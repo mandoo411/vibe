@@ -1,0 +1,182 @@
+/* Minimal, modern calculator UI */
+:root {
+  --bg: #0b1020;
+  --panel: rgba(255, 255, 255, 0.07);
+  --panel-2: rgba(255, 255, 255, 0.10);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  --accent: #7c5cff;
+  --danger: #ff4d6d;
+  --radius: 22px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans KR",
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 900px at 10% 10%, rgba(124, 92, 255, 0.25), transparent 55%),
+    radial-gradient(1100px 800px at 90% 30%, rgba(74, 222, 128, 0.12), transparent 60%),
+    radial-gradient(900px 700px at 50% 90%, rgba(59, 130, 246, 0.12), transparent 60%),
+    var(--bg);
+}
+
+.app {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 28px 16px;
+}
+
+.calc {
+  width: min(420px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.05));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.top {
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.90);
+}
+
+.brand__logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+}
+
+.brand__text {
+  display: grid;
+  gap: 2px;
+  line-height: 1.1;
+}
+
+.brand__title {
+  font-weight: 750;
+  letter-spacing: 0.2px;
+}
+
+.brand__sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.60);
+}
+
+.display {
+  padding: 16px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+}
+
+.history {
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.screen {
+  margin-top: 10px;
+  font-size: clamp(30px, 7vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding: 14px;
+}
+
+.key {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border-radius: 16px;
+  padding: 14px 12px;
+  font-size: 18px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 0.06s ease, background 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+}
+
+.key:active {
+  transform: translateY(1px);
+}
+
+.key:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.65);
+  outline-offset: 2px;
+}
+
+.key--func {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.key--op {
+  background: rgba(124, 92, 255, 0.16);
+  border-color: rgba(124, 92, 255, 0.28);
+}
+
+.key--equals {
+  background: linear-gradient(180deg, rgba(124, 92, 255, 0.95), rgba(124, 92, 255, 0.70));
+  border-color: rgba(124, 92, 255, 0.65);
+}
+
+.key--wide {
+  grid-column: span 2;
+}
+
+.hint {
+  padding: 0 16px 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.56);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    transition: none;
+  }
+}
+

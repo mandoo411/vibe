@@ -1,0 +1,85 @@
+name: Daily Market Sync
+
+# 평일 16:00 KST (= 07:00 UTC) 자동 실행
+# 한국 증시 마감(15:30 KST) 30분 후 KIS API + Naver 뉴스 + Claude 분류 실행
+# 한국 공휴일에도 동작하지만 sync:kis가 더미(0%) 데이터를 받으면
+# 프런트엔드의 isDayEmpty()가 빈 상태로 처리합니다.
+on:
+  schedule:
+    - cron: "0 7 * * 1-5"
+  workflow_dispatch:
+
+# data/daily-market.json 자동 커밋을 위해 쓰기 권한 필요
+permissions:
+  contents: write
+
+# 동시 실행 방지 (이전 실행이 끝날 때까지 대기)
+concurrency:
+  group: daily-market-sync
+  cancel-in-progress: false
+
+env:
+  # Vercel 프로젝트 식별자 — 비밀이 아닙니다 (.vercel/project.json 참고)
+  VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
+  VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
+  TZ: Asia/Seoul
+
+jobs:
+  sync-and-deploy:
+    name: Sync KIS + Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env from secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: |
+          {
+            printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY"
+            printf 'KIS_APP_KEY=%s\n'        "$KIS_APP_KEY"
+            printf 'KIS_APP_SECRET=%s\n'     "$KIS_APP_SECRET"
+            printf 'TELEGRAM_TOKEN=%s\n'     "$TELEGRAM_TOKEN"
+            printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
+          } > .env
+
+      - name: Sync KIS top 30 + Naver news + Claude
+        run: npm run sync:kis
+
+      - name: Commit updated data/daily-market.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/daily-market.json; then
+            echo "::notice::No data changes to commit"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git add data/daily-market.json
+            git commit -m "chore(data): sync daily market ${STAMP}"
+            git push
+          fi
+
+      - name: Deploy to Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f .env .kis-token.json

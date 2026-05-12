@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>bori-cal</title>
+    <link rel="icon" href="./assets/bori-logo.png" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app" aria-label="계산기">
+      <section class="calc" role="application" aria-label="사칙연산 계산기">
+        <header class="top">
+          <div class="brand">
+            <img class="brand__logo" src="./assets/bori-logo.png" alt="bori-cal 로고" />
+            <div class="brand__text">
+              <div class="brand__title">bori-cal</div>
+              <div class="brand__sub">simple calculator</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="display" aria-live="polite">
+          <div id="history" class="history" aria-label="이전 식"></div>
+          <div id="screen" class="screen" aria-label="현재 입력값">0</div>
+        </div>
+
+        <div class="keys" aria-label="키패드">
+          <button class="key key--func" data-action="clear" type="button">AC</button>
+          <button class="key key--func" data-action="backspace" type="button">⌫</button>
+          <button class="key key--func" data-action="toggleSign" type="button">±</button>
+          <button class="key key--op" data-op="/" type="button">÷</button>
+
+          <button class="key" data-digit="7" type="button">7</button>
+          <button class="key" data-digit="8" type="button">8</button>
+          <button class="key" data-digit="9" type="button">9</button>
+          <button class="key key--op" data-op="*" type="button">×</button>
+
+          <button class="key" data-digit="4" type="button">4</button>
+          <button class="key" data-digit="5" type="button">5</button>
+          <button class="key" data-digit="6" type="button">6</button>
+          <button class="key key--op" data-op="-" type="button">−</button>
+
+          <button class="key" data-digit="1" type="button">1</button>
+          <button class="key" data-digit="2" type="button">2</button>
+          <button class="key" data-digit="3" type="button">3</button>
+          <button class="key key--op" data-op="+" type="button">+</button>
+
+          <button class="key key--wide" data-digit="0" type="button">0</button>
+          <button class="key" data-action="decimal" type="button">.</button>
+          <button class="key key--equals" data-action="equals" type="button">=</button>
+        </div>
+
+        <footer class="hint">
+          키보드: 숫자/연산자(+ - * /), Enter(=), Backspace, Esc(AC)
+        </footer>
+      </section>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

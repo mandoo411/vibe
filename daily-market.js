@@ -1,0 +1,490 @@
+(function () {
+  const DATA_URL = "./data/daily-market.json";
+  const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
+  const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+  // ─── State ────────────────────────────────────────────────
+  const state = {
+    meta: { title: "매일 시황 기록", timezoneNote: "" },
+    days: {},
+    archiveAnchor: null,
+    selected: null,
+  };
+
+  // ─── DOM ──────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    title: $("masthead-title"),
+    range: $("masthead-range"),
+    updated: $("masthead-updated"),
+    tz: $("masthead-tz"),
+    notice: $("masthead-notice"),
+    navPrev: $("nav-prev"),
+    navNext: $("nav-next"),
+    navDate: $("nav-date"),
+    navToday: $("nav-today"),
+    railMd: $("rail-md"),
+    railDow: $("rail-dow"),
+    dayBody: $("day-body"),
+    dayPrep: $("day-prep"),
+    dayPrepTitle: $("day-prep-title"),
+    summary: $("day-summary"),
+    indexes: $("day-indexes"),
+    notable: $("day-notable"),
+    topGainers: $("day-topgainers"),
+    topGainersMeta: $("day-topgainers-meta"),
+    themes: $("day-themes"),
+    news: $("day-news"),
+    archivePrev: $("archive-prev"),
+    archiveNext: $("archive-next"),
+    archiveTitle: $("archive-title"),
+    archiveGrid: $("archive-grid"),
+  };
+
+  // ─── Date helpers ─────────────────────────────────────────
+  function seoulYmd(d = new Date()) {
+    return new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  }
+
+  function addDaysYmd(ymd, n) {
+    const t = new Date(ymd + "T12:00:00+09:00").getTime() + n * 86400000;
+    return new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Asia/Seoul",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(t));
+  }
+
+  function ymdParts(ymd) {
+    const [y, m, d] = ymd.split("-").map(Number);
+    return { y, m, d };
+  }
+
+  function ymdWeekday(ymd) {
+    const d = new Date(ymd + "T12:00:00+09:00");
+    return d.getUTCDay();
+  }
+
+  function shortDateDot(ymd) {
+    if (!ymd || !YMD_RE.test(ymd)) return "—";
+    const { m, d } = ymdParts(ymd);
+    return `${m}.${d}`;
+  }
+
+  function headlineKo(ymd) {
+    const { y, m, d } = ymdParts(ymd);
+    const w = WD_KO[ymdWeekday(ymd)];
+    return `${y}년 ${m}월 ${d}일 (${w})`;
+  }
+
+  function monthLabel(ymd) {
+    const { y, m } = ymdParts(ymd);
+    return `${y}년 ${m}월`;
+  }
+
+  function firstOfMonth(ymd) {
+    const { y, m } = ymdParts(ymd);
+    return `${y}-${String(m).padStart(2, "0")}-01`;
+  }
+
+  function addMonths(ymd, n) {
+    const { y, m } = ymdParts(ymd);
+    const total = y * 12 + (m - 1) + n;
+    const ny = Math.floor(total / 12);
+    const nm = (total % 12) + 1;
+    return `${ny}-${String(nm).padStart(2, "0")}-01`;
+  }
+
+  function daysInMonth(ymd) {
+    const { y, m } = ymdParts(ymd);
+    return new Date(y, m, 0).getDate();
+  }
+
+  // ─── Utils ────────────────────────────────────────────────
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function sanitizeStr(v) {
+    return v == null ? "" : String(v).trim();
+  }
+
+  function parseChange(v) {
+    if (v === "" || v == null) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function formatChange(v) {
+    if (v == null || !Number.isFinite(v)) return "—";
+    const sign = v > 0 ? "+" : "";
+    return `${sign}${v.toFixed(2)}%`;
+  }
+
+  function deltaClass(v) {
+    if (v == null || !Number.isFinite(v) || v === 0) return "delta--flat";
+    return v > 0 ? "delta--pos" : "delta--neg";
+  }
+
+  function getDay(ymd) {
+    return state.days[ymd] || null;
+  }
+
+  function isDayEmpty(day) {
+    if (!day || typeof day !== "object") return true;
+    const hasSummary = sanitizeStr(day.summary).length > 0;
+    const hasArr = (k) => Array.isArray(day[k]) && day[k].length > 0;
+
+    // topGainers는 모든 종목의 등락률이 0%이면 장 마감 전 더미 데이터로 간주
+    const hasMeaningfulTopGainers =
+      Array.isArray(day.topGainers) &&
+      day.topGainers.length > 0 &&
+      day.topGainers.some((s) => {
+        const chg = parseChange(s && s.change);
+        return chg != null && chg !== 0;
+      });
+
+    return !(
+      hasSummary ||
+      hasArr("indexes") ||
+      hasArr("notableStocks") ||
+      hasMeaningfulTopGainers ||
+      hasArr("themes") ||
+      hasArr("news")
+    );
+  }
+
+  // ─── Render: detail ───────────────────────────────────────
+  function render() {
+    const ymd = state.selected;
+    const day = getDay(ymd);
+    const empty = isDayEmpty(day);
+
+    els.railMd.textContent = shortDateDot(ymd);
+    els.railDow.textContent = WD_KO[ymdWeekday(ymd)];
+    els.range.innerHTML = `<strong>${escapeHtml(headlineKo(ymd))}</strong>`;
+    els.updated.textContent = !empty && day && day.updatedAt ? `업데이트: ${day.updatedAt}` : "";
+    els.tz.textContent = state.meta.timezoneNote || "";
+
+    try {
+      document.title = `${state.meta.title || "매일 시황 기록"} · ${headlineKo(ymd)}`;
+    } catch (_) {
+      /* ignore */
+    }
+
+    if (els.dayBody) {
+      els.dayBody.classList.toggle("is-empty", empty);
+    }
+    if (els.dayPrep) {
+      els.dayPrep.hidden = !empty;
+      if (empty && els.dayPrepTitle) {
+        const isToday = ymd === seoulYmd();
+        els.dayPrepTitle.textContent = isToday
+          ? "오늘 시황 데이터 준비 중입니다"
+          : `${headlineKo(ymd)} 시황 데이터가 아직 없습니다`;
+      }
+    }
+
+    if (empty) {
+      els.summary.textContent = "";
+      els.indexes.innerHTML = "";
+      els.notable.innerHTML = "";
+      if (els.topGainers) els.topGainers.innerHTML = "";
+      if (els.topGainersMeta) els.topGainersMeta.textContent = "";
+      els.themes.innerHTML = "";
+      els.news.innerHTML = "";
+    } else {
+      els.summary.textContent = (day && day.summary) || "";
+      els.indexes.innerHTML = renderIndexes(day && day.indexes);
+      els.notable.innerHTML = renderNotable(day && day.notableStocks);
+      if (els.topGainers) {
+        els.topGainers.innerHTML = renderTopGainers(day && day.topGainers);
+      }
+      if (els.topGainersMeta) {
+        const ts = day && day.topGainersUpdatedAt;
+        els.topGainersMeta.textContent = ts ? `갱신: ${ts} · KIS+Naver+Claude` : "";
+      }
+      els.themes.innerHTML = renderThemes(day && day.themes);
+      els.news.innerHTML = renderNews(day && day.news);
+    }
+
+    renderArchive();
+  }
+
+  function renderTopGainers(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">기록 없음</p>';
+    }
+    const showTv = arr.some((s) => sanitizeStr(s && s.tradingValue));
+    const rows = arr
+      .map((s) => {
+        const chg = parseChange(s && s.change);
+        const reason = sanitizeStr(s && s.reason);
+        const theme = sanitizeStr(s && s.theme);
+        const market = sanitizeStr(s && s.market);
+        const code = sanitizeStr(s && s.code);
+        const tv = sanitizeStr(s && s.tradingValue);
+        return `<tr>
+          <td class="topgainers__rank">${escapeHtml(s && s.rank != null ? s.rank : "")}</td>
+          <td>
+            <span class="topgainers__name">${escapeHtml(s && s.name)}</span>
+            ${market ? `<span class="topgainers__market">${escapeHtml(market)}</span>` : ""}
+            ${code ? `<span class="topgainers__code">${escapeHtml(code)}</span>` : ""}
+            ${reason ? `<span class="topgainers__reason">${escapeHtml(reason)}</span>` : ""}
+          </td>
+          <td class="num"><span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span></td>
+          ${showTv ? `<td class="num">${escapeHtml(tv || "—")}</td>` : ""}
+          <td>${theme ? `<span class="theme-chip">${escapeHtml(theme)}</span>` : ""}</td>
+        </tr>`;
+      })
+      .join("");
+    return `<table class="topgainers-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>종목</th>
+          <th class="num">등락률</th>
+          ${showTv ? '<th class="num">거래대금</th>' : ""}
+          <th>테마</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  function renderNews(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">기록 없음</p>';
+    }
+    return `<ul class="news-list">${arr
+      .map((n) => {
+        const title = escapeHtml(n && n.title);
+        const note = sanitizeStr(n && n.note);
+        const source = sanitizeStr(n && n.source);
+        const url = typeof (n && n.url) === "string" && /^https?:\/\//i.test(n.url) ? n.url : "";
+        const titleHtml = url
+          ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${title}</a>`
+          : title;
+        const metaParts = [];
+        if (source) metaParts.push(escapeHtml(source));
+        if (url) metaParts.push('<span class="news__link">link</span>');
+        return `<li class="news-item">
+          <p class="news-item__title">${titleHtml}</p>
+          ${note ? `<p class="news-item__note">${escapeHtml(note)}</p>` : ""}
+          ${metaParts.length ? `<p class="news-item__meta">${metaParts.join(" · ")}</p>` : ""}
+        </li>`;
+      })
+      .join("")}</ul>`;
+  }
+
+  function renderIndexes(arr) {
+    if (!Array.isArray(arr) || !arr.length) return "";
+    return arr
+      .map((row) => {
+        const name = escapeHtml(row && row.name);
+        const value = escapeHtml(row && row.value != null ? row.value : "");
+        const chg = parseChange(row && row.change);
+        const chgHtml = chg == null
+          ? ""
+          : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`;
+        return `<span class="index-chip"><span class="index-chip__name">${name}</span><span class="index-chip__value">${value || "—"}</span>${chgHtml}</span>`;
+      })
+      .join("");
+  }
+
+  function renderNotable(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">기록 없음</p>';
+    }
+    const showTv = arr.some((row) => sanitizeStr(row && row.tradingValue));
+    const rows = arr
+      .map((row) => {
+        const chg = parseChange(row && row.change);
+        const note = (row && row.note ? String(row.note) : "").trim();
+        return `<tr>
+          <td>
+            <span class="notable-table__name">${escapeHtml(row && row.name)}</span>
+            ${note ? `<span class="notable-table__note">${escapeHtml(note)}</span>` : ""}
+          </td>
+          <td class="num"><span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span></td>
+          ${showTv ? `<td class="num">${escapeHtml((row && row.tradingValue) || "—")}</td>` : ""}
+        </tr>`;
+      })
+      .join("");
+    return `<table class="notable-table">
+      <thead>
+        <tr><th>종목</th><th class="num">등락률</th>${showTv ? '<th class="num">거래대금</th>' : ""}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  function renderThemes(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">기록 없음</p>';
+    }
+    return arr
+      .map((t) => {
+        const leaders = Array.isArray(t && t.leaders) ? t.leaders : [];
+        const leadersHtml = leaders.length
+          ? `<ul class="theme__leaders">${leaders
+              .map((l) => {
+                const chg = parseChange(l && l.change);
+                const reason = sanitizeStr(l && l.reason);
+                return `<li class="theme__leader${reason ? " theme__leader--with-reason" : ""}">
+                  <span class="theme__leader-line">
+                    <span class="theme__leader-name">${escapeHtml(l && l.name)}</span>
+                    ${chg == null ? "" : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`}
+                  </span>
+                  ${reason ? `<span class="theme__leader-reason">${escapeHtml(reason)}</span>` : ""}
+                </li>`;
+              })
+              .join("")}</ul>`
+          : "";
+        return `<div class="theme">
+          <div class="theme__line1">
+            <span class="theme__name">${escapeHtml(t && t.name)}</span>
+            ${t && t.note ? `<span class="theme__sep">·</span><span class="theme__summary">${escapeHtml(t.note)}</span>` : ""}
+          </div>
+          ${leadersHtml}
+        </div>`;
+      })
+      .join("");
+  }
+
+  // ─── Render: archive calendar ─────────────────────────────
+  function renderArchive() {
+    const anchor = state.archiveAnchor;
+    const first = firstOfMonth(anchor);
+    const total = daysInMonth(anchor);
+    const firstWd = ymdWeekday(first);
+    const todayYmd = seoulYmd();
+    const days = state.days || {};
+
+    els.archiveTitle.textContent = monthLabel(anchor);
+
+    const cells = [];
+    for (let i = 0; i < firstWd; i++) {
+      cells.push(`<div class="cell cell--blank" role="presentation"></div>`);
+    }
+    for (let d = 1; d <= total; d++) {
+      const { y, m } = ymdParts(anchor);
+      const ymd = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const wd = ymdWeekday(ymd);
+      const hasData = !isDayEmpty(days[ymd]);
+      const isToday = ymd === todayYmd;
+      const isSelected = ymd === state.selected;
+      const cls = [
+        "cell",
+        wd === 0 ? "cell--sun" : "",
+        hasData ? "cell--has" : "",
+        isToday ? "cell--today" : "",
+        isSelected ? "cell--selected" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      cells.push(
+        `<button type="button" class="${cls}" role="gridcell" data-ymd="${ymd}" aria-label="${escapeHtml(headlineKo(ymd))}${hasData ? ", 기록 있음" : ""}">${d}</button>`
+      );
+    }
+    const totalCells = firstWd + total;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < trailing; i++) {
+      cells.push(`<div class="cell cell--blank" role="presentation"></div>`);
+    }
+    els.archiveGrid.innerHTML = cells.join("");
+
+    els.archiveGrid.querySelectorAll(".cell[data-ymd]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        select(btn.dataset.ymd, { syncArchive: false });
+      });
+    });
+  }
+
+  // ─── Selection / navigation ───────────────────────────────
+  function select(ymd, opts = {}) {
+    if (!YMD_RE.test(ymd)) return;
+    state.selected = ymd;
+    if (opts.syncArchive !== false) {
+      state.archiveAnchor = firstOfMonth(ymd);
+    } else {
+      const cur = ymdParts(state.archiveAnchor);
+      const sel = ymdParts(ymd);
+      if (cur.y !== sel.y || cur.m !== sel.m) {
+        state.archiveAnchor = firstOfMonth(ymd);
+      }
+    }
+    els.navDate.value = ymd;
+    try {
+      history.replaceState(null, "", `#${ymd}`);
+    } catch (_) {
+      /* ignore */
+    }
+    render();
+  }
+
+  // ─── Events ───────────────────────────────────────────────
+  function bindEvents() {
+    els.navPrev.addEventListener("click", () => select(addDaysYmd(state.selected, -1)));
+    els.navNext.addEventListener("click", () => select(addDaysYmd(state.selected, 1)));
+    els.navToday.addEventListener("click", () => select(seoulYmd()));
+    els.navDate.addEventListener("change", () => {
+      if (YMD_RE.test(els.navDate.value)) select(els.navDate.value);
+    });
+
+    els.archivePrev.addEventListener("click", () => {
+      state.archiveAnchor = addMonths(state.archiveAnchor, -1);
+      renderArchive();
+    });
+    els.archiveNext.addEventListener("click", () => {
+      state.archiveAnchor = addMonths(state.archiveAnchor, 1);
+      renderArchive();
+    });
+
+    window.addEventListener("hashchange", () => {
+      const h = (location.hash || "").replace("#", "");
+      if (YMD_RE.test(h) && h !== state.selected) select(h);
+    });
+  }
+
+  function initialYmd() {
+    const h = (location.hash || "").replace("#", "");
+    if (YMD_RE.test(h)) return h;
+    return seoulYmd();
+  }
+
+  async function loadData() {
+    try {
+      const res = await fetch(DATA_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+      if (raw && raw.meta) state.meta = { ...state.meta, ...raw.meta };
+      if (raw && raw.days && typeof raw.days === "object") state.days = raw.days;
+    } catch (e) {
+      console.warn("daily-market.json 불러오기 실패:", e);
+    }
+  }
+
+  async function main() {
+    await loadData();
+
+    state.selected = initialYmd();
+    state.archiveAnchor = firstOfMonth(state.selected);
+    els.navDate.value = state.selected;
+
+    bindEvents();
+    render();
+  }
+
+  main();
+})();

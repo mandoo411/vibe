@@ -1,7 +1,7 @@
 /**
  * 한국투자증권 Open API 프록시 (Vercel Serverless)
  * 환경변수: KIS_APP_KEY, KIS_APP_SECRET
- * 선택: KIS_BASE_URL (기본 https://openapi.koreainvestment.com:9443)
+ * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 500, 호출 간격 ms)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";

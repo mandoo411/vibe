@@ -15,6 +15,21 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** KIS 응답 tr_cont (연속조회). 헤더 이름·대소문자 편차 흡수 */
+function readTrContHeader(res, json) {
+  const fromBody =
+    (json && (json.tr_cont ?? json.TR_CONT ?? json.trCont)) != null
+      ? String(json.tr_cont ?? json.TR_CONT ?? json.trCont).trim()
+      : "";
+  if (fromBody) return fromBody;
+  for (const [k, v] of res.headers.entries()) {
+    if (String(k).toLowerCase() === "tr_cont" || String(k).toLowerCase() === "tr-cont") {
+      return String(v || "").trim();
+    }
+  }
+  return "";
+}
+
 function baseUrl() {
   return (process.env.KIS_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
 }
@@ -99,7 +114,7 @@ async function kisGet(path, trId, searchParams, trCont = "") {
       }
       throw new Error(`KIS rt_cd=${json.rt_cd} msg=${msg}`);
     }
-    const nextTrCont = res.headers.get("tr_cont") || res.headers.get("tr-cont") || "";
+    const nextTrCont = readTrContHeader(res, json);
     return { json, trCont: nextTrCont };
   }
   throw new Error(`KIS GET failed after retries (${path})`);
@@ -118,7 +133,7 @@ function toNum(v) {
 async function fetchMarketCapKospi50() {
   const rows = [];
   let trCont = "";
-  for (let i = 0; i < 8 && rows.length < 50; i++) {
+  for (let i = 0; i < 10 && rows.length < 50; i++) {
     const { json, trCont: next } = await kisGet(
       "/uapi/domestic-stock/v1/ranking/market-cap",
       "FHPST01740000",
@@ -136,18 +151,26 @@ async function fetchMarketCapKospi50() {
       trCont
     );
     const chunk = Array.isArray(json.output) ? json.output : [];
+    const before = rows.length;
     for (const row of chunk) {
+      const code = sanitizeStr(row.mksc_shrn_iscd);
+      if (!code || rows.some((r) => r.code === code)) continue;
       rows.push({
         rank: toNum(row.data_rank),
-        code: sanitizeStr(row.mksc_shrn_iscd),
+        code,
         name: sanitizeStr(row.hts_kor_isnm),
         price: sanitizeStr(row.stck_prpr),
         changePct: toNum(row.prdy_ctrt),
         volume: sanitizeStr(row.acml_vol),
         mcapEok: sanitizeStr(row.stck_avls),
       });
+      if (rows.length >= 50) break;
     }
-    if (next !== "M") break;
+    if (rows.length >= 50) break;
+    const appended = rows.length - before;
+    const moreByHeader = /^[MFmf]$/.test(String(next || ""));
+    const moreByFirstFullPage = i === 0 && appended >= 28 && rows.length === 30;
+    if (!moreByHeader && !moreByFirstFullPage) break;
     trCont = "N";
   }
   return rows.filter((r) => r.code).slice(0, 50);

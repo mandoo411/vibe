@@ -130,6 +130,34 @@ function toNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+/** KIS 응답 본문 배열 (output / output1 / output2 등 편차) */
+function kisOutputRows(json) {
+  if (!json || typeof json !== "object") return [];
+  for (const key of ["output", "output1", "output2", "OUTPUT", "Output"]) {
+    const v = json[key];
+    if (Array.isArray(v)) return v;
+  }
+  return [];
+}
+
+/** 숫자·문자·과학적 표기 등을 원 단위 정수 문자열로 정규화 (없으면 "") */
+function normalizeWonMoneyString(v) {
+  if (v == null || v === "") return "";
+  if (typeof v === "number" && Number.isFinite(v)) {
+    if (v <= 0) return "";
+    return String(Math.round(Math.abs(v)));
+  }
+  const s0 = String(v).trim();
+  if (!s0) return "";
+  if (/^[\d.]+e[+-]?\d+$/i.test(s0)) {
+    const n = Number(s0);
+    if (Number.isFinite(n) && n > 0) return String(Math.round(n));
+  }
+  const s = s0.replace(/[^\d,]/g, "");
+  if (s && /\d/.test(s)) return s;
+  return "";
+}
+
 /**
  * KIS 순위/등락률 응답에서 누적 거래대금(원) 필드명이 환경·API마다 달라질 수 있어 후보를 순서대로 탐색.
  */
@@ -144,15 +172,28 @@ function pickAcmlTrPbmn(row) {
     "acml_pbmn",
     "stck_mxac_tr_pbmn",
     "mxac_tr_pbmn",
+    "acmlTrPbmn",
   ];
   for (const k of keys) {
-    const v = row[k];
-    if (v == null || v === "") continue;
-    const s0 = String(v).trim();
-    const s = s0.replace(/[^\d,]/g, "");
-    if (s && /\d/.test(s)) return s;
+    const got = normalizeWonMoneyString(row[k]);
+    if (got) return got;
+  }
+  for (const k of Object.keys(row)) {
+    if (!/pbmn/i.test(k)) continue;
+    const got = normalizeWonMoneyString(row[k]);
+    if (got) return got;
   }
   return "";
+}
+
+/** API가 거래대금을 비울 때 표시용 근사치(현재가×누적거래량, 원) */
+function approxPbmnFromPriceVol(priceStr, volStr) {
+  const p = Number(String(priceStr || "").replace(/,/g, ""));
+  const v = Number(String(volStr || "").replace(/,/g, ""));
+  if (!Number.isFinite(p) || !Number.isFinite(v) || p <= 0 || v <= 0) return "";
+  const x = p * v;
+  if (!Number.isFinite(x) || x <= 0 || x > Number.MAX_SAFE_INTEGER) return "";
+  return String(Math.round(x));
 }
 
 /** 누적 거래량(주) — 필드명 편차 흡수 */
@@ -193,7 +234,7 @@ async function fetchMarketCapKospi30() {
     },
     ""
   );
-  const chunk = Array.isArray(json.output) ? json.output : [];
+  const chunk = kisOutputRows(json);
   const rows = [];
   for (const row of chunk) {
     const code = sanitizeStr(row.mksc_shrn_iscd);
@@ -213,15 +254,15 @@ async function fetchMarketCapKospi30() {
 }
 
 async function fetchFluctuationRank(marketCode, marketLabel) {
-  const url = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
-  const params = {
+  const urlBase = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
+  const buildParams = (fidPrcCls) => ({
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20170",
     fid_input_iscd: marketCode,
     fid_rank_sort_cls_code: "0",
     fid_input_cnt_1: "0",
-    /** 0: 현재가 기준(장중 누적 거래대금 등). 1(종가)일 때 acml_tr_pbmn이 비는 경우가 있음 */
-    fid_prc_cls_code: "0",
+    /** 1: 종가(일간 스크립트와 동일). 0: 현재가 — 환경에 따라 거래대금 필드가 한쪽만 채워질 수 있음 */
+    fid_prc_cls_code: fidPrcCls,
     fid_input_price_1: "",
     fid_input_price_2: "",
     fid_vol_cnt: "",
@@ -230,53 +271,84 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     fid_div_cls_code: "0",
     fid_rsfl_rate1: "",
     fid_rsfl_rate2: "",
-  };
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  });
 
-  await sleep(KIS_GAP_MS);
-  const { appkey, appsecret } = requireKeys();
-  const token = await getAccessToken();
+  async function fetchOnce(fidPrcCls) {
+    const url = new URL(urlBase.toString());
+    for (const [k, v] of Object.entries(buildParams(fidPrcCls))) url.searchParams.set(k, v);
 
-  const maxTry = 4;
-  let json;
-  for (let attempt = 0; attempt < maxTry; attempt++) {
-    const res = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        authorization: `Bearer ${token}`,
-        appkey,
-        appsecret: appsecret,
-        tr_id: "FHPST01700000",
-        custtype: "P",
-        tr_cont: "",
-      },
-    });
-    const text = await res.text();
-    json = JSON.parse(text);
-    if (json.rt_cd && json.rt_cd !== "0") {
-      const msg = json.msg1 || json.msg_cd || "";
-      const rateLimited =
-        json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
-      if (rateLimited && attempt < maxTry - 1) {
-        await sleep(600 + attempt * 350);
-        continue;
+    await sleep(KIS_GAP_MS);
+    const { appkey, appsecret } = requireKeys();
+    const token = await getAccessToken();
+
+    const maxTry = 4;
+    let json;
+    for (let attempt = 0; attempt < maxTry; attempt++) {
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          authorization: `Bearer ${token}`,
+          appkey,
+          appsecret: appsecret,
+          tr_id: "FHPST01700000",
+          custtype: "P",
+          tr_cont: "",
+        },
+      });
+      const text = await res.text();
+      json = JSON.parse(text);
+      if (json.rt_cd && json.rt_cd !== "0") {
+        const msg = json.msg1 || json.msg_cd || "";
+        const rateLimited =
+          json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
+        if (rateLimited && attempt < maxTry - 1) {
+          await sleep(600 + attempt * 350);
+          continue;
+        }
+        throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${msg}`);
       }
-      throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${msg}`);
+      break;
     }
-    break;
+    return json;
   }
-  const list = Array.isArray(json.output) ? json.output : [];
-  return list.map((row) => ({
-    code: sanitizeStr(row.stck_shrn_iscd),
-    name: sanitizeStr(row.hts_kor_isnm),
-    market: marketLabel,
-    price: sanitizeStr(row.stck_prpr),
-    changePct: toNum(row.prdy_ctrt),
-    volume: pickAcmlVol(row),
-    tradingValue: pickAcmlTrPbmn(row),
-    rank: toNum(row.data_rank),
-  })).filter((r) => r.code && r.name);
+
+  const mapRows = (rawJson) => {
+    const list = kisOutputRows(rawJson);
+    return list
+      .map((row) => {
+        const code = sanitizeStr(row.stck_shrn_iscd);
+        const price = sanitizeStr(row.stck_prpr);
+        const volume = pickAcmlVol(row);
+        const tradingValue = pickAcmlTrPbmn(row);
+        return {
+          code,
+          name: sanitizeStr(row.hts_kor_isnm),
+          market: marketLabel,
+          price,
+          changePct: toNum(row.prdy_ctrt),
+          volume,
+          tradingValue,
+          rank: toNum(row.data_rank),
+        };
+      })
+      .filter((r) => r.code && r.name);
+  };
+
+  let rows = mapRows(await fetchOnce("1"));
+  if (rows.length && rows.some((r) => !r.tradingValue)) {
+    const rawAlt = await fetchOnce("0");
+    const tvByCode = new Map(
+      kisOutputRows(rawAlt).map((row) => [sanitizeStr(row.stck_shrn_iscd), pickAcmlTrPbmn(row)])
+    );
+    rows = rows.map((r) =>
+      r.tradingValue ? r : { ...r, tradingValue: tvByCode.get(r.code) || "" }
+    );
+  }
+  rows = rows.map((r) =>
+    r.tradingValue ? r : { ...r, tradingValue: approxPbmnFromPriceVol(r.price, r.volume) || "" }
+  );
+  return rows;
 }
 
 async function fetchGainersMerged50() {

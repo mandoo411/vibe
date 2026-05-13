@@ -1,13 +1,21 @@
 /**
  * 한국투자증권 Open API 프록시 (Vercel Serverless)
  * 환경변수: KIS_APP_KEY, KIS_APP_SECRET
- * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 500, 호출 간격 ms)
+ * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
 
 /** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
-const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 500);
+const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
+
+/** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
+function isKisRateLimitError(json) {
+  if (!json || typeof json !== "object") return false;
+  if (json.msg_cd === "EGW00201") return true;
+  const blob = `${json.msg1 || ""} ${json.message || ""}`;
+  return /초당 거래건수|EGW00201/.test(String(blob));
+}
 
 let tokenMem = { access_token: null, expires_at: 0 };
 
@@ -91,7 +99,7 @@ async function kisGet(path, trId, searchParams, trCont = "") {
     tr_cont: trCont,
   };
 
-  const maxTry = 4;
+  const maxTry = 7;
   for (let attempt = 0; attempt < maxTry; attempt++) {
     const res = await fetch(url.toString(), { method: "GET", headers });
     const text = await res.text();
@@ -99,17 +107,25 @@ async function kisGet(path, trId, searchParams, trCont = "") {
     try {
       json = JSON.parse(text);
     } catch {
+      if (!res.ok && attempt < maxTry - 1) {
+        await sleep(800 + attempt * 400);
+        continue;
+      }
       throw new Error(`KIS GET invalid JSON (${path}) HTTP ${res.status}: ${text.slice(0, 400)}`);
+    }
+    const rateLimited = isKisRateLimitError(json);
+    /** EGW00201 등은 HTTP 500 + rt_cd≠0 으로만 올 때가 있어 res.ok 전에 재시도 판단 */
+    if (!res.ok && rateLimited && attempt < maxTry - 1) {
+      await sleep(900 + attempt * 450);
+      continue;
     }
     if (!res.ok) {
       throw new Error(`KIS GET HTTP ${res.status} (${path}): ${text.slice(0, 400)}`);
     }
     if (json.rt_cd && json.rt_cd !== "0") {
       const msg = json.msg1 || json.msg_cd || "";
-      const rateLimited =
-        json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
       if (rateLimited && attempt < maxTry - 1) {
-        await sleep(600 + attempt * 350);
+        await sleep(900 + attempt * 450);
         continue;
       }
       throw new Error(`KIS rt_cd=${json.rt_cd} msg=${msg}`);
@@ -512,6 +528,7 @@ module.exports = async function handler(req, res) {
 
     if (action === "index") {
       const kospi = await fetchIndexPrice("0001", "코스피");
+      await sleep(KIS_GAP_MS);
       const kosdaq = await fetchIndexPrice("1001", "코스닥");
       json(res, 200, { indexes: [kospi, kosdaq] });
       return;
@@ -526,7 +543,9 @@ module.exports = async function handler(req, res) {
 
     if (action === "snapshot") {
       const marketTime = await fetchMarketTime();
+      await sleep(KIS_GAP_MS);
       const kospi = await fetchIndexPrice("0001", "코스피");
+      await sleep(KIS_GAP_MS);
       const kosdaq = await fetchIndexPrice("1001", "코스닥");
       const gainers = await fetchGainersMerged50();
       const cap = await fetchMarketCapKospi30();

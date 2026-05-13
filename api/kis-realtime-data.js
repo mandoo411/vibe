@@ -167,6 +167,8 @@ function pickAcmlTrPbmn(row) {
     "acml_tr_pbmn",
     "ACML_TR_PBMN",
     "hts_acml_tr_pbmn",
+    "hts_deal_tr_pbmn",
+    "deal_tr_pbmn",
     "prtt_tr_pbmn",
     "tot_acml_tr_pbmn",
     "acml_pbmn",
@@ -196,7 +198,24 @@ function approxPbmnFromPriceVol(priceStr, volStr) {
   return String(Math.round(x));
 }
 
-/** 누적 거래량(주) — 필드명 편차 흡수 */
+/** 누적 거래량(주) 문자열 정규화 */
+function normalizeShareVolString(v) {
+  if (v == null || v === "") return "";
+  if (typeof v === "number" && Number.isFinite(v) && v >= 0) {
+    return String(Math.round(Math.abs(v)));
+  }
+  const s0 = String(v).trim();
+  if (!s0) return "";
+  if (/^[\d.]+e[+-]?\d+$/i.test(s0)) {
+    const n = Number(s0);
+    if (Number.isFinite(n) && n >= 0) return String(Math.round(n));
+  }
+  const s = s0.replace(/[^\d,]/g, "");
+  if (s && /\d/.test(s)) return s;
+  return "";
+}
+
+/** 누적 거래량(주) — 필드명 편차 흡수 (시총 순위 등) */
 function pickAcmlVol(row) {
   if (!row || typeof row !== "object") return "";
   const keys = [
@@ -205,13 +224,16 @@ function pickAcmlVol(row) {
     "prdy_acml_vol",
     "tot_acml_vol",
     "hts_acml_vol",
+    "acmlVol",
   ];
   for (const k of keys) {
-    const v = row[k];
-    if (v == null || v === "") continue;
-    const s0 = String(v).trim();
-    const s = s0.replace(/[^\d,]/g, "");
-    if (s && /\d/.test(s)) return s;
+    const got = normalizeShareVolString(row[k]);
+    if (got) return got;
+  }
+  for (const k of Object.keys(row)) {
+    if (!/acml.*vol|acml_vol/i.test(k)) continue;
+    const got = normalizeShareVolString(row[k]);
+    if (got) return got;
   }
   return "";
 }
@@ -228,7 +250,8 @@ async function fetchMarketCapKospi30() {
       fid_div_cls_code: "0",
       fid_input_iscd: "0001",
       fid_trgt_cls_code: "0",
-      fid_trgt_exls_cls_code: "0",
+      /** 등락률 순위와 동일 10자리 — "0"만 줄 때 일부 필드가 비는 사례 대비 */
+      fid_trgt_exls_cls_code: "0000000000",
       fid_input_price_1: "",
       fid_vol_cnt: "",
     },
@@ -239,14 +262,19 @@ async function fetchMarketCapKospi30() {
   for (const row of chunk) {
     const code = sanitizeStr(row.mksc_shrn_iscd);
     if (!code) continue;
+    const price = sanitizeStr(row.stck_prpr);
+    const volume = pickAcmlVol(row);
+    let tradingValue = pickAcmlTrPbmn(row);
+    /** 시총 순위 TR은 응답에 누적거래대금 컬럼이 없는 경우가 있어 근사치 사용 */
+    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
     rows.push({
       rank: toNum(row.data_rank),
       code,
       name: sanitizeStr(row.hts_kor_isnm),
-      price: sanitizeStr(row.stck_prpr),
+      price,
       changePct: toNum(row.prdy_ctrt),
-      volume: pickAcmlVol(row),
-      tradingValue: pickAcmlTrPbmn(row),
+      volume,
+      tradingValue,
       mcapEok: sanitizeStr(row.stck_avls),
     });
   }

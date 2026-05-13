@@ -129,12 +129,20 @@
       .replace(/"/g, "&quot;");
   }
 
-  /** 한국 거래소 심볼 (TradingView: KRX:종목코드 6자리) */
-  function krxTvSymbol(code) {
+  /** TradingView 국내주식: 코스피 KSE:, 코스닥 KOSDAQ: */
+  function tvDomesticSymbol(code, exchange) {
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
     const six = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
-    return `KRX:${six}`;
+    const ex = exchange === "KOSDAQ" ? "KOSDAQ" : "KSE";
+    return `${ex}:${six}`;
+  }
+
+  /** 시총 탭=코스피(KSE), 상승률 탭=행의 market(KOSPI|KOSDAQ) */
+  function rowTvExchange(row, tab) {
+    if (tab === "cap") return "KSE";
+    const m = String(row && row.market ? row.market : "").toUpperCase();
+    return m === "KOSDAQ" ? "KOSDAQ" : "KSE";
   }
 
   function loadTradingViewScript() {
@@ -186,8 +194,8 @@
     document.removeEventListener("keydown", onChartModalKeydown);
   }
 
-  async function openChartModal(rawCode, displayName) {
-    const symbol = krxTvSymbol(rawCode);
+  async function openChartModal(rawCode, displayName, tvExchange) {
+    const symbol = tvDomesticSymbol(rawCode, tvExchange);
     if (!symbol) return;
     const modal = $("rt-chart-modal");
     const title = $("rt-chart-modal-title");
@@ -263,7 +271,9 @@
         const code = tr && tr.getAttribute("data-code");
         if (!code) return;
         ev.preventDefault();
-        openChartModal(code, (btn.textContent || "").trim());
+        const exRaw = (tr.getAttribute("data-tv-exchange") || "KSE").toUpperCase();
+        const tvExchange = exRaw === "KOSDAQ" ? "KOSDAQ" : "KSE";
+        openChartModal(code, (btn.textContent || "").trim(), tvExchange);
       });
     }
     const modal = $("rt-chart-modal");
@@ -407,7 +417,8 @@
         const tv = formatTradeVal(r.tradingValue);
         const vol = fmtNum(r.volume);
         const nm = escapeHtml(r.name);
-        return `<tr data-code="${escapeHtml(r.code)}">
+        const tvEx = rowTvExchange(r, state.tab);
+        return `<tr data-code="${escapeHtml(r.code)}" data-tv-exchange="${tvEx}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name"><button type="button" class="rt-name-btn" aria-label="${nm} 차트">${nm}</button></td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>

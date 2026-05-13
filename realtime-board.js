@@ -256,11 +256,13 @@
         const ch = r.changePct;
         const cls = deltaClass(ch);
         const tv = formatTradeVal(r.tradingValue);
+        const vol = fmtNum(r.volume);
         return `<tr data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name"><span class="rt-name">${escapeHtml(r.name)}</span></td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
           <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
           <td class="num rt-td-tv">${escapeHtml(tv)}</td>
         </tr>`;
       })

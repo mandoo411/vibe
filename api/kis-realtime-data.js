@@ -155,6 +155,26 @@ function pickAcmlTrPbmn(row) {
   return "";
 }
 
+/** 누적 거래량(주) — 필드명 편차 흡수 */
+function pickAcmlVol(row) {
+  if (!row || typeof row !== "object") return "";
+  const keys = [
+    "acml_vol",
+    "ACML_VOL",
+    "prdy_acml_vol",
+    "tot_acml_vol",
+    "hts_acml_vol",
+  ];
+  for (const k of keys) {
+    const v = row[k];
+    if (v == null || v === "") continue;
+    const s0 = String(v).trim();
+    const s = s0.replace(/[^\d,]/g, "");
+    if (s && /\d/.test(s)) return s;
+  }
+  return "";
+}
+
 /** 코스피 시가총액 상위 30 (단일 조회, 연속조회 없음) */
 async function fetchMarketCapKospi30() {
   const { json } = await kisGet(
@@ -184,7 +204,7 @@ async function fetchMarketCapKospi30() {
       name: sanitizeStr(row.hts_kor_isnm),
       price: sanitizeStr(row.stck_prpr),
       changePct: toNum(row.prdy_ctrt),
-      volume: sanitizeStr(row.acml_vol),
+      volume: pickAcmlVol(row),
       tradingValue: pickAcmlTrPbmn(row),
       mcapEok: sanitizeStr(row.stck_avls),
     });
@@ -253,7 +273,7 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     market: marketLabel,
     price: sanitizeStr(row.stck_prpr),
     changePct: toNum(row.prdy_ctrt),
-    volume: sanitizeStr(row.acml_vol),
+    volume: pickAcmlVol(row),
     tradingValue: pickAcmlTrPbmn(row),
     rank: toNum(row.data_rank),
   })).filter((r) => r.code && r.name);

@@ -1,7 +1,15 @@
 {
   "version": 2,
+  "functions": {
+    "api/kis-realtime-data.js": {
+      "maxDuration": 60
+    }
+  },
   "routes": [
     { "handle": "filesystem" },
+    { "src": "/realtime.html", "dest": "/realtime.html" },
+    { "src": "/daily-market.html", "dest": "/daily-market.html" },
+    { "src": "/weekly-market.html", "dest": "/weekly-market.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

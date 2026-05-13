@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d0b08" />
+    <title>TotalMoney AI · 실시간 전광판</title>
+    <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./daily-market.css" />
+    <style>
+      /* Bloomberg-style dense board on top of TotalMoney dark theme */
+      .rt-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px 18px 48px;
+        padding-left: max(18px, env(safe-area-inset-left));
+        padding-right: max(18px, env(safe-area-inset-right));
+      }
+      .rt-strip {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .rt-index-chip {
+        flex: 1 1 200px;
+        min-width: 0;
+        padding: 10px 12px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 6px 12px;
+        align-items: baseline;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.02em;
+      }
+      .rt-index-chip__name {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+      }
+      .rt-index-chip__val {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        justify-self: end;
+      }
+      .rt-meta-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 16px;
+        padding: 8px 12px;
+        margin-bottom: 14px;
+        background: #0a0907;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .rt-session {
+        padding: 3px 8px;
+        border-radius: 2px;
+        border: 1px solid var(--border);
+        color: var(--accent-bright);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+      }
+      .rt-session--pre {
+        color: #9ecbff;
+      }
+      .rt-session--open {
+        color: #7cffb3;
+      }
+      .rt-session--after {
+        color: #f0c75a;
+      }
+      .rt-session--closed {
+        color: var(--text-dim);
+      }
+      .rt-session__sub {
+        color: var(--text-dim);
+        max-width: 56ch;
+      }
+      .rt-conn {
+        margin-left: auto;
+        color: var(--text-dim);
+      }
+      .rt-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 0;
+        border: 1px solid var(--border-strong);
+        border-bottom: 0;
+        border-radius: var(--radius) var(--radius) 0 0;
+        overflow: hidden;
+        width: fit-content;
+        max-width: 100%;
+      }
+      .rt-tab {
+        appearance: none;
+        border: 0;
+        margin: 0;
+        padding: 10px 18px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        cursor: pointer;
+        background: var(--bg-panel);
+        color: var(--text-muted);
+        border-right: 1px solid var(--border);
+      }
+      .rt-tab:last-child {
+        border-right: 0;
+      }
+      .rt-tab[aria-selected="true"] {
+        background: var(--bg-elevated);
+        color: var(--accent-bright);
+      }
+      .rt-tab:hover {
+        color: var(--text);
+      }
+      .rt-panel {
+        border: 1px solid var(--border-strong);
+        border-radius: 0 var(--radius) var(--radius) var(--radius);
+        background: var(--bg-panel);
+        box-shadow: var(--sheet-shadow);
+        overflow: auto;
+      }
+      .rt-panel__head {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.08em;
+      }
+      .rt-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .rt-table th,
+      .rt-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        white-space: nowrap;
+      }
+      .rt-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #12100c;
+        color: var(--text-dim);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+      }
+      .rt-table tr:hover td {
+        background: rgba(212, 175, 55, 0.04);
+      }
+      .rt-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .rt-name {
+        font-weight: 600;
+        color: var(--text);
+        margin-right: 6px;
+      }
+      .rt-code {
+        font-size: 10px;
+        color: var(--text-dim);
+      }
+      .rt-mkt {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 5px;
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        border-radius: 2px;
+        vertical-align: middle;
+      }
+      .rt-hour {
+        font-size: 10px;
+        color: var(--accent);
+      }
+      .rt-mcap-unit {
+        margin-left: 4px;
+        font-size: 9px;
+        color: var(--text-dim);
+      }
+      .rt-error {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: rgba(248, 112, 112, 0.08);
+        border: 1px solid rgba(248, 112, 112, 0.35);
+        color: #f8a8a8;
+        font-size: 13px;
+        border-radius: var(--radius);
+      }
+      .rt-foot {
+        margin-top: 14px;
+        font-size: 11px;
+        color: var(--text-dim);
+        line-height: 1.5;
+      }
+      .rt-foot a {
+        color: var(--accent-bright);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rt-wrap page">
+      <header class="masthead">
+        <a class="masthead__brand" href="./daily-market.html" aria-label="TotalMoney AI 홈">
+          <img
+            class="masthead__logo"
+            src="./assets/totalmoney_ai.png"
+            alt=""
+            width="40"
+            height="40"
+            decoding="async"
+          />
+          <span class="masthead__brand-text">
+            <span class="masthead__brand-name">TotalMoney AI</span>
+            <span class="masthead__brand-tagline">Smarter Financial Decisions</span>
+          </span>
+        </a>
+        <div class="masthead__copy">
+          <p class="masthead__kicker">Realtime board</p>
+          <h1 class="masthead__title">실시간 전광판</h1>
+          <div class="masthead__meta">
+            <span>한국투자증권 Open API · KRX + NXT(통합체결)</span>
+            <span><a href="./daily-market.html">매일 시황 →</a></span>
+          </div>
+        </div>
+      </header>
+
+      <div id="rt-indexes" class="rt-strip" aria-live="polite"></div>
+
+      <div class="rt-meta-bar" aria-live="polite">
+        <span id="rt-meta"></span>
+        <span id="rt-conn" class="rt-conn"></span>
+      </div>
+
+      <div class="rt-tabs" role="tablist" aria-label="보기 전환">
+        <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
+          시총 TOP 50
+        </button>
+        <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
+          상승률 TOP 50
+        </button>
+      </div>
+      <div class="rt-panel" role="tabpanel">
+        <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 50</div>
+        <table class="rt-table" aria-label="실시간 시세">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>종목</th>
+              <th class="num">가격</th>
+              <th class="num">등락률</th>
+              <th class="num">거래량</th>
+              <th>비고</th>
+            </tr>
+          </thead>
+          <tbody id="rt-tbody"></tbody>
+        </table>
+      </div>
+
+      <p id="rt-error" class="rt-error" hidden></p>
+
+      <p class="rt-foot">
+        Vercel 등 HTTPS 배포 환경에서는 브라우저 정책으로 <code>ws://</code> WebSocket이 차단될 수 있어, 이 경우
+        REST로 초·중·장후 시세를 빠르게 갱신합니다. 로컬 HTTP로 열면 WebSocket 실시간이 활성화됩니다. 서버에는
+        <code>KIS_APP_KEY</code>와 <code>KIS_APP_SECRET</code>만 설정하면 됩니다.
+      </p>
+    </div>
+
+    <script src="./realtime-board.js"></script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 /**
  * 한국투자증권 Open API 프록시 (Vercel Serverless)
  * 환경변수: KIS_APP_KEY, KIS_APP_SECRET
- * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
+ * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms), KIS_TOKEN_SKEW_MS (토큰 만료 여유 ms, 기본 120000)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -17,7 +17,67 @@ function isKisRateLimitError(json) {
   return /초당 거래건수|EGW00201/.test(String(blob));
 }
 
-let tokenMem = { access_token: null, expires_at: 0 };
+/** OAuth 액세스 토큰 캐시 (동일 서버리스 인스턴스 메모리 내에서 재사용). */
+let tokenCache = {
+  access_token: null,
+  /** epoch ms — 이 시각 이후에는 만료로 간주 */
+  expires_at_ms: 0,
+};
+/** 동시에 여러 요청이 만료 토큰을 만나도 tokenP는 한 번만 호출 */
+let tokenRefreshInflight = null;
+
+/** 만료 전 이 시간(ms)부터 재발급. 환경변수 KIS_TOKEN_SKEW_MS로 조정 (기본 2분). */
+const TOKEN_EXPIRY_SKEW_MS = Math.max(
+  60_000,
+  Number(process.env.KIS_TOKEN_SKEW_MS) || 120_000
+);
+
+function isAccessTokenCachedValid() {
+  if (!tokenCache.access_token) return false;
+  return Date.now() < tokenCache.expires_at_ms - TOKEN_EXPIRY_SKEW_MS;
+}
+
+async function fetchNewAccessToken() {
+  const { appkey, appsecret } = requireKeys();
+  await sleep(KIS_GAP_MS);
+  const res = await fetch(`${baseUrl()}/oauth2/tokenP`, {
+    method: "POST",
+    headers: { "content-type": "application/json; charset=utf-8" },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      appkey,
+      appsecret: appsecret,
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`tokenP HTTP ${res.status}: ${text.slice(0, 400)}`);
+  const json = JSON.parse(text);
+  if (!json.access_token) throw new Error(`tokenP: no access_token: ${text.slice(0, 400)}`);
+  const ttlSec = Number(json.expires_in) || 86400;
+  tokenCache = {
+    access_token: json.access_token,
+    expires_at_ms: Date.now() + ttlSec * 1000,
+  };
+  return tokenCache.access_token;
+}
+
+/**
+ * 유효한 토큰이 있으면 즉시 반환. 없거나 곧 만료면 한 번만 발급 후 공유(inflight).
+ */
+async function getAccessToken() {
+  if (isAccessTokenCachedValid()) {
+    return tokenCache.access_token;
+  }
+  if (tokenRefreshInflight) {
+    await tokenRefreshInflight;
+    if (isAccessTokenCachedValid()) return tokenCache.access_token;
+    throw new Error("KIS access token refresh completed but token still invalid");
+  }
+  tokenRefreshInflight = fetchNewAccessToken().finally(() => {
+    tokenRefreshInflight = null;
+  });
+  return tokenRefreshInflight;
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -51,34 +111,6 @@ function requireKeys() {
     throw err;
   }
   return { appkey, appsecret };
-}
-
-async function getAccessToken() {
-  const { appkey, appsecret } = requireKeys();
-  const now = Date.now();
-  if (tokenMem.access_token && now < tokenMem.expires_at - 60_000) {
-    return tokenMem.access_token;
-  }
-  await sleep(KIS_GAP_MS);
-  const res = await fetch(`${baseUrl()}/oauth2/tokenP`, {
-    method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      appkey,
-      appsecret: appsecret,
-    }),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`tokenP HTTP ${res.status}: ${text.slice(0, 400)}`);
-  const json = JSON.parse(text);
-  if (!json.access_token) throw new Error(`tokenP: no access_token: ${text.slice(0, 400)}`);
-  const ttlSec = Number(json.expires_in) || 86400;
-  tokenMem = {
-    access_token: json.access_token,
-    expires_at: Date.now() + ttlSec * 1000,
-  };
-  return tokenMem.access_token;
 }
 
 async function kisGet(path, trId, searchParams, trCont = "") {

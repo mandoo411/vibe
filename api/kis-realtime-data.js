@@ -130,6 +130,31 @@ function toNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * KIS 순위/등락률 응답에서 누적 거래대금(원) 필드명이 환경·API마다 달라질 수 있어 후보를 순서대로 탐색.
+ */
+function pickAcmlTrPbmn(row) {
+  if (!row || typeof row !== "object") return "";
+  const keys = [
+    "acml_tr_pbmn",
+    "ACML_TR_PBMN",
+    "hts_acml_tr_pbmn",
+    "prtt_tr_pbmn",
+    "tot_acml_tr_pbmn",
+    "acml_pbmn",
+    "stck_mxac_tr_pbmn",
+    "mxac_tr_pbmn",
+  ];
+  for (const k of keys) {
+    const v = row[k];
+    if (v == null || v === "") continue;
+    const s0 = String(v).trim();
+    const s = s0.replace(/[^\d,]/g, "");
+    if (s && /\d/.test(s)) return s;
+  }
+  return "";
+}
+
 /** 코스피 시가총액 상위 30 (단일 조회, 연속조회 없음) */
 async function fetchMarketCapKospi30() {
   const { json } = await kisGet(
@@ -160,7 +185,7 @@ async function fetchMarketCapKospi30() {
       price: sanitizeStr(row.stck_prpr),
       changePct: toNum(row.prdy_ctrt),
       volume: sanitizeStr(row.acml_vol),
-      tradingValue: sanitizeStr(row.acml_tr_pbmn),
+      tradingValue: pickAcmlTrPbmn(row),
       mcapEok: sanitizeStr(row.stck_avls),
     });
   }
@@ -175,7 +200,8 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     fid_input_iscd: marketCode,
     fid_rank_sort_cls_code: "0",
     fid_input_cnt_1: "0",
-    fid_prc_cls_code: "1",
+    /** 0: 현재가 기준(장중 누적 거래대금 등). 1(종가)일 때 acml_tr_pbmn이 비는 경우가 있음 */
+    fid_prc_cls_code: "0",
     fid_input_price_1: "",
     fid_input_price_2: "",
     fid_vol_cnt: "",
@@ -228,7 +254,7 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     price: sanitizeStr(row.stck_prpr),
     changePct: toNum(row.prdy_ctrt),
     volume: sanitizeStr(row.acml_vol),
-    tradingValue: sanitizeStr(row.acml_tr_pbmn),
+    tradingValue: pickAcmlTrPbmn(row),
     rank: toNum(row.data_rank),
   })).filter((r) => r.code && r.name);
 }

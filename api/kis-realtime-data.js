@@ -6,7 +6,14 @@
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
 
+/** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
+const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 500);
+
 let tokenMem = { access_token: null, expires_at: 0 };
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function baseUrl() {
   return (process.env.KIS_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
@@ -29,6 +36,7 @@ async function getAccessToken() {
   if (tokenMem.access_token && now < tokenMem.expires_at - 60_000) {
     return tokenMem.access_token;
   }
+  await sleep(KIS_GAP_MS);
   const res = await fetch(`${baseUrl()}/oauth2/tokenP`, {
     method: "POST",
     headers: { "content-type": "application/json; charset=utf-8" },
@@ -53,6 +61,7 @@ async function getAccessToken() {
 async function kisGet(path, trId, searchParams, trCont = "") {
   const { appkey, appsecret } = requireKeys();
   const token = await getAccessToken();
+  await sleep(KIS_GAP_MS);
   const url = new URL(path, baseUrl());
   for (const [k, v] of Object.entries(searchParams || {})) {
     url.searchParams.set(k, v == null ? "" : String(v));
@@ -66,20 +75,34 @@ async function kisGet(path, trId, searchParams, trCont = "") {
     custtype: "P",
     tr_cont: trCont,
   };
-  const res = await fetch(url.toString(), { method: "GET", headers });
-  const text = await res.text();
-  let json;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    throw new Error(`KIS GET invalid JSON (${path}) HTTP ${res.status}: ${text.slice(0, 400)}`);
+
+  const maxTry = 4;
+  for (let attempt = 0; attempt < maxTry; attempt++) {
+    const res = await fetch(url.toString(), { method: "GET", headers });
+    const text = await res.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      throw new Error(`KIS GET invalid JSON (${path}) HTTP ${res.status}: ${text.slice(0, 400)}`);
+    }
+    if (!res.ok) {
+      throw new Error(`KIS GET HTTP ${res.status} (${path}): ${text.slice(0, 400)}`);
+    }
+    if (json.rt_cd && json.rt_cd !== "0") {
+      const msg = json.msg1 || json.msg_cd || "";
+      const rateLimited =
+        json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
+      if (rateLimited && attempt < maxTry - 1) {
+        await sleep(600 + attempt * 350);
+        continue;
+      }
+      throw new Error(`KIS rt_cd=${json.rt_cd} msg=${msg}`);
+    }
+    const nextTrCont = res.headers.get("tr_cont") || res.headers.get("tr-cont") || "";
+    return { json, trCont: nextTrCont };
   }
-  if (!res.ok) throw new Error(`KIS GET HTTP ${res.status} (${path}): ${text.slice(0, 400)}`);
-  if (json.rt_cd && json.rt_cd !== "0") {
-    throw new Error(`KIS rt_cd=${json.rt_cd} msg=${json.msg1 || json.msg_cd || ""}`);
-  }
-  const nextTrCont = res.headers.get("tr_cont") || res.headers.get("tr-cont") || "";
-  return { json, trCont: nextTrCont };
+  throw new Error(`KIS GET failed after retries (${path})`);
 }
 
 function sanitizeStr(v) {
@@ -150,24 +173,38 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
   };
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
+  await sleep(KIS_GAP_MS);
   const { appkey, appsecret } = requireKeys();
   const token = await getAccessToken();
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      authorization: `Bearer ${token}`,
-      appkey,
-      appsecret: appsecret,
-      tr_id: "FHPST01700000",
-      custtype: "P",
-      tr_cont: "",
-    },
-  });
-  const text = await res.text();
-  const json = JSON.parse(text);
-  if (json.rt_cd && json.rt_cd !== "0") {
-    throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${json.msg1 || ""}`);
+
+  const maxTry = 4;
+  let json;
+  for (let attempt = 0; attempt < maxTry; attempt++) {
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${token}`,
+        appkey,
+        appsecret: appsecret,
+        tr_id: "FHPST01700000",
+        custtype: "P",
+        tr_cont: "",
+      },
+    });
+    const text = await res.text();
+    json = JSON.parse(text);
+    if (json.rt_cd && json.rt_cd !== "0") {
+      const msg = json.msg1 || json.msg_cd || "";
+      const rateLimited =
+        json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
+      if (rateLimited && attempt < maxTry - 1) {
+        await sleep(600 + attempt * 350);
+        continue;
+      }
+      throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${msg}`);
+    }
+    break;
   }
   const list = Array.isArray(json.output) ? json.output : [];
   return list.map((row) => ({
@@ -182,10 +219,8 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
 }
 
 async function fetchGainersMerged50() {
-  const [kospi, kosdaq] = await Promise.all([
-    fetchFluctuationRank("0001", "KOSPI"),
-    fetchFluctuationRank("1001", "KOSDAQ"),
-  ]);
+  const kospi = await fetchFluctuationRank("0001", "KOSPI");
+  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
   const merged = new Map();
   for (const r of [...kospi, ...kosdaq]) {
     if (!merged.has(r.code)) merged.set(r.code, r);
@@ -233,6 +268,7 @@ async function fetchMarketTime() {
 }
 
 async function getApprovalKey() {
+  await sleep(KIS_GAP_MS);
   const { appkey, appsecret } = requireKeys();
   const res = await fetch(`${baseUrl()}/oauth2/Approval`, {
     method: "POST",
@@ -314,10 +350,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "index") {
-      const [kospi, kosdaq] = await Promise.all([
-        fetchIndexPrice("0001", "코스피"),
-        fetchIndexPrice("1001", "코스닥"),
-      ]);
+      const kospi = await fetchIndexPrice("0001", "코스피");
+      const kosdaq = await fetchIndexPrice("1001", "코스닥");
       json(res, 200, { indexes: [kospi, kosdaq] });
       return;
     }
@@ -330,13 +364,11 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "snapshot") {
-      const [marketTime, kospi, kosdaq, gainers, cap] = await Promise.all([
-        fetchMarketTime(),
-        fetchIndexPrice("0001", "코스피"),
-        fetchIndexPrice("1001", "코스닥"),
-        fetchGainersMerged50(),
-        fetchMarketCapKospi50(),
-      ]);
+      const marketTime = await fetchMarketTime();
+      const kospi = await fetchIndexPrice("0001", "코스피");
+      const kosdaq = await fetchIndexPrice("1001", "코스닥");
+      const gainers = await fetchGainersMerged50();
+      const cap = await fetchMarketCapKospi50();
       const clock = sessionLabelFromKst();
       json(res, 200, {
         clock,

@@ -129,11 +129,28 @@
       .replace(/"/g, "&quot;");
   }
 
-  /** TradingView 위젯용 심볼: 거래소 접두사 없이 종목코드 6자리만 (예: 000660) */
+  /** 종목코드 6자리 (TradingView 심볼 접두사 제외) */
   function tvSymbolSixDigits(code) {
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+  }
+
+  /** API tvBoard 또는 상승률 market → KOSPI | KOSDAQ */
+  function normalizeTvBoard(row) {
+    const b = String(row && row.tvBoard ? row.tvBoard : "").toUpperCase();
+    if (b === "KOSDAQ") return "KOSDAQ";
+    if (b === "KOSPI") return "KOSPI";
+    const m = String(row && row.market ? row.market : "").toUpperCase();
+    if (m === "KOSDAQ") return "KOSDAQ";
+    return "KOSPI";
+  }
+
+  /** 코스피 KRX:, 코스닥 KOSDAQ: */
+  function tvTradingViewSymbol(code, boardKind) {
+    const six = tvSymbolSixDigits(code);
+    if (!six) return "";
+    return String(boardKind || "").toUpperCase() === "KOSDAQ" ? `KOSDAQ:${six}` : `KRX:${six}`;
   }
 
   function loadTradingViewScript() {
@@ -185,8 +202,8 @@
     document.removeEventListener("keydown", onChartModalKeydown);
   }
 
-  async function openChartModal(rawCode, displayName) {
-    const symbol = tvSymbolSixDigits(rawCode);
+  async function openChartModal(rawCode, displayName, tvBoard) {
+    const symbol = tvTradingViewSymbol(rawCode, tvBoard);
     if (!symbol) return;
     const modal = $("rt-chart-modal");
     const title = $("rt-chart-modal-title");
@@ -262,7 +279,10 @@
         const code = tr && tr.getAttribute("data-code");
         if (!code) return;
         ev.preventDefault();
-        openChartModal(code, (btn.textContent || "").trim());
+        const tvBoard = (tr.getAttribute("data-tv-board") || "KOSPI").toUpperCase() === "KOSDAQ"
+          ? "KOSDAQ"
+          : "KOSPI";
+        openChartModal(code, (btn.textContent || "").trim(), tvBoard);
       });
     }
     const modal = $("rt-chart-modal");
@@ -406,7 +426,8 @@
         const tv = formatTradeVal(r.tradingValue);
         const vol = fmtNum(r.volume);
         const nm = escapeHtml(r.name);
-        return `<tr data-code="${escapeHtml(r.code)}">
+        const tvB = normalizeTvBoard(r);
+        return `<tr data-code="${escapeHtml(r.code)}" data-tv-board="${tvB}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name"><button type="button" class="rt-name-btn" aria-label="${nm} 차트">${nm}</button></td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>

@@ -238,6 +238,44 @@ function pickAcmlVol(row) {
   return "";
 }
 
+/**
+ * KIS 순위/시세 응답의 bstp_cls_code·mrkt_cls_code 등으로 코스피/코스닥 구분.
+ * 해석 불가 시 fallbackLabel(KOSPI|KOSDAQ) 사용.
+ */
+function pickKoreanBoardKind(row, fallbackLabel) {
+  const fb = String(fallbackLabel || "").toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI";
+  if (!row || typeof row !== "object") return fb;
+  const direct = sanitizeStr(
+    row.bstp_cls_code ||
+      row.BSTP_CLS_CODE ||
+      row.mrkt_cls_code ||
+      row.MRKT_CLS_CODE
+  );
+  if (direct) {
+    const b = boardKindFromClsCode(direct);
+    if (b) return b;
+  }
+  for (const k of Object.keys(row)) {
+    if (!/bstp_cls|mrkt_cls/i.test(k)) continue;
+    const s = sanitizeStr(row[k]);
+    if (!s) continue;
+    const b = boardKindFromClsCode(s);
+    if (b) return b;
+  }
+  return fb;
+}
+
+/** 분류 코드 문자열 → KOSPI | KOSDAQ (알 수 없으면 null) */
+function boardKindFromClsCode(raw) {
+  const s = String(raw || "").trim().toUpperCase();
+  if (!s) return null;
+  if (/(KOSDAQ|KONEX|KTQ)/.test(s)) return "KOSDAQ";
+  if (/KOSPI/.test(s)) return "KOSPI";
+  if (/^Q$|^KQ$|^02$|^2$/.test(s)) return "KOSDAQ";
+  if (/^Y$|^K$|^KS$|^01$|^1$/.test(s)) return "KOSPI";
+  return null;
+}
+
 /** 코스피 시가총액 상위 30 (단일 조회, 연속조회 없음) */
 async function fetchMarketCapKospi30() {
   const { json } = await kisGet(
@@ -276,6 +314,7 @@ async function fetchMarketCapKospi30() {
       volume,
       tradingValue,
       mcapEok: sanitizeStr(row.stck_avls),
+      tvBoard: pickKoreanBoardKind(row, "KOSPI"),
     });
   }
   return rows.filter((r) => r.code).slice(0, 30);
@@ -353,6 +392,7 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
           code,
           name: sanitizeStr(row.hts_kor_isnm),
           market: marketLabel,
+          tvBoard: pickKoreanBoardKind(row, marketLabel),
           price,
           changePct: toNum(row.prdy_ctrt),
           volume,

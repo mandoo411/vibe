@@ -76,8 +76,6 @@
     wsUrl: null,
     marketStatusWs: null,
     codesSubscribed: new Set(),
-    tvWidget: null,
-    tvScriptPromise: null,
   };
 
   function $(id) {
@@ -153,36 +151,14 @@
     return String(boardKind || "").toUpperCase() === "KOSDAQ" ? `KOSDAQ:${six}` : `KRX:${six}`;
   }
 
-  function loadTradingViewScript() {
-    if (typeof window !== "undefined" && window.TradingView && window.TradingView.widget) {
-      return Promise.resolve();
-    }
-    if (state.tvScriptPromise) return state.tvScriptPromise;
-    state.tvScriptPromise = new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://s3.tradingview.com/tv.js";
-      s.async = true;
-      s.onload = () => resolve();
-      s.onerror = () => {
-        state.tvScriptPromise = null;
-        reject(new Error("TradingView 스크립트를 불러오지 못했습니다."));
-      };
-      document.head.appendChild(s);
-    });
-    return state.tvScriptPromise;
+  function tradingViewChartPageUrl(symbol) {
+    const q = encodeURIComponent(symbol);
+    return `https://www.tradingview.com/chart/?symbol=${q}`;
   }
 
-  function destroyTvWidget() {
-    if (state.tvWidget && typeof state.tvWidget.remove === "function") {
-      try {
-        state.tvWidget.remove();
-      } catch (_) {
-        /* ignore */
-      }
-    }
-    state.tvWidget = null;
-    const el = $("tv_chart_container");
-    if (el) el.innerHTML = "";
+  function clearChartIframe() {
+    const iframe = $("rt-chart-iframe");
+    if (iframe) iframe.src = "about:blank";
   }
 
   function onChartModalKeydown(ev) {
@@ -192,7 +168,7 @@
   }
 
   function closeChartModal() {
-    destroyTvWidget();
+    clearChartIframe();
     const modal = $("rt-chart-modal");
     if (modal) {
       modal.hidden = true;
@@ -202,68 +178,23 @@
     document.removeEventListener("keydown", onChartModalKeydown);
   }
 
-  async function openChartModal(rawCode, displayName, tvBoard) {
+  function openChartModal(rawCode, displayName, tvBoard) {
     const symbol = tvTradingViewSymbol(rawCode, tvBoard);
     if (!symbol) return;
     const modal = $("rt-chart-modal");
     const title = $("rt-chart-modal-title");
-    const container = $("tv_chart_container");
-    if (!modal || !container) return;
+    const iframe = $("rt-chart-iframe");
+    if (!modal || !iframe) return;
 
-    destroyTvWidget();
+    clearChartIframe();
     if (title) title.textContent = `${(displayName || "").trim() || symbol} · 차트`;
+
+    iframe.src = tradingViewChartPageUrl(symbol);
 
     modal.hidden = false;
     modal.removeAttribute("aria-hidden");
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onChartModalKeydown);
-
-    try {
-      await loadTradingViewScript();
-    } catch (e) {
-      const errEl = $("rt-error");
-      if (errEl) {
-        errEl.hidden = false;
-        errEl.textContent = e.message || String(e);
-      }
-      closeChartModal();
-      return;
-    }
-
-    const TV = typeof window !== "undefined" ? window.TradingView : null;
-    if (!TV || typeof TV.widget !== "function") {
-      const errEl = $("rt-error");
-      if (errEl) {
-        errEl.hidden = false;
-        errEl.textContent = "TradingView 위젯 API를 사용할 수 없습니다.";
-      }
-      closeChartModal();
-      return;
-    }
-
-    try {
-      state.tvWidget = new TV.widget({
-        autosize: true,
-        symbol,
-        interval: "D",
-        timezone: "Asia/Seoul",
-        theme: "dark",
-        style: "1",
-        locale: "kr",
-        toolbar_bg: "#12100c",
-        enable_publishing: false,
-        allow_symbol_change: false,
-        container_id: "tv_chart_container",
-      });
-    } catch (e) {
-      const errEl = $("rt-error");
-      if (errEl) {
-        errEl.hidden = false;
-        errEl.textContent = e.message || "차트를 열지 못했습니다.";
-      }
-      closeChartModal();
-      return;
-    }
 
     const closeBtn = $("rt-chart-close");
     if (closeBtn) closeBtn.focus();

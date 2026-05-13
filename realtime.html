@@ -357,9 +357,20 @@
       }
       .rt-chart-modal__chart {
         flex: 1;
-        min-height: 240px;
+        min-height: 0;
         width: 100%;
         position: relative;
+        display: flex;
+        flex-direction: column;
+        background: #0a0907;
+      }
+      .rt-chart-modal__iframe {
+        display: block;
+        flex: 1;
+        width: 100%;
+        min-height: 240px;
+        border: 0;
+        background: #0d0b08;
       }
       @media (max-width: 520px) {
         .rt-chart-modal__panel {
@@ -491,7 +502,16 @@
             ×
           </button>
         </div>
-        <div id="tv_chart_container" class="rt-chart-modal__chart"></div>
+        <div class="rt-chart-modal__chart">
+          <iframe
+            id="rt-chart-iframe"
+            class="rt-chart-modal__iframe"
+            title="TradingView 차트"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allow="fullscreen; clipboard-read; clipboard-write"
+          ></iframe>
+        </div>
       </div>
     </div>
 

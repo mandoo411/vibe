@@ -129,20 +129,11 @@
       .replace(/"/g, "&quot;");
   }
 
-  /** TradingView 국내주식: 코스피 KSE:, 코스닥 KOSDAQ: */
-  function tvDomesticSymbol(code, exchange) {
+  /** TradingView 위젯용 심볼: 거래소 접두사 없이 종목코드 6자리만 (예: 000660) */
+  function tvSymbolSixDigits(code) {
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
-    const six = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
-    const ex = exchange === "KOSDAQ" ? "KOSDAQ" : "KSE";
-    return `${ex}:${six}`;
-  }
-
-  /** 시총 탭=코스피(KSE), 상승률 탭=행의 market(KOSPI|KOSDAQ) */
-  function rowTvExchange(row, tab) {
-    if (tab === "cap") return "KSE";
-    const m = String(row && row.market ? row.market : "").toUpperCase();
-    return m === "KOSDAQ" ? "KOSDAQ" : "KSE";
+    return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
   function loadTradingViewScript() {
@@ -194,8 +185,8 @@
     document.removeEventListener("keydown", onChartModalKeydown);
   }
 
-  async function openChartModal(rawCode, displayName, tvExchange) {
-    const symbol = tvDomesticSymbol(rawCode, tvExchange);
+  async function openChartModal(rawCode, displayName) {
+    const symbol = tvSymbolSixDigits(rawCode);
     if (!symbol) return;
     const modal = $("rt-chart-modal");
     const title = $("rt-chart-modal-title");
@@ -271,9 +262,7 @@
         const code = tr && tr.getAttribute("data-code");
         if (!code) return;
         ev.preventDefault();
-        const exRaw = (tr.getAttribute("data-tv-exchange") || "KSE").toUpperCase();
-        const tvExchange = exRaw === "KOSDAQ" ? "KOSDAQ" : "KSE";
-        openChartModal(code, (btn.textContent || "").trim(), tvExchange);
+        openChartModal(code, (btn.textContent || "").trim());
       });
     }
     const modal = $("rt-chart-modal");
@@ -417,8 +406,7 @@
         const tv = formatTradeVal(r.tradingValue);
         const vol = fmtNum(r.volume);
         const nm = escapeHtml(r.name);
-        const tvEx = rowTvExchange(r, state.tab);
-        return `<tr data-code="${escapeHtml(r.code)}" data-tv-exchange="${tvEx}">
+        return `<tr data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name"><button type="button" class="rt-name-btn" aria-label="${nm} 차트">${nm}</button></td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>

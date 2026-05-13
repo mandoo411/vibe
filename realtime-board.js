@@ -76,6 +76,8 @@
     wsUrl: null,
     marketStatusWs: null,
     codesSubscribed: new Set(),
+    tvWidget: null,
+    tvScriptPromise: null,
   };
 
   function $(id) {
@@ -125,6 +127,153 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  /** 한국 거래소 심볼 (TradingView: KRX:종목코드 6자리) */
+  function krxTvSymbol(code) {
+    const digits = String(code || "").replace(/\D/g, "");
+    if (!digits) return "";
+    const six = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+    return `KRX:${six}`;
+  }
+
+  function loadTradingViewScript() {
+    if (typeof window !== "undefined" && window.TradingView && window.TradingView.widget) {
+      return Promise.resolve();
+    }
+    if (state.tvScriptPromise) return state.tvScriptPromise;
+    state.tvScriptPromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://s3.tradingview.com/tv.js";
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => {
+        state.tvScriptPromise = null;
+        reject(new Error("TradingView 스크립트를 불러오지 못했습니다."));
+      };
+      document.head.appendChild(s);
+    });
+    return state.tvScriptPromise;
+  }
+
+  function destroyTvWidget() {
+    if (state.tvWidget && typeof state.tvWidget.remove === "function") {
+      try {
+        state.tvWidget.remove();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    state.tvWidget = null;
+    const el = $("tv_chart_container");
+    if (el) el.innerHTML = "";
+  }
+
+  function onChartModalKeydown(ev) {
+    const modal = $("rt-chart-modal");
+    if (!modal || modal.hidden) return;
+    if (ev.key === "Escape") closeChartModal();
+  }
+
+  function closeChartModal() {
+    destroyTvWidget();
+    const modal = $("rt-chart-modal");
+    if (modal) {
+      modal.hidden = true;
+      modal.setAttribute("aria-hidden", "true");
+    }
+    document.body.style.overflow = "";
+    document.removeEventListener("keydown", onChartModalKeydown);
+  }
+
+  async function openChartModal(rawCode, displayName) {
+    const symbol = krxTvSymbol(rawCode);
+    if (!symbol) return;
+    const modal = $("rt-chart-modal");
+    const title = $("rt-chart-modal-title");
+    const container = $("tv_chart_container");
+    if (!modal || !container) return;
+
+    destroyTvWidget();
+    if (title) title.textContent = `${(displayName || "").trim() || symbol} · 차트`;
+
+    modal.hidden = false;
+    modal.removeAttribute("aria-hidden");
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onChartModalKeydown);
+
+    try {
+      await loadTradingViewScript();
+    } catch (e) {
+      const errEl = $("rt-error");
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = e.message || String(e);
+      }
+      closeChartModal();
+      return;
+    }
+
+    const TV = typeof window !== "undefined" ? window.TradingView : null;
+    if (!TV || typeof TV.widget !== "function") {
+      const errEl = $("rt-error");
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = "TradingView 위젯 API를 사용할 수 없습니다.";
+      }
+      closeChartModal();
+      return;
+    }
+
+    try {
+      state.tvWidget = new TV.widget({
+        autosize: true,
+        symbol,
+        interval: "D",
+        timezone: "Asia/Seoul",
+        theme: "dark",
+        style: "1",
+        locale: "kr",
+        toolbar_bg: "#12100c",
+        enable_publishing: false,
+        allow_symbol_change: false,
+        container_id: "tv_chart_container",
+      });
+    } catch (e) {
+      const errEl = $("rt-error");
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = e.message || "차트를 열지 못했습니다.";
+      }
+      closeChartModal();
+      return;
+    }
+
+    const closeBtn = $("rt-chart-close");
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function setupChartModal() {
+    const tbody = $("rt-tbody");
+    if (tbody) {
+      tbody.addEventListener("click", (ev) => {
+        const btn = ev.target.closest(".rt-name-btn");
+        if (!btn) return;
+        const tr = btn.closest("tr[data-code]");
+        const code = tr && tr.getAttribute("data-code");
+        if (!code) return;
+        ev.preventDefault();
+        openChartModal(code, (btn.textContent || "").trim());
+      });
+    }
+    const modal = $("rt-chart-modal");
+    if (modal) {
+      modal.addEventListener("click", (ev) => {
+        if (ev.target.closest("[data-rt-chart-close]")) closeChartModal();
+      });
+    }
+    const closeBtn = $("rt-chart-close");
+    if (closeBtn) closeBtn.addEventListener("click", () => closeChartModal());
   }
 
   async function fetchJson(action) {
@@ -257,9 +406,10 @@
         const cls = deltaClass(ch);
         const tv = formatTradeVal(r.tradingValue);
         const vol = fmtNum(r.volume);
+        const nm = escapeHtml(r.name);
         return `<tr data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name"><span class="rt-name">${escapeHtml(r.name)}</span></td>
+          <td class="rt-td-name"><button type="button" class="rt-name-btn" aria-label="${nm} 차트">${nm}</button></td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
           <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
           <td class="num rt-td-vol">${escapeHtml(vol)}</td>
@@ -500,6 +650,7 @@
 
   async function init() {
     setupTabs();
+    setupChartModal();
     const err = $("rt-error");
     if (err) err.hidden = true;
     try {

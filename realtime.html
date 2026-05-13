@@ -211,6 +211,29 @@
         color: var(--text);
         line-height: 1.35;
       }
+      .rt-name-btn {
+        appearance: none;
+        border: 0;
+        background: none;
+        padding: 0;
+        margin: 0;
+        font: inherit;
+        font-weight: 600;
+        color: var(--text);
+        text-align: left;
+        cursor: pointer;
+        line-height: 1.35;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        word-break: keep-all;
+        touch-action: manipulation;
+      }
+      .rt-name-btn:hover,
+      .rt-name-btn:focus-visible {
+        color: var(--accent-bright);
+        text-decoration: underline;
+        outline: none;
+      }
       .rt-code {
         font-size: 10px;
         color: var(--text-dim);
@@ -253,7 +276,106 @@
       .rt-foot a {
         color: var(--accent-bright);
       }
+      /* TradingView 차트 모달 */
+      .rt-chart-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+          max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+        box-sizing: border-box;
+      }
+      .rt-chart-modal[hidden] {
+        display: none !important;
+      }
+      .rt-chart-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(5, 4, 2, 0.72);
+        cursor: pointer;
+      }
+      .rt-chart-modal__panel {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        width: min(100%, 920px);
+        max-height: min(88dvh, 720px);
+        height: min(88dvh, 720px);
+        background: var(--bg-panel);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+        overflow: hidden;
+      }
+      .rt-chart-modal__head {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        background: #12100c;
+      }
+      .rt-chart-modal__title {
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+        font-family: var(--font-sans, "Noto Sans KR", sans-serif);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+      .rt-chart-modal__close {
+        flex-shrink: 0;
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--bg-elevated);
+        color: var(--text);
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: var(--radius);
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        touch-action: manipulation;
+      }
+      .rt-chart-modal__close:hover {
+        border-color: var(--accent);
+        color: var(--accent-bright);
+      }
+      .rt-chart-modal__chart {
+        flex: 1;
+        min-height: 240px;
+        width: 100%;
+        position: relative;
+      }
       @media (max-width: 520px) {
+        .rt-chart-modal__panel {
+          width: 100%;
+          max-height: 100dvh;
+          height: 100dvh;
+          max-height: 100vh;
+          height: 100vh;
+          border-radius: 0;
+        }
+        .rt-chart-modal {
+          padding: 0;
+        }
+        .rt-chart-modal__head {
+          padding: max(10px, env(safe-area-inset-top)) 10px 10px;
+        }
         .rt-wrap {
           padding-left: 12px;
           padding-right: 12px;
@@ -351,6 +473,26 @@
         REST로 초·중·장후 시세를 빠르게 갱신합니다. 로컬 HTTP로 열면 WebSocket 실시간이 활성화됩니다. 서버에는
         <code>KIS_ACCESS_TOKEN</code>, <code>KIS_APP_KEY</code>, <code>KIS_APP_SECRET</code>을 설정하면 됩니다.
       </p>
+    </div>
+
+    <div
+      id="rt-chart-modal"
+      class="rt-chart-modal"
+      hidden
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby="rt-chart-modal-title"
+    >
+      <div class="rt-chart-modal__backdrop" data-rt-chart-close aria-hidden="true"></div>
+      <div class="rt-chart-modal__panel">
+        <div class="rt-chart-modal__head">
+          <h2 id="rt-chart-modal-title" class="rt-chart-modal__title">차트</h2>
+          <button type="button" class="rt-chart-modal__close" id="rt-chart-close" aria-label="차트 닫기">
+            ×
+          </button>
+        </div>
+        <div id="tv_chart_container" class="rt-chart-modal__chart"></div>
+      </div>
     </div>
 
     <script src="./realtime-board.js"></script>

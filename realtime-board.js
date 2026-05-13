@@ -95,6 +95,23 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  /** 누적 거래대금(원) → 조·억 등 */
+  function formatTradeVal(raw) {
+    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e12) {
+      const jo = n / 1e12;
+      return `${jo.toFixed(2).replace(/\.?0+$/, "")}조`;
+    }
+    if (n >= 1e8) {
+      return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
+    }
+    if (n >= 1e4) {
+      return `${Math.round(n / 1e4).toLocaleString("ko-KR")}만`;
+    }
+    return n.toLocaleString("ko-KR");
+  }
+
   function deltaClass(pct) {
     if (pct == null || !Number.isFinite(pct)) return "delta--flat";
     if (pct > 0) return "delta--pos";
@@ -137,6 +154,7 @@
     const price = String(o.STCK_PRPR || "").trim();
     const changePct = Number(String(o.PRDY_CTRT || "").replace(/,/g, ""));
     const vol = String(o.ACML_VOL || "").trim();
+    const tv = String(o.ACML_TR_PBMN || "").trim();
     const hourCls = String(o.HOUR_CLS_CODE || "").trim();
     const mrkt = String(o.MRKT_TRTM_CLS_CODE || "").trim();
     return {
@@ -144,6 +162,7 @@
       price,
       changePct: Number.isFinite(changePct) ? changePct : null,
       volume: vol,
+      tradingValue: tv,
       hourCls,
       mrkt,
     };
@@ -174,6 +193,7 @@
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
     if (patch.volume) cur.volume = patch.volume;
+    if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.hourCls) cur.hourCls = patch.hourCls;
     if (patch.mrkt) cur.mrktCls = patch.mrkt;
     list[i] = cur;
@@ -229,25 +249,19 @@
     const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
     if (title) {
       title.textContent =
-        state.tab === "cap" ? "코스피 시가총액 상위 50" : "코스피·코스닥 통합 상승률 상위 50";
+        state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
     }
     body.innerHTML = rows
       .map((r) => {
         const ch = r.changePct;
         const cls = deltaClass(ch);
-        const mkt = r.market ? `<span class="rt-mkt">${escapeHtml(r.market)}</span>` : "";
-        const hx = r.hourCls || r.mrktCls;
-        const hxHtml = hx
-          ? `<span class="rt-hour" title="시간·장운영 코드">${escapeHtml(hx)}</span>`
-          : "";
+        const tv = formatTradeVal(r.tradingValue);
         return `<tr data-code="${escapeHtml(r.code)}">
-          <td class="num">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td><span class="rt-name">${escapeHtml(r.name)}</span>${mkt}
-            <span class="rt-code">${escapeHtml(r.code)}</span></td>
-          <td class="num">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num">${escapeHtml(fmtNum(r.volume))}</td>
-          <td>${state.tab === "cap" ? escapeHtml(fmtNum(r.mcapEok)) + "<span class=\"rt-mcap-unit\">백만원</span>" : hxHtml}</td>
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name"><span class="rt-name">${escapeHtml(r.name)}</span></td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
         </tr>`;
       })
       .join("");
@@ -342,7 +356,8 @@
 
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
-    const list = codes.slice(0, 50);
+    const limit = state.tab === "cap" ? 30 : 50;
+    const list = codes.slice(0, limit);
     for (const c of list) {
       if (state.codesSubscribed.has(c)) continue;
       state.ws.send(makeWsPayload("1", "H0UNCNT0", c));

@@ -144,7 +144,12 @@
         border-radius: 0 var(--radius) var(--radius) var(--radius);
         background: var(--bg-panel);
         box-shadow: var(--sheet-shadow);
-        overflow: auto;
+        overflow: hidden;
+      }
+      .rt-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -2px;
       }
       .rt-panel__head {
         padding: 8px 12px;
@@ -156,15 +161,30 @@
       }
       .rt-table {
         width: 100%;
+        min-width: 280px;
         border-collapse: collapse;
         font-family: var(--font-mono);
         font-size: 12px;
+        table-layout: fixed;
       }
       .rt-table th,
       .rt-table td {
-        padding: 6px 10px;
+        padding: 6px 8px;
         border-bottom: 1px solid var(--border);
         text-align: left;
+        vertical-align: middle;
+      }
+      .rt-td-rank {
+        width: 2.5rem;
+        white-space: nowrap;
+      }
+      .rt-td-name {
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      .rt-td-price,
+      .rt-td-chg,
+      .rt-td-tv {
         white-space: nowrap;
       }
       .rt-table th {
@@ -188,7 +208,7 @@
       .rt-name {
         font-weight: 600;
         color: var(--text);
-        margin-right: 6px;
+        line-height: 1.35;
       }
       .rt-code {
         font-size: 10px;
@@ -232,6 +252,34 @@
       .rt-foot a {
         color: var(--accent-bright);
       }
+      @media (max-width: 520px) {
+        .rt-wrap {
+          padding-left: 12px;
+          padding-right: 12px;
+        }
+        .rt-table {
+          font-size: 11px;
+        }
+        .rt-table th,
+        .rt-table td {
+          padding: 5px 4px;
+        }
+        .rt-td-rank {
+          width: 2rem;
+        }
+        .rt-tab {
+          padding: 8px 10px;
+          font-size: 10px;
+          letter-spacing: 0.06em;
+        }
+        .rt-index-chip {
+          font-size: 11px;
+          padding: 8px 10px;
+        }
+        .rt-index-chip__val {
+          font-size: 15px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -270,27 +318,28 @@
 
       <div class="rt-tabs" role="tablist" aria-label="보기 전환">
         <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
-          시총 TOP 50
+          시총 TOP 30
         </button>
         <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
           상승률 TOP 50
         </button>
       </div>
       <div class="rt-panel" role="tabpanel">
-        <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 50</div>
-        <table class="rt-table" aria-label="실시간 시세">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>종목</th>
-              <th class="num">가격</th>
-              <th class="num">등락률</th>
-              <th class="num">거래량</th>
-              <th>비고</th>
-            </tr>
-          </thead>
-          <tbody id="rt-tbody"></tbody>
-        </table>
+        <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 30</div>
+        <div class="rt-scroll">
+          <table class="rt-table" aria-label="실시간 시세">
+            <thead>
+              <tr>
+                <th class="rt-td-rank">순위</th>
+                <th class="rt-td-name">종목명</th>
+                <th class="num rt-td-price">가격</th>
+                <th class="num rt-td-chg">등락률</th>
+                <th class="num rt-td-tv">거래대금</th>
+              </tr>
+            </thead>
+            <tbody id="rt-tbody"></tbody>
+          </table>
+        </div>
       </div>
 
       <p id="rt-error" class="rt-error" hidden></p>

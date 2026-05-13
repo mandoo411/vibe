@@ -130,50 +130,41 @@ function toNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-async function fetchMarketCapKospi50() {
+/** 코스피 시가총액 상위 30 (단일 조회, 연속조회 없음) */
+async function fetchMarketCapKospi30() {
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/ranking/market-cap",
+    "FHPST01740000",
+    {
+      fid_input_price_2: "",
+      fid_cond_mrkt_div_code: "J",
+      fid_cond_scr_div_code: "20174",
+      fid_div_cls_code: "0",
+      fid_input_iscd: "0001",
+      fid_trgt_cls_code: "0",
+      fid_trgt_exls_cls_code: "0",
+      fid_input_price_1: "",
+      fid_vol_cnt: "",
+    },
+    ""
+  );
+  const chunk = Array.isArray(json.output) ? json.output : [];
   const rows = [];
-  let trCont = "";
-  for (let i = 0; i < 10 && rows.length < 50; i++) {
-    const { json, trCont: next } = await kisGet(
-      "/uapi/domestic-stock/v1/ranking/market-cap",
-      "FHPST01740000",
-      {
-        fid_input_price_2: "",
-        fid_cond_mrkt_div_code: "J",
-        fid_cond_scr_div_code: "20174",
-        fid_div_cls_code: "0",
-        fid_input_iscd: "0001",
-        fid_trgt_cls_code: "0",
-        fid_trgt_exls_cls_code: "0",
-        fid_input_price_1: "",
-        fid_vol_cnt: "",
-      },
-      trCont
-    );
-    const chunk = Array.isArray(json.output) ? json.output : [];
-    const before = rows.length;
-    for (const row of chunk) {
-      const code = sanitizeStr(row.mksc_shrn_iscd);
-      if (!code || rows.some((r) => r.code === code)) continue;
-      rows.push({
-        rank: toNum(row.data_rank),
-        code,
-        name: sanitizeStr(row.hts_kor_isnm),
-        price: sanitizeStr(row.stck_prpr),
-        changePct: toNum(row.prdy_ctrt),
-        volume: sanitizeStr(row.acml_vol),
-        mcapEok: sanitizeStr(row.stck_avls),
-      });
-      if (rows.length >= 50) break;
-    }
-    if (rows.length >= 50) break;
-    const appended = rows.length - before;
-    const moreByHeader = /^[MFmf]$/.test(String(next || ""));
-    const moreByFirstFullPage = i === 0 && appended >= 28 && rows.length === 30;
-    if (!moreByHeader && !moreByFirstFullPage) break;
-    trCont = "N";
+  for (const row of chunk) {
+    const code = sanitizeStr(row.mksc_shrn_iscd);
+    if (!code) continue;
+    rows.push({
+      rank: toNum(row.data_rank),
+      code,
+      name: sanitizeStr(row.hts_kor_isnm),
+      price: sanitizeStr(row.stck_prpr),
+      changePct: toNum(row.prdy_ctrt),
+      volume: sanitizeStr(row.acml_vol),
+      tradingValue: sanitizeStr(row.acml_tr_pbmn),
+      mcapEok: sanitizeStr(row.stck_avls),
+    });
   }
-  return rows.filter((r) => r.code).slice(0, 50);
+  return rows.filter((r) => r.code).slice(0, 30);
 }
 
 async function fetchFluctuationRank(marketCode, marketLabel) {
@@ -237,6 +228,7 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     price: sanitizeStr(row.stck_prpr),
     changePct: toNum(row.prdy_ctrt),
     volume: sanitizeStr(row.acml_vol),
+    tradingValue: sanitizeStr(row.acml_tr_pbmn),
     rank: toNum(row.data_rank),
   })).filter((r) => r.code && r.name);
 }
@@ -361,7 +353,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "market-cap") {
-      const stocks = await fetchMarketCapKospi50();
+      const stocks = await fetchMarketCapKospi30();
       json(res, 200, { stocks });
       return;
     }
@@ -391,7 +383,7 @@ module.exports = async function handler(req, res) {
       const kospi = await fetchIndexPrice("0001", "코스피");
       const kosdaq = await fetchIndexPrice("1001", "코스닥");
       const gainers = await fetchGainersMerged50();
-      const cap = await fetchMarketCapKospi50();
+      const cap = await fetchMarketCapKospi30();
       const clock = sessionLabelFromKst();
       json(res, 200, {
         clock,

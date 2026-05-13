@@ -127,103 +127,19 @@
       .replace(/"/g, "&quot;");
   }
 
-  /** 종목코드 6자리 (TradingView 심볼 접두사 제외) */
+  /** 종목코드 6자리 정규화 */
   function tvSymbolSixDigits(code) {
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
-  /** API tvBoard 또는 상승률 market → KOSPI | KOSDAQ */
-  function normalizeTvBoard(row) {
-    const b = String(row && row.tvBoard ? row.tvBoard : "").toUpperCase();
-    if (b === "KOSDAQ") return "KOSDAQ";
-    if (b === "KOSPI") return "KOSPI";
-    const m = String(row && row.market ? row.market : "").toUpperCase();
-    if (m === "KOSDAQ") return "KOSDAQ";
-    return "KOSPI";
-  }
-
-  /** 코스피 KRX:, 코스닥 KOSDAQ: */
-  function tvTradingViewSymbol(code, boardKind) {
+  /** TradingView 새 탭 URL — symbol=KRX:6자리종목코드 */
+  function tradingViewChartTabUrl(code) {
     const six = tvSymbolSixDigits(code);
     if (!six) return "";
-    return String(boardKind || "").toUpperCase() === "KOSDAQ" ? `KOSDAQ:${six}` : `KRX:${six}`;
-  }
-
-  function tradingViewChartPageUrl(symbol) {
-    const q = encodeURIComponent(symbol);
-    return `https://www.tradingview.com/chart/?symbol=${q}`;
-  }
-
-  function clearChartIframe() {
-    const iframe = $("rt-chart-iframe");
-    if (iframe) iframe.src = "about:blank";
-  }
-
-  function onChartModalKeydown(ev) {
-    const modal = $("rt-chart-modal");
-    if (!modal || modal.hidden) return;
-    if (ev.key === "Escape") closeChartModal();
-  }
-
-  function closeChartModal() {
-    clearChartIframe();
-    const modal = $("rt-chart-modal");
-    if (modal) {
-      modal.hidden = true;
-      modal.setAttribute("aria-hidden", "true");
-    }
-    document.body.style.overflow = "";
-    document.removeEventListener("keydown", onChartModalKeydown);
-  }
-
-  function openChartModal(rawCode, displayName, tvBoard) {
-    const symbol = tvTradingViewSymbol(rawCode, tvBoard);
-    if (!symbol) return;
-    const modal = $("rt-chart-modal");
-    const title = $("rt-chart-modal-title");
-    const iframe = $("rt-chart-iframe");
-    if (!modal || !iframe) return;
-
-    clearChartIframe();
-    if (title) title.textContent = `${(displayName || "").trim() || symbol} · 차트`;
-
-    iframe.src = tradingViewChartPageUrl(symbol);
-
-    modal.hidden = false;
-    modal.removeAttribute("aria-hidden");
-    document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", onChartModalKeydown);
-
-    const closeBtn = $("rt-chart-close");
-    if (closeBtn) closeBtn.focus();
-  }
-
-  function setupChartModal() {
-    const tbody = $("rt-tbody");
-    if (tbody) {
-      tbody.addEventListener("click", (ev) => {
-        const btn = ev.target.closest(".rt-name-btn");
-        if (!btn) return;
-        const tr = btn.closest("tr[data-code]");
-        const code = tr && tr.getAttribute("data-code");
-        if (!code) return;
-        ev.preventDefault();
-        const tvBoard = (tr.getAttribute("data-tv-board") || "KOSPI").toUpperCase() === "KOSDAQ"
-          ? "KOSDAQ"
-          : "KOSPI";
-        openChartModal(code, (btn.textContent || "").trim(), tvBoard);
-      });
-    }
-    const modal = $("rt-chart-modal");
-    if (modal) {
-      modal.addEventListener("click", (ev) => {
-        if (ev.target.closest("[data-rt-chart-close]")) closeChartModal();
-      });
-    }
-    const closeBtn = $("rt-chart-close");
-    if (closeBtn) closeBtn.addEventListener("click", () => closeChartModal());
+    const sym = `KRX:${six}`;
+    return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}`;
   }
 
   async function fetchJson(action) {
@@ -357,10 +273,13 @@
         const tv = formatTradeVal(r.tradingValue);
         const vol = fmtNum(r.volume);
         const nm = escapeHtml(r.name);
-        const tvB = normalizeTvBoard(r);
-        return `<tr data-code="${escapeHtml(r.code)}" data-tv-board="${tvB}">
+        const chartUrl = tradingViewChartTabUrl(r.code);
+        const nameCell = chartUrl
+          ? `<a class="rt-name-link" href="${escapeHtml(chartUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${nm} TradingView 차트">${nm}</a>`
+          : `<span class="rt-name-text">${nm}</span>`;
+        return `<tr data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name"><button type="button" class="rt-name-btn" aria-label="${nm} 차트">${nm}</button></td>
+          <td class="rt-td-name">${nameCell}</td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
           <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
           <td class="num rt-td-vol">${escapeHtml(vol)}</td>
@@ -601,7 +520,6 @@
 
   async function init() {
     setupTabs();
-    setupChartModal();
     const err = $("rt-error");
     if (err) err.hidden = true;
     try {

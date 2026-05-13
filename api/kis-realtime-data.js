@@ -1,7 +1,9 @@
 /**
  * 한국투자증권 Open API 프록시 (Vercel Serverless)
- * 환경변수: KIS_APP_KEY, KIS_APP_SECRET
- * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms), KIS_TOKEN_SKEW_MS (토큰 만료 여유 ms, 기본 120000)
+ * 환경변수:
+ *   - KIS_ACCESS_TOKEN : OAuth 액세스 토큰 (GitHub Actions 등에서 주기 갱신 후 주입)
+ *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
+ * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -15,68 +17,6 @@ function isKisRateLimitError(json) {
   if (json.msg_cd === "EGW00201") return true;
   const blob = `${json.msg1 || ""} ${json.message || ""}`;
   return /초당 거래건수|EGW00201/.test(String(blob));
-}
-
-/** OAuth 액세스 토큰 캐시 (동일 서버리스 인스턴스 메모리 내에서 재사용). */
-let tokenCache = {
-  access_token: null,
-  /** epoch ms — 이 시각 이후에는 만료로 간주 */
-  expires_at_ms: 0,
-};
-/** 동시에 여러 요청이 만료 토큰을 만나도 tokenP는 한 번만 호출 */
-let tokenRefreshInflight = null;
-
-/** 만료 전 이 시간(ms)부터 재발급. 환경변수 KIS_TOKEN_SKEW_MS로 조정 (기본 2분). */
-const TOKEN_EXPIRY_SKEW_MS = Math.max(
-  60_000,
-  Number(process.env.KIS_TOKEN_SKEW_MS) || 120_000
-);
-
-function isAccessTokenCachedValid() {
-  if (!tokenCache.access_token) return false;
-  return Date.now() < tokenCache.expires_at_ms - TOKEN_EXPIRY_SKEW_MS;
-}
-
-async function fetchNewAccessToken() {
-  const { appkey, appsecret } = requireKeys();
-  await sleep(KIS_GAP_MS);
-  const res = await fetch(`${baseUrl()}/oauth2/tokenP`, {
-    method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      appkey,
-      appsecret: appsecret,
-    }),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`tokenP HTTP ${res.status}: ${text.slice(0, 400)}`);
-  const json = JSON.parse(text);
-  if (!json.access_token) throw new Error(`tokenP: no access_token: ${text.slice(0, 400)}`);
-  const ttlSec = Number(json.expires_in) || 86400;
-  tokenCache = {
-    access_token: json.access_token,
-    expires_at_ms: Date.now() + ttlSec * 1000,
-  };
-  return tokenCache.access_token;
-}
-
-/**
- * 유효한 토큰이 있으면 즉시 반환. 없거나 곧 만료면 한 번만 발급 후 공유(inflight).
- */
-async function getAccessToken() {
-  if (isAccessTokenCachedValid()) {
-    return tokenCache.access_token;
-  }
-  if (tokenRefreshInflight) {
-    await tokenRefreshInflight;
-    if (isAccessTokenCachedValid()) return tokenCache.access_token;
-    throw new Error("KIS access token refresh completed but token still invalid");
-  }
-  tokenRefreshInflight = fetchNewAccessToken().finally(() => {
-    tokenRefreshInflight = null;
-  });
-  return tokenRefreshInflight;
 }
 
 function sleep(ms) {
@@ -102,7 +42,7 @@ function baseUrl() {
   return (process.env.KIS_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
 }
 
-function requireKeys() {
+function requireAppKeySecret() {
   const appkey = process.env.KIS_APP_KEY;
   const appsecret = process.env.KIS_APP_SECRET;
   if (!appkey || !appsecret) {
@@ -113,9 +53,21 @@ function requireKeys() {
   return { appkey, appsecret };
 }
 
+/** GitHub Actions 등에서 갱신한 OAuth 액세스 토큰 (tokenP 직접 호출 없음). */
+function requireAccessToken() {
+  const t = process.env.KIS_ACCESS_TOKEN;
+  const trimmed = t == null ? "" : String(t).trim();
+  if (!trimmed) {
+    const err = new Error("Missing KIS_ACCESS_TOKEN");
+    err.statusCode = 503;
+    throw err;
+  }
+  return trimmed;
+}
+
 async function kisGet(path, trId, searchParams, trCont = "") {
-  const { appkey, appsecret } = requireKeys();
-  const token = await getAccessToken();
+  const { appkey, appsecret } = requireAppKeySecret();
+  const token = requireAccessToken();
   await sleep(KIS_GAP_MS);
   const url = new URL(path, baseUrl());
   for (const [k, v] of Object.entries(searchParams || {})) {
@@ -354,8 +306,8 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
     for (const [k, v] of Object.entries(buildParams(fidPrcCls))) url.searchParams.set(k, v);
 
     await sleep(KIS_GAP_MS);
-    const { appkey, appsecret } = requireKeys();
-    const token = await getAccessToken();
+    const { appkey, appsecret } = requireAppKeySecret();
+    const token = requireAccessToken();
 
     const maxTry = 4;
     let json;
@@ -478,7 +430,7 @@ async function fetchMarketTime() {
 
 async function getApprovalKey() {
   await sleep(KIS_GAP_MS);
-  const { appkey, appsecret } = requireKeys();
+  const { appkey, appsecret } = requireAppKeySecret();
   const res = await fetch(`${baseUrl()}/oauth2/Approval`, {
     method: "POST",
     headers: { "content-type": "application/json; charset=utf-8" },

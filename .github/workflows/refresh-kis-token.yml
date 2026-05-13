@@ -1,0 +1,59 @@
+# 한국투자증권 OAuth 액세스 토큰을 매일 갱신해 저장소 Secret `KIS_ACCESS_TOKEN`에 반영합니다.
+#
+# 필요한 Repository secrets:
+#   - KIS_APP_KEY, KIS_APP_SECRET : 한투 앱 키 (기존과 동일)
+#   - GH_PAT_REPO_SECRETS_WRITE : 이 저장소의 Actions secrets를 갱신할 수 있는 PAT
+#       (Classic: repo 범위 / Fine-grained: Repository → Secrets Read and write)
+#
+# 참고: GITHUB_TOKEN으로는 secrets 쓰기가 불가하므로 위 PAT가 필요합니다.
+# Vercel 등 다른 호스트의 환경변수는 자동 동기화되지 않습니다. 배포 환경에 KIS_ACCESS_TOKEN을 맞춰 주세요.
+
+name: Refresh KIS access token
+
+on:
+  schedule:
+    # 매일 08:00 KST ≈ 전날 23:00 UTC (KST = UTC+9)
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-kis-token
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue KIS OAuth token (tokenP)
+        id: kis
+        env:
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KIS_APP_KEY:-}" ] || [ -z "${KIS_APP_SECRET:-}" ]; then
+            echo "Missing KIS_APP_KEY or KIS_APP_SECRET in repository secrets."
+            exit 1
+          fi
+          BASE="${KIS_BASE_URL:-https://openapi.koreainvestment.com:9443}"
+          BASE="${BASE%/}"
+          RESP="$(curl -sS -X POST "${BASE}/oauth2/tokenP" \
+            -H "content-type: application/json; charset=utf-8" \
+            -d "{\"grant_type\":\"client_credentials\",\"appkey\":\"${KIS_APP_KEY}\",\"appsecret\":\"${KIS_APP_SECRET}\"}")"
+          echo "$RESP" | jq -e '.access_token' >/dev/null || { echo "tokenP response: $RESP"; exit 1; }
+          echo "$RESP" | jq -r '.access_token' > kis_access_token.txt
+          echo "issued=true" >> "$GITHUB_OUTPUT"
+
+      - name: Update repository secret KIS_ACCESS_TOKEN
+        if: steps.kis.outputs.issued == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "Missing GH_PAT_REPO_SECRETS_WRITE — add a PAT with permission to update repo Actions secrets."
+            exit 1
+          fi
+          gh secret set KIS_ACCESS_TOKEN --repo "${{ github.repository }}" < kis_access_token.txt
+          rm -f kis_access_token.txt
+          echo "KIS_ACCESS_TOKEN updated in GitHub Secrets."

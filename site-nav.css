@@ -1,9 +1,10 @@
-/* TotalMoney AI — 공통 상단 네비 (홈 | 시황 | 전광판 | 주간일정) */
+/* TotalMoney AI — 공통 상단 네비 (🏠 홈 | 📊 시황 | 📡 전광판 | 📅 주간일정) */
 .tm-site-nav {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px 10px;
   margin-bottom: 16px;
   padding: 10px 12px;
   background: var(--bg-panel);
@@ -18,15 +19,30 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 7px 12px;
+  gap: 5px;
+  min-height: 44px;
+  padding: 8px 14px;
   border-radius: 2px;
   border: 1px solid transparent;
   color: var(--text-muted);
   text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.15);
   transition:
     color 0.12s ease,
     border-color 0.12s ease,
     background 0.12s ease;
+}
+
+.tm-site-nav__ico {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tm-site-nav__txt {
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .tm-site-nav__link:hover {
@@ -41,4 +57,17 @@
   border-color: var(--accent);
   background: var(--accent-dim);
   font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .tm-site-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .tm-site-nav__link {
+    width: 100%;
+    min-height: 48px;
+  }
 }

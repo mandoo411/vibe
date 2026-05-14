@@ -11,6 +11,9 @@ const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
 /** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 
+/** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
+const candleMemoryCache = new Map();
+
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
   if (!json || typeof json !== "object") return false;
@@ -507,6 +510,85 @@ function sessionLabelFromKst() {
   return { key: "after", label: "장후", detail: "정규장 마감 후 · NXT 시간외 등" };
 }
 
+/** KST 기준 YYYYMMDD */
+function ymdKst(d = new Date()) {
+  const s = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+  return s.replace(/-/g, "");
+}
+
+function subtractCalendarDaysFromYmd(ymd, days) {
+  const y = Number(ymd.slice(0, 4));
+  const mo = Number(ymd.slice(4, 6)) - 1;
+  const da = Number(ymd.slice(6, 8));
+  const u = Date.UTC(y, mo, da) - days * 86400000;
+  const d = new Date(u);
+  const yy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${yy}${mm}${dd}`;
+}
+
+function candleCacheTtlMs() {
+  const s = sessionLabelFromKst();
+  return s.key === "open" ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000;
+}
+
+function normalizeDomesticStockCode6(code) {
+  const digits = String(code || "").replace(/\D/g, "");
+  if (!digits) return "";
+  return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+}
+
+/** KIS output2 행 → Lightweight Charts용 일봉 (time YYYY-MM-DD) */
+function mapDailyItemchartRow(row) {
+  if (!row || typeof row !== "object") return null;
+  const dateRaw = sanitizeStr(row.stck_bsop_date || row.STCK_BSOP_DATE);
+  if (!/^\d{8}$/.test(dateRaw)) return null;
+  const time = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+  const open = toNum(row.stck_oprc || row.STCK_OPRC);
+  const high = toNum(row.stck_hgpr || row.STCK_HGPR);
+  const low = toNum(row.stck_lwpr || row.STCK_LWPR);
+  const close = toNum(row.stck_clpr || row.STCK_CLPR);
+  if (open == null || high == null || low == null || close == null) return null;
+  return { time, open, high, low, close };
+}
+
+/**
+ * 국내주식기간별시세(일) 최대 100건 — 최근 거래일 기준 60일 분량 확보용으로 기간을 넉넉히 잡음.
+ */
+async function fetchDailyItemchartCandlesFromKis(code6) {
+  const end = ymdKst(new Date());
+  const start = subtractCalendarDaysFromYmd(end, 120);
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+    "FHKST03010100",
+    {
+      fid_cond_mrkt_div_code: "J",
+      fid_input_iscd: code6,
+      fid_input_date_1: start,
+      fid_input_date_2: end,
+      fid_period_div_code: "D",
+      fid_org_adj_prc: "0",
+    },
+    ""
+  );
+  let raw = json.output2;
+  if (raw && !Array.isArray(raw)) raw = [raw];
+  if (!Array.isArray(raw)) raw = [];
+  const bars = [];
+  for (const row of raw) {
+    const b = mapDailyItemchartRow(row);
+    if (b) bars.push(b);
+  }
+  bars.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  return bars.slice(-60);
+}
+
 function json(res, status, body) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
@@ -562,6 +644,24 @@ module.exports = async function handler(req, res) {
       const marketTime = await fetchMarketTime();
       const clock = sessionLabelFromKst();
       json(res, 200, { clock, marketTime });
+      return;
+    }
+
+    if (action === "candle") {
+      const code6 = normalizeDomesticStockCode6(req.query && req.query.code);
+      if (!code6) {
+        json(res, 400, { error: "Missing or invalid code" });
+        return;
+      }
+      const now = Date.now();
+      const cached = candleMemoryCache.get(code6);
+      if (cached && now < cached.expiresAt) {
+        json(res, 200, { code: code6, candles: cached.bars, cached: true });
+        return;
+      }
+      const bars = await fetchDailyItemchartCandlesFromKis(code6);
+      candleMemoryCache.set(code6, { bars, expiresAt: now + candleCacheTtlMs() });
+      json(res, 200, { code: code6, candles: bars, cached: false });
       return;
     }
 

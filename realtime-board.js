@@ -1,4 +1,4 @@
-/* global document, window, fetch, WebSocket, Intl, setInterval, clearInterval, requestAnimationFrame */
+/* global document, window, fetch, WebSocket, Intl, setInterval, clearInterval, requestAnimationFrame, LightweightCharts */
 (function () {
   "use strict";
 
@@ -77,6 +77,8 @@
     marketStatusWs: null,
     codesSubscribed: new Set(),
     openChartCode: null,
+    lwChart: null,
+    lwResizeObs: null,
   };
 
   function $(id) {
@@ -135,38 +137,114 @@
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
-  function naverFchartUrl(code) {
-    const six = chartSymbolSixDigits(code);
-    if (!six) return "";
-    const q = new URLSearchParams({
-      symbol: six,
-      timeframe: "day",
-      count: "60",
-      requestType: "0",
-    });
-    return `https://fchart.stock.naver.com/sise.nhn?${q.toString()}`;
+  function disposeLwChart() {
+    if (state.lwResizeObs) {
+      try {
+        state.lwResizeObs.disconnect();
+      } catch (e) {
+        /* noop */
+      }
+      state.lwResizeObs = null;
+    }
+    if (state.lwChart) {
+      try {
+        state.lwChart.remove();
+      } catch (e) {
+        /* noop */
+      }
+      state.lwChart = null;
+    }
   }
 
-  function syncNaverChartIframe(body) {
+  function syncNameChartButtonsAria(body) {
+    body.querySelectorAll(".rt-name-chart-btn").forEach((btn) => {
+      const c = btn.getAttribute("data-code");
+      btn.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
+    });
+  }
+
+  async function mountLightweightChart(body) {
     if (!state.openChartCode) return;
-    const chartTr = body.querySelector("tr.rt-chart-row");
-    if (!chartTr) return;
-    const url = naverFchartUrl(state.openChartCode);
-    if (!url) return;
-    let frame = chartTr.querySelector("iframe.rt-naver-chart-frame");
-    if (!frame) {
-      const wrap = chartTr.querySelector(".rt-chart-wrap");
-      if (!wrap) return;
-      frame = document.createElement("iframe");
-      frame.className = "rt-naver-chart-frame";
-      frame.title = "네이버 증권 차트";
-      frame.loading = "lazy";
-      frame.referrerPolicy = "no-referrer-when-downgrade";
-      frame.setAttribute("src", url);
-      wrap.appendChild(frame);
+    const host = body.querySelector("tr.rt-chart-row .rt-lw-chart-host");
+    if (!host) return;
+
+    const LC = window.LightweightCharts;
+    if (!LC || typeof LC.createChart !== "function") {
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
       return;
     }
-    if (frame.getAttribute("src") !== url) frame.setAttribute("src", url);
+
+    if (host.dataset.mountedFor === state.openChartCode && state.lwChart) {
+      const w = host.clientWidth;
+      if (w > 0) state.lwChart.applyOptions({ width: w });
+      syncNameChartButtonsAria(body);
+      return;
+    }
+
+    disposeLwChart();
+    delete host.dataset.mountedFor;
+    host.innerHTML = "";
+    host.removeAttribute("data-error");
+
+    const chart = LC.createChart(host, {
+      width: Math.max(host.clientWidth, 200),
+      height: 350,
+      layout: {
+        background: { type: "solid", color: "#12100c" },
+        textColor: "#c4b8a8",
+      },
+      grid: {
+        vertLines: { color: "rgba(212, 175, 55, 0.08)" },
+        horzLines: { color: "rgba(212, 175, 55, 0.08)" },
+      },
+      rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
+      timeScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
+    });
+
+    const candleOpts = {
+      upColor: "#7cffb3",
+      downColor: "#f87171",
+      borderUpColor: "#7cffb3",
+      borderDownColor: "#f87171",
+      wickUpColor: "#7cffb3",
+      wickDownColor: "#f87171",
+    };
+    let series;
+    if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
+      series = chart.addSeries(LC.CandlestickSeries, candleOpts);
+    } else if (typeof chart.addCandlestickSeries === "function") {
+      series = chart.addCandlestickSeries(candleOpts);
+    } else {
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
+      return;
+    }
+
+    state.lwChart = chart;
+    host.dataset.mountedFor = state.openChartCode;
+
+    const ro = new ResizeObserver(() => {
+      if (!state.lwChart || !host.isConnected) return;
+      const w = host.clientWidth;
+      if (w > 0) state.lwChart.applyOptions({ width: w });
+    });
+    ro.observe(host);
+    state.lwResizeObs = ro;
+
+    try {
+      const code = chartSymbolSixDigits(state.openChartCode);
+      const res = await fetch(`${API}?action=candle&code=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const candles = data.candles || [];
+      series.setData(candles);
+      chart.timeScale().fitContent();
+    } catch (e) {
+      disposeLwChart();
+      delete host.dataset.mountedFor;
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e.message || String(e))}</p>`;
+    }
+
+    syncNameChartButtonsAria(body);
   }
 
   async function fetchJson(action) {
@@ -290,8 +368,8 @@
     const tv = formatTradeVal(r.tradingValue);
     const vol = fmtNum(r.volume);
     const nm = escapeHtml(r.name);
-    const nameCell = `<span class="rt-name-text">${nm}</span>`;
-    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}" tabindex="0" role="button" aria-expanded="false">
+    const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name">${nameCell}</td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
@@ -302,17 +380,10 @@
   }
 
   function chartRowHtml(forCode) {
-    const url = naverFchartUrl(forCode);
-    const srcAttr = url ? escapeHtml(url) : "";
-    const title = escapeHtml(`네이버 증권 일봉 차트 ${forCode}`);
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
           <td colspan="6">
             <div class="rt-chart-wrap">
-              ${
-                url
-                  ? `<iframe class="rt-naver-chart-frame" title="${title}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${srcAttr}"></iframe>`
-                  : ""
-              }
+              <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="일봉 캔들 차트"></div>
             </div>
           </td>
         </tr>`;
@@ -325,7 +396,7 @@
     const vol = fmtNum(r.volume);
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
-    tr.cells[1].innerHTML = `<span class="rt-name-text">${nm}</span>`;
+    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
     tr.cells[2].textContent = fmtNum(r.price);
     tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
     tr.cells[4].textContent = vol;
@@ -337,6 +408,7 @@
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
     if (!anchor) {
       state.openChartCode = null;
+      disposeLwChart();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -352,11 +424,8 @@
       anchor.after(chartTr);
     }
     if (chartTr) chartTr.setAttribute("data-chart-for", state.openChartCode);
-    body.querySelectorAll("tr.rt-stock-row").forEach((tr) => {
-      const open = tr.getAttribute("data-code") === state.openChartCode;
-      tr.setAttribute("aria-expanded", open ? "true" : "false");
-    });
-    syncNaverChartIframe(body);
+    syncNameChartButtonsAria(body);
+    void mountLightweightChart(body);
   }
 
   function renderTable() {
@@ -369,6 +438,7 @@
         state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
     }
     if (!state.openChartCode) {
+      disposeLwChart();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -383,6 +453,7 @@
         applyRowToTr(stockRows[i], rows[i]);
       }
     } else {
+      disposeLwChart();
       const parts = [];
       for (const r of rows) {
         parts.push(stockRowHtml(r));
@@ -621,10 +692,9 @@
     if (!body || body.dataset.rtChartWire === "1") return;
     body.dataset.rtChartWire = "1";
     body.addEventListener("click", (ev) => {
-      if (ev.target.closest("tr.rt-chart-row")) return;
-      const tr = ev.target.closest("tr.rt-stock-row");
-      if (!tr || !body.contains(tr)) return;
-      const code = tr.getAttribute("data-code");
+      const btn = ev.target.closest(".rt-name-chart-btn");
+      if (!btn || !body.contains(btn)) return;
+      const code = btn.getAttribute("data-code");
       if (!code) return;
       if (state.openChartCode === code) state.openChartCode = null;
       else state.openChartCode = code;

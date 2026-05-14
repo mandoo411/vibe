@@ -77,13 +77,6 @@
     marketStatusWs: null,
     codesSubscribed: new Set(),
     openChartCode: null,
-    /** KRX → KOSDAQ: 재시도 시 TradingView 접두어만 강제 */
-    tvExchangeOverride: null,
-    tvFallbackGen: 0,
-    tvWidget: null,
-    tvMountedSymbol: null,
-    tvScriptLoading: null,
-    chartHostId: "rt-tv-host",
   };
 
   function $(id) {
@@ -135,189 +128,45 @@
       .replace(/"/g, "&quot;");
   }
 
-  /** 종목코드 6자리 정규화 */
-  function tvSymbolSixDigits(code) {
+  /** 종목코드 6자리 정규화 (차트 URL 등) */
+  function chartSymbolSixDigits(code) {
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
-  function getOpenStockRow() {
-    const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
-    return rows.find((r) => r.code === state.openChartCode) || null;
-  }
-
-  /**
-   * API 시장구분 → TradingView 거래소 접두어.
-   * 코스닥: KOSDAQ:, 코스피·미상: KRX: (기본).
-   */
-  function listingPrefixForRow(row) {
-    if (state.tvExchangeOverride === "KOSDAQ") return "KOSDAQ";
-    if (!row || typeof row !== "object") return "KRX";
-    const b = String(row.tvBoard ?? "")
-      .trim()
-      .toUpperCase();
-    if (b === "KOSDAQ") return "KOSDAQ";
-    if (b === "KOSPI") return "KRX";
-    const m = String(row.market ?? "")
-      .trim()
-      .toUpperCase();
-    if (m === "KOSDAQ" || m.includes("KOSDAQ")) return "KOSDAQ";
-    if (m === "KOSPI" || m.includes("KOSPI")) return "KRX";
-    return "KRX";
-  }
-
-  function tvFullSymbolForOpenChart() {
-    if (!state.openChartCode) return "";
-    const six = tvSymbolSixDigits(state.openChartCode);
+  function naverFchartUrl(code) {
+    const six = chartSymbolSixDigits(code);
     if (!six) return "";
-    const row = getOpenStockRow();
-    return `${listingPrefixForRow(row)}:${six}`;
-  }
-
-  function stringifyTvProbePayload(data) {
-    if (data == null) return "";
-    if (typeof data === "string") return data;
-    try {
-      return JSON.stringify(data);
-    } catch (e) {
-      return "";
-    }
-  }
-
-  /** TradingView 전용(브로커 미제공) 심볼 안내 문구 감지 */
-  function tvPayloadSuggestsBrokerOnlySymbol(blob) {
-    if (!blob) return false;
-    if (
-      /TradingView에서만|트레이딩뷰에서만|TradingView에서\s*만|TradingView에서만\s*제공|TradingView에서만\s*거래/i.test(
-        blob
-      )
-    ) {
-      return true;
-    }
-    const low = blob.toLowerCase();
-    return (
-      /only\s+available\s+on\s+tradingview/.test(low) ||
-      /this\s+symbol\s+is\s+only\s+available/.test(low) ||
-      /symbol\s+is\s+only\s+available/.test(low) ||
-      /available\s+only\s+on\s+tradingview/.test(low) ||
-      /broker[-_\s]*only|restricted[_\s-]*symbol|library[_\s-]*symbol/.test(low)
-    );
-  }
-
-  function installTvBrokerOnlyFallback(widget) {
-    if (!widget || typeof widget.ready !== "function") return;
-    const gen = (state.tvFallbackGen += 1);
-    let fired = false;
-
-    const attempt = () => {
-      if (fired || gen !== state.tvFallbackGen || !state.openChartCode) return;
-      const cur = state.tvMountedSymbol || "";
-      if (!cur.startsWith("KRX:")) return;
-      if (state.tvExchangeOverride === "KOSDAQ") return;
-      fired = true;
-      state.tvExchangeOverride = "KOSDAQ";
-      destroyTvWidget();
-      void ensureTvWidgetMounted();
-    };
-
-    const onMsg = (ev) => {
-      if (fired || gen !== state.tvFallbackGen || !state.openChartCode) return;
-      let raw = ev.data;
-      if (raw == null) return;
-      if (typeof raw === "string") {
-        if (tvPayloadSuggestsBrokerOnlySymbol(raw)) attempt();
-        try {
-          raw = JSON.parse(raw);
-        } catch (e) {
-          return;
-        }
-      }
-      if (!raw || typeof raw !== "object") return;
-      if (raw.provider && raw.provider !== "TradingView") return;
-      const blob =
-        stringifyTvProbePayload(raw.data) +
-        stringifyTvProbePayload(raw.msg) +
-        stringifyTvProbePayload(raw.message) +
-        stringifyTvProbePayload(raw);
-      if (tvPayloadSuggestsBrokerOnlySymbol(blob)) attempt();
-    };
-
-    window.addEventListener("message", onMsg);
-    window.setTimeout(() => {
-      window.removeEventListener("message", onMsg);
-    }, 20000);
-
-    widget.ready(() => {
-      try {
-        if (typeof widget.getSymbolInfo === "function") {
-          widget.getSymbolInfo((info) => {
-            if (fired || gen !== state.tvFallbackGen) return;
-            if (tvPayloadSuggestsBrokerOnlySymbol(stringifyTvProbePayload(info))) attempt();
-          });
-        }
-      } catch (e) {
-        /* noop */
-      }
+    const q = new URLSearchParams({
+      symbol: six,
+      timeframe: "day",
+      count: "60",
+      requestType: "0",
     });
+    return `https://fchart.stock.naver.com/sise.nhn?${q.toString()}`;
   }
 
-  function loadTradingViewScript() {
-    const g = window;
-    if (g.TradingView && g.TradingView.widget) return Promise.resolve();
-    if (!state.tvScriptLoading) {
-      state.tvScriptLoading = new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = "https://s3.tradingview.com/tv.js";
-        s.async = true;
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("TradingView 스크립트 로드 실패"));
-        document.head.appendChild(s);
-      });
+  function syncNaverChartIframe(body) {
+    if (!state.openChartCode) return;
+    const chartTr = body.querySelector("tr.rt-chart-row");
+    if (!chartTr) return;
+    const url = naverFchartUrl(state.openChartCode);
+    if (!url) return;
+    let frame = chartTr.querySelector("iframe.rt-naver-chart-frame");
+    if (!frame) {
+      const wrap = chartTr.querySelector(".rt-chart-wrap");
+      if (!wrap) return;
+      frame = document.createElement("iframe");
+      frame.className = "rt-naver-chart-frame";
+      frame.title = "네이버 증권 차트";
+      frame.loading = "lazy";
+      frame.referrerPolicy = "no-referrer-when-downgrade";
+      frame.setAttribute("src", url);
+      wrap.appendChild(frame);
+      return;
     }
-    return state.tvScriptLoading;
-  }
-
-  function destroyTvWidget() {
-    if (state.tvWidget && typeof state.tvWidget.remove === "function") {
-      try {
-        state.tvWidget.remove();
-      } catch (e) {
-        /* noop */
-      }
-    }
-    state.tvWidget = null;
-    state.tvMountedSymbol = null;
-    const host = $(state.chartHostId);
-    if (host) host.innerHTML = "";
-  }
-
-  async function ensureTvWidgetMounted() {
-    const sym = tvFullSymbolForOpenChart();
-    if (!sym) return;
-    if (state.tvWidget && state.tvMountedSymbol === sym) return;
-    await loadTradingViewScript().catch(() => {});
-    const TV = window.TradingView;
-    const host = $(state.chartHostId);
-    if (!TV || !TV.widget || !host) return;
-    destroyTvWidget();
-    state.tvWidget = new TV.widget({
-      container_id: state.chartHostId,
-      symbol: sym,
-      interval: "D",
-      timezone: "Asia/Seoul",
-      theme: "dark",
-      style: "1",
-      locale: "kr",
-      toolbar_bg: "#0d0b08",
-      enable_publishing: false,
-      allow_symbol_change: false,
-      autosize: false,
-      height: 400,
-      width: "100%",
-    });
-    state.tvMountedSymbol = sym;
-    installTvBrokerOnlyFallback(state.tvWidget);
+    if (frame.getAttribute("src") !== url) frame.setAttribute("src", url);
   }
 
   async function fetchJson(action) {
@@ -453,10 +302,17 @@
   }
 
   function chartRowHtml(forCode) {
+    const url = naverFchartUrl(forCode);
+    const srcAttr = url ? escapeHtml(url) : "";
+    const title = escapeHtml(`네이버 증권 일봉 차트 ${forCode}`);
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
           <td colspan="6">
-            <div class="rt-tv-wrap">
-              <div id="${state.chartHostId}" class="rt-tv-host"></div>
+            <div class="rt-chart-wrap">
+              ${
+                url
+                  ? `<iframe class="rt-naver-chart-frame" title="${title}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="${srcAttr}"></iframe>`
+                  : ""
+              }
             </div>
           </td>
         </tr>`;
@@ -481,9 +337,6 @@
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
     if (!anchor) {
       state.openChartCode = null;
-      state.tvExchangeOverride = null;
-      state.tvFallbackGen += 1;
-      destroyTvWidget();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -495,7 +348,6 @@
       const expectedFor = state.openChartCode;
       if (chartTr.getAttribute("data-chart-for") !== expectedFor) {
         chartTr.setAttribute("data-chart-for", expectedFor);
-        destroyTvWidget();
       }
       anchor.after(chartTr);
     }
@@ -504,7 +356,7 @@
       const open = tr.getAttribute("data-code") === state.openChartCode;
       tr.setAttribute("aria-expanded", open ? "true" : "false");
     });
-    void ensureTvWidgetMounted();
+    syncNaverChartIframe(body);
   }
 
   function renderTable() {
@@ -517,9 +369,6 @@
         state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
     }
     if (!state.openChartCode) {
-      state.tvExchangeOverride = null;
-      state.tvFallbackGen += 1;
-      destroyTvWidget();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -534,7 +383,6 @@
         applyRowToTr(stockRows[i], rows[i]);
       }
     } else {
-      destroyTvWidget();
       const parts = [];
       for (const r of rows) {
         parts.push(stockRowHtml(r));
@@ -754,7 +602,6 @@
         const t = btn.getAttribute("data-rt-tab");
         state.tab = t === "gainers" ? "gainers" : "cap";
         state.openChartCode = null;
-        destroyTvWidget();
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
@@ -780,10 +627,7 @@
       const code = tr.getAttribute("data-code");
       if (!code) return;
       if (state.openChartCode === code) state.openChartCode = null;
-      else {
-        state.tvExchangeOverride = null;
-        state.openChartCode = code;
-      }
+      else state.openChartCode = code;
       renderTable();
     });
   }

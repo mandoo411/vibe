@@ -50,6 +50,12 @@ function sanitizeStr(v) {
 
 function toNumberOrNull(v) {
   if (v === "" || v == null) return null;
+  if (typeof v === "string") {
+    const s = v.trim().replace(/%/g, "").replace(/,/g, "").replace(/\s/g, "").replace(/^\+/, "");
+    if (s === "" || s === "-" || s === ".") return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+  }
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
@@ -130,6 +136,17 @@ async function getKisToken({ baseUrl, appKey, appSecret, cachePath }) {
   return data.access_token;
 }
 
+/** KIS FHPST01700000 output 등락률(%) — prdy_ctrt 외 필드명 변형 대응 */
+function kisRowPctChange(row) {
+  if (!row || typeof row !== "object") return null;
+  const keys = ["prdy_ctrt", "PRDY_CTRT", "bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT"];
+  for (const k of keys) {
+    const n = toNumberOrNull(row[k]);
+    if (n != null && Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
 // ─── KIS 등락률 순위 조회 ─────────────────────────────────
 // 시장 코드: 0000(전체) | 0001(코스피) | 1001(코스닥)
 async function fetchFluctuationRanking({ baseUrl, token, appKey, appSecret, marketCode, marketLabel }) {
@@ -181,7 +198,7 @@ async function fetchFluctuationRanking({ baseUrl, token, appKey, appSecret, mark
     market: marketLabel,
     currentPrice: sanitizeStr(row.stck_prpr),
     prevDelta: toNumberOrNull(row.prdy_vrss),
-    change: toNumberOrNull(row.prdy_ctrt),
+    change: kisRowPctChange(row),
     volume: sanitizeStr(row.acml_vol),
     tradingValue: sanitizeStr(row.acml_tr_pbmn), // 원 단위 누적 거래대금
     rank: toNumberOrNull(row.data_rank),
@@ -436,6 +453,26 @@ function parseJsonFromAssistant(text) {
   return JSON.parse(raw);
 }
 
+function findTopGainerMatch(topGainers, r) {
+  const code = sanitizeStr(r.code);
+  if (code) {
+    const byCode = topGainers.find((s) => s.code === code);
+    if (byCode) return byCode;
+  }
+  const name = sanitizeStr(r.name);
+  if (!name) return null;
+  return topGainers.find((s) => s.name === name) || null;
+}
+
+/** 특징주 등락률: 랭킹(실측) 우선, AI 값은 보조. 알 수 없으면 null(0으로 채우지 않음) */
+function resolveNotableChangePct(r, match) {
+  const fromRank = match != null ? toNumberOrNull(match.change) : null;
+  if (fromRank != null && Number.isFinite(fromRank)) return fromRank;
+  const fromAi = toNumberOrNull(r.change);
+  if (fromAi != null && Number.isFinite(fromAi)) return fromAi;
+  return null;
+}
+
 function normalizeNotableStocks(raw, topGainers) {
   const rows = [];
   if (Array.isArray(raw)) {
@@ -443,11 +480,11 @@ function normalizeNotableStocks(raw, topGainers) {
       if (!r || typeof r !== "object") continue;
       const name = sanitizeStr(r.name);
       if (!name) continue;
-      const match = topGainers.find((s) => s.name === name);
-      const ch = toNumberOrNull(r.change);
+      const match = findTopGainerMatch(topGainers, r);
+      const change = resolveNotableChangePct(r, match);
       rows.push({
         name,
-        change: ch != null ? ch : toNumberOrNull(match?.change) ?? 0,
+        change,
         tradingValue: sanitizeStr(r.tradingValue) || (match ? sanitizeStr(match.tradingValue) : ""),
         note: sanitizeStr(r.note) || (match ? sanitizeStr(match.reason) || sanitizeStr(match.theme) : ""),
       });
@@ -456,7 +493,7 @@ function normalizeNotableStocks(raw, topGainers) {
   if (rows.length) return rows.slice(0, 12);
   return topGainers.slice(0, 6).map((s) => ({
     name: s.name,
-    change: s.change ?? 0,
+    change: toNumberOrNull(s.change),
     tradingValue: sanitizeStr(s.tradingValue),
     note: sanitizeStr(s.reason) || sanitizeStr(s.theme),
   }));
@@ -509,7 +546,8 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 
 규칙(notableStocks):
 - 5~8개. 그날 시황에서 눈에 띄는 종목(상승률 상위·뉴스 헤드라인에 반복 등장·테마 대표주).
-- change는 퍼센트 숫자(입력 종목의 상승률과 일치). tradingValue는 알면 "1234억" 형태, 모르면 빈 문자열 "".
+- change는 입력 종목 목록의 등락률(%)과 숫자로 반드시 일치시키거나, 확신 없으면 null. 0으로 채우지 마세요.
+- tradingValue는 알면 "1234억" 형태, 모르면 빈 문자열 "".
 - note는 한 줄(30~60자), 뉴스 단서 기반.
 
 규칙(stocks):

@@ -309,7 +309,9 @@
     const showTv = arr.some((row) => sanitizeStr(row && row.tradingValue));
     const rows = arr
       .map((row) => {
-        const chg = parseChange(row && row.change);
+        const chgRaw = parseChange(row && row.change);
+        /* JSON에 잘못 들어간 0%는 등락률 미상으로 표시(스크립트는 null로 저장) */
+        const chg = chgRaw === 0 ? null : chgRaw;
         const note = (row && row.note ? String(row.note) : "").trim();
         return `<tr>
           <td>

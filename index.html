@@ -2,61 +2,113 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>bori-cal</title>
-    <link rel="icon" href="./assets/bori-logo.png" />
-    <link rel="stylesheet" href="./style.css" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d0b08" />
+    <title>TotalMoney AI · 홈</title>
+    <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./site-nav.css" />
+    <link rel="stylesheet" href="./hub.css" />
   </head>
   <body>
-    <main class="app" aria-label="계산기">
-      <section class="calc" role="application" aria-label="사칙연산 계산기">
-        <header class="top">
-          <div class="brand">
-            <img class="brand__logo" src="./assets/bori-logo.png" alt="bori-cal 로고" />
-            <div class="brand__text">
-              <div class="brand__title">bori-cal</div>
-              <div class="brand__sub">simple calculator</div>
-            </div>
+    <div class="hub-page">
+      <a class="masthead__brand" href="./index.html" aria-label="TotalMoney AI 홈">
+        <img
+          class="masthead__logo"
+          src="./assets/totalmoney_ai.png"
+          alt=""
+          width="40"
+          height="40"
+          decoding="async"
+        />
+        <span class="masthead__brand-text">
+          <span class="masthead__brand-name">TotalMoney AI</span>
+          <span class="masthead__brand-tagline">Smarter Financial Decisions</span>
+        </span>
+      </a>
+
+      <nav class="tm-site-nav" aria-label="주요 메뉴">
+        <a class="tm-site-nav__link" href="./index.html" aria-current="page">홈</a>
+        <a class="tm-site-nav__link" href="./daily-market.html">시황</a>
+        <a class="tm-site-nav__link" href="./realtime.html">전광판</a>
+        <a class="tm-site-nav__link" href="./weekly-market.html">주간일정</a>
+      </nav>
+
+      <header class="hub-hero">
+        <p class="hub-hero__kicker">Market Hub</p>
+        <h1 class="hub-hero__title">한눈에 보는 시장 도구</h1>
+        <p class="hub-hero__lead">
+          국내 시황·실시간 보드·주간 일정을 한 곳에서 연결합니다. 다크 톤과 골드 포인트는 기존 TotalMoney AI 화면과 동일합니다.
+        </p>
+      </header>
+
+      <div class="hub-grid" role="list">
+        <a class="hub-card" href="./daily-market.html" role="listitem">
+          <span class="hub-card__icon" aria-hidden="true">📊</span>
+          <h2 class="hub-card__title">매일 시황 기록</h2>
+          <p class="hub-card__desc">KIS+Naver+Claude AI 분석</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--live">운영중</span>
+            <span class="hub-card__chev" aria-hidden="true">→</span>
           </div>
-        </header>
+        </a>
 
-        <div class="display" aria-live="polite">
-          <div id="history" class="history" aria-label="이전 식"></div>
-          <div id="screen" class="screen" aria-label="현재 입력값">0</div>
+        <a class="hub-card" href="./realtime.html" role="listitem">
+          <span class="hub-card__icon" aria-hidden="true">📡</span>
+          <h2 class="hub-card__title">실시간 전광판</h2>
+          <p class="hub-card__desc">시총/상승률/거래대금 TOP50 실시간</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--live">운영중</span>
+            <span class="hub-card__chev" aria-hidden="true">→</span>
+          </div>
+        </a>
+
+        <a class="hub-card" href="./weekly-market.html" role="listitem">
+          <span class="hub-card__icon" aria-hidden="true">📅</span>
+          <h2 class="hub-card__title">주간 일정</h2>
+          <p class="hub-card__desc">이번주 주요 경제 일정</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--live">운영중</span>
+            <span class="hub-card__chev" aria-hidden="true">→</span>
+          </div>
+        </a>
+
+        <div class="hub-card hub-card--soon" role="listitem" aria-disabled="true">
+          <span class="hub-card__icon" aria-hidden="true">🌅</span>
+          <h2 class="hub-card__title">장전 브리핑</h2>
+          <p class="hub-card__desc">미국 마감, 환율, 주요 뉴스</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--soon">준비중</span>
+          </div>
         </div>
 
-        <div class="keys" aria-label="키패드">
-          <button class="key key--func" data-action="clear" type="button">AC</button>
-          <button class="key key--func" data-action="backspace" type="button">⌫</button>
-          <button class="key key--func" data-action="toggleSign" type="button">±</button>
-          <button class="key key--op" data-op="/" type="button">÷</button>
-
-          <button class="key" data-digit="7" type="button">7</button>
-          <button class="key" data-digit="8" type="button">8</button>
-          <button class="key" data-digit="9" type="button">9</button>
-          <button class="key key--op" data-op="*" type="button">×</button>
-
-          <button class="key" data-digit="4" type="button">4</button>
-          <button class="key" data-digit="5" type="button">5</button>
-          <button class="key" data-digit="6" type="button">6</button>
-          <button class="key key--op" data-op="-" type="button">−</button>
-
-          <button class="key" data-digit="1" type="button">1</button>
-          <button class="key" data-digit="2" type="button">2</button>
-          <button class="key" data-digit="3" type="button">3</button>
-          <button class="key key--op" data-op="+" type="button">+</button>
-
-          <button class="key key--wide" data-digit="0" type="button">0</button>
-          <button class="key" data-action="decimal" type="button">.</button>
-          <button class="key key--equals" data-action="equals" type="button">=</button>
+        <div class="hub-card hub-card--soon" role="listitem" aria-disabled="true">
+          <span class="hub-card__icon" aria-hidden="true">🇺🇸</span>
+          <h2 class="hub-card__title">미국 주식</h2>
+          <p class="hub-card__desc">나스닥/S&amp;P500 실시간</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--soon">준비중</span>
+          </div>
         </div>
 
-        <footer class="hint">
-          키보드: 숫자/연산자(+ - * /), Enter(=), Backspace, Esc(AC)
-        </footer>
-      </section>
-    </main>
-
-    <script src="./script.js"></script>
+        <div class="hub-card hub-card--soon" role="listitem" aria-disabled="true">
+          <span class="hub-card__icon" aria-hidden="true">🪙</span>
+          <h2 class="hub-card__title">암호화폐</h2>
+          <p class="hub-card__desc">BTC/ETH/알트코인 시황</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-card__status--soon">준비중</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

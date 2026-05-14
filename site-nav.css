@@ -1,0 +1,44 @@
+/* TotalMoney AI — 공통 상단 네비 (홈 | 시황 | 전광판 | 주간일정) */
+.tm-site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.tm-site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.tm-site-nav__link:hover {
+  color: var(--accent-bright);
+  border-color: var(--border-strong);
+  background: rgba(212, 175, 55, 0.06);
+  text-decoration: none;
+}
+
+.tm-site-nav__link[aria-current="page"] {
+  color: var(--accent-bright);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  font-weight: 600;
+}

@@ -1,0 +1,154 @@
+/* TotalMoney AI — 메인 허브 (index) */
+.hub-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 18px 56px;
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
+  padding-bottom: max(56px, calc(28px + env(safe-area-inset-bottom)));
+}
+
+.hub-hero {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hub-hero__kicker {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hub-hero__title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 4vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.hub-hero__lead {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+}
+
+.hub-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 168px;
+  padding: 18px 18px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+a.hub-card {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.hub-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--sheet-shadow);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+a.hub-card:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.hub-card--soon {
+  opacity: 0.88;
+  cursor: not-allowed;
+  background: linear-gradient(180deg, var(--bg-panel) 0%, rgba(24, 21, 16, 0.92) 100%);
+}
+
+.hub-card__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin-bottom: 10px;
+  filter: grayscale(0.05);
+}
+
+.hub-card__title {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.hub-card__desc {
+  margin: 0;
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.hub-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.hub-card__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hub-card__status--live {
+  color: #7cffb3;
+  border-color: rgba(124, 255, 179, 0.35);
+  background: rgba(124, 255, 179, 0.08);
+}
+
+.hub-card__status--soon {
+  color: var(--text-dim);
+  border-color: var(--border);
+  background: var(--tag-bg);
+}
+
+.hub-card__chev {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.hub-card--soon .hub-card__chev {
+  display: none;
+}

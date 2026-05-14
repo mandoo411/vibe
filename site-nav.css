@@ -1,19 +1,107 @@
-/* TotalMoney AI — 공통 상단 네비 (홈 | 시황 | 전광판 | 주간일정) */
-a.masthead__brand + .tm-site-nav {
-  margin-top: 0;
+/* TotalMoney AI — 공통 상단 헤더 + 사이트 네비 (픽셀 고정 · 모든 페이지 동일) */
+
+.tm-site-header {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  height: 60px;
+  padding: 0 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow);
+}
+
+.tm-site-brand {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.12s ease;
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.12);
+}
+
+.tm-site-brand:hover {
+  opacity: 0.92;
+  text-decoration: none;
+}
+
+.tm-site-brand__logo {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.5),
+    0 2px 10px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+}
+
+.tm-site-brand__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1;
+}
+
+.tm-site-brand__name {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--accent-bright);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.tm-site-brand__tagline {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tm-site-nav {
   display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 4px 6px;
-  margin-bottom: 16px;
-  padding: 8px 10px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.02em;
@@ -23,8 +111,10 @@ a.masthead__brand + .tm-site-nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  padding: 8px 14px;
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 10px;
   border-radius: 2px;
   border: 1px solid transparent;
   color: var(--text-muted);
@@ -46,7 +136,6 @@ a.masthead__brand + .tm-site-nav {
   text-decoration: none;
 }
 
-/* 현재 페이지: 눌린 버튼 느낌 없이 골드 언더라인 + 텍스트 강조 */
 .tm-site-nav__link[aria-current="page"] {
   color: var(--accent-bright);
   font-weight: 600;
@@ -64,15 +153,33 @@ a.masthead__brand + .tm-site-nav {
   text-decoration: none;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 720px) {
+  .tm-site-header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 60px;
+    padding: 10px 10px;
+    row-gap: 10px;
+    column-gap: 10px;
+  }
+
+  .tm-site-brand {
+    flex: 1 1 100%;
+  }
+
   .tm-site-nav {
+    flex: 1 1 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
+    justify-items: stretch;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
   }
 
   .tm-site-nav__link {
     width: 100%;
-    min-height: 48px;
+    min-height: 44px;
+    height: 44px;
   }
 }

@@ -1,30 +1,5 @@
-/* TotalMoney AI — 메인 허브 (index, .page 레이아웃은 weekly-market.css) */
+/* TotalMoney AI — 메인 허브 (index, .page·허브 히어로 타이포는 weekly-market.css) */
 /* PC·모바일 공통: .page 하단 패딩은 weekly-market.css만 사용(다른 탭과 동일 리듬) */
-
-.hub-hero {
-  margin-bottom: 18px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.hub-hero__kicker {
-  margin: 0 0 6px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.hub-hero__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(1.65rem, 4vw, 2.15rem);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text);
-  line-height: 1.2;
-}
 
 .hub-grid {
   display: grid;
@@ -174,28 +149,6 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-hero {
     flex-shrink: 0;
-    margin-bottom: 6px;
-    padding: 10px 0;
-    border-top: 1px solid rgba(201, 168, 76, 0.4);
-    border-bottom: 1px solid rgba(201, 168, 76, 0.4);
-  }
-
-  .page.page--hub .hub-hero__kicker {
-    margin: 0 0 2px;
-    padding-left: 10px;
-    border-left: 3px solid #c9a84c;
-    font-size: 16px;
-    letter-spacing: 0.06em;
-    line-height: 1.15;
-    color: #c9a84c;
-  }
-
-  .page.page--hub .hub-hero__title {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-    color: #ffffff;
   }
 
   .page.page--hub .hub-grid {

@@ -80,20 +80,42 @@ a:hover {
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
 }
 
-/* Header */
-.masthead {
+/* ─── 페이지 공통 타이틀 블록(허브·시황·전광판·주간) 네비 아래 동일 리듬 ─── */
+.hub-hero,
+.masthead.masthead--title-only {
+  box-sizing: border-box;
+  margin: 0 0 18px;
+  padding: 10px 0 16px;
+  border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-  margin-bottom: 18px;
-}
-
-/* 로고 브랜드 없이 제목·메타만 (상단 네비와 중복 제거 시) */
-.masthead--title-only {
-  padding-top: 2px;
 }
 
 .masthead--title-only .masthead__kicker {
   margin-top: 0;
+}
+
+.hub-hero__kicker,
+.masthead__kicker {
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  line-height: 1.2;
+}
+
+.hub-hero__title,
+.masthead__title {
+  box-sizing: border-box;
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text);
 }
 
 .masthead__copy {
@@ -102,24 +124,6 @@ a:hover {
   flex-direction: column;
   justify-content: center;
   gap: 0;
-}
-
-.masthead__kicker {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin: 0 0 5px;
-  line-height: 1.2;
-}
-
-.masthead__title {
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  margin: 0 0 7px;
 }
 
 .masthead__meta {
@@ -500,7 +504,7 @@ a:hover {
   color: var(--text);
 }
 
-/* ——— Tablet·phone (768px 이하): .page 패딩 통일(허브↔시황 등 전환 시 레이아웃 튐 방지) ——— */
+/* ——— Tablet·phone (768px 이하): .page 패딩 + 페이지 타이틀 블록(허브·마스트헤드) 동일 리듬 ——— */
 @media (max-width: 768px) {
   .page {
     padding-top: max(16px, env(safe-area-inset-top));
@@ -508,25 +512,21 @@ a:hover {
     padding-right: max(16px, env(safe-area-inset-right));
     padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
-}
 
-/* ——— Smartphone & narrow screens ——— */
-@media (max-width: 639px) {
-  html {
-    font-size: 16px;
+  .hub-hero,
+  .masthead.masthead--title-only {
+    margin: 0 0 14px;
+    padding: 10px 0 14px;
   }
 
-  .masthead {
-    padding-bottom: 14px;
-    margin-bottom: 14px;
-  }
-
+  .hub-hero__kicker,
   .masthead__kicker {
-    margin-bottom: 4px;
+    margin: 0 0 4px;
   }
 
+  .hub-hero__title,
   .masthead__title {
-    margin-bottom: 6px;
+    margin: 0 0 6px;
     font-size: clamp(1.25rem, 6.5vw, 1.5rem);
     line-height: 1.25;
   }
@@ -548,6 +548,13 @@ a:hover {
   .masthead__notice {
     font-size: 13px;
     padding: 10px 12px;
+  }
+}
+
+/* ——— Smartphone & narrow screens ——— */
+@media (max-width: 639px) {
+  html {
+    font-size: 16px;
   }
 
   .tabs {

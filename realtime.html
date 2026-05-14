@@ -465,40 +465,103 @@
         }
       }
 
-      /* 초기 로딩 (다크 테마) */
+      /* 초기 로딩 — 다크 배경 + 골드 포인트 */
       .rt-loading {
         position: fixed;
         inset: 0;
         z-index: 2000;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 1.25rem;
-        background: rgba(10, 9, 7, 0.92);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+          max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+        background:
+          radial-gradient(ellipse 90% 60% at 50% 32%, rgba(212, 175, 55, 0.11) 0%, transparent 58%),
+          radial-gradient(ellipse 100% 45% at 50% 100%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
+          #0a0907;
         transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .rt-loading::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.55;
+        background-image:
+          radial-gradient(circle at 10% 14%, rgba(212, 175, 55, 0.45) 0, rgba(212, 175, 55, 0) 1.5px),
+          radial-gradient(circle at 22% 78%, rgba(212, 175, 55, 0.35) 0, rgba(212, 175, 55, 0) 1px),
+          radial-gradient(circle at 88% 18%, rgba(212, 175, 55, 0.4) 0, rgba(212, 175, 55, 0) 1.5px),
+          radial-gradient(circle at 92% 62%, rgba(212, 175, 55, 0.3) 0, rgba(212, 175, 55, 0) 1px),
+          radial-gradient(circle at 6% 48%, rgba(212, 175, 55, 0.25) 0, rgba(212, 175, 55, 0) 1px),
+          radial-gradient(circle at 48% 8%, rgba(212, 175, 55, 0.28) 0, rgba(212, 175, 55, 0) 1px),
+          radial-gradient(circle at 72% 88%, rgba(212, 175, 55, 0.32) 0, rgba(212, 175, 55, 0) 1px),
+          radial-gradient(circle at 38% 92%, rgba(212, 175, 55, 0.22) 0, rgba(212, 175, 55, 0) 1px);
       }
       .rt-loading[hidden] {
         display: none;
         pointer-events: none;
       }
+      .rt-loading__inner {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1.75rem;
+        max-width: 28rem;
+      }
+      .rt-loading__brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .rt-loading__logo {
+        margin: 0;
+        font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+        font-size: clamp(2.125rem, 7vw, 3.35rem);
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        line-height: 1.1;
+        background: linear-gradient(180deg, #f0d78c 0%, #d4af37 42%, #a67c1a 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: none;
+        filter: drop-shadow(0 2px 24px rgba(212, 175, 55, 0.35));
+      }
+      .rt-loading__logo-ai {
+        font-style: italic;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+      }
+      .rt-loading__tagline {
+        margin: 0;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: clamp(9px, 2.1vw, 11px);
+        font-weight: 500;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        color: rgba(196, 184, 168, 0.72);
+      }
       .rt-loading__spinner {
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        border: 3px solid rgba(255, 255, 255, 0.12);
-        border-top-color: var(--accent-bright, #c9a227);
-        animation: rt-spin 0.85s linear infinite;
+        border: 3px solid rgba(212, 175, 55, 0.22);
+        border-top-color: #d4af37;
+        border-right-color: rgba(212, 175, 55, 0.55);
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        animation: rt-spin 0.8s linear infinite;
       }
       .rt-loading__text {
         margin: 0;
         font-family: var(--font-sans, "Noto Sans KR", sans-serif);
-        font-size: 15px;
+        font-size: clamp(14px, 3.5vw, 16px);
         font-weight: 500;
         letter-spacing: 0.02em;
-        color: var(--text-muted, #a8a29e);
+        color: rgba(200, 190, 175, 0.88);
       }
       @keyframes rt-spin {
         to {
@@ -509,8 +572,14 @@
   </head>
   <body>
     <div id="rt-loading" class="rt-loading" aria-busy="true" aria-label="데이터 로딩 중">
-      <div class="rt-loading__spinner" aria-hidden="true"></div>
-      <p class="rt-loading__text">시장 데이터를 불러오는 중...</p>
+      <div class="rt-loading__inner">
+        <div class="rt-loading__brand">
+          <p class="rt-loading__logo">TotalMoney <span class="rt-loading__logo-ai">AI</span></p>
+          <p class="rt-loading__tagline">Smarter financial decisions</p>
+        </div>
+        <div class="rt-loading__spinner" aria-hidden="true"></div>
+        <p class="rt-loading__text">시장 데이터를 불러오는 중...</p>
+      </div>
     </div>
     <div class="rt-wrap page">
       <nav class="tm-site-nav" aria-label="주요 메뉴">

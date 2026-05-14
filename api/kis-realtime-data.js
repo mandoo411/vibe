@@ -515,14 +515,22 @@ async function fetchPrevDayOfficialFluctuationTop50(rankingYmd) {
     fid_rank_sort_cls_code: params.fid_rank_sort_cls_code,
   });
   const { json } = await kisGet(path, trId, params, "");
-  try {
-    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE_JSON_START");
-    console.log(JSON.stringify(json));
-    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE_JSON_END");
-  } catch (logErr) {
-    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE stringify error", logErr && logErr.message);
-  }
   const raw = kisOutputRows(json);
+  const firstOut = raw[0];
+  if (firstOut && typeof firstOut === "object") {
+    const fieldNames = Object.keys(firstOut).sort();
+    console.log("[KIS prev-day FHPST01700000] output[0] fieldNames (sorted)", fieldNames);
+    console.log("[KIS prev-day FHPST01700000] output[0] fieldNamesAndValues JSON", JSON.stringify(firstOut, null, 2));
+    console.log("[KIS prev-day FHPST01700000] output[0] prdy_ctrt raw", {
+      prdy_ctrt: firstOut.prdy_ctrt,
+      PRDY_CTRT: firstOut.PRDY_CTRT,
+    });
+  } else {
+    console.log("[KIS prev-day FHPST01700000] output[0] missing", {
+      rawLength: raw.length,
+      topLevelKeys: json && typeof json === "object" ? Object.keys(json) : [],
+    });
+  }
   const rows = raw
     .map((row) => {
       const code = sanitizeStr(row.stck_shrn_iscd);

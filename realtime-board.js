@@ -80,6 +80,7 @@
     codesSubscribed: new Set(),
     openChartCode: null,
     lwChart: null,
+    lwVolChart: null,
     lwResizeObs: null,
     /** 캔들 주기: 1|5|15|30|60|240(분) 또는 D|W|M — API period 파라미터와 동일 */
     candlePeriod: "D",
@@ -169,6 +170,14 @@
       }
       state.lwChart = null;
     }
+    if (state.lwVolChart) {
+      try {
+        state.lwVolChart.remove();
+      } catch (e) {
+        /* noop */
+      }
+      state.lwVolChart = null;
+    }
     state.lwBundle = null;
   }
 
@@ -178,19 +187,24 @@
     return candles.slice(-n);
   }
 
+  const CANDLE_UP = "#26a69a";
+  const CANDLE_DOWN = "#ef5350";
+
   function buildVolumeHistogramData(candles) {
-    const green = "#22c55e";
-    const red = "#ef4444";
     const volData = [];
     for (let i = 0; i < candles.length; i++) {
       const c = candles[i];
       const t = c.time;
       const v = c.volume != null ? Number(c.volume) : 0;
-      const up = c.close >= c.open;
+      const o = c.open;
+      const cl = c.close;
+      let color = "#8a8580";
+      if (cl > o) color = CANDLE_UP;
+      else if (cl < o) color = CANDLE_DOWN;
       volData.push({
         time: t,
         value: Number.isFinite(v) ? v : 0,
-        color: up ? green : red,
+        color,
       });
     }
     return volData;
@@ -202,14 +216,17 @@
 
   function applyLwChartVisibleRange() {
     const b = state.lwBundle;
-    if (!b || !b.chart || !b.candle || !b.vol || !b.fullCandles || !b.fullCandles.length) return;
+    if (!b || !b.chartCandle || !b.chartVol || !b.candle || !b.vol || !b.fullCandles || !b.fullCandles.length) return;
     const intraday = isIntradayCandlePeriod(state.candlePeriod);
     const limit = state.chartBarsLimit || 200;
     const sliced = intraday ? b.fullCandles : sliceCandlesFromEnd(b.fullCandles, limit);
     const volData = buildVolumeHistogramData(sliced);
     b.candle.setData(sliced);
     b.vol.setData(volData);
-    b.chart.timeScale().fitContent();
+    b.chartCandle.timeScale().fitContent();
+    b.chartVol.timeScale().fitContent();
+    const r = b.chartCandle.timeScale().getVisibleLogicalRange();
+    if (r) b.chartVol.timeScale().setVisibleLogicalRange(r);
   }
 
   function syncChartPeriodToolbarPressed(body) {
@@ -239,40 +256,77 @@
     });
   }
 
+  function linkLogicalRangeSync(chartA, chartB) {
+    const tsA = chartA.timeScale();
+    const tsB = chartB.timeScale();
+    if (typeof tsA.subscribeVisibleLogicalRangeChange !== "function") return;
+    let ignoreA = false;
+    let ignoreB = false;
+    tsA.subscribeVisibleLogicalRangeChange((range) => {
+      if (!range || ignoreA) return;
+      ignoreB = true;
+      try {
+        tsB.setVisibleLogicalRange(range);
+      } catch (e) {
+        /* noop */
+      }
+      ignoreB = false;
+    });
+    tsB.subscribeVisibleLogicalRangeChange((range) => {
+      if (!range || ignoreB) return;
+      ignoreA = true;
+      try {
+        tsA.setVisibleLogicalRange(range);
+      } catch (e) {
+        /* noop */
+      }
+      ignoreA = false;
+    });
+  }
+
   async function mountLightweightChart(body) {
     if (!state.openChartCode) return;
-    const host = body.querySelector("tr.rt-chart-row .rt-lw-chart-host");
-    if (!host) return;
+    const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
+    const candleHost = body.querySelector("tr.rt-chart-row .rt-lw-candle-host");
+    const volHost = body.querySelector("tr.rt-chart-row .rt-lw-volume-host");
+    if (!panes || !candleHost || !volHost) return;
 
     const LC = window.LightweightCharts;
     if (!LC || typeof LC.createChart !== "function") {
-      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
+      volHost.innerHTML = "";
       return;
     }
 
     if (
-      host.dataset.mountedFor === state.openChartCode &&
-      host.dataset.mountedPeriod === state.candlePeriod &&
-      state.lwChart
+      panes.dataset.mountedFor === state.openChartCode &&
+      panes.dataset.mountedPeriod === state.candlePeriod &&
+      state.lwChart &&
+      state.lwVolChart
     ) {
-      const w = host.clientWidth;
-      if (w > 0) state.lwChart.applyOptions({ width: w });
+      const w = panes.clientWidth;
+      const hC = Math.max(candleHost.clientHeight, 80);
+      const hV = Math.max(volHost.clientHeight, 60);
+      if (w > 0) {
+        state.lwChart.applyOptions({ width: w, height: hC });
+        state.lwVolChart.applyOptions({ width: w, height: hV });
+      }
       syncNameChartButtonsAria(body);
       syncChartPeriodToolbarPressed(body);
       return;
     }
 
     disposeLwChart();
-    delete host.dataset.mountedFor;
-    delete host.dataset.mountedPeriod;
-    host.innerHTML = "";
-    host.removeAttribute("data-error");
+    delete panes.dataset.mountedFor;
+    delete panes.dataset.mountedPeriod;
+    candleHost.innerHTML = "";
+    volHost.innerHTML = "";
+    panes.removeAttribute("data-error");
 
     const intraday = isIntradayCandlePeriod(state.candlePeriod);
-    const chartHeight = 360;
-    const chart = LC.createChart(host, {
-      width: Math.max(host.clientWidth, 200),
-      height: chartHeight,
+    const chartCommon = (width, height, timeScaleVisible) => ({
+      width: Math.max(width, 200),
+      height: Math.max(height, 60),
       layout: {
         background: { type: "solid", color: "#12100c" },
         textColor: "#c4b8a8",
@@ -283,48 +337,50 @@
       },
       rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
       timeScale: {
+        visible: timeScaleVisible,
         borderColor: "rgba(148, 130, 98, 0.35)",
         timeVisible: intraday,
         secondsVisible: false,
       },
     });
 
-    const paneMargins = {
-      candleTop: 0.02,
-      candleBottom: 0.3,
-      volTop: 0.7,
-      volBottom: 0.02,
-    };
+    const w0 = Math.max(panes.clientWidth, 200);
+    const hC0 = Math.max(candleHost.clientHeight, 80);
+    const hV0 = Math.max(volHost.clientHeight, 60);
+
+    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
+    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
 
     const candleOpts = {
-      upColor: "#7cffb3",
-      downColor: "#f87171",
-      borderUpColor: "#7cffb3",
-      borderDownColor: "#f87171",
-      wickUpColor: "#7cffb3",
-      wickDownColor: "#f87171",
-      priceScaleId: "right",
-      scaleMargins: { top: paneMargins.candleTop, bottom: paneMargins.candleBottom },
+      upColor: CANDLE_UP,
+      downColor: CANDLE_DOWN,
+      borderUpColor: CANDLE_UP,
+      borderDownColor: CANDLE_DOWN,
+      wickUpColor: CANDLE_UP,
+      wickDownColor: CANDLE_DOWN,
     };
 
     let candle;
-    if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
-      candle = chart.addSeries(LC.CandlestickSeries, candleOpts);
-    } else if (typeof chart.addCandlestickSeries === "function") {
-      candle = chart.addCandlestickSeries(candleOpts);
+    if (LC.CandlestickSeries && typeof chartCandle.addSeries === "function") {
+      candle = chartCandle.addSeries(LC.CandlestickSeries, candleOpts);
+    } else if (typeof chartCandle.addCandlestickSeries === "function") {
+      candle = chartCandle.addCandlestickSeries(candleOpts);
     } else {
       try {
-        chart.remove();
+        chartCandle.remove();
       } catch (e) {
         /* noop */
       }
-      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
+      try {
+        chartVol.remove();
+      } catch (e2) {
+        /* noop */
+      }
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
       return;
     }
 
-    const vol = addHistogramSeriesCompat(chart, LC, {
-      priceScaleId: "vol",
-      scaleMargins: { top: paneMargins.volTop, bottom: paneMargins.volBottom },
+    const vol = addHistogramSeriesCompat(chartVol, LC, {
       priceFormat: { type: "volume" },
       priceLineVisible: false,
       lastValueVisible: false,
@@ -332,35 +388,37 @@
 
     if (!vol) {
       try {
-        chart.remove();
+        chartCandle.remove();
       } catch (e) {
         /* noop */
       }
-      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("거래량 시리즈를 초기화하지 못했습니다.")}</p>`;
+      try {
+        chartVol.remove();
+      } catch (e2) {
+        /* noop */
+      }
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("거래량 시리즈를 초기화하지 못했습니다.")}</p>`;
       return;
     }
 
-    try {
-      chart.priceScale("vol").applyOptions({ visible: false });
-    } catch (e) {
-      /* noop */
-    }
+    linkLogicalRangeSync(chartCandle, chartVol);
 
-    const divider = document.createElement("div");
-    divider.className = "rt-chart-pane-divider";
-    divider.setAttribute("aria-hidden", "true");
-    host.appendChild(divider);
-
-    state.lwChart = chart;
-    host.dataset.mountedFor = state.openChartCode;
-    host.dataset.mountedPeriod = state.candlePeriod;
+    state.lwChart = chartCandle;
+    state.lwVolChart = chartVol;
+    panes.dataset.mountedFor = state.openChartCode;
+    panes.dataset.mountedPeriod = state.candlePeriod;
 
     const ro = new ResizeObserver(() => {
-      if (!state.lwChart || !host.isConnected) return;
-      const w = host.clientWidth;
-      if (w > 0) state.lwChart.applyOptions({ width: w });
+      if (!state.lwChart || !state.lwVolChart || !panes.isConnected) return;
+      const w = panes.clientWidth;
+      const hC = Math.max(candleHost.clientHeight, 80);
+      const hV = Math.max(volHost.clientHeight, 60);
+      if (w > 0) {
+        state.lwChart.applyOptions({ width: w, height: hC });
+        state.lwVolChart.applyOptions({ width: w, height: hV });
+      }
     });
-    ro.observe(host);
+    ro.observe(panes);
     state.lwResizeObs = ro;
 
     try {
@@ -375,7 +433,8 @@
       if (!candles.length) throw new Error("차트 데이터가 없습니다.");
 
       state.lwBundle = {
-        chart,
+        chartCandle,
+        chartVol,
         candle,
         vol,
         fullCandles: candles,
@@ -384,9 +443,10 @@
       syncChartPeriodToolbarPressed(body);
     } catch (e) {
       disposeLwChart();
-      delete host.dataset.mountedFor;
-      delete host.dataset.mountedPeriod;
-      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e.message || String(e))}</p>`;
+      delete panes.dataset.mountedFor;
+      delete panes.dataset.mountedPeriod;
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e.message || String(e))}</p>`;
+      volHost.innerHTML = "";
     }
 
     syncNameChartButtonsAria(body);
@@ -601,17 +661,25 @@
           <td colspan="${cs}">
             <div class="rt-chart-wrap">
               <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="1" aria-pressed="false">1분</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="5" aria-pressed="false">5분</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="15" aria-pressed="false">15분</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="30" aria-pressed="false">30분</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="60" aria-pressed="false">60분</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="240" aria-pressed="false">4시간</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="false">일봉</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
               </div>
-              <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="캔들 차트"></div>
+              <div class="rt-chart-panes">
+                <div class="rt-chart-pane rt-chart-pane--candle">
+                  <div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div>
+                </div>
+                <div class="rt-chart-pane-sep" aria-hidden="true"></div>
+                <div class="rt-chart-pane rt-chart-pane--vol">
+                  <div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div>
+                </div>
+              </div>
             </div>
           </td>
         </tr>`;
@@ -958,7 +1026,7 @@
       if (intervalBtn && body.contains(intervalBtn)) {
         const p = intervalBtn.getAttribute("data-rt-candle-period");
         if (!p) return;
-        if (state.candlePeriod === p && state.lwBundle && state.lwChart) {
+        if (state.candlePeriod === p && state.lwBundle && state.lwChart && state.lwVolChart) {
           body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
             btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
           });
@@ -968,10 +1036,10 @@
         body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
           btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
         });
-        const chartHost = body.querySelector("tr.rt-chart-row .rt-lw-chart-host");
-        if (chartHost) {
-          delete chartHost.dataset.mountedFor;
-          delete chartHost.dataset.mountedPeriod;
+        const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
+        if (panes) {
+          delete panes.dataset.mountedFor;
+          delete panes.dataset.mountedPeriod;
         }
         disposeLwChart();
         void mountLightweightChart(body);
@@ -981,8 +1049,12 @@
       if (!btn || !body.contains(btn)) return;
       const code = btn.getAttribute("data-code");
       if (!code) return;
-      if (state.openChartCode === code) state.openChartCode = null;
-      else state.openChartCode = code;
+      if (state.openChartCode === code) {
+        state.openChartCode = null;
+      } else {
+        state.openChartCode = code;
+        state.candlePeriod = "D";
+      }
       renderTable();
     });
   }

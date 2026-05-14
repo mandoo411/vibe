@@ -82,9 +82,9 @@
     lwChart: null,
     lwVolChart: null,
     lwResizeObs: null,
-    /** 캔들 주기: 1|5|15|30|60|240(분) 또는 D|W|M — API period 파라미터와 동일 */
+    /** 캔들 주기: D|W|M — API period와 동일 */
     candlePeriod: "D",
-    /** 일/주/월봉에서 화면에 쓸 최근 봉 개수 (분봉은 전체 사용) */
+    /** 화면에 쓸 최근 봉 개수 */
     chartBarsLimit: 200,
     lwBundle: null,
   };
@@ -210,16 +210,11 @@
     return volData;
   }
 
-  function isIntradayCandlePeriod(p) {
-    return ["1", "5", "15", "30", "60", "240"].includes(String(p || ""));
-  }
-
   function applyLwChartVisibleRange() {
     const b = state.lwBundle;
     if (!b || !b.chartCandle || !b.chartVol || !b.candle || !b.vol || !b.fullCandles || !b.fullCandles.length) return;
-    const intraday = isIntradayCandlePeriod(state.candlePeriod);
     const limit = state.chartBarsLimit || 200;
-    const sliced = intraday ? b.fullCandles : sliceCandlesFromEnd(b.fullCandles, limit);
+    const sliced = sliceCandlesFromEnd(b.fullCandles, limit);
     const volData = buildVolumeHistogramData(sliced);
     b.candle.setData(sliced);
     b.vol.setData(volData);
@@ -323,7 +318,6 @@
     volHost.innerHTML = "";
     panes.removeAttribute("data-error");
 
-    const intraday = isIntradayCandlePeriod(state.candlePeriod);
     const chartCommon = (width, height, timeScaleVisible) => ({
       width: Math.max(width, 200),
       height: Math.max(height, 60),
@@ -339,7 +333,7 @@
       timeScale: {
         visible: timeScaleVisible,
         borderColor: "rgba(148, 130, 98, 0.35)",
-        timeVisible: intraday,
+        timeVisible: false,
         secondsVisible: false,
       },
     });
@@ -664,12 +658,6 @@
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="1" aria-pressed="false">1분</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="5" aria-pressed="false">5분</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="15" aria-pressed="false">15분</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="30" aria-pressed="false">30분</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="60" aria-pressed="false">60분</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="240" aria-pressed="false">4시간</button>
               </div>
               <div class="rt-chart-panes">
                 <div class="rt-chart-pane rt-chart-pane--candle">

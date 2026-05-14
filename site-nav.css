@@ -17,13 +17,27 @@
   box-shadow: var(--shadow);
 }
 
-.tm-site-brand {
+.header-top {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
   flex: 1 1 auto;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+.header-top__link {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
   padding: 0;
   margin: 0;
   border: 0;
@@ -34,12 +48,15 @@
   -webkit-tap-highlight-color: rgba(212, 175, 55, 0.12);
 }
 
-.tm-site-brand:hover {
+.header-top__link:hover {
   opacity: 0.92;
   text-decoration: none;
 }
 
-.tm-site-brand__logo {
+.header-top__logo {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: center;
   display: block;
   width: 40px;
   height: 40px;
@@ -53,16 +70,9 @@
   flex-shrink: 0;
 }
 
-.tm-site-brand__text {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  min-width: 0;
-  line-height: 1;
-}
-
-.tm-site-brand__name {
+.header-top__title {
+  grid-column: 2;
+  grid-row: 1;
   margin: 0;
   padding: 0;
   font-family: var(--font-display);
@@ -74,7 +84,9 @@
   white-space: nowrap;
 }
 
-.tm-site-brand__tagline {
+.header-top__tagline {
+  grid-column: 2;
+  grid-row: 2;
   margin: 0;
   padding: 0;
   font-family: var(--font-mono);
@@ -163,10 +175,10 @@
     align-items: stretch;
     justify-content: flex-start;
     width: 100%;
-    height: 105px;
-    min-height: 105px;
-    max-height: 105px;
-    padding: 8px;
+    height: 88px;
+    min-height: 88px;
+    max-height: 88px;
+    padding: 0;
     margin-bottom: 12px;
     gap: 0;
     overflow: hidden;
@@ -178,26 +190,45 @@
     box-shadow: var(--shadow);
   }
 
-  .tm-site-brand {
+  .header-top {
     box-sizing: border-box;
-    flex: 0 0 44px;
+    flex: 0 0 48px;
     width: 100%;
-    height: 44px;
-    min-height: 44px;
-    max-height: 44px;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
     margin: 0;
-    padding: 0 4px 0 0;
+    padding: 0 8px 0 8px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .header-top__link {
+    box-sizing: border-box;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
     gap: 8px;
-    min-width: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0 4px 0 0;
+    grid-template-columns: unset;
+    grid-template-rows: unset;
   }
 
-  .tm-site-brand__logo {
+  .header-top__logo {
     box-sizing: border-box;
+    grid-column: unset;
+    grid-row: unset;
+    align-self: center;
     display: block;
     width: 36px;
     height: 36px;
@@ -209,28 +240,15 @@
     object-fit: cover;
   }
 
-  .tm-site-brand__text {
-    box-sizing: border-box;
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0;
-    min-width: 0;
-    height: 100%;
-    min-height: 0;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
-  }
-
-  .tm-site-brand__tagline {
+  .header-top__tagline {
     display: none;
   }
 
-  .tm-site-brand__name {
+  .header-top__title {
     box-sizing: border-box;
+    grid-column: unset;
+    grid-row: unset;
+    flex: 1 1 auto;
     margin: 0;
     padding: 0;
     font-size: 15px;
@@ -239,15 +257,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .tm-site-nav {
     box-sizing: border-box;
-    flex: 0 0 45px;
+    flex: 0 0 40px;
     width: 100%;
-    height: 45px;
-    min-height: 45px;
-    max-height: 45px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
     display: flex;
     flex-wrap: nowrap;
     align-items: stretch;
@@ -273,9 +292,9 @@
     justify-content: center;
     min-width: 0;
     width: auto;
-    height: 44px;
-    min-height: 44px;
-    max-height: 44px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
     margin: 0;
     padding: 0 2px;
     font-size: 12px;

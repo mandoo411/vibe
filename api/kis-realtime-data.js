@@ -469,123 +469,6 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   return rows;
 }
 
-/** 국내 순위 API output 행 → 전광판 테이블용 (NXT·KRX 공통) */
-function mapKisDomesticRankingStockRow(row) {
-  if (!row || typeof row !== "object") return null;
-  const code = sanitizeStr(row.stck_shrn_iscd || row.STCK_SHRN_ISCD || row.mksc_shrn_iscd || row.MKSC_SHRN_ISCD);
-  if (!code) return null;
-  const price = sanitizeStr(row.stck_prpr || row.STCK_PRPR);
-  const volume = pickAcmlVol(row);
-  let tradingValue = pickAcmlTrPbmn(row);
-  if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-  return {
-    rank: toNum(row.data_rank || row.DATA_RANK),
-    code,
-    name: sanitizeStr(row.hts_kor_isnm || row.HTS_KOR_ISNM),
-    price,
-    changePct: toNum(row.prdy_ctrt || row.PRDY_CTRT),
-    volume,
-    tradingValue,
-  };
-}
-
-/** NXT 거래량·거래대금 순위 등에 공통으로 쓰이는 KIS FID 묶음 (fid_cond_mrkt_div_code=NXT 로 덮어씀) */
-function nxtVolumeStyleRankParams(extra = {}) {
-  return {
-    fid_blng_cls_code: "0",
-    fid_cond_mrkt_div_code: "NXT",
-    fid_cond_scr_div_code: "20171",
-    fid_div_cls_code: "0",
-    fid_input_date_1: "",
-    fid_input_iscd: "0000",
-    fid_input_price_1: "",
-    fid_input_price_2: "",
-    fid_trgt_cls_code: "0",
-    fid_trgt_exls_cls_code: "0",
-    fid_vol_cnt: "0",
-    fid_input_cnt_1: "30",
-    ...extra,
-  };
-}
-
-/** NXT 등락률 순위 — fid_cond_mrkt_div_code=NXT, fid_rsfl_rate1=0, fid_input_cnt_1=30 */
-async function fetchNxtFluctuationTop30() {
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/ranking/fluctuation",
-    "FHPST01700000",
-    {
-      fid_cond_mrkt_div_code: "NXT",
-      fid_cond_scr_div_code: "20170",
-      fid_input_iscd: "0000",
-      fid_rank_sort_cls_code: "0",
-      fid_input_cnt_1: "30",
-      fid_prc_cls_code: "0",
-      fid_input_price_1: "",
-      fid_input_price_2: "",
-      fid_vol_cnt: "0",
-      fid_trgt_cls_code: "0",
-      fid_trgt_exls_cls_code: "0000000000",
-      fid_div_cls_code: "0",
-      fid_rsfl_rate1: "0",
-      fid_rsfl_rate2: "",
-    },
-    ""
-  );
-  const list = kisOutputRows(json);
-  const rows = [];
-  for (const row of list) {
-    const r = mapKisDomesticRankingStockRow(row);
-    if (r) rows.push(r);
-  }
-  return rows
-    .filter((r) => r.code && r.name)
-    .slice(0, 30)
-    .map((r, i) => ({ ...r, rank: r.rank != null ? r.rank : i + 1 }));
-}
-
-/** NXT 거래대금 순위 */
-async function fetchNxtTradePbmnTop30() {
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/ranking/trade-pbmn",
-    "FHPST01710000",
-    nxtVolumeStyleRankParams(),
-    ""
-  );
-  const list = kisOutputRows(json);
-  const rows = [];
-  for (const row of list) {
-    const r = mapKisDomesticRankingStockRow(row);
-    if (r) rows.push(r);
-  }
-  return rows
-    .filter((r) => r.code && r.name)
-    .slice(0, 30)
-    .map((r, i) => ({ ...r, rank: r.rank != null ? r.rank : i + 1 }));
-}
-
-/** NXT 거래량 순위 — 문서/포털에 따라 path가 `ranking/volume` 또는 `quotations/volume-rank` */
-async function fetchNxtVolumeTop30() {
-  const params = nxtVolumeStyleRankParams();
-  let json;
-  try {
-    ({ json } = await kisGet("/uapi/domestic-stock/v1/ranking/volume", "FHPST01710000", params, ""));
-  } catch (e) {
-    const msg = String(e && e.message ? e.message : e);
-    if (!/404/.test(msg)) throw e;
-    ({ json } = await kisGet("/uapi/domestic-stock/v1/quotations/volume-rank", "FHPST01710000", params, ""));
-  }
-  const list = kisOutputRows(json);
-  const rows = [];
-  for (const row of list) {
-    const r = mapKisDomesticRankingStockRow(row);
-    if (r) rows.push(r);
-  }
-  return rows
-    .filter((r) => r.code && r.name)
-    .slice(0, 30)
-    .map((r, i) => ({ ...r, rank: r.rank != null ? r.rank : i + 1 }));
-}
-
 async function fetchGainersMerged50() {
   const kospi = await fetchFluctuationRank("0001", "KOSPI");
   const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
@@ -1021,21 +904,9 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    if (action === "nxt-fluctuation-30") {
-      const stocks = await fetchNxtFluctuationTop30();
-      json(res, 200, { stocks });
-      return;
-    }
-
-    if (action === "nxt-trade-pbmn-30") {
-      const stocks = await fetchNxtTradePbmnTop30();
-      json(res, 200, { stocks });
-      return;
-    }
-
-    if (action === "nxt-volume-30") {
-      const stocks = await fetchNxtVolumeTop30();
-      json(res, 200, { stocks });
+    /** NXT 전용 순위 API는 fid_cond_mrkt_div_code 1자 제한 등으로 미지원 — 클라이언트는 준비중 UI */
+    if (action === "nxt-fluctuation-30" || action === "nxt-trade-pbmn-30" || action === "nxt-volume-30") {
+      json(res, 200, { stocks: [], nxtUnavailable: true });
       return;
     }
 

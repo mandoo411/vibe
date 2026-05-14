@@ -323,6 +323,59 @@
         font-size: 13px;
         border-radius: var(--radius);
       }
+      .rt-skel-row td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+      }
+      .rt-skel-bar {
+        display: block;
+        height: 10px;
+        max-width: 100%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, #252018 0%, #3a342c 45%, #252018 100%);
+        background-size: 220% 100%;
+        animation: rt-skel-shimmer 1.15s ease-in-out infinite;
+      }
+      @keyframes rt-skel-shimmer {
+        0% {
+          background-position: 100% 0;
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 0.95;
+        }
+        100% {
+          background-position: 0 0;
+          opacity: 0.55;
+        }
+      }
+      .rt-nxt-soon-cell {
+        text-align: center;
+        padding: 18px 12px;
+        vertical-align: middle;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .rt-nxt-soon-label {
+        display: inline-block;
+        margin-right: 8px;
+        padding: 2px 8px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-dim);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        background: var(--tag-bg);
+        vertical-align: middle;
+      }
+      .rt-nxt-soon-msg {
+        display: inline;
+        color: var(--text-muted);
+      }
       .rt-name-chart-btn {
         font: inherit;
         font-weight: 600;

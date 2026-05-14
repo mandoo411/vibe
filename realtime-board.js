@@ -3,6 +3,10 @@
   "use strict";
 
   const API = "/api/kis-realtime-data";
+  const FETCH_TIMEOUT_MS = 10000;
+  const TAB_CACHE_MS = 3 * 60 * 1000;
+  /** 한투 REST는 NXT 전용 fid_cond_mrkt_div_code 미지원 → UI만 준비중 */
+  const NXT_DISABLED = true;
 
   const CCNL_COLS = [
     "MKSC_SHRN_ISCD",
@@ -91,6 +95,8 @@
     /** 화면에 쓸 최근 봉 개수 */
     chartBarsLimit: 200,
     lwBundle: null,
+    /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
+    tabLoadedAt: {},
   };
 
   function $(id) {
@@ -598,11 +604,115 @@
     syncNameChartButtonsAria(body);
   }
 
-  async function fetchJson(action) {
-    const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, { cache: "no-store" });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    return data;
+  async function fetchJson(action, timeoutMs) {
+    const useAbort = typeof timeoutMs === "number" && timeoutMs > 0;
+    const ctrl = useAbort ? new AbortController() : null;
+    const tid = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : 0;
+    try {
+      const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, {
+        cache: "no-store",
+        signal: ctrl ? ctrl.signal : undefined,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      return data;
+    } catch (e) {
+      if (useAbort && e && e.name === "AbortError") {
+        throw new Error("요청 시간이 초과되었습니다.");
+      }
+      throw e;
+    } finally {
+      if (tid) clearTimeout(tid);
+    }
+  }
+
+  function rowsLoadedForTab(tab) {
+    if (tab === "nxt" && NXT_DISABLED) return true;
+    if (tab === "cap") return state.capRows.length >= 10;
+    if (tab === "gainers") return state.gainerRows.length >= 10;
+    if (tab === "prevday") return state.prevDayRows.length >= 5;
+    if (tab === "tradeval") return state.tradeValRows.length >= 10;
+    if (tab === "nxt") {
+      const rows = getNxtRowsForSub();
+      return rows.length >= 5;
+    }
+    return false;
+  }
+
+  function getNxtRowsForSub() {
+    if (state.nxtSub === "trade") return state.nxtPbmnRows;
+    if (state.nxtSub === "volume") return state.nxtVolRows;
+    return state.nxtFluctRows;
+  }
+
+  function applyStocksArrayToTab(tab, stocks) {
+    const rows = (stocks || []).map((r) => ({ ...r, tab: tab === "nxt" ? "nxt" : r.tab || tab }));
+    if (tab === "cap") state.capRows = rows;
+    else if (tab === "gainers") state.gainerRows = rows;
+    else if (tab === "prevday") state.prevDayRows = rows;
+    else if (tab === "tradeval") state.tradeValRows = rows;
+    else if (tab === "nxt") {
+      if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
+      else if (state.nxtSub === "volume") state.nxtVolRows = rows;
+      else state.nxtFluctRows = rows;
+    }
+  }
+
+  async function fetchStocksJsonForTab(tab) {
+    if (tab === "nxt" && NXT_DISABLED) return { stocks: [] };
+    const action =
+      tab === "cap"
+        ? "market-cap"
+        : tab === "gainers"
+          ? "gainers"
+          : tab === "prevday"
+            ? "prev-day-gainers"
+            : tab === "tradeval"
+              ? "trade-value-top50"
+              : nxtFetchAction();
+    return fetchJson(action, FETCH_TIMEOUT_MS);
+  }
+
+  async function loadBootstrapForTab(tab) {
+    const [sess, idx, stockPack] = await Promise.all([
+      fetchJson("session", FETCH_TIMEOUT_MS),
+      fetchJson("index", FETCH_TIMEOUT_MS),
+      fetchStocksJsonForTab(tab),
+    ]);
+    state.clockSession = sess.clock || null;
+    state.marketTime = sess.marketTime || null;
+    state.indexes = (idx.indexes || []).map((x) => ({
+      id: x.id,
+      label: x.label,
+      value: x.value,
+      changePct: x.changePct,
+    }));
+    applyStocksArrayToTab(tab, stockPack.stocks);
+    state.tabLoadedAt[tab] = Date.now();
+  }
+
+  function showTableSkeleton() {
+    const body = $("rt-tbody");
+    if (!body) return;
+    body.dataset.rtSkeleton = "1";
+    const cs = tableColSpan();
+    const parts = [];
+    for (let i = 0; i < 10; i++) {
+      parts.push(
+        `<tr class="rt-skel-row" aria-hidden="true"><td colspan="${cs}"><span class="rt-skel-bar"></span></td></tr>`
+      );
+    }
+    body.innerHTML = parts.join("");
+  }
+
+  function hideTableSkeleton() {
+    const body = $("rt-tbody");
+    if (body) delete body.dataset.rtSkeleton;
+  }
+
+  function rtErrorTimeoutMessage(err) {
+    const m = String(err && err.message ? err.message : err || "");
+    return /시간이 초과|시간 초과|AbortError/i.test(m) ? "데이터를 불러오지 못했습니다. 새로고침 해주세요" : m;
   }
 
   function parsePipeFrame(raw) {
@@ -676,9 +786,8 @@
     if (state.tab === "prevday") return state.prevDayRows;
     if (state.tab === "tradeval") return state.tradeValRows;
     if (state.tab === "nxt") {
-      if (state.nxtSub === "trade") return state.nxtPbmnRows;
-      if (state.nxtSub === "volume") return state.nxtVolRows;
-      return state.nxtFluctRows;
+      if (NXT_DISABLED) return [];
+      return getNxtRowsForSub();
     }
     return state.capRows;
   }
@@ -708,8 +817,15 @@
   }
 
   async function refreshNxtPanel() {
+    if (NXT_DISABLED) {
+      state.nxtFluctRows = [];
+      state.nxtPbmnRows = [];
+      state.nxtVolRows = [];
+      renderAll();
+      return;
+    }
     const act = nxtFetchAction();
-    const { stocks } = await fetchJson(act);
+    const { stocks } = await fetchJson(act, FETCH_TIMEOUT_MS);
     const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
     if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
     else if (state.nxtSub === "volume") state.nxtVolRows = rows;
@@ -939,11 +1055,24 @@
     const body = $("rt-tbody");
     const title = $("rt-table-title");
     if (!body) return;
-    const rows = getCurrentRows();
+    if (body.dataset.rtSkeleton === "1") return;
     renderThead();
     if (title) {
       title.textContent = getTableTitle();
     }
+    if (state.tab === "nxt" && NXT_DISABLED) {
+      disposeLwChart();
+      state.openChartCode = null;
+      const cs = tableColSpan();
+      body.innerHTML = `<tr class="rt-stock-row rt-nxt-soon-row" data-code="">
+          <td colspan="${cs}" class="rt-nxt-soon-cell">
+            <span class="rt-nxt-soon-label">준비중</span>
+            <span class="rt-nxt-soon-msg">한국투자증권 API에서 NXT 전용 순위를 제공하지 않습니다.</span>
+          </td>
+        </tr>`;
+      return;
+    }
+    const rows = getCurrentRows();
     if (!state.openChartCode) {
       disposeLwChart();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
@@ -980,19 +1109,9 @@
     renderTable();
   }
 
-  function applySnapshot(data) {
-    state.clockSession = data.clock || null;
-    state.marketTime = data.marketTime || null;
-    state.indexes = (data.indexes || []).map((x) => ({
-      id: x.id,
-      label: x.label,
-      value: x.value,
-      changePct: x.changePct,
-    }));
-    state.capRows = (data.marketCap || []).map((r) => ({ ...r, tab: "cap" }));
-    state.gainerRows = (data.gainers || []).map((r) => ({ ...r, tab: "gainers" }));
-    state.prevDayRows = (data.prevDayGainers || []).map((r) => ({ ...r, tab: "prevday" }));
-    state.tradeValRows = (data.tradeValueTop50 || []).map((r) => ({ ...r, tab: "tradeval" }));
+  function hideRtErrorIfNxt() {
+    const err = $("rt-error");
+    if (err && state.tab === "nxt" && NXT_DISABLED) err.hidden = true;
   }
 
   function makeWsPayload(trType, trId, trKey) {
@@ -1147,48 +1266,58 @@
     }
   }
 
-  async function refreshSnapshot() {
-    const data = await fetchJson("snapshot");
-    applySnapshot(data);
-    renderAll();
-    if (state.ws && state.ws.readyState === 1) {
-      unsubscribeAll();
-      subscribeStocks(getCurrentRows().map((r) => r.code));
-    }
-  }
-
   async function refreshPartial() {
+    hideRtErrorIfNxt();
     try {
+      if (state.tab === "nxt" && NXT_DISABLED) {
+        const { indexes } = await fetchJson("index", FETCH_TIMEOUT_MS);
+        state.indexes = (indexes || []).map((x) => ({
+          id: x.id,
+          label: x.label,
+          value: x.value,
+          changePct: x.changePct,
+        }));
+        const { clock, marketTime } = await fetchJson("session", FETCH_TIMEOUT_MS);
+        state.clockSession = clock;
+        state.marketTime = marketTime;
+        renderAll();
+        if (state.ws && state.ws.readyState === 1) {
+          unsubscribeAll();
+          subscribeStocks(getCurrentRows().map((r) => r.code));
+        }
+        return;
+      }
       if (state.tab === "gainers") {
-        const { stocks } = await fetchJson("gainers");
+        const { stocks } = await fetchJson("gainers", FETCH_TIMEOUT_MS);
         state.gainerRows = stocks.map((r) => ({ ...r, tab: "gainers" }));
       } else if (state.tab === "prevday") {
-        const { stocks } = await fetchJson("prev-day-gainers");
+        const { stocks } = await fetchJson("prev-day-gainers", FETCH_TIMEOUT_MS);
         state.prevDayRows = stocks.map((r) => ({ ...r, tab: "prevday" }));
       } else if (state.tab === "tradeval") {
-        const { stocks } = await fetchJson("trade-value-top50");
+        const { stocks } = await fetchJson("trade-value-top50", FETCH_TIMEOUT_MS);
         state.tradeValRows = stocks.map((r) => ({ ...r, tab: "tradeval" }));
       } else if (state.tab === "nxt") {
         const act = nxtFetchAction();
-        const { stocks } = await fetchJson(act);
+        const { stocks } = await fetchJson(act, FETCH_TIMEOUT_MS);
         const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
         if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
         else if (state.nxtSub === "volume") state.nxtVolRows = rows;
         else state.nxtFluctRows = rows;
       } else {
-        const { stocks } = await fetchJson("market-cap");
+        const { stocks } = await fetchJson("market-cap", FETCH_TIMEOUT_MS);
         state.capRows = stocks.map((r) => ({ ...r, tab: "cap" }));
       }
-      const { indexes } = await fetchJson("index");
+      const { indexes } = await fetchJson("index", FETCH_TIMEOUT_MS);
       state.indexes = (indexes || []).map((x) => ({
         id: x.id,
         label: x.label,
         value: x.value,
         changePct: x.changePct,
       }));
-      const { clock, marketTime } = await fetchJson("session");
+      const { clock, marketTime } = await fetchJson("session", FETCH_TIMEOUT_MS);
       state.clockSession = clock;
       state.marketTime = marketTime;
+      state.tabLoadedAt[state.tab] = Date.now();
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
@@ -1197,8 +1326,12 @@
     } catch (e) {
       const err = $("rt-error");
       if (err) {
-        err.hidden = false;
-        err.textContent = e.message || String(e);
+        if (state.tab === "nxt" && NXT_DISABLED) {
+          err.hidden = true;
+        } else {
+          err.hidden = false;
+          err.textContent = rtErrorTimeoutMessage(e);
+        }
       }
     }
   }
@@ -1221,6 +1354,7 @@
         syncNxtSubtabAria();
 
         const finish = () => {
+          hideRtErrorIfNxt();
           startPolling();
           if (state.ws && state.ws.readyState === 1) {
             unsubscribeAll();
@@ -1228,21 +1362,45 @@
           }
         };
 
-        if (state.tab === "nxt") {
-          refreshNxtPanel()
-            .then(finish)
-            .catch((e) => {
-              const err = $("rt-error");
-              if (err) {
-                err.hidden = false;
-                err.textContent = e.message || String(e);
-              }
-              finish();
-            });
-        } else {
-          renderTable();
+        const tk = state.tab;
+        const errEl = $("rt-error");
+        const cached =
+          state.tabLoadedAt[tk] &&
+          Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS &&
+          rowsLoadedForTab(tk);
+
+        if (cached) {
+          if (errEl) errEl.hidden = true;
+          renderAll();
           finish();
+          return;
         }
+
+        if (tk === "nxt" && NXT_DISABLED) {
+          if (errEl) errEl.hidden = true;
+          renderAll();
+          finish();
+          return;
+        }
+
+        showTableSkeleton();
+        loadBootstrapForTab(tk)
+          .then(() => {
+            hideTableSkeleton();
+            if (errEl) errEl.hidden = true;
+            renderAll();
+          })
+          .catch((e) => {
+            hideTableSkeleton();
+            if (errEl) {
+              errEl.hidden = false;
+              errEl.textContent = rtErrorTimeoutMessage(e);
+            }
+            renderAll();
+          })
+          .finally(() => {
+            finish();
+          });
       });
     });
   }
@@ -1258,21 +1416,37 @@
         syncNxtSubtabAria();
         state.openChartCode = null;
         state.candlePeriod = "D";
+        const errEl = $("rt-error");
+        if (errEl) errEl.hidden = true;
         const finish = () => {
+          hideRtErrorIfNxt();
           startPolling();
           if (state.ws && state.ws.readyState === 1) {
             unsubscribeAll();
             subscribeStocks(getCurrentRows().map((r) => r.code));
           }
         };
+        if (NXT_DISABLED) {
+          renderAll();
+          finish();
+          return;
+        }
+        showTableSkeleton();
         refreshNxtPanel()
-          .then(finish)
+          .then(() => {
+            hideTableSkeleton();
+            if (errEl) errEl.hidden = true;
+            renderAll();
+          })
           .catch((e) => {
-            const err = $("rt-error");
-            if (err) {
-              err.hidden = false;
-              err.textContent = e.message || String(e);
+            hideTableSkeleton();
+            if (errEl) {
+              errEl.hidden = false;
+              errEl.textContent = rtErrorTimeoutMessage(e);
             }
+            renderAll();
+          })
+          .finally(() => {
             finish();
           });
       });
@@ -1342,17 +1516,22 @@
     wireTableChartAccordion();
     const err = $("rt-error");
     if (err) err.hidden = true;
+    hideLoadingOverlay();
+    renderThead();
+    showTableSkeleton();
     try {
-      await refreshSnapshot();
-      startPolling();
-      await tryConnectWs();
+      await loadBootstrapForTab(state.tab);
+      if (err) err.hidden = true;
     } catch (e) {
       if (err) {
         err.hidden = false;
-        err.textContent = e.message || String(e);
+        err.textContent = rtErrorTimeoutMessage(e);
       }
     } finally {
-      hideLoadingOverlay();
+      hideTableSkeleton();
+      renderAll();
+      startPolling();
+      await tryConnectWs();
     }
   }
 

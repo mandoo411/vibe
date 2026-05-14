@@ -178,70 +178,6 @@ a.hub-card:focus-visible {
     padding-top: max(6px, env(safe-area-inset-top));
   }
 
-  /* site-nav 720px 그리드 래핑 덮어쓰기: 로고 이미지 + 네비 한 줄 */
-  .page.page--hub .tm-site-header {
-    flex-shrink: 0;
-    flex-wrap: nowrap;
-    align-items: center;
-    height: 44px;
-    min-height: 44px;
-    padding: 0 6px;
-    margin-bottom: 6px;
-    gap: 4px;
-    overflow: visible;
-  }
-
-  .page.page--hub .tm-site-brand {
-    flex: 0 0 auto;
-    min-width: 0;
-    overflow: visible;
-  }
-
-  .page.page--hub .tm-site-brand__text {
-    display: none;
-  }
-
-  .page.page--hub .tm-site-brand__logo {
-    display: block;
-    flex-shrink: 0;
-    width: 36px;
-    height: 36px;
-    visibility: visible;
-    opacity: 1;
-    object-fit: cover;
-  }
-
-  .page.page--hub .tm-site-nav {
-    flex: 1 1 auto;
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    border-top: none;
-    font-size: 12px;
-  }
-
-  .page.page--hub .tm-site-nav__link {
-    box-sizing: border-box;
-    flex: 0 1 auto;
-    min-width: 0;
-    height: auto;
-    min-height: 0;
-    padding: 4px 3px;
-    font-size: 12px;
-    line-height: 1.2;
-    white-space: nowrap;
-  }
-
-  .page.page--hub .tm-site-nav__link[aria-current="page"] {
-    box-shadow: inset 0 -1px 0 0 var(--accent-bright);
-  }
-
   .page.page--hub .hub-hero {
     flex-shrink: 0;
     margin-bottom: 6px;
@@ -292,13 +228,13 @@ a.hub-card:focus-visible {
     flex-shrink: 0;
     width: 50px;
     height: 50px;
-    margin: 0 auto 4px;
+    margin: 0 auto 0;
     border-radius: 10px;
   }
 
   .page.page--hub .hub-card__title {
     flex-shrink: 0;
-    margin: 0;
+    margin: auto 0 0;
     font-size: 12px;
     font-weight: 700;
     line-height: 1.25;
@@ -311,7 +247,7 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card__meta {
     flex-shrink: 0;
-    margin-top: auto;
+    margin-top: 4px;
     margin-bottom: 0;
     padding-top: 4px;
     width: 100%;

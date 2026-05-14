@@ -153,33 +153,85 @@
   text-decoration: none;
 }
 
-@media (max-width: 720px) {
+/* 스마트폰·태블릿 좁은 폭: 1행 브랜드(로고+이름) · 2행 네비 4균등 */
+@media (max-width: 768px) {
   .tm-site-header {
-    flex-wrap: wrap;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
     height: auto;
-    min-height: 60px;
-    padding: 10px 10px;
-    row-gap: 10px;
-    column-gap: 10px;
+    min-height: 0;
+    padding: 6px;
+    margin-bottom: 12px;
+    gap: 6px;
   }
 
   .tm-site-brand {
-    flex: 1 1 100%;
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tm-site-brand__logo {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .tm-site-brand__text {
+    flex-direction: row;
+    align-items: center;
+    gap: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .tm-site-brand__tagline {
+    display: none;
+  }
+
+  .tm-site-brand__name {
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tm-site-nav {
-    flex: 1 1 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    justify-items: stretch;
-    padding-top: 10px;
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+    gap: 0;
+    padding: 6px 0 0;
+    margin: 0;
+    border: 0;
     border-top: 1px solid var(--border);
+    border-radius: 0;
+    font-size: 12px;
   }
 
   .tm-site-nav__link {
-    width: 100%;
-    min-height: 44px;
-    height: 44px;
+    flex: 1 1 0;
+    min-width: 0;
+    height: auto;
+    min-height: 36px;
+    padding: 4px 2px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 0;
+  }
+
+  .tm-site-nav__link[aria-current="page"] {
+    border-radius: 0;
+    box-shadow: inset 0 -2px 0 0 var(--accent-bright);
   }
 }

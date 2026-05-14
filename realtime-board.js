@@ -151,6 +151,27 @@
     return n.toLocaleString("ko-KR");
   }
 
+  /** 시가총액 원본(stck_avls 또는 API의 mcapEok) — 원 단위: 1조 이상 X.XX조, 미만 XXXX억 */
+  function readStckAvlsRaw(r) {
+    if (!r) return null;
+    const a = r.stck_avls;
+    if (a != null && String(a).trim() !== "") return a;
+    const b = r.mcapEok;
+    if (b != null && String(b).trim() !== "") return b;
+    return null;
+  }
+
+  function formatStckAvls(raw) {
+    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e12) {
+      return `${(n / 1e12).toFixed(2)}조`;
+    }
+    const eok = Math.round(n / 1e8);
+    if (eok <= 0) return "—";
+    return `${eok.toLocaleString("ko-KR")}억`;
+  }
+
   function deltaClass(pct) {
     if (pct == null || !Number.isFinite(pct)) return "delta--flat";
     if (pct > 0) return "delta--pos";
@@ -883,6 +904,8 @@
     if (patch.changePct != null) cur.changePct = patch.changePct;
     if (patch.volume) cur.volume = patch.volume;
     if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
+    if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
+    if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
     if (patch.hourCls) cur.hourCls = patch.hourCls;
     if (patch.mrkt) cur.mrktCls = patch.mrkt;
     list[i] = cur;
@@ -969,7 +992,7 @@
       return;
     }
     tr.innerHTML =
-      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th><th class="num rt-td-mcap">시가총액</th>';
   }
 
   function getTableTitle() {
@@ -1063,17 +1086,32 @@
         </tr>`;
     }
 
-    const ch = r.changePct;
-    const cls = deltaClass(ch);
-    const tv = formatTradeVal(r.tradingValue);
-    const vol = fmtNum(r.volume);
-    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+    if (state.tab === "nxt") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const tv = formatTradeVal(r.tradingValue);
+      const vol = fmtNum(r.volume);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name">${nameCell}</td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
           <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
           <td class="num rt-td-vol">${escapeHtml(vol)}</td>
           <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
+    const ch = r.changePct;
+    const cls = deltaClass(ch);
+    const tv = formatTradeVal(r.tradingValue);
+    const mcap = formatStckAvls(readStckAvlsRaw(r));
+    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+          <td class="num rt-td-mcap">${escapeHtml(mcap)}</td>
         </tr>`;
   }
 
@@ -1131,12 +1169,22 @@
       return;
     }
 
+    if (state.tab === "nxt") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = fmtNum(r.volume);
+      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
+
     const ch = r.changePct;
     const cls = deltaClass(ch);
     tr.cells[2].textContent = fmtNum(r.price);
     tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-    tr.cells[4].textContent = fmtNum(r.volume);
-    tr.cells[5].textContent = formatTradeVal(r.tradingValue);
+    tr.cells[4].textContent = formatTradeVal(r.tradingValue);
+    tr.cells[5].textContent = formatStckAvls(readStckAvlsRaw(r));
   }
 
   function syncChartDomAfterRows(body, rows) {

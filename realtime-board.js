@@ -87,6 +87,14 @@
     return document.getElementById(id);
   }
 
+  function hideLoadingOverlay() {
+    const el = $("rt-loading");
+    if (el) {
+      el.hidden = true;
+      el.setAttribute("aria-busy", "false");
+    }
+  }
+
   function fmtNum(s) {
     if (s == null || s === "") return "—";
     const n = Number(String(s).replace(/,/g, ""));
@@ -353,7 +361,7 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "prevday") return "직전 거래일 종가 기준 상승률 상위 50 · 당일 시세";
+    if (state.tab === "prevday") return "전일 등락률 상위 50 · 당일 시세";
     if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
     return "실시간 시세";
   }
@@ -805,6 +813,8 @@
         err.hidden = false;
         err.textContent = e.message || String(e);
       }
+    } finally {
+      hideLoadingOverlay();
     }
   }
 

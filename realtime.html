@@ -350,9 +350,54 @@
           font-size: 15px;
         }
       }
+
+      /* 초기 로딩 (다크 테마) */
+      .rt-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        background: rgba(10, 9, 7, 0.92);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      .rt-loading[hidden] {
+        display: none;
+        pointer-events: none;
+      }
+      .rt-loading__spinner {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.12);
+        border-top-color: var(--accent-bright, #c9a227);
+        animation: rt-spin 0.85s linear infinite;
+      }
+      .rt-loading__text {
+        margin: 0;
+        font-family: var(--font-sans, "Noto Sans KR", sans-serif);
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        color: var(--text-muted, #a8a29e);
+      }
+      @keyframes rt-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
     </style>
   </head>
   <body>
+    <div id="rt-loading" class="rt-loading" aria-busy="true" aria-label="데이터 로딩 중">
+      <div class="rt-loading__spinner" aria-hidden="true"></div>
+      <p class="rt-loading__text">시장 데이터를 불러오는 중...</p>
+    </div>
     <div class="rt-wrap page">
       <header class="masthead">
         <a class="masthead__brand" href="./daily-market.html" aria-label="TotalMoney AI 홈">
@@ -394,7 +439,7 @@
           상승률 TOP 50
         </button>
         <button type="button" class="rt-tab" role="tab" data-rt-tab="prevday" aria-selected="false" id="tab-prevday">
-          직전장 상승 TOP50
+          작전장 상승 TOP50
         </button>
         <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
           거래대금 TOP50
@@ -420,12 +465,6 @@
       </div>
 
       <p id="rt-error" class="rt-error" hidden></p>
-
-      <p class="rt-foot">
-        Vercel 등 HTTPS 배포 환경에서는 브라우저 정책으로 <code>ws://</code> WebSocket이 차단될 수 있어, 이 경우
-        REST로 초·중·장후 시세를 빠르게 갱신합니다. 로컬 HTTP로 열면 WebSocket 실시간이 활성화됩니다. 서버에는
-        <code>KIS_ACCESS_TOKEN</code>, <code>KIS_APP_KEY</code>, <code>KIS_APP_SECRET</code>을 설정하면 됩니다.
-      </p>
     </div>
 
     <script

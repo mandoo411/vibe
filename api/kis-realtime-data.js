@@ -14,9 +14,9 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 /** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
 const candleMemoryCache = new Map();
 
-/** action=prev-day-gainers — 직전 거래일 fluctuation(fid_input_date_1) TOP50(24h) + 당일 시세(5분) */
-let prevDayGainersCache = null; // { at, sessionYmd, stocks }
-let prevDayQuotesCache = null; // { at, sessionYmd, codeKey, byCode: Map }
+/** action=prev-day-gainers — 전일 등락률 순위(0000) TOP50 + 당일 시세(5분) */
+let prevDayGainersCache = null; // { at, listDayYmd, stocks }
+let prevDayQuotesCache = null; // { at, listDayYmd, codeKey, byCode: Map }
 
 function parsePbmnSortKey(s) {
   const n = Number(String(s || "").replace(/,/g, ""));
@@ -364,36 +364,29 @@ async function fetchTradeValueTop50FromMarketCap() {
 }
 
 /**
- * @param {{ closeOnly?: boolean; baseYmd?: string }} [opts]
- *   closeOnly: fid_prc_cls_code=1 만 사용(등락률·종가 기준 랭킹).
- *   baseYmd: YYYYMMDD 직전 거래일 등 — fid_input_date_1 (해당 일자 장마감 기준 랭킹).
+ * @param {{ closeOnly?: boolean }} [opts]
+ *   closeOnly: fid_prc_cls_code=1 만 사용(등락률·전일대비 랭킹).
  */
 async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   const closeOnly = Boolean(opts.closeOnly);
-  const baseYmd =
-    opts.baseYmd && /^\d{8}$/.test(String(opts.baseYmd).trim()) ? String(opts.baseYmd).trim() : "";
   const urlBase = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
-  const buildParams = (fidPrcCls) => {
-    const p = {
-      fid_cond_mrkt_div_code: "J",
-      fid_cond_scr_div_code: "20170",
-      fid_input_iscd: marketCode,
-      fid_rank_sort_cls_code: "0",
-      fid_input_cnt_1: "0",
-      /** 1: 등락률(종가/전일대비 스크립트). 0: 현재가 */
-      fid_prc_cls_code: fidPrcCls,
-      fid_input_price_1: "",
-      fid_input_price_2: "",
-      fid_vol_cnt: "",
-      fid_trgt_cls_code: "0",
-      fid_trgt_exls_cls_code: "0000000000",
-      fid_div_cls_code: "0",
-      fid_rsfl_rate1: "",
-      fid_rsfl_rate2: "",
-    };
-    if (baseYmd) p.fid_input_date_1 = baseYmd;
-    return p;
-  };
+  const buildParams = (fidPrcCls) => ({
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20170",
+    fid_input_iscd: marketCode,
+    fid_rank_sort_cls_code: "0",
+    fid_input_cnt_1: "0",
+    /** 1: 등락률(종가/전일대비 스크립트). 0: 현재가 */
+    fid_prc_cls_code: fidPrcCls,
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: "",
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_div_cls_code: "0",
+    fid_rsfl_rate1: "",
+    fid_rsfl_rate2: "",
+  });
 
   async function fetchOnce(fidPrcCls) {
     const url = new URL(urlBase.toString());
@@ -486,18 +479,60 @@ async function fetchGainersMerged50() {
   return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
-/** 직전 거래일(sessionYmd) 장마감 기준 상승률 상위 50 — fluctuation + fid_input_date_1 */
-async function fetchPrevDayGainersForSessionYmd(sessionYmd) {
-  const kospi = await fetchFluctuationRank("0001", "KOSPI", { closeOnly: true, baseYmd: sessionYmd });
-  await sleep(KIS_GAP_MS);
-  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ", { closeOnly: true, baseYmd: sessionYmd });
-  const merged = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    if (!merged.has(r.code)) merged.set(r.code, r);
-  }
-  const all = [...merged.values()].filter((r) => r.changePct != null);
-  all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  return all.slice(0, 50).map((r, i) => ({
+/**
+ * 전일 등락률 순위 (한투 fluctuation TR FHPST01700000, fid_input_iscd 0000 통합)
+ * fid_input_date_1/2 비움 — API 기준 전일 랭킹.
+ */
+async function fetchPrevDayOfficialFluctuationTop50() {
+  const params = {
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20170",
+    fid_input_iscd: "0000",
+    fid_rank_sort_cls_code: "0",
+    fid_input_cnt_1: "0",
+    fid_prc_cls_code: "1",
+    fid_input_date_1: "",
+    fid_input_date_2: "",
+    fid_hour_cls_code: "0",
+    fid_pw_data_incu_yn: "Y",
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: "",
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_div_cls_code: "0",
+    fid_rsfl_rate1: "",
+    fid_rsfl_rate2: "",
+  };
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/ranking/fluctuation",
+    "FHPST01700000",
+    params,
+    ""
+  );
+  const raw = kisOutputRows(json);
+  const rows = raw
+    .map((row) => {
+      const code = sanitizeStr(row.stck_shrn_iscd);
+      const name = sanitizeStr(row.hts_kor_isnm);
+      const tvBoard = pickKoreanBoardKind(row, "KOSPI");
+      return {
+        code,
+        name,
+        market: tvBoard,
+        tvBoard,
+        apiRank: toNum(row.data_rank),
+        prevChg: toNum(row.prdy_ctrt),
+      };
+    })
+    .filter((r) => r.code && r.name);
+  rows.sort((a, b) => {
+    const ar = a.apiRank != null ? a.apiRank : 9999;
+    const br = b.apiRank != null ? b.apiRank : 9999;
+    if (ar !== br) return ar - br;
+    return (b.prevChg || 0) - (a.prevChg || 0);
+  });
+  return rows.slice(0, 50).map((r, i) => ({
     rank: i + 1,
     code: r.code,
     name: r.name,
@@ -524,13 +559,13 @@ function mergeLiveQuotesIntoPrevDayRows(baseRows, liveByCode) {
 }
 
 /** 당일 fluctuation 전체에서 코드 매칭 — 5분 메모리 캐시 */
-async function enrichPrevDayWithLiveQuotesCached(baseRows, sessionYmd) {
+async function enrichPrevDayWithLiveQuotesCached(baseRows, listDayYmd) {
   const codeKey = [...baseRows.map((r) => r.code)].sort().join(",");
   const now = Date.now();
   const ttlQuotes = 5 * 60 * 1000;
   if (
     prevDayQuotesCache &&
-    prevDayQuotesCache.sessionYmd === sessionYmd &&
+    prevDayQuotesCache.listDayYmd === listDayYmd &&
     prevDayQuotesCache.codeKey === codeKey &&
     now - prevDayQuotesCache.at < ttlQuotes
   ) {
@@ -543,24 +578,24 @@ async function enrichPrevDayWithLiveQuotesCached(baseRows, sessionYmd) {
   for (const r of [...kospi, ...kosdaq]) {
     if (r.code) byCode.set(r.code, r);
   }
-  prevDayQuotesCache = { at: now, sessionYmd, codeKey, byCode };
+  prevDayQuotesCache = { at: now, listDayYmd, codeKey, byCode };
   return mergeLiveQuotesIntoPrevDayRows(baseRows, byCode);
 }
 
-/** 직전 거래일 TOP50 종목코드 목록 — 24시간 캐시(동일 sessionYmd 한정) */
+/** 전일 상승 TOP50 종목 목록 — KST 달력일당 24시간 캐시(자정 이후 자동 갱신) */
 async function getPrevDayGainersTop50Cached() {
-  const sessionYmd = priorKoreanEquitySessionYmd();
+  const listDayYmd = ymdKst();
   const now = Date.now();
   const ttlList = 24 * 60 * 60 * 1000;
   if (
     prevDayGainersCache &&
-    prevDayGainersCache.sessionYmd === sessionYmd &&
+    prevDayGainersCache.listDayYmd === listDayYmd &&
     now - prevDayGainersCache.at < ttlList
   ) {
     return prevDayGainersCache.stocks;
   }
-  const stocks = await fetchPrevDayGainersForSessionYmd(sessionYmd);
-  prevDayGainersCache = { at: now, sessionYmd, stocks };
+  const stocks = await fetchPrevDayOfficialFluctuationTop50();
+  prevDayGainersCache = { at: now, listDayYmd, stocks };
   return stocks;
 }
 
@@ -649,31 +684,6 @@ function ymdKst(d = new Date()) {
     day: "2-digit",
   }).format(d);
   return s.replace(/-/g, "");
-}
-
-/** KST 달력 ymd가 토·일이면 true (공휴일 미반영) */
-function isWeekendYmdKst(ymd) {
-  if (!/^\d{8}$/.test(ymd)) return true;
-  const yy = ymd.slice(0, 4);
-  const mm = ymd.slice(4, 6);
-  const dd = ymd.slice(6, 8);
-  const wd = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", weekday: "short" }).format(
-    new Date(`${yy}-${mm}-${dd}T15:30:00+09:00`)
-  );
-  return wd === "Sat" || wd === "Sun";
-}
-
-/**
- * 직전 정규장 거래일 YYYYMMDD (KST, 주말 건너뜀 — 월요일이면 금요일).
- * 한투 fluctuation fid_input_date_1 용.
- */
-function priorKoreanEquitySessionYmd(ref = new Date()) {
-  let ymd = subtractCalendarDaysFromYmd(ymdKst(ref), 1);
-  for (let g = 0; g < 14; g++) {
-    if (!isWeekendYmdKst(ymd)) return ymd;
-    ymd = subtractCalendarDaysFromYmd(ymd, 1);
-  }
-  return ymd;
 }
 
 function subtractCalendarDaysFromYmd(ymd, days) {
@@ -789,8 +799,8 @@ module.exports = async function handler(req, res) {
 
     if (action === "prev-day-gainers") {
       const base = await getPrevDayGainersTop50Cached();
-      const sessionYmd = prevDayGainersCache.sessionYmd;
-      const stocks = await enrichPrevDayWithLiveQuotesCached(base, sessionYmd);
+      const listDayYmd = prevDayGainersCache.listDayYmd;
+      const stocks = await enrichPrevDayWithLiveQuotesCached(base, listDayYmd);
       json(res, 200, { stocks });
       return;
     }
@@ -844,9 +854,9 @@ module.exports = async function handler(req, res) {
       const cap = await fetchMarketCapKospi30();
       await sleep(KIS_GAP_MS);
       const prevDayBase = await getPrevDayGainersTop50Cached();
-      const prevSessionYmd = prevDayGainersCache.sessionYmd;
+      const prevListDayYmd = prevDayGainersCache.listDayYmd;
       await sleep(KIS_GAP_MS);
-      const prevDayGainers = await enrichPrevDayWithLiveQuotesCached(prevDayBase, prevSessionYmd);
+      const prevDayGainers = await enrichPrevDayWithLiveQuotesCached(prevDayBase, prevListDayYmd);
       await sleep(KIS_GAP_MS);
       const tradeValueTop50 = await fetchTradeValueTop50FromMarketCap();
       const clock = sessionLabelFromKst();

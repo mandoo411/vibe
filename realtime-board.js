@@ -1025,6 +1025,11 @@
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
+    if (state.tab === "gainers") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+      return;
+    }
     tr.innerHTML =
       '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th><th class="num rt-td-mcap">시가총액</th>';
   }
@@ -1135,6 +1140,21 @@
         </tr>`;
     }
 
+    if (state.tab === "gainers") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const tv = formatTradeVal(r.tradingValue);
+      const vol = fmtNum(r.volume);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
     const ch = r.changePct;
     const cls = deltaClass(ch);
     const tv = formatTradeVal(r.tradingValue);
@@ -1204,6 +1224,16 @@
     }
 
     if (state.tab === "nxt") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = fmtNum(r.volume);
+      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
+
+    if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
       tr.cells[2].textContent = fmtNum(r.price);

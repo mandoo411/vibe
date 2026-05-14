@@ -615,115 +615,6 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   return rows;
 }
 
-/** 주식현재가 시세(v1_국내주식-008) — 시가총액 hts_avls/stck_avls 등 */
-async function fetchInquirePriceDomesticRow(code6, mrktHint) {
-  const raw = String(code6 || "").replace(/\D/g, "");
-  const iscd = raw.length <= 6 ? raw.padStart(6, "0") : raw.slice(-6);
-  if (!iscd) return {};
-  const hint = String(mrktHint || "").toUpperCase();
-  const divOrder = hint === "KOSDAQ" ? ["Q", "J"] : ["J", "Q"];
-  for (const fid_cond_mrkt_div_code of divOrder) {
-    const { json } = await kisGet(
-      "/uapi/domestic-stock/v1/quotations/inquire-price",
-      "FHKST01010100",
-      {
-        fid_cond_mrkt_div_code,
-        fid_input_iscd: iscd,
-      },
-      ""
-    );
-    const out = json && json.output;
-    const row =
-      out && typeof out === "object" && !Array.isArray(out)
-        ? out
-        : Array.isArray(out) && out[0] && typeof out[0] === "object"
-          ? out[0]
-          : null;
-    if (row && marketCapWonStringForStockRow(row)) return row;
-  }
-  return {};
-}
-
-function rowHasPositiveMcapWon(r) {
-  const raw = sanitizeStr(r.mcapEok) || sanitizeStr(r.stck_avls);
-  if (!raw) return false;
-  const n = Number(String(raw).replace(/,/g, ""));
-  return Number.isFinite(n) && n > 0;
-}
-
-/** 시가총액 순위에서 코드 매칭 시 mcapEok/stck_avls(원 문자열) 주입 */
-async function mergeMcapFromCapRankingsToRows(rows, opts = {}) {
-  const kMax = opts.kospiMax != null ? opts.kospiMax : 30;
-  const qMax = opts.kosdaqMax != null ? opts.kosdaqMax : 30;
-  try {
-    const ko = await fetchMarketCapRows("0001", kMax, "KOSPI", { logSample: false });
-    await sleep(KIS_GAP_MS);
-    const kq = await fetchMarketCapRows("1001", qMax, "KOSDAQ", { logSample: false });
-    const by = new Map();
-    for (const r of [...ko, ...kq]) {
-      if (r.code && r.mcapEok) by.set(r.code, r.mcapEok);
-    }
-    let hit = 0;
-    for (const r of rows) {
-      const w = by.get(r.code);
-      if (w) {
-        r.mcapEok = w;
-        r.stck_avls = w;
-        hit += 1;
-      }
-    }
-    console.log("[kis-realtime-data][gainers] 시총순위 병합", {
-      kospiMax: kMax,
-      kosdaqMax: qMax,
-      mapSize: by.size,
-      matched: hit,
-      total: rows.length,
-    });
-  } catch (e) {
-    console.warn("[kis-realtime-data][gainers] mergeMcapFromCapRankingsToRows", e && e.message);
-  }
-  return rows;
-}
-
-/**
- * 시총 미보유 행만 주식현재가 시세로 보강 (KIS 호출 상한으로 서버리스 타임아웃 완화)
- * @param {{ maxCalls?: number }} [opts] 기본 maxCalls=18
- */
-async function enrichRowsMcapFromInquirePrice(rows, logTag, opts = {}) {
-  const maxCalls = opts.maxCalls != null ? opts.maxCalls : 18;
-  const missingAll = rows.filter((r) => !rowHasPositiveMcapWon(r));
-  const missing = missingAll.slice(0, maxCalls);
-  if (missing.length === 0) return;
-  console.log("[kis-realtime-data][" + logTag + "] inquire-price 시총 보강", {
-    totalMissing: missingAll.length,
-    willFetch: missing.length,
-  });
-  let firstLogDone = false;
-  for (const r of missing) {
-    try {
-      const out = await fetchInquirePriceDomesticRow(r.code, r.tvBoard);
-      const won = marketCapWonStringForStockRow(out);
-      if (!firstLogDone) {
-        firstLogDone = true;
-        const avlsKeys = Object.keys(out).filter((k) => /avls|iscd/i.test(k));
-        console.log("[kis-realtime-data][" + logTag + "] inquire-price 샘플", {
-          code: r.code,
-          sample_keys: avlsKeys,
-          hts_avls_raw: out.hts_avls ?? out.HTS_AVLS,
-          stck_avls_raw: out.stck_avls ?? out.STCK_AVLS,
-          converted_won_string: won || "(없음)",
-        });
-      }
-      if (won) {
-        r.mcapEok = won;
-        r.stck_avls = won;
-      }
-    } catch (e) {
-      console.warn("[kis-realtime-data][" + logTag + "] inquire-price 실패", r.code, e && e.message);
-    }
-  }
-}
-
 async function fetchGainersMerged50() {
   const kospi = await fetchFluctuationRank("0001", "KOSPI");
   await sleep(KIS_GAP_MS);
@@ -734,18 +625,7 @@ async function fetchGainersMerged50() {
   }
   const all = [...merged.values()].filter((r) => r.changePct != null);
   all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  const sliced = all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
-  try {
-    await mergeMcapFromCapRankingsToRows(sliced, { kospiMax: 100, kosdaqMax: 100 });
-  } catch (e) {
-    console.warn("[kis-realtime-data][gainers] merge mcap", e && e.message);
-  }
-  try {
-    await enrichRowsMcapFromInquirePrice(sliced, "gainers", { maxCalls: 18 });
-  } catch (e) {
-    console.warn("[kis-realtime-data][gainers] inquire mcap enrich", e && e.message);
-  }
-  return sliced;
+  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 function getPrevTop50JsonPath() {

@@ -14,7 +14,7 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 /** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
 const candleMemoryCache = new Map();
 
-/** action=prev-day-gainers — 전일 일별랭킹(FHPST01710000) TOP50 + prevDayChangePct, 당일 시세 5분 */
+/** action=prev-day-gainers — 전일 fluctuation(FHPST01700000, fid_input_date_1/2) TOP50 + 당일 시세 5분 */
 let prevDayGainersCache = null; // { at, rankingYmd, stocks }
 let prevDayQuotesCache = null; // { at, rankingYmd, codeKey, byCode: Map }
 
@@ -480,19 +480,19 @@ async function fetchGainersMerged50() {
 }
 
 /**
- * 전일 등락률 순위 — 국내주식 일별랭킹 (inquire-daily-ranking, TR FHPST01710000)
- * fid_input_date_1/2 = 직전 거래일 YYYYMMDD (KST, 주말 제외)
+ * 전일 등락률 순위 — ranking/fluctuation (FHPST01700000)
+ * fid_input_date_1·fid_input_date_2 = 직전 거래일 YYYYMMDD (동일, KST 주말 제외)
  */
-async function fetchPrevDayDailyRankingTop50(rankingYmd) {
-  const trId = "FHPST01710000";
-  const path = "/uapi/domestic-stock/v1/quotations/inquire-daily-ranking";
+async function fetchPrevDayFluctuationTop50(rankingYmd) {
+  const trId = "FHPST01700000";
+  const path = "/uapi/domestic-stock/v1/ranking/fluctuation";
   const ymd =
     rankingYmd && /^\d{8}$/.test(String(rankingYmd).trim())
       ? String(rankingYmd).trim()
       : priorKoreanEquitySessionYmd();
   const params = {
     fid_cond_mrkt_div_code: "J",
-    fid_cond_scr_div_code: "20171",
+    fid_cond_scr_div_code: "20170",
     fid_input_iscd: "0000",
     fid_rank_sort_cls_code: "0",
     fid_input_cnt_1: "0",
@@ -501,8 +501,16 @@ async function fetchPrevDayDailyRankingTop50(rankingYmd) {
     fid_input_date_2: ymd,
     fid_hour_cls_code: "0",
     fid_pw_data_incu_yn: "Y",
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: "",
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_div_cls_code: "0",
+    fid_rsfl_rate1: "",
+    fid_rsfl_rate2: "",
   };
-  console.log("[KIS prev-day daily-ranking] kisGet 호출", {
+  console.log("[KIS prev-day fluctuation] kisGet 호출 (전일날짜 테스트)", {
     tr_id: trId,
     path,
     fid_input_date_1: params.fid_input_date_1,
@@ -515,15 +523,9 @@ async function fetchPrevDayDailyRankingTop50(rankingYmd) {
   const raw = kisOutputRows(json);
   const firstOut = raw[0];
   if (firstOut && typeof firstOut === "object") {
-    const fieldNames = Object.keys(firstOut).sort();
-    console.log("[KIS prev-day FHPST01710000] output[0] fieldNames (sorted)", fieldNames);
-    console.log("[KIS prev-day FHPST01710000] output[0] fieldNamesAndValues JSON", JSON.stringify(firstOut, null, 2));
-    console.log("[KIS prev-day FHPST01710000] output[0] prdy_ctrt raw", {
-      prdy_ctrt: firstOut.prdy_ctrt,
-      PRDY_CTRT: firstOut.PRDY_CTRT,
-    });
+    console.log("[KIS prev-day fluctuation] output[0] 첫 항목 전체 JSON", JSON.stringify(firstOut, null, 2));
   } else {
-    console.log("[KIS prev-day FHPST01710000] output[0] missing", {
+    console.log("[KIS prev-day fluctuation] output[0] 없음", {
       rawLength: raw.length,
       topLevelKeys: json && typeof json === "object" ? Object.keys(json) : [],
     });
@@ -561,7 +563,7 @@ async function fetchPrevDayDailyRankingTop50(rankingYmd) {
     tvBoard: r.tvBoard,
     prevDayChangePct: r.prevChg != null && Number.isFinite(r.prevChg) ? r.prevChg : null,
   }));
-  console.log("[KIS prev-day daily-ranking] 응답", {
+  console.log("[KIS prev-day fluctuation] 응답 요약", {
     tr_id: trId,
     rawRowCount: raw.length,
     mappedRows: rows.length,
@@ -626,7 +628,7 @@ async function getPrevDayGainersTop50Cached() {
   ) {
     return prevDayGainersCache.stocks;
   }
-  const stocks = await fetchPrevDayDailyRankingTop50(rankingYmd);
+  const stocks = await fetchPrevDayFluctuationTop50(rankingYmd);
   prevDayGainersCache = { at: now, rankingYmd, stocks };
   return stocks;
 }
@@ -865,11 +867,11 @@ module.exports = async function handler(req, res) {
       console.log("[prev-day-gainers] handler", {
         actionQuery: actionRaw,
         actionResolved: "prev-day-gainers",
-        dailyRankingTrId: "FHPST01710000",
-        path: "/uapi/domestic-stock/v1/quotations/inquire-daily-ranking",
+        fluctuationTrId: "FHPST01700000",
+        path: "/uapi/domestic-stock/v1/ranking/fluctuation",
         rankingYmd,
         listFromCache: cacheHit,
-        note: "전일 랭킹은 inquire-daily-ranking(FHPST01710000)만 사용합니다.",
+        note: "전일 랭킹: fluctuation + fid_input_date_1/2 동일(직전 거래일)",
       });
       const base = await getPrevDayGainersTop50Cached();
       const rankYmd = prevDayGainersCache.rankingYmd;

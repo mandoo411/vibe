@@ -183,11 +183,14 @@
     gap: 0;
     overflow: hidden;
     flex-shrink: 0;
-    border: 1px solid var(--border);
-    border-bottom: 1px solid #c9a84c;
+    border: 0;
     border-radius: var(--radius);
     background: var(--bg-panel);
-    box-shadow: var(--shadow);
+    /* border는 박스 높이를 잡아먹지 않도록 그림자로만 표현(48+40=88px 유지) */
+    box-shadow:
+      var(--shadow),
+      0 0 0 1px var(--border),
+      inset 0 -1px 0 0 #c9a84c;
   }
 
   .header-top {

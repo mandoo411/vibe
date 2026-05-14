@@ -488,8 +488,9 @@
     const hC0 = Math.max(candleHost.clientHeight, 80);
     const hV0 = Math.max(volHost.clientHeight, 60);
 
-    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, true));
-    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, false));
+    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
+    /* 날짜 축: 거래량 패널 하단만 표시. 범위는 linkLogicalRangeSync로 캔들과 동기화 */
+    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
 
     const candleOpts = {
       upColor: CANDLE_UP,

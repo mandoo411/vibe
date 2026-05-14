@@ -86,26 +86,33 @@ a.hub-card:focus-visible {
   color: var(--text-muted);
 }
 
-/* 카드 아이콘 — assets/icons.jpg 3×2 스프라이트 (120×120, 세로 맞춤 + 가로 중앙 크롭 ≈ object-fit: cover) */
+/* 카드 아이콘 — 스프라이트만 표시(테두리·배경·그림자·패딩 없음), 카드와 블렌딩 */
 .hub-card__icon {
   box-sizing: border-box;
   flex-shrink: 0;
-  margin-bottom: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: none;
+  box-shadow: none;
 }
 
 .hub-card__icon--sprite {
   display: block;
   width: 120px;
   height: 120px;
+  padding: 0;
   overflow: hidden;
+  border: none;
+  outline: none;
+  border-radius: 0;
+  box-shadow: none;
   background-color: transparent;
   background-image: url("./assets/icons.jpg");
   background-repeat: no-repeat;
   /* 1024×556 기준, 행 높이 278px → 120px 스케일 */
   background-size: 442.014px 240px;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
 }
 
 /* 셀 너비 147.338px, 뷰포트 120px → 좌우 (147.338-120)/2 크롭 */

@@ -776,16 +776,20 @@ function mapTimeItemchartRow(row) {
  * 연속조회(tr_cont) 병합
  */
 async function fetchTimeItemchartCandlesFromKis(code6, fidMinuteStr) {
+  const todayY = ymdKst(new Date());
+  const maxBars = 200;
   const params = {
     fid_cond_mrkt_div_code: "J",
     fid_input_iscd: code6,
     fid_input_hour_1: fidMinuteStr,
+    fid_input_date_1: todayY,
+    fid_input_date_2: todayY,
     fid_etc_cls_code: "",
     fid_pw_data_incu_yn: "Y",
   };
   const byKey = new Map();
   let trCont = "";
-  for (let page = 0; page < 40; page++) {
+  for (let page = 0; page < 80; page++) {
     const { json, trCont: nextCont } = await kisGet(
       "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
       "FHKST03010200",
@@ -799,13 +803,14 @@ async function fetchTimeItemchartCandlesFromKis(code6, fidMinuteStr) {
       const b = mapTimeItemchartRow(row);
       if (b) byKey.set(String(b.time), b);
     }
+    if (byKey.size >= maxBars) break;
     const nxt = sanitizeStr(nextCont).toUpperCase();
     if (page > 0 && !raw.length) break;
     if (!nxt || nxt === "D" || nxt === "E") break;
     trCont = nxt;
   }
   const bars = [...byKey.values()].sort((a, b) => a.time - b.time);
-  return bars.slice(-500);
+  return bars.slice(-maxBars);
 }
 
 function normalizeDomesticStockCode6(code) {
@@ -814,16 +819,50 @@ function normalizeDomesticStockCode6(code) {
   return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
 }
 
-/** KIS output2 행 → Lightweight Charts용 일봉 (time YYYY-MM-DD) */
+/** 일/주/월봉 목표 개수 */
+function dailyCandleTargetCount(periodDiv) {
+  const p = String(periodDiv || "D").toUpperCase();
+  if (p === "M") return 120;
+  return 200;
+}
+
+/** 첫 조회 fid_input_date_1 하한 (오늘 기준 과거 달력일) */
+function dailyFirstWindowStartDays(periodDiv) {
+  const p = String(periodDiv || "D").toUpperCase();
+  if (p === "M") return 3650;
+  if (p === "W") return 1460;
+  return 365;
+}
+
+/** 이전 구간으로 넘길 때 한 번에 덮을 달력 폭 */
+function dailyBackwardChunkDays(periodDiv) {
+  const p = String(periodDiv || "D").toUpperCase();
+  if (p === "M") return 4000;
+  if (p === "W") return 1000;
+  return 450;
+}
+
+/** KIS output2 행 → Lightweight Charts용 일/주/월 (time YYYY-MM-DD) */
 function mapDailyItemchartRow(row) {
   if (!row || typeof row !== "object") return null;
-  const dateRaw = sanitizeStr(row.stck_bsop_date || row.STCK_BSOP_DATE);
+  const dateRaw = sanitizeStr(
+    row.stck_bsop_date ||
+      row.STCK_BSOP_DATE ||
+      row.bstp_bsop_date ||
+      row.BSTP_BSOP_DATE ||
+      row.trd_dd ||
+      row.TRD_DD
+  );
   if (!/^\d{8}$/.test(dateRaw)) return null;
   const time = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
-  const open = toNum(row.stck_oprc || row.STCK_OPRC);
+  const open = toNum(
+    row.stck_oprc || row.STCK_OPRC || row.bstp_stck_oprc || row.stck_sdpr || row.STCK_SDPR
+  );
   const high = toNum(row.stck_hgpr || row.STCK_HGPR);
   const low = toNum(row.stck_lwpr || row.STCK_LWPR);
-  const close = toNum(row.stck_clpr || row.STCK_CLPR);
+  const close = toNum(
+    row.stck_clpr || row.STCK_CLPR || row.stck_prpr || row.STCK_PRPR || row.prpr || row.PRPR
+  );
   if (open == null || high == null || low == null || close == null) return null;
   const volRaw = toNum(
     row.acml_vol ||
@@ -845,21 +884,33 @@ function mapDailyItemchartRow(row) {
 async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
   const div = sanitizeStr(periodDiv).toUpperCase();
   const fidPeriod = div === "W" || div === "M" ? div : "D";
+  const target = dailyCandleTargetCount(fidPeriod);
   const endAll = ymdKst(new Date());
   const byTime = new Map();
   let chunkEnd = endAll;
+  const floorYmd = subtractCalendarDaysFromYmd(endAll, dailyFirstWindowStartDays(fidPeriod));
 
-  for (let iter = 0; iter < 8; iter++) {
+  for (let iter = 0; iter < 30; iter++) {
     if (iter > 0) await sleep(KIS_GAP_MS);
-    const chunkStart = subtractCalendarDaysFromYmd(chunkEnd, 118);
+    const chunkStart =
+      iter === 0
+        ? floorYmd
+        : subtractCalendarDaysFromYmd(chunkEnd, dailyBackwardChunkDays(fidPeriod));
+    let d1 = chunkStart;
+    let d2 = chunkEnd;
+    if (d1 >= d2) {
+      d1 = subtractCalendarDaysFromYmd(d2, 30);
+    }
+    if (d1 >= d2) break;
+
     const { json } = await kisGet(
       "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
       "FHKST03010100",
       {
         fid_cond_mrkt_div_code: "J",
         fid_input_iscd: code6,
-        fid_input_date_1: chunkStart,
-        fid_input_date_2: chunkEnd,
+        fid_input_date_1: d1,
+        fid_input_date_2: d2,
         fid_period_div_code: fidPeriod,
         fid_org_adj_prc: "0",
       },
@@ -875,18 +926,20 @@ async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
     }
     batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
     if (!batch.length) break;
+    const beforeSize = byTime.size;
     for (const b of batch) byTime.set(b.time, b);
-    if (byTime.size >= 260) break;
+    if (byTime.size >= target) break;
+    if (byTime.size === beforeSize && iter > 2) break;
+
     const oldestYmd = String(batch[0].time).replace(/\D/g, "").slice(0, 8);
     if (!/^\d{8}$/.test(oldestYmd)) break;
     const nextEnd = subtractCalendarDaysFromYmd(oldestYmd, 1);
     if (nextEnd >= chunkEnd) break;
-    if (batch.length < 35) break;
     chunkEnd = nextEnd;
   }
 
   const bars = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-  return bars.slice(-320);
+  return bars.slice(-target);
 }
 
 function json(res, status, body) {

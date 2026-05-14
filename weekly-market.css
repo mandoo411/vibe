@@ -85,6 +85,15 @@ a:hover {
   margin-bottom: 18px;
 }
 
+/* 로고 브랜드 없이 제목·메타만 (상단 네비와 중복 제거 시) */
+.masthead--title-only {
+  padding-top: 2px;
+}
+
+.masthead--title-only .masthead__kicker {
+  margin-top: 0;
+}
+
 .masthead__brand {
   display: inline-flex;
   align-items: center;

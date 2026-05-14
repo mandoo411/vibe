@@ -1,12 +1,12 @@
-/* TotalMoney AI — 공통 상단 네비 (🏠 홈 | 📊 시황 | 📡 전광판 | 📅 주간일정) */
+/* TotalMoney AI — 공통 상단 네비 (홈 | 시황 | 전광판 | 주간일정) */
 .tm-site-nav {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
   justify-content: flex-start;
-  gap: 8px 10px;
+  gap: 4px 6px;
   margin-bottom: 16px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -19,51 +19,52 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
   min-height: 44px;
   padding: 8px 14px;
   border-radius: 2px;
   border: 1px solid transparent;
   color: var(--text-muted);
   text-decoration: none;
+  white-space: nowrap;
   touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.15);
+  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.12);
   transition:
     color 0.12s ease,
     border-color 0.12s ease,
-    background 0.12s ease;
+    background 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
-.tm-site-nav__ico {
-  font-size: 1.1rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.tm-site-nav__txt {
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.tm-site-nav__link:hover {
+.tm-site-nav__link:hover:not([aria-current="page"]) {
   color: var(--accent-bright);
-  border-color: var(--border-strong);
-  background: rgba(212, 175, 55, 0.06);
+  border-color: transparent;
+  background: rgba(212, 175, 55, 0.05);
   text-decoration: none;
 }
 
+/* 현재 페이지: 눌린 버튼 느낌 없이 골드 언더라인 + 텍스트 강조 */
 .tm-site-nav__link[aria-current="page"] {
   color: var(--accent-bright);
-  border-color: var(--accent);
-  background: var(--accent-dim);
   font-weight: 600;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: inset 0 -2px 0 0 var(--accent-bright);
+  border-radius: 2px 2px 0 0;
+}
+
+.tm-site-nav__link[aria-current="page"]:hover {
+  color: var(--accent-bright);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+  text-decoration: none;
 }
 
 @media (max-width: 520px) {
   .tm-site-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .tm-site-nav__link {

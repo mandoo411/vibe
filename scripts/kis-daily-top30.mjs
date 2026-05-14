@@ -2,8 +2,8 @@
 /**
  * 한국투자증권 Open API → 코스피+코스닥 상승률 TOP 30
  *  → 각 종목 네이버 뉴스 헤드라인 수집
- *  → Claude로 "상승 이유 한 줄 + 테마" 자동 분류
- *  → data/daily-market.json 의 days[targetYmd].topGainers 에 저장
+ *  → Claude로 "상승 이유 한 줄 + 테마 + 시황 요약(summary) + 특징주" 자동 분류
+ *  → data/daily-market.json 의 days[targetYmd] (topGainers, summary, notableStocks 등) 에 저장
  *
  * 필수: KIS_APP_KEY, KIS_APP_SECRET, ANTHROPIC_API_KEY
  * 선택: TARGET_DATE=YYYY-MM-DD (기본: 오늘 KST)
@@ -436,6 +436,32 @@ function parseJsonFromAssistant(text) {
   return JSON.parse(raw);
 }
 
+function normalizeNotableStocks(raw, topGainers) {
+  const rows = [];
+  if (Array.isArray(raw)) {
+    for (const r of raw) {
+      if (!r || typeof r !== "object") continue;
+      const name = sanitizeStr(r.name);
+      if (!name) continue;
+      const match = topGainers.find((s) => s.name === name);
+      const ch = toNumberOrNull(r.change);
+      rows.push({
+        name,
+        change: ch != null ? ch : toNumberOrNull(match?.change) ?? 0,
+        tradingValue: sanitizeStr(r.tradingValue) || (match ? sanitizeStr(match.tradingValue) : ""),
+        note: sanitizeStr(r.note) || (match ? sanitizeStr(match.reason) || sanitizeStr(match.theme) : ""),
+      });
+    }
+  }
+  if (rows.length) return rows.slice(0, 12);
+  return topGainers.slice(0, 6).map((s) => ({
+    name: s.name,
+    change: s.change ?? 0,
+    tradingValue: sanitizeStr(s.tradingValue),
+    note: sanitizeStr(s.reason) || sanitizeStr(s.theme),
+  }));
+}
+
 async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, indexes }) {
   const client = new Anthropic({ apiKey });
 
@@ -462,9 +488,13 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 
   const system = `당신은 한국 주식 데이터 큐레이터입니다. 입력은 ${targetYmd}일 한국 증시 상승률 상위 종목 목록과 각 종목 네이버 뉴스 헤드라인입니다.
 
-요구 출력은 다음 JSON 객체(키 두 개)뿐입니다. 마크다운, 코드펜스, 주석, 설명을 절대 추가하지 마세요.
+요구 출력은 다음 JSON 객체(키 네 개)뿐입니다. 마크다운, 코드펜스, 주석, 설명을 절대 추가하지 마세요.
 
 {
+  "marketSummary": "한국어 시황 요약 3~5문장. 지수·자금·대표 테마를 뉴스·지수 종가 근거로만 서술.",
+  "notableStocks": [
+    { "name": "삼성전자", "change": 1.2, "tradingValue": "1조 2000억", "note": "거래대금·뉴스 기준 한 줄 요약" }
+  ],
   "stocks": [
     { "code": "005930", "reason": "HBM4 양산 본격화 기대", "theme": "AI 반도체" }
   ],
@@ -472,6 +502,15 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
     { "title": "뉴스 한 줄", "note": "왜 중요한지 1문장(선택)", "source": "출처(선택)" }
   ]
 }
+
+규칙(marketSummary):
+- 입력에 제시된 지수 종가(있다면)와 종목 뉴스 헤드라인만 근거로 작성.
+- 추측·단정적 투자 권유 금지. 문장은 완결형 한국어.
+
+규칙(notableStocks):
+- 5~8개. 그날 시황에서 눈에 띄는 종목(상승률 상위·뉴스 헤드라인에 반복 등장·테마 대표주).
+- change는 퍼센트 숫자(입력 종목의 상승률과 일치). tradingValue는 알면 "1234억" 형태, 모르면 빈 문자열 "".
+- note는 한 줄(30~60자), 뉴스 단서 기반.
 
 규칙(stocks):
 - 입력 순서를 그대로 유지하고 입력 개수와 동일한 길이의 배열.
@@ -498,6 +537,8 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
     throw new Error("Claude output missing stocks array");
   }
   return {
+    marketSummary: sanitizeStr(parsed.marketSummary),
+    notableStocks: Array.isArray(parsed.notableStocks) ? parsed.notableStocks : [],
     stocks: parsed.stocks,
     topNews: Array.isArray(parsed.topNews) ? parsed.topNews : [],
   };
@@ -672,6 +713,9 @@ async function main() {
     url: typeof n.url === "string" && /^https?:\/\//i.test(n.url) ? n.url : "",
   })).filter((n) => n.title);
 
+  const notableStocks = normalizeNotableStocks(ai.notableStocks, topGainers);
+  const summary = sanitizeStr(ai.marketSummary);
+
   console.log("[6/6] daily-market.json 갱신...");
   const data = (await readJsonIfExists(outputPath)) || {
     meta: { title: "매일 시황 기록", timezoneNote: "KST 기준. 특별한 표기가 없으면 종가 기준입니다." },
@@ -681,6 +725,8 @@ async function main() {
   const existing = data.days[targetYmd] || {};
   data.days[targetYmd] = {
     ...existing,
+    summary: summary || sanitizeStr(existing.summary),
+    notableStocks: notableStocks.length ? notableStocks : (existing.notableStocks || []),
     indexes: indexes.length ? indexes : (existing.indexes || []),
     themes,
     news: topNews.length ? topNews : (existing.news || []),
@@ -706,6 +752,11 @@ async function main() {
   });
   console.log("주요 뉴스:");
   topNews.forEach((n, i) => console.log(`  ${i + 1}. ${n.title}${n.source ? ` (${n.source})` : ""}`));
+  if (summary) {
+    console.log("시황 요약:");
+    console.log("  " + summary.replace(/\n/g, "\n  "));
+  }
+  console.log(`특징주: ${notableStocks.length}건`);
 }
 
 main().catch((e) => {

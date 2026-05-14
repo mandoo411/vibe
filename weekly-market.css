@@ -80,14 +80,28 @@ a:hover {
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
 }
 
-/* ─── 페이지 공통 타이틀 블록(허브·시황·전광판·주간) 네비 아래 동일 리듬 ─── */
+/* ─── 페이지 공통 타이틀 블록: 100px 고정 · 라벨 11px · 제목 28px · 부가정보는 .page-hero-sub ─── */
 .hub-hero,
 .masthead.masthead--title-only {
   box-sizing: border-box;
-  margin: 0 0 18px;
-  padding: 10px 0 16px;
+  height: 100px;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.hub-hero {
+  margin-bottom: 18px;
+}
+
+.masthead.masthead--title-only {
+  margin-bottom: 0;
 }
 
 .masthead--title-only .masthead__kicker {
@@ -109,21 +123,29 @@ a:hover {
 .hub-hero__title,
 .masthead__title {
   box-sizing: border-box;
-  margin: 0 0 8px;
+  margin: 0;
+  padding: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-size: 28px;
   font-weight: 650;
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--text);
 }
 
 .masthead__copy {
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0;
+  overflow: hidden;
+}
+
+.page-hero-sub {
+  box-sizing: border-box;
+  margin: 10px 0 18px;
 }
 
 .masthead__meta {
@@ -513,22 +535,8 @@ a:hover {
     padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
 
-  .hub-hero,
-  .masthead.masthead--title-only {
-    margin: 0 0 14px;
-    padding: 10px 0 14px;
-  }
-
-  .hub-hero__kicker,
-  .masthead__kicker {
-    margin: 0 0 4px;
-  }
-
-  .hub-hero__title,
-  .masthead__title {
-    margin: 0 0 6px;
-    font-size: clamp(1.25rem, 6.5vw, 1.5rem);
-    line-height: 1.25;
+  .page-hero-sub {
+    margin: 8px 0 14px;
   }
 
   .masthead__meta {

@@ -181,7 +181,9 @@ a.hub-card:focus-visible {
   .page.page--hub .hub-hero {
     flex-shrink: 0;
     margin-bottom: 6px;
-    padding-bottom: 6px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(201, 168, 76, 0.4);
+    border-bottom: 1px solid rgba(201, 168, 76, 0.4);
   }
 
   .page.page--hub .hub-hero__kicker {
@@ -191,6 +193,7 @@ a.hub-card:focus-visible {
     font-size: 16px;
     letter-spacing: 0.06em;
     line-height: 1.15;
+    color: #c9a84c;
   }
 
   .page.page--hub .hub-hero__title {
@@ -198,7 +201,7 @@ a.hub-card:focus-visible {
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.01em;
-    color: #d4af37;
+    color: #ffffff;
   }
 
   .page.page--hub .hub-grid {

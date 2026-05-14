@@ -163,3 +163,136 @@ a.hub-card:focus-visible {
 .hub-card--soon .hub-card__chev {
   display: none;
 }
+
+/* ——— Hub home: iPhone 한 화면에 6카드 (2×3) ——— */
+@media (max-width: 720px) {
+  .page.page--hub {
+    padding: 8px 8px max(12px, calc(8px + env(safe-area-inset-bottom)));
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-top: max(6px, env(safe-area-inset-top));
+  }
+
+  /* site-nav 720px 그리드 래핑 덮어쓰기: 로고(아이콘만) + 네비 한 줄 */
+  .page.page--hub .tm-site-header {
+    flex-wrap: nowrap;
+    align-items: center;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 6px;
+    margin-bottom: 6px;
+    gap: 4px;
+  }
+
+  .page.page--hub .tm-site-brand {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .page.page--hub .tm-site-brand__text {
+    display: none;
+  }
+
+  .page.page--hub .tm-site-brand__logo {
+    width: 36px;
+    height: 36px;
+  }
+
+  .page.page--hub .tm-site-nav {
+    flex: 1 1 auto;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-top: none;
+    font-size: 12px;
+  }
+
+  .page.page--hub .tm-site-nav__link {
+    box-sizing: border-box;
+    flex: 0 1 auto;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    padding: 4px 3px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .page.page--hub .tm-site-nav__link[aria-current="page"] {
+    box-shadow: inset 0 -1px 0 0 var(--accent-bright);
+  }
+
+  .page.page--hub .hub-hero {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+
+  .page.page--hub .hub-hero__kicker {
+    margin: 0 0 2px;
+    font-size: 16px;
+    letter-spacing: 0.06em;
+    line-height: 1.15;
+  }
+
+  .page.page--hub .hub-hero__title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .page.page--hub .hub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .page.page--hub .hub-card {
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .page.page--hub .hub-card__icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 4px;
+    border-radius: 10px;
+  }
+
+  .page.page--hub .hub-card__title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  .page.page--hub .hub-card__desc {
+    display: none;
+  }
+
+  .page.page--hub .hub-card__meta {
+    margin-top: 4px;
+    padding-top: 4px;
+    gap: 4px;
+    justify-content: center;
+    font-size: 9px;
+  }
+
+  .page.page--hub .hub-card__status {
+    padding: 2px 5px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+  }
+
+  .page.page--hub .hub-card__chev {
+    font-size: 11px;
+  }
+}

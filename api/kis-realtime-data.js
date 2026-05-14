@@ -13,7 +13,7 @@ const path = require("path");
 /** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 
-/** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
+/** action=candle — 종목+주기별 캔들 메모리 캐시 { bars, expiresAt, period } */
 const candleMemoryCache = new Map();
 
 /** action=prev-day-gainers — data/prev-top50.json 목록 + 당일 시세(5분) */
@@ -685,6 +685,129 @@ function candleCacheTtlMs() {
   return s.key === "open" ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000;
 }
 
+/** 분봉 캐시 — 장중 짧게 */
+function candleCacheTtlMsIntraday() {
+  const s = sessionLabelFromKst();
+  if (s.key === "open") return 45 * 1000;
+  return 15 * 60 * 1000;
+}
+
+/**
+ * ?period= 쿼리 정규화
+ * 분: 1m|5m|15m|30m|60m|240m|4h (→ 240) / 숫자 1,5,15,30,60,240
+ * 일/주/월: D|W|M|d|w|m|daily|weekly|monthly
+ */
+function normalizeCandlePeriodParam(raw) {
+  const s = sanitizeStr(raw).toLowerCase();
+  if (!s) return "D";
+  const map = {
+    "1m": "1",
+    "1": "1",
+    "5m": "5",
+    "5": "5",
+    "15m": "15",
+    "15": "15",
+    "30m": "30",
+    "30": "30",
+    "60m": "60",
+    "60": "60",
+    "240m": "240",
+    "240": "240",
+    "4h": "240",
+    "4시간": "240",
+    d: "D",
+    daily: "D",
+    일: "D",
+    일봉: "D",
+    w: "W",
+    weekly: "W",
+    주: "W",
+    주봉: "W",
+    m: "M",
+    monthly: "M",
+    월: "M",
+    월봉: "M",
+  };
+  if (map[s] != null) return map[s];
+  if (/^\d+$/.test(s) && ["1", "5", "15", "30", "60", "240"].includes(s)) return s;
+  if (s === "d" || s === "w" || s === "m") return s.toUpperCase();
+  return "D";
+}
+
+function isIntradayCandlePeriod(periodKey) {
+  return ["1", "5", "15", "30", "60", "240"].includes(periodKey);
+}
+
+/** KST 벽시계(공휴일 제외 없음) → UTC epoch 초 */
+function kstYmdAndCntgHourToUtcSec(dateYmd8, cntgHourRaw) {
+  if (!/^\d{8}$/.test(dateYmd8)) return NaN;
+  const y = Number(dateYmd8.slice(0, 4));
+  const mo = Number(dateYmd8.slice(4, 6)) - 1;
+  const da = Number(dateYmd8.slice(6, 8));
+  const h6 = String(cntgHourRaw || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  const hh = Number(h6.slice(0, 2));
+  const mm = Number(h6.slice(2, 4));
+  const ss = Number(h6.slice(4, 6));
+  if (![hh, mm, ss].every((n) => Number.isFinite(n))) return NaN;
+  return Math.floor(Date.UTC(y, mo, da, hh - 9, mm, ss) / 1000);
+}
+
+/** 국내주식 분봉 output2 → Lightweight Charts (time: UTCTimestamp 초) */
+function mapTimeItemchartRow(row) {
+  if (!row || typeof row !== "object") return null;
+  const dateRaw = sanitizeStr(row.stck_bsop_date || row.STCK_BSOP_DATE);
+  const hourRaw = sanitizeStr(row.stck_cntg_hour || row.STCK_CNTG_HOUR);
+  if (!/^\d{8}$/.test(dateRaw)) return null;
+  const open = toNum(row.stck_oprc || row.STCK_OPRC);
+  const high = toNum(row.stck_hgpr || row.STCK_HGPR);
+  const low = toNum(row.stck_lwpr || row.STCK_LWPR);
+  const close = toNum(row.stck_prpr || row.STCK_PRPR || row.stck_clpr || row.STCK_CLPR);
+  if (open == null || high == null || low == null || close == null) return null;
+  const volRaw = toNum(row.cntg_vol || row.CNTG_VOL);
+  const volume = volRaw != null && Number.isFinite(volRaw) && volRaw >= 0 ? volRaw : 0;
+  const tSec = kstYmdAndCntgHourToUtcSec(dateRaw, hourRaw);
+  if (!Number.isFinite(tSec)) return null;
+  return { time: tSec, open, high, low, close, volume };
+}
+
+/**
+ * 국내주식 분봉·시간봉 (FHKST03010200)
+ * fid_input_hour_1: 봉 간격(분) — 1|5|15|30|60|240
+ * 연속조회(tr_cont) 병합
+ */
+async function fetchTimeItemchartCandlesFromKis(code6, fidMinuteStr) {
+  const params = {
+    fid_cond_mrkt_div_code: "J",
+    fid_input_iscd: code6,
+    fid_input_hour_1: fidMinuteStr,
+    fid_etc_cls_code: "",
+    fid_pw_data_incu_yn: "Y",
+  };
+  const byKey = new Map();
+  let trCont = "";
+  for (let page = 0; page < 40; page++) {
+    const { json, trCont: nextCont } = await kisGet(
+      "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
+      "FHKST03010200",
+      params,
+      trCont
+    );
+    let raw = json.output2;
+    if (raw && !Array.isArray(raw)) raw = [raw];
+    if (!Array.isArray(raw)) raw = [];
+    for (const row of raw) {
+      const b = mapTimeItemchartRow(row);
+      if (b) byKey.set(String(b.time), b);
+    }
+    const nxt = sanitizeStr(nextCont).toUpperCase();
+    if (page > 0 && !raw.length) break;
+    if (!nxt || nxt === "D" || nxt === "E") break;
+    trCont = nxt;
+  }
+  const bars = [...byKey.values()].sort((a, b) => a.time - b.time);
+  return bars.slice(-500);
+}
+
 function normalizeDomesticStockCode6(code) {
   const digits = String(code || "").replace(/\D/g, "");
   if (!digits) return "";
@@ -716,9 +839,12 @@ function mapDailyItemchartRow(row) {
 }
 
 /**
- * 국내주식기간별시세(일) — 응답당 최대 약 100건이라 구간을 나눠 병합해 MA200·RSI용 일봉을 확보.
+ * 국내주식기간별시세(일/주/월) — 응답당 최대 약 100건이라 구간을 나눠 병합.
+ * @param {string} periodDiv  D | W | M
  */
-async function fetchDailyItemchartCandlesFromKis(code6) {
+async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
+  const div = sanitizeStr(periodDiv).toUpperCase();
+  const fidPeriod = div === "W" || div === "M" ? div : "D";
   const endAll = ymdKst(new Date());
   const byTime = new Map();
   let chunkEnd = endAll;
@@ -734,7 +860,7 @@ async function fetchDailyItemchartCandlesFromKis(code6) {
         fid_input_iscd: code6,
         fid_input_date_1: chunkStart,
         fid_input_date_2: chunkEnd,
-        fid_period_div_code: "D",
+        fid_period_div_code: fidPeriod,
         fid_org_adj_prc: "0",
       },
       ""
@@ -848,20 +974,28 @@ module.exports = async function handler(req, res) {
         json(res, 400, { error: "Missing or invalid code" });
         return;
       }
+      const periodKey = normalizeCandlePeriodParam(req.query && req.query.period);
+      const cacheKey = `${code6}|${periodKey}`;
       const now = Date.now();
-      const cached = candleMemoryCache.get(code6);
-      const cacheStale =
+      const cached = candleMemoryCache.get(cacheKey);
+      const cacheStaleVolume =
         cached &&
         cached.bars &&
         cached.bars.length > 0 &&
         !Object.prototype.hasOwnProperty.call(cached.bars[0], "volume");
-      if (cached && now < cached.expiresAt && !cacheStale) {
-        json(res, 200, { code: code6, candles: cached.bars, cached: true });
+      const ttl = isIntradayCandlePeriod(periodKey) ? candleCacheTtlMsIntraday() : candleCacheTtlMs();
+      if (cached && now < cached.expiresAt && !cacheStaleVolume) {
+        json(res, 200, { code: code6, period: periodKey, candles: cached.bars, cached: true });
         return;
       }
-      const bars = await fetchDailyItemchartCandlesFromKis(code6);
-      candleMemoryCache.set(code6, { bars, expiresAt: now + candleCacheTtlMs() });
-      json(res, 200, { code: code6, candles: bars, cached: false });
+      let bars;
+      if (isIntradayCandlePeriod(periodKey)) {
+        bars = await fetchTimeItemchartCandlesFromKis(code6, periodKey);
+      } else {
+        bars = await fetchDailyItemchartCandlesFromKis(code6, periodKey);
+      }
+      candleMemoryCache.set(cacheKey, { bars, expiresAt: now + ttl, period: periodKey });
+      json(res, 200, { code: code6, period: periodKey, candles: bars, cached: false });
       return;
     }
 

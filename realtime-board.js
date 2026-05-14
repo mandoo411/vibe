@@ -81,8 +81,10 @@
     openChartCode: null,
     lwChart: null,
     lwResizeObs: null,
-    /** 아코디언 일봉: 표시할 최근 거래일 수 (전체 데이터는 API에서 받고 클라이언트에서 슬라이스) */
-    chartViewDays: 120,
+    /** 캔들 주기: 1|5|15|30|60|240(분) 또는 D|W|M — API period 파라미터와 동일 */
+    candlePeriod: "D",
+    /** 일/주/월봉에서 화면에 쓸 최근 봉 개수 (분봉은 전체 사용) */
+    chartBarsLimit: 200,
     lwBundle: null,
   };
 
@@ -243,11 +245,16 @@
     return { ma50Data, ma200Data, rsiData, volData };
   }
 
+  function isIntradayCandlePeriod(p) {
+    return ["1", "5", "15", "30", "60", "240"].includes(String(p || ""));
+  }
+
   function applyLwChartVisibleRange() {
     const b = state.lwBundle;
     if (!b || !b.chart || !b.candle || !b.fullCandles || !b.fullCandles.length) return;
-    const days = state.chartViewDays || 120;
-    const sliced = sliceCandlesFromEnd(b.fullCandles, days);
+    const intraday = isIntradayCandlePeriod(state.candlePeriod);
+    const limit = state.chartBarsLimit || 200;
+    const sliced = intraday ? b.fullCandles : sliceCandlesFromEnd(b.fullCandles, limit);
     const ind = buildIndicatorSeriesData(sliced);
     b.candle.setData(sliced);
     b.ma50.setData(ind.ma50Data);
@@ -260,9 +267,9 @@
   function syncChartPeriodToolbarPressed(body) {
     const wrap = body.querySelector("tr.rt-chart-row .rt-chart-toolbar");
     if (!wrap) return;
-    const d = String(state.chartViewDays || 120);
-    wrap.querySelectorAll(".rt-chart-period-btn").forEach((btn) => {
-      const active = btn.getAttribute("data-rt-candle-days") === d;
+    const p = String(state.candlePeriod || "D");
+    wrap.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
+      const active = btn.getAttribute("data-rt-candle-period") === p;
       btn.setAttribute("aria-pressed", active ? "true" : "false");
     });
   }
@@ -305,7 +312,11 @@
       return;
     }
 
-    if (host.dataset.mountedFor === state.openChartCode && state.lwChart) {
+    if (
+      host.dataset.mountedFor === state.openChartCode &&
+      host.dataset.mountedPeriod === state.candlePeriod &&
+      state.lwChart
+    ) {
       const w = host.clientWidth;
       if (w > 0) state.lwChart.applyOptions({ width: w });
       syncNameChartButtonsAria(body);
@@ -315,9 +326,11 @@
 
     disposeLwChart();
     delete host.dataset.mountedFor;
+    delete host.dataset.mountedPeriod;
     host.innerHTML = "";
     host.removeAttribute("data-error");
 
+    const intraday = isIntradayCandlePeriod(state.candlePeriod);
     const chartHeight = 360;
     const chart = LC.createChart(host, {
       width: Math.max(host.clientWidth, 200),
@@ -331,7 +344,11 @@
         horzLines: { color: "rgba(212, 175, 55, 0.08)" },
       },
       rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-      timeScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
+      timeScale: {
+        borderColor: "rgba(148, 130, 98, 0.35)",
+        timeVisible: intraday,
+        secondsVisible: false,
+      },
     });
 
     const paneMargins = { candleTop: 0.02, candleBottom: 0.35, volTop: 0.65, volBottom: 0.15, rsiTop: 0.85, rsiBottom: 0 };
@@ -449,6 +466,7 @@
 
     state.lwChart = chart;
     host.dataset.mountedFor = state.openChartCode;
+    host.dataset.mountedPeriod = state.candlePeriod;
 
     const ro = new ResizeObserver(() => {
       if (!state.lwChart || !host.isConnected) return;
@@ -460,11 +478,14 @@
 
     try {
       const code = chartSymbolSixDigits(state.openChartCode);
-      const res = await fetch(`${API}?action=candle&code=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const period = encodeURIComponent(state.candlePeriod || "D");
+      const res = await fetch(`${API}?action=candle&code=${encodeURIComponent(code)}&period=${period}`, {
+        cache: "no-store",
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       const candles = Array.isArray(data.candles) ? data.candles : [];
-      if (!candles.length) throw new Error("일봉 데이터가 없습니다.");
+      if (!candles.length) throw new Error("차트 데이터가 없습니다.");
 
       state.lwBundle = {
         chart,
@@ -475,12 +496,12 @@
         rsi,
         fullCandles: candles,
       };
-      if (!state.chartViewDays) state.chartViewDays = 120;
       applyLwChartVisibleRange();
       syncChartPeriodToolbarPressed(body);
     } catch (e) {
       disposeLwChart();
       delete host.dataset.mountedFor;
+      delete host.dataset.mountedPeriod;
       host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e.message || String(e))}</p>`;
     }
 
@@ -695,14 +716,18 @@
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">
             <div class="rt-chart-wrap">
-              <div class="rt-chart-toolbar" role="toolbar" aria-label="일봉 표시 기간">
-                <span class="rt-chart-toolbar__label">기간</span>
-                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="90" aria-pressed="false">90일</button>
-                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="120" aria-pressed="false">120일</button>
-                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="200" aria-pressed="false">200일</button>
-                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="9999" aria-pressed="false">전체</button>
+              <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="1" aria-pressed="false">1분</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="5" aria-pressed="false">5분</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="15" aria-pressed="false">15분</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="30" aria-pressed="false">30분</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="60" aria-pressed="false">60분</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="240" aria-pressed="false">4시간</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="false">일봉</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
+                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
               </div>
-              <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="일봉 캔들 차트"></div>
+              <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="캔들 차트"></div>
             </div>
           </td>
         </tr>`;
@@ -1026,6 +1051,7 @@
         else if (t === "tradeval") state.tab = "tradeval";
         else state.tab = "cap";
         state.openChartCode = null;
+        state.candlePeriod = "D";
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
@@ -1044,16 +1070,27 @@
     if (!body || body.dataset.rtChartWire === "1") return;
     body.dataset.rtChartWire = "1";
     body.addEventListener("click", (ev) => {
-      const periodBtn = ev.target.closest(".rt-chart-period-btn");
-      if (periodBtn && body.contains(periodBtn)) {
-        const raw = periodBtn.getAttribute("data-rt-candle-days");
-        const d = Number(raw);
-        if (!Number.isFinite(d)) return;
-        state.chartViewDays = d >= 9999 ? 9999 : d;
-        body.querySelectorAll(".rt-chart-period-btn").forEach((btn) => {
-          btn.setAttribute("aria-pressed", btn === periodBtn ? "true" : "false");
+      const intervalBtn = ev.target.closest(".rt-chart-interval-btn");
+      if (intervalBtn && body.contains(intervalBtn)) {
+        const p = intervalBtn.getAttribute("data-rt-candle-period");
+        if (!p) return;
+        if (state.candlePeriod === p && state.lwBundle && state.lwChart) {
+          body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
+            btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
+          });
+          return;
+        }
+        state.candlePeriod = p;
+        body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
+          btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
         });
-        applyLwChartVisibleRange();
+        const chartHost = body.querySelector("tr.rt-chart-row .rt-lw-chart-host");
+        if (chartHost) {
+          delete chartHost.dataset.mountedFor;
+          delete chartHost.dataset.mountedPeriod;
+        }
+        disposeLwChart();
+        void mountLightweightChart(body);
         return;
       }
       const btn = ev.target.closest(".rt-name-chart-btn");

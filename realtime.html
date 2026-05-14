@@ -308,45 +308,44 @@
         flex: 0 0 auto;
         display: flex;
         flex-wrap: wrap;
-        align-items: center;
-        gap: 6px 8px;
-        padding: 8px 10px;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 8px 8px 10px;
         border-bottom: 1px solid var(--border);
         background: #0a0907;
         font-family: var(--font-mono);
         font-size: 11px;
       }
-      .rt-chart-toolbar__label {
-        color: var(--text-dim);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-right: 4px;
-      }
-      .rt-chart-period-btn {
+      .rt-chart-interval-btn {
         appearance: none;
         margin: 0;
-        padding: 5px 10px;
-        border-radius: 2px;
+        flex: 1 1 auto;
+        min-width: 3.25rem;
+        padding: 8px 6px;
+        border-radius: 3px;
         border: 1px solid var(--border);
         background: #12100c;
         color: var(--text-muted);
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.02em;
         cursor: pointer;
         touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
-      .rt-chart-period-btn:hover,
-      .rt-chart-period-btn:focus-visible {
+      .rt-chart-interval-btn:hover,
+      .rt-chart-interval-btn:focus-visible {
         color: var(--text);
         border-color: rgba(201, 162, 39, 0.45);
         outline: none;
       }
-      .rt-chart-period-btn[aria-pressed="true"] {
+      .rt-chart-interval-btn[aria-pressed="true"] {
         color: var(--accent-bright);
         border-color: rgba(201, 162, 39, 0.55);
-        background: rgba(201, 162, 39, 0.08);
+        background: rgba(201, 162, 39, 0.1);
+        box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.12);
       }
       .rt-lw-chart-host {
         width: 100%;
@@ -387,6 +386,15 @@
         }
         .rt-index-chip__val {
           font-size: 15px;
+        }
+        .rt-chart-toolbar {
+          gap: 5px;
+          padding: 6px 6px 8px;
+        }
+        .rt-chart-interval-btn {
+          min-width: 2.75rem;
+          padding: 9px 4px;
+          font-size: 10px;
         }
       }
 

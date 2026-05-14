@@ -86,7 +86,7 @@ a.hub-card:focus-visible {
   color: var(--text-muted);
 }
 
-/* 카드 아이콘 — 스프라이트만 표시(테두리·배경·그림자·패딩 없음), 카드와 블렌딩 */
+/* 카드 아이콘 — assets/icons2.png 3×2 스프라이트(투명 PNG 권장, 테두리·배경·그림자 없음) */
 .hub-card__icon {
   box-sizing: border-box;
   flex-shrink: 0;
@@ -109,10 +109,9 @@ a.hub-card:focus-visible {
   border-radius: 0;
   box-shadow: none;
   background-color: transparent;
-  mix-blend-mode: lighten;
-  background-image: url("./assets/icons.jpg");
+  background-image: url("./assets/icons2.png");
   background-repeat: no-repeat;
-  /* 1024×556 기준, 행 높이 278px → 120px 스케일 */
+  /* 1024×556 3×2 그리드, 행 높이 278px → 120px 스케일 (icons2.png) */
   background-size: 442.014px 240px;
 }
 

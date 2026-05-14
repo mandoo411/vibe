@@ -498,16 +498,20 @@ a:hover {
   color: var(--text);
 }
 
-/* ——— Smartphone & narrow screens ——— */
-@media (max-width: 639px) {
-  html {
-    font-size: 16px;
-  }
-
+/* ——— Tablet·phone (768px 이하): .page 패딩 통일(허브↔시황 등 전환 시 레이아웃 튐 방지) ——— */
+@media (max-width: 768px) {
   .page {
     padding-top: max(16px, env(safe-area-inset-top));
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+  }
+}
+
+/* ——— Smartphone & narrow screens ——— */
+@media (max-width: 639px) {
+  html {
+    font-size: 16px;
   }
 
   .masthead {

@@ -170,12 +170,9 @@ a.hub-card:focus-visible {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    min-height: 100dvh;
-    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
-    padding-left: max(8px, env(safe-area-inset-left));
-    padding-right: max(8px, env(safe-area-inset-right));
-    padding-top: max(6px, env(safe-area-inset-top));
+    /* 패딩은 weekly-market.css @768 .page와 동일(8px 전용 패딩·100dvh 제거로 시황↔메인 전환 시 확대 느낌 방지) */
+    min-height: 0;
+    padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
 
   .page.page--hub .hub-hero {

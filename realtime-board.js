@@ -353,7 +353,7 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "prevday") return "전일 상승률 상위 50 종목 · 당일 시세";
+    if (state.tab === "prevday") return "직전 거래일 종가 기준 상승률 상위 50 · 당일 시세";
     if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
     return "실시간 시세";
   }
@@ -780,7 +780,7 @@
     if (state.pollRest) clearInterval(state.pollRest);
     const period =
       state.tab === "prevday"
-        ? 5000
+        ? 5 * 60 * 1000
         : state.tab === "tradeval"
           ? 15000
           : state.tab === "gainers"

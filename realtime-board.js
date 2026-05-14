@@ -77,6 +77,9 @@
     marketStatusWs: null,
     codesSubscribed: new Set(),
     openChartCode: null,
+    /** KRX → KOSDAQ: 재시도 시 TradingView 접두어만 강제 */
+    tvExchangeOverride: null,
+    tvFallbackGen: 0,
     tvWidget: null,
     tvMountedSymbol: null,
     tvScriptLoading: null,
@@ -139,10 +142,124 @@
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
-  function krTvSymbol(code) {
-    const six = tvSymbolSixDigits(code);
+  function getOpenStockRow() {
+    const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
+    return rows.find((r) => r.code === state.openChartCode) || null;
+  }
+
+  /**
+   * API 시장구분 → TradingView 거래소 접두어.
+   * 코스닥: KOSDAQ:, 코스피·미상: KRX: (기본).
+   */
+  function listingPrefixForRow(row) {
+    if (state.tvExchangeOverride === "KOSDAQ") return "KOSDAQ";
+    if (!row || typeof row !== "object") return "KRX";
+    const b = String(row.tvBoard ?? "")
+      .trim()
+      .toUpperCase();
+    if (b === "KOSDAQ") return "KOSDAQ";
+    if (b === "KOSPI") return "KRX";
+    const m = String(row.market ?? "")
+      .trim()
+      .toUpperCase();
+    if (m === "KOSDAQ" || m.includes("KOSDAQ")) return "KOSDAQ";
+    if (m === "KOSPI" || m.includes("KOSPI")) return "KRX";
+    return "KRX";
+  }
+
+  function tvFullSymbolForOpenChart() {
+    if (!state.openChartCode) return "";
+    const six = tvSymbolSixDigits(state.openChartCode);
     if (!six) return "";
-    return `KRX:${six}`;
+    const row = getOpenStockRow();
+    return `${listingPrefixForRow(row)}:${six}`;
+  }
+
+  function stringifyTvProbePayload(data) {
+    if (data == null) return "";
+    if (typeof data === "string") return data;
+    try {
+      return JSON.stringify(data);
+    } catch (e) {
+      return "";
+    }
+  }
+
+  /** TradingView 전용(브로커 미제공) 심볼 안내 문구 감지 */
+  function tvPayloadSuggestsBrokerOnlySymbol(blob) {
+    if (!blob) return false;
+    if (
+      /TradingView에서만|트레이딩뷰에서만|TradingView에서\s*만|TradingView에서만\s*제공|TradingView에서만\s*거래/i.test(
+        blob
+      )
+    ) {
+      return true;
+    }
+    const low = blob.toLowerCase();
+    return (
+      /only\s+available\s+on\s+tradingview/.test(low) ||
+      /this\s+symbol\s+is\s+only\s+available/.test(low) ||
+      /symbol\s+is\s+only\s+available/.test(low) ||
+      /available\s+only\s+on\s+tradingview/.test(low) ||
+      /broker[-_\s]*only|restricted[_\s-]*symbol|library[_\s-]*symbol/.test(low)
+    );
+  }
+
+  function installTvBrokerOnlyFallback(widget) {
+    if (!widget || typeof widget.ready !== "function") return;
+    const gen = (state.tvFallbackGen += 1);
+    let fired = false;
+
+    const attempt = () => {
+      if (fired || gen !== state.tvFallbackGen || !state.openChartCode) return;
+      const cur = state.tvMountedSymbol || "";
+      if (!cur.startsWith("KRX:")) return;
+      if (state.tvExchangeOverride === "KOSDAQ") return;
+      fired = true;
+      state.tvExchangeOverride = "KOSDAQ";
+      destroyTvWidget();
+      void ensureTvWidgetMounted();
+    };
+
+    const onMsg = (ev) => {
+      if (fired || gen !== state.tvFallbackGen || !state.openChartCode) return;
+      let raw = ev.data;
+      if (raw == null) return;
+      if (typeof raw === "string") {
+        if (tvPayloadSuggestsBrokerOnlySymbol(raw)) attempt();
+        try {
+          raw = JSON.parse(raw);
+        } catch (e) {
+          return;
+        }
+      }
+      if (!raw || typeof raw !== "object") return;
+      if (raw.provider && raw.provider !== "TradingView") return;
+      const blob =
+        stringifyTvProbePayload(raw.data) +
+        stringifyTvProbePayload(raw.msg) +
+        stringifyTvProbePayload(raw.message) +
+        stringifyTvProbePayload(raw);
+      if (tvPayloadSuggestsBrokerOnlySymbol(blob)) attempt();
+    };
+
+    window.addEventListener("message", onMsg);
+    window.setTimeout(() => {
+      window.removeEventListener("message", onMsg);
+    }, 20000);
+
+    widget.ready(() => {
+      try {
+        if (typeof widget.getSymbolInfo === "function") {
+          widget.getSymbolInfo((info) => {
+            if (fired || gen !== state.tvFallbackGen) return;
+            if (tvPayloadSuggestsBrokerOnlySymbol(stringifyTvProbePayload(info))) attempt();
+          });
+        }
+      } catch (e) {
+        /* noop */
+      }
+    });
   }
 
   function loadTradingViewScript() {
@@ -176,7 +293,7 @@
   }
 
   async function ensureTvWidgetMounted() {
-    const sym = krTvSymbol(state.openChartCode);
+    const sym = tvFullSymbolForOpenChart();
     if (!sym) return;
     if (state.tvWidget && state.tvMountedSymbol === sym) return;
     await loadTradingViewScript().catch(() => {});
@@ -200,6 +317,7 @@
       width: "100%",
     });
     state.tvMountedSymbol = sym;
+    installTvBrokerOnlyFallback(state.tvWidget);
   }
 
   async function fetchJson(action) {
@@ -363,6 +481,8 @@
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
     if (!anchor) {
       state.openChartCode = null;
+      state.tvExchangeOverride = null;
+      state.tvFallbackGen += 1;
       destroyTvWidget();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
@@ -397,6 +517,8 @@
         state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
     }
     if (!state.openChartCode) {
+      state.tvExchangeOverride = null;
+      state.tvFallbackGen += 1;
       destroyTvWidget();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
@@ -658,7 +780,10 @@
       const code = tr.getAttribute("data-code");
       if (!code) return;
       if (state.openChartCode === code) state.openChartCode = null;
-      else state.openChartCode = code;
+      else {
+        state.tvExchangeOverride = null;
+        state.openChartCode = code;
+      }
       renderTable();
     });
   }

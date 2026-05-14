@@ -1,10 +1,18 @@
-/* global document, window, fetch, WebSocket, Intl, setInterval, clearInterval, requestAnimationFrame, LightweightCharts */
+/* global document, window, fetch, WebSocket, Intl, setInterval, clearInterval, requestAnimationFrame */
 (function () {
   "use strict";
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
   const TAB_CACHE_MS = 3 * 60 * 1000;
+  /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
+  const CHART_FETCH_TIMEOUT_MS = 8000;
+  const CHART_SCRIPT_TIMEOUT_MS = 8000;
+  const CHART_CACHE_MAX_ENTRIES = 24;
+
+  /** Lightweight Charts 스크립트 1회 로드 Promise */
+  let lwChartsScriptPromise = null;
+  const chartCandleCache = new Map();
   /** 한투 REST는 NXT 전용 fid_cond_mrkt_div_code 미지원 → UI만 준비중 */
   const NXT_DISABLED = true;
 
@@ -97,6 +105,8 @@
     lwBundle: null,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
+    /** NXT 서브탭별 마지막 성공 로드 시각 */
+    nxtSubLoadedAt: {},
   };
 
   function $(id) {
@@ -161,6 +171,81 @@
     const digits = String(code || "").replace(/\D/g, "");
     if (!digits) return "";
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+  }
+
+  function raceWithTimeout(promise, ms, message) {
+    return new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error(message)), ms);
+      promise.then(
+        (v) => {
+          clearTimeout(t);
+          resolve(v);
+        },
+        (e) => {
+          clearTimeout(t);
+          reject(e);
+        }
+      );
+    });
+  }
+
+  /** 종목 클릭 시까지 차트 스크립트 미로드 (페이지 초기 로드 경량화) */
+  function ensureLightweightCharts(timeoutMs) {
+    if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
+      return Promise.resolve();
+    }
+    if (!lwChartsScriptPromise) {
+      lwChartsScriptPromise = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.async = true;
+        s.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
+        s.crossOrigin = "anonymous";
+        s.onload = () => {
+          if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
+            resolve();
+          } else {
+            lwChartsScriptPromise = null;
+            reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+          }
+        };
+        s.onerror = () => {
+          lwChartsScriptPromise = null;
+          reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+        };
+        document.head.appendChild(s);
+      });
+    }
+    return raceWithTimeout(
+      lwChartsScriptPromise,
+      timeoutMs,
+      "차트 라이브러리 로드 시간이 초과되었습니다."
+    );
+  }
+
+  function chartCacheKey(code, periodUpper) {
+    return `${chartSymbolSixDigits(code)}|${String(periodUpper || "D").toUpperCase()}`;
+  }
+
+  function readChartCandleCache(code, periodUpper) {
+    const ent = chartCandleCache.get(chartCacheKey(code, periodUpper));
+    return ent && Array.isArray(ent.candles) && ent.candles.length ? ent.candles : null;
+  }
+
+  function writeChartCandleCache(code, periodUpper, candles) {
+    const k = chartCacheKey(code, periodUpper);
+    while (chartCandleCache.size >= CHART_CACHE_MAX_ENTRIES) {
+      const first = chartCandleCache.keys().next().value;
+      chartCandleCache.delete(first);
+    }
+    chartCandleCache.set(k, { candles: candles.slice() });
+  }
+
+  function setChartRowLoading(chartTr, on) {
+    if (!chartTr) return;
+    const msg = chartTr.querySelector(".rt-chart-loading-msg");
+    const panes = chartTr.querySelector(".rt-chart-panes");
+    if (msg) msg.hidden = !on;
+    if (panes) panes.classList.toggle("rt-chart-panes--pending", !!on);
   }
 
   const WD_KO_SUN0 = ["일", "월", "화", "수", "목", "금", "토"];
@@ -423,165 +508,177 @@
 
   async function mountLightweightChart(body) {
     if (!state.openChartCode) return;
+    const chartTr = body.querySelector("tr.rt-chart-row");
     const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
     const candleHost = body.querySelector("tr.rt-chart-row .rt-lw-candle-host");
     const volHost = body.querySelector("tr.rt-chart-row .rt-lw-volume-host");
     if (!panes || !candleHost || !volHost) return;
 
-    const LC = window.LightweightCharts;
-    if (!LC || typeof LC.createChart !== "function") {
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
-      volHost.innerHTML = "";
-      return;
-    }
-
-    if (
-      panes.dataset.mountedFor === state.openChartCode &&
-      panes.dataset.mountedPeriod === state.candlePeriod &&
-      state.lwChart &&
-      state.lwVolChart
-    ) {
-      const w = panes.clientWidth;
-      const hC = Math.max(candleHost.clientHeight, 80);
-      const hV = Math.max(volHost.clientHeight, 60);
-      if (w > 0) {
-        state.lwChart.applyOptions({ width: w, height: hC });
-        state.lwVolChart.applyOptions({ width: w, height: hV });
-      }
-      syncNameChartButtonsAria(body);
-      syncChartPeriodToolbarPressed(body);
-      return;
-    }
-
-    disposeLwChart();
-    delete panes.dataset.mountedFor;
-    delete panes.dataset.mountedPeriod;
-    candleHost.innerHTML = "";
-    volHost.innerHTML = "";
-    panes.removeAttribute("data-error");
-
-    const periodUpper = String(state.candlePeriod || "D").toUpperCase();
-    const localization = buildChartLocalization(periodUpper);
-
-    const chartCommon = (width, height, timeScaleVisible) => ({
-      width: Math.max(width, 200),
-      height: Math.max(height, 60),
-      layout: {
-        background: { type: "solid", color: "#12100c" },
-        textColor: "#c4b8a8",
-      },
-      localization,
-      crosshair: {
-        vertLine: {
-          labelVisible: true,
-        },
-        horzLine: {
-          labelVisible: true,
-        },
-      },
-      grid: {
-        vertLines: { color: "rgba(212, 175, 55, 0.08)" },
-        horzLines: { color: "rgba(212, 175, 55, 0.08)" },
-      },
-      rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-      timeScale: {
-        visible: timeScaleVisible,
-        borderVisible: true,
-        borderColor: "rgba(148, 130, 98, 0.35)",
-        timeVisible: false,
-        secondsVisible: false,
-        allowBoldLabels: true,
-      },
-    });
-
-    const w0 = Math.max(panes.clientWidth, 200);
-    const hC0 = Math.max(candleHost.clientHeight, 80);
-    const hV0 = Math.max(volHost.clientHeight, 60);
-
-    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
-    /* 날짜 축: 거래량 패널 하단만 표시. 범위는 linkLogicalRangeSync로 캔들과 동기화 */
-    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
-
-    const candleOpts = {
-      upColor: CANDLE_UP,
-      downColor: CANDLE_DOWN,
-      borderUpColor: CANDLE_UP,
-      borderDownColor: CANDLE_DOWN,
-      wickUpColor: CANDLE_UP,
-      wickDownColor: CANDLE_DOWN,
-    };
-
-    let candle;
-    if (LC.CandlestickSeries && typeof chartCandle.addSeries === "function") {
-      candle = chartCandle.addSeries(LC.CandlestickSeries, candleOpts);
-    } else if (typeof chartCandle.addCandlestickSeries === "function") {
-      candle = chartCandle.addCandlestickSeries(candleOpts);
-    } else {
-      try {
-        chartCandle.remove();
-      } catch (e) {
-        /* noop */
-      }
-      try {
-        chartVol.remove();
-      } catch (e2) {
-        /* noop */
-      }
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
-      return;
-    }
-
-    const vol = addHistogramSeriesCompat(chartVol, LC, {
-      priceFormat: { type: "volume" },
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-
-    if (!vol) {
-      try {
-        chartCandle.remove();
-      } catch (e) {
-        /* noop */
-      }
-      try {
-        chartVol.remove();
-      } catch (e2) {
-        /* noop */
-      }
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("거래량 시리즈를 초기화하지 못했습니다.")}</p>`;
-      return;
-    }
-
-    linkLogicalRangeSync(chartCandle, chartVol);
-
-    state.lwChart = chartCandle;
-    state.lwVolChart = chartVol;
-    panes.dataset.mountedFor = state.openChartCode;
-    panes.dataset.mountedPeriod = state.candlePeriod;
-
-    const ro = new ResizeObserver(() => {
-      if (!state.lwChart || !state.lwVolChart || !panes.isConnected) return;
-      const w = panes.clientWidth;
-      const hC = Math.max(candleHost.clientHeight, 80);
-      const hV = Math.max(volHost.clientHeight, 60);
-      if (w > 0) {
-        state.lwChart.applyOptions({ width: w, height: hC });
-        state.lwVolChart.applyOptions({ width: w, height: hV });
-      }
-    });
-    ro.observe(panes);
-    state.lwResizeObs = ro;
-
+    setChartRowLoading(chartTr, true);
     try {
-      const code = chartSymbolSixDigits(state.openChartCode);
-      const period = encodeURIComponent(state.candlePeriod || "D");
-      const res = await fetch(`${API}?action=candle&code=${encodeURIComponent(code)}&period=${period}`, {
-        cache: "no-store",
+      await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
+      const LC = window.LightweightCharts;
+      if (!LC || typeof LC.createChart !== "function") {
+        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
+        volHost.innerHTML = "";
+        return;
+      }
+
+      if (
+        panes.dataset.mountedFor === state.openChartCode &&
+        panes.dataset.mountedPeriod === state.candlePeriod &&
+        state.lwChart &&
+        state.lwVolChart
+      ) {
+        const w = panes.clientWidth;
+        const hC = Math.max(candleHost.clientHeight, 80);
+        const hV = Math.max(volHost.clientHeight, 60);
+        if (w > 0) {
+          state.lwChart.applyOptions({ width: w, height: hC });
+          state.lwVolChart.applyOptions({ width: w, height: hV });
+        }
+        syncChartPeriodToolbarPressed(body);
+        return;
+      }
+
+      disposeLwChart();
+      delete panes.dataset.mountedFor;
+      delete panes.dataset.mountedPeriod;
+      candleHost.innerHTML = "";
+      volHost.innerHTML = "";
+      panes.removeAttribute("data-error");
+
+      const periodUpper = String(state.candlePeriod || "D").toUpperCase();
+      const localization = buildChartLocalization(periodUpper);
+
+      const chartCommon = (width, height, timeScaleVisible) => ({
+        width: Math.max(width, 200),
+        height: Math.max(height, 60),
+        layout: {
+          background: { type: "solid", color: "#12100c" },
+          textColor: "#c4b8a8",
+        },
+        localization,
+        crosshair: {
+          vertLine: {
+            labelVisible: true,
+          },
+          horzLine: {
+            labelVisible: true,
+          },
+        },
+        grid: {
+          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
+          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
+        },
+        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
+        timeScale: {
+          visible: timeScaleVisible,
+          borderVisible: true,
+          borderColor: "rgba(148, 130, 98, 0.35)",
+          timeVisible: false,
+          secondsVisible: false,
+          allowBoldLabels: true,
+        },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      const candles = Array.isArray(data.candles) ? data.candles : [];
-      if (!candles.length) throw new Error("차트 데이터가 없습니다.");
+
+      const w0 = Math.max(panes.clientWidth, 200);
+      const hC0 = Math.max(candleHost.clientHeight, 80);
+      const hV0 = Math.max(volHost.clientHeight, 60);
+
+      const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
+      /* 날짜 축: 거래량 패널 하단만 표시. 범위는 linkLogicalRangeSync로 캔들과 동기화 */
+      const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
+
+      const candleOpts = {
+        upColor: CANDLE_UP,
+        downColor: CANDLE_DOWN,
+        borderUpColor: CANDLE_UP,
+        borderDownColor: CANDLE_DOWN,
+        wickUpColor: CANDLE_UP,
+        wickDownColor: CANDLE_DOWN,
+      };
+
+      let candle;
+      if (LC.CandlestickSeries && typeof chartCandle.addSeries === "function") {
+        candle = chartCandle.addSeries(LC.CandlestickSeries, candleOpts);
+      } else if (typeof chartCandle.addCandlestickSeries === "function") {
+        candle = chartCandle.addCandlestickSeries(candleOpts);
+      } else {
+        try {
+          chartCandle.remove();
+        } catch (e) {
+          /* noop */
+        }
+        try {
+          chartVol.remove();
+        } catch (e2) {
+          /* noop */
+        }
+        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
+        return;
+      }
+
+      const vol = addHistogramSeriesCompat(chartVol, LC, {
+        priceFormat: { type: "volume" },
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+
+      if (!vol) {
+        try {
+          chartCandle.remove();
+        } catch (e) {
+          /* noop */
+        }
+        try {
+          chartVol.remove();
+        } catch (e2) {
+          /* noop */
+        }
+        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("거래량 시리즈를 초기화하지 못했습니다.")}</p>`;
+        return;
+      }
+
+      linkLogicalRangeSync(chartCandle, chartVol);
+
+      state.lwChart = chartCandle;
+      state.lwVolChart = chartVol;
+      panes.dataset.mountedFor = state.openChartCode;
+      panes.dataset.mountedPeriod = state.candlePeriod;
+
+      const ro = new ResizeObserver(() => {
+        if (!state.lwChart || !state.lwVolChart || !panes.isConnected) return;
+        const w = panes.clientWidth;
+        const hC = Math.max(candleHost.clientHeight, 80);
+        const hV = Math.max(volHost.clientHeight, 60);
+        if (w > 0) {
+          state.lwChart.applyOptions({ width: w, height: hC });
+          state.lwVolChart.applyOptions({ width: w, height: hV });
+        }
+      });
+      ro.observe(panes);
+      state.lwResizeObs = ro;
+
+      const code6 = chartSymbolSixDigits(state.openChartCode);
+      let candles = readChartCandleCache(state.openChartCode, periodUpper);
+      if (!candles) {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
+        try {
+          const res = await fetch(
+            `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodUpper)}`,
+            { cache: "no-store", signal: ctrl.signal }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          candles = Array.isArray(data.candles) ? data.candles : [];
+          if (!candles.length) throw new Error("차트 데이터가 없습니다.");
+          writeChartCandleCache(state.openChartCode, periodUpper, candles);
+        } finally {
+          clearTimeout(tid);
+        }
+      }
 
       state.lwBundle = {
         chartCandle,
@@ -597,8 +694,16 @@
       disposeLwChart();
       delete panes.dataset.mountedFor;
       delete panes.dataset.mountedPeriod;
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e.message || String(e))}</p>`;
+      const msg =
+        e && e.name === "AbortError"
+          ? "차트 불러오기 시간이 초과되었습니다."
+          : e && e.message
+            ? e.message
+            : String(e);
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msg)}</p>`;
       volHost.innerHTML = "";
+    } finally {
+      setChartRowLoading(chartTr, false);
     }
 
     syncNameChartButtonsAria(body);
@@ -689,6 +794,9 @@
     }));
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
+    if (tab === "nxt" && !NXT_DISABLED) {
+      state.nxtSubLoadedAt[state.nxtSub] = Date.now();
+    }
   }
 
   function showTableSkeleton() {
@@ -831,6 +939,9 @@
     else if (state.nxtSub === "volume") state.nxtVolRows = rows;
     else state.nxtFluctRows = rows;
     renderAll();
+    if (!NXT_DISABLED) {
+      state.nxtSubLoadedAt[state.nxtSub] = Date.now();
+    }
   }
 
   function tableColSpan() {
@@ -976,13 +1087,16 @@
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
               </div>
-              <div class="rt-chart-panes">
-                <div class="rt-chart-pane rt-chart-pane--candle">
-                  <div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div>
-                </div>
-                <div class="rt-chart-pane-sep" aria-hidden="true"></div>
-                <div class="rt-chart-pane rt-chart-pane--vol">
-                  <div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div>
+              <div class="rt-chart-body">
+                <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>
+                <div class="rt-chart-panes rt-chart-panes--pending">
+                  <div class="rt-chart-pane rt-chart-pane--candle">
+                    <div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div>
+                  </div>
+                  <div class="rt-chart-pane-sep" aria-hidden="true"></div>
+                  <div class="rt-chart-pane rt-chart-pane--vol">
+                    <div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1364,15 +1478,27 @@
 
         const tk = state.tab;
         const errEl = $("rt-error");
-        const cached =
-          state.tabLoadedAt[tk] &&
-          Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS &&
-          rowsLoadedForTab(tk);
+        const hasRows = rowsLoadedForTab(tk);
+        const cacheFresh =
+          state.tabLoadedAt[tk] && Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS;
 
-        if (cached) {
+        if (hasRows) {
           if (errEl) errEl.hidden = true;
           renderAll();
           finish();
+          if (!cacheFresh && !(tk === "nxt" && NXT_DISABLED)) {
+            loadBootstrapForTab(tk)
+              .then(() => {
+                if (errEl) errEl.hidden = true;
+                renderAll();
+              })
+              .catch((e) => {
+                if (errEl) {
+                  errEl.hidden = false;
+                  errEl.textContent = rtErrorTimeoutMessage(e);
+                }
+              });
+          }
           return;
         }
 
@@ -1431,6 +1557,30 @@
           finish();
           return;
         }
+        const subKey = state.nxtSub;
+        const hasRows = getNxtRowsForSub().length >= 5;
+        const subFresh =
+          state.nxtSubLoadedAt[subKey] && Date.now() - state.nxtSubLoadedAt[subKey] < TAB_CACHE_MS;
+
+        if (hasRows) {
+          renderAll();
+          finish();
+          if (!subFresh) {
+            refreshNxtPanel()
+              .then(() => {
+                if (errEl) errEl.hidden = true;
+                renderAll();
+              })
+              .catch((e) => {
+                if (errEl) {
+                  errEl.hidden = false;
+                  errEl.textContent = rtErrorTimeoutMessage(e);
+                }
+              });
+          }
+          return;
+        }
+
         showTableSkeleton();
         refreshNxtPanel()
           .then(() => {

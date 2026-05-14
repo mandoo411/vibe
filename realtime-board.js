@@ -76,6 +76,11 @@
     wsUrl: null,
     marketStatusWs: null,
     codesSubscribed: new Set(),
+    openChartCode: null,
+    tvWidget: null,
+    tvMountedSymbol: null,
+    tvScriptLoading: null,
+    chartHostId: "rt-tv-host",
   };
 
   function $(id) {
@@ -134,12 +139,67 @@
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
-  /** TradingView 새 탭 URL — symbol=KRX:6자리종목코드 */
-  function tradingViewChartTabUrl(code) {
+  function krTvSymbol(code) {
     const six = tvSymbolSixDigits(code);
     if (!six) return "";
-    const sym = `KRX:${six}`;
-    return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(sym)}`;
+    return `KRX:${six}`;
+  }
+
+  function loadTradingViewScript() {
+    const g = window;
+    if (g.TradingView && g.TradingView.widget) return Promise.resolve();
+    if (!state.tvScriptLoading) {
+      state.tvScriptLoading = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://s3.tradingview.com/tv.js";
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("TradingView 스크립트 로드 실패"));
+        document.head.appendChild(s);
+      });
+    }
+    return state.tvScriptLoading;
+  }
+
+  function destroyTvWidget() {
+    if (state.tvWidget && typeof state.tvWidget.remove === "function") {
+      try {
+        state.tvWidget.remove();
+      } catch (e) {
+        /* noop */
+      }
+    }
+    state.tvWidget = null;
+    state.tvMountedSymbol = null;
+    const host = $(state.chartHostId);
+    if (host) host.innerHTML = "";
+  }
+
+  async function ensureTvWidgetMounted() {
+    const sym = krTvSymbol(state.openChartCode);
+    if (!sym) return;
+    if (state.tvWidget && state.tvMountedSymbol === sym) return;
+    await loadTradingViewScript().catch(() => {});
+    const TV = window.TradingView;
+    const host = $(state.chartHostId);
+    if (!TV || !TV.widget || !host) return;
+    destroyTvWidget();
+    state.tvWidget = new TV.widget({
+      container_id: state.chartHostId,
+      symbol: sym,
+      interval: "D",
+      timezone: "Asia/Seoul",
+      theme: "dark",
+      style: "1",
+      locale: "kr",
+      toolbar_bg: "#0d0b08",
+      enable_publishing: false,
+      allow_symbol_change: false,
+      autosize: false,
+      height: 400,
+      width: "100%",
+    });
+    state.tvMountedSymbol = sym;
   }
 
   async function fetchJson(action) {
@@ -257,6 +317,76 @@
     }
   }
 
+  function stockRowHtml(r) {
+    const ch = r.changePct;
+    const cls = deltaClass(ch);
+    const tv = formatTradeVal(r.tradingValue);
+    const vol = fmtNum(r.volume);
+    const nm = escapeHtml(r.name);
+    const nameCell = `<span class="rt-name-text">${nm}</span>`;
+    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}" tabindex="0" role="button" aria-expanded="false">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+  }
+
+  function chartRowHtml(forCode) {
+    return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
+          <td colspan="6">
+            <div class="rt-tv-wrap">
+              <div id="${state.chartHostId}" class="rt-tv-host"></div>
+            </div>
+          </td>
+        </tr>`;
+  }
+
+  function applyRowToTr(tr, r) {
+    const ch = r.changePct;
+    const cls = deltaClass(ch);
+    const tv = formatTradeVal(r.tradingValue);
+    const vol = fmtNum(r.volume);
+    const nm = escapeHtml(r.name);
+    tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
+    tr.cells[1].innerHTML = `<span class="rt-name-text">${nm}</span>`;
+    tr.cells[2].textContent = fmtNum(r.price);
+    tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+    tr.cells[4].textContent = vol;
+    tr.cells[5].textContent = tv;
+  }
+
+  function syncChartDomAfterRows(body, rows) {
+    if (!state.openChartCode) return;
+    const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
+    if (!anchor) {
+      state.openChartCode = null;
+      destroyTvWidget();
+      body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      return;
+    }
+    let chartTr = body.querySelector("tr.rt-chart-row");
+    if (!chartTr) {
+      anchor.insertAdjacentHTML("afterend", chartRowHtml(state.openChartCode));
+      chartTr = body.querySelector("tr.rt-chart-row");
+    } else {
+      const expectedFor = state.openChartCode;
+      if (chartTr.getAttribute("data-chart-for") !== expectedFor) {
+        chartTr.setAttribute("data-chart-for", expectedFor);
+        destroyTvWidget();
+      }
+      anchor.after(chartTr);
+    }
+    if (chartTr) chartTr.setAttribute("data-chart-for", state.openChartCode);
+    body.querySelectorAll("tr.rt-stock-row").forEach((tr) => {
+      const open = tr.getAttribute("data-code") === state.openChartCode;
+      tr.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    void ensureTvWidgetMounted();
+  }
+
   function renderTable() {
     const body = $("rt-tbody");
     const title = $("rt-table-title");
@@ -266,27 +396,31 @@
       title.textContent =
         state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
     }
-    body.innerHTML = rows
-      .map((r) => {
-        const ch = r.changePct;
-        const cls = deltaClass(ch);
-        const tv = formatTradeVal(r.tradingValue);
-        const vol = fmtNum(r.volume);
-        const nm = escapeHtml(r.name);
-        const chartUrl = tradingViewChartTabUrl(r.code);
-        const nameCell = chartUrl
-          ? `<a class="rt-name-link" href="${escapeHtml(chartUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${nm} TradingView 차트">${nm}</a>`
-          : `<span class="rt-name-text">${nm}</span>`;
-        return `<tr data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
-        </tr>`;
-      })
-      .join("");
+    if (!state.openChartCode) {
+      destroyTvWidget();
+      body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      return;
+    }
+
+    const stockRows = body.querySelectorAll("tr.rt-stock-row");
+    const canPatch =
+      stockRows.length === rows.length &&
+      Array.from(stockRows).every((tr, i) => tr.getAttribute("data-code") === rows[i]?.code);
+
+    if (canPatch) {
+      for (let i = 0; i < rows.length; i++) {
+        applyRowToTr(stockRows[i], rows[i]);
+      }
+    } else {
+      destroyTvWidget();
+      const parts = [];
+      for (const r of rows) {
+        parts.push(stockRowHtml(r));
+        if (state.openChartCode === r.code) parts.push(chartRowHtml(r.code));
+      }
+      body.innerHTML = parts.join("");
+    }
+    syncChartDomAfterRows(body, rows);
   }
 
   function renderAll() {
@@ -497,6 +631,8 @@
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
         state.tab = t === "gainers" ? "gainers" : "cap";
+        state.openChartCode = null;
+        destroyTvWidget();
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
@@ -511,6 +647,22 @@
     });
   }
 
+  function wireTableChartAccordion() {
+    const body = $("rt-tbody");
+    if (!body || body.dataset.rtChartWire === "1") return;
+    body.dataset.rtChartWire = "1";
+    body.addEventListener("click", (ev) => {
+      if (ev.target.closest("tr.rt-chart-row")) return;
+      const tr = ev.target.closest("tr.rt-stock-row");
+      if (!tr || !body.contains(tr)) return;
+      const code = tr.getAttribute("data-code");
+      if (!code) return;
+      if (state.openChartCode === code) state.openChartCode = null;
+      else state.openChartCode = code;
+      renderTable();
+    });
+  }
+
   function startPolling() {
     if (state.pollRest) clearInterval(state.pollRest);
     state.pollRest = setInterval(() => {
@@ -520,6 +672,7 @@
 
   async function init() {
     setupTabs();
+    wireTableChartAccordion();
     const err = $("rt-error");
     if (err) err.hidden = true;
     try {

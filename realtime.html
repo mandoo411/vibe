@@ -276,6 +276,30 @@
       .rt-foot a {
         color: var(--accent-bright);
       }
+      .rt-stock-row {
+        cursor: pointer;
+      }
+      .rt-stock-row:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+      }
+      .rt-chart-row td {
+        padding: 0 !important;
+        border-bottom: 1px solid var(--border-strong);
+        background: #0c0a08;
+        vertical-align: top;
+      }
+      .rt-tv-wrap {
+        width: 100%;
+        height: 400px;
+        min-height: 400px;
+        position: relative;
+        border-top: 1px solid var(--border);
+      }
+      .rt-tv-host {
+        width: 100%;
+        height: 100%;
+      }
       @media (max-width: 520px) {
         .rt-wrap {
           padding-left: 12px;

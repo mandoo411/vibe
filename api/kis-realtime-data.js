@@ -702,38 +702,65 @@ function mapDailyItemchartRow(row) {
   const low = toNum(row.stck_lwpr || row.STCK_LWPR);
   const close = toNum(row.stck_clpr || row.STCK_CLPR);
   if (open == null || high == null || low == null || close == null) return null;
-  return { time, open, high, low, close };
+  const volRaw = toNum(
+    row.acml_vol ||
+      row.ACML_VOL ||
+      row.prdy_vol ||
+      row.PRDY_VOL ||
+      row.hts_acml_vol ||
+      row.hts_vol ||
+      row.tot_acml_vol
+  );
+  const volume = volRaw != null && Number.isFinite(volRaw) && volRaw >= 0 ? volRaw : 0;
+  return { time, open, high, low, close, volume };
 }
 
 /**
- * 국내주식기간별시세(일) 최대 100건 — 최근 거래일 기준 60일 분량 확보용으로 기간을 넉넉히 잡음.
+ * 국내주식기간별시세(일) — 응답당 최대 약 100건이라 구간을 나눠 병합해 MA200·RSI용 일봉을 확보.
  */
 async function fetchDailyItemchartCandlesFromKis(code6) {
-  const end = ymdKst(new Date());
-  const start = subtractCalendarDaysFromYmd(end, 120);
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
-    "FHKST03010100",
-    {
-      fid_cond_mrkt_div_code: "J",
-      fid_input_iscd: code6,
-      fid_input_date_1: start,
-      fid_input_date_2: end,
-      fid_period_div_code: "D",
-      fid_org_adj_prc: "0",
-    },
-    ""
-  );
-  let raw = json.output2;
-  if (raw && !Array.isArray(raw)) raw = [raw];
-  if (!Array.isArray(raw)) raw = [];
-  const bars = [];
-  for (const row of raw) {
-    const b = mapDailyItemchartRow(row);
-    if (b) bars.push(b);
+  const endAll = ymdKst(new Date());
+  const byTime = new Map();
+  let chunkEnd = endAll;
+
+  for (let iter = 0; iter < 8; iter++) {
+    if (iter > 0) await sleep(KIS_GAP_MS);
+    const chunkStart = subtractCalendarDaysFromYmd(chunkEnd, 118);
+    const { json } = await kisGet(
+      "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+      "FHKST03010100",
+      {
+        fid_cond_mrkt_div_code: "J",
+        fid_input_iscd: code6,
+        fid_input_date_1: chunkStart,
+        fid_input_date_2: chunkEnd,
+        fid_period_div_code: "D",
+        fid_org_adj_prc: "0",
+      },
+      ""
+    );
+    let raw = json.output2;
+    if (raw && !Array.isArray(raw)) raw = [raw];
+    if (!Array.isArray(raw)) raw = [];
+    const batch = [];
+    for (const row of raw) {
+      const b = mapDailyItemchartRow(row);
+      if (b) batch.push(b);
+    }
+    batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    if (!batch.length) break;
+    for (const b of batch) byTime.set(b.time, b);
+    if (byTime.size >= 260) break;
+    const oldestYmd = String(batch[0].time).replace(/\D/g, "").slice(0, 8);
+    if (!/^\d{8}$/.test(oldestYmd)) break;
+    const nextEnd = subtractCalendarDaysFromYmd(oldestYmd, 1);
+    if (nextEnd >= chunkEnd) break;
+    if (batch.length < 35) break;
+    chunkEnd = nextEnd;
   }
-  bars.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-  return bars.slice(-60);
+
+  const bars = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  return bars.slice(-320);
 }
 
 function json(res, status, body) {
@@ -823,7 +850,12 @@ module.exports = async function handler(req, res) {
       }
       const now = Date.now();
       const cached = candleMemoryCache.get(code6);
-      if (cached && now < cached.expiresAt) {
+      const cacheStale =
+        cached &&
+        cached.bars &&
+        cached.bars.length > 0 &&
+        !Object.prototype.hasOwnProperty.call(cached.bars[0], "volume");
+      if (cached && now < cached.expiresAt && !cacheStale) {
         json(res, 200, { code: code6, candles: cached.bars, cached: true });
         return;
       }

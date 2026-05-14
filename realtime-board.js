@@ -81,6 +81,9 @@
     openChartCode: null,
     lwChart: null,
     lwResizeObs: null,
+    /** 아코디언 일봉: 표시할 최근 거래일 수 (전체 데이터는 API에서 받고 클라이언트에서 슬라이스) */
+    chartViewDays: 120,
+    lwBundle: null,
   };
 
   function $(id) {
@@ -164,6 +167,124 @@
       }
       state.lwChart = null;
     }
+    state.lwBundle = null;
+  }
+
+  function sliceCandlesFromEnd(candles, days) {
+    const n = Number(days);
+    if (!Number.isFinite(n) || n <= 0 || candles.length <= n) return candles;
+    return candles.slice(-n);
+  }
+
+  function computeSma(closes, period) {
+    const n = closes.length;
+    const out = new Array(n).fill(null);
+    for (let i = period - 1; i < n; i++) {
+      let s = 0;
+      for (let k = 0; k < period; k++) s += closes[i - k];
+      out[i] = s / period;
+    }
+    return out;
+  }
+
+  /** Wilder smoothing RSI(14) — closes[i] 기준 값은 rsi[i] (초기 i<14 는 null) */
+  function computeRsiWilder14(closes) {
+    const period = 14;
+    const n = closes.length;
+    const rsi = new Array(n).fill(null);
+    if (n < period + 1) return rsi;
+    let avgG = 0;
+    let avgL = 0;
+    for (let i = 1; i <= period; i++) {
+      const ch = closes[i] - closes[i - 1];
+      avgG += ch > 0 ? ch : 0;
+      avgL += ch < 0 ? -ch : 0;
+    }
+    avgG /= period;
+    avgL /= period;
+    const rs0 = avgL === 0 ? Infinity : avgG / avgL;
+    rsi[period] = 100 - 100 / (1 + rs0);
+    for (let i = period + 1; i < n; i++) {
+      const ch = closes[i] - closes[i - 1];
+      const g = ch > 0 ? ch : 0;
+      const l = ch < 0 ? -ch : 0;
+      avgG = (avgG * (period - 1) + g) / period;
+      avgL = (avgL * (period - 1) + l) / period;
+      const rs = avgL === 0 ? Infinity : avgG / avgL;
+      rsi[i] = 100 - 100 / (1 + rs);
+    }
+    return rsi;
+  }
+
+  function buildIndicatorSeriesData(candles) {
+    const closes = candles.map((c) => c.close);
+    const sma50 = computeSma(closes, 50);
+    const sma200 = computeSma(closes, 200);
+    const rsiArr = computeRsiWilder14(closes);
+    const ma50Data = [];
+    const ma200Data = [];
+    const rsiData = [];
+    const volData = [];
+    const green = "#7cffb3";
+    const red = "#f87171";
+    for (let i = 0; i < candles.length; i++) {
+      const t = candles[i].time;
+      if (sma50[i] != null) ma50Data.push({ time: t, value: sma50[i] });
+      if (sma200[i] != null) ma200Data.push({ time: t, value: sma200[i] });
+      if (rsiArr[i] != null) rsiData.push({ time: t, value: rsiArr[i] });
+      const v = candles[i].volume != null ? Number(candles[i].volume) : 0;
+      const up = candles[i].close >= candles[i].open;
+      volData.push({
+        time: t,
+        value: Number.isFinite(v) ? v : 0,
+        color: up ? green : red,
+      });
+    }
+    return { ma50Data, ma200Data, rsiData, volData };
+  }
+
+  function applyLwChartVisibleRange() {
+    const b = state.lwBundle;
+    if (!b || !b.chart || !b.candle || !b.fullCandles || !b.fullCandles.length) return;
+    const days = state.chartViewDays || 120;
+    const sliced = sliceCandlesFromEnd(b.fullCandles, days);
+    const ind = buildIndicatorSeriesData(sliced);
+    b.candle.setData(sliced);
+    b.ma50.setData(ind.ma50Data);
+    b.ma200.setData(ind.ma200Data);
+    b.vol.setData(ind.volData);
+    b.rsi.setData(ind.rsiData);
+    b.chart.timeScale().fitContent();
+  }
+
+  function syncChartPeriodToolbarPressed(body) {
+    const wrap = body.querySelector("tr.rt-chart-row .rt-chart-toolbar");
+    if (!wrap) return;
+    const d = String(state.chartViewDays || 120);
+    wrap.querySelectorAll(".rt-chart-period-btn").forEach((btn) => {
+      const active = btn.getAttribute("data-rt-candle-days") === d;
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function addLineSeriesCompat(chart, LC, opts) {
+    if (LC.LineSeries && typeof chart.addSeries === "function") {
+      return chart.addSeries(LC.LineSeries, opts);
+    }
+    if (typeof chart.addLineSeries === "function") {
+      return chart.addLineSeries(opts);
+    }
+    return null;
+  }
+
+  function addHistogramSeriesCompat(chart, LC, opts) {
+    if (LC.HistogramSeries && typeof chart.addSeries === "function") {
+      return chart.addSeries(LC.HistogramSeries, opts);
+    }
+    if (typeof chart.addHistogramSeries === "function") {
+      return chart.addHistogramSeries(opts);
+    }
+    return null;
   }
 
   function syncNameChartButtonsAria(body) {
@@ -188,6 +309,7 @@
       const w = host.clientWidth;
       if (w > 0) state.lwChart.applyOptions({ width: w });
       syncNameChartButtonsAria(body);
+      syncChartPeriodToolbarPressed(body);
       return;
     }
 
@@ -196,9 +318,10 @@
     host.innerHTML = "";
     host.removeAttribute("data-error");
 
+    const chartHeight = 360;
     const chart = LC.createChart(host, {
       width: Math.max(host.clientWidth, 200),
-      height: 350,
+      height: chartHeight,
       layout: {
         background: { type: "solid", color: "#12100c" },
         textColor: "#c4b8a8",
@@ -211,6 +334,8 @@
       timeScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
     });
 
+    const paneMargins = { candleTop: 0.02, candleBottom: 0.35, volTop: 0.65, volBottom: 0.15, rsiTop: 0.85, rsiBottom: 0 };
+
     const candleOpts = {
       upColor: "#7cffb3",
       downColor: "#f87171",
@@ -218,15 +343,108 @@
       borderDownColor: "#f87171",
       wickUpColor: "#7cffb3",
       wickDownColor: "#f87171",
+      priceScaleId: "right",
+      scaleMargins: { top: paneMargins.candleTop, bottom: paneMargins.candleBottom },
     };
-    let series;
+
+    let candle;
     if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
-      series = chart.addSeries(LC.CandlestickSeries, candleOpts);
+      candle = chart.addSeries(LC.CandlestickSeries, candleOpts);
     } else if (typeof chart.addCandlestickSeries === "function") {
-      series = chart.addCandlestickSeries(candleOpts);
+      candle = chart.addCandlestickSeries(candleOpts);
     } else {
+      try {
+        chart.remove();
+      } catch (e) {
+        /* noop */
+      }
       host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
       return;
+    }
+
+    const lineCommon = {
+      priceScaleId: "right",
+      scaleMargins: { top: paneMargins.candleTop, bottom: paneMargins.candleBottom },
+      priceLineVisible: false,
+      lastValueVisible: true,
+    };
+
+    const ma50 = addLineSeriesCompat(chart, LC, {
+      ...lineCommon,
+      color: "#2196F3",
+      lineWidth: 3,
+      title: "MA50",
+    });
+    const ma200 = addLineSeriesCompat(chart, LC, {
+      ...lineCommon,
+      color: "#FFFFFF",
+      lineWidth: 3,
+      title: "MA200",
+    });
+
+    const vol = addHistogramSeriesCompat(chart, LC, {
+      priceScaleId: "vol",
+      scaleMargins: { top: paneMargins.volTop, bottom: paneMargins.volBottom },
+      priceFormat: { type: "volume" },
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
+    const rsi = addLineSeriesCompat(chart, LC, {
+      priceScaleId: "rsi",
+      scaleMargins: { top: paneMargins.rsiTop, bottom: paneMargins.rsiBottom },
+      color: "#2196F3",
+      lineWidth: 2,
+      priceLineVisible: false,
+      lastValueVisible: true,
+      title: "RSI(14)",
+    });
+
+    if (!ma50 || !ma200 || !vol || !rsi) {
+      try {
+        chart.remove();
+      } catch (e) {
+        /* noop */
+      }
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("보조 시리즈를 초기화하지 못했습니다.")}</p>`;
+      return;
+    }
+
+    try {
+      if (typeof rsi.applyOptions === "function") {
+        rsi.applyOptions({
+          autoscaleInfoProvider: () => ({
+            priceRange: { minValue: 0, maxValue: 100 },
+          }),
+        });
+      }
+    } catch (e) {
+      /* RSI 0–100 고정 스케일 미지원 시 자동 스케일 유지 */
+    }
+
+    const dashed = LC.LineStyle != null ? LC.LineStyle.Dashed : 2;
+    if (typeof rsi.createPriceLine === "function") {
+      rsi.createPriceLine({
+        price: 70,
+        color: "rgba(248, 113, 113, 0.8)",
+        lineWidth: 1,
+        lineStyle: dashed,
+        axisLabelVisible: false,
+      });
+      rsi.createPriceLine({
+        price: 30,
+        color: "rgba(74, 222, 128, 0.85)",
+        lineWidth: 1,
+        lineStyle: dashed,
+        axisLabelVisible: false,
+      });
+    }
+
+    try {
+      chart.priceScale("vol").applyOptions({ visible: false });
+      chart.priceScale("rsi").applyOptions({ visible: false });
+    } catch (e) {
+      /* noop */
     }
 
     state.lwChart = chart;
@@ -245,9 +463,21 @@
       const res = await fetch(`${API}?action=candle&code=${encodeURIComponent(code)}`, { cache: "no-store" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      const candles = data.candles || [];
-      series.setData(candles);
-      chart.timeScale().fitContent();
+      const candles = Array.isArray(data.candles) ? data.candles : [];
+      if (!candles.length) throw new Error("일봉 데이터가 없습니다.");
+
+      state.lwBundle = {
+        chart,
+        candle,
+        ma50,
+        ma200,
+        vol,
+        rsi,
+        fullCandles: candles,
+      };
+      if (!state.chartViewDays) state.chartViewDays = 120;
+      applyLwChartVisibleRange();
+      syncChartPeriodToolbarPressed(body);
     } catch (e) {
       disposeLwChart();
       delete host.dataset.mountedFor;
@@ -465,6 +695,13 @@
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">
             <div class="rt-chart-wrap">
+              <div class="rt-chart-toolbar" role="toolbar" aria-label="일봉 표시 기간">
+                <span class="rt-chart-toolbar__label">기간</span>
+                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="90" aria-pressed="false">90일</button>
+                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="120" aria-pressed="false">120일</button>
+                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="200" aria-pressed="false">200일</button>
+                <button type="button" class="rt-chart-period-btn" data-rt-candle-days="9999" aria-pressed="false">전체</button>
+              </div>
               <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="일봉 캔들 차트"></div>
             </div>
           </td>
@@ -807,6 +1044,18 @@
     if (!body || body.dataset.rtChartWire === "1") return;
     body.dataset.rtChartWire = "1";
     body.addEventListener("click", (ev) => {
+      const periodBtn = ev.target.closest(".rt-chart-period-btn");
+      if (periodBtn && body.contains(periodBtn)) {
+        const raw = periodBtn.getAttribute("data-rt-candle-days");
+        const d = Number(raw);
+        if (!Number.isFinite(d)) return;
+        state.chartViewDays = d >= 9999 ? 9999 : d;
+        body.querySelectorAll(".rt-chart-period-btn").forEach((btn) => {
+          btn.setAttribute("aria-pressed", btn === periodBtn ? "true" : "false");
+        });
+        applyLwChartVisibleRange();
+        return;
+      }
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const code = btn.getAttribute("data-code");

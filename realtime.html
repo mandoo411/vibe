@@ -386,6 +386,47 @@
         font-size: 13px;
         color: #f8a8a8;
       }
+      .rt-lw-ohlc-tooltip {
+        position: absolute;
+        z-index: 50;
+        left: 0;
+        top: 0;
+        display: none;
+        min-width: 158px;
+        max-width: min(280px, 92vw);
+        padding: 9px 11px;
+        pointer-events: none;
+        background: rgba(14, 12, 10, 0.96);
+        border: 1px solid rgba(148, 130, 98, 0.45);
+        border-radius: var(--radius);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .rt-lw-ohlc-tooltip__dt {
+        margin: 0 0 7px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        color: var(--accent-bright);
+        letter-spacing: 0.02em;
+      }
+      .rt-lw-ohlc-tooltip__row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 2px 0;
+      }
+      .rt-lw-ohlc-tooltip__row span:first-child {
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .rt-lw-ohlc-tooltip__row span:last-child {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
       @media (max-width: 520px) {
         .rt-wrap {
           padding-left: 12px;

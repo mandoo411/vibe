@@ -153,6 +153,138 @@
     return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
   }
 
+  const WD_KO_SUN0 = ["일", "월", "화", "수", "목", "금", "토"];
+
+  /** LightweightCharts Time → { year, month, day } (월 1–12) */
+  function parseChartBusinessDay(time) {
+    if (time == null) return null;
+    if (typeof time === "string") {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(time).trim());
+      if (!m) return null;
+      return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+    }
+    if (typeof time === "object" && time.year != null && time.month != null && time.day != null) {
+      return { year: +time.year, month: +time.month, day: +time.day };
+    }
+    if (typeof time === "number" && Number.isFinite(time)) {
+      const d = new Date(time * 1000);
+      return {
+        year: d.getUTCFullYear(),
+        month: d.getUTCMonth() + 1,
+        day: d.getUTCDate(),
+      };
+    }
+    return null;
+  }
+
+  function chartTimeKey(time) {
+    const bd = parseChartBusinessDay(time);
+    if (!bd) return "";
+    return `${bd.year}-${String(bd.month).padStart(2, "0")}-${String(bd.day).padStart(2, "0")}`;
+  }
+
+  /**
+   * 십자선·x축용 한국어 날짜 (일봉 / 주봉 / 월봉)
+   * - D: 2026년 5월 14일 (수)
+   * - W: 2026년 5월 2주  (해당 영업일이 속한 달의 n주차, 1–7일→1주)
+   * - M: 2026년 5월
+   */
+  function formatChartTimeKo(time, periodKey) {
+    const bd = parseChartBusinessDay(time);
+    if (!bd) return "";
+    const p = String(periodKey || "D").toUpperCase();
+    const { year, month, day } = bd;
+    if (p === "M") {
+      return `${year}년 ${month}월`;
+    }
+    if (p === "W") {
+      const weekOfMonth = Math.min(5, Math.max(1, Math.ceil(day / 7)));
+      return `${year}년 ${month}월 ${weekOfMonth}주`;
+    }
+    const utc = Date.UTC(year, month - 1, day);
+    const dow = WD_KO_SUN0[new Date(utc).getUTCDay()];
+    return `${year}년 ${month}월 ${day}일 (${dow})`;
+  }
+
+  function buildChartLocalization(periodKey) {
+    const p = String(periodKey || "D").toUpperCase();
+    return {
+      locale: "ko-KR",
+      timeFormatter: (time) => formatChartTimeKo(time, p),
+    };
+  }
+
+  function fmtChartPrice(n) {
+    if (n == null || !Number.isFinite(Number(n))) return "—";
+    return Number(n).toLocaleString("ko-KR", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  function fmtChartVol(n) {
+    if (n == null || !Number.isFinite(Number(n))) return "—";
+    return Math.round(Number(n)).toLocaleString("ko-KR");
+  }
+
+  function wireRtCrosshairTooltip(panesEl, candleHost, volHost, chartCandle, chartVol, periodKey) {
+    let tip = panesEl.querySelector(".rt-lw-ohlc-tooltip");
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.className = "rt-lw-ohlc-tooltip";
+      tip.setAttribute("aria-hidden", "true");
+      panesEl.appendChild(tip);
+    }
+    const p = String(periodKey || "D").toUpperCase();
+
+    function handle(param, hostEl) {
+      const rows = state.lwBundle && state.lwBundle.fullCandles ? state.lwBundle.fullCandles : null;
+      if (!param || param.time == null || !param.point || !rows || !rows.length) {
+        tip.style.display = "none";
+        return;
+      }
+      const tk = chartTimeKey(param.time);
+      const row = rows.find((r) => chartTimeKey(r.time) === tk);
+      if (!row || row.open == null) {
+        tip.style.display = "none";
+        return;
+      }
+      const dt = formatChartTimeKo(param.time, p);
+      const o = fmtChartPrice(row.open);
+      const h = fmtChartPrice(row.high);
+      const l = fmtChartPrice(row.low);
+      const c = fmtChartPrice(row.close);
+      const v = fmtChartVol(row.volume);
+      tip.innerHTML = [
+        `<div class="rt-lw-ohlc-tooltip__dt">${escapeHtml(dt)}</div>`,
+        `<div class="rt-lw-ohlc-tooltip__row"><span>시가</span><span>${escapeHtml(o)}</span></div>`,
+        `<div class="rt-lw-ohlc-tooltip__row"><span>고가</span><span>${escapeHtml(h)}</span></div>`,
+        `<div class="rt-lw-ohlc-tooltip__row"><span>저가</span><span>${escapeHtml(l)}</span></div>`,
+        `<div class="rt-lw-ohlc-tooltip__row"><span>종가</span><span>${escapeHtml(c)}</span></div>`,
+        `<div class="rt-lw-ohlc-tooltip__row"><span>거래량</span><span>${escapeHtml(v)}</span></div>`,
+      ].join("");
+      tip.style.display = "block";
+      const pr = panesEl.getBoundingClientRect();
+      const hr = hostEl.getBoundingClientRect();
+      const pad = 8;
+      let x = hr.left - pr.left + param.point.x + 14;
+      let y = hr.top - pr.top + param.point.y + 14;
+      tip.style.visibility = "hidden";
+      const tw = tip.offsetWidth || 168;
+      const th = tip.offsetHeight || 108;
+      tip.style.visibility = "visible";
+      const pw = panesEl.clientWidth;
+      const ph = panesEl.clientHeight;
+      if (x + tw + pad > pw) x = Math.max(pad, hr.left - pr.left + param.point.x - tw - 14);
+      if (y + th + pad > ph) y = Math.max(pad, hr.top - pr.top + param.point.y - th - 14);
+      tip.style.left = `${Math.max(pad, x)}px`;
+      tip.style.top = `${Math.max(pad, y)}px`;
+    }
+
+    chartCandle.subscribeCrosshairMove((param) => handle(param, candleHost));
+    chartVol.subscribeCrosshairMove((param) => handle(param, volHost));
+  }
+
   function disposeLwChart() {
     if (state.lwResizeObs) {
       try {
@@ -318,12 +450,24 @@
     volHost.innerHTML = "";
     panes.removeAttribute("data-error");
 
+    const periodUpper = String(state.candlePeriod || "D").toUpperCase();
+    const localization = buildChartLocalization(periodUpper);
+
     const chartCommon = (width, height, timeScaleVisible) => ({
       width: Math.max(width, 200),
       height: Math.max(height, 60),
       layout: {
         background: { type: "solid", color: "#12100c" },
         textColor: "#c4b8a8",
+      },
+      localization,
+      crosshair: {
+        vertLine: {
+          labelVisible: true,
+        },
+        horzLine: {
+          labelVisible: true,
+        },
       },
       grid: {
         vertLines: { color: "rgba(212, 175, 55, 0.08)" },
@@ -332,9 +476,11 @@
       rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
       timeScale: {
         visible: timeScaleVisible,
+        borderVisible: true,
         borderColor: "rgba(148, 130, 98, 0.35)",
         timeVisible: false,
         secondsVisible: false,
+        allowBoldLabels: true,
       },
     });
 
@@ -342,8 +488,8 @@
     const hC0 = Math.max(candleHost.clientHeight, 80);
     const hV0 = Math.max(volHost.clientHeight, 60);
 
-    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
-    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
+    const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, true));
+    const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, false));
 
     const candleOpts = {
       upColor: CANDLE_UP,
@@ -433,6 +579,7 @@
         vol,
         fullCandles: candles,
       };
+      wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, state.candlePeriod);
       applyLwChartVisibleRange();
       syncChartPeriodToolbarPressed(body);
     } catch (e) {

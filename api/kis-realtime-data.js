@@ -14,7 +14,7 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 /** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
 const candleMemoryCache = new Map();
 
-/** action=prev-day-gainers — 전일 등락률 순위(0000) TOP50 + 당일 시세(5분) */
+/** action=prev-day-gainers — 전일 등락률(0000·fid_prc_cls=1) TOP50 + prevDayChangePct, 당일 시세 5분 */
 let prevDayGainersCache = null; // { at, listDayYmd, stocks }
 let prevDayQuotesCache = null; // { at, listDayYmd, codeKey, byCode: Map }
 
@@ -538,6 +538,8 @@ async function fetchPrevDayOfficialFluctuationTop50() {
     name: r.name,
     market: r.market,
     tvBoard: r.tvBoard,
+    /** 전일 fluctuation(fid_prc_cls_code=1) 기준 등락률 — 24h 캐시와 함께 고정 */
+    prevDayChangePct: r.prevChg != null && Number.isFinite(r.prevChg) ? r.prevChg : null,
   }));
 }
 
@@ -550,6 +552,7 @@ function mergeLiveQuotesIntoPrevDayRows(baseRows, liveByCode) {
       name: r.name,
       market: r.market,
       tvBoard: r.tvBoard,
+      prevDayChangePct: r.prevDayChangePct != null ? r.prevDayChangePct : null,
       price: L && L.price != null && String(L.price).trim() !== "" ? L.price : "",
       changePct: L && L.changePct != null ? L.changePct : null,
       volume: L && L.volume ? L.volume : "",

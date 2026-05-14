@@ -338,7 +338,9 @@
   }
 
   function tableColSpan() {
-    return state.tab === "tradeval" ? 5 : 6;
+    if (state.tab === "prevday") return 7;
+    if (state.tab === "tradeval") return 5;
+    return 6;
   }
 
   function renderThead() {
@@ -346,7 +348,7 @@
     if (!tr) return;
     if (state.tab === "prevday") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률(오늘)</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">전일등락률</th><th class="num rt-td-chg">오늘등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
     if (state.tab === "tradeval") {
@@ -361,7 +363,7 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "prevday") return "전일 등락률 상위 50 · 당일 시세";
+    if (state.tab === "prevday") return "전일 상승 상위 50 · 오늘 조정·추세 추적";
     if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
     return "실시간 시세";
   }
@@ -413,6 +415,24 @@
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
 
+    if (state.tab === "prevday") {
+      const chPrev = r.prevDayChangePct;
+      const clsPrev = deltaClass(chPrev);
+      const chToday = r.changePct;
+      const clsToday = deltaClass(chToday);
+      const vol = fmtNum(r.volume);
+      const tv = formatTradeVal(r.tradingValue);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
+          <td class="num rt-td-chg"><span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
     if (state.tab === "tradeval") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
@@ -455,6 +475,19 @@
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
+
+    if (state.tab === "prevday") {
+      const chPrev = r.prevDayChangePct;
+      const clsPrev = deltaClass(chPrev);
+      const chToday = r.changePct;
+      const clsToday = deltaClass(chToday);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
+      tr.cells[4].innerHTML = `<span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span>`;
+      tr.cells[5].textContent = fmtNum(r.volume);
+      tr.cells[6].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
 
     if (state.tab === "tradeval") {
       const ch = r.changePct;

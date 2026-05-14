@@ -165,7 +165,10 @@
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
     if (n >= 1e12) {
-      return `${(n / 1e12).toFixed(2)}조`;
+      const jo = n / 1e12;
+      const s = jo.toFixed(2);
+      const trimmed = s.replace(/\.00$/, "");
+      return `${trimmed}조`;
     }
     const eok = Math.round(n / 1e8);
     if (eok <= 0) return "—";
@@ -734,15 +737,24 @@
     const useAbort = typeof timeoutMs === "number" && timeoutMs > 0;
     const ctrl = useAbort ? new AbortController() : null;
     const tid = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : 0;
+    const url = `${API}?action=${encodeURIComponent(action)}`;
+    console.log("[realtime-board] fetch →", action, url);
     try {
-      const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, {
+      const res = await fetch(url, {
         cache: "no-store",
         signal: ctrl ? ctrl.signal : undefined,
       });
       const data = await res.json().catch(() => ({}));
+      console.log("[realtime-board] fetch ←", action, {
+        ok: res.ok,
+        status: res.status,
+        keys: data && typeof data === "object" ? Object.keys(data) : [],
+        stocksLen: Array.isArray(data.stocks) ? data.stocks.length : null,
+      });
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       return data;
     } catch (e) {
+      console.warn("[realtime-board] fetch ✗", action, e && e.message);
       if (useAbort && e && e.name === "AbortError") {
         throw new Error("요청 시간이 초과되었습니다.");
       }
@@ -772,7 +784,9 @@
   }
 
   function applyStocksArrayToTab(tab, stocks) {
-    const rows = (stocks || []).map((r) => ({ ...r, tab: tab === "nxt" ? "nxt" : r.tab || tab }));
+    const rows = (stocks || [])
+      .filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0)
+      .map((r) => ({ ...r, tab: tab === "nxt" ? "nxt" : r.tab || tab }));
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
     else if (tab === "prevday") state.prevDayRows = rows;
@@ -800,11 +814,11 @@
   }
 
   async function loadBootstrapForTab(tab) {
-    const [sess, idx, stockPack] = await Promise.all([
+    const [sess, idx] = await Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
       fetchJson("index", FETCH_TIMEOUT_MS),
-      fetchStocksJsonForTab(tab),
     ]);
+    const stockPack = await fetchStocksJsonForTab(tab);
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
     state.indexes = (idx.indexes || []).map((x) => ({
@@ -855,13 +869,33 @@
     return { trId, cells };
   }
 
-  function rowFromCcnl(cells) {
+  /** 웹소켓 CCNL 매핑 후에도 stck_prpr 우선 — 짧은 페이로드 시 cells[0]=종목코드, cells[2]=현재가 보정 */
+  function pickWsStckPrpr(o, cells) {
+    let p = String(o.STCK_PRPR || "").trim();
+    if (p) return p;
+    if (cells && cells.length > 2) {
+      const c0 = String(cells[0] || "").replace(/\D/g, "");
+      const code6 = c0.length <= 6 ? c0.padStart(6, "0") : c0.slice(-6);
+      if (/^\d{6}$/.test(code6)) {
+        p = String(cells[2] != null ? cells[2] : "").trim();
+      }
+    }
+    return p;
+  }
+
+  function rowFromCcnl(cells, trId) {
     const o = {};
     CCNL_COLS.forEach((k, i) => {
       o[k] = cells[i] != null ? cells[i] : "";
     });
-    const code = String(o.MKSC_SHRN_ISCD || "").trim();
-    const price = String(o.STCK_PRPR || "").trim();
+    let code = String(o.MKSC_SHRN_ISCD || "").trim().replace(/\D/g, "");
+    if (code.length > 6) code = code.slice(-6);
+    if (!/^\d{6}$/.test(code) && cells[0]) {
+      const c0 = String(cells[0]).replace(/\D/g, "");
+      const c6 = c0.length <= 6 ? c0.padStart(6, "0") : c0.slice(-6);
+      if (/^\d{6}$/.test(c6)) code = c6;
+    }
+    const price = pickWsStckPrpr(o, cells);
     const changePct = Number(String(o.PRDY_CTRT || "").replace(/,/g, ""));
     const vol = String(o.ACML_VOL || "").trim();
     const tv = String(o.ACML_TR_PBMN || "").trim();
@@ -1337,7 +1371,7 @@
       return;
     }
     if (trId === "H0UNCNT0" || trId === "H0STCNT0") {
-      const row = rowFromCcnl(cells);
+      const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
       mergeStockRow(state.prevDayRows, row);
@@ -1357,7 +1391,11 @@
     if (!state.ws || state.ws.readyState !== 1) return;
     const trId = ccnlTrIdForTab(state.tab);
     const limit = state.tab === "cap" || state.tab === "nxt" ? 30 : 50;
-    const list = codes.slice(0, limit);
+    const list = codes
+      .map((c) => String(c || "").replace(/\D/g, ""))
+      .map((d) => (d.length <= 6 ? d.padStart(6, "0") : d.slice(-6)))
+      .filter((c) => /^\d{6}$/.test(c))
+      .slice(0, limit);
     for (const c of list) {
       const key = `${trId}:${c}`;
       if (state.codesSubscribed.has(key)) continue;
@@ -1451,13 +1489,13 @@
       }
       if (state.tab === "gainers") {
         const { stocks } = await fetchJson("gainers", FETCH_TIMEOUT_MS);
-        state.gainerRows = stocks.map((r) => ({ ...r, tab: "gainers" }));
+        state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
       } else if (state.tab === "prevday") {
         const { stocks } = await fetchJson("prev-day-gainers", FETCH_TIMEOUT_MS);
-        state.prevDayRows = stocks.map((r) => ({ ...r, tab: "prevday" }));
+        state.prevDayRows = (stocks || []).map((r) => ({ ...r, tab: "prevday" }));
       } else if (state.tab === "tradeval") {
         const { stocks } = await fetchJson("trade-value-top50", FETCH_TIMEOUT_MS);
-        state.tradeValRows = stocks.map((r) => ({ ...r, tab: "tradeval" }));
+        state.tradeValRows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
       } else if (state.tab === "nxt") {
         const act = nxtFetchAction();
         const { stocks } = await fetchJson(act, FETCH_TIMEOUT_MS);
@@ -1467,7 +1505,7 @@
         else state.nxtFluctRows = rows;
       } else {
         const { stocks } = await fetchJson("market-cap", FETCH_TIMEOUT_MS);
-        state.capRows = stocks.map((r) => ({ ...r, tab: "cap" }));
+        state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
       }
       const { indexes } = await fetchJson("index", FETCH_TIMEOUT_MS);
       state.indexes = (indexes || []).map((x) => ({

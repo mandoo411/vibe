@@ -14,6 +14,7 @@
  *       ANTHROPIC_MODEL (기본 claude-sonnet-4-5)
  *       OUTPUT_PATH (기본 ./data/daily-market.json)
  *       KIS_TOKEN_CACHE (기본 ./.kis-token.json)
+ *       KIS_NOTABLE_QUOTE_DELAY_MS (기본 150, 특징주 KIS 개별시세 호출 간격 ms)
  */
 
 import fs from "node:fs/promises";
@@ -453,18 +454,80 @@ function parseJsonFromAssistant(text) {
   return JSON.parse(raw);
 }
 
-function findTopGainerMatch(topGainers, r) {
-  const code = sanitizeStr(r.code);
-  if (code) {
-    const byCode = topGainers.find((s) => s.code === code);
-    if (byCode) return byCode;
+/** 주식현재가 시세 — fid_input_iscd(6자리) + 시장구분으로 등락률(prdy_ctrt) 조회 */
+const KIS_INQUIRE_PRICE_TR_ID = "FHKST01010100";
+
+async function fetchKisInquirePricePrdyCtrt({ baseUrl, token, appKey, appSecret, code6, market }) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  if (!/^\d{6}$/.test(code)) return null;
+
+  const divOrder = [];
+  if (market === "KOSDAQ") divOrder.push("Q");
+  else if (market === "KOSPI") divOrder.push("J");
+  else divOrder.push("J", "Q", "K");
+
+  for (const fidCondMrktDivCode of divOrder) {
+    const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-price`);
+    url.searchParams.set("FID_COND_MRKT_DIV_CODE", fidCondMrktDivCode);
+    url.searchParams.set("FID_INPUT_ISCD", code);
+
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${token}`,
+        appkey: appKey,
+        appsecret: appSecret,
+        tr_id: KIS_INQUIRE_PRICE_TR_ID,
+        custtype: "P",
+      },
+    });
+    const text = await res.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      continue;
+    }
+    if (json.rt_cd && json.rt_cd !== "0") continue;
+    const out = json.output;
+    const row = Array.isArray(out) ? out[0] : out;
+    if (!row || typeof row !== "object") continue;
+    const pct = kisRowPctChange(row);
+    if (pct != null && Number.isFinite(pct)) return pct;
   }
-  const name = sanitizeStr(r.name);
-  if (!name) return null;
-  return topGainers.find((s) => s.name === name) || null;
+  return null;
 }
 
-/** 특징주 등락률: 랭킹(실측) 우선, AI 값은 보조. 알 수 없으면 null(0으로 채우지 않음) */
+function nameLooseKey(name) {
+  return sanitizeStr(name).replace(/\s+/g, "");
+}
+
+function buildTopGainerLookup(topGainers) {
+  const byCode = new Map();
+  const byName = new Map();
+  const byNameLoose = new Map();
+  for (const s of topGainers) {
+    const c = sanitizeStr(s.code);
+    if (c) byCode.set(c, s);
+    const nm = sanitizeStr(s.name);
+    if (nm) {
+      byName.set(nm, s);
+      byNameLoose.set(nameLooseKey(nm), s);
+    }
+  }
+  return { byCode, byName, byNameLoose };
+}
+
+function findTopGainerMatch(topGainers, r, lookup) {
+  const codeIn = sanitizeStr(r.code);
+  if (codeIn && lookup.byCode.has(codeIn)) return lookup.byCode.get(codeIn);
+  const name = sanitizeStr(r.name);
+  if (!name) return null;
+  return lookup.byName.get(name) || lookup.byNameLoose.get(nameLooseKey(name)) || null;
+}
+
+/** 특징주: TOP30(실측) 등락률 우선, 없으면 AI 숫자. 둘 다 없으면 null */
 function resolveNotableChangePct(r, match) {
   const fromRank = match != null ? toNumberOrNull(match.change) : null;
   if (fromRank != null && Number.isFinite(fromRank)) return fromRank;
@@ -473,26 +536,64 @@ function resolveNotableChangePct(r, match) {
   return null;
 }
 
-function normalizeNotableStocks(raw, topGainers) {
+/**
+ * Claude notableStocks → TOP30 이름·코드 매칭 후 등락률 부착.
+ * 여전히 없으면 KIS inquire-price(종목코드)로 prdy_ctrt 보강. 코드는 TOP30에서만(없으면 "").
+ */
+async function finalizeNotableStocks(raw, topGainers, kisCtx) {
+  const lookup = buildTopGainerLookup(topGainers);
+  const quoteDelayMs = Math.max(0, Number(process.env.KIS_NOTABLE_QUOTE_DELAY_MS) || 150);
   const rows = [];
+
   if (Array.isArray(raw)) {
     for (const r of raw) {
       if (!r || typeof r !== "object") continue;
       const name = sanitizeStr(r.name);
       if (!name) continue;
-      const match = findTopGainerMatch(topGainers, r);
-      const change = resolveNotableChangePct(r, match);
+      const match = findTopGainerMatch(topGainers, r, lookup);
+      let code = sanitizeStr(r.code) || (match ? sanitizeStr(match.code) : "");
+      if (!/^\d{6}$/.test(code)) code = "";
+
+      let change = resolveNotableChangePct(r, match);
+      const canQuote =
+        change == null &&
+        code.length === 6 &&
+        kisCtx &&
+        kisCtx.token &&
+        kisCtx.appKey &&
+        kisCtx.appSecret;
+
+      if (canQuote) {
+        try {
+          await delay(quoteDelayMs);
+          const fromKis = await fetchKisInquirePricePrdyCtrt({
+            baseUrl: kisCtx.baseUrl,
+            token: kisCtx.token,
+            appKey: kisCtx.appKey,
+            appSecret: kisCtx.appSecret,
+            code6: code,
+            market: match?.market || "",
+          });
+          if (fromKis != null && Number.isFinite(fromKis)) change = fromKis;
+        } catch (e) {
+          console.warn(`  [notable KIS] ${name} (${code}): ${e.message || e}`);
+        }
+      }
+
       rows.push({
         name,
-        change,
+        code,
+        change: change != null && Number.isFinite(change) ? change : null,
         tradingValue: sanitizeStr(r.tradingValue) || (match ? sanitizeStr(match.tradingValue) : ""),
         note: sanitizeStr(r.note) || (match ? sanitizeStr(match.reason) || sanitizeStr(match.theme) : ""),
       });
     }
   }
+
   if (rows.length) return rows.slice(0, 12);
   return topGainers.slice(0, 6).map((s) => ({
     name: s.name,
+    code: sanitizeStr(s.code),
     change: toNumberOrNull(s.change),
     tradingValue: sanitizeStr(s.tradingValue),
     note: sanitizeStr(s.reason) || sanitizeStr(s.theme),
@@ -530,7 +631,7 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 {
   "marketSummary": "한국어 시황 요약 3~5문장. 지수·자금·대표 테마를 뉴스·지수 종가 근거로만 서술.",
   "notableStocks": [
-    { "name": "삼성전자", "change": 1.2, "tradingValue": "1조 2000억", "note": "거래대금·뉴스 기준 한 줄 요약" }
+    { "name": "삼성전자", "code": "005930", "change": null, "tradingValue": "1조 2000억", "note": "거래대금·뉴스 기준 한 줄 요약" }
   ],
   "stocks": [
     { "code": "005930", "reason": "HBM4 양산 본격화 기대", "theme": "AI 반도체" }
@@ -546,7 +647,8 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 
 규칙(notableStocks):
 - 5~8개. 그날 시황에서 눈에 띄는 종목(상승률 상위·뉴스 헤드라인에 반복 등장·테마 대표주).
-- change는 입력 종목 목록의 등락률(%)과 숫자로 반드시 일치시키거나, 확신 없으면 null. 0으로 채우지 마세요.
+- 종목명은 입력 목록과 동일한 한글명. 가능하면 "code"에 입력과 동일한 6자리 종목코드.
+- change는 입력 종목의 등락률(%)과 숫자로 일치시키거나, 확신 없으면 null. 0으로 채우지 마세요(후처리에서 TOP30·KIS로 보강).
 - tradingValue는 알면 "1234억" 형태, 모르면 빈 문자열 "".
 - note는 한 줄(30~60자), 뉴스 단서 기반.
 
@@ -608,20 +710,29 @@ async function main() {
 
   let top = [];
   let rankingSource = "";
+  let kisOAuthToken = null;
 
   if (!forceNaver) {
     console.log("[1/6] KIS OAuth token...");
-    const token = await getKisToken({ baseUrl, appKey, appSecret, cachePath });
+    kisOAuthToken = await getKisToken({ baseUrl, appKey, appSecret, cachePath });
 
     console.log("[2/6] KIS 상승률 랭킹 (KOSPI/KOSDAQ)...");
     const [kospi, kosdaq] = await Promise.all([
       fetchFluctuationRanking({
-        baseUrl, token, appKey, appSecret,
-        marketCode: "0001", marketLabel: "KOSPI",
+        baseUrl,
+        token: kisOAuthToken,
+        appKey,
+        appSecret,
+        marketCode: "0001",
+        marketLabel: "KOSPI",
       }),
       fetchFluctuationRanking({
-        baseUrl, token, appKey, appSecret,
-        marketCode: "1001", marketLabel: "KOSDAQ",
+        baseUrl,
+        token: kisOAuthToken,
+        appKey,
+        appSecret,
+        marketCode: "1001",
+        marketLabel: "KOSDAQ",
       }),
     ]);
     console.log(`  KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
@@ -665,6 +776,12 @@ async function main() {
     console.error("상승률 데이터가 비어 있습니다.");
     process.exit(1);
   }
+
+  if (!kisOAuthToken) {
+    console.log("[2b/6] KIS OAuth (특징주 개별 시세 보강용)...");
+    kisOAuthToken = await getKisToken({ baseUrl, appKey, appSecret, cachePath });
+  }
+
   console.log(
     `  Source=${rankingSource} | Top ${top.length}: ${top.slice(0, 3).map((s) => `${s.name}(${s.change}%)`).join(", ")} ...`
   );
@@ -751,7 +868,12 @@ async function main() {
     url: typeof n.url === "string" && /^https?:\/\//i.test(n.url) ? n.url : "",
   })).filter((n) => n.title);
 
-  const notableStocks = normalizeNotableStocks(ai.notableStocks, topGainers);
+  const notableStocks = await finalizeNotableStocks(ai.notableStocks, topGainers, {
+    baseUrl,
+    token: kisOAuthToken,
+    appKey,
+    appSecret,
+  });
   const summary = sanitizeStr(ai.marketSummary);
 
   console.log("[6/6] daily-market.json 갱신...");

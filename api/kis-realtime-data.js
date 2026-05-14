@@ -87,6 +87,8 @@ async function kisGet(path, trId, searchParams, trCont = "") {
   for (const [k, v] of Object.entries(searchParams || {})) {
     url.searchParams.set(k, v == null ? "" : String(v));
   }
+  const qPreview = String(url.search || "").slice(0, 220);
+  console.log("[kis-api] →", { path, trId, trCont: trCont || "", query: qPreview });
   const headers = {
     "content-type": "application/json; charset=utf-8",
     authorization: `Bearer ${token}`,
@@ -129,6 +131,8 @@ async function kisGet(path, trId, searchParams, trCont = "") {
       throw new Error(`KIS rt_cd=${json.rt_cd} msg=${msg}`);
     }
     const nextTrCont = readTrContHeader(res, json);
+    const outN = kisOutputRows(json).length;
+    console.log("[kis-api] ←", { path, trId, rt_cd: json && json.rt_cd, outputRowCount: outN });
     return { json, trCont: nextTrCont };
   }
   throw new Error(`KIS GET failed after retries (${path})`);
@@ -138,10 +142,15 @@ function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
 }
 
+/** REST/JSON 종목 row에서 현재가 — stck_prpr 만 사용 (prpr_unt 등은 단위·스케일이 달라 오표시 원인) */
+function pickStckPrpr(row) {
+  if (!row || typeof row !== "object") return "";
+  return sanitizeStr(row.stck_prpr ?? row.STCK_PRPR);
+}
+
 /**
- * KIS 시가총액 관련 필드(stck_avls, hts_avls 등)는 통상 **백만원** 단위 정수.
- * (시가총액 순위 TR, 주식현재가 시세 inquire-price 출력 동일 관례)
- * 이미 원 단위로 보이는 큰 값(≥1e12)만 원으로 간주해 그대로 문자열화.
+ * KIS 시가총액 관련 필드(stck_avls, hts_avls 등) — TR마다 **백만원** 또는 **억원** 정수로 오는 경우가 있어
+ * 둘 다 안전하게 원화 문자열로 환산한다. (이미 원 단위인 초대 정수는 그대로)
  */
 function pickMcapMillionWonFromRow(row) {
   if (!row || typeof row !== "object") return "";
@@ -162,23 +171,60 @@ function pickMcapMillionWonFromRow(row) {
   }
   for (const k of Object.keys(row)) {
     if (!/avls/i.test(k)) continue;
+    if (/rlim|rate|prtt|비중|whol.*rlim/i.test(k)) continue;
     const v = row[k];
     if (v != null && String(v).trim() !== "") return v;
   }
   return "";
 }
 
-function mcapMillionWonToWonString(millionWonRaw) {
-  const s = normalizeWonMoneyString(millionWonRaw);
+/** 시가총액 필드 정수 → 원 단위 문자열 (백만원 / 억원 / 이미 원) — 시총순위 외 TR용 */
+function mcapAvlsRawToWonString(raw) {
+  const s = normalizeWonMoneyString(raw);
   if (!s) return "";
   const n = Number(s.replace(/,/g, ""));
   if (!Number.isFinite(n) || n <= 0) return "";
-  if (n >= 1e12) {
-    return String(Math.round(n));
+  if (n >= 1e13) return String(Math.round(n));
+
+  const WON_MAX = 3e15;
+  const WON_MIN = 5e11;
+
+  if (n >= 1e8) {
+    const w = Math.round(n * 1e6);
+    if (w >= WON_MIN && w <= WON_MAX) return String(w);
+    return "";
   }
-  const won = Math.round(n * 1e6);
-  if (!Number.isFinite(won) || won <= 0) return "";
-  return String(won);
+
+  if (n < 2e7) {
+    const wE = Math.round(n * 1e8);
+    if (wE >= WON_MIN && wE <= WON_MAX) return String(wE);
+  }
+  const wM = Math.round(n * 1e6);
+  if (wM >= WON_MIN && wM <= WON_MAX) return String(wM);
+  return "";
+}
+
+/**
+ * FHPST01740000 시가총액 순위의 stck_avls — 8자리 이상은 백만원, 그 미만은 억원 우선 후 백만원.
+ */
+function mcapRankingStckAvlsToWonString(raw) {
+  const s = normalizeWonMoneyString(raw);
+  if (!s) return "";
+  const n = Number(s.replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n >= 1e13) return String(Math.round(n));
+  const WON_MAX = 3e15;
+  const WON_MIN = 5e11;
+  if (n >= 1e8) {
+    const wM = Math.round(n * 1e6);
+    if (wM >= WON_MIN && wM <= WON_MAX) return String(wM);
+    return "";
+  }
+  const wE = Math.round(n * 1e8);
+  if (wE >= WON_MIN && wE <= WON_MAX) return String(wE);
+  const wM = Math.round(n * 1e6);
+  if (wM >= WON_MIN && wM <= WON_MAX) return String(wM);
+  return "";
 }
 
 /** 클라이언트로 내려갈 시가총액(원) 문자열: 순위/현재가 응답 row */
@@ -186,17 +232,15 @@ function marketCapWonStringForStockRow(row) {
   if (!row || typeof row !== "object") return "";
   const millionField = pickMcapMillionWonFromRow(row);
   if (millionField) {
-    const w = mcapMillionWonToWonString(millionField);
+    const w = mcapAvlsRawToWonString(millionField);
     if (w) return w;
   }
   const legacy = sanitizeStr(row.mcapEok) || sanitizeStr(row.stck_avls);
   if (!legacy) return "";
   const n = Number(String(legacy).replace(/,/g, ""));
   if (!Number.isFinite(n) || n <= 0) return "";
-  if (n >= 1e11) {
-    return String(Math.round(n));
-  }
-  return mcapMillionWonToWonString(legacy);
+  if (n >= 1e13) return String(Math.round(n));
+  return mcapAvlsRawToWonString(legacy);
 }
 
 function toNum(v) {
@@ -381,8 +425,8 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
     if (chunk.length > 0) {
       const row0 = chunk[0];
       const avlsKeys = Object.keys(row0).filter((k) => /avls|iscd|rank|prpr|ctrt/i.test(k));
-      const million0 = pickMcapMillionWonFromRow(row0);
-      const won0 = mcapMillionWonToWonString(million0);
+      const avls0 = sanitizeStr(row0.stck_avls ?? row0.STCK_AVLS);
+      const won0 = avls0 ? mcapRankingStckAvlsToWonString(avls0) : "";
       console.log("[kis-realtime-data][market-cap] KIS 응답 샘플", {
         tr_id: "FHPST01740000",
         url: "/uapi/domestic-stock/v1/ranking/market-cap",
@@ -392,7 +436,7 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
         sample_avls_related_keys: avlsKeys,
         stck_avls: row0.stck_avls ?? row0.STCK_AVLS,
         hts_avls: row0.hts_avls ?? row0.HTS_AVLS,
-        picked_million_won: million0 || "(없음)",
+        stck_prpr: row0.stck_prpr ?? row0.STCK_PRPR,
         converted_won_string: won0 || "(없음)",
       });
     } else {
@@ -407,11 +451,12 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
   for (const row of chunk) {
     const code = sanitizeStr(row.mksc_shrn_iscd);
     if (!code) continue;
-    const price = sanitizeStr(row.stck_prpr);
+    const price = pickStckPrpr(row);
     const volume = pickAcmlVol(row);
     let tradingValue = pickAcmlTrPbmn(row);
     if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-    const mcapWon = marketCapWonStringForStockRow(row);
+    const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
+    const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
     rows.push({
       rank: toNum(row.data_rank),
       code,
@@ -493,6 +538,13 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     const maxTry = 4;
     let json;
     for (let attempt = 0; attempt < maxTry; attempt++) {
+      if (attempt === 0) {
+        console.log("[kis-api] → fluctuation (direct fetch)", {
+          market: marketLabel,
+          tr_id: "FHPST01700000",
+          fid_prc_cls_code: fidPrcCls,
+        });
+      }
       const res = await fetch(url.toString(), {
         method: "GET",
         headers: {
@@ -519,6 +571,8 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
       }
       break;
     }
+    const rn = kisOutputRows(json).length;
+    console.log("[kis-api] ← fluctuation", { market: marketLabel, fid_prc_cls_code: fidPrcCls, outputRows: rn });
     return json;
   }
 
@@ -527,7 +581,7 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     return list
       .map((row) => {
         const code = sanitizeStr(row.stck_shrn_iscd);
-        const price = sanitizeStr(row.stck_prpr);
+        const price = pickStckPrpr(row);
         const volume = pickAcmlVol(row);
         const tradingValue = pickAcmlTrPbmn(row);
         return {
@@ -571,94 +625,7 @@ async function fetchGainersMerged50() {
   }
   const all = [...merged.values()].filter((r) => r.changePct != null);
   all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  const sliced = all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
-  await mergeMcapFromDualCapRankingsToRows(sliced);
-  await enrichRowsMcapFromInquirePrice(sliced, "gainers");
-  return sliced;
-}
-
-/** 주식현재가 시세(v1_국내주식-008) — HTS 시가총액 hts_avls(백만원) 등 */
-async function fetchInquirePriceDomesticRow(code6) {
-  const raw = String(code6 || "").replace(/\D/g, "");
-  const iscd = raw.length <= 6 ? raw.padStart(6, "0") : raw.slice(-6);
-  if (!iscd) return {};
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/quotations/inquire-price",
-    "FHKST01010100",
-    {
-      fid_cond_mrkt_div_code: "J",
-      fid_input_iscd: iscd,
-    },
-    ""
-  );
-  const out = json && json.output;
-  if (out && typeof out === "object" && !Array.isArray(out)) return out;
-  if (Array.isArray(out) && out[0] && typeof out[0] === "object") return out[0];
-  return {};
-}
-
-async function mergeMcapFromDualCapRankingsToRows(rows) {
-  const ko = await fetchMarketCapRows("0001", 30, "KOSPI");
-  await sleep(KIS_GAP_MS);
-  const kq = await fetchMarketCapRows("1001", 30, "KOSDAQ", { logSample: false });
-  const by = new Map();
-  for (const r of [...ko, ...kq]) {
-    if (r.code && r.mcapEok) by.set(r.code, r.mcapEok);
-  }
-  let hit = 0;
-  for (const r of rows) {
-    const w = by.get(r.code);
-    if (w) {
-      r.mcapEok = w;
-      r.stck_avls = w;
-      hit += 1;
-    }
-  }
-  console.log("[kis-realtime-data][gainers] 시총순위(코스피30+코스닥30) 병합", {
-    mapSize: by.size,
-    matched: hit,
-    total: rows.length,
-  });
-  return rows;
-}
-
-function rowHasPositiveMcapWon(r) {
-  const raw = sanitizeStr(r.mcapEok) || sanitizeStr(r.stck_avls);
-  if (!raw) return false;
-  const n = Number(String(raw).replace(/,/g, ""));
-  return Number.isFinite(n) && n > 0;
-}
-
-async function enrichRowsMcapFromInquirePrice(rows, logTag) {
-  const missing = rows.filter((r) => !rowHasPositiveMcapWon(r));
-  if (missing.length === 0) return;
-  console.log("[kis-realtime-data][" + logTag + "] 주식현재가 시세(FHKST01010100)로 시총 보강", {
-    count: missing.length,
-  });
-  let firstLogDone = false;
-  for (const r of missing) {
-    try {
-      const out = await fetchInquirePriceDomesticRow(r.code);
-      const won = marketCapWonStringForStockRow(out);
-      if (!firstLogDone) {
-        firstLogDone = true;
-        const avlsKeys = Object.keys(out).filter((k) => /avls|iscd/i.test(k));
-        console.log("[kis-realtime-data][" + logTag + "] inquire-price 샘플", {
-          code: r.code,
-          sample_keys: avlsKeys,
-          hts_avls_raw: out.hts_avls ?? out.HTS_AVLS,
-          stck_avls_raw: out.stck_avls ?? out.STCK_AVLS,
-          converted_won_string: won || "(없음)",
-        });
-      }
-      if (won) {
-        r.mcapEok = won;
-        r.stck_avls = won;
-      }
-    } catch (e) {
-      console.warn("[kis-realtime-data][" + logTag + "] inquire-price 실패", r.code, e && e.message);
-    }
-  }
+  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 function getPrevTop50JsonPath() {
@@ -761,25 +728,86 @@ async function getPrevDayGainersTop50Cached() {
   return loaded.stocks;
 }
 
-async function fetchIndexPrice(fidInputIscd, label) {
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/quotations/inquire-index-price",
-    "FHPUP02100000",
-    {
-      FID_COND_MRKT_DIV_CODE: "U",
-      FID_INPUT_ISCD: fidInputIscd,
-    },
-    ""
+/** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
+function pickIndexLevelRaw(row) {
+  if (!row || typeof row !== "object") return "";
+  return (
+    sanitizeStr(row.nmix_prpr) ||
+    sanitizeStr(row.NMIX_PRPR) ||
+    sanitizeStr(row.nmix_nmix_prpr) ||
+    sanitizeStr(row.NMIX_NMIX_PRPR) ||
+    sanitizeStr(row.bstp_nmix_prpr) ||
+    sanitizeStr(row.BSTP_NMIX_PRPR) ||
+    sanitizeStr(row.stck_prpr) ||
+    sanitizeStr(row.STCK_PRPR) ||
+    sanitizeStr(row.prpr_nmix) ||
+    sanitizeStr(row.prpr)
   );
-  const o = json.output;
-  const row = Array.isArray(o) ? o[0] : o;
-  if (!row || typeof row !== "object") {
-    return { id: fidInputIscd, label, value: "", changePct: null, raw: row };
+}
+
+function indexLevelPlausible(fidInputIscd, rawLevel) {
+  const n = Number(String(rawLevel).replace(/,/g, ""));
+  if (!Number.isFinite(n)) return false;
+  if (fidInputIscd === "0001") return n > 500 && n < 8000;
+  if (fidInputIscd === "1001") return n > 300 && n < 4000;
+  return true;
+}
+
+async function fetchIndexPrice(fidInputIscd, label) {
+  for (const fidCondMrktDivCode of ["J", "U"]) {
+    console.log("[kis-realtime-data][index] → inquire-index-price", {
+      tr_id: "FHPUP02100000",
+      fid_cond_mrkt_div_code: fidCondMrktDivCode,
+      fid_input_iscd: fidInputIscd,
+      label,
+    });
+    try {
+      const { json } = await kisGet(
+        "/uapi/domestic-stock/v1/quotations/inquire-index-price",
+        "FHPUP02100000",
+        {
+          fid_cond_mrkt_div_code: fidCondMrktDivCode,
+          fid_input_iscd: fidInputIscd,
+        },
+        ""
+      );
+      const o = json.output;
+      const row = Array.isArray(o) ? o[0] : o;
+      if (!row || typeof row !== "object") continue;
+      const rawLevel = pickIndexLevelRaw(row);
+      const changePct = toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt);
+      const value = formatIndexDisplayValue(rawLevel);
+      if (rawLevel && indexLevelPlausible(fidInputIscd, rawLevel)) {
+        console.log("[kis-realtime-data][index] ←", {
+          label,
+          fid_input_iscd: fidInputIscd,
+          fid_cond_mrkt_div_code: fidCondMrktDivCode,
+          rawLevel,
+          value,
+          changePct,
+          keysSample: Object.keys(row).filter((k) => /nmix|prpr|ctrt|bstp/i.test(k)).slice(0, 12),
+        });
+        return { id: fidInputIscd, label, value, changePct, raw: row };
+      }
+    } catch (e) {
+      console.warn("[kis-realtime-data][index] try failed", fidCondMrktDivCode, fidInputIscd, e && e.message);
+    }
   }
-  const value =
-    sanitizeStr(row.nmix_prpr || row.bstp_nmix_prpr || row.prpr_nmix || row.hts_kor_isnm_nmix_prpr);
-  const changePct = toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt);
-  return { id: fidInputIscd, label, value, changePct, raw: row };
+  console.log("[kis-realtime-data][index] ← no plausible level", { label, fidInputIscd });
+  return { id: fidInputIscd, label, value: "", changePct: null, raw: null };
+}
+
+/** 업종 지수 표시값 — API 문자열 유지·숫자만 정규 포맷 */
+function formatIndexDisplayValue(raw) {
+  const t = sanitizeStr(raw);
+  if (!t) return "";
+  const n = Number(String(t).replace(/,/g, ""));
+  if (!Number.isFinite(n)) return t;
+  const hasDot = /[.]/.test(t);
+  return n.toLocaleString("ko-KR", {
+    minimumFractionDigits: hasDot ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
 }
 
 async function fetchMarketTime() {
@@ -801,6 +829,7 @@ async function fetchMarketTime() {
 async function getApprovalKey() {
   await sleep(KIS_GAP_MS);
   const { appkey, appsecret } = requireAppKeySecret();
+  console.log("[kis-api] → POST oauth2/Approval");
   const res = await fetch(`${baseUrl()}/oauth2/Approval`, {
     method: "POST",
     headers: { "content-type": "application/json; charset=utf-8" },
@@ -814,6 +843,7 @@ async function getApprovalKey() {
   if (!res.ok) throw new Error(`Approval HTTP ${res.status}: ${text.slice(0, 400)}`);
   const json = JSON.parse(text);
   if (!json.approval_key) throw new Error(`Approval: no approval_key: ${text.slice(0, 400)}`);
+  console.log("[kis-api] ← POST oauth2/Approval OK");
   return json.approval_key;
 }
 
@@ -1059,8 +1089,13 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "gainers") {
-      const stocks = await fetchGainersMerged50();
-      json(res, 200, { stocks });
+      try {
+        const stocks = await fetchGainersMerged50();
+        json(res, 200, { stocks });
+      } catch (e) {
+        console.error("[kis-realtime-data] action=gainers", e && e.message, e);
+        json(res, 200, { stocks: [] });
+      }
       return;
     }
 
@@ -1137,7 +1172,13 @@ module.exports = async function handler(req, res) {
       const kospi = await fetchIndexPrice("0001", "코스피");
       await sleep(KIS_GAP_MS);
       const kosdaq = await fetchIndexPrice("1001", "코스닥");
-      const gainers = await fetchGainersMerged50();
+      let gainers = [];
+      try {
+        gainers = await fetchGainersMerged50();
+      } catch (e) {
+        console.error("[kis-realtime-data][snapshot] gainers", e && e.message, e);
+      }
+      await sleep(KIS_GAP_MS);
       const cap = await fetchMarketCapKospi30();
       await sleep(KIS_GAP_MS);
       const prevDayBase = await getPrevDayGainersTop50Cached();

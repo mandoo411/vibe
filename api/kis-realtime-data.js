@@ -515,6 +515,13 @@ async function fetchPrevDayOfficialFluctuationTop50(rankingYmd) {
     fid_rank_sort_cls_code: params.fid_rank_sort_cls_code,
   });
   const { json } = await kisGet(path, trId, params, "");
+  try {
+    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE_JSON_START");
+    console.log(JSON.stringify(json));
+    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE_JSON_END");
+  } catch (logErr) {
+    console.log("[KIS prev-day fluctuation] FULL_API_RESPONSE stringify error", logErr && logErr.message);
+  }
   const raw = kisOutputRows(json);
   const rows = raw
     .map((row) => {
@@ -815,7 +822,8 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const action = (req.query && req.query.action) || "snapshot";
+  const actionRaw = (req.query && req.query.action) || "snapshot";
+  const action = actionRaw === "prevDay" ? "prev-day-gainers" : actionRaw;
 
   try {
     if (action === "approval") {
@@ -848,7 +856,8 @@ module.exports = async function handler(req, res) {
           Date.now() - prevDayGainersCache.at < 24 * 60 * 60 * 1000
       );
       console.log("[prev-day-gainers] handler", {
-        action: "prev-day-gainers",
+        actionQuery: actionRaw,
+        actionResolved: "prev-day-gainers",
         fluctuationTrId: "FHPST01700000",
         rankingYmd,
         listFromCache: cacheHit,

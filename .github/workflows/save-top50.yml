@@ -1,0 +1,49 @@
+name: Save prev top50
+
+# 매일 16:00 KST = 07:00 UTC — 장마감 직후 당일 상승 TOP50을 data/prev-top50.json 에 저장 후 커밋
+# 필요 secrets: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET (선택 KIS_BASE_URL)
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: save-prev-top50
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Fetch TOP50 and write data/prev-top50.json
+        env:
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
+        run: node scripts/save-prev-top50.mjs
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/prev-top50.json
+          if git diff --staged --quiet; then
+            echo "No changes to data/prev-top50.json"
+          else
+            git commit -m "chore(data): prev-top50 장마감 상승 TOP50 $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi

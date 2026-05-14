@@ -109,6 +109,7 @@ a.hub-card:focus-visible {
   border-radius: 0;
   box-shadow: none;
   background-color: transparent;
+  mix-blend-mode: lighten;
   background-image: url("./assets/icons.jpg");
   background-repeat: no-repeat;
   /* 1024×556 기준, 행 높이 278px → 120px 스케일 */

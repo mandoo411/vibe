@@ -86,7 +86,7 @@ a.hub-card:focus-visible {
   color: var(--text-muted);
 }
 
-/* 카드 아이콘 — assets/icons.jpg 3×2 스프라이트 (표시 80×80) */
+/* 카드 아이콘 — assets/icons.jpg 3×2 스프라이트 (120×120, 세로 맞춤 + 가로 중앙 크롭 ≈ object-fit: cover) */
 .hub-card__icon {
   box-sizing: border-box;
   flex-shrink: 0;
@@ -95,34 +95,37 @@ a.hub-card:focus-visible {
 
 .hub-card__icon--sprite {
   display: block;
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
+  overflow: hidden;
+  background-color: transparent;
   background-image: url("./assets/icons.jpg");
   background-repeat: no-repeat;
-  /* 원본 1024×556, 3열×2행 → 각 셀을 80×80으로 맞춤 */
-  background-size: 240px 160px;
-  border-radius: var(--radius, 3px);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  /* 1024×556 기준, 행 높이 278px → 120px 스케일 */
+  background-size: 442.014px 240px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* 1행: 장마감 시황 | 전광판 | 주간일정 — 2행: 장전 | 미국 | 암호화폐 */
+/* 셀 너비 147.338px, 뷰포트 120px → 좌우 (147.338-120)/2 크롭 */
 .hub-card__icon--sprite-c0-r0 {
-  background-position: 0 0;
+  background-position: -13.669px 0;
 }
 .hub-card__icon--sprite-c1-r0 {
-  background-position: -80px 0;
+  background-position: -161.007px 0;
 }
 .hub-card__icon--sprite-c2-r0 {
-  background-position: -160px 0;
+  background-position: -308.345px 0;
 }
 .hub-card__icon--sprite-c0-r1 {
-  background-position: 0 -80px;
+  background-position: -13.669px -120px;
 }
 .hub-card__icon--sprite-c1-r1 {
-  background-position: -80px -80px;
+  background-position: -161.007px -120px;
 }
 .hub-card__icon--sprite-c2-r1 {
-  background-position: -160px -80px;
+  background-position: -308.345px -120px;
 }
 
 .hub-card__title {

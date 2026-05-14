@@ -86,35 +86,35 @@ a.hub-card:focus-visible {
   color: var(--text-muted);
 }
 
-/* 텍스트 기반 카드 아이콘 — 골드 정사각형 */
+/* 카드 아이콘 — 40×40 골드 (#C9A84C) */
 .hub-card__icon {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   margin-bottom: 10px;
   flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  text-transform: none;
   color: #c9a84c;
   background: rgba(201, 168, 76, 0.2);
   border-radius: var(--radius, 3px);
 }
 
-.hub-card__icon--sym {
-  font-size: 1.1rem;
-  letter-spacing: 0;
+.hub-card__icon > svg {
+  display: block;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
 }
 
 .hub-card__icon--live {
+  font-family: var(--font-mono);
+  font-weight: 700;
   font-size: 9px;
   letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: none;
 }
 
 .hub-card__title {

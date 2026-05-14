@@ -108,6 +108,19 @@ a.hub-card:focus-visible {
   flex-shrink: 0;
 }
 
+.hub-card__icon--flag {
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.hub-card__icon--flag > img {
+  display: block;
+  width: 40px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
 .hub-card__icon--live {
   font-family: var(--font-mono);
   font-weight: 700;

@@ -4,7 +4,7 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  const TAB_CACHE_MS = 3 * 60 * 1000;
+  const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
@@ -813,12 +813,22 @@
     return fetchJson(action, FETCH_TIMEOUT_MS);
   }
 
+  /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
+  async function refreshTabStocksOnly(tab) {
+    const stockPack = await fetchStocksJsonForTab(tab);
+    applyStocksArrayToTab(tab, stockPack.stocks);
+    state.tabLoadedAt[tab] = Date.now();
+    if (tab === "nxt" && !NXT_DISABLED) {
+      state.nxtSubLoadedAt[state.nxtSub] = Date.now();
+    }
+  }
+
   async function loadBootstrapForTab(tab) {
-    const [sess, idx] = await Promise.all([
+    const [sess, idx, stockPack] = await Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
       fetchJson("index", FETCH_TIMEOUT_MS),
+      fetchStocksJsonForTab(tab),
     ]);
-    const stockPack = await fetchStocksJsonForTab(tab);
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
     state.indexes = (idx.indexes || []).map((x) => ({
@@ -1500,14 +1510,16 @@
     hideRtErrorIfNxt();
     try {
       if (state.tab === "nxt" && NXT_DISABLED) {
-        const { indexes } = await fetchJson("index", FETCH_TIMEOUT_MS);
+        const [{ indexes }, { clock, marketTime }] = await Promise.all([
+          fetchJson("index", FETCH_TIMEOUT_MS),
+          fetchJson("session", FETCH_TIMEOUT_MS),
+        ]);
         state.indexes = (indexes || []).map((x) => ({
           id: x.id,
           label: x.label,
           value: x.value,
           changePct: x.changePct,
         }));
-        const { clock, marketTime } = await fetchJson("session", FETCH_TIMEOUT_MS);
         state.clockSession = clock;
         state.marketTime = marketTime;
         renderAll();
@@ -1517,36 +1529,52 @@
         }
         return;
       }
-      if (state.tab === "gainers") {
-        const { stocks } = await fetchJson("gainers", FETCH_TIMEOUT_MS);
-        state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
-      } else if (state.tab === "prevday") {
-        const { stocks } = await fetchJson("prev-day-gainers", FETCH_TIMEOUT_MS);
-        state.prevDayRows = (stocks || []).map((r) => ({ ...r, tab: "prevday" }));
-      } else if (state.tab === "tradeval") {
-        const { stocks } = await fetchJson("trade-value-top50", FETCH_TIMEOUT_MS);
-        state.tradeValRows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
-      } else if (state.tab === "nxt") {
-        const act = nxtFetchAction();
-        const { stocks } = await fetchJson(act, FETCH_TIMEOUT_MS);
-        const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
-        if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
-        else if (state.nxtSub === "volume") state.nxtVolRows = rows;
-        else state.nxtFluctRows = rows;
-      } else {
-        const { stocks } = await fetchJson("market-cap", FETCH_TIMEOUT_MS);
-        state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
-      }
-      const { indexes } = await fetchJson("index", FETCH_TIMEOUT_MS);
-      state.indexes = (indexes || []).map((x) => ({
+
+      const stockPromise =
+        state.tab === "gainers"
+          ? fetchJson("gainers", FETCH_TIMEOUT_MS)
+          : state.tab === "prevday"
+            ? fetchJson("prev-day-gainers", FETCH_TIMEOUT_MS)
+            : state.tab === "tradeval"
+              ? fetchJson("trade-value-top50", FETCH_TIMEOUT_MS)
+              : state.tab === "nxt"
+                ? fetchJson(nxtFetchAction(), FETCH_TIMEOUT_MS)
+                : fetchJson("market-cap", FETCH_TIMEOUT_MS);
+
+      const [stockPack, idxPack, sessPack] = await Promise.all([
+        stockPromise,
+        fetchJson("index", FETCH_TIMEOUT_MS),
+        fetchJson("session", FETCH_TIMEOUT_MS),
+      ]);
+
+      state.indexes = (idxPack.indexes || []).map((x) => ({
         id: x.id,
         label: x.label,
         value: x.value,
         changePct: x.changePct,
       }));
-      const { clock, marketTime } = await fetchJson("session", FETCH_TIMEOUT_MS);
-      state.clockSession = clock;
-      state.marketTime = marketTime;
+      state.clockSession = sessPack.clock || null;
+      state.marketTime = sessPack.marketTime || null;
+
+      if (state.tab === "gainers") {
+        const { stocks } = stockPack;
+        state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
+      } else if (state.tab === "prevday") {
+        const { stocks } = stockPack;
+        state.prevDayRows = (stocks || []).map((r) => ({ ...r, tab: "prevday" }));
+      } else if (state.tab === "tradeval") {
+        const { stocks } = stockPack;
+        state.tradeValRows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
+      } else if (state.tab === "nxt") {
+        const { stocks } = stockPack;
+        const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
+        if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
+        else if (state.nxtSub === "volume") state.nxtVolRows = rows;
+        else state.nxtFluctRows = rows;
+      } else {
+        const { stocks } = stockPack;
+        state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
+      }
       state.tabLoadedAt[state.tab] = Date.now();
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
@@ -1603,7 +1631,7 @@
           renderAll();
           finish();
           if (!cacheFresh && !(tk === "nxt" && NXT_DISABLED)) {
-            loadBootstrapForTab(tk)
+            refreshTabStocksOnly(tk)
               .then(() => {
                 if (errEl) errEl.hidden = true;
                 renderAll();

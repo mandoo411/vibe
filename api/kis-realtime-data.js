@@ -478,11 +478,12 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
-/** market-cap TR 응답으로 코스피·코스닥 합쳐 거래대금 상위 50 */
+/** market-cap TR 응답으로 코스피·코스닥 합쳐 거래대금 상위 50 (두 시장 조회 병렬로 지연 단축) */
 async function fetchTradeValueTop50FromMarketCap() {
-  const kospi = await fetchMarketCapRows("0001", 100, "KOSPI");
-  await sleep(KIS_GAP_MS);
-  const kosdaq = await fetchMarketCapRows("1001", 100, "KOSDAQ");
+  const [kospi, kosdaq] = await Promise.all([
+    fetchMarketCapRows("0001", 80, "KOSPI", { logSample: false }),
+    fetchMarketCapRows("1001", 80, "KOSDAQ", { logSample: false }),
+  ]);
   const merged = new Map();
   for (const r of [...kospi, ...kosdaq]) {
     const prev = merged.get(r.code);
@@ -616,9 +617,10 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
 }
 
 async function fetchGainersMerged50() {
-  const kospi = await fetchFluctuationRank("0001", "KOSPI");
-  await sleep(KIS_GAP_MS);
-  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
+  const [kospi, kosdaq] = await Promise.all([
+    fetchFluctuationRank("0001", "KOSPI"),
+    fetchFluctuationRank("1001", "KOSDAQ"),
+  ]);
   const merged = new Map();
   for (const r of [...kospi, ...kosdaq]) {
     if (!merged.has(r.code)) merged.set(r.code, r);
@@ -701,9 +703,10 @@ async function enrichPrevDayWithLiveQuotesCached(baseRows, rankingYmd) {
   ) {
     return mergeLiveQuotesIntoPrevDayRows(baseRows, prevDayQuotesCache.byCode);
   }
-  const kospi = await fetchFluctuationRank("0001", "KOSPI");
-  await sleep(KIS_GAP_MS);
-  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
+  const [kospi, kosdaq] = await Promise.all([
+    fetchFluctuationRank("0001", "KOSPI"),
+    fetchFluctuationRank("1001", "KOSDAQ"),
+  ]);
   const byCode = new Map();
   for (const r of [...kospi, ...kosdaq]) {
     if (r.code) byCode.set(r.code, r);
@@ -1126,9 +1129,10 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "index") {
-      const kospi = await fetchIndexPrice("0001", "코스피");
-      await sleep(KIS_GAP_MS);
-      const kosdaq = await fetchIndexPrice("1001", "코스닥");
+      const [kospi, kosdaq] = await Promise.all([
+        fetchIndexPrice("0001", "코스피"),
+        fetchIndexPrice("1001", "코스닥"),
+      ]);
       json(res, 200, { indexes: [kospi, kosdaq] });
       return;
     }
@@ -1169,9 +1173,10 @@ module.exports = async function handler(req, res) {
     if (action === "snapshot") {
       const marketTime = await fetchMarketTime();
       await sleep(KIS_GAP_MS);
-      const kospi = await fetchIndexPrice("0001", "코스피");
-      await sleep(KIS_GAP_MS);
-      const kosdaq = await fetchIndexPrice("1001", "코스닥");
+      const [kospi, kosdaq] = await Promise.all([
+        fetchIndexPrice("0001", "코스피"),
+        fetchIndexPrice("1001", "코스닥"),
+      ]);
       let gainers = [];
       try {
         gainers = await fetchGainersMerged50();

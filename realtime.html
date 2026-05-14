@@ -143,6 +143,58 @@
       .rt-tab:hover {
         color: var(--text);
       }
+      .rt-nxt-subtabs {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px 8px;
+        margin: 0 0 0;
+        border: 1px solid var(--border-strong);
+        border-top: 0;
+        background: #0e0c09;
+      }
+      .rt-nxt-subtabs[hidden] {
+        display: none !important;
+      }
+      .rt-nxt-subtab {
+        appearance: none;
+        border: 1px solid var(--border);
+        margin: 0;
+        padding: 5px 10px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-radius: 3px;
+        background: var(--bg-panel);
+        color: var(--text-dim);
+      }
+      .rt-nxt-subtab[aria-selected="true"] {
+        background: var(--bg-elevated);
+        color: var(--accent-bright);
+        border-color: var(--border-strong);
+      }
+      .rt-nxt-subtab:hover {
+        color: var(--text);
+      }
+      .rt-nxt-badge {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 6px 2px;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        vertical-align: middle;
+        color: #14110a;
+        background: linear-gradient(165deg, #fff4c2, #d4af37 55%, #8a6d1e);
+        border: 1px solid #e8c547;
+        border-radius: 3px;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25) inset;
+        text-transform: none;
+      }
       .rt-panel {
         border: 1px solid var(--border-strong);
         border-radius: 0 var(--radius) var(--radius) var(--radius);
@@ -639,6 +691,27 @@
           </button>
           <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
             거래대금 TOP50
+          </button>
+          <button type="button" class="rt-tab" role="tab" data-rt-tab="nxt" aria-selected="false" id="tab-nxt">
+            NXT마켓<span class="rt-nxt-badge" aria-hidden="true">NXT</span>
+          </button>
+        </div>
+        <div id="rt-nxt-subtabs" class="rt-nxt-subtabs" role="tablist" aria-label="NXT 순위" hidden>
+          <button
+            type="button"
+            class="rt-nxt-subtab"
+            role="tab"
+            data-rt-nxt-sub="fluctuation"
+            aria-selected="true"
+            id="tab-nxt-fluct"
+          >
+            NXT 상승률 TOP30
+          </button>
+          <button type="button" class="rt-nxt-subtab" role="tab" data-rt-nxt-sub="trade" aria-selected="false" id="tab-nxt-trade">
+            NXT 거래대금 TOP30
+          </button>
+          <button type="button" class="rt-nxt-subtab" role="tab" data-rt-nxt-sub="volume" aria-selected="false" id="tab-nxt-vol">
+            NXT 거래량 TOP30
           </button>
         </div>
         <div class="rt-panel" role="tabpanel">

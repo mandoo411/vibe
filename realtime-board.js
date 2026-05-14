@@ -64,10 +64,14 @@
 
   const state = {
     tab: "cap",
+    nxtSub: "fluctuation",
     capRows: [],
     gainerRows: [],
     prevDayRows: [],
     tradeValRows: [],
+    nxtFluctRows: [],
+    nxtPbmnRows: [],
+    nxtVolRows: [],
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -671,7 +675,46 @@
     if (state.tab === "gainers") return state.gainerRows;
     if (state.tab === "prevday") return state.prevDayRows;
     if (state.tab === "tradeval") return state.tradeValRows;
+    if (state.tab === "nxt") {
+      if (state.nxtSub === "trade") return state.nxtPbmnRows;
+      if (state.nxtSub === "volume") return state.nxtVolRows;
+      return state.nxtFluctRows;
+    }
     return state.capRows;
+  }
+
+  function ccnlTrIdForTab(tab) {
+    if (tab === "nxt") return "H0NXCNT0";
+    return "H0UNCNT0";
+  }
+
+  function nxtFetchAction() {
+    if (state.nxtSub === "trade") return "nxt-trade-pbmn-30";
+    if (state.nxtSub === "volume") return "nxt-volume-30";
+    return "nxt-fluctuation-30";
+  }
+
+  function updateNxtSubtabsVisibility() {
+    const bar = $("rt-nxt-subtabs");
+    if (!bar) return;
+    if (state.tab === "nxt") bar.removeAttribute("hidden");
+    else bar.setAttribute("hidden", "");
+  }
+
+  function syncNxtSubtabAria() {
+    document.querySelectorAll("[data-rt-nxt-sub]").forEach((b) => {
+      b.setAttribute("aria-selected", b.getAttribute("data-rt-nxt-sub") === state.nxtSub ? "true" : "false");
+    });
+  }
+
+  async function refreshNxtPanel() {
+    const act = nxtFetchAction();
+    const { stocks } = await fetchJson(act);
+    const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
+    if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
+    else if (state.nxtSub === "volume") state.nxtVolRows = rows;
+    else state.nxtFluctRows = rows;
+    renderAll();
   }
 
   function tableColSpan() {
@@ -693,6 +736,11 @@
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
+    if (state.tab === "nxt") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+      return;
+    }
     tr.innerHTML =
       '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
   }
@@ -702,6 +750,11 @@
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 상위 50 · 오늘 조정·추세 추적";
     if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
+    if (state.tab === "nxt") {
+      if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
+      if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
+      return "NXT 상승률 TOP30";
+    }
     return "실시간 시세";
   }
 
@@ -1002,30 +1055,43 @@
       renderMeta();
       return;
     }
-    if (trId === "H0UNCNT0" || trId === "H0STCNT0" || trId === "H0NXCNT0") {
+    if (trId === "H0UNCNT0" || trId === "H0STCNT0") {
       const row = rowFromCcnl(cells);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
       mergeStockRow(state.prevDayRows, row);
       if (state.tab === "cap" || state.tab === "gainers" || state.tab === "prevday") renderTable();
+      return;
+    }
+    if (trId === "H0NXCNT0") {
+      const row = rowFromCcnl(cells);
+      mergeStockRow(state.nxtFluctRows, row);
+      mergeStockRow(state.nxtPbmnRows, row);
+      mergeStockRow(state.nxtVolRows, row);
+      if (state.tab === "nxt") renderTable();
     }
   }
 
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
-    const limit = state.tab === "cap" ? 30 : 50;
+    const trId = ccnlTrIdForTab(state.tab);
+    const limit = state.tab === "cap" || state.tab === "nxt" ? 30 : 50;
     const list = codes.slice(0, limit);
     for (const c of list) {
-      if (state.codesSubscribed.has(c)) continue;
-      state.ws.send(makeWsPayload("1", "H0UNCNT0", c));
-      state.codesSubscribed.add(c);
+      const key = `${trId}:${c}`;
+      if (state.codesSubscribed.has(key)) continue;
+      state.ws.send(makeWsPayload("1", trId, c));
+      state.codesSubscribed.add(key);
     }
   }
 
   function unsubscribeAll() {
     if (!state.ws || state.ws.readyState !== 1) return;
-    for (const c of state.codesSubscribed) {
-      state.ws.send(makeWsPayload("0", "H0UNCNT0", c));
+    for (const key of state.codesSubscribed) {
+      const sep = key.indexOf(":");
+      const trId = sep >= 0 ? key.slice(0, sep) : "H0UNCNT0";
+      const c = sep >= 0 ? key.slice(sep + 1) : key;
+      state.ws.send(makeWsPayload("0", trId, c));
     }
     state.codesSubscribed.clear();
     state.ws.send(makeWsPayload("0", "H0UPCNT0", "0001"));
@@ -1102,6 +1168,13 @@
       } else if (state.tab === "tradeval") {
         const { stocks } = await fetchJson("trade-value-top50");
         state.tradeValRows = stocks.map((r) => ({ ...r, tab: "tradeval" }));
+      } else if (state.tab === "nxt") {
+        const act = nxtFetchAction();
+        const { stocks } = await fetchJson(act);
+        const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
+        if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
+        else if (state.nxtSub === "volume") state.nxtVolRows = rows;
+        else state.nxtFluctRows = rows;
       } else {
         const { stocks } = await fetchJson("market-cap");
         state.capRows = stocks.map((r) => ({ ...r, tab: "cap" }));
@@ -1137,18 +1210,71 @@
         if (t === "gainers") state.tab = "gainers";
         else if (t === "prevday") state.tab = "prevday";
         else if (t === "tradeval") state.tab = "tradeval";
+        else if (t === "nxt") state.tab = "nxt";
         else state.tab = "cap";
         state.openChartCode = null;
         state.candlePeriod = "D";
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
-        renderTable();
-        startPolling();
-        if (state.ws && state.ws.readyState === 1) {
-          unsubscribeAll();
-          subscribeStocks(getCurrentRows().map((r) => r.code));
+        updateNxtSubtabsVisibility();
+        syncNxtSubtabAria();
+
+        const finish = () => {
+          startPolling();
+          if (state.ws && state.ws.readyState === 1) {
+            unsubscribeAll();
+            subscribeStocks(getCurrentRows().map((r) => r.code));
+          }
+        };
+
+        if (state.tab === "nxt") {
+          refreshNxtPanel()
+            .then(finish)
+            .catch((e) => {
+              const err = $("rt-error");
+              if (err) {
+                err.hidden = false;
+                err.textContent = e.message || String(e);
+              }
+              finish();
+            });
+        } else {
+          renderTable();
+          finish();
         }
+      });
+    });
+  }
+
+  function setupNxtSubtabs() {
+    document.querySelectorAll("[data-rt-nxt-sub]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (state.tab !== "nxt") return;
+        const s = btn.getAttribute("data-rt-nxt-sub");
+        if (s === "trade") state.nxtSub = "trade";
+        else if (s === "volume") state.nxtSub = "volume";
+        else state.nxtSub = "fluctuation";
+        syncNxtSubtabAria();
+        state.openChartCode = null;
+        state.candlePeriod = "D";
+        const finish = () => {
+          startPolling();
+          if (state.ws && state.ws.readyState === 1) {
+            unsubscribeAll();
+            subscribeStocks(getCurrentRows().map((r) => r.code));
+          }
+        };
+        refreshNxtPanel()
+          .then(finish)
+          .catch((e) => {
+            const err = $("rt-error");
+            if (err) {
+              err.hidden = false;
+              err.textContent = e.message || String(e);
+            }
+            finish();
+          });
       });
     });
   }
@@ -1200,7 +1326,7 @@
     const period =
       state.tab === "prevday"
         ? 5 * 60 * 1000
-        : state.tab === "tradeval"
+        : state.tab === "tradeval" || state.tab === "nxt"
           ? 15000
           : state.tab === "gainers"
             ? 5000
@@ -1212,6 +1338,7 @@
 
   async function init() {
     setupTabs();
+    setupNxtSubtabs();
     wireTableChartAccordion();
     const err = $("rt-error");
     if (err) err.hidden = true;

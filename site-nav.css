@@ -1,4 +1,8 @@
 /* TotalMoney AI — 공통 상단 네비 (홈 | 시황 | 전광판 | 주간일정) */
+a.masthead__brand + .tm-site-nav {
+  margin-top: 0;
+}
+
 .tm-site-nav {
   display: flex;
   flex-wrap: wrap;

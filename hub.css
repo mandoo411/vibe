@@ -1,10 +1,5 @@
-/* TotalMoney AI — 메인 허브 (index) */
-.hub-page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px 18px 56px;
-  padding-left: max(18px, env(safe-area-inset-left));
-  padding-right: max(18px, env(safe-area-inset-right));
+/* TotalMoney AI — 메인 허브 (index, .page 레이아웃은 weekly-market.css) */
+.page.page--hub {
   padding-bottom: max(56px, calc(28px + env(safe-area-inset-bottom)));
 }
 

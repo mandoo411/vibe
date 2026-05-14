@@ -20,12 +20,14 @@
     <link rel="stylesheet" href="./site-nav.css" />
     <style>
       /* Bloomberg-style dense board on top of TotalMoney dark theme */
-      .rt-wrap {
+      .page.page--realtime {
         max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px 18px 48px;
-        padding-left: max(18px, env(safe-area-inset-left));
-        padding-right: max(18px, env(safe-area-inset-right));
+      }
+      /* 상단은 .page 패딩; 보드 영역만 */
+      .rt-wrap {
+        max-width: none;
+        margin: 0;
+        padding: 0;
       }
       .rt-strip {
         display: flex;
@@ -581,65 +583,83 @@
         <p class="rt-loading__text">시장 데이터를 불러오는 중...</p>
       </div>
     </div>
-    <div class="rt-wrap page">
+    <div class="page page--realtime">
+      <a class="masthead__brand" href="./index.html" aria-label="TotalMoney AI 홈">
+        <img
+          class="masthead__logo"
+          src="./assets/totalmoney_ai.png"
+          alt=""
+          width="40"
+          height="40"
+          decoding="async"
+        />
+        <span class="masthead__brand-text">
+          <span class="masthead__brand-name">TotalMoney AI</span>
+          <span class="masthead__brand-tagline">Smarter Financial Decisions</span>
+        </span>
+      </a>
+
       <nav class="tm-site-nav" aria-label="주요 메뉴">
         <a class="tm-site-nav__link" href="./index.html">홈</a>
         <a class="tm-site-nav__link" href="./daily-market.html">시황</a>
         <a class="tm-site-nav__link" href="./realtime.html" aria-current="page">전광판</a>
         <a class="tm-site-nav__link" href="./weekly-market.html">주간일정</a>
       </nav>
-      <header class="masthead masthead--title-only">
-        <div class="masthead__copy">
-          <p class="masthead__kicker">Realtime board</p>
-          <h1 class="masthead__title">실시간 전광판</h1>
-          <div class="masthead__meta">
-            <span>한국투자증권 Open API · KRX + NXT(통합체결)</span>
-            <span><a href="./daily-market.html">매일 시황 →</a></span>
+
+      <div class="rt-wrap">
+        <header class="masthead masthead--title-only">
+          <div class="masthead__copy">
+            <p class="masthead__kicker">Realtime board</p>
+            <h1 class="masthead__title">실시간 전광판</h1>
+            <div class="masthead__meta">
+              <span>한국투자증권 Open API · KRX + NXT(통합체결)</span>
+              <span><a href="./daily-market.html">매일 시황 →</a></span>
+            </div>
+          </div>
+        </header>
+
+        <div id="rt-indexes" class="rt-strip" aria-live="polite"></div>
+
+        <div class="rt-meta-bar" aria-live="polite">
+          <span id="rt-meta"></span>
+          <span id="rt-conn" class="rt-conn"></span>
+        </div>
+
+        <div class="rt-tabs" role="tablist" aria-label="보기 전환">
+          <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
+            시총 TOP 30
+          </button>
+          <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
+            상승률 TOP 50
+          </button>
+          <button type="button" class="rt-tab" role="tab" data-rt-tab="prevday" aria-selected="false" id="tab-prevday">
+            작전장 상승 TOP50
+          </button>
+          <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
+            거래대금 TOP50
+          </button>
+        </div>
+        <div class="rt-panel" role="tabpanel">
+          <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 30</div>
+          <div class="rt-scroll">
+            <table class="rt-table" aria-label="실시간 시세">
+              <thead>
+                <tr id="rt-thead-row">
+                  <th class="rt-td-rank">순위</th>
+                  <th class="rt-td-name">종목명</th>
+                  <th class="num rt-td-price">가격</th>
+                  <th class="num rt-td-chg">등락률</th>
+                  <th class="num rt-td-vol">거래량</th>
+                  <th class="num rt-td-tv">거래대금</th>
+                </tr>
+              </thead>
+              <tbody id="rt-tbody"></tbody>
+            </table>
           </div>
         </div>
-      </header>
 
-      <div id="rt-indexes" class="rt-strip" aria-live="polite"></div>
-
-      <div class="rt-meta-bar" aria-live="polite">
-        <span id="rt-meta"></span>
-        <span id="rt-conn" class="rt-conn"></span>
+        <p id="rt-error" class="rt-error" hidden></p>
       </div>
-
-      <div class="rt-tabs" role="tablist" aria-label="보기 전환">
-        <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
-          시총 TOP 30
-        </button>
-        <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
-          상승률 TOP 50
-        </button>
-        <button type="button" class="rt-tab" role="tab" data-rt-tab="prevday" aria-selected="false" id="tab-prevday">
-          작전장 상승 TOP50
-        </button>
-        <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
-          거래대금 TOP50
-        </button>
-      </div>
-      <div class="rt-panel" role="tabpanel">
-        <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 30</div>
-        <div class="rt-scroll">
-          <table class="rt-table" aria-label="실시간 시세">
-            <thead>
-              <tr id="rt-thead-row">
-                <th class="rt-td-rank">순위</th>
-                <th class="rt-td-name">종목명</th>
-                <th class="num rt-td-price">가격</th>
-                <th class="num rt-td-chg">등락률</th>
-                <th class="num rt-td-vol">거래량</th>
-                <th class="num rt-td-tv">거래대금</th>
-              </tr>
-            </thead>
-            <tbody id="rt-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <p id="rt-error" class="rt-error" hidden></p>
     </div>
 
     <script

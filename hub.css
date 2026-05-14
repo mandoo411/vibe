@@ -1,11 +1,9 @@
 /* TotalMoney AI — 메인 허브 (index, .page 레이아웃은 weekly-market.css) */
-.page.page--hub {
-  padding-bottom: max(56px, calc(28px + env(safe-area-inset-bottom)));
-}
+/* PC·모바일 공통: .page 하단 패딩은 weekly-market.css만 사용(다른 탭과 동일 리듬) */
 
 .hub-hero {
-  margin-bottom: 22px;
-  padding-bottom: 18px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -170,9 +168,8 @@ a.hub-card:focus-visible {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    /* 패딩은 weekly-market.css @768 .page와 동일(8px 전용 패딩·100dvh 제거로 시황↔메인 전환 시 확대 느낌 방지) */
+    /* 패딩은 weekly-market.css @768 .page와 동일 */
     min-height: 0;
-    padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
 
   .page.page--hub .hub-hero {

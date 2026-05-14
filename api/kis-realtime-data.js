@@ -752,6 +752,131 @@ function kstYmdAndCntgHourToUtcSec(dateYmd8, cntgHourRaw) {
   return Math.floor(Date.UTC(y, mo, da, hh - 9, mm, ss) / 1000);
 }
 
+/** HHMMSS(6자리) → 그날 0시부터 초 */
+function hhmmssToSecOfDay(hhmmss) {
+  const h6 = String(hhmmss || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  const hh = Number(h6.slice(0, 2));
+  const mm = Number(h6.slice(2, 4));
+  const ss = Number(h6.slice(4, 6));
+  if (![hh, mm, ss].every((n) => Number.isFinite(n))) return NaN;
+  return hh * 3600 + mm * 60 + ss;
+}
+
+function secOfDayToHhmmss(sec) {
+  if (!Number.isFinite(sec) || sec < 0) return "000000";
+  const s = Math.min(Math.floor(sec), 24 * 3600 - 1);
+  const hh = Math.floor(s / 3600);
+  const mm = Math.floor((s % 3600) / 60);
+  const ss = s % 60;
+  return `${String(hh).padStart(2, "0")}${String(mm).padStart(2, "0")}${String(ss).padStart(2, "0")}`;
+}
+
+/** KST 기준 현재 시각 HHMMSS */
+function kstWallHhmmss(d = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const m = Object.fromEntries(parts.filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+  const hh = String(m.hour || "0").padStart(2, "0");
+  const mm = String(m.minute || "0").padStart(2, "0");
+  const ss = String(m.second || "0").padStart(2, "0");
+  return `${hh}${mm}${ss}`;
+}
+
+/**
+ * 분봉 조회 앵커(HHMMSS). 장마감(15:30)까지 역순 조회이므로 상한은 153000.
+ * 장전에는 전일 마감 기준과 동일하게 153000.
+ */
+function intradayChartFidInputHour1() {
+  const cur = hhmmssToSecOfDay(kstWallHhmmss());
+  const open = hhmmssToSecOfDay("090000");
+  const close = hhmmssToSecOfDay("153000");
+  if (!Number.isFinite(cur)) return "153000";
+  if (cur < open) return "153000";
+  return secOfDayToHhmmss(Math.min(cur, close));
+}
+
+function utcSecToKstYmd8(utcSec) {
+  if (!Number.isFinite(utcSec)) return "";
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(new Date(utcSec * 1000))
+    .replace(/-/g, "");
+}
+
+function utcSecToKstHhmmss(utcSec) {
+  if (!Number.isFinite(utcSec)) return "000000";
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(utcSec * 1000));
+  const m = Object.fromEntries(parts.filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+  const hh = String(m.hour || "0").padStart(2, "0");
+  const mm = String(m.minute || "0").padStart(2, "0");
+  const ss = String(m.second || "0").padStart(2, "0");
+  return `${hh}${mm}${ss}`;
+}
+
+/** 정규장 KST 09:00~15:30 (분 단위 경계, 프리마켓 06시대 제외) */
+function isKstRegularSessionUtcSec(utcSec) {
+  const sec = hhmmssToSecOfDay(utcSecToKstHhmmss(utcSec));
+  if (!Number.isFinite(sec)) return false;
+  return sec >= hhmmssToSecOfDay("090000") && sec <= hhmmssToSecOfDay("153000");
+}
+
+function filterRegularSessionIntraday(bars) {
+  if (!Array.isArray(bars)) return [];
+  return bars.filter((b) => b && Number.isFinite(b.time) && isKstRegularSessionUtcSec(b.time));
+}
+
+/**
+ * 당일 1분봉을 periodMin(5,15,…)분봉으로 집계. time은 버킷 시작(UTC 초).
+ */
+function aggregateIntradayFromOneMinute(bars1m, periodMin) {
+  const p = Number(periodMin);
+  if (!Number.isFinite(p) || p <= 1) return bars1m;
+  const rows = filterRegularSessionIntraday(bars1m).sort((a, b) => a.time - b.time);
+  if (!rows.length) return [];
+  const dayYmd = utcSecToKstYmd8(rows[0].time);
+  const dayOpenSec = kstYmdAndCntgHourToUtcSec(dayYmd, "090000");
+  if (!Number.isFinite(dayOpenSec)) return rows;
+  const buckets = new Map();
+  for (const bar of rows) {
+    const rel = bar.time - dayOpenSec;
+    if (rel < 0) continue;
+    const idx = Math.floor(rel / (p * 60));
+    const t0 = dayOpenSec + idx * p * 60;
+    const cur = buckets.get(t0);
+    if (!cur) {
+      buckets.set(t0, {
+        time: t0,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+        volume: bar.volume || 0,
+      });
+    } else {
+      cur.high = Math.max(cur.high, bar.high);
+      cur.low = Math.min(cur.low, bar.low);
+      cur.close = bar.close;
+      cur.volume = (cur.volume || 0) + (bar.volume || 0);
+    }
+  }
+  return [...buckets.values()].sort((a, b) => a.time - b.time);
+}
+
 /** 국내주식 분봉 output2 → Lightweight Charts (time: UTCTimestamp 초) */
 function mapTimeItemchartRow(row) {
   if (!row || typeof row !== "object") return null;
@@ -771,46 +896,78 @@ function mapTimeItemchartRow(row) {
 }
 
 /**
- * 국내주식 분봉·시간봉 (FHKST03010200)
- * fid_input_hour_1: 봉 간격(분) — 1|5|15|30|60|240
- * 연속조회(tr_cont) 병합
+ * 국내주식 당일 분봉 (FHKST03010200, v1_국내주식-022)
+ * fid_input_hour_1: 조회 기준 시각 HHMMSS (장마감 153000부터 역순; 장중에는 현재 시각까지, 상한 153000)
+ * fid_pw_data_incu_yn: Y (과거 데이터 포함)
+ * fid_input_date_1/2: 당일 YYYYMMDD
+ * API는 1분봉만 제공(건당 최대 약 30건) → tr_cont 및 앵커 이동으로 수집 후, 5·15·30·60·240분은 서버에서 집계.
  */
-async function fetchTimeItemchartCandlesFromKis(code6, fidMinuteStr) {
+async function fetchOneMinuteBarsFromKis(code6) {
   const todayY = ymdKst(new Date());
-  const maxBars = 200;
-  const params = {
-    fid_cond_mrkt_div_code: "J",
-    fid_input_iscd: code6,
-    fid_input_hour_1: fidMinuteStr,
-    fid_input_date_1: todayY,
-    fid_input_date_2: todayY,
-    fid_etc_cls_code: "",
-    fid_pw_data_incu_yn: "Y",
-  };
+  const maxBars = 480;
   const byKey = new Map();
-  let trCont = "";
-  for (let page = 0; page < 80; page++) {
-    const { json, trCont: nextCont } = await kisGet(
-      "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
-      "FHKST03010200",
-      params,
-      trCont
-    );
-    let raw = json.output2;
-    if (raw && !Array.isArray(raw)) raw = [raw];
-    if (!Array.isArray(raw)) raw = [];
-    for (const row of raw) {
-      const b = mapTimeItemchartRow(row);
-      if (b) byKey.set(String(b.time), b);
+  let anchor = intradayChartFidInputHour1();
+  let oldestBeforeWave = Infinity;
+
+  for (let wave = 0; wave < 30; wave++) {
+    const sizeBeforeWave = byKey.size;
+    let trCont = "";
+    for (let page = 0; page < 50; page++) {
+      const params = {
+        fid_cond_mrkt_div_code: "J",
+        fid_input_iscd: code6,
+        fid_input_hour_1: anchor,
+        fid_input_date_1: todayY,
+        fid_input_date_2: todayY,
+        fid_etc_cls_code: "",
+        fid_pw_data_incu_yn: "Y",
+      };
+      const { json, trCont: nextCont } = await kisGet(
+        "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice",
+        "FHKST03010200",
+        params,
+        trCont
+      );
+      let raw = json.output2;
+      if (raw && !Array.isArray(raw)) raw = [raw];
+      if (!Array.isArray(raw)) raw = [];
+      for (const row of raw) {
+        const b = mapTimeItemchartRow(row);
+        if (!b || !isKstRegularSessionUtcSec(b.time)) continue;
+        byKey.set(String(b.time), b);
+      }
+      if (byKey.size >= maxBars) break;
+      const nxt = sanitizeStr(nextCont).toUpperCase();
+      if (page > 0 && !raw.length) break;
+      if (!nxt || nxt === "D" || nxt === "E") break;
+      trCont = nxt;
     }
-    if (byKey.size >= maxBars) break;
-    const nxt = sanitizeStr(nextCont).toUpperCase();
-    if (page > 0 && !raw.length) break;
-    if (!nxt || nxt === "D" || nxt === "E") break;
-    trCont = nxt;
+
+    const sorted = [...byKey.values()].sort((a, b) => a.time - b.time);
+    if (!sorted.length) break;
+    const openSec = kstYmdAndCntgHourToUtcSec(todayY, "090000");
+    if (!Number.isFinite(openSec)) break;
+    if (sorted[0].time <= openSec || byKey.size >= maxBars) break;
+    if (byKey.size === sizeBeforeWave) break;
+    if (sorted[0].time >= oldestBeforeWave) break;
+    oldestBeforeWave = sorted[0].time;
+    const nextAnchorSec = sorted[0].time - 60;
+    const nextAnchor = utcSecToKstHhmmss(nextAnchorSec);
+    if (!nextAnchor || nextAnchor === anchor) break;
+    anchor = nextAnchor;
   }
-  const bars = [...byKey.values()].sort((a, b) => a.time - b.time);
-  return bars.slice(-maxBars);
+
+  const merged = [...byKey.values()].sort((a, b) => a.time - b.time);
+  return filterRegularSessionIntraday(merged);
+}
+
+async function fetchTimeItemchartCandlesFromKis(code6, periodKey) {
+  const oneM = await fetchOneMinuteBarsFromKis(code6);
+  const p = String(periodKey || "1");
+  if (p === "1") return oneM;
+  const n = Number(p);
+  if (!Number.isFinite(n) || n <= 1) return oneM;
+  return aggregateIntradayFromOneMinute(oneM, n);
 }
 
 function normalizeDomesticStockCode6(code) {

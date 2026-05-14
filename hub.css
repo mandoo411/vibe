@@ -164,17 +164,23 @@ a.hub-card:focus-visible {
   display: none;
 }
 
-/* ——— Hub home: iPhone 한 화면에 6카드 (2×3) ——— */
-@media (max-width: 720px) {
+/* ——— Hub home: 모바일(768px 이하) ——— PC(769px+)는 미적용 */
+@media (max-width: 768px) {
   .page.page--hub {
-    padding: 8px 8px max(12px, calc(8px + env(safe-area-inset-bottom)));
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
     padding-left: max(8px, env(safe-area-inset-left));
     padding-right: max(8px, env(safe-area-inset-right));
     padding-top: max(6px, env(safe-area-inset-top));
   }
 
-  /* site-nav 720px 그리드 래핑 덮어쓰기: 로고(아이콘만) + 네비 한 줄 */
+  /* site-nav 720px 그리드 래핑 덮어쓰기: 로고 이미지 + 네비 한 줄 */
   .page.page--hub .tm-site-header {
+    flex-shrink: 0;
     flex-wrap: nowrap;
     align-items: center;
     height: 44px;
@@ -182,11 +188,13 @@ a.hub-card:focus-visible {
     padding: 0 6px;
     margin-bottom: 6px;
     gap: 4px;
+    overflow: visible;
   }
 
   .page.page--hub .tm-site-brand {
     flex: 0 0 auto;
     min-width: 0;
+    overflow: visible;
   }
 
   .page.page--hub .tm-site-brand__text {
@@ -194,8 +202,13 @@ a.hub-card:focus-visible {
   }
 
   .page.page--hub .tm-site-brand__logo {
+    display: block;
+    flex-shrink: 0;
     width: 36px;
     height: 36px;
+    visibility: visible;
+    opacity: 1;
+    object-fit: cover;
   }
 
   .page.page--hub .tm-site-nav {
@@ -230,6 +243,7 @@ a.hub-card:focus-visible {
   }
 
   .page.page--hub .hub-hero {
+    flex-shrink: 0;
     margin-bottom: 6px;
     padding-bottom: 6px;
   }
@@ -248,18 +262,34 @@ a.hub-card:focus-visible {
     letter-spacing: -0.01em;
   }
 
+  /* 헤더·히어로 제외한 높이를 그리드가 균등 분배 */
   .page.page--hub .hub-grid {
     display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-content: stretch;
+    align-items: stretch;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 
-  .page.page--hub .hub-card {
+  .page.page--hub .hub-card,
+  .page.page--hub a.hub-card {
+    box-sizing: border-box;
+    height: 100%;
     min-height: 0;
+    align-self: stretch;
     padding: 8px;
+    align-items: center;
+  }
+
+  .page.page--hub a.hub-card {
+    flex: none;
   }
 
   .page.page--hub .hub-card__icon {
+    flex-shrink: 0;
     width: 50px;
     height: 50px;
     margin: 0 auto 4px;
@@ -267,6 +297,7 @@ a.hub-card:focus-visible {
   }
 
   .page.page--hub .hub-card__title {
+    flex-shrink: 0;
     margin: 0;
     font-size: 12px;
     font-weight: 700;
@@ -279,8 +310,11 @@ a.hub-card:focus-visible {
   }
 
   .page.page--hub .hub-card__meta {
-    margin-top: 4px;
+    flex-shrink: 0;
+    margin-top: auto;
+    margin-bottom: 0;
     padding-top: 4px;
+    width: 100%;
     gap: 4px;
     justify-content: center;
     font-size: 9px;

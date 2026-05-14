@@ -186,6 +186,8 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-hero__kicker {
     margin: 0 0 2px;
+    padding-left: 10px;
+    border-left: 3px solid #c9a84c;
     font-size: 16px;
     letter-spacing: 0.06em;
     line-height: 1.15;
@@ -196,45 +198,81 @@ a.hub-card:focus-visible {
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.01em;
+    color: #d4af37;
   }
 
-  /* 헤더·히어로 제외한 높이를 그리드가 균등 분배 */
   .page.page--hub .hub-grid {
     display: grid;
     flex: 1 1 auto;
     min-height: 0;
-    align-content: stretch;
-    align-items: stretch;
+    align-content: start;
+    align-items: start;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    grid-auto-rows: auto;
+    gap: 10px;
   }
 
   .page.page--hub .hub-card,
   .page.page--hub a.hub-card {
     box-sizing: border-box;
-    height: 100%;
+    height: auto;
     min-height: 0;
     align-self: stretch;
-    padding: 8px;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    text-align: center;
+    border: 1px solid transparent;
+    background:
+      linear-gradient(180deg, #15120e 0%, #100e0b 100%) padding-box,
+      linear-gradient(145deg, #c9a84c 0%, #8b6914 100%) border-box;
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.12s ease,
+      filter 0.12s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .page.page--hub .hub-card--soon {
+    background:
+      linear-gradient(180deg, #0f0d0a 0%, #0c0a08 100%) padding-box,
+      linear-gradient(145deg, #c9a84c 0%, #8b6914 100%) border-box;
+    border: 1px solid transparent;
+    opacity: 1;
+  }
+
+  .page.page--hub a.hub-card:hover {
+    transform: none;
+    border-color: transparent;
+    box-shadow: var(--shadow);
+  }
+
+  .page.page--hub .hub-card:active,
+  .page.page--hub a.hub-card:active {
+    transform: scale(0.97);
+    filter: brightness(1.07);
   }
 
   .page.page--hub a.hub-card {
     flex: none;
+    -webkit-tap-highlight-color: rgba(201, 168, 76, 0.15);
   }
 
   .page.page--hub .hub-card__icon {
     flex-shrink: 0;
     width: 50px;
     height: 50px;
-    margin: 0 auto 0;
+    margin: 0 0 8px;
     border-radius: 10px;
   }
 
   .page.page--hub .hub-card__title {
     flex-shrink: 0;
-    margin: auto 0 0;
+    margin: 0 0 6px;
     font-size: 12px;
     font-weight: 700;
     line-height: 1.25;
@@ -247,22 +285,31 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card__meta {
     flex-shrink: 0;
-    margin-top: 4px;
-    margin-bottom: 0;
-    padding-top: 4px;
+    margin: 0;
+    padding: 0;
+    border-top: none;
     width: 100%;
-    gap: 4px;
+    max-width: 100%;
+    gap: 6px;
     justify-content: center;
+    align-items: center;
     font-size: 9px;
   }
 
   .page.page--hub .hub-card__status {
-    padding: 2px 5px;
+    padding: 2px 6px;
     font-size: 9px;
     letter-spacing: 0.04em;
   }
 
+  .page.page--hub .hub-card__status--soon {
+    background: transparent;
+    border: 1px solid #c9a84c;
+    color: #d4af37;
+  }
+
   .page.page--hub .hub-card__chev {
     font-size: 11px;
+    margin-left: 0;
   }
 }

@@ -14,6 +14,14 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 /** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
 const candleMemoryCache = new Map();
 
+/** action=prev-day-gainers — 전일 종가 기준 등락률 랭킹 (24h) */
+let prevDayGainersCache = null;
+
+function parsePbmnSortKey(s) {
+  const n = Number(String(s || "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
   if (!json || typeof json !== "object") return false;
@@ -279,8 +287,12 @@ function boardKindFromClsCode(raw) {
   return null;
 }
 
-/** 코스피 시가총액 상위 30 (단일 조회, 연속조회 없음) */
-async function fetchMarketCapKospi30() {
+/**
+ * 시가총액 순위 TR (코스피·코스닥 공통 파라미터, fid_input_iscd 로 시장 선택)
+ * @param {string} fidInputIscd "0001" 코스피 | "1001" 코스닥
+ * @param {number} maxRows 상한
+ */
+async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard) {
   const { json } = await kisGet(
     "/uapi/domestic-stock/v1/ranking/market-cap",
     "FHPST01740000",
@@ -289,9 +301,8 @@ async function fetchMarketCapKospi30() {
       fid_cond_mrkt_div_code: "J",
       fid_cond_scr_div_code: "20174",
       fid_div_cls_code: "0",
-      fid_input_iscd: "0001",
+      fid_input_iscd: fidInputIscd,
       fid_trgt_cls_code: "0",
-      /** 등락률 순위와 동일 10자리 — "0"만 줄 때 일부 필드가 비는 사례 대비 */
       fid_trgt_exls_cls_code: "0000000000",
       fid_input_price_1: "",
       fid_vol_cnt: "",
@@ -306,7 +317,6 @@ async function fetchMarketCapKospi30() {
     const price = sanitizeStr(row.stck_prpr);
     const volume = pickAcmlVol(row);
     let tradingValue = pickAcmlTrPbmn(row);
-    /** 시총 순위 TR은 응답에 누적거래대금 컬럼이 없는 경우가 있어 근사치 사용 */
     if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
     rows.push({
       rank: toNum(row.data_rank),
@@ -317,13 +327,46 @@ async function fetchMarketCapKospi30() {
       volume,
       tradingValue,
       mcapEok: sanitizeStr(row.stck_avls),
-      tvBoard: pickKoreanBoardKind(row, "KOSPI"),
+      tvBoard: pickKoreanBoardKind(row, fallbackBoard),
     });
   }
-  return rows.filter((r) => r.code).slice(0, 30);
+  return rows.filter((r) => r.code).slice(0, maxRows);
 }
 
-async function fetchFluctuationRank(marketCode, marketLabel) {
+/** 코스피 시가총액 상위 30 */
+async function fetchMarketCapKospi30() {
+  return fetchMarketCapRows("0001", 30, "KOSPI");
+}
+
+/** market-cap TR 응답으로 코스피·코스닥 합쳐 거래대금 상위 50 */
+async function fetchTradeValueTop50FromMarketCap() {
+  const kospi = await fetchMarketCapRows("0001", 100, "KOSPI");
+  await sleep(KIS_GAP_MS);
+  const kosdaq = await fetchMarketCapRows("1001", 100, "KOSDAQ");
+  const merged = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    const prev = merged.get(r.code);
+    if (!prev) merged.set(r.code, r);
+    else if (parsePbmnSortKey(r.tradingValue) > parsePbmnSortKey(prev.tradingValue)) merged.set(r.code, r);
+  }
+  const list = [...merged.values()];
+  list.sort((a, b) => parsePbmnSortKey(b.tradingValue) - parsePbmnSortKey(a.tradingValue));
+  return list.slice(0, 50).map((r, i) => ({
+    rank: i + 1,
+    code: r.code,
+    name: r.name,
+    price: r.price,
+    changePct: r.changePct,
+    tradingValue: r.tradingValue,
+    tvBoard: r.tvBoard,
+  }));
+}
+
+/**
+ * @param {{ closeOnly?: boolean }} [opts] closeOnly: 종가(전일 기준)만 사용 — 전일상승 랭킹용
+ */
+async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
+  const closeOnly = Boolean(opts.closeOnly);
   const urlBase = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
   const buildParams = (fidPrcCls) => ({
     fid_cond_mrkt_div_code: "J",
@@ -407,7 +450,7 @@ async function fetchFluctuationRank(marketCode, marketLabel) {
   };
 
   let rows = mapRows(await fetchOnce("1"));
-  if (rows.length && rows.some((r) => !r.tradingValue)) {
+  if (!closeOnly && rows.length && rows.some((r) => !r.tradingValue)) {
     const rawAlt = await fetchOnce("0");
     const tvByCode = new Map(
       kisOutputRows(rawAlt).map((row) => [sanitizeStr(row.stck_shrn_iscd), pickAcmlTrPbmn(row)])
@@ -432,6 +475,40 @@ async function fetchGainersMerged50() {
   const all = [...merged.values()].filter((r) => r.changePct != null);
   all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
   return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+/** 전일 종가 기준 등락률 상위 50 (fluctuation fid_prc_cls_code=1 만 사용) */
+async function fetchPrevDayGainersMerged50() {
+  const kospi = await fetchFluctuationRank("0001", "KOSPI", { closeOnly: true });
+  await sleep(KIS_GAP_MS);
+  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ", { closeOnly: true });
+  const merged = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    if (!merged.has(r.code)) merged.set(r.code, r);
+  }
+  const all = [...merged.values()].filter((r) => r.changePct != null);
+  all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
+  return all.slice(0, 50).map((r, i) => ({
+    rank: i + 1,
+    code: r.code,
+    name: r.name,
+    market: r.market,
+    tvBoard: r.tvBoard,
+    prevClose: r.price,
+    prevChangePct: r.changePct,
+    volume: r.volume,
+  }));
+}
+
+async function getPrevDayGainersTop50Cached() {
+  const now = Date.now();
+  const ttl = 24 * 60 * 60 * 1000;
+  if (prevDayGainersCache && now - prevDayGainersCache.at < ttl) {
+    return prevDayGainersCache.stocks;
+  }
+  const stocks = await fetchPrevDayGainersMerged50();
+  prevDayGainersCache = { at: now, stocks };
+  return stocks;
 }
 
 async function fetchIndexPrice(fidInputIscd, label) {
@@ -632,6 +709,18 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    if (action === "prev-day-gainers") {
+      const stocks = await getPrevDayGainersTop50Cached();
+      json(res, 200, { stocks });
+      return;
+    }
+
+    if (action === "trade-value-top50") {
+      const stocks = await fetchTradeValueTop50FromMarketCap();
+      json(res, 200, { stocks });
+      return;
+    }
+
     if (action === "index") {
       const kospi = await fetchIndexPrice("0001", "코스피");
       await sleep(KIS_GAP_MS);
@@ -673,6 +762,10 @@ module.exports = async function handler(req, res) {
       const kosdaq = await fetchIndexPrice("1001", "코스닥");
       const gainers = await fetchGainersMerged50();
       const cap = await fetchMarketCapKospi30();
+      await sleep(KIS_GAP_MS);
+      const prevDayGainers = await getPrevDayGainersTop50Cached();
+      await sleep(KIS_GAP_MS);
+      const tradeValueTop50 = await fetchTradeValueTop50FromMarketCap();
       const clock = sessionLabelFromKst();
       json(res, 200, {
         clock,
@@ -680,6 +773,8 @@ module.exports = async function handler(req, res) {
         indexes: [kospi, kosdaq],
         gainers,
         marketCap: cap,
+        prevDayGainers,
+        tradeValueTop50,
       });
       return;
     }

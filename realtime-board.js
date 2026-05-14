@@ -66,6 +66,8 @@
     tab: "cap",
     capRows: [],
     gainerRows: [],
+    prevDayRows: [],
+    tradeValRows: [],
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -319,6 +321,43 @@
     list[i] = cur;
   }
 
+  function getCurrentRows() {
+    if (state.tab === "cap") return state.capRows;
+    if (state.tab === "gainers") return state.gainerRows;
+    if (state.tab === "prevday") return state.prevDayRows;
+    if (state.tab === "tradeval") return state.tradeValRows;
+    return state.capRows;
+  }
+
+  function tableColSpan() {
+    return state.tab === "prevday" || state.tab === "tradeval" ? 5 : 6;
+  }
+
+  function renderThead() {
+    const tr = document.getElementById("rt-thead-row");
+    if (!tr) return;
+    if (state.tab === "prevday") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">전일종가</th><th class="num rt-td-chg">전일등락률</th><th class="num rt-td-vol">거래량</th>';
+      return;
+    }
+    if (state.tab === "tradeval") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
+      return;
+    }
+    tr.innerHTML =
+      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+  }
+
+  function getTableTitle() {
+    if (state.tab === "cap") return "코스피 시가총액 상위 30";
+    if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
+    if (state.tab === "prevday") return "전일 종가 기준 상승률 상위 50";
+    if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
+    return "실시간 시세";
+  }
+
   function renderIndexes() {
     const el = $("rt-indexes");
     if (!el) return;
@@ -363,12 +402,40 @@
   }
 
   function stockRowHtml(r) {
+    const nm = escapeHtml(r.name);
+    const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+
+    if (state.tab === "prevday") {
+      const ch = r.prevChangePct;
+      const cls = deltaClass(ch);
+      const vol = fmtNum(r.volume);
+      const pc = escapeHtml(fmtNum(r.prevClose));
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${pc}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
+        </tr>`;
+    }
+
+    if (state.tab === "tradeval") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const tv = formatTradeVal(r.tradingValue);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
     const ch = r.changePct;
     const cls = deltaClass(ch);
     const tv = formatTradeVal(r.tradingValue);
     const vol = fmtNum(r.volume);
-    const nm = escapeHtml(r.name);
-    const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
     return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name">${nameCell}</td>
@@ -380,8 +447,9 @@
   }
 
   function chartRowHtml(forCode) {
+    const cs = tableColSpan();
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
-          <td colspan="6">
+          <td colspan="${cs}">
             <div class="rt-chart-wrap">
               <div class="rt-lw-chart-host" id="rt-lw-chart-host" role="region" aria-label="일봉 캔들 차트"></div>
             </div>
@@ -390,17 +458,33 @@
   }
 
   function applyRowToTr(tr, r) {
-    const ch = r.changePct;
-    const cls = deltaClass(ch);
-    const tv = formatTradeVal(r.tradingValue);
-    const vol = fmtNum(r.volume);
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
+
+    if (state.tab === "prevday") {
+      const ch = r.prevChangePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.prevClose);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = fmtNum(r.volume);
+      return;
+    }
+    if (state.tab === "tradeval") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
+
+    const ch = r.changePct;
+    const cls = deltaClass(ch);
     tr.cells[2].textContent = fmtNum(r.price);
     tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-    tr.cells[4].textContent = vol;
-    tr.cells[5].textContent = tv;
+    tr.cells[4].textContent = fmtNum(r.volume);
+    tr.cells[5].textContent = formatTradeVal(r.tradingValue);
   }
 
   function syncChartDomAfterRows(body, rows) {
@@ -409,6 +493,7 @@
     if (!anchor) {
       state.openChartCode = null;
       disposeLwChart();
+      renderThead();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -432,10 +517,10 @@
     const body = $("rt-tbody");
     const title = $("rt-table-title");
     if (!body) return;
-    const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
+    const rows = getCurrentRows();
+    renderThead();
     if (title) {
-      title.textContent =
-        state.tab === "cap" ? "코스피 시가총액 상위 30" : "코스피·코스닥 통합 상승률 상위 50";
+      title.textContent = getTableTitle();
     }
     if (!state.openChartCode) {
       disposeLwChart();
@@ -444,9 +529,12 @@
     }
 
     const stockRows = body.querySelectorAll("tr.rt-stock-row");
+    const colN = tableColSpan();
     const canPatch =
       stockRows.length === rows.length &&
-      Array.from(stockRows).every((tr, i) => tr.getAttribute("data-code") === rows[i]?.code);
+      Array.from(stockRows).every(
+        (tr, i) => tr.getAttribute("data-code") === rows[i]?.code && tr.cells.length === colN
+      );
 
     if (canPatch) {
       for (let i = 0; i < rows.length; i++) {
@@ -481,6 +569,8 @@
     }));
     state.capRows = (data.marketCap || []).map((r) => ({ ...r, tab: "cap" }));
     state.gainerRows = (data.gainers || []).map((r) => ({ ...r, tab: "gainers" }));
+    state.prevDayRows = (data.prevDayGainers || []).map((r) => ({ ...r, tab: "prevday" }));
+    state.tradeValRows = (data.tradeValueTop50 || []).map((r) => ({ ...r, tab: "tradeval" }));
   }
 
   function makeWsPayload(trType, trId, trKey) {
@@ -547,7 +637,7 @@
       const row = rowFromCcnl(cells);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      renderTable();
+      if (state.tab === "cap" || state.tab === "gainers") renderTable();
     }
   }
 
@@ -587,8 +677,7 @@
       state.ws.send(makeWsPayload("1", "H0UPCNT0", "0001"));
       state.ws.send(makeWsPayload("1", "H0UPCNT0", "1001"));
       state.ws.send(makeWsPayload("1", "H0STMKO0", "005930"));
-      const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
-      subscribeStocks(rows.map((r) => r.code));
+      subscribeStocks(getCurrentRows().map((r) => r.code));
       renderMeta();
     };
     state.ws.onmessage = (ev) => {
@@ -628,8 +717,7 @@
     renderAll();
     if (state.ws && state.ws.readyState === 1) {
       unsubscribeAll();
-      const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
-      subscribeStocks(rows.map((r) => r.code));
+      subscribeStocks(getCurrentRows().map((r) => r.code));
     }
   }
 
@@ -638,6 +726,12 @@
       if (state.tab === "gainers") {
         const { stocks } = await fetchJson("gainers");
         state.gainerRows = stocks.map((r) => ({ ...r, tab: "gainers" }));
+      } else if (state.tab === "prevday") {
+        const { stocks } = await fetchJson("prev-day-gainers");
+        state.prevDayRows = stocks.map((r) => ({ ...r, tab: "prevday" }));
+      } else if (state.tab === "tradeval") {
+        const { stocks } = await fetchJson("trade-value-top50");
+        state.tradeValRows = stocks.map((r) => ({ ...r, tab: "tradeval" }));
       } else {
         const { stocks } = await fetchJson("market-cap");
         state.capRows = stocks.map((r) => ({ ...r, tab: "cap" }));
@@ -655,8 +749,7 @@
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
-        const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
-        subscribeStocks(rows.map((r) => r.code));
+        subscribeStocks(getCurrentRows().map((r) => r.code));
       }
     } catch (e) {
       const err = $("rt-error");
@@ -671,7 +764,10 @@
     document.querySelectorAll("[data-rt-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
-        state.tab = t === "gainers" ? "gainers" : "cap";
+        if (t === "gainers") state.tab = "gainers";
+        else if (t === "prevday") state.tab = "prevday";
+        else if (t === "tradeval") state.tab = "tradeval";
+        else state.tab = "cap";
         state.openChartCode = null;
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
@@ -680,8 +776,7 @@
         startPolling();
         if (state.ws && state.ws.readyState === 1) {
           unsubscribeAll();
-          const rows = state.tab === "cap" ? state.capRows : state.gainerRows;
-          subscribeStocks(rows.map((r) => r.code));
+          subscribeStocks(getCurrentRows().map((r) => r.code));
         }
       });
     });
@@ -704,9 +799,17 @@
 
   function startPolling() {
     if (state.pollRest) clearInterval(state.pollRest);
+    const period =
+      state.tab === "prevday"
+        ? 30 * 60 * 1000
+        : state.tab === "tradeval"
+          ? 15000
+          : state.tab === "gainers"
+            ? 5000
+            : 12000;
     state.pollRest = setInterval(() => {
       refreshPartial().catch(() => {});
-    }, state.tab === "gainers" ? 5000 : 12000);
+    }, period);
   }
 
   async function init() {

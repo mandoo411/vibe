@@ -105,13 +105,14 @@
       }
       .rt-tabs {
         display: flex;
+        flex-wrap: wrap;
         gap: 0;
         margin-bottom: 0;
         border: 1px solid var(--border-strong);
         border-bottom: 0;
         border-radius: var(--radius) var(--radius) 0 0;
         overflow: hidden;
-        width: fit-content;
+        width: 100%;
         max-width: 100%;
       }
       .rt-tab {
@@ -392,13 +393,19 @@
         <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
           상승률 TOP 50
         </button>
+        <button type="button" class="rt-tab" role="tab" data-rt-tab="prevday" aria-selected="false" id="tab-prevday">
+          전일상승 TOP50
+        </button>
+        <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
+          거래대금 TOP50
+        </button>
       </div>
       <div class="rt-panel" role="tabpanel">
         <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 30</div>
         <div class="rt-scroll">
           <table class="rt-table" aria-label="실시간 시세">
             <thead>
-              <tr>
+              <tr id="rt-thead-row">
                 <th class="rt-td-rank">순위</th>
                 <th class="rt-td-name">종목명</th>
                 <th class="num rt-td-price">가격</th>

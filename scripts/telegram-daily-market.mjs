@@ -465,7 +465,7 @@ async function readJsonIfExists(filePath) {
     if (e && e.code === "ENOENT") {
       return {
         meta: {
-          title: "매일 시황 기록",
+          title: "장마감 리포트",
           timezoneNote: "KST 기준. 특별한 표기가 없으면 종가 기준입니다.",
         },
         days: {},

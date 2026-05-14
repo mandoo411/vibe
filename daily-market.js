@@ -5,7 +5,7 @@
 
   // ─── State ────────────────────────────────────────────────
   const state = {
-    meta: { title: "매일 시황 기록", timezoneNote: "" },
+    meta: { title: "장마감 리포트", timezoneNote: "" },
     days: {},
     archiveAnchor: null,
     selected: null,
@@ -177,7 +177,7 @@
     els.tz.textContent = state.meta.timezoneNote || "";
 
     try {
-      document.title = `${state.meta.title || "매일 시황 기록"} · ${headlineKo(ymd)}`;
+      document.title = `${state.meta.title || "장마감 리포트"} · ${headlineKo(ymd)}`;
     } catch (_) {
       /* ignore */
     }
@@ -190,8 +190,8 @@
       if (empty && els.dayPrepTitle) {
         const isToday = ymd === seoulYmd();
         els.dayPrepTitle.textContent = isToday
-          ? "오늘 시황 데이터 준비 중입니다"
-          : `${headlineKo(ymd)} 시황 데이터가 아직 없습니다`;
+          ? "오늘 장마감 리포트 데이터 준비 중입니다"
+          : `${headlineKo(ymd)} 장마감 리포트 데이터가 아직 없습니다`;
       }
     }
 

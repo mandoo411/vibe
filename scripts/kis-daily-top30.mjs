@@ -718,7 +718,7 @@ async function main() {
 
   console.log("[6/6] daily-market.json 갱신...");
   const data = (await readJsonIfExists(outputPath)) || {
-    meta: { title: "매일 시황 기록", timezoneNote: "KST 기준. 특별한 표기가 없으면 종가 기준입니다." },
+    meta: { title: "장마감 리포트", timezoneNote: "KST 기준. 특별한 표기가 없으면 종가 기준입니다." },
     days: {},
   };
   if (!data.days || typeof data.days !== "object") data.days = {};

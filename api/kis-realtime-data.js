@@ -138,6 +138,67 @@ function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
 }
 
+/**
+ * KIS 시가총액 관련 필드(stck_avls, hts_avls 등)는 통상 **백만원** 단위 정수.
+ * (시가총액 순위 TR, 주식현재가 시세 inquire-price 출력 동일 관례)
+ * 이미 원 단위로 보이는 큰 값(≥1e12)만 원으로 간주해 그대로 문자열화.
+ */
+function pickMcapMillionWonFromRow(row) {
+  if (!row || typeof row !== "object") return "";
+  const keys = [
+    "stck_avls",
+    "STCK_AVLS",
+    "hts_avls",
+    "HTS_AVLS",
+    "hts_avls_unt",
+    "HTS_AVLS_UNT",
+    "stck_mxac_avls",
+    "STCK_MXAC_AVLS",
+  ];
+  for (const k of keys) {
+    if (!(k in row)) continue;
+    const v = row[k];
+    if (v != null && String(v).trim() !== "") return v;
+  }
+  for (const k of Object.keys(row)) {
+    if (!/avls/i.test(k)) continue;
+    const v = row[k];
+    if (v != null && String(v).trim() !== "") return v;
+  }
+  return "";
+}
+
+function mcapMillionWonToWonString(millionWonRaw) {
+  const s = normalizeWonMoneyString(millionWonRaw);
+  if (!s) return "";
+  const n = Number(s.replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n >= 1e12) {
+    return String(Math.round(n));
+  }
+  const won = Math.round(n * 1e6);
+  if (!Number.isFinite(won) || won <= 0) return "";
+  return String(won);
+}
+
+/** 클라이언트로 내려갈 시가총액(원) 문자열: 순위/현재가 응답 row */
+function marketCapWonStringForStockRow(row) {
+  if (!row || typeof row !== "object") return "";
+  const millionField = pickMcapMillionWonFromRow(row);
+  if (millionField) {
+    const w = mcapMillionWonToWonString(millionField);
+    if (w) return w;
+  }
+  const legacy = sanitizeStr(row.mcapEok) || sanitizeStr(row.stck_avls);
+  if (!legacy) return "";
+  const n = Number(String(legacy).replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  if (n >= 1e11) {
+    return String(Math.round(n));
+  }
+  return mcapMillionWonToWonString(legacy);
+}
+
 function toNum(v) {
   if (v === "" || v == null) return null;
   const n = Number(String(v).replace(/,/g, ""));
@@ -294,8 +355,11 @@ function boardKindFromClsCode(raw) {
  * 시가총액 순위 TR (코스피·코스닥 공통 파라미터, fid_input_iscd 로 시장 선택)
  * @param {string} fidInputIscd "0001" 코스피 | "1001" 코스닥
  * @param {number} maxRows 상한
+ * @param {string} fallbackBoard
+ * @param {{ logSample?: boolean }} [opts] logSample=false 시 첫 행 console.log 생략
  */
-async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard) {
+async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
+  const logSample = opts.logSample !== false;
   const { json } = await kisGet(
     "/uapi/domestic-stock/v1/ranking/market-cap",
     "FHPST01740000",
@@ -313,6 +377,32 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard) {
     ""
   );
   const chunk = kisOutputRows(json);
+  if (logSample) {
+    if (chunk.length > 0) {
+      const row0 = chunk[0];
+      const avlsKeys = Object.keys(row0).filter((k) => /avls|iscd|rank|prpr|ctrt/i.test(k));
+      const million0 = pickMcapMillionWonFromRow(row0);
+      const won0 = mcapMillionWonToWonString(million0);
+      console.log("[kis-realtime-data][market-cap] KIS 응답 샘플", {
+        tr_id: "FHPST01740000",
+        url: "/uapi/domestic-stock/v1/ranking/market-cap",
+        fid_cond_scr_div_code: "20174 (시가총액 순위 전용)",
+        fid_input_iscd: fidInputIscd,
+        rowCount: chunk.length,
+        sample_avls_related_keys: avlsKeys,
+        stck_avls: row0.stck_avls ?? row0.STCK_AVLS,
+        hts_avls: row0.hts_avls ?? row0.HTS_AVLS,
+        picked_million_won: million0 || "(없음)",
+        converted_won_string: won0 || "(없음)",
+      });
+    } else {
+      console.log("[kis-realtime-data][market-cap] 빈 output", {
+        fid_input_iscd: fidInputIscd,
+        rt_cd: json && json.rt_cd,
+        msg1: json && json.msg1,
+      });
+    }
+  }
   const rows = [];
   for (const row of chunk) {
     const code = sanitizeStr(row.mksc_shrn_iscd);
@@ -321,6 +411,7 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard) {
     const volume = pickAcmlVol(row);
     let tradingValue = pickAcmlTrPbmn(row);
     if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+    const mcapWon = marketCapWonStringForStockRow(row);
     rows.push({
       rank: toNum(row.data_rank),
       code,
@@ -329,7 +420,8 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard) {
       changePct: toNum(row.prdy_ctrt),
       volume,
       tradingValue,
-      mcapEok: sanitizeStr(row.stck_avls),
+      mcapEok: mcapWon,
+      stck_avls: mcapWon,
       tvBoard: pickKoreanBoardKind(row, fallbackBoard),
     });
   }
@@ -471,6 +563,7 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
 
 async function fetchGainersMerged50() {
   const kospi = await fetchFluctuationRank("0001", "KOSPI");
+  await sleep(KIS_GAP_MS);
   const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
   const merged = new Map();
   for (const r of [...kospi, ...kosdaq]) {
@@ -478,7 +571,94 @@ async function fetchGainersMerged50() {
   }
   const all = [...merged.values()].filter((r) => r.changePct != null);
   all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+  const sliced = all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+  await mergeMcapFromDualCapRankingsToRows(sliced);
+  await enrichRowsMcapFromInquirePrice(sliced, "gainers");
+  return sliced;
+}
+
+/** 주식현재가 시세(v1_국내주식-008) — HTS 시가총액 hts_avls(백만원) 등 */
+async function fetchInquirePriceDomesticRow(code6) {
+  const raw = String(code6 || "").replace(/\D/g, "");
+  const iscd = raw.length <= 6 ? raw.padStart(6, "0") : raw.slice(-6);
+  if (!iscd) return {};
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/quotations/inquire-price",
+    "FHKST01010100",
+    {
+      fid_cond_mrkt_div_code: "J",
+      fid_input_iscd: iscd,
+    },
+    ""
+  );
+  const out = json && json.output;
+  if (out && typeof out === "object" && !Array.isArray(out)) return out;
+  if (Array.isArray(out) && out[0] && typeof out[0] === "object") return out[0];
+  return {};
+}
+
+async function mergeMcapFromDualCapRankingsToRows(rows) {
+  const ko = await fetchMarketCapRows("0001", 30, "KOSPI");
+  await sleep(KIS_GAP_MS);
+  const kq = await fetchMarketCapRows("1001", 30, "KOSDAQ", { logSample: false });
+  const by = new Map();
+  for (const r of [...ko, ...kq]) {
+    if (r.code && r.mcapEok) by.set(r.code, r.mcapEok);
+  }
+  let hit = 0;
+  for (const r of rows) {
+    const w = by.get(r.code);
+    if (w) {
+      r.mcapEok = w;
+      r.stck_avls = w;
+      hit += 1;
+    }
+  }
+  console.log("[kis-realtime-data][gainers] 시총순위(코스피30+코스닥30) 병합", {
+    mapSize: by.size,
+    matched: hit,
+    total: rows.length,
+  });
+  return rows;
+}
+
+function rowHasPositiveMcapWon(r) {
+  const raw = sanitizeStr(r.mcapEok) || sanitizeStr(r.stck_avls);
+  if (!raw) return false;
+  const n = Number(String(raw).replace(/,/g, ""));
+  return Number.isFinite(n) && n > 0;
+}
+
+async function enrichRowsMcapFromInquirePrice(rows, logTag) {
+  const missing = rows.filter((r) => !rowHasPositiveMcapWon(r));
+  if (missing.length === 0) return;
+  console.log("[kis-realtime-data][" + logTag + "] 주식현재가 시세(FHKST01010100)로 시총 보강", {
+    count: missing.length,
+  });
+  let firstLogDone = false;
+  for (const r of missing) {
+    try {
+      const out = await fetchInquirePriceDomesticRow(r.code);
+      const won = marketCapWonStringForStockRow(out);
+      if (!firstLogDone) {
+        firstLogDone = true;
+        const avlsKeys = Object.keys(out).filter((k) => /avls|iscd/i.test(k));
+        console.log("[kis-realtime-data][" + logTag + "] inquire-price 샘플", {
+          code: r.code,
+          sample_keys: avlsKeys,
+          hts_avls_raw: out.hts_avls ?? out.HTS_AVLS,
+          stck_avls_raw: out.stck_avls ?? out.STCK_AVLS,
+          converted_won_string: won || "(없음)",
+        });
+      }
+      if (won) {
+        r.mcapEok = won;
+        r.stck_avls = won;
+      }
+    } catch (e) {
+      console.warn("[kis-realtime-data][" + logTag + "] inquire-price 실패", r.code, e && e.message);
+    }
+  }
 }
 
 function getPrevTop50JsonPath() {

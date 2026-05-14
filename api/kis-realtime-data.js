@@ -14,7 +14,7 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 /** action=candle — 종목별 일봉 캔들 메모리 캐시 { bars, expiresAt } */
 const candleMemoryCache = new Map();
 
-/** action=prev-day-gainers — 전일 종가 기준 등락률 랭킹 (24h) */
+/** action=prev-day-gainers — 전일 종가 기준 등락률로 고른 종목 순서(24h 캐시) + 당일 fluctuation 시세 병합 */
 let prevDayGainersCache = null;
 
 function parsePbmnSortKey(s) {
@@ -500,6 +500,31 @@ async function fetchPrevDayGainersMerged50() {
   }));
 }
 
+/** 전일상승 캐시 종목 순서 유지 + 당일 fluctuation(현재가·등락률·거래량·누적거래대금) 병합 */
+async function enrichPrevDayWithLiveFluctuation(baseRows) {
+  const kospi = await fetchFluctuationRank("0001", "KOSPI");
+  await sleep(KIS_GAP_MS);
+  const kosdaq = await fetchFluctuationRank("1001", "KOSDAQ");
+  const liveByCode = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    if (r.code) liveByCode.set(r.code, r);
+  }
+  return baseRows.map((r) => {
+    const L = liveByCode.get(r.code);
+    return {
+      rank: r.rank,
+      code: r.code,
+      name: r.name,
+      market: r.market,
+      tvBoard: r.tvBoard,
+      price: L && L.price != null && String(L.price).trim() !== "" ? L.price : "",
+      changePct: L && L.changePct != null ? L.changePct : null,
+      volume: L && L.volume ? L.volume : "",
+      tradingValue: L && L.tradingValue ? L.tradingValue : "",
+    };
+  });
+}
+
 async function getPrevDayGainersTop50Cached() {
   const now = Date.now();
   const ttl = 24 * 60 * 60 * 1000;
@@ -710,7 +735,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "prev-day-gainers") {
-      const stocks = await getPrevDayGainersTop50Cached();
+      const base = await getPrevDayGainersTop50Cached();
+      const stocks = await enrichPrevDayWithLiveFluctuation(base);
       json(res, 200, { stocks });
       return;
     }
@@ -763,7 +789,9 @@ module.exports = async function handler(req, res) {
       const gainers = await fetchGainersMerged50();
       const cap = await fetchMarketCapKospi30();
       await sleep(KIS_GAP_MS);
-      const prevDayGainers = await getPrevDayGainersTop50Cached();
+      const prevDayBase = await getPrevDayGainersTop50Cached();
+      await sleep(KIS_GAP_MS);
+      const prevDayGainers = await enrichPrevDayWithLiveFluctuation(prevDayBase);
       await sleep(KIS_GAP_MS);
       const tradeValueTop50 = await fetchTradeValueTop50FromMarketCap();
       const clock = sessionLabelFromKst();

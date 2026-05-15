@@ -4,17 +4,11 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  /** 거래대금 TOP50 — 시장당 API 1회(mrkt=J|Q); 클라이언트 대기 상한 */
-  const TRADE_PBMN_FETCH_TIMEOUT_MS = 20000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
   const CHART_CACHE_MAX_ENTRIES = 24;
-
-  /** 전일 탭 호버 시 inquire-price 결과 — 종목코드당 1회만 API 호출 */
-  const prevDayInquirePriceCache = new Map();
-  const prevdayPopUi = { hoverCode: null, hideTimer: 0, fetchGen: 0 };
 
   /** Lightweight Charts 스크립트 1회 로드 Promise */
   let lwChartsScriptPromise = null;
@@ -82,14 +76,6 @@
     tab: "cap",
     capRows: [],
     gainerRows: [],
-    /** 거래대금 탭: 시장별 캐시 — API는 mrkt=J|Q 로 시장당 1회만 호출 */
-    tradeValSub: "kospi",
-    tradeValKospiRows: [],
-    tradeValKosdaqRows: [],
-    tradeValSubLoadedAt: {},
-    prevDayRows: [],
-    prevDayNoData: false,
-    prevDayLoaded: false,
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -184,141 +170,6 @@
     if (pct > 0) return "delta--pos";
     if (pct < 0) return "delta--neg";
     return "delta--flat";
-  }
-
-  function hidePrevdayQuotePop() {
-    const pop = $("rt-prevday-quote-pop");
-    if (pop) {
-      pop.hidden = true;
-      pop.classList.remove("rt-prevday-quote-pop--err");
-    }
-    if (prevdayPopUi.hideTimer) {
-      clearTimeout(prevdayPopUi.hideTimer);
-      prevdayPopUi.hideTimer = 0;
-    }
-    prevdayPopUi.hoverCode = null;
-  }
-
-  function mrktDivForPrevdayRow(r) {
-    const m = String((r && (r.market || r.tvBoard)) || "").toUpperCase();
-    if (m.includes("KOSDAQ") || m === "Q") return "Q";
-    return "J";
-  }
-
-  function setPrevdayQuotePopContent(pop, opts) {
-    const loading = opts && opts.loading;
-    const errMsg = opts && opts.errMsg;
-    const price = opts && opts.price;
-    const changePct = opts && opts.changePct;
-    if (errMsg) {
-      pop.classList.add("rt-prevday-quote-pop--err");
-      pop.innerHTML = `<div class="rt-prevday-quote-pop__row"><span class="rt-prevday-quote-pop__val">${escapeHtml(
-        errMsg
-      )}</span></div>`;
-      return;
-    }
-    pop.classList.remove("rt-prevday-quote-pop--err");
-    if (loading) {
-      pop.innerHTML =
-        '<div class="rt-prevday-quote-pop__row"><span class="rt-prevday-quote-pop__lbl">현재가</span><span class="rt-prevday-quote-pop__val">…</span></div>';
-      return;
-    }
-    const p = escapeHtml(fmtNum(price));
-    const cls = deltaClass(changePct);
-    const pct = escapeHtml(fmtPct(changePct));
-    pop.innerHTML = `<div class="rt-prevday-quote-pop__row">
-      <span class="rt-prevday-quote-pop__lbl">현재가</span><span class="rt-prevday-quote-pop__val">${p}</span>
-      <span class="rt-prevday-quote-pop__lbl">등락률</span><span class="rt-prevday-quote-pop__val delta ${cls}">${pct}</span>
-    </div>`;
-  }
-
-  function positionPrevdayQuotePop(anchorTd) {
-    const pop = $("rt-prevday-quote-pop");
-    if (!pop || !anchorTd) return;
-    const rect = anchorTd.getBoundingClientRect();
-    const margin = 8;
-    const estW = 190;
-    let left = rect.right + margin;
-    if (left + estW > window.innerWidth - margin) {
-      left = Math.max(margin, rect.left - estW - margin);
-    }
-    const top = rect.top;
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
-    pop.hidden = false;
-  }
-
-  function wirePrevdayQuoteHover() {
-    const body = $("rt-tbody");
-    if (!body || body.dataset.rtPrevdayHover === "1") return;
-    body.dataset.rtPrevdayHover = "1";
-    const pop = $("rt-prevday-quote-pop");
-    if (!pop) return;
-
-    function cancelHide() {
-      if (prevdayPopUi.hideTimer) {
-        clearTimeout(prevdayPopUi.hideTimer);
-        prevdayPopUi.hideTimer = 0;
-      }
-    }
-
-    function scheduleHide() {
-      cancelHide();
-      prevdayPopUi.hideTimer = setTimeout(() => {
-        prevdayPopUi.hideTimer = 0;
-        hidePrevdayQuotePop();
-      }, 120);
-    }
-
-    body.addEventListener("mouseover", (e) => {
-      if (state.tab !== "prevday") return;
-      const tr = e.target.closest("tr.rt-prevday-stock-row[data-code]");
-      if (!tr || !body.contains(tr)) return;
-      const code = tr.getAttribute("data-code");
-      if (!code) return;
-      const from = e.relatedTarget;
-      if (from && tr.contains(from)) return;
-      cancelHide();
-      prevdayPopUi.hoverCode = code;
-      const nameTd = tr.querySelector(".rt-prevday-name-cell") || tr.querySelector(".rt-td-name");
-      positionPrevdayQuotePop(nameTd);
-      const cached = prevDayInquirePriceCache.get(code);
-      if (cached) {
-        setPrevdayQuotePopContent(pop, { price: cached.price, changePct: cached.changePct });
-        return;
-      }
-      prevdayPopUi.fetchGen += 1;
-      const gen = prevdayPopUi.fetchGen;
-      setPrevdayQuotePopContent(pop, { loading: true });
-      const row = state.prevDayRows.find((r) => String(r.code) === code);
-      const mrkt = mrktDivForPrevdayRow(row);
-      fetchJson("inquire-price", FETCH_TIMEOUT_MS, { code, mrkt })
-        .then((data) => {
-          if (prevdayPopUi.fetchGen !== gen || prevdayPopUi.hoverCode !== code) return;
-          const price = data && data.price != null ? data.price : "";
-          const changePct = data && data.changePct != null ? data.changePct : null;
-          prevDayInquirePriceCache.set(code, { price, changePct });
-          setPrevdayQuotePopContent(pop, { price, changePct });
-        })
-        .catch(() => {
-          if (prevdayPopUi.fetchGen !== gen || prevdayPopUi.hoverCode !== code) return;
-          setPrevdayQuotePopContent(pop, { errMsg: "조회 실패" });
-        });
-    });
-
-    body.addEventListener("mouseout", (e) => {
-      if (state.tab !== "prevday") return;
-      const tr = e.target.closest("tr.rt-prevday-stock-row[data-code]");
-      if (!tr || !body.contains(tr)) return;
-      const code = tr.getAttribute("data-code");
-      if (!code || prevdayPopUi.hoverCode !== code) return;
-      const rel = e.relatedTarget;
-      if (rel && (tr.contains(rel) || pop.contains(rel))) return;
-      scheduleHide();
-    });
-
-    pop.addEventListener("mouseenter", cancelHide);
-    pop.addEventListener("mouseleave", scheduleHide);
   }
 
   function escapeHtml(s) {
@@ -639,11 +490,6 @@
       const c = btn.getAttribute("data-code");
       btn.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
     });
-    body.querySelectorAll("tr.rt-prevday-stock-row[data-code]").forEach((row) => {
-      const c = row.getAttribute("data-code");
-      if (!c) return;
-      row.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
-    });
   }
 
   function linkLogicalRangeSync(chartA, chartB) {
@@ -674,38 +520,11 @@
     });
   }
 
-  function updateChartQuoteStripFromCandles(body, candles) {
+  function updateChartQuoteStripFromCandles(body) {
     const strip = body.querySelector("tr.rt-chart-row .rt-chart-quote-strip");
     if (!strip) return;
-    if (state.tab !== "prevday") {
-      strip.classList.add("rt-chart-quote-strip--empty");
-      strip.innerHTML = "";
-      return;
-    }
-    if (!Array.isArray(candles) || candles.length === 0) {
-      strip.classList.add("rt-chart-quote-strip--empty");
-      strip.innerHTML = "";
-      return;
-    }
-    strip.classList.remove("rt-chart-quote-strip--empty");
-    const last = candles[candles.length - 1];
-    const close = Number(last && last.close);
-    const prevBar = candles.length >= 2 ? candles[candles.length - 2] : null;
-    let chg = null;
-    if (prevBar != null && Number.isFinite(Number(prevBar.close)) && Number(prevBar.close) !== 0) {
-      const pc = Number(prevBar.close);
-      chg = ((close - pc) / pc) * 100;
-    }
-    const priceStr = Number.isFinite(close) ? fmtNum(String(close)) : "—";
-    const chgStr = chg != null && Number.isFinite(chg) ? fmtPct(chg) : "—";
-    const cls = deltaClass(chg);
-    strip.innerHTML = `<span class="rt-chart-quote-strip__inner">
-      <span class="rt-chart-quote-strip__lbl">현재가(선택 봉 종가)</span>
-      <span class="rt-chart-quote-strip__val">${escapeHtml(priceStr)}</span>
-      <span class="rt-chart-quote-strip__sep">·</span>
-      <span class="rt-chart-quote-strip__lbl">등락률(직전 봉 대비)</span>
-      <span class="delta ${cls}">${escapeHtml(chgStr)}</span>
-    </span>`;
+    strip.classList.add("rt-chart-quote-strip--empty");
+    strip.innerHTML = "";
   }
 
   async function mountLightweightChart(body) {
@@ -740,7 +559,7 @@
           state.lwVolChart.applyOptions({ width: w, height: hV });
         }
         syncChartPeriodToolbarPressed(body);
-        updateChartQuoteStripFromCandles(body, state.lwBundle && state.lwBundle.fullCandles);
+        updateChartQuoteStripFromCandles(body);
         return;
       }
 
@@ -893,7 +712,7 @@
       wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, state.candlePeriod);
       applyLwChartVisibleRange();
       syncChartPeriodToolbarPressed(body);
-      updateChartQuoteStripFromCandles(body, candles);
+      updateChartQuoteStripFromCandles(body);
     } catch (e) {
       disposeLwChart();
       delete panes.dataset.mountedFor;
@@ -973,15 +792,7 @@
   function rowsLoadedForTab(tab) {
     if (tab === "cap") return state.capRows.length >= 10;
     if (tab === "gainers") return state.gainerRows.length >= 10;
-    if (tab === "tradeval") return getTradeValRowsForSub().length >= 10;
-    if (tab === "prevday") {
-      return state.prevDayLoaded && (state.prevDayRows.length > 0 || state.prevDayNoData);
-    }
     return false;
-  }
-
-  function getTradeValRowsForSub() {
-    return state.tradeValSub === "kosdaq" ? state.tradeValKosdaqRows : state.tradeValKospiRows;
   }
 
   function applyStocksArrayToTab(tab, stocks) {
@@ -990,44 +801,18 @@
       .map((r) => ({ ...r, tab: r.tab || tab }));
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
-    else if (tab === "tradeval") {
-      if (state.tradeValSub === "kosdaq") state.tradeValKosdaqRows = rows;
-      else state.tradeValKospiRows = rows;
-    }
-    else if (tab === "prevday") state.prevDayRows = rows;
   }
 
   async function fetchStocksJsonForTab(tab) {
-    const action =
-      tab === "cap"
-        ? "market-cap"
-        : tab === "gainers"
-          ? "gainers"
-          : tab === "tradeval"
-            ? "trade-pbmn-top50"
-            : tab === "prevday"
-              ? "prev-day-top50"
-              : "market-cap";
-    const ms = tab === "tradeval" ? TRADE_PBMN_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
-    if (tab === "tradeval") {
-      const mrkt = state.tradeValSub === "kosdaq" ? "Q" : "J";
-      return fetchJson(action, ms, { mrkt });
-    }
-    return fetchJson(action, ms);
+    const action = tab === "cap" ? "market-cap" : "gainers";
+    return fetchJson(action, FETCH_TIMEOUT_MS);
   }
 
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
   async function refreshTabStocksOnly(tab) {
     const stockPack = await fetchStocksJsonForTab(tab);
-    if (tab === "prevday") {
-      state.prevDayNoData = Boolean(stockPack.noData);
-      state.prevDayLoaded = true;
-    }
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
-    if (tab === "tradeval") {
-      state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
-    }
   }
 
   async function loadBootstrapForTab(tab) {
@@ -1044,15 +829,8 @@
       value: x.value,
       changePct: x.changePct,
     }));
-    if (tab === "prevday") {
-      state.prevDayNoData = Boolean(stockPack.noData);
-      state.prevDayLoaded = true;
-    }
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
-    if (tab === "tradeval") {
-      state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
-    }
   }
 
   function showTableSkeleton() {
@@ -1169,8 +947,6 @@
   function getCurrentRows() {
     if (state.tab === "cap") return state.capRows;
     if (state.tab === "gainers") return state.gainerRows;
-    if (state.tab === "tradeval") return getTradeValRowsForSub();
-    if (state.tab === "prevday") return state.prevDayRows;
     return state.capRows;
   }
 
@@ -1178,46 +954,16 @@
     return "H0UNCNT0";
   }
 
-  function updateTradevalSubtabsVisibility() {
-    const bar = $("rt-tradeval-subtabs");
-    if (!bar) return;
-    if (state.tab === "tradeval") bar.removeAttribute("hidden");
-    else bar.setAttribute("hidden", "");
-  }
-
-  function updateSubtabBarsVisibility() {
-    updateTradevalSubtabsVisibility();
-  }
-
-  function syncTradevalSubtabAria() {
-    document.querySelectorAll("[data-rt-tradeval-sub]").forEach((b) => {
-      const s = b.getAttribute("data-rt-tradeval-sub");
-      const on = (s === "kosdaq" && state.tradeValSub === "kosdaq") || (s === "kospi" && state.tradeValSub === "kospi");
-      b.setAttribute("aria-selected", on ? "true" : "false");
-    });
-  }
-
   function tableColSpan() {
-    if (state.tab === "prevday") return 3;
     return 6;
   }
 
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
-    if (state.tab === "tradeval") {
-      tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
-      return;
-    }
     if (state.tab === "gainers") {
       tr.innerHTML =
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
-      return;
-    }
-    if (state.tab === "prevday") {
-      tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-chg">전일등락률</th>';
       return;
     }
     tr.innerHTML =
@@ -1225,12 +971,8 @@
   }
 
   function getTableTitle() {
-    if (state.tab === "cap") return "코스피 시가총액 상위 30";
-    if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "tradeval") {
-      return state.tradeValSub === "kosdaq" ? "코스닥 거래대금 TOP50" : "코스피 거래대금 TOP50";
-    }
-    if (state.tab === "prevday") return "전일 상승 TOP50 (data/prev-top50.json)";
+    if (state.tab === "cap") return "코스피·코스닥 시가총액 상위 30";
+    if (state.tab === "gainers") return "코스피·코스닥 등락률 상위 50";
     return "실시간 시세";
   }
 
@@ -1281,32 +1023,7 @@
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
 
-    if (state.tab === "prevday") {
-      const chPrev = r.prevDayChangePct;
-      const clsPrev = deltaClass(chPrev);
-      return `<tr class="rt-stock-row rt-prevday-stock-row" data-code="${escapeHtml(r.code)}" aria-expanded="false">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name rt-prevday-name-cell"><span class="rt-prevday-name-display">${nm}</span></td>
-          <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
-        </tr>`;
-    }
-
     if (state.tab === "gainers") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      const tv = formatTradeVal(r.tradingValue);
-      const vol = fmtNum(r.volume);
-      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
-        </tr>`;
-    }
-
-    if (state.tab === "tradeval") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
       const tv = formatTradeVal(r.tradingValue);
@@ -1367,29 +1084,9 @@
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
-    if (state.tab === "prevday") {
-      const chPrev = r.prevDayChangePct;
-      const clsPrev = deltaClass(chPrev);
-      tr.setAttribute("aria-expanded", state.openChartCode === r.code ? "true" : "false");
-      tr.cells[1].innerHTML = `<span class="rt-prevday-name-display">${nm}</span>`;
-      tr.cells[1].classList.add("rt-prevday-name-cell");
-      tr.cells[2].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
-      return;
-    }
-
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
 
     if (state.tab === "gainers") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      tr.cells[2].textContent = fmtNum(r.price);
-      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-      tr.cells[4].textContent = fmtNum(r.volume);
-      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
-      return;
-    }
-
-    if (state.tab === "tradeval") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
       tr.cells[2].textContent = fmtNum(r.price);
@@ -1437,13 +1134,6 @@
     const title = $("rt-table-title");
     if (title) title.textContent = getTableTitle();
     renderThead();
-    updatePrevdayHint();
-  }
-
-  function updatePrevdayHint() {
-    const el = $("rt-prevday-hint");
-    if (!el) return;
-    el.hidden = state.tab !== "prevday" || (state.prevDayNoData && state.prevDayRows.length === 0);
   }
 
   function renderTable() {
@@ -1451,20 +1141,8 @@
     const title = $("rt-table-title");
     if (!body) return;
     if (title) title.textContent = getTableTitle();
-    updatePrevdayHint();
-    if (state.tab !== "prevday") hidePrevdayQuotePop();
     if (body.dataset.rtSkeleton === "1") return;
     renderThead();
-    if (state.tab === "prevday" && state.prevDayNoData && state.prevDayRows.length === 0) {
-      disposeLwChart();
-      state.openChartCode = null;
-      const cs = tableColSpan();
-      body.innerHTML = `<tr class="rt-stock-row rt-prevday-empty-row" data-code="">
-          <td colspan="${cs}" class="rt-prevday-empty-cell">데이터 없음</td>
-        </tr>`;
-      updatePrevdayHint();
-      return;
-    }
     const rows = getCurrentRows();
     if (!state.openChartCode) {
       disposeLwChart();
@@ -1566,16 +1244,13 @@
       const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      mergeStockRow(state.tradeValKospiRows, row);
-      mergeStockRow(state.tradeValKosdaqRows, row);
-      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "tradeval") renderTable();
+      if (state.tab === "cap" || state.tab === "gainers") renderTable();
       return;
     }
   }
 
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
-    if (state.tab === "prevday") return;
     const trId = ccnlTrIdForTab();
     const limit = state.tab === "cap" ? 30 : 50;
     const list = codes
@@ -1656,15 +1331,7 @@
   async function refreshPartial() {
     try {
       const stockPromise =
-        state.tab === "gainers"
-          ? fetchJson("gainers", FETCH_TIMEOUT_MS)
-          : state.tab === "tradeval"
-            ? fetchJson("trade-pbmn-top50", TRADE_PBMN_FETCH_TIMEOUT_MS, {
-                mrkt: state.tradeValSub === "kosdaq" ? "Q" : "J",
-              })
-            : state.tab === "prevday"
-              ? fetchJson("prev-day-top50", FETCH_TIMEOUT_MS)
-              : fetchJson("market-cap", FETCH_TIMEOUT_MS);
+        state.tab === "gainers" ? fetchJson("gainers", FETCH_TIMEOUT_MS) : fetchJson("market-cap", FETCH_TIMEOUT_MS);
 
       const [stockPack, idxPack, sessPack] = await Promise.all([
         stockPromise,
@@ -1684,24 +1351,11 @@
       if (state.tab === "gainers") {
         const { stocks } = stockPack;
         state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
-      } else if (state.tab === "tradeval") {
-        const { stocks } = stockPack;
-        const rows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
-        if (state.tradeValSub === "kosdaq") state.tradeValKosdaqRows = rows;
-        else state.tradeValKospiRows = rows;
-      } else if (state.tab === "prevday") {
-        state.prevDayNoData = Boolean(stockPack.noData);
-        state.prevDayLoaded = true;
-        const { stocks } = stockPack;
-        state.prevDayRows = (stocks || []).map((r) => ({ ...r, tab: "prevday" }));
       } else {
         const { stocks } = stockPack;
         state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
       }
       state.tabLoadedAt[state.tab] = Date.now();
-      if (state.tab === "tradeval") {
-        state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
-      }
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
@@ -1730,17 +1384,12 @@
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
         if (t === "gainers") state.tab = "gainers";
-        else if (t === "tradeval") state.tab = "tradeval";
-        else if (t === "prevday") state.tab = "prevday";
         else state.tab = "cap";
-        hidePrevdayQuotePop();
         state.openChartCode = null;
         state.candlePeriod = "D";
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
-        updateSubtabBarsVisibility();
-        syncTradevalSubtabAria();
 
         const finish = () => {
           startPolling();
@@ -1802,75 +1451,6 @@
     });
   }
 
-  function setupTradevalSubtabs() {
-    document.querySelectorAll("[data-rt-tradeval-sub]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        if (state.tab !== "tradeval") return;
-        const s = btn.getAttribute("data-rt-tradeval-sub");
-        if (s === "kosdaq") state.tradeValSub = "kosdaq";
-        else state.tradeValSub = "kospi";
-        syncTradevalSubtabAria();
-        state.openChartCode = null;
-        state.candlePeriod = "D";
-        const errEl = $("rt-error");
-        if (errEl) errEl.hidden = true;
-        const finish = () => {
-          startPolling();
-          if (state.ws && state.ws.readyState === 1) {
-            unsubscribeAll();
-            subscribeStocks(getCurrentRows().map((r) => r.code));
-          }
-        };
-        const subKey = state.tradeValSub;
-        const hasRows = getTradeValRowsForSub().length >= 10;
-        const subFresh =
-          state.tradeValSubLoadedAt[subKey] && Date.now() - state.tradeValSubLoadedAt[subKey] < TAB_CACHE_MS;
-
-        if (hasRows) {
-          syncTableChromeForTab();
-          renderAll();
-          finish();
-          if (!subFresh) {
-            refreshTabStocksOnly("tradeval")
-              .then(() => {
-                if (errEl) errEl.hidden = true;
-                renderAll();
-              })
-              .catch((e) => {
-                console.error("[realtime-board] refreshTabStocksOnly tradeval (bg)", subKey, e && e.message, e);
-                if (errEl) {
-                  errEl.hidden = false;
-                  errEl.textContent = rtErrorTimeoutMessage(e);
-                }
-              });
-          }
-          return;
-        }
-
-        syncTableChromeForTab();
-        showTableSkeleton();
-        refreshTabStocksOnly("tradeval")
-          .then(() => {
-            hideTableSkeleton();
-            if (errEl) errEl.hidden = true;
-            renderAll();
-          })
-          .catch((e) => {
-            console.error("[realtime-board] refreshTabStocksOnly tradeval", subKey, e && e.message, e);
-            hideTableSkeleton();
-            if (errEl) {
-              errEl.hidden = false;
-              errEl.textContent = rtErrorTimeoutMessage(e);
-            }
-            renderAll();
-          })
-          .finally(() => {
-            finish();
-          });
-      });
-    });
-  }
-
   function wireTableChartAccordion() {
     const body = $("rt-tbody");
     if (!body || body.dataset.rtChartWire === "1") return;
@@ -1899,19 +1479,6 @@
         void mountLightweightChart(body);
         return;
       }
-      const prvRow = ev.target.closest("tr.rt-prevday-stock-row[data-code]");
-      if (state.tab === "prevday" && prvRow && body.contains(prvRow)) {
-        if (ev.target.closest(".rt-chart-row") || ev.target.closest(".rt-chart-interval-btn")) return;
-        const code = prvRow.getAttribute("data-code");
-        if (!code) return;
-        if (state.openChartCode === code) state.openChartCode = null;
-        else {
-          state.openChartCode = code;
-          state.candlePeriod = "D";
-        }
-        renderTable();
-        return;
-      }
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const code = btn.getAttribute("data-code");
@@ -1928,12 +1495,7 @@
 
   function startPolling() {
     if (state.pollRest) clearInterval(state.pollRest);
-    const period =
-      state.tab === "prevday"
-        ? 5 * 60 * 1000
-        : state.tab === "gainers" || state.tab === "tradeval"
-          ? 5000
-          : 12000;
+    const period = state.tab === "gainers" ? 5000 : 12000;
     state.pollRest = setInterval(() => {
       refreshPartial().catch((e) => {
         console.error("[realtime-board] poll refreshPartial", e && e.message, e);
@@ -1943,9 +1505,7 @@
 
   async function init() {
     setupTabs();
-    setupTradevalSubtabs();
     wireTableChartAccordion();
-    wirePrevdayQuoteHover();
     const err = $("rt-error");
     if (err) err.hidden = true;
     hideLoadingOverlay();

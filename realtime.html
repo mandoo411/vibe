@@ -103,85 +103,92 @@
         margin-left: auto;
         color: var(--text-dim);
       }
+      .rt-tabs-outer {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin: 0 0 0;
+        padding: 0 0 2px;
+      }
       .rt-tabs {
         display: flex;
         flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: center;
         gap: 0;
-        margin-bottom: 0;
-        border: 1px solid var(--border-strong);
-        border-bottom: 0;
-        border-radius: var(--radius) var(--radius) 0 0;
-        overflow: hidden;
-        width: 100%;
         max-width: 100%;
+        border: 1px solid rgba(212, 175, 55, 0.28);
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        background: linear-gradient(180deg, #12100d 0%, #0b0907 100%);
+        box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.06);
+      }
+      .rt-tab-sep {
+        width: 1px;
+        align-self: stretch;
+        min-height: 48px;
+        background: rgba(212, 175, 55, 0.45);
+        flex-shrink: 0;
       }
       .rt-tab {
         appearance: none;
         border: 0;
         margin: 0;
-        padding: 10px 18px;
+        padding: 12px 40px 10px;
+        cursor: pointer;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-width: 0;
+        border-bottom: 2px solid transparent;
+        transition:
+          color 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .rt-tab__label {
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        cursor: pointer;
-        background: var(--bg-panel);
-        color: var(--text-muted);
-        border-right: 1px solid var(--border);
+        line-height: 1.2;
       }
-      .rt-tab:last-child {
-        border-right: 0;
+      .rt-tab__desc {
+        font-family: var(--font-sans, "Noto Sans KR", sans-serif);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        line-height: 1.35;
+        text-align: center;
+        max-width: 22ch;
+      }
+      .rt-tab[aria-selected="false"] .rt-tab__label,
+      .rt-tab[aria-selected="false"] .rt-tab__desc {
+        color: rgba(148, 138, 124, 0.88);
+      }
+      .rt-tab[aria-selected="true"] .rt-tab__label,
+      .rt-tab[aria-selected="true"] .rt-tab__desc {
+        color: #d4af37;
       }
       .rt-tab[aria-selected="true"] {
-        background: var(--bg-elevated);
-        color: var(--accent-bright);
+        border-bottom-color: #d4af37;
+        background: rgba(212, 175, 55, 0.06);
       }
-      .rt-tab:hover {
-        color: var(--text);
-      }
-      .rt-nxt-subtabs {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px 8px;
-        margin: 0 0 0;
-        border: 1px solid var(--border-strong);
-        border-top: 0;
-        background: #0e0c09;
-      }
-      .rt-nxt-subtabs[hidden] {
-        display: none !important;
-      }
-      .rt-nxt-subtab {
-        appearance: none;
-        border: 1px solid var(--border);
-        margin: 0;
-        padding: 5px 10px;
-        font-family: var(--font-mono);
-        font-size: 9px;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        cursor: pointer;
-        border-radius: 3px;
-        background: var(--bg-panel);
-        color: var(--text-dim);
-      }
-      .rt-nxt-subtab[aria-selected="true"] {
-        background: var(--bg-elevated);
-        color: var(--accent-bright);
-        border-color: var(--border-strong);
-      }
-      .rt-nxt-subtab:hover {
-        color: var(--text);
+      .rt-tab[aria-selected="false"]:hover .rt-tab__label,
+      .rt-tab[aria-selected="false"]:hover .rt-tab__desc {
+        color: #d4af37;
       }
       .rt-panel {
-        border: 1px solid var(--border-strong);
-        border-radius: 0 var(--radius) var(--radius) var(--radius);
+        border: 1px solid rgba(212, 175, 55, 0.28);
+        border-top: 1px solid rgba(212, 175, 55, 0.18);
+        border-radius: 0 0 var(--radius) var(--radius);
         background: var(--bg-panel);
-        box-shadow: var(--sheet-shadow);
+        box-shadow:
+          var(--sheet-shadow),
+          inset 0 1px 0 rgba(212, 175, 55, 0.04);
         overflow: hidden;
       }
       .rt-scroll {
@@ -199,64 +206,6 @@
       }
       .rt-panel__head-title {
         letter-spacing: inherit;
-      }
-      .rt-prevday-hint {
-        margin: 6px 0 0;
-        padding: 0;
-        font-size: 11px;
-        color: var(--text-muted);
-        letter-spacing: 0.04em;
-        line-height: 1.45;
-      }
-      .rt-table tr.rt-prevday-stock-row {
-        cursor: pointer;
-      }
-      .rt-table tr.rt-prevday-stock-row:hover td {
-        background: rgba(212, 175, 55, 0.1);
-      }
-      .rt-prevday-name-cell {
-        position: relative;
-      }
-      .rt-prevday-name-display {
-        display: inline;
-        color: var(--text);
-      }
-      .rt-prevday-quote-pop {
-        position: fixed;
-        z-index: 10050;
-        min-width: 128px;
-        max-width: 220px;
-        padding: 8px 10px;
-        border-radius: 6px;
-        border: 1px solid rgba(212, 175, 55, 0.42);
-        background: linear-gradient(165deg, #1a140c 0%, #0c0906 100%);
-        box-shadow:
-          0 8px 24px rgba(0, 0, 0, 0.45),
-          inset 0 1px 0 rgba(212, 175, 55, 0.12);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: #e8dcc4;
-        line-height: 1.45;
-        pointer-events: auto;
-      }
-      .rt-prevday-quote-pop__row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        gap: 4px 10px;
-      }
-      .rt-prevday-quote-pop__lbl {
-        color: #9a855c;
-        font-size: 10px;
-        letter-spacing: 0.08em;
-      }
-      .rt-prevday-quote-pop__val {
-        color: #f5ebd4;
-        font-weight: 600;
-      }
-      .rt-prevday-quote-pop--err .rt-prevday-quote-pop__val {
-        color: #c9a227;
-        font-weight: 500;
       }
       .rt-chart-quote-strip {
         padding: 8px 12px;
@@ -789,46 +738,22 @@
           <span id="rt-conn" class="rt-conn"></span>
         </div>
 
-        <div class="rt-tabs" role="tablist" aria-label="보기 전환">
-          <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
-            시총 TOP 30
-          </button>
-          <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
-            상승률 TOP 50
-          </button>
-          <button type="button" class="rt-tab" role="tab" data-rt-tab="tradeval" aria-selected="false" id="tab-tradeval">
-            거래대금 TOP50
-          </button>
-          <button type="button" class="rt-tab" role="tab" data-rt-tab="prevday" aria-selected="false" id="tab-prevday">
-            전일 상승 TOP50
-          </button>
-        </div>
-        <div id="rt-tradeval-subtabs" class="rt-nxt-subtabs" role="tablist" aria-label="거래대금 시장" hidden>
-          <button
-            type="button"
-            class="rt-nxt-subtab"
-            role="tab"
-            data-rt-tradeval-sub="kospi"
-            aria-selected="true"
-            id="tab-tradeval-kospi"
-          >
-            코스피 거래대금 TOP50
-          </button>
-          <button
-            type="button"
-            class="rt-nxt-subtab"
-            role="tab"
-            data-rt-tradeval-sub="kosdaq"
-            aria-selected="false"
-            id="tab-tradeval-kosdaq"
-          >
-            코스닥 거래대금 TOP50
-          </button>
+        <div class="rt-tabs-outer">
+          <div class="rt-tabs" role="tablist" aria-label="보기 전환">
+            <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
+              <span class="rt-tab__label">시총 TOP 30</span>
+              <span class="rt-tab__desc">코스피·코스닥 시가총액 상위</span>
+            </button>
+            <span class="rt-tab-sep" aria-hidden="true"></span>
+            <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
+              <span class="rt-tab__label">상승률 TOP 50</span>
+              <span class="rt-tab__desc">코스피·코스닥 등락률 상위</span>
+            </button>
+          </div>
         </div>
         <div class="rt-panel" role="tabpanel">
           <div class="rt-panel__head">
-            <div class="rt-panel__head-title" id="rt-table-title">코스피 시가총액 상위 30</div>
-            <p id="rt-prevday-hint" class="rt-prevday-hint" hidden>행에 마우스를 올리면 현재가 · 행을 클릭하면 차트</p>
+            <div class="rt-panel__head-title" id="rt-table-title">코스피·코스닥 시가총액 상위 30</div>
           </div>
           <div class="rt-scroll">
             <table class="rt-table" aria-label="실시간 시세">
@@ -846,8 +771,6 @@
             </table>
           </div>
         </div>
-
-        <div id="rt-prevday-quote-pop" class="rt-prevday-quote-pop" hidden role="tooltip"></div>
 
         <p id="rt-error" class="rt-error" hidden></p>
       </div>

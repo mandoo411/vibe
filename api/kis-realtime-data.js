@@ -5,8 +5,6 @@
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
- * 선택: KIS_TRADE_PBMN_MAX_PAGES — 거래금액순위(volume-rank, fid_blng_cls_code=3) 연속조회 상한, 기본 12
- * 선택: KIS_TRADE_PBMN_HTTP_TIMEOUT_MS — 첫 페이지 HTTP 타임아웃(ms), 기본 20000
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -26,18 +24,6 @@ const FLUCTUATION_RANK_MAX_PAGES = Math.max(
 const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
-);
-
-/** FHPST01710000 국내 거래금액순위 — 공식 `quotations/volume-rank` + fid_blng_cls_code=3 (거래금액순). 연속조회 페이지 상한 */
-const TRADE_PBMN_RANK_MAX_PAGES = Math.max(
-  1,
-  Math.min(30, Number(process.env.KIS_TRADE_PBMN_MAX_PAGES) || 12)
-);
-
-/** volume-rank(거래금액순) 단일 HTTP 타임아웃(ms). 미설정 시 kisGet 기본(무제한)과 병행 가능하나 클라이언트 대기 완화용. */
-const TRADE_PBMN_HTTP_TIMEOUT_MS = Math.max(
-  1000,
-  Number(process.env.KIS_TRADE_PBMN_HTTP_TIMEOUT_MS) || 20000
 );
 
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
@@ -652,123 +638,6 @@ async function fetchGainersMerged50() {
   return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
-/** 거래대금 문자열 → 정렬용 숫자(원) */
-function tradePbmnSortKey(tvStr) {
-  const n = Number(String(tvStr || "").replace(/,/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-/**
- * [국내주식] 거래금액순위 — 한투 공식은 `GET /uapi/domestic-stock/v1/quotations/volume-rank` (TR FHPST01710000),
- * fid_cond_scr_div_code=20171, fid_blng_cls_code=3(거래금액순). 코스피/코스닥은 등락률·시총과 같이 fid_cond_mrkt_div_code=J + fid_input_iscd 0001|1001.
- */
-async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
-  const isKosdaq = fidMrktDiv === "Q" || String(marketLabel || "").toUpperCase() === "KOSDAQ";
-  const fidInputIscd = isKosdaq ? "1001" : "0001";
-  const params = {
-    fid_cond_mrkt_div_code: "J",
-    fid_cond_scr_div_code: "20171",
-    fid_input_iscd: fidInputIscd,
-    fid_div_cls_code: "0",
-    fid_blng_cls_code: "3",
-    fid_trgt_cls_code: "111111111",
-    fid_trgt_exls_cls_code: "0000000000",
-    fid_input_price_1: "",
-    fid_input_price_2: "",
-    fid_vol_cnt: "",
-    fid_input_date_1: "",
-  };
-
-  const rawAll = [];
-  let trCont = "";
-  for (let page = 0; page < TRADE_PBMN_RANK_MAX_PAGES; page++) {
-    const fetchOpts = page === 0 ? { timeoutMs: TRADE_PBMN_HTTP_TIMEOUT_MS } : {};
-    const { json, trCont: nextTr } = await kisGet(
-      "/uapi/domestic-stock/v1/quotations/volume-rank",
-      "FHPST01710000",
-      params,
-      trCont,
-      fetchOpts
-    );
-    const part = kisOutputRows(json);
-    if (!part.length) break;
-    rawAll.push(...part);
-    const cont = String(nextTr || "").trim().toUpperCase();
-    if (cont !== "M") break;
-    trCont = "N";
-  }
-
-  const rows = [];
-  const seen = new Set();
-  for (const row of rawAll) {
-    const code = sanitizeStr(
-      row.mksc_shrn_iscd || row.MKSC_SHRN_ISCD || row.stck_shrn_iscd || row.STCK_SHRN_ISCD
-    );
-    if (!code || seen.has(code)) continue;
-    seen.add(code);
-    const name = sanitizeStr(row.hts_kor_isnm);
-    if (!name) continue;
-    const price = pickStckPrpr(row);
-    const volume = pickAcmlVol(row);
-    let tradingValue = pickAcmlTrPbmn(row);
-    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-    rows.push({
-      code,
-      name,
-      price,
-      changePct: toNum(row.prdy_ctrt),
-      volume,
-      tradingValue,
-      tvBoard: pickKoreanBoardKind(row, isKosdaq ? "KOSDAQ" : "KOSPI"),
-    });
-  }
-  return rows;
-}
-
-/** 단일 시장 trade-pbmn만 호출해 거래대금 기준 TOP50(순위 부여). */
-async function fetchTradePbmnTop50ForMarket(fidMrktDiv, marketLabel) {
-  const rows = await fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel);
-  const all = [...rows].filter((r) => r.code && r.name);
-  all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
-  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
-}
-
-function getPrevTop50JsonPath() {
-  return path.join(process.cwd(), "data", "prev-top50.json");
-}
-
-/** 전일 상승 TOP50 — data/prev-top50.json 만 읽음(KIS 호출 없음). 실패·빈 목록 시 noData */
-function loadPrevDayTop50FromDisk() {
-  const filePath = getPrevTop50JsonPath();
-  try {
-    if (!fs.existsSync(filePath)) {
-      return { stocks: [], noData: true };
-    }
-    const rawText = fs.readFileSync(filePath, "utf8");
-    const data = JSON.parse(rawText);
-    const rawList = Array.isArray(data.stocks) ? data.stocks : [];
-    const stocks = rawList
-      .filter((x) => x && sanitizeStr(x.code))
-      .map((x, i) => {
-        const digits = String(x.code).replace(/\D/g, "");
-        const code = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
-        return {
-          rank: x.rank != null ? toNum(x.rank) : i + 1,
-          code,
-          name: sanitizeStr(x.name),
-          market: sanitizeStr(x.market) || "KOSPI",
-          tvBoard: sanitizeStr(x.tvBoard) || sanitizeStr(x.market) || "KOSPI",
-          prevDayChangePct: toNum(x.prevDayChangePct),
-        };
-      })
-      .filter((x) => x.code && x.name)
-      .slice(0, 50);
-    return { stocks, noData: stocks.length === 0 };
-  } catch {
-    return { stocks: [], noData: true };
-  }
-}
-
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
 function pickIndexLevelRaw(row) {
   if (!row || typeof row !== "object") return "";
@@ -865,28 +734,6 @@ async function fetchMarketTime() {
   } catch {
     return null;
   }
-}
-
-/** [국내주식] 주식현재가 시세 — fid_cond_mrkt_div_code J(코스피)·Q(코스닥) */
-async function fetchDomesticInquirePrice(code6, fidMrktDiv) {
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/quotations/inquire-price",
-    "FHKST01010100",
-    {
-      fid_cond_mrkt_div_code: fidMrktDiv,
-      fid_input_iscd: code6,
-    },
-    "",
-    { timeoutMs: 12000 }
-  );
-  const o = json.output;
-  const row = Array.isArray(o) ? o[0] : o;
-  if (!row || typeof row !== "object") {
-    throw new Error("inquire-price: empty output");
-  }
-  const price = pickStckPrpr(row);
-  const changePct = toNum(row.prdy_ctrt ?? row.PRDY_CTRT);
-  return { code: code6, price, changePct, mrkt: fidMrktDiv };
 }
 
 async function getApprovalKey() {
@@ -1158,72 +1005,6 @@ module.exports = async function handler(req, res) {
       } catch (e) {
         console.error("[kis-realtime-data] action=gainers", e && e.message, e);
         json(res, 200, { stocks: [] });
-      }
-      return;
-    }
-
-    if (action === "trade-pbmn-top50") {
-      try {
-        const mrktRaw = String((req.query && req.query.mrkt) != null ? req.query.mrkt : "J")
-          .trim()
-          .toUpperCase();
-        let fid = "J";
-        let marketLabel = "KOSPI";
-        if (mrktRaw === "Q" || mrktRaw === "KOSDAQ") {
-          fid = "Q";
-          marketLabel = "KOSDAQ";
-        } else if (mrktRaw === "J" || mrktRaw === "KOSPI" || mrktRaw === "") {
-          fid = "J";
-          marketLabel = "KOSPI";
-        } else {
-          json(res, 400, {
-            error: "Invalid mrkt. Use J (KOSPI) or Q (KOSDAQ).",
-            stocks: [],
-          });
-          return;
-        }
-        const stocks = await fetchTradePbmnTop50ForMarket(fid, marketLabel);
-        json(res, 200, { stocks, mrkt: fid });
-      } catch (e) {
-        console.error("[kis-realtime-data] action=trade-pbmn-top50", e && e.message, e);
-        json(res, 502, {
-          error: e.message || String(e),
-          stocks: [],
-        });
-      }
-      return;
-    }
-
-    if (action === "prev-day-top50") {
-      const { stocks, noData } = loadPrevDayTop50FromDisk();
-      json(res, 200, { stocks, noData });
-      return;
-    }
-
-    if (action === "inquire-price") {
-      const code6 = normalizeDomesticStockCode6(req.query && req.query.code);
-      if (!/^\d{6}$/.test(code6)) {
-        json(res, 400, { error: "Invalid code", code: code6, price: "", changePct: null });
-        return;
-      }
-      let fid = String((req.query && req.query.mrkt) || "J").trim().toUpperCase();
-      if (fid === "KOSPI") fid = "J";
-      if (fid === "KOSDAQ") fid = "Q";
-      if (fid !== "J" && fid !== "Q") {
-        json(res, 400, { error: "Invalid mrkt (use J or Q)", code: code6, price: "", changePct: null });
-        return;
-      }
-      try {
-        const quote = await fetchDomesticInquirePrice(code6, fid);
-        json(res, 200, quote);
-      } catch (e) {
-        console.error("[kis-realtime-data] action=inquire-price", code6, fid, e && e.message, e);
-        json(res, 502, {
-          error: e.message || String(e),
-          code: code6,
-          price: "",
-          changePct: null,
-        });
       }
       return;
     }

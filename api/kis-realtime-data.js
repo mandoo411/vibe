@@ -5,9 +5,12 @@
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
+ * 선택: KIS_TRADE_PBMN_MAX_PAGES — 거래대금 순위(trade-pbmn) 연속조회 상한, 기본 12
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
+const fs = require("fs");
+const path = require("path");
 
 /** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
@@ -22,6 +25,12 @@ const FLUCTUATION_RANK_MAX_PAGES = Math.max(
 const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
+);
+
+/** FHPST01710000 거래대금 순위(trade-pbmn) — 연속조회 페이지 상한 */
+const TRADE_PBMN_RANK_MAX_PAGES = Math.max(
+  1,
+  Math.min(30, Number(process.env.KIS_TRADE_PBMN_MAX_PAGES) || 12)
 );
 
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
@@ -615,6 +624,129 @@ async function fetchGainersMerged50() {
   return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
+/** 거래대금 문자열 → 정렬용 숫자(원) */
+function tradePbmnSortKey(tvStr) {
+  const n = Number(String(tvStr || "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * [국내주식 순위] 거래대금 — trade-pbmn (코스피 J / 코스닥 Q 각각 호출 후 거래대금 기준 TOP50).
+ * 요청 파라미터는 스펙에 맞춤(fid_cond_scr_div_code: 전체 0 등).
+ */
+async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
+  const params = {
+    fid_cond_mrkt_div_code: fidMrktDiv,
+    fid_cond_scr_div_code: "0",
+    fid_cond_scrs_div_code: "0",
+    fid_input_iscd: "0000",
+    fid_div_cls_code: "0",
+    fid_blng_cls_code: "0",
+    fid_trgt_cls_code: "111111111",
+    fid_trgt_exls_cls_code: "000000",
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: "",
+    fid_input_date_1: "",
+  };
+
+  const rawAll = [];
+  let trCont = "";
+  for (let page = 0; page < TRADE_PBMN_RANK_MAX_PAGES; page++) {
+    const { json, trCont: nextTr } = await kisGet(
+      "/uapi/domestic-stock/v1/ranking/trade-pbmn",
+      "FHPST01710000",
+      params,
+      trCont
+    );
+    const part = kisOutputRows(json);
+    if (!part.length) break;
+    rawAll.push(...part);
+    const cont = String(nextTr || "").trim().toUpperCase();
+    if (cont !== "M") break;
+    trCont = "N";
+  }
+
+  const rows = [];
+  const seen = new Set();
+  for (const row of rawAll) {
+    const code = sanitizeStr(
+      row.mksc_shrn_iscd || row.MKSC_SHRN_ISCD || row.stck_shrn_iscd || row.STCK_SHRN_ISCD
+    );
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    const name = sanitizeStr(row.hts_kor_isnm);
+    if (!name) continue;
+    const price = pickStckPrpr(row);
+    const volume = pickAcmlVol(row);
+    let tradingValue = pickAcmlTrPbmn(row);
+    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+    rows.push({
+      code,
+      name,
+      price,
+      changePct: toNum(row.prdy_ctrt),
+      volume,
+      tradingValue,
+      tvBoard: pickKoreanBoardKind(row, marketLabel),
+    });
+  }
+  return rows;
+}
+
+async function fetchTradePbmnMergedTop50() {
+  const [kospi, kosdaq] = await Promise.all([
+    fetchTradePbmnRankRowsForMarket("J", "KOSPI"),
+    fetchTradePbmnRankRowsForMarket("Q", "KOSDAQ"),
+  ]);
+  const merged = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    const prev = merged.get(r.code);
+    if (!prev || tradePbmnSortKey(r.tradingValue) > tradePbmnSortKey(prev.tradingValue)) {
+      merged.set(r.code, r);
+    }
+  }
+  const all = [...merged.values()].filter((r) => r.code && r.name);
+  all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
+  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+function getPrevTop50JsonPath() {
+  return path.join(process.cwd(), "data", "prev-top50.json");
+}
+
+/** 전일 상승 TOP50 — data/prev-top50.json 만 읽음(추가 KIS 호출 없음). 실패·빈 목록 시 noData */
+function loadPrevDayTop50FromDisk() {
+  const filePath = getPrevTop50JsonPath();
+  try {
+    if (!fs.existsSync(filePath)) {
+      return { stocks: [], noData: true };
+    }
+    const rawText = fs.readFileSync(filePath, "utf8");
+    const data = JSON.parse(rawText);
+    const rawList = Array.isArray(data.stocks) ? data.stocks : [];
+    const stocks = rawList
+      .filter((x) => x && sanitizeStr(x.code))
+      .map((x, i) => {
+        const digits = String(x.code).replace(/\D/g, "");
+        const code = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+        return {
+          rank: x.rank != null ? toNum(x.rank) : i + 1,
+          code,
+          name: sanitizeStr(x.name),
+          market: sanitizeStr(x.market) || "KOSPI",
+          tvBoard: sanitizeStr(x.tvBoard) || sanitizeStr(x.market) || "KOSPI",
+          prevDayChangePct: toNum(x.prevDayChangePct),
+        };
+      })
+      .filter((x) => x.code && x.name)
+      .slice(0, 50);
+    return { stocks, noData: stocks.length === 0 };
+  } catch {
+    return { stocks: [], noData: true };
+  }
+}
+
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
 function pickIndexLevelRaw(row) {
   if (!row || typeof row !== "object") return "";
@@ -983,6 +1115,23 @@ module.exports = async function handler(req, res) {
         console.error("[kis-realtime-data] action=gainers", e && e.message, e);
         json(res, 200, { stocks: [] });
       }
+      return;
+    }
+
+    if (action === "trade-pbmn-top50") {
+      try {
+        const stocks = await fetchTradePbmnMergedTop50();
+        json(res, 200, { stocks });
+      } catch (e) {
+        console.error("[kis-realtime-data] action=trade-pbmn-top50", e && e.message, e);
+        json(res, 200, { stocks: [] });
+      }
+      return;
+    }
+
+    if (action === "prev-day-top50") {
+      const { stocks, noData } = loadPrevDayTop50FromDisk();
+      json(res, 200, { stocks, noData });
       return;
     }
 

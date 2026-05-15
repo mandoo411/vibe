@@ -971,8 +971,8 @@
   }
 
   function getTableTitle() {
-    if (state.tab === "cap") return "코스피·코스닥 시가총액 상위 30";
-    if (state.tab === "gainers") return "코스피·코스닥 등락률 상위 50";
+    if (state.tab === "cap") return "시가총액 TOP 30";
+    if (state.tab === "gainers") return "상승률 TOP 50";
     return "실시간 시세";
   }
 

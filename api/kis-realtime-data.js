@@ -22,7 +22,7 @@ const FLUCTUATION_RANK_MAX_PAGES = Math.max(
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
 const candleMemoryCache = new Map();
 
-/** action=prev-day-gainers — data/prev-top50.json 목록 + 당일 시세(5분) */
+/** action=prev-day-gainers — data/prev-top50.json(전일 순위·전일 등락률) + 종목별 inquire-price(5분 캐시) */
 let prevDayGainersCache = null; // { mtimeMs, rankingYmd, stocks }
 let prevDayQuotesCache = null; // { at, rankingYmd, codeKey, byCode: Map }
 
@@ -673,13 +673,59 @@ function mergeLiveQuotesIntoPrevDayRows(baseRows, liveByCode) {
       prevDayChangePct: r.prevDayChangePct != null ? r.prevDayChangePct : null,
       price: L && L.price != null && String(L.price).trim() !== "" ? L.price : "",
       changePct: L && L.changePct != null ? L.changePct : null,
-      volume: L && L.volume ? L.volume : "",
+      volume: "",
       tradingValue: L && L.tradingValue ? L.tradingValue : "",
     };
   });
 }
 
-/** 당일 fluctuation 전체에서 코드 매칭 — 5분 메모리 캐시 */
+const KIS_INQUIRE_PRICE_TR_ID = "FHKST01010100";
+
+function fidMrktDivForPrevDayStock(tvBoard, market) {
+  const u = String(tvBoard || market || "").toUpperCase();
+  if (u.includes("KOSDAQ") || u === "Q") return "Q";
+  return "J";
+}
+
+/**
+ * 주식현재가 시세 — 전일 TOP50 행에만 붙일 당일 현재가·등락률·거래대금.
+ * fluctuation 매칭은 랭킹 밖 종목이 누락되어 inquire-price 로 통일.
+ */
+async function fetchInquirePriceQuoteByCode(codeRaw, primaryMrktDiv) {
+  const digits = String(codeRaw || "").replace(/\D/g, "");
+  const code6 = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
+  if (!/^\d{6}$/.test(code6)) {
+    return { code: "", price: "", changePct: null, tradingValue: "" };
+  }
+  const tryOrder = primaryMrktDiv === "Q" ? ["Q", "J"] : ["J", "Q"];
+  for (const div of tryOrder) {
+    try {
+      const { json } = await kisGet(
+        "/uapi/domestic-stock/v1/quotations/inquire-price",
+        KIS_INQUIRE_PRICE_TR_ID,
+        {
+          FID_COND_MRKT_DIV_CODE: div,
+          FID_INPUT_ISCD: code6,
+        },
+        ""
+      );
+      const out = json && json.output;
+      const row = Array.isArray(out) ? out[0] : out;
+      if (!row || typeof row !== "object") continue;
+      const price = pickStckPrpr(row);
+      const changePct = toNum(row.prdy_ctrt);
+      const tradingValue = pickAcmlTrPbmn(row);
+      if (price || changePct != null || tradingValue) {
+        return { code: code6, price, changePct, tradingValue };
+      }
+    } catch {
+      /* 보드 추정이 틀린 경우 다음 div 시도 */
+    }
+  }
+  return { code: code6, price: "", changePct: null, tradingValue: "" };
+}
+
+/** prev-top50.json 종목별 inquire-price — 5분 메모리 캐시 */
 async function enrichPrevDayWithLiveQuotesCached(baseRows, rankingYmd) {
   const codeKey = [...baseRows.map((r) => r.code)].sort().join(",");
   const now = Date.now();
@@ -692,19 +738,18 @@ async function enrichPrevDayWithLiveQuotesCached(baseRows, rankingYmd) {
   ) {
     return mergeLiveQuotesIntoPrevDayRows(baseRows, prevDayQuotesCache.byCode);
   }
-  const [kospi, kosdaq] = await Promise.all([
-    fetchFluctuationRank("0001", "KOSPI"),
-    fetchFluctuationRank("1001", "KOSDAQ"),
-  ]);
   const byCode = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    if (r.code) byCode.set(r.code, r);
+  for (const r of baseRows) {
+    if (!r || !r.code) continue;
+    const div = fidMrktDivForPrevDayStock(r.tvBoard, r.market);
+    const q = await fetchInquirePriceQuoteByCode(r.code, div);
+    byCode.set(r.code, q);
   }
   prevDayQuotesCache = { at: now, rankingYmd, codeKey, byCode };
   return mergeLiveQuotesIntoPrevDayRows(baseRows, byCode);
 }
 
-/** 작전장 상승 TOP50 목록 — data/prev-top50.json (mtime 변경 시 재로드) */
+/** 전일 상승 TOP50 목록 — data/prev-top50.json (mtime 변경 시 재로드) */
 async function getPrevDayGainersTop50Cached() {
   const loaded = loadPrevTop50ListFromDisk();
   if (prevDayGainersCache && prevDayGainersCache.mtimeMs === loaded.mtimeMs) {
@@ -1096,7 +1141,7 @@ module.exports = async function handler(req, res) {
       const rankYmd = prevDayGainersCache.rankingYmd || "";
       const stocks = await enrichPrevDayWithLiveQuotesCached(base, rankYmd);
       console.log("[prev-day-gainers] result", {
-        source: "data/prev-top50.json",
+        source: "data/prev-top50.json + inquire-price(FHKST01010100)",
         sessionYmd: rankYmd,
         baseCount: base.length,
         stocksCount: stocks.length,

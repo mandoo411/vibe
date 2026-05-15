@@ -944,9 +944,10 @@
     const i = list.findIndex((r) => r.code === patch.code);
     if (i < 0) return;
     const cur = { ...list[i] };
+    const prevTabList = list === state.prevDayRows;
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
-    if (patch.volume) cur.volume = patch.volume;
+    if (!prevTabList && patch.volume) cur.volume = patch.volume;
     if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
     if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
@@ -1012,7 +1013,7 @@
   }
 
   function tableColSpan() {
-    if (state.tab === "prevday") return 7;
+    if (state.tab === "prevday") return 6;
     if (state.tab === "tradeval") return 5;
     return 6;
   }
@@ -1022,7 +1023,7 @@
     if (!tr) return;
     if (state.tab === "prevday") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">전일등락률</th><th class="num rt-td-chg">오늘등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">전일 등락률</th><th class="num rt-td-chg">금일 등락률</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
     if (state.tab === "tradeval") {
@@ -1047,7 +1048,7 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "prevday") return "전일 상승 상위 50 · 오늘 조정·추세 추적";
+    if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
     if (state.tab === "tradeval") return "거래대금 상위 50 (시총 랭킹 데이터 기준)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
@@ -1109,7 +1110,6 @@
       const clsPrev = deltaClass(chPrev);
       const chToday = r.changePct;
       const clsToday = deltaClass(chToday);
-      const vol = fmtNum(r.volume);
       const tv = formatTradeVal(r.tradingValue);
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
@@ -1117,7 +1117,6 @@
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
           <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
           <td class="num rt-td-chg"><span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span></td>
-          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
           <td class="num rt-td-tv">${escapeHtml(tv)}</td>
         </tr>`;
     }
@@ -1219,8 +1218,7 @@
       tr.cells[2].textContent = fmtNum(r.price);
       tr.cells[3].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
       tr.cells[4].innerHTML = `<span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span>`;
-      tr.cells[5].textContent = fmtNum(r.volume);
-      tr.cells[6].textContent = formatTradeVal(r.tradingValue);
+      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
       return;
     }
 

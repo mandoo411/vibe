@@ -12,6 +12,10 @@ const OUT = path.join(ROOT, "data", "prev-top50.json");
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
+const FLUCTUATION_RANK_MAX_PAGES = Math.max(
+  1,
+  Math.min(30, Number(process.env.KIS_FLUCTUATION_MAX_PAGES) || 12)
+);
 
 function baseUrl() {
   return (process.env.KIS_BASE_URL || DEFAULT_BASE).replace(/\/+$/, "");
@@ -154,6 +158,20 @@ function pickKoreanBoardKind(row, fallbackLabel) {
   return fb;
 }
 
+function readTrContHeader(res, json) {
+  const fromBody =
+    (json && (json.tr_cont ?? json.TR_CONT ?? json.trCont)) != null
+      ? String(json.tr_cont ?? json.TR_CONT ?? json.trCont).trim()
+      : "";
+  if (fromBody) return fromBody;
+  for (const [k, v] of res.headers.entries()) {
+    if (String(k).toLowerCase() === "tr_cont" || String(k).toLowerCase() === "tr-cont") {
+      return String(v || "").trim();
+    }
+  }
+  return "";
+}
+
 async function fetchFluctuationRank(marketCode, marketLabel, token, appkey, appsecret) {
   const urlBase = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
   const buildParams = (fidPrcCls) => ({
@@ -173,33 +191,42 @@ async function fetchFluctuationRank(marketCode, marketLabel, token, appkey, apps
     fid_rsfl_rate2: "",
   });
 
-  async function fetchOnce(fidPrcCls) {
-    const url = new URL(urlBase.toString());
-    for (const [k, v] of Object.entries(buildParams(fidPrcCls))) url.searchParams.set(k, v);
-    await sleep(KIS_GAP_MS);
-    const res = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        authorization: `Bearer ${token}`,
-        appkey,
-        appsecret: appsecret,
-        tr_id: "FHPST01700000",
-        custtype: "P",
-        tr_cont: "",
-      },
-    });
-    const text = await res.text();
-    const json = JSON.parse(text);
-    if (json.rt_cd && json.rt_cd !== "0") {
-      throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${json.msg1 || json.msg_cd || ""}`);
+  async function fetchFluctuationRawRowsPaged(fidPrcCls) {
+    const acc = [];
+    let trCont = "";
+    for (let page = 0; page < FLUCTUATION_RANK_MAX_PAGES; page++) {
+      const url = new URL(urlBase.toString());
+      for (const [k, v] of Object.entries(buildParams(fidPrcCls))) url.searchParams.set(k, v);
+      await sleep(KIS_GAP_MS);
+      const res = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          authorization: `Bearer ${token}`,
+          appkey,
+          appsecret: appsecret,
+          tr_id: "FHPST01700000",
+          custtype: "P",
+          tr_cont: trCont,
+        },
+      });
+      const text = await res.text();
+      const json = JSON.parse(text);
+      if (json.rt_cd && json.rt_cd !== "0") {
+        throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${json.msg1 || json.msg_cd || ""}`);
+      }
+      const part = kisOutputRows(json);
+      if (!part.length) break;
+      acc.push(...part);
+      const cont = String(readTrContHeader(res, json) || "").trim().toUpperCase();
+      if (cont !== "M") break;
+      trCont = "N";
     }
-    return json;
+    return acc;
   }
 
-  const mapRows = (rawJson) => {
-    const list = kisOutputRows(rawJson);
-    return list
+  const mapRawList = (list) =>
+    list
       .map((row) => {
         const code = sanitizeStr(row.stck_shrn_iscd);
         const price = sanitizeStr(row.stck_prpr);
@@ -218,14 +245,22 @@ async function fetchFluctuationRank(marketCode, marketLabel, token, appkey, apps
         };
       })
       .filter((r) => r.code && r.name);
-  };
 
-  let rows = mapRows(await fetchOnce("1"));
+  const rawPrimary = await fetchFluctuationRawRowsPaged("1");
+  const byCode = new Map();
+  for (const r of mapRawList(rawPrimary)) {
+    if (!byCode.has(r.code)) byCode.set(r.code, r);
+  }
+  let rows = [...byCode.values()];
+
   if (rows.length && rows.some((r) => !r.tradingValue)) {
-    const rawAlt = await fetchOnce("0");
-    const tvByCode = new Map(
-      kisOutputRows(rawAlt).map((row) => [sanitizeStr(row.stck_shrn_iscd), pickAcmlTrPbmn(row)])
-    );
+    const rawAlt = await fetchFluctuationRawRowsPaged("0");
+    const tvByCode = new Map();
+    for (const row of rawAlt) {
+      const c = sanitizeStr(row.stck_shrn_iscd);
+      const tv = pickAcmlTrPbmn(row);
+      if (c && tv) tvByCode.set(c, tv);
+    }
     rows = rows.map((r) => (r.tradingValue ? r : { ...r, tradingValue: tvByCode.get(r.code) || "" }));
   }
   rows = rows.map((r) =>

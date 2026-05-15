@@ -13,6 +13,12 @@ const path = require("path");
 /** KIS REST 호출 사이 간격(ms). EGW00201(초당 거래건수 초과) 회피. */
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 
+/** FHPST01700000 등락률 순위 — 페이지당 ~30건이라 연속조회로 후보 풀 확장 (시장당 상한) */
+const FLUCTUATION_RANK_MAX_PAGES = Math.max(
+  1,
+  Math.min(30, Number(process.env.KIS_FLUCTUATION_MAX_PAGES) || 12)
+);
+
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
 const candleMemoryCache = new Map();
 
@@ -509,8 +515,7 @@ async function fetchTradeValueTop50FromMarketCap() {
  */
 async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   const closeOnly = Boolean(opts.closeOnly);
-  const urlBase = new URL("/uapi/domestic-stock/v1/ranking/fluctuation", baseUrl());
-  const buildParams = (fidPrcCls) => ({
+  const fluctuationSearchParams = (fidPrcCls) => ({
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20170",
     fid_input_iscd: marketCode,
@@ -528,58 +533,30 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     fid_rsfl_rate2: "",
   });
 
-  async function fetchOnce(fidPrcCls) {
-    const url = new URL(urlBase.toString());
-    for (const [k, v] of Object.entries(buildParams(fidPrcCls))) url.searchParams.set(k, v);
-
-    await sleep(KIS_GAP_MS);
-    const { appkey, appsecret } = requireAppKeySecret();
-    const token = requireAccessToken();
-
-    const maxTry = 4;
-    let json;
-    for (let attempt = 0; attempt < maxTry; attempt++) {
-      if (attempt === 0) {
-        console.log("[kis-api] → fluctuation (direct fetch)", {
-          market: marketLabel,
-          tr_id: "FHPST01700000",
-          fid_prc_cls_code: fidPrcCls,
-        });
-      }
-      const res = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          "content-type": "application/json; charset=utf-8",
-          authorization: `Bearer ${token}`,
-          appkey,
-          appsecret: appsecret,
-          tr_id: "FHPST01700000",
-          custtype: "P",
-          tr_cont: "",
-        },
-      });
-      const text = await res.text();
-      json = JSON.parse(text);
-      if (json.rt_cd && json.rt_cd !== "0") {
-        const msg = json.msg1 || json.msg_cd || "";
-        const rateLimited =
-          json.msg_cd === "EGW00201" || /초과|거래건수/.test(String(msg));
-        if (rateLimited && attempt < maxTry - 1) {
-          await sleep(600 + attempt * 350);
-          continue;
-        }
-        throw new Error(`fluctuation ${marketLabel} rt_cd=${json.rt_cd} msg=${msg}`);
-      }
-      break;
+  /** 연속조회(tr_cont M→N)로 등락률 순위 원시 행 누적 */
+  async function fetchFluctuationRawRowsPaged(fidPrcCls) {
+    const params = fluctuationSearchParams(fidPrcCls);
+    const acc = [];
+    let trCont = "";
+    for (let page = 0; page < FLUCTUATION_RANK_MAX_PAGES; page++) {
+      const { json, trCont: nextTr } = await kisGet(
+        "/uapi/domestic-stock/v1/ranking/fluctuation",
+        "FHPST01700000",
+        params,
+        trCont
+      );
+      const part = kisOutputRows(json);
+      if (!part.length) break;
+      acc.push(...part);
+      const cont = String(nextTr || "").trim().toUpperCase();
+      if (cont !== "M") break;
+      trCont = "N";
     }
-    const rn = kisOutputRows(json).length;
-    console.log("[kis-api] ← fluctuation", { market: marketLabel, fid_prc_cls_code: fidPrcCls, outputRows: rn });
-    return json;
+    return acc;
   }
 
-  const mapRows = (rawJson) => {
-    const list = kisOutputRows(rawJson);
-    return list
+  const mapRawRowsToRanked = (list) =>
+    list
       .map((row) => {
         const code = sanitizeStr(row.stck_shrn_iscd);
         const price = pickStckPrpr(row);
@@ -598,21 +575,33 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
         };
       })
       .filter((r) => r.code && r.name);
-  };
 
-  let rows = mapRows(await fetchOnce("1"));
+  const rawPrimary = await fetchFluctuationRawRowsPaged("1");
+  const byCode = new Map();
+  for (const r of mapRawRowsToRanked(rawPrimary)) {
+    if (!byCode.has(r.code)) byCode.set(r.code, r);
+  }
+  let rows = [...byCode.values()];
+
   if (!closeOnly && rows.length && rows.some((r) => !r.tradingValue)) {
-    const rawAlt = await fetchOnce("0");
-    const tvByCode = new Map(
-      kisOutputRows(rawAlt).map((row) => [sanitizeStr(row.stck_shrn_iscd), pickAcmlTrPbmn(row)])
-    );
-    rows = rows.map((r) =>
-      r.tradingValue ? r : { ...r, tradingValue: tvByCode.get(r.code) || "" }
-    );
+    const rawAlt = await fetchFluctuationRawRowsPaged("0");
+    const tvByCode = new Map();
+    for (const row of rawAlt) {
+      const c = sanitizeStr(row.stck_shrn_iscd);
+      const tv = pickAcmlTrPbmn(row);
+      if (c && tv) tvByCode.set(c, tv);
+    }
+    rows = rows.map((r) => (r.tradingValue ? r : { ...r, tradingValue: tvByCode.get(r.code) || "" }));
   }
   rows = rows.map((r) =>
     r.tradingValue ? r : { ...r, tradingValue: approxPbmnFromPriceVol(r.price, r.volume) || "" }
   );
+  console.log("[kis-api] fluctuation merged", {
+    market: marketLabel,
+    closeOnly,
+    uniqueRows: rows.length,
+    maxPagesCap: FLUCTUATION_RANK_MAX_PAGES,
+  });
   return rows;
 }
 

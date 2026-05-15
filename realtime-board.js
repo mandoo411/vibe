@@ -4,7 +4,7 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  /** 거래대금 TOP50 — 코스피+코스닥 병렬·연속조회 대비 클라이언트 대기 상한 */
+  /** 거래대금 TOP50 — 시장당 API 1회(mrkt=J|Q); 클라이언트 대기 상한 */
   const TRADE_PBMN_FETCH_TIMEOUT_MS = 20000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
@@ -81,7 +81,11 @@
     nxtSub: "fluctuation",
     capRows: [],
     gainerRows: [],
-    tradeValRows: [],
+    /** 거래대금 탭: 시장별 캐시 — API는 mrkt=J|Q 로 시장당 1회만 호출 */
+    tradeValSub: "kospi",
+    tradeValKospiRows: [],
+    tradeValKosdaqRows: [],
+    tradeValSubLoadedAt: {},
     prevDayRows: [],
     prevDayNoData: false,
     prevDayLoaded: false,
@@ -773,11 +777,17 @@
     syncNameChartButtonsAria(body);
   }
 
-  async function fetchJson(action, timeoutMs) {
+  async function fetchJson(action, timeoutMs, extraQuery) {
     const useAbort = typeof timeoutMs === "number" && timeoutMs > 0;
     const ctrl = useAbort ? new AbortController() : null;
     const tid = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : 0;
-    const url = `${API}?action=${encodeURIComponent(action)}`;
+    let url = `${API}?action=${encodeURIComponent(action)}`;
+    if (extraQuery && typeof extraQuery === "object") {
+      for (const [k, v] of Object.entries(extraQuery)) {
+        if (v == null || v === "") continue;
+        url += `&${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`;
+      }
+    }
     console.log("[realtime-board] fetch →", action, url);
     try {
       const res = await fetch(url, {
@@ -828,7 +838,7 @@
     if (tab === "nxt" && NXT_DISABLED) return true;
     if (tab === "cap") return state.capRows.length >= 10;
     if (tab === "gainers") return state.gainerRows.length >= 10;
-    if (tab === "tradeval") return state.tradeValRows.length >= 10;
+    if (tab === "tradeval") return getTradeValRowsForSub().length >= 10;
     if (tab === "prevday") {
       return state.prevDayLoaded && (state.prevDayRows.length > 0 || state.prevDayNoData);
     }
@@ -845,13 +855,20 @@
     return state.nxtFluctRows;
   }
 
+  function getTradeValRowsForSub() {
+    return state.tradeValSub === "kosdaq" ? state.tradeValKosdaqRows : state.tradeValKospiRows;
+  }
+
   function applyStocksArrayToTab(tab, stocks) {
     const rows = (stocks || [])
       .filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0)
       .map((r) => ({ ...r, tab: tab === "nxt" ? "nxt" : r.tab || tab }));
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
-    else if (tab === "tradeval") state.tradeValRows = rows;
+    else if (tab === "tradeval") {
+      if (state.tradeValSub === "kosdaq") state.tradeValKosdaqRows = rows;
+      else state.tradeValKospiRows = rows;
+    }
     else if (tab === "prevday") state.prevDayRows = rows;
     else if (tab === "nxt") {
       if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
@@ -873,6 +890,10 @@
               ? "prev-day-top50"
               : nxtFetchAction();
     const ms = tab === "tradeval" ? TRADE_PBMN_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
+    if (tab === "tradeval") {
+      const mrkt = state.tradeValSub === "kosdaq" ? "Q" : "J";
+      return fetchJson(action, ms, { mrkt });
+    }
     return fetchJson(action, ms);
   }
 
@@ -887,6 +908,9 @@
     state.tabLoadedAt[tab] = Date.now();
     if (tab === "nxt" && !NXT_DISABLED) {
       state.nxtSubLoadedAt[state.nxtSub] = Date.now();
+    }
+    if (tab === "tradeval") {
+      state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
     }
   }
 
@@ -912,6 +936,9 @@
     state.tabLoadedAt[tab] = Date.now();
     if (tab === "nxt" && !NXT_DISABLED) {
       state.nxtSubLoadedAt[state.nxtSub] = Date.now();
+    }
+    if (tab === "tradeval") {
+      state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
     }
   }
 
@@ -1029,7 +1056,7 @@
   function getCurrentRows() {
     if (state.tab === "cap") return state.capRows;
     if (state.tab === "gainers") return state.gainerRows;
-    if (state.tab === "tradeval") return state.tradeValRows;
+    if (state.tab === "tradeval") return getTradeValRowsForSub();
     if (state.tab === "prevday") return state.prevDayRows;
     if (state.tab === "nxt") {
       if (NXT_DISABLED) return [];
@@ -1056,9 +1083,29 @@
     else bar.setAttribute("hidden", "");
   }
 
+  function updateTradevalSubtabsVisibility() {
+    const bar = $("rt-tradeval-subtabs");
+    if (!bar) return;
+    if (state.tab === "tradeval") bar.removeAttribute("hidden");
+    else bar.setAttribute("hidden", "");
+  }
+
+  function updateSubtabBarsVisibility() {
+    updateNxtSubtabsVisibility();
+    updateTradevalSubtabsVisibility();
+  }
+
   function syncNxtSubtabAria() {
     document.querySelectorAll("[data-rt-nxt-sub]").forEach((b) => {
       b.setAttribute("aria-selected", b.getAttribute("data-rt-nxt-sub") === state.nxtSub ? "true" : "false");
+    });
+  }
+
+  function syncTradevalSubtabAria() {
+    document.querySelectorAll("[data-rt-tradeval-sub]").forEach((b) => {
+      const s = b.getAttribute("data-rt-tradeval-sub");
+      const on = (s === "kosdaq" && state.tradeValSub === "kosdaq") || (s === "kospi" && state.tradeValSub === "kospi");
+      b.setAttribute("aria-selected", on ? "true" : "false");
     });
   }
 
@@ -1117,7 +1164,9 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "tradeval") return "코스피·코스닥 통합 거래대금 상위 50";
+    if (state.tab === "tradeval") {
+      return state.tradeValSub === "kosdaq" ? "코스닥 거래대금 TOP50" : "코스피 거래대금 TOP50";
+    }
     if (state.tab === "prevday") return "전일 상승 TOP50 (data/prev-top50.json)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
@@ -1499,7 +1548,8 @@
       const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      mergeStockRow(state.tradeValRows, row);
+      mergeStockRow(state.tradeValKospiRows, row);
+      mergeStockRow(state.tradeValKosdaqRows, row);
       if (state.tab === "cap" || state.tab === "gainers" || state.tab === "tradeval") renderTable();
       return;
     }
@@ -1620,7 +1670,9 @@
         state.tab === "gainers"
           ? fetchJson("gainers", FETCH_TIMEOUT_MS)
           : state.tab === "tradeval"
-            ? fetchJson("trade-pbmn-top50", TRADE_PBMN_FETCH_TIMEOUT_MS)
+            ? fetchJson("trade-pbmn-top50", TRADE_PBMN_FETCH_TIMEOUT_MS, {
+                mrkt: state.tradeValSub === "kosdaq" ? "Q" : "J",
+              })
             : state.tab === "prevday"
               ? fetchJson("prev-day-top50", FETCH_TIMEOUT_MS)
               : state.tab === "nxt"
@@ -1647,7 +1699,9 @@
         state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
       } else if (state.tab === "tradeval") {
         const { stocks } = stockPack;
-        state.tradeValRows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
+        const rows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
+        if (state.tradeValSub === "kosdaq") state.tradeValKosdaqRows = rows;
+        else state.tradeValKospiRows = rows;
       } else if (state.tab === "prevday") {
         state.prevDayNoData = Boolean(stockPack.noData);
         state.prevDayLoaded = true;
@@ -1664,6 +1718,9 @@
         state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
       }
       state.tabLoadedAt[state.tab] = Date.now();
+      if (state.tab === "tradeval") {
+        state.tradeValSubLoadedAt[state.tradeValSub] = Date.now();
+      }
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
@@ -1703,8 +1760,9 @@
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
-        updateNxtSubtabsVisibility();
+        updateSubtabBarsVisibility();
         syncNxtSubtabAria();
+        syncTradevalSubtabAria();
 
         const finish = () => {
           hideRtErrorIfNxt();
@@ -1849,6 +1907,76 @@
     });
   }
 
+  function setupTradevalSubtabs() {
+    document.querySelectorAll("[data-rt-tradeval-sub]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (state.tab !== "tradeval") return;
+        const s = btn.getAttribute("data-rt-tradeval-sub");
+        if (s === "kosdaq") state.tradeValSub = "kosdaq";
+        else state.tradeValSub = "kospi";
+        syncTradevalSubtabAria();
+        state.openChartCode = null;
+        state.candlePeriod = "D";
+        const errEl = $("rt-error");
+        if (errEl) errEl.hidden = true;
+        const finish = () => {
+          hideRtErrorIfNxt();
+          startPolling();
+          if (state.ws && state.ws.readyState === 1) {
+            unsubscribeAll();
+            subscribeStocks(getCurrentRows().map((r) => r.code));
+          }
+        };
+        const subKey = state.tradeValSub;
+        const hasRows = getTradeValRowsForSub().length >= 10;
+        const subFresh =
+          state.tradeValSubLoadedAt[subKey] && Date.now() - state.tradeValSubLoadedAt[subKey] < TAB_CACHE_MS;
+
+        if (hasRows) {
+          syncTableChromeForTab();
+          renderAll();
+          finish();
+          if (!subFresh) {
+            refreshTabStocksOnly("tradeval")
+              .then(() => {
+                if (errEl) errEl.hidden = true;
+                renderAll();
+              })
+              .catch((e) => {
+                console.error("[realtime-board] refreshTabStocksOnly tradeval (bg)", subKey, e && e.message, e);
+                if (errEl) {
+                  errEl.hidden = false;
+                  errEl.textContent = rtErrorTimeoutMessage(e);
+                }
+              });
+          }
+          return;
+        }
+
+        syncTableChromeForTab();
+        showTableSkeleton();
+        refreshTabStocksOnly("tradeval")
+          .then(() => {
+            hideTableSkeleton();
+            if (errEl) errEl.hidden = true;
+            renderAll();
+          })
+          .catch((e) => {
+            console.error("[realtime-board] refreshTabStocksOnly tradeval", subKey, e && e.message, e);
+            hideTableSkeleton();
+            if (errEl) {
+              errEl.hidden = false;
+              errEl.textContent = rtErrorTimeoutMessage(e);
+            }
+            renderAll();
+          })
+          .finally(() => {
+            finish();
+          });
+      });
+    });
+  }
+
   function wireTableChartAccordion() {
     const body = $("rt-tbody");
     if (!body || body.dataset.rtChartWire === "1") return;
@@ -1911,6 +2039,7 @@
   async function init() {
     setupTabs();
     setupNxtSubtabs();
+    setupTradevalSubtabs();
     wireTableChartAccordion();
     const err = $("rt-error");
     if (err) err.hidden = true;

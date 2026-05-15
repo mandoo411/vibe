@@ -659,7 +659,7 @@ function tradePbmnSortKey(tvStr) {
 }
 
 /**
- * [국내주식 순위] 거래대금 — trade-pbmn (코스피 J / 코스닥 Q 각각 호출 후 거래대금 기준 TOP50).
+ * [국내주식 순위] 거래대금 — trade-pbmn (시장당 fid_cond_mrkt_div_code: 코스피 J, 코스닥 Q).
  * 요청 파라미터는 스펙에 맞춤(fid_cond_scr_div_code: 전체 0 등).
  */
 async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
@@ -723,41 +723,12 @@ async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
   return rows;
 }
 
-/**
- * 코스피(J)·코스닥(Q) trade-pbmn을 Promise.all로 병렬 호출 후 거래대금 기준 TOP50.
- * 한쪽이라도 실패하면 전체 실패로 간주하고 1회만 재시도한다.
- */
-async function fetchTradePbmnMergedTop50() {
-  let lastErr;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const [kospi, kosdaq] = await Promise.all([
-        fetchTradePbmnRankRowsForMarket("J", "KOSPI"),
-        fetchTradePbmnRankRowsForMarket("Q", "KOSDAQ"),
-      ]);
-      const merged = new Map();
-      for (const r of [...kospi, ...kosdaq]) {
-        const prev = merged.get(r.code);
-        if (!prev || tradePbmnSortKey(r.tradingValue) > tradePbmnSortKey(prev.tradingValue)) {
-          merged.set(r.code, r);
-        }
-      }
-      const all = [...merged.values()].filter((r) => r.code && r.name);
-      all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
-      return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
-    } catch (e) {
-      lastErr = e;
-      console.error("[kis-realtime-data][trade-pbmn-top50] merge attempt failed", {
-        attempt: attempt + 1,
-        message: e && e.message,
-      });
-      if (attempt === 0) {
-        await sleep(KIS_GAP_MS);
-        continue;
-      }
-      throw lastErr;
-    }
-  }
+/** 단일 시장 trade-pbmn만 호출해 거래대금 기준 TOP50(순위 부여). */
+async function fetchTradePbmnTop50ForMarket(fidMrktDiv, marketLabel) {
+  const rows = await fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel);
+  const all = [...rows].filter((r) => r.code && r.name);
+  all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
+  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 function getPrevTop50JsonPath() {
@@ -1169,8 +1140,26 @@ module.exports = async function handler(req, res) {
 
     if (action === "trade-pbmn-top50") {
       try {
-        const stocks = await fetchTradePbmnMergedTop50();
-        json(res, 200, { stocks });
+        const mrktRaw = String((req.query && req.query.mrkt) != null ? req.query.mrkt : "J")
+          .trim()
+          .toUpperCase();
+        let fid = "J";
+        let marketLabel = "KOSPI";
+        if (mrktRaw === "Q" || mrktRaw === "KOSDAQ") {
+          fid = "Q";
+          marketLabel = "KOSDAQ";
+        } else if (mrktRaw === "J" || mrktRaw === "KOSPI" || mrktRaw === "") {
+          fid = "J";
+          marketLabel = "KOSPI";
+        } else {
+          json(res, 400, {
+            error: "Invalid mrkt. Use J (KOSPI) or Q (KOSDAQ).",
+            stocks: [],
+          });
+          return;
+        }
+        const stocks = await fetchTradePbmnTop50ForMarket(fid, marketLabel);
+        json(res, 200, { stocks, mrkt: fid });
       } catch (e) {
         console.error("[kis-realtime-data] action=trade-pbmn-top50", e && e.message, e);
         json(res, 502, {

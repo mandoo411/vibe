@@ -1037,6 +1037,8 @@
   }
 
   function tableColSpan() {
+    if (state.tab === "prevday") return 6;
+    if (state.tab === "tradeval") return 5;
     return 6;
   }
 
@@ -1048,7 +1050,17 @@
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">전일 등락률</th><th class="num rt-td-chg">금일 등락률</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
-    if (state.tab === "tradeval" || state.tab === "gainers" || state.tab === "nxt") {
+    if (state.tab === "tradeval") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
+      return;
+    }
+    if (state.tab === "nxt") {
+      tr.innerHTML =
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+      return;
+    }
+    if (state.tab === "gainers") {
       tr.innerHTML =
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
       return;
@@ -1062,7 +1074,7 @@
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
     if (state.tab === "tradeval")
-      return "국내 거래량 상위 50 (volume-rank, 평균거래량·연속조회, 1분 갱신)";
+      return "국내 거래대금 상위 50 (trade-amount 우선, 미수신 시 거래량순위 거래금액순, 1분 갱신)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1134,7 +1146,35 @@
         </tr>`;
     }
 
-    if (state.tab === "tradeval" || state.tab === "gainers" || state.tab === "nxt") {
+    if (state.tab === "tradeval") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const tv = formatTradeVal(r.tradingValue);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
+    if (state.tab === "nxt") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const tv = formatTradeVal(r.tradingValue);
+      const vol = fmtNum(r.volume);
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+          <td class="rt-td-name">${nameCell}</td>
+          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
+          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
+          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
+        </tr>`;
+    }
+
+    if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
       const tv = formatTradeVal(r.tradingValue);
@@ -1207,7 +1247,26 @@
       return;
     }
 
-    if (state.tab === "tradeval" || state.tab === "gainers" || state.tab === "nxt") {
+    if (state.tab === "tradeval") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
+
+    if (state.tab === "nxt") {
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      tr.cells[2].textContent = fmtNum(r.price);
+      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
+      tr.cells[4].textContent = fmtNum(r.volume);
+      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
+      return;
+    }
+
+    if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
       tr.cells[2].textContent = fmtNum(r.price);
@@ -1383,9 +1442,7 @@
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
       mergeStockRow(state.prevDayRows, row);
-      mergeStockRow(state.tradeValRows, row);
-      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "prevday" || state.tab === "tradeval")
-        renderTable();
+      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "prevday") renderTable();
       return;
     }
     if (trId === "H0NXCNT0") {

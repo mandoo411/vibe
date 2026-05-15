@@ -4,8 +4,9 @@
  *   - KIS_ACCESS_TOKEN : OAuth 액세스 토큰 (GitHub Actions 등에서 주기 갱신 후 주입)
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
- * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES, KIS_VOLUME_RANK_MAX_PAGES 또는 KIS_TRADE_AMOUNT_RANK_MAX_PAGES (거래량순위 연속조회 페이지 상한, 기본 12, 최대 30)
- * 선택: KIS_VOLUME_RANK_BLNG_CLS (거래량순위 소속구분 0~4, 기본 0=평균거래량), KIS_VOLUME_RANK_EXLS_CLS 또는 KIS_TRADE_VALUE_EXLS_CLS (ETF·ETN 제외 10자리, 기본 0000000011)
+ * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES, KIS_TRADE_AMOUNT_RANK_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
+ * 선택: KIS_TRADE_AMOUNT_TR_ID(기본 FHPST01610000 — 시총 FHPST01740000/등락 FHPST01700000 과 동일 규칙으로 20161 유추), KIS_TRADE_AMOUNT_SCR_DIV, KIS_TRADE_AMOUNT_RANK_PATH, KIS_TRADE_AMOUNT_EXLS_CLS
+ * 선택: KIS_TRADE_VALUE_EXLS_CLS (거래량순위 거래금액순 폴백 시 ETF·ETN 제외 10자리, 기본 0000000011)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -27,13 +28,10 @@ const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
 );
 
-/** domestic-stock/v1/quotations/volume-rank 연속조회 (기본 12페이지, 최대 30) */
-const VOLUME_RANK_MAX_PAGES = Math.max(
+/** domestic-stock/v1/ranking/trade-amount 연속조회 (기본 12페이지) */
+const TRADE_AMOUNT_RANK_MAX_PAGES = Math.max(
   1,
-  Math.min(
-    30,
-    Number(process.env.KIS_VOLUME_RANK_MAX_PAGES || process.env.KIS_TRADE_AMOUNT_RANK_MAX_PAGES) || 12
-  )
+  Math.min(30, Number(process.env.KIS_TRADE_AMOUNT_RANK_MAX_PAGES) || 12)
 );
 
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
@@ -290,6 +288,16 @@ function kisOutputRows(json) {
   return [];
 }
 
+/** 국내 순위 API — 종목 배열이 `output2`·`output` 등에만 있을 때 `kisOutputRows`가 빈 배열을 고르는 문제 방지 */
+function kisDomesticRankingRows(json) {
+  if (!json || typeof json !== "object") return [];
+  for (const key of ["output2", "OUTPUT2", "output", "OUTPUT", "output1", "OUTPUT1"]) {
+    const v = json[key];
+    if (Array.isArray(v) && v.length) return v;
+  }
+  return [];
+}
+
 /** 숫자·문자·과학적 표기 등을 원 단위 정수 문자열로 정규화 (없으면 "") */
 function normalizeWonMoneyString(v) {
   if (v == null || v === "") return "";
@@ -348,13 +356,20 @@ function approxPbmnFromPriceVol(priceStr, volStr) {
   return String(Math.round(x));
 }
 
+/** 거래대금순위 API `tr_pbmn` — 백만원 단위 → 원 단위 정수 문자열(전광판 formatTradeVal 호환) */
+function trPbmnMillionToWonString(raw) {
+  const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  return String(Math.round(n * 1e6));
+}
+
 function pickHtsStockName(row) {
   if (!row || typeof row !== "object") return "";
   return sanitizeStr(row.hts_kanm || row.HTS_KANM || row.hts_kor_isnm || row.HTS_KOR_ISNM);
 }
 
-function parseVolSortKey(volStr) {
-  const n = Number(String(volStr || "").replace(/,/g, ""));
+function parsePbmnSortKey(wonStr) {
+  const n = Number(String(wonStr || "").replace(/,/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -537,30 +552,24 @@ async function fetchMarketCapKospi30() {
 }
 
 /**
- * [국내주식-047] 거래량순위 상위 50 — `volume-rank` + 연속조회.
- * fid_blng_cls_code: 0 평균거래량, 1 거래증가율, 2 평균거래회전율, 3 거래금액순, 4 평균거래금액회전율 (KIS 샘플).
- * 기본 0(거래량 기준). ETF·ETN 제외 후 누적거래량 내림차순으로 재정렬해 50건.
+ * [국내주식-047] 거래량순위 — fid_blng_cls_code=3 거래금액순.
+ * `trade-amount` 순위 API가 실패·빈 배열일 때 동일 HTS에 가깝게 맞추기 위한 폴백.
  */
-async function fetchDomesticVolumeTop50() {
+async function fetchTradeValueTop50FromVolumeRank() {
   const fidTrgtExlsClsCode = String(
-    process.env.KIS_VOLUME_RANK_EXLS_CLS || process.env.KIS_TRADE_VALUE_EXLS_CLS || "0000000011"
+    process.env.KIS_TRADE_VALUE_EXLS_CLS || process.env.KIS_TRADE_AMOUNT_EXLS_CLS || "0000000011"
   ).trim();
   const safeExls =
     fidTrgtExlsClsCode.length === 10 && /^[01]+$/.test(fidTrgtExlsClsCode)
       ? fidTrgtExlsClsCode
       : "0000000011";
 
-  const fidBlng = String(process.env.KIS_VOLUME_RANK_BLNG_CLS || "0").trim();
-  if (!/^[01234]$/.test(fidBlng)) {
-    throw new Error(`Invalid KIS_VOLUME_RANK_BLNG_CLS: ${fidBlng}`);
-  }
-
   const params = {
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20171",
     fid_input_iscd: "0000",
     fid_div_cls_code: "0",
-    fid_blng_cls_code: fidBlng,
+    fid_blng_cls_code: "3",
     fid_trgt_cls_code: "111111111",
     fid_trgt_exls_cls_code: safeExls,
     fid_input_price_1: "",
@@ -571,7 +580,7 @@ async function fetchDomesticVolumeTop50() {
 
   const rawAll = [];
   let trCont = "";
-  for (let page = 0; page < VOLUME_RANK_MAX_PAGES; page++) {
+  for (let page = 0; page < TRADE_AMOUNT_RANK_MAX_PAGES; page++) {
     const { json, trCont: nextTr } = await kisGet(
       "/uapi/domestic-stock/v1/quotations/volume-rank",
       "FHPST01710000",
@@ -594,8 +603,8 @@ async function fetchDomesticVolumeTop50() {
     );
     if (!code || seen.has(code)) continue;
     seen.add(code);
-    const name = pickHtsStockName(row) || sanitizeStr(row.hts_kor_isnm);
-    if (!name || rowIsEtfOrEtn(row, name)) continue;
+    const name = sanitizeStr(row.hts_kor_isnm);
+    if (rowIsEtfOrEtn(row, name)) continue;
 
     const price = pickStckPrpr(row);
     const volume = pickAcmlVol(row);
@@ -614,22 +623,14 @@ async function fetchDomesticVolumeTop50() {
     });
   }
 
-  const blngLabel = {
-    "0": "평균거래량",
-    "1": "거래증가율",
-    "2": "평균거래회전율",
-    "3": "거래금액순",
-    "4": "평균거래금액회전율",
-  }[fidBlng];
-  candidates.sort((a, b) => parseVolSortKey(b.volume) - parseVolSortKey(a.volume));
+  candidates.sort((a, b) => parsePbmnSortKey(b.tradingValue) - parsePbmnSortKey(a.tradingValue));
 
-  console.log("[kis-realtime-data][volume-rank-top50]", {
+  console.log("[kis-realtime-data][trade-value-volume-rank-fallback]", {
     tr_id: "FHPST01710000",
-    fid_blng_cls_code: `${fidBlng} (${blngLabel})`,
+    fid_blng_cls_code: "3 (거래금액순)",
     fid_trgt_exls_cls_code: safeExls,
     rawRows: rawAll.length,
     candidates: candidates.length,
-    maxPagesCap: VOLUME_RANK_MAX_PAGES,
   });
 
   return candidates.slice(0, 50).map((r, i) => ({
@@ -638,10 +639,135 @@ async function fetchDomesticVolumeTop50() {
     name: r.name,
     price: r.price,
     changePct: r.changePct,
-    volume: r.volume,
     tradingValue: r.tradingValue,
     tvBoard: r.tvBoard,
   }));
+}
+
+/**
+ * [국내주식 순위] 거래대금 상위 — `domestic-stock/v1/ranking/trade-amount`
+ * 종목명: hts_kanm 우선. 거래대금: tr_pbmn(백만원)→원. 응답은 `output2` 우선(`kisDomesticRankingRows`).
+ * 기본 TR: FHPST01610000 + fid_cond_scr_div_code 20161 (시총 FHPST01740000·등락 FHPST01700000 과 동일 네이밍 규칙 유추, 포털과 다르면 env).
+ */
+async function fetchTradeAmountTop50FromRanking() {
+  const rankPathRaw = String(process.env.KIS_TRADE_AMOUNT_RANK_PATH || "").trim();
+  const rankPath =
+    rankPathRaw && rankPathRaw.startsWith("/")
+      ? rankPathRaw
+      : "/uapi/domestic-stock/v1/ranking/trade-amount";
+  const trId = String(process.env.KIS_TRADE_AMOUNT_TR_ID || "FHPST01610000").trim();
+  const scrDiv = String(process.env.KIS_TRADE_AMOUNT_SCR_DIV || "20161").trim();
+  const fidTrgtExlsClsCode = String(process.env.KIS_TRADE_AMOUNT_EXLS_CLS || "0000000011").trim();
+  const safeExls =
+    fidTrgtExlsClsCode.length === 10 && /^[01]+$/.test(fidTrgtExlsClsCode)
+      ? fidTrgtExlsClsCode
+      : "0000000011";
+
+  const params = {
+    fid_input_price_2: "",
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: scrDiv,
+    fid_div_cls_code: "0",
+    fid_input_iscd: "0000",
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: safeExls,
+    fid_input_price_1: "",
+    fid_vol_cnt: "",
+  };
+
+  const rawAll = [];
+  let trCont = "";
+  for (let page = 0; page < TRADE_AMOUNT_RANK_MAX_PAGES; page++) {
+    const { json, trCont: nextTr } = await kisGet(rankPath, trId, params, trCont);
+    const part = kisDomesticRankingRows(json);
+    if (!part.length) break;
+    rawAll.push(...part);
+    const cont = String(nextTr || "").trim().toUpperCase();
+    if (cont !== "M") break;
+    trCont = "N";
+  }
+
+  const rows = [];
+  const seen = new Set();
+  for (const row of rawAll) {
+    const code = sanitizeStr(
+      row.mksc_shrn_iscd || row.MKSC_SHRN_ISCD || row.stck_shrn_iscd || row.STCK_SHRN_ISCD
+    );
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    const name = pickHtsStockName(row);
+    if (!name) continue;
+
+    let tradingValue = trPbmnMillionToWonString(row.tr_pbmn ?? row.TR_PBMN);
+    if (!tradingValue) {
+      const price = pickStckPrpr(row);
+      const vol = pickAcmlVol(row);
+      tradingValue = approxPbmnFromPriceVol(price, vol) || pickAcmlTrPbmn(row) || "";
+    }
+
+    rows.push({
+      rank: toNum(row.data_rank),
+      code,
+      name,
+      price: pickStckPrpr(row),
+      changePct: toNum(row.prdy_ctrt),
+      volume: pickAcmlVol(row),
+      tradingValue,
+      tvBoard: pickKoreanBoardKind(row, "KOSPI"),
+    });
+  }
+
+  console.log("[kis-realtime-data][trade-amount-rank]", {
+    path: rankPath,
+    tr_id: trId,
+    fid_cond_scr_div_code: scrDiv,
+    fid_trgt_exls_cls_code: safeExls,
+    rawRows: rawAll.length,
+    uniqueRows: rows.length,
+    maxPagesCap: TRADE_AMOUNT_RANK_MAX_PAGES,
+  });
+
+  return rows.slice(0, 50).map((r, i) => ({
+    rank: i + 1,
+    code: r.code,
+    name: r.name,
+    price: r.price,
+    changePct: r.changePct,
+    tradingValue: r.tradingValue,
+    tvBoard: r.tvBoard,
+  }));
+}
+
+/** 국내 거래대금 TOP50 — trade-amount 우선, 건수 부족·오류 시 거래량순위(거래금액순) 폴백 */
+async function fetchDomesticTradeValueTop50() {
+  const MIN_ROWS = 25;
+  let primary = [];
+  try {
+    primary = await fetchTradeAmountTop50FromRanking();
+  } catch (e) {
+    console.error("[kis-realtime-data][domestic-trade-top50] trade-amount", e && e.message, e);
+    primary = [];
+  }
+  if (primary.length >= MIN_ROWS) return primary;
+
+  if (primary.length > 0) {
+    console.warn(
+      "[kis-realtime-data][domestic-trade-top50] trade-amount insufficient rows",
+      primary.length,
+      "→ volume-rank"
+    );
+  } else {
+    console.warn("[kis-realtime-data][domestic-trade-top50] trade-amount empty → volume-rank");
+  }
+
+  try {
+    const fb = await fetchTradeValueTop50FromVolumeRank();
+    if (fb.length >= primary.length) return fb;
+    return primary.length ? primary : fb;
+  } catch (e2) {
+    console.error("[kis-realtime-data][domestic-trade-top50] volume-rank", e2 && e2.message, e2);
+    return primary;
+  }
 }
 
 /**
@@ -1287,7 +1413,7 @@ module.exports = async function handler(req, res) {
 
     if (action === "trade-value-top50") {
       try {
-        const stocks = await fetchDomesticVolumeTop50();
+        const stocks = await fetchDomesticTradeValueTop50();
         json(res, 200, { stocks });
       } catch (e) {
         console.error("[kis-realtime-data] action=trade-value-top50", e && e.message, e);
@@ -1367,7 +1493,7 @@ module.exports = async function handler(req, res) {
       await sleep(KIS_GAP_MS);
       let tradeValueTop50 = [];
       try {
-        tradeValueTop50 = await fetchDomesticVolumeTop50();
+        tradeValueTop50 = await fetchDomesticTradeValueTop50();
       } catch (e) {
         console.error("[kis-realtime-data][snapshot] tradeValueTop50", e && e.message, e);
       }

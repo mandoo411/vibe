@@ -5,7 +5,7 @@
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES, KIS_TRADE_AMOUNT_RANK_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
- * 선택: KIS_TRADE_AMOUNT_TR_ID, KIS_TRADE_AMOUNT_SCR_DIV, KIS_TRADE_AMOUNT_RANK_PATH, KIS_TRADE_AMOUNT_EXLS_CLS (거래대금순위 — 포털 명세와 불일치 시 환경변수로 보정, 제외코드 기본 0000000011)
+ * 선택: KIS_TRADE_AMOUNT_TR_ID(기본 FHKST01010900), KIS_TRADE_AMOUNT_SCR_DIV(기본 20161), KIS_TRADE_AMOUNT_RANK_PATH, KIS_TRADE_AMOUNT_EXLS_CLS (거래대금순위 — 포털과 다르면 env로 보정, 제외코드 기본 0000000011)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -135,6 +135,12 @@ async function kisGet(path, trId, searchParams, trCont = "") {
       continue;
     }
     if (!res.ok) {
+      console.error("[kis-api] KIS GET HTTP error", {
+        status: res.status,
+        path,
+        trId,
+        snippet: text.slice(0, 500),
+      });
       throw new Error(`KIS GET HTTP ${res.status} (${path}): ${text.slice(0, 400)}`);
     }
     if (json.rt_cd && json.rt_cd !== "0") {
@@ -143,6 +149,13 @@ async function kisGet(path, trId, searchParams, trCont = "") {
         await sleep(900 + attempt * 450);
         continue;
       }
+      console.error("[kis-api] KIS rt_cd error", {
+        path,
+        trId,
+        rt_cd: json.rt_cd,
+        msg1: json.msg1,
+        msg_cd: json.msg_cd,
+      });
       throw new Error(`KIS rt_cd=${json.rt_cd} msg=${msg}`);
     }
     const nextTrCont = readTrContHeader(res, json);
@@ -519,8 +532,8 @@ async function fetchMarketCapKospi30() {
 
 /**
  * [국내주식 순위] 거래대금 상위 — `domestic-stock/v1/ranking/trade-amount`
- * 종목명: hts_kanm 우선, 없으면 hts_kor_isnm. 거래대금: tr_pbmn(백만원)→원 환산.
- * TR·fid_cond_scr_div_code는 KIS 포털과 다를 수 있어 KIS_TRADE_AMOUNT_TR_ID / KIS_TRADE_AMOUNT_SCR_DIV 로 보정.
+ * 종목명: hts_kanm 우선, 없으면 hts_kor_isnm. 거래대금: tr_pbmn(백만원 단위) → 원 문자열(클라이언트에서 조·억 포맷).
+ * 기본 TR: FHKST01010900, fid_cond_scr_div_code: 20161, fid_cond_mrkt_div_code: J, fid_input_iscd: 0000 (포털과 다르면 env).
  */
 async function fetchTradeAmountTop50FromRanking() {
   const rankPathRaw = String(process.env.KIS_TRADE_AMOUNT_RANK_PATH || "").trim();
@@ -528,8 +541,8 @@ async function fetchTradeAmountTop50FromRanking() {
     rankPathRaw && rankPathRaw.startsWith("/")
       ? rankPathRaw
       : "/uapi/domestic-stock/v1/ranking/trade-amount";
-  const trId = String(process.env.KIS_TRADE_AMOUNT_TR_ID || "FHPST01770000").trim();
-  const scrDiv = String(process.env.KIS_TRADE_AMOUNT_SCR_DIV || "20177").trim();
+  const trId = String(process.env.KIS_TRADE_AMOUNT_TR_ID || "FHKST01010900").trim();
+  const scrDiv = String(process.env.KIS_TRADE_AMOUNT_SCR_DIV || "20161").trim();
   const fidTrgtExlsClsCode = String(process.env.KIS_TRADE_AMOUNT_EXLS_CLS || "0000000011").trim();
   const safeExls =
     fidTrgtExlsClsCode.length === 10 && /^[01]+$/.test(fidTrgtExlsClsCode)
@@ -1253,8 +1266,13 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "trade-value-top50") {
-      const stocks = await fetchTradeAmountTop50FromRanking();
-      json(res, 200, { stocks });
+      try {
+        const stocks = await fetchTradeAmountTop50FromRanking();
+        json(res, 200, { stocks });
+      } catch (e) {
+        console.error("[kis-realtime-data] action=trade-value-top50", e && e.message, e);
+        json(res, 502, { error: e.message || String(e), stocks: [] });
+      }
       return;
     }
 
@@ -1327,7 +1345,12 @@ module.exports = async function handler(req, res) {
       await sleep(KIS_GAP_MS);
       const prevDayGainers = await enrichPrevDayWithLiveQuotesCached(prevDayBase, prevRankYmd);
       await sleep(KIS_GAP_MS);
-      const tradeValueTop50 = await fetchTradeAmountTop50FromRanking();
+      let tradeValueTop50 = [];
+      try {
+        tradeValueTop50 = await fetchTradeAmountTop50FromRanking();
+      } catch (e) {
+        console.error("[kis-realtime-data][snapshot] tradeValueTop50", e && e.message, e);
+      }
       const clock = sessionLabelFromKst();
       json(res, 200, {
         clock,

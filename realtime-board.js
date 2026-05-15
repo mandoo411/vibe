@@ -136,7 +136,7 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
-  /** 누적 거래대금(원) → 조·억 등 */
+  /** 누적 거래대금: API `tr_pbmn`은 백만원 단위 → 서버에서 원으로 환산한 문자열이 오면 조·억으로 압축 표기 */
   function formatTradeVal(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
@@ -753,10 +753,30 @@
         keys: data && typeof data === "object" ? Object.keys(data) : [],
         stocksLen: Array.isArray(data.stocks) ? data.stocks.length : null,
       });
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (!res.ok) {
+        const msg =
+          (data && typeof data.error === "string" && data.error) || `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.fetchStatus = res.status;
+        err.fetchAction = action;
+        err.fetchUrl = url;
+        console.error("[realtime-board] fetch HTTP error", {
+          action,
+          status: res.status,
+          statusText: res.statusText,
+          url,
+          error: data && data.error,
+        });
+        throw err;
+      }
       return data;
     } catch (e) {
-      console.warn("[realtime-board] fetch ✗", action, e && e.message);
+      console.error("[realtime-board] fetch failed", {
+        action,
+        message: e && e.message,
+        status: e && e.fetchStatus,
+        url: e && e.fetchUrl,
+      }, e);
       if (useAbort && e && e.name === "AbortError") {
         throw new Error("요청 시간이 초과되었습니다.");
       }
@@ -1032,7 +1052,7 @@
     }
     if (state.tab === "tradeval") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
       return;
     }
     if (state.tab === "nxt") {
@@ -1054,7 +1074,7 @@
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
     if (state.tab === "tradeval")
-      return "거래대금 상위 50 (trade-amount 순위, tr_pbmn 기준, 1분 갱신, ETF·ETN 제외)";
+      return "거래대금 상위 50 (KIS trade-amount, FHKST01010900 / 20161, 1분 갱신)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1290,15 +1310,19 @@
     void mountLightweightChart(body);
   }
 
+  function syncTableChromeForTab() {
+    const title = $("rt-table-title");
+    if (title) title.textContent = getTableTitle();
+    renderThead();
+  }
+
   function renderTable() {
     const body = $("rt-tbody");
     const title = $("rt-table-title");
     if (!body) return;
+    if (title) title.textContent = getTableTitle();
     if (body.dataset.rtSkeleton === "1") return;
     renderThead();
-    if (title) {
-      title.textContent = getTableTitle();
-    }
     if (state.tab === "nxt" && NXT_DISABLED) {
       disposeLwChart();
       state.openChartCode = null;
@@ -1585,9 +1609,16 @@
         subscribeStocks(getCurrentRows().map((r) => r.code));
       }
     } catch (e) {
+      console.error("[realtime-board] refreshPartial", {
+        tab: state.tab,
+        message: e && e.message,
+        status: e && e.fetchStatus,
+      }, e);
       const err = $("rt-error");
       if (err) {
         if (state.tab === "nxt" && NXT_DISABLED) {
+          err.hidden = true;
+        } else if (rowsLoadedForTab(state.tab)) {
           err.hidden = true;
         } else {
           err.hidden = false;
@@ -1640,6 +1671,7 @@
                 renderAll();
               })
               .catch((e) => {
+                console.error("[realtime-board] refreshTabStocksOnly (tab cache)", tk, e && e.message, e);
                 if (errEl) {
                   errEl.hidden = false;
                   errEl.textContent = rtErrorTimeoutMessage(e);
@@ -1656,6 +1688,8 @@
           return;
         }
 
+        if (errEl) errEl.hidden = true;
+        syncTableChromeForTab();
         showTableSkeleton();
         loadBootstrapForTab(tk)
           .then(() => {
@@ -1664,6 +1698,7 @@
             renderAll();
           })
           .catch((e) => {
+            console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
             hideTableSkeleton();
             if (errEl) {
               errEl.hidden = false;
@@ -1719,6 +1754,7 @@
                 renderAll();
               })
               .catch((e) => {
+                console.error("[realtime-board] refreshNxtPanel (bg)", subKey, e && e.message, e);
                 if (errEl) {
                   errEl.hidden = false;
                   errEl.textContent = rtErrorTimeoutMessage(e);
@@ -1728,6 +1764,7 @@
           return;
         }
 
+        syncTableChromeForTab();
         showTableSkeleton();
         refreshNxtPanel()
           .then(() => {
@@ -1736,6 +1773,7 @@
             renderAll();
           })
           .catch((e) => {
+            console.error("[realtime-board] refreshNxtPanel", state.nxtSub, e && e.message, e);
             hideTableSkeleton();
             if (errEl) {
               errEl.hidden = false;
@@ -1805,7 +1843,9 @@
               ? 5000
               : 12000;
     state.pollRest = setInterval(() => {
-      refreshPartial().catch(() => {});
+      refreshPartial().catch((e) => {
+        console.error("[realtime-board] poll refreshPartial", e && e.message, e);
+      });
     }, period);
   }
 
@@ -1816,13 +1856,14 @@
     const err = $("rt-error");
     if (err) err.hidden = true;
     hideLoadingOverlay();
-    renderThead();
+    syncTableChromeForTab();
     showTableSkeleton();
     try {
       await loadBootstrapForTab(state.tab);
       if (err) err.hidden = true;
     } catch (e) {
       if (err) {
+        console.error("[realtime-board] init bootstrap", e && e.message, e);
         err.hidden = false;
         err.textContent = rtErrorTimeoutMessage(e);
       }

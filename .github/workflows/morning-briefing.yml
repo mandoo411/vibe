@@ -1,0 +1,48 @@
+name: Morning Briefing
+
+# 평일 07:00 KST = 전날 22:00 UTC (GitHub cron 일~목 UTC → 월~금 KST 장전)
+on:
+  schedule:
+    - cron: "0 22 * * 0-4"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: morning-briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    name: Run morning briefing script
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run morning briefing
+        run: node scripts/morning-briefing.mjs
+
+      - name: Commit and push if changed
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          STATUS=$(git status --porcelain)
+          if [ -n "$STATUS" ]; then
+            STAMP=$(date -u +'%Y-%m-%dT%H:%MZ')
+            git add -A
+            git commit -m "chore(data): morning briefing ${STAMP}"
+            git pull --rebase origin main
+            git push
+          else
+            echo "::notice::No repository changes from morning-briefing.mjs"
+          fi

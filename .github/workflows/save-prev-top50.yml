@@ -1,11 +1,11 @@
 name: Save prev top50
 
-# 매일 16:00 KST = 07:00 UTC — 장마감 직후 당일 상승 TOP50을 data/prev-top50.json 에 저장 후 커밋
+# 평일(월~금) 매일 15:40 KST = 06:40 UTC — 장마감 직후 당일 상승 TOP50을 data/prev-top50.json 에 저장 후 커밋
 # 필요 secrets: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET (선택 KIS_BASE_URL)
 
 on:
   schedule:
-    - cron: "0 7 * * *"
+    - cron: "40 6 * * 1-5"
   workflow_dispatch:
 
 concurrency:

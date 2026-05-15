@@ -4,6 +4,7 @@
  *   - KIS_ACCESS_TOKEN : OAuth 액세스 토큰 (GitHub Actions 등에서 주기 갱신 후 주입)
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
+ * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -17,6 +18,12 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 const FLUCTUATION_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_FLUCTUATION_MAX_PAGES) || 12)
+);
+
+/** FHPST01740000 시가총액 순위 — 페이지 제한으로 연속조회 (시장당 상한) */
+const MARKET_CAP_RANK_MAX_PAGES = Math.max(
+  1,
+  Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
 );
 
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
@@ -410,23 +417,36 @@ function boardKindFromClsCode(raw) {
  */
 async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
   const logSample = opts.logSample !== false;
-  const { json } = await kisGet(
-    "/uapi/domestic-stock/v1/ranking/market-cap",
-    "FHPST01740000",
-    {
-      fid_input_price_2: "",
-      fid_cond_mrkt_div_code: "J",
-      fid_cond_scr_div_code: "20174",
-      fid_div_cls_code: "0",
-      fid_input_iscd: fidInputIscd,
-      fid_trgt_cls_code: "0",
-      fid_trgt_exls_cls_code: "0000000000",
-      fid_input_price_1: "",
-      fid_vol_cnt: "",
-    },
-    ""
-  );
-  const chunk = kisOutputRows(json);
+  const params = {
+    fid_input_price_2: "",
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20174",
+    fid_div_cls_code: "0",
+    fid_input_iscd: fidInputIscd,
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_input_price_1: "",
+    fid_vol_cnt: "",
+  };
+
+  const rawAll = [];
+  let trCont = "";
+  for (let page = 0; page < MARKET_CAP_RANK_MAX_PAGES; page++) {
+    const { json, trCont: nextTr } = await kisGet(
+      "/uapi/domestic-stock/v1/ranking/market-cap",
+      "FHPST01740000",
+      params,
+      trCont
+    );
+    const part = kisOutputRows(json);
+    if (!part.length) break;
+    rawAll.push(...part);
+    const cont = String(nextTr || "").trim().toUpperCase();
+    if (cont !== "M") break;
+    trCont = "N";
+  }
+  const chunk = rawAll;
+
   if (logSample) {
     if (chunk.length > 0) {
       const row0 = chunk[0];
@@ -438,7 +458,8 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
         url: "/uapi/domestic-stock/v1/ranking/market-cap",
         fid_cond_scr_div_code: "20174 (시가총액 순위 전용)",
         fid_input_iscd: fidInputIscd,
-        rowCount: chunk.length,
+        pagedRowCount: chunk.length,
+        maxPagesCap: MARKET_CAP_RANK_MAX_PAGES,
         sample_avls_related_keys: avlsKeys,
         stck_avls: row0.stck_avls ?? row0.STCK_AVLS,
         hts_avls: row0.hts_avls ?? row0.HTS_AVLS,
@@ -446,17 +467,15 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
         converted_won_string: won0 || "(없음)",
       });
     } else {
-      console.log("[kis-realtime-data][market-cap] 빈 output", {
-        fid_input_iscd: fidInputIscd,
-        rt_cd: json && json.rt_cd,
-        msg1: json && json.msg1,
-      });
+      console.log("[kis-realtime-data][market-cap] 빈 output", { fid_input_iscd: fidInputIscd });
     }
   }
   const rows = [];
+  const seen = new Set();
   for (const row of chunk) {
     const code = sanitizeStr(row.mksc_shrn_iscd);
-    if (!code) continue;
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
     const price = pickStckPrpr(row);
     const volume = pickAcmlVol(row);
     let tradingValue = pickAcmlTrPbmn(row);
@@ -484,11 +503,12 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
-/** market-cap TR 응답으로 코스피·코스닥 합쳐 거래대금 상위 50 (두 시장 조회 병렬로 지연 단축) */
+/** 시총 순위(연속조회로 넓힌 후보)에서 거래대금 기준 상위 50 — 전 시장 거래대금 전용 TR 부재 시 우회 */
 async function fetchTradeValueTop50FromMarketCap() {
+  const perMarketCap = 280;
   const [kospi, kosdaq] = await Promise.all([
-    fetchMarketCapRows("0001", 80, "KOSPI", { logSample: false }),
-    fetchMarketCapRows("1001", 80, "KOSDAQ", { logSample: false }),
+    fetchMarketCapRows("0001", perMarketCap, "KOSPI", { logSample: false }),
+    fetchMarketCapRows("1001", perMarketCap, "KOSDAQ", { logSample: false }),
   ]);
   const merged = new Map();
   for (const r of [...kospi, ...kosdaq]) {

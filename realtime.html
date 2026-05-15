@@ -223,26 +223,55 @@
         letter-spacing: 0.04em;
         line-height: 1.45;
       }
+      .rt-table tr.rt-prevday-stock-row {
+        cursor: pointer;
+      }
       .rt-table tr.rt-prevday-stock-row:hover td {
         background: rgba(212, 175, 55, 0.1);
       }
-      .rt-name-chart-btn--prevday {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        max-width: 100%;
+      .rt-prevday-name-cell {
+        position: relative;
       }
-      .rt-prevday-name-txt {
-        flex: 1 1 auto;
-        text-align: left;
-        min-width: 0;
+      .rt-prevday-name-display {
+        display: inline;
+        color: var(--text);
       }
-      .rt-prevday-chart-ico {
-        flex: 0 0 auto;
-        font-size: 12px;
-        opacity: 0.75;
-        line-height: 1;
+      .rt-prevday-quote-pop {
+        position: fixed;
+        z-index: 10050;
+        min-width: 128px;
+        max-width: 220px;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(212, 175, 55, 0.42);
+        background: linear-gradient(165deg, #1a140c 0%, #0c0906 100%);
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.45),
+          inset 0 1px 0 rgba(212, 175, 55, 0.12);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: #e8dcc4;
+        line-height: 1.45;
+        pointer-events: auto;
+      }
+      .rt-prevday-quote-pop__row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 10px;
+      }
+      .rt-prevday-quote-pop__lbl {
+        color: #9a855c;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+      }
+      .rt-prevday-quote-pop__val {
+        color: #f5ebd4;
+        font-weight: 600;
+      }
+      .rt-prevday-quote-pop--err .rt-prevday-quote-pop__val {
+        color: #c9a227;
+        font-weight: 500;
       }
       .rt-chart-quote-strip {
         padding: 8px 12px;
@@ -861,7 +890,7 @@
         <div class="rt-panel" role="tabpanel">
           <div class="rt-panel__head">
             <div class="rt-panel__head-title" id="rt-table-title">코스피 시가총액 상위 30</div>
-            <p id="rt-prevday-hint" class="rt-prevday-hint" hidden>종목 클릭시 현재가 · 차트 확인</p>
+            <p id="rt-prevday-hint" class="rt-prevday-hint" hidden>행에 마우스를 올리면 현재가 · 행을 클릭하면 차트</p>
           </div>
           <div class="rt-scroll">
             <table class="rt-table" aria-label="실시간 시세">
@@ -879,6 +908,8 @@
             </table>
           </div>
         </div>
+
+        <div id="rt-prevday-quote-pop" class="rt-prevday-quote-pop" hidden role="tooltip"></div>
 
         <p id="rt-error" class="rt-error" hidden></p>
       </div>

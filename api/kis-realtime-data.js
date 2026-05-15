@@ -865,6 +865,28 @@ async function fetchMarketTime() {
   }
 }
 
+/** [국내주식] 주식현재가 시세 — fid_cond_mrkt_div_code J(코스피)·Q(코스닥) */
+async function fetchDomesticInquirePrice(code6, fidMrktDiv) {
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/quotations/inquire-price",
+    "FHKST01010100",
+    {
+      fid_cond_mrkt_div_code: fidMrktDiv,
+      fid_input_iscd: code6,
+    },
+    "",
+    { timeoutMs: 12000 }
+  );
+  const o = json.output;
+  const row = Array.isArray(o) ? o[0] : o;
+  if (!row || typeof row !== "object") {
+    throw new Error("inquire-price: empty output");
+  }
+  const price = pickStckPrpr(row);
+  const changePct = toNum(row.prdy_ctrt ?? row.PRDY_CTRT);
+  return { code: code6, price, changePct, mrkt: fidMrktDiv };
+}
+
 async function getApprovalKey() {
   await sleep(KIS_GAP_MS);
   const { appkey, appsecret } = requireAppKeySecret();
@@ -1173,6 +1195,34 @@ module.exports = async function handler(req, res) {
     if (action === "prev-day-top50") {
       const { stocks, noData } = loadPrevDayTop50FromDisk();
       json(res, 200, { stocks, noData });
+      return;
+    }
+
+    if (action === "inquire-price") {
+      const code6 = normalizeDomesticStockCode6(req.query && req.query.code);
+      if (!/^\d{6}$/.test(code6)) {
+        json(res, 400, { error: "Invalid code", code: code6, price: "", changePct: null });
+        return;
+      }
+      let fid = String((req.query && req.query.mrkt) || "J").trim().toUpperCase();
+      if (fid === "KOSPI") fid = "J";
+      if (fid === "KOSDAQ") fid = "Q";
+      if (fid !== "J" && fid !== "Q") {
+        json(res, 400, { error: "Invalid mrkt (use J or Q)", code: code6, price: "", changePct: null });
+        return;
+      }
+      try {
+        const quote = await fetchDomesticInquirePrice(code6, fid);
+        json(res, 200, quote);
+      } catch (e) {
+        console.error("[kis-realtime-data] action=inquire-price", code6, fid, e && e.message, e);
+        json(res, 502, {
+          error: e.message || String(e),
+          code: code6,
+          price: "",
+          changePct: null,
+        });
+      }
       return;
     }
 

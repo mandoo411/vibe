@@ -12,6 +12,10 @@
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
   const CHART_CACHE_MAX_ENTRIES = 24;
 
+  /** 전일 탭 호버 시 inquire-price 결과 — 종목코드당 1회만 API 호출 */
+  const prevDayInquirePriceCache = new Map();
+  const prevdayPopUi = { hoverCode: null, hideTimer: 0, fetchGen: 0 };
+
   /** Lightweight Charts 스크립트 1회 로드 Promise */
   let lwChartsScriptPromise = null;
   const chartCandleCache = new Map();
@@ -188,6 +192,141 @@
     if (pct > 0) return "delta--pos";
     if (pct < 0) return "delta--neg";
     return "delta--flat";
+  }
+
+  function hidePrevdayQuotePop() {
+    const pop = $("rt-prevday-quote-pop");
+    if (pop) {
+      pop.hidden = true;
+      pop.classList.remove("rt-prevday-quote-pop--err");
+    }
+    if (prevdayPopUi.hideTimer) {
+      clearTimeout(prevdayPopUi.hideTimer);
+      prevdayPopUi.hideTimer = 0;
+    }
+    prevdayPopUi.hoverCode = null;
+  }
+
+  function mrktDivForPrevdayRow(r) {
+    const m = String((r && (r.market || r.tvBoard)) || "").toUpperCase();
+    if (m.includes("KOSDAQ") || m === "Q") return "Q";
+    return "J";
+  }
+
+  function setPrevdayQuotePopContent(pop, opts) {
+    const loading = opts && opts.loading;
+    const errMsg = opts && opts.errMsg;
+    const price = opts && opts.price;
+    const changePct = opts && opts.changePct;
+    if (errMsg) {
+      pop.classList.add("rt-prevday-quote-pop--err");
+      pop.innerHTML = `<div class="rt-prevday-quote-pop__row"><span class="rt-prevday-quote-pop__val">${escapeHtml(
+        errMsg
+      )}</span></div>`;
+      return;
+    }
+    pop.classList.remove("rt-prevday-quote-pop--err");
+    if (loading) {
+      pop.innerHTML =
+        '<div class="rt-prevday-quote-pop__row"><span class="rt-prevday-quote-pop__lbl">현재가</span><span class="rt-prevday-quote-pop__val">…</span></div>';
+      return;
+    }
+    const p = escapeHtml(fmtNum(price));
+    const cls = deltaClass(changePct);
+    const pct = escapeHtml(fmtPct(changePct));
+    pop.innerHTML = `<div class="rt-prevday-quote-pop__row">
+      <span class="rt-prevday-quote-pop__lbl">현재가</span><span class="rt-prevday-quote-pop__val">${p}</span>
+      <span class="rt-prevday-quote-pop__lbl">등락률</span><span class="rt-prevday-quote-pop__val delta ${cls}">${pct}</span>
+    </div>`;
+  }
+
+  function positionPrevdayQuotePop(anchorTd) {
+    const pop = $("rt-prevday-quote-pop");
+    if (!pop || !anchorTd) return;
+    const rect = anchorTd.getBoundingClientRect();
+    const margin = 8;
+    const estW = 190;
+    let left = rect.right + margin;
+    if (left + estW > window.innerWidth - margin) {
+      left = Math.max(margin, rect.left - estW - margin);
+    }
+    const top = rect.top;
+    pop.style.left = `${left}px`;
+    pop.style.top = `${top}px`;
+    pop.hidden = false;
+  }
+
+  function wirePrevdayQuoteHover() {
+    const body = $("rt-tbody");
+    if (!body || body.dataset.rtPrevdayHover === "1") return;
+    body.dataset.rtPrevdayHover = "1";
+    const pop = $("rt-prevday-quote-pop");
+    if (!pop) return;
+
+    function cancelHide() {
+      if (prevdayPopUi.hideTimer) {
+        clearTimeout(prevdayPopUi.hideTimer);
+        prevdayPopUi.hideTimer = 0;
+      }
+    }
+
+    function scheduleHide() {
+      cancelHide();
+      prevdayPopUi.hideTimer = setTimeout(() => {
+        prevdayPopUi.hideTimer = 0;
+        hidePrevdayQuotePop();
+      }, 120);
+    }
+
+    body.addEventListener("mouseover", (e) => {
+      if (state.tab !== "prevday") return;
+      const tr = e.target.closest("tr.rt-prevday-stock-row[data-code]");
+      if (!tr || !body.contains(tr)) return;
+      const code = tr.getAttribute("data-code");
+      if (!code) return;
+      const from = e.relatedTarget;
+      if (from && tr.contains(from)) return;
+      cancelHide();
+      prevdayPopUi.hoverCode = code;
+      const nameTd = tr.querySelector(".rt-prevday-name-cell") || tr.querySelector(".rt-td-name");
+      positionPrevdayQuotePop(nameTd);
+      const cached = prevDayInquirePriceCache.get(code);
+      if (cached) {
+        setPrevdayQuotePopContent(pop, { price: cached.price, changePct: cached.changePct });
+        return;
+      }
+      prevdayPopUi.fetchGen += 1;
+      const gen = prevdayPopUi.fetchGen;
+      setPrevdayQuotePopContent(pop, { loading: true });
+      const row = state.prevDayRows.find((r) => String(r.code) === code);
+      const mrkt = mrktDivForPrevdayRow(row);
+      fetchJson("inquire-price", FETCH_TIMEOUT_MS, { code, mrkt })
+        .then((data) => {
+          if (prevdayPopUi.fetchGen !== gen || prevdayPopUi.hoverCode !== code) return;
+          const price = data && data.price != null ? data.price : "";
+          const changePct = data && data.changePct != null ? data.changePct : null;
+          prevDayInquirePriceCache.set(code, { price, changePct });
+          setPrevdayQuotePopContent(pop, { price, changePct });
+        })
+        .catch(() => {
+          if (prevdayPopUi.fetchGen !== gen || prevdayPopUi.hoverCode !== code) return;
+          setPrevdayQuotePopContent(pop, { errMsg: "조회 실패" });
+        });
+    });
+
+    body.addEventListener("mouseout", (e) => {
+      if (state.tab !== "prevday") return;
+      const tr = e.target.closest("tr.rt-prevday-stock-row[data-code]");
+      if (!tr || !body.contains(tr)) return;
+      const code = tr.getAttribute("data-code");
+      if (!code || prevdayPopUi.hoverCode !== code) return;
+      const rel = e.relatedTarget;
+      if (rel && (tr.contains(rel) || pop.contains(rel))) return;
+      scheduleHide();
+    });
+
+    pop.addEventListener("mouseenter", cancelHide);
+    pop.addEventListener("mouseleave", scheduleHide);
   }
 
   function escapeHtml(s) {
@@ -507,6 +646,11 @@
     body.querySelectorAll(".rt-name-chart-btn").forEach((btn) => {
       const c = btn.getAttribute("data-code");
       btn.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
+    });
+    body.querySelectorAll("tr.rt-prevday-stock-row[data-code]").forEach((row) => {
+      const c = row.getAttribute("data-code");
+      if (!c) return;
+      row.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
     });
   }
 
@@ -1226,10 +1370,9 @@
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
-      const nameBtn = `<button type="button" class="rt-name-chart-btn rt-name-chart-btn--prevday" data-code="${escapeHtml(r.code)}" aria-expanded="false"><span class="rt-prevday-name-txt">${nm}</span><span class="rt-prevday-chart-ico" aria-hidden="true">📊</span></button>`;
-      return `<tr class="rt-stock-row rt-prevday-stock-row" data-code="${escapeHtml(r.code)}">
+      return `<tr class="rt-stock-row rt-prevday-stock-row" data-code="${escapeHtml(r.code)}" aria-expanded="false">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameBtn}</td>
+          <td class="rt-td-name rt-prevday-name-cell"><span class="rt-prevday-name-display">${nm}</span></td>
           <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
         </tr>`;
     }
@@ -1328,7 +1471,9 @@
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
-      tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn rt-name-chart-btn--prevday" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}"><span class="rt-prevday-name-txt">${nm}</span><span class="rt-prevday-chart-ico" aria-hidden="true">📊</span></button>`;
+      tr.setAttribute("aria-expanded", state.openChartCode === r.code ? "true" : "false");
+      tr.cells[1].innerHTML = `<span class="rt-prevday-name-display">${nm}</span>`;
+      tr.cells[1].classList.add("rt-prevday-name-cell");
       tr.cells[2].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
       return;
     }
@@ -1418,6 +1563,7 @@
     if (!body) return;
     if (title) title.textContent = getTableTitle();
     updatePrevdayHint();
+    if (state.tab !== "prevday") hidePrevdayQuotePop();
     if (body.dataset.rtSkeleton === "1") return;
     renderThead();
     if (state.tab === "nxt" && NXT_DISABLED) {
@@ -1755,6 +1901,7 @@
         else if (t === "prevday") state.tab = "prevday";
         else if (t === "nxt") state.tab = "nxt";
         else state.tab = "cap";
+        hidePrevdayQuotePop();
         state.openChartCode = null;
         state.candlePeriod = "D";
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
@@ -2005,6 +2152,19 @@
         void mountLightweightChart(body);
         return;
       }
+      const prvRow = ev.target.closest("tr.rt-prevday-stock-row[data-code]");
+      if (state.tab === "prevday" && prvRow && body.contains(prvRow)) {
+        if (ev.target.closest(".rt-chart-row") || ev.target.closest(".rt-chart-interval-btn")) return;
+        const code = prvRow.getAttribute("data-code");
+        if (!code) return;
+        if (state.openChartCode === code) state.openChartCode = null;
+        else {
+          state.openChartCode = code;
+          state.candlePeriod = "D";
+        }
+        renderTable();
+        return;
+      }
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const code = btn.getAttribute("data-code");
@@ -2041,6 +2201,7 @@
     setupNxtSubtabs();
     setupTradevalSubtabs();
     wireTableChartAccordion();
+    wirePrevdayQuoteHover();
     const err = $("rt-error");
     if (err) err.hidden = true;
     hideLoadingOverlay();

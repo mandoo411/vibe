@@ -4,6 +4,8 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
+  /** prev-day-top50: JSON + 종목별 inquire-price(최대 50회·KIS 간격) */
+  const PREVDAY_TOP50_FETCH_TIMEOUT_MS = 75000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
@@ -834,7 +836,10 @@
             : tab === "prevday"
               ? "prev-day-top50"
               : nxtFetchAction();
-    return fetchJson(action, FETCH_TIMEOUT_MS);
+    return fetchJson(
+      action,
+      tab === "prevday" ? PREVDAY_TOP50_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS
+    );
   }
 
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
@@ -1044,7 +1049,7 @@
   }
 
   function tableColSpan() {
-    if (state.tab === "prevday") return 3;
+    if (state.tab === "prevday") return 4;
     return 6;
   }
 
@@ -1068,7 +1073,7 @@
     }
     if (state.tab === "prevday") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-chg">전일등락률</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-chg">전일등락률</th><th class="num rt-td-chg">실시간 등락률</th>';
       return;
     }
     tr.innerHTML =
@@ -1079,7 +1084,7 @@
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "tradeval") return "코스피·코스닥 통합 거래대금 상위 50";
-    if (state.tab === "prevday") return "전일 상승 TOP50 (data/prev-top50.json)";
+    if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 실시간 등락률)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1138,10 +1143,13 @@
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
+      const chToday = r.changePct;
+      const clsToday = deltaClass(chToday);
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name">${nameCell}</td>
           <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
+          <td class="num rt-td-chg"><span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span></td>
         </tr>`;
     }
 
@@ -1239,7 +1247,10 @@
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
+      const chToday = r.changePct;
+      const clsToday = deltaClass(chToday);
       tr.cells[2].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
+      tr.cells[3].innerHTML = `<span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span>`;
       return;
     }
 
@@ -1448,7 +1459,14 @@
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
       mergeStockRow(state.tradeValRows, row);
-      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "tradeval") renderTable();
+      mergeStockRow(state.prevDayRows, row);
+      if (
+        state.tab === "cap" ||
+        state.tab === "gainers" ||
+        state.tab === "tradeval" ||
+        state.tab === "prevday"
+      )
+        renderTable();
       return;
     }
     if (trId === "H0NXCNT0") {
@@ -1462,7 +1480,6 @@
 
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
-    if (state.tab === "prevday") return;
     const trId = ccnlTrIdForTab(state.tab);
     const limit = state.tab === "cap" || state.tab === "nxt" ? 30 : 50;
     const list = codes
@@ -1570,7 +1587,7 @@
           : state.tab === "tradeval"
             ? fetchJson("trade-pbmn-top50", FETCH_TIMEOUT_MS)
             : state.tab === "prevday"
-              ? fetchJson("prev-day-top50", FETCH_TIMEOUT_MS)
+              ? fetchJson("prev-day-top50", PREVDAY_TOP50_FETCH_TIMEOUT_MS)
               : state.tab === "nxt"
                 ? fetchJson(nxtFetchAction(), FETCH_TIMEOUT_MS)
                 : fetchJson("market-cap", FETCH_TIMEOUT_MS);

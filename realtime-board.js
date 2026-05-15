@@ -1074,7 +1074,7 @@
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
     if (state.tab === "tradeval")
-      return "거래대금 상위 50 (KIS trade-amount, FHKST01010900 / 20161, 1분 갱신)";
+      return "국내 거래대금 상위 50 (trade-amount 우선, 미수신 시 거래량순위 거래금액순, 1분 갱신)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";

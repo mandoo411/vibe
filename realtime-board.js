@@ -1053,7 +1053,8 @@
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
-    if (state.tab === "tradeval") return "거래대금 상위 50 (ETF·ETN 제외, 현재가×거래량 우선)";
+    if (state.tab === "tradeval")
+      return "거래대금 상위 50 (trade-amount 순위, tr_pbmn 기준, 1분 갱신, ETF·ETN 제외)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1796,11 +1797,13 @@
     const period =
       state.tab === "prevday"
         ? 5 * 60 * 1000
-        : state.tab === "tradeval" || state.tab === "nxt"
-          ? 15000
-          : state.tab === "gainers"
-            ? 5000
-            : 12000;
+        : state.tab === "tradeval"
+          ? 60 * 1000
+          : state.tab === "nxt"
+            ? 15000
+            : state.tab === "gainers"
+              ? 5000
+              : 12000;
     state.pollRest = setInterval(() => {
       refreshPartial().catch(() => {});
     }, period);

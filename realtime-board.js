@@ -4,6 +4,8 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
+  /** prev-day-gainers: 종목별 inquire-price 최대 50회(KIS 간격 포함) — 짧은 타임아웃이면 AbortError */
+  const PREVDAY_GAINERS_FETCH_TIMEOUT_MS = 75000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
@@ -810,7 +812,9 @@
             : tab === "tradeval"
               ? "trade-value-top50"
               : nxtFetchAction();
-    return fetchJson(action, FETCH_TIMEOUT_MS);
+    const stockTimeout =
+      action === "prev-day-gainers" ? PREVDAY_GAINERS_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
+    return fetchJson(action, stockTimeout);
   }
 
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
@@ -1532,7 +1536,7 @@
         state.tab === "gainers"
           ? fetchJson("gainers", FETCH_TIMEOUT_MS)
           : state.tab === "prevday"
-            ? fetchJson("prev-day-gainers", FETCH_TIMEOUT_MS)
+            ? fetchJson("prev-day-gainers", PREVDAY_GAINERS_FETCH_TIMEOUT_MS)
             : state.tab === "tradeval"
               ? fetchJson("trade-value-top50", FETCH_TIMEOUT_MS)
               : state.tab === "nxt"

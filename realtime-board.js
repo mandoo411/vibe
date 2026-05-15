@@ -4,8 +4,6 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  /** prev-day-gainers: 종목별 inquire-price 최대 50회(KIS 간격 포함) — 짧은 타임아웃이면 AbortError */
-  const PREVDAY_GAINERS_FETCH_TIMEOUT_MS = 75000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
@@ -81,8 +79,6 @@
     nxtSub: "fluctuation",
     capRows: [],
     gainerRows: [],
-    prevDayRows: [],
-    tradeValRows: [],
     nxtFluctRows: [],
     nxtPbmnRows: [],
     nxtVolRows: [],
@@ -790,8 +786,6 @@
     if (tab === "nxt" && NXT_DISABLED) return true;
     if (tab === "cap") return state.capRows.length >= 10;
     if (tab === "gainers") return state.gainerRows.length >= 10;
-    if (tab === "prevday") return state.prevDayRows.length >= 5;
-    if (tab === "tradeval") return state.tradeValRows.length >= 10;
     if (tab === "nxt") {
       const rows = getNxtRowsForSub();
       return rows.length >= 5;
@@ -811,8 +805,6 @@
       .map((r) => ({ ...r, tab: tab === "nxt" ? "nxt" : r.tab || tab }));
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
-    else if (tab === "prevday") state.prevDayRows = rows;
-    else if (tab === "tradeval") state.tradeValRows = rows;
     else if (tab === "nxt") {
       if (state.nxtSub === "trade") state.nxtPbmnRows = rows;
       else if (state.nxtSub === "volume") state.nxtVolRows = rows;
@@ -823,18 +815,8 @@
   async function fetchStocksJsonForTab(tab) {
     if (tab === "nxt" && NXT_DISABLED) return { stocks: [] };
     const action =
-      tab === "cap"
-        ? "market-cap"
-        : tab === "gainers"
-          ? "gainers"
-          : tab === "prevday"
-            ? "prev-day-gainers"
-            : tab === "tradeval"
-              ? "trade-value-top50"
-              : nxtFetchAction();
-    const stockTimeout =
-      action === "prev-day-gainers" ? PREVDAY_GAINERS_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
-    return fetchJson(action, stockTimeout);
+      tab === "cap" ? "market-cap" : tab === "gainers" ? "gainers" : nxtFetchAction();
+    return fetchJson(action, FETCH_TIMEOUT_MS);
   }
 
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
@@ -968,10 +950,9 @@
     const i = list.findIndex((r) => r.code === patch.code);
     if (i < 0) return;
     const cur = { ...list[i] };
-    const prevTabList = list === state.prevDayRows;
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
-    if (!prevTabList && patch.volume) cur.volume = patch.volume;
+    if (patch.volume) cur.volume = patch.volume;
     if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
     if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
@@ -983,8 +964,6 @@
   function getCurrentRows() {
     if (state.tab === "cap") return state.capRows;
     if (state.tab === "gainers") return state.gainerRows;
-    if (state.tab === "prevday") return state.prevDayRows;
-    if (state.tab === "tradeval") return state.tradeValRows;
     if (state.tab === "nxt") {
       if (NXT_DISABLED) return [];
       return getNxtRowsForSub();
@@ -1037,24 +1016,12 @@
   }
 
   function tableColSpan() {
-    if (state.tab === "prevday") return 6;
-    if (state.tab === "tradeval") return 5;
     return 6;
   }
 
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
-    if (state.tab === "prevday") {
-      tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">전일 등락률</th><th class="num rt-td-chg">금일 등락률</th><th class="num rt-td-tv">거래대금</th>';
-      return;
-    }
-    if (state.tab === "tradeval") {
-      tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th>';
-      return;
-    }
     if (state.tab === "nxt") {
       tr.innerHTML =
         '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
@@ -1072,9 +1039,6 @@
   function getTableTitle() {
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
-    if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
-    if (state.tab === "tradeval")
-      return "국내 거래대금 상위 50 (trade-amount 우선, 미수신 시 거래량순위 거래금액순, 1분 갱신)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1129,35 +1093,6 @@
   function stockRowHtml(r) {
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
-
-    if (state.tab === "prevday") {
-      const chPrev = r.prevDayChangePct;
-      const clsPrev = deltaClass(chPrev);
-      const chToday = r.changePct;
-      const clsToday = deltaClass(chToday);
-      const tv = formatTradeVal(r.tradingValue);
-      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
-          <td class="num rt-td-chg"><span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span></td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
-        </tr>`;
-    }
-
-    if (state.tab === "tradeval") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      const tv = formatTradeVal(r.tradingValue);
-      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
-        </tr>`;
-    }
 
     if (state.tab === "nxt") {
       const ch = r.changePct;
@@ -1234,27 +1169,6 @@
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
-
-    if (state.tab === "prevday") {
-      const chPrev = r.prevDayChangePct;
-      const clsPrev = deltaClass(chPrev);
-      const chToday = r.changePct;
-      const clsToday = deltaClass(chToday);
-      tr.cells[2].textContent = fmtNum(r.price);
-      tr.cells[3].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
-      tr.cells[4].innerHTML = `<span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span>`;
-      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
-      return;
-    }
-
-    if (state.tab === "tradeval") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      tr.cells[2].textContent = fmtNum(r.price);
-      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-      tr.cells[4].textContent = formatTradeVal(r.tradingValue);
-      return;
-    }
 
     if (state.tab === "nxt") {
       const ch = r.changePct;
@@ -1441,8 +1355,7 @@
       const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      mergeStockRow(state.prevDayRows, row);
-      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "prevday") renderTable();
+      if (state.tab === "cap" || state.tab === "gainers") renderTable();
       return;
     }
     if (trId === "H0NXCNT0") {
@@ -1560,13 +1473,9 @@
       const stockPromise =
         state.tab === "gainers"
           ? fetchJson("gainers", FETCH_TIMEOUT_MS)
-          : state.tab === "prevday"
-            ? fetchJson("prev-day-gainers", PREVDAY_GAINERS_FETCH_TIMEOUT_MS)
-            : state.tab === "tradeval"
-              ? fetchJson("trade-value-top50", FETCH_TIMEOUT_MS)
-              : state.tab === "nxt"
-                ? fetchJson(nxtFetchAction(), FETCH_TIMEOUT_MS)
-                : fetchJson("market-cap", FETCH_TIMEOUT_MS);
+          : state.tab === "nxt"
+            ? fetchJson(nxtFetchAction(), FETCH_TIMEOUT_MS)
+            : fetchJson("market-cap", FETCH_TIMEOUT_MS);
 
       const [stockPack, idxPack, sessPack] = await Promise.all([
         stockPromise,
@@ -1586,12 +1495,6 @@
       if (state.tab === "gainers") {
         const { stocks } = stockPack;
         state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
-      } else if (state.tab === "prevday") {
-        const { stocks } = stockPack;
-        state.prevDayRows = (stocks || []).map((r) => ({ ...r, tab: "prevday" }));
-      } else if (state.tab === "tradeval") {
-        const { stocks } = stockPack;
-        state.tradeValRows = (stocks || []).map((r) => ({ ...r, tab: "tradeval" }));
       } else if (state.tab === "nxt") {
         const { stocks } = stockPack;
         const rows = (stocks || []).map((r) => ({ ...r, tab: "nxt" }));
@@ -1633,8 +1536,6 @@
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
         if (t === "gainers") state.tab = "gainers";
-        else if (t === "prevday") state.tab = "prevday";
-        else if (t === "tradeval") state.tab = "tradeval";
         else if (t === "nxt") state.tab = "nxt";
         else state.tab = "cap";
         state.openChartCode = null;
@@ -1833,15 +1734,7 @@
   function startPolling() {
     if (state.pollRest) clearInterval(state.pollRest);
     const period =
-      state.tab === "prevday"
-        ? 5 * 60 * 1000
-        : state.tab === "tradeval"
-          ? 60 * 1000
-          : state.tab === "nxt"
-            ? 15000
-            : state.tab === "gainers"
-              ? 5000
-              : 12000;
+      state.tab === "nxt" ? 15000 : state.tab === "gainers" ? 5000 : 12000;
     state.pollRest = setInterval(() => {
       refreshPartial().catch((e) => {
         console.error("[realtime-board] poll refreshPartial", e && e.message, e);

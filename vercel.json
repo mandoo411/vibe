@@ -3,6 +3,9 @@
   "functions": {
     "api/kis-realtime-data.js": {
       "maxDuration": 60
+    },
+    "api/us-market-data.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -10,6 +13,7 @@
     { "src": "/realtime.html", "dest": "/realtime.html" },
     { "src": "/daily-market.html", "dest": "/daily-market.html" },
     { "src": "/weekly-market.html", "dest": "/weekly-market.html" },
+    { "src": "/us-market.html", "dest": "/us-market.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

@@ -9,7 +9,8 @@
     "deploy": "npx --yes vercel@53.2.0 --prod",
     "sync:schedule": "node --env-file=.env scripts/telegram-weekly-schedule.mjs",
     "sync:daily": "node --env-file=.env scripts/telegram-daily-market.mjs",
-    "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs"
+    "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs",
+    "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0"

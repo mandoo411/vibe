@@ -13,11 +13,14 @@ concurrency:
   group: morning-briefing
   cancel-in-progress: false
 
+env:
+  TZ: Asia/Seoul
+
 jobs:
   briefing:
     name: Run morning briefing script
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -27,22 +30,35 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env from secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env
 
       - name: Run morning briefing
-        run: node scripts/morning-briefing.mjs
+        run: npm run sync:briefing
 
       - name: Commit and push if changed
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          STATUS=$(git status --porcelain)
-          if [ -n "$STATUS" ]; then
-            STAMP=$(date -u +'%Y-%m-%dT%H:%MZ')
-            git add -A
+          if git diff --quiet -- data/briefing.json; then
+            echo "::notice::No changes to data/briefing.json"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git add data/briefing.json
             git commit -m "chore(data): morning briefing ${STAMP}"
             git pull --rebase origin main
             git push
-          else
-            echo "::notice::No repository changes from morning-briefing.mjs"
           fi
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f .env

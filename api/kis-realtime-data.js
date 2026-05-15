@@ -5,6 +5,7 @@
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES, KIS_TRADE_VALUE_RANK_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
+ * 선택: KIS_TRADE_VALUE_EXLS_CLS (거래량순위 대상제외 10자리, 기본 0000000011=ETF·ETN 제외)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -38,6 +39,30 @@ const candleMemoryCache = new Map();
 /** action=prev-day-gainers — data/prev-top50.json(전일 순위·전일 등락률) + 종목별 inquire-price(5분 캐시) */
 let prevDayGainersCache = null; // { mtimeMs, rankingYmd, stocks }
 let prevDayQuotesCache = null; // { at, rankingYmd, codeKey, byCode: Map }
+
+function parsePbmnSortKey(s) {
+  const n = Number(String(s || "").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** 순위 응답 행이 ETF/ETN인지 — fid_trgt_exls 보조(필드·종목명) */
+function rowIsEtfOrEtn(row, name) {
+  if (!row || typeof row !== "object") return false;
+  const dvsn = sanitizeStr(
+    row.etf_etn_dvsn_cd ||
+      row.ETF_ETN_DVSN_CD ||
+      row.prdt_type_cd ||
+      row.PRDT_TYPE_CD ||
+      row.stck_dvsn_name ||
+      row.STCK_DVSN_NAME
+  );
+  if (/etf|etn|상장지수/i.test(dvsn)) return true;
+  const u = String(name || "").toUpperCase();
+  if (/\bETF\b|\bETN\b/.test(u)) return true;
+  const t = String(name || "").trim();
+  if (/(^|\s)ETF$|(^|\s)ETN$|\(ETF\)|\(ETN\)/i.test(t)) return true;
+  return false;
+}
 
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
@@ -509,6 +534,13 @@ async function fetchMarketCapKospi30() {
  * 시총 순위에서 거래대금 재정렬하던 방식은 HTS 거래대금상위와 불일치함.
  */
 async function fetchTradeValueTop50FromVolumeRank() {
+  /** 10자리: … 거래정지(7) ETF(8) ETN(9) — 1=해당 유형 제외 (KIS 샘플 주석 기준) */
+  const fidTrgtExlsClsCode = String(process.env.KIS_TRADE_VALUE_EXLS_CLS || "0000000011").trim();
+  const safeExls =
+    fidTrgtExlsClsCode.length === 10 && /^[01]+$/.test(fidTrgtExlsClsCode)
+      ? fidTrgtExlsClsCode
+      : "0000000011";
+
   const params = {
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20171",
@@ -516,7 +548,7 @@ async function fetchTradeValueTop50FromVolumeRank() {
     fid_div_cls_code: "0",
     fid_blng_cls_code: "3",
     fid_trgt_cls_code: "111111111",
-    fid_trgt_exls_cls_code: "0000000000",
+    fid_trgt_exls_cls_code: safeExls,
     fid_input_price_1: "",
     fid_input_price_2: "",
     fid_vol_cnt: "",
@@ -540,7 +572,7 @@ async function fetchTradeValueTop50FromVolumeRank() {
     trCont = "N";
   }
 
-  const rows = [];
+  const candidates = [];
   const seen = new Set();
   for (const row of rawAll) {
     const code = sanitizeStr(
@@ -548,14 +580,18 @@ async function fetchTradeValueTop50FromVolumeRank() {
     );
     if (!code || seen.has(code)) continue;
     seen.add(code);
+    const name = sanitizeStr(row.hts_kor_isnm);
+    if (rowIsEtfOrEtn(row, name)) continue;
+
     const price = pickStckPrpr(row);
     const volume = pickAcmlVol(row);
-    let tradingValue = pickAcmlTrPbmn(row);
-    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-    rows.push({
-      rank: toNum(row.data_rank),
+    const approxTv = approxPbmnFromPriceVol(price, volume) || "";
+    const apiTv = pickAcmlTrPbmn(row);
+    const tradingValue = approxTv || apiTv || "";
+
+    candidates.push({
       code,
-      name: sanitizeStr(row.hts_kor_isnm),
+      name,
       price,
       changePct: toNum(row.prdy_ctrt),
       volume,
@@ -564,15 +600,18 @@ async function fetchTradeValueTop50FromVolumeRank() {
     });
   }
 
+  candidates.sort((a, b) => parsePbmnSortKey(b.tradingValue) - parsePbmnSortKey(a.tradingValue));
+
   console.log("[kis-realtime-data][trade-value-rank]", {
     tr_id: "FHPST01710000",
     fid_blng_cls_code: "3 (거래금액순)",
+    fid_trgt_exls_cls_code: safeExls,
     rawRows: rawAll.length,
-    uniqueRows: rows.length,
+    candidates: candidates.length,
     maxPagesCap: TRADE_VALUE_RANK_MAX_PAGES,
   });
 
-  return rows.slice(0, 50).map((r, i) => ({
+  return candidates.slice(0, 50).map((r, i) => ({
     rank: i + 1,
     code: r.code,
     name: r.name,

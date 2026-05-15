@@ -1053,7 +1053,7 @@
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 시세)";
-    if (state.tab === "tradeval") return "거래대금 상위 50 (KIS 거래금액순위, KRX)";
+    if (state.tab === "tradeval") return "거래대금 상위 50 (ETF·ETN 제외, 현재가×거래량 우선)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";

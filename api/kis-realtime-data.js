@@ -6,6 +6,7 @@
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
  * 선택: KIS_TRADE_PBMN_MAX_PAGES — 거래대금 순위(trade-pbmn) 연속조회 상한, 기본 12
+ * 선택: KIS_TRADE_PBMN_HTTP_TIMEOUT_MS — trade-pbmn 단일 HTTP 타임아웃(ms), 기본 20000
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -31,6 +32,12 @@ const MARKET_CAP_RANK_MAX_PAGES = Math.max(
 const TRADE_PBMN_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_TRADE_PBMN_MAX_PAGES) || 12)
+);
+
+/** trade-pbmn 단일 HTTP 요청 타임아웃(ms). env 미설정 시 20000(8초대 클라이언트 한계 완화). */
+const TRADE_PBMN_HTTP_TIMEOUT_MS = Math.max(
+  1000,
+  Number(process.env.KIS_TRADE_PBMN_HTTP_TIMEOUT_MS) || 20000
 );
 
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
@@ -90,7 +97,7 @@ function requireAccessToken() {
   return trimmed;
 }
 
-async function kisGet(path, trId, searchParams, trCont = "") {
+async function kisGet(path, trId, searchParams, trCont = "", fetchOpts = {}) {
   const { appkey, appsecret } = requireAppKeySecret();
   const token = requireAccessToken();
   await sleep(KIS_GAP_MS);
@@ -110,9 +117,30 @@ async function kisGet(path, trId, searchParams, trCont = "") {
     tr_cont: trCont,
   };
 
+  const timeoutMs =
+    fetchOpts && fetchOpts.timeoutMs != null && Number.isFinite(Number(fetchOpts.timeoutMs))
+      ? Math.max(1000, Number(fetchOpts.timeoutMs))
+      : 0;
+
   const maxTry = 7;
   for (let attempt = 0; attempt < maxTry; attempt++) {
-    const res = await fetch(url.toString(), { method: "GET", headers });
+    let res;
+    if (timeoutMs > 0) {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        res = await fetch(url.toString(), { method: "GET", headers, signal: ctrl.signal });
+      } catch (e) {
+        clearTimeout(tid);
+        if (e && e.name === "AbortError") {
+          throw new Error(`KIS GET timeout after ${timeoutMs}ms (${path})`);
+        }
+        throw e;
+      }
+      clearTimeout(tid);
+    } else {
+      res = await fetch(url.toString(), { method: "GET", headers });
+    }
     const text = await res.text();
     let json;
     try {
@@ -657,7 +685,8 @@ async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
       "/uapi/domestic-stock/v1/ranking/trade-pbmn",
       "FHPST01710000",
       params,
-      trCont
+      trCont,
+      { timeoutMs: TRADE_PBMN_HTTP_TIMEOUT_MS }
     );
     const part = kisOutputRows(json);
     if (!part.length) break;
@@ -694,21 +723,41 @@ async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
   return rows;
 }
 
+/**
+ * 코스피(J)·코스닥(Q) trade-pbmn을 Promise.all로 병렬 호출 후 거래대금 기준 TOP50.
+ * 한쪽이라도 실패하면 전체 실패로 간주하고 1회만 재시도한다.
+ */
 async function fetchTradePbmnMergedTop50() {
-  const [kospi, kosdaq] = await Promise.all([
-    fetchTradePbmnRankRowsForMarket("J", "KOSPI"),
-    fetchTradePbmnRankRowsForMarket("Q", "KOSDAQ"),
-  ]);
-  const merged = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    const prev = merged.get(r.code);
-    if (!prev || tradePbmnSortKey(r.tradingValue) > tradePbmnSortKey(prev.tradingValue)) {
-      merged.set(r.code, r);
+  let lastErr;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const [kospi, kosdaq] = await Promise.all([
+        fetchTradePbmnRankRowsForMarket("J", "KOSPI"),
+        fetchTradePbmnRankRowsForMarket("Q", "KOSDAQ"),
+      ]);
+      const merged = new Map();
+      for (const r of [...kospi, ...kosdaq]) {
+        const prev = merged.get(r.code);
+        if (!prev || tradePbmnSortKey(r.tradingValue) > tradePbmnSortKey(prev.tradingValue)) {
+          merged.set(r.code, r);
+        }
+      }
+      const all = [...merged.values()].filter((r) => r.code && r.name);
+      all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
+      return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+    } catch (e) {
+      lastErr = e;
+      console.error("[kis-realtime-data][trade-pbmn-top50] merge attempt failed", {
+        attempt: attempt + 1,
+        message: e && e.message,
+      });
+      if (attempt === 0) {
+        await sleep(KIS_GAP_MS);
+        continue;
+      }
+      throw lastErr;
     }
   }
-  const all = [...merged.values()].filter((r) => r.code && r.name);
-  all.sort((a, b) => tradePbmnSortKey(b.tradingValue) - tradePbmnSortKey(a.tradingValue));
-  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 function getPrevTop50JsonPath() {
@@ -1205,7 +1254,10 @@ module.exports = async function handler(req, res) {
         json(res, 200, { stocks });
       } catch (e) {
         console.error("[kis-realtime-data] action=trade-pbmn-top50", e && e.message, e);
-        json(res, 200, { stocks: [] });
+        json(res, 502, {
+          error: e.message || String(e),
+          stocks: [],
+        });
       }
       return;
     }

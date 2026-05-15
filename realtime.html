@@ -212,6 +212,66 @@
         color: var(--text-muted);
         letter-spacing: 0.08em;
       }
+      .rt-panel__head-title {
+        letter-spacing: inherit;
+      }
+      .rt-prevday-hint {
+        margin: 6px 0 0;
+        padding: 0;
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.04em;
+        line-height: 1.45;
+      }
+      .rt-table tr.rt-prevday-stock-row:hover td {
+        background: rgba(212, 175, 55, 0.1);
+      }
+      .rt-name-chart-btn--prevday {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        max-width: 100%;
+      }
+      .rt-prevday-name-txt {
+        flex: 1 1 auto;
+        text-align: left;
+        min-width: 0;
+      }
+      .rt-prevday-chart-ico {
+        flex: 0 0 auto;
+        font-size: 12px;
+        opacity: 0.75;
+        line-height: 1;
+      }
+      .rt-chart-quote-strip {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .rt-chart-quote-strip--empty {
+        display: none;
+      }
+      .rt-chart-quote-strip__inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 10px;
+      }
+      .rt-chart-quote-strip__lbl {
+        color: var(--text-dim);
+        letter-spacing: 0.06em;
+      }
+      .rt-chart-quote-strip__val {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .rt-chart-quote-strip__sep {
+        color: var(--text-dim);
+        user-select: none;
+      }
       .rt-table {
         width: 100%;
         min-width: 280px;
@@ -777,7 +837,10 @@
           </button>
         </div>
         <div class="rt-panel" role="tabpanel">
-          <div class="rt-panel__head" id="rt-table-title">코스피 시가총액 상위 30</div>
+          <div class="rt-panel__head">
+            <div class="rt-panel__head-title" id="rt-table-title">코스피 시가총액 상위 30</div>
+            <p id="rt-prevday-hint" class="rt-prevday-hint" hidden>종목 클릭시 현재가 · 차트 확인</p>
+          </div>
           <div class="rt-scroll">
             <table class="rt-table" aria-label="실시간 시세">
               <thead>

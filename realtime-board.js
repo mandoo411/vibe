@@ -4,8 +4,6 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  /** prev-day-top50: JSON + 종목별 inquire-price(최대 50회·KIS 간격) */
-  const PREVDAY_TOP50_FETCH_TIMEOUT_MS = 75000;
   /** 거래대금 TOP50 — 코스피+코스닥 병렬·연속조회 대비 클라이언트 대기 상한 */
   const TRADE_PBMN_FETCH_TIMEOUT_MS = 20000;
   const TAB_CACHE_MS = 5 * 60 * 1000;
@@ -536,6 +534,40 @@
     });
   }
 
+  function updateChartQuoteStripFromCandles(body, candles) {
+    const strip = body.querySelector("tr.rt-chart-row .rt-chart-quote-strip");
+    if (!strip) return;
+    if (state.tab !== "prevday") {
+      strip.classList.add("rt-chart-quote-strip--empty");
+      strip.innerHTML = "";
+      return;
+    }
+    if (!Array.isArray(candles) || candles.length === 0) {
+      strip.classList.add("rt-chart-quote-strip--empty");
+      strip.innerHTML = "";
+      return;
+    }
+    strip.classList.remove("rt-chart-quote-strip--empty");
+    const last = candles[candles.length - 1];
+    const close = Number(last && last.close);
+    const prevBar = candles.length >= 2 ? candles[candles.length - 2] : null;
+    let chg = null;
+    if (prevBar != null && Number.isFinite(Number(prevBar.close)) && Number(prevBar.close) !== 0) {
+      const pc = Number(prevBar.close);
+      chg = ((close - pc) / pc) * 100;
+    }
+    const priceStr = Number.isFinite(close) ? fmtNum(String(close)) : "—";
+    const chgStr = chg != null && Number.isFinite(chg) ? fmtPct(chg) : "—";
+    const cls = deltaClass(chg);
+    strip.innerHTML = `<span class="rt-chart-quote-strip__inner">
+      <span class="rt-chart-quote-strip__lbl">현재가(선택 봉 종가)</span>
+      <span class="rt-chart-quote-strip__val">${escapeHtml(priceStr)}</span>
+      <span class="rt-chart-quote-strip__sep">·</span>
+      <span class="rt-chart-quote-strip__lbl">등락률(직전 봉 대비)</span>
+      <span class="delta ${cls}">${escapeHtml(chgStr)}</span>
+    </span>`;
+  }
+
   async function mountLightweightChart(body) {
     if (!state.openChartCode) return;
     const chartTr = body.querySelector("tr.rt-chart-row");
@@ -568,6 +600,7 @@
           state.lwVolChart.applyOptions({ width: w, height: hV });
         }
         syncChartPeriodToolbarPressed(body);
+        updateChartQuoteStripFromCandles(body, state.lwBundle && state.lwBundle.fullCandles);
         return;
       }
 
@@ -720,6 +753,7 @@
       wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, state.candlePeriod);
       applyLwChartVisibleRange();
       syncChartPeriodToolbarPressed(body);
+      updateChartQuoteStripFromCandles(body, candles);
     } catch (e) {
       disposeLwChart();
       delete panes.dataset.mountedFor;
@@ -838,12 +872,7 @@
             : tab === "prevday"
               ? "prev-day-top50"
               : nxtFetchAction();
-    const ms =
-      tab === "prevday"
-        ? PREVDAY_TOP50_FETCH_TIMEOUT_MS
-        : tab === "tradeval"
-          ? TRADE_PBMN_FETCH_TIMEOUT_MS
-          : FETCH_TIMEOUT_MS;
+    const ms = tab === "tradeval" ? TRADE_PBMN_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
     return fetchJson(action, ms);
   }
 
@@ -1054,7 +1083,7 @@
   }
 
   function tableColSpan() {
-    if (state.tab === "prevday") return 4;
+    if (state.tab === "prevday") return 3;
     return 6;
   }
 
@@ -1078,7 +1107,7 @@
     }
     if (state.tab === "prevday") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-chg">전일등락률</th><th class="num rt-td-chg">실시간 등락률</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-chg">전일등락률</th>';
       return;
     }
     tr.innerHTML =
@@ -1089,7 +1118,7 @@
     if (state.tab === "cap") return "코스피 시가총액 상위 30";
     if (state.tab === "gainers") return "코스피·코스닥 통합 상승률 상위 50";
     if (state.tab === "tradeval") return "코스피·코스닥 통합 거래대금 상위 50";
-    if (state.tab === "prevday") return "전일 상승 TOP50 (저장 순위·전일 등락률 + 금일 실시간 등락률)";
+    if (state.tab === "prevday") return "전일 상승 TOP50 (data/prev-top50.json)";
     if (state.tab === "nxt") {
       if (state.nxtSub === "trade") return "NXT 거래대금 TOP30";
       if (state.nxtSub === "volume") return "NXT 거래량 TOP30";
@@ -1148,13 +1177,11 @@
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
-      const chToday = r.changePct;
-      const clsToday = deltaClass(chToday);
-      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
+      const nameBtn = `<button type="button" class="rt-name-chart-btn rt-name-chart-btn--prevday" data-code="${escapeHtml(r.code)}" aria-expanded="false"><span class="rt-prevday-name-txt">${nm}</span><span class="rt-prevday-chart-ico" aria-hidden="true">📊</span></button>`;
+      return `<tr class="rt-stock-row rt-prevday-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
+          <td class="rt-td-name">${nameBtn}</td>
           <td class="num rt-td-chg"><span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span></td>
-          <td class="num rt-td-chg"><span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span></td>
         </tr>`;
     }
 
@@ -1222,6 +1249,7 @@
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">
             <div class="rt-chart-wrap">
+              <div class="rt-chart-quote-strip rt-chart-quote-strip--empty" aria-live="polite"></div>
               <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>
                 <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
@@ -1247,17 +1275,16 @@
   function applyRowToTr(tr, r) {
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
-    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
 
     if (state.tab === "prevday") {
       const chPrev = r.prevDayChangePct;
       const clsPrev = deltaClass(chPrev);
-      const chToday = r.changePct;
-      const clsToday = deltaClass(chToday);
+      tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn rt-name-chart-btn--prevday" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}"><span class="rt-prevday-name-txt">${nm}</span><span class="rt-prevday-chart-ico" aria-hidden="true">📊</span></button>`;
       tr.cells[2].innerHTML = `<span class="delta ${clsPrev}">${escapeHtml(fmtPct(chPrev))}</span>`;
-      tr.cells[3].innerHTML = `<span class="delta ${clsToday}">${escapeHtml(fmtPct(chToday))}</span>`;
       return;
     }
+
+    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
 
     if (state.tab === "nxt") {
       const ch = r.changePct;
@@ -1327,6 +1354,13 @@
     const title = $("rt-table-title");
     if (title) title.textContent = getTableTitle();
     renderThead();
+    updatePrevdayHint();
+  }
+
+  function updatePrevdayHint() {
+    const el = $("rt-prevday-hint");
+    if (!el) return;
+    el.hidden = state.tab !== "prevday" || (state.prevDayNoData && state.prevDayRows.length === 0);
   }
 
   function renderTable() {
@@ -1334,6 +1368,7 @@
     const title = $("rt-table-title");
     if (!body) return;
     if (title) title.textContent = getTableTitle();
+    updatePrevdayHint();
     if (body.dataset.rtSkeleton === "1") return;
     renderThead();
     if (state.tab === "nxt" && NXT_DISABLED) {
@@ -1355,6 +1390,7 @@
       body.innerHTML = `<tr class="rt-stock-row rt-prevday-empty-row" data-code="">
           <td colspan="${cs}" class="rt-prevday-empty-cell">데이터 없음</td>
         </tr>`;
+      updatePrevdayHint();
       return;
     }
     const rows = getCurrentRows();
@@ -1464,14 +1500,7 @@
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
       mergeStockRow(state.tradeValRows, row);
-      mergeStockRow(state.prevDayRows, row);
-      if (
-        state.tab === "cap" ||
-        state.tab === "gainers" ||
-        state.tab === "tradeval" ||
-        state.tab === "prevday"
-      )
-        renderTable();
+      if (state.tab === "cap" || state.tab === "gainers" || state.tab === "tradeval") renderTable();
       return;
     }
     if (trId === "H0NXCNT0") {
@@ -1485,6 +1514,7 @@
 
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
+    if (state.tab === "prevday") return;
     const trId = ccnlTrIdForTab(state.tab);
     const limit = state.tab === "cap" || state.tab === "nxt" ? 30 : 50;
     const list = codes
@@ -1592,7 +1622,7 @@
           : state.tab === "tradeval"
             ? fetchJson("trade-pbmn-top50", TRADE_PBMN_FETCH_TIMEOUT_MS)
             : state.tab === "prevday"
-              ? fetchJson("prev-day-top50", PREVDAY_TOP50_FETCH_TIMEOUT_MS)
+              ? fetchJson("prev-day-top50", FETCH_TIMEOUT_MS)
               : state.tab === "nxt"
                 ? fetchJson(nxtFetchAction(), FETCH_TIMEOUT_MS)
                 : fetchJson("market-cap", FETCH_TIMEOUT_MS);

@@ -764,7 +764,7 @@ function getPrevTop50JsonPath() {
   return path.join(process.cwd(), "data", "prev-top50.json");
 }
 
-/** 전일 상승 TOP50 — data/prev-top50.json. 실패·빈 목록 시 noData (금일 등락률은 별도 enrich) */
+/** 전일 상승 TOP50 — data/prev-top50.json 만 읽음(KIS 호출 없음). 실패·빈 목록 시 noData */
 function loadPrevDayTop50FromDisk() {
   const filePath = getPrevTop50JsonPath();
   try {
@@ -794,87 +794,6 @@ function loadPrevDayTop50FromDisk() {
   } catch {
     return { stocks: [], noData: true };
   }
-}
-
-/** prev-day-top50 금일 시세 — 동일 종목 묶음에 대해 5분 메모리 캐시(연속 요청 시 KIS 부하 완화) */
-let prevDayLiveQuotesCache = null;
-
-const KIS_INQUIRE_PRICE_TR_ID = "FHKST01010100";
-const PREVDAY_LIVE_QUOTES_CACHE_MS = 5 * 60 * 1000;
-
-function fidMrktDivForPrevDayStock(tvBoard, market) {
-  const u = String(tvBoard || market || "").toUpperCase();
-  if (u.includes("KOSDAQ") || u === "Q") return "Q";
-  return "J";
-}
-
-/**
- * 주식현재가 시세 — 전일 TOP50 행에 붙일 당일 등락률·현재가(표시는 등락률 중심).
- */
-async function fetchInquirePriceQuoteByCode(codeRaw, primaryMrktDiv) {
-  const digits = String(codeRaw || "").replace(/\D/g, "");
-  const code6 = digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
-  if (!/^\d{6}$/.test(code6)) {
-    return { code: "", price: "", changePct: null };
-  }
-  const tryOrder = primaryMrktDiv === "Q" ? ["Q", "J"] : ["J", "Q"];
-  for (const div of tryOrder) {
-    try {
-      const { json } = await kisGet(
-        "/uapi/domestic-stock/v1/quotations/inquire-price",
-        KIS_INQUIRE_PRICE_TR_ID,
-        {
-          FID_COND_MRKT_DIV_CODE: div,
-          FID_INPUT_ISCD: code6,
-        },
-        ""
-      );
-      const out = json && json.output;
-      const row = Array.isArray(out) ? out[0] : out;
-      if (!row || typeof row !== "object") continue;
-      const price = pickStckPrpr(row);
-      const changePct = toNum(row.prdy_ctrt);
-      if (price || changePct != null) {
-        return { code: code6, price, changePct };
-      }
-    } catch {
-      /* 보드 추정이 틀린 경우 다음 div 시도 */
-    }
-  }
-  return { code: code6, price: "", changePct: null };
-}
-
-function mergeLiveQuotesIntoPrevDayStocks(baseStocks, liveByCode) {
-  return baseStocks.map((r) => {
-    const L = liveByCode.get(r.code);
-    return {
-      ...r,
-      price: L && L.price != null && String(L.price).trim() !== "" ? L.price : r.price != null ? r.price : "",
-      changePct: L && L.changePct != null ? L.changePct : r.changePct != null ? r.changePct : null,
-    };
-  });
-}
-
-async function enrichPrevDayTop50WithLiveQuotes(stocks) {
-  if (!stocks || !stocks.length) return stocks;
-  const codeKey = [...stocks.map((r) => r.code)].sort().join(",");
-  const now = Date.now();
-  if (
-    prevDayLiveQuotesCache &&
-    prevDayLiveQuotesCache.codeKey === codeKey &&
-    now - prevDayLiveQuotesCache.at < PREVDAY_LIVE_QUOTES_CACHE_MS
-  ) {
-    return mergeLiveQuotesIntoPrevDayStocks(stocks, prevDayLiveQuotesCache.byCode);
-  }
-  const byCode = new Map();
-  for (const r of stocks) {
-    if (!r || !r.code) continue;
-    const div = fidMrktDivForPrevDayStock(r.tvBoard, r.market);
-    const q = await fetchInquirePriceQuoteByCode(r.code, div);
-    byCode.set(r.code, q);
-  }
-  prevDayLiveQuotesCache = { at: now, codeKey, byCode };
-  return mergeLiveQuotesIntoPrevDayStocks(stocks, byCode);
 }
 
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
@@ -1263,18 +1182,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "prev-day-top50") {
-      const loaded = loadPrevDayTop50FromDisk();
-      if (loaded.noData || !loaded.stocks.length) {
-        json(res, 200, { stocks: loaded.stocks, noData: loaded.noData });
-        return;
-      }
-      try {
-        const stocks = await enrichPrevDayTop50WithLiveQuotes(loaded.stocks);
-        json(res, 200, { stocks, noData: false });
-      } catch (e) {
-        console.error("[kis-realtime-data] action=prev-day-top50 enrich", e && e.message, e);
-        json(res, 200, { stocks: loaded.stocks, noData: false });
-      }
+      const { stocks, noData } = loadPrevDayTop50FromDisk();
+      json(res, 200, { stocks, noData });
       return;
     }
 

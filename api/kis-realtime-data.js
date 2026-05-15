@@ -4,7 +4,7 @@
  *   - KIS_ACCESS_TOKEN : OAuth 액세스 토큰 (GitHub Actions 등에서 주기 갱신 후 주입)
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
- * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
+ * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES, KIS_TRADE_VALUE_RANK_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -26,17 +26,18 @@ const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
 );
 
+/** FHPST01710000 거래량순위 — fid_blng_cls_code=3 거래금액순, 연속조회 (HTS 거래대금상위와 동일 계열) */
+const TRADE_VALUE_RANK_MAX_PAGES = Math.max(
+  1,
+  Math.min(30, Number(process.env.KIS_TRADE_VALUE_RANK_MAX_PAGES) || 12)
+);
+
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
 const candleMemoryCache = new Map();
 
 /** action=prev-day-gainers — data/prev-top50.json(전일 순위·전일 등락률) + 종목별 inquire-price(5분 캐시) */
 let prevDayGainersCache = null; // { mtimeMs, rankingYmd, stocks }
 let prevDayQuotesCache = null; // { at, rankingYmd, codeKey, byCode: Map }
-
-function parsePbmnSortKey(s) {
-  const n = Number(String(s || "").replace(/,/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
 
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
@@ -503,22 +504,75 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
-/** 시총 순위(연속조회로 넓힌 후보)에서 거래대금 기준 상위 50 — 전 시장 거래대금 전용 TR 부재 시 우회 */
-async function fetchTradeValueTop50FromMarketCap() {
-  const perMarketCap = 280;
-  const [kospi, kosdaq] = await Promise.all([
-    fetchMarketCapRows("0001", perMarketCap, "KOSPI", { logSample: false }),
-    fetchMarketCapRows("1001", perMarketCap, "KOSDAQ", { logSample: false }),
-  ]);
-  const merged = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    const prev = merged.get(r.code);
-    if (!prev) merged.set(r.code, r);
-    else if (parsePbmnSortKey(r.tradingValue) > parsePbmnSortKey(prev.tradingValue)) merged.set(r.code, r);
+/**
+ * [국내주식-047] 거래량순위 — fid_blng_cls_code=3 거래금액순, KRX 전체(0000) 후 연속조회로 상위 50.
+ * 시총 순위에서 거래대금 재정렬하던 방식은 HTS 거래대금상위와 불일치함.
+ */
+async function fetchTradeValueTop50FromVolumeRank() {
+  const params = {
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20171",
+    fid_input_iscd: "0000",
+    fid_div_cls_code: "0",
+    fid_blng_cls_code: "3",
+    fid_trgt_cls_code: "111111111",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: "",
+    fid_input_date_1: "",
+  };
+
+  const rawAll = [];
+  let trCont = "";
+  for (let page = 0; page < TRADE_VALUE_RANK_MAX_PAGES; page++) {
+    const { json, trCont: nextTr } = await kisGet(
+      "/uapi/domestic-stock/v1/quotations/volume-rank",
+      "FHPST01710000",
+      params,
+      trCont
+    );
+    const part = kisOutputRows(json);
+    if (!part.length) break;
+    rawAll.push(...part);
+    const cont = String(nextTr || "").trim().toUpperCase();
+    if (cont !== "M") break;
+    trCont = "N";
   }
-  const list = [...merged.values()];
-  list.sort((a, b) => parsePbmnSortKey(b.tradingValue) - parsePbmnSortKey(a.tradingValue));
-  return list.slice(0, 50).map((r, i) => ({
+
+  const rows = [];
+  const seen = new Set();
+  for (const row of rawAll) {
+    const code = sanitizeStr(
+      row.mksc_shrn_iscd || row.MKSC_SHRN_ISCD || row.stck_shrn_iscd || row.STCK_SHRN_ISCD
+    );
+    if (!code || seen.has(code)) continue;
+    seen.add(code);
+    const price = pickStckPrpr(row);
+    const volume = pickAcmlVol(row);
+    let tradingValue = pickAcmlTrPbmn(row);
+    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+    rows.push({
+      rank: toNum(row.data_rank),
+      code,
+      name: sanitizeStr(row.hts_kor_isnm),
+      price,
+      changePct: toNum(row.prdy_ctrt),
+      volume,
+      tradingValue,
+      tvBoard: pickKoreanBoardKind(row, "KOSPI"),
+    });
+  }
+
+  console.log("[kis-realtime-data][trade-value-rank]", {
+    tr_id: "FHPST01710000",
+    fid_blng_cls_code: "3 (거래금액순)",
+    rawRows: rawAll.length,
+    uniqueRows: rows.length,
+    maxPagesCap: TRADE_VALUE_RANK_MAX_PAGES,
+  });
+
+  return rows.slice(0, 50).map((r, i) => ({
     rank: i + 1,
     code: r.code,
     name: r.name,
@@ -1171,7 +1225,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "trade-value-top50") {
-      const stocks = await fetchTradeValueTop50FromMarketCap();
+      const stocks = await fetchTradeValueTop50FromVolumeRank();
       json(res, 200, { stocks });
       return;
     }
@@ -1245,7 +1299,7 @@ module.exports = async function handler(req, res) {
       await sleep(KIS_GAP_MS);
       const prevDayGainers = await enrichPrevDayWithLiveQuotesCached(prevDayBase, prevRankYmd);
       await sleep(KIS_GAP_MS);
-      const tradeValueTop50 = await fetchTradeValueTop50FromMarketCap();
+      const tradeValueTop50 = await fetchTradeValueTop50FromVolumeRank();
       const clock = sessionLabelFromKst();
       json(res, 200, {
         clock,

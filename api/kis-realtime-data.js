@@ -5,8 +5,8 @@
  *   - KIS_APP_KEY, KIS_APP_SECRET : REST/WebSocket 헤더·Approval용 앱 키
  * 선택: KIS_BASE_URL, KIS_API_GAP_MS (기본 700, 호출 간격 ms)
  * 선택: KIS_FLUCTUATION_MAX_PAGES, KIS_MARKET_CAP_MAX_PAGES (순위 연속조회 페이지 상한, 기본 12)
- * 선택: KIS_TRADE_PBMN_MAX_PAGES — 거래대금 순위(trade-pbmn) 연속조회 상한, 기본 12
- * 선택: KIS_TRADE_PBMN_HTTP_TIMEOUT_MS — trade-pbmn 단일 HTTP 타임아웃(ms), 기본 20000
+ * 선택: KIS_TRADE_PBMN_MAX_PAGES — 거래금액순위(volume-rank, fid_blng_cls_code=3) 연속조회 상한, 기본 12
+ * 선택: KIS_TRADE_PBMN_HTTP_TIMEOUT_MS — 첫 페이지 HTTP 타임아웃(ms), 기본 20000
  */
 
 const DEFAULT_BASE = "https://openapi.koreainvestment.com:9443";
@@ -28,13 +28,13 @@ const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
 );
 
-/** FHPST01710000 거래대금 순위(trade-pbmn) — 연속조회 페이지 상한 */
+/** FHPST01710000 국내 거래금액순위 — 공식 `quotations/volume-rank` + fid_blng_cls_code=3 (거래금액순). 연속조회 페이지 상한 */
 const TRADE_PBMN_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_TRADE_PBMN_MAX_PAGES) || 12)
 );
 
-/** trade-pbmn 단일 HTTP 요청 타임아웃(ms). env 미설정 시 20000(8초대 클라이언트 한계 완화). */
+/** volume-rank(거래금액순) 단일 HTTP 타임아웃(ms). 미설정 시 kisGet 기본(무제한)과 병행 가능하나 클라이언트 대기 완화용. */
 const TRADE_PBMN_HTTP_TIMEOUT_MS = Math.max(
   1000,
   Number(process.env.KIS_TRADE_PBMN_HTTP_TIMEOUT_MS) || 20000
@@ -659,19 +659,20 @@ function tradePbmnSortKey(tvStr) {
 }
 
 /**
- * [국내주식 순위] 거래대금 — trade-pbmn (시장당 fid_cond_mrkt_div_code: 코스피 J, 코스닥 Q).
- * 요청 파라미터는 스펙에 맞춤(fid_cond_scr_div_code: 전체 0 등).
+ * [국내주식] 거래금액순위 — 한투 공식은 `GET /uapi/domestic-stock/v1/quotations/volume-rank` (TR FHPST01710000),
+ * fid_cond_scr_div_code=20171, fid_blng_cls_code=3(거래금액순). 코스피/코스닥은 등락률·시총과 같이 fid_cond_mrkt_div_code=J + fid_input_iscd 0001|1001.
  */
 async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
+  const isKosdaq = fidMrktDiv === "Q" || String(marketLabel || "").toUpperCase() === "KOSDAQ";
+  const fidInputIscd = isKosdaq ? "1001" : "0001";
   const params = {
-    fid_cond_mrkt_div_code: fidMrktDiv,
-    fid_cond_scr_div_code: "0",
-    fid_cond_scrs_div_code: "0",
-    fid_input_iscd: "0000",
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20171",
+    fid_input_iscd: fidInputIscd,
     fid_div_cls_code: "0",
-    fid_blng_cls_code: "0",
+    fid_blng_cls_code: "3",
     fid_trgt_cls_code: "111111111",
-    fid_trgt_exls_cls_code: "000000",
+    fid_trgt_exls_cls_code: "0000000000",
     fid_input_price_1: "",
     fid_input_price_2: "",
     fid_vol_cnt: "",
@@ -681,12 +682,13 @@ async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
   const rawAll = [];
   let trCont = "";
   for (let page = 0; page < TRADE_PBMN_RANK_MAX_PAGES; page++) {
+    const fetchOpts = page === 0 ? { timeoutMs: TRADE_PBMN_HTTP_TIMEOUT_MS } : {};
     const { json, trCont: nextTr } = await kisGet(
-      "/uapi/domestic-stock/v1/ranking/trade-pbmn",
+      "/uapi/domestic-stock/v1/quotations/volume-rank",
       "FHPST01710000",
       params,
       trCont,
-      { timeoutMs: TRADE_PBMN_HTTP_TIMEOUT_MS }
+      fetchOpts
     );
     const part = kisOutputRows(json);
     if (!part.length) break;
@@ -717,7 +719,7 @@ async function fetchTradePbmnRankRowsForMarket(fidMrktDiv, marketLabel) {
       changePct: toNum(row.prdy_ctrt),
       volume,
       tradingValue,
-      tvBoard: pickKoreanBoardKind(row, marketLabel),
+      tvBoard: pickKoreanBoardKind(row, isKosdaq ? "KOSDAQ" : "KOSPI"),
     });
   }
   return rows;
@@ -1227,11 +1229,6 @@ module.exports = async function handler(req, res) {
     }
 
     /** NXT 전용 순위 API는 fid_cond_mrkt_div_code 1자 제한 등으로 미지원 — 클라이언트는 준비중 UI */
-    if (action === "nxt-fluctuation-30" || action === "nxt-trade-pbmn-30" || action === "nxt-volume-30") {
-      json(res, 200, { stocks: [], nxtUnavailable: true });
-      return;
-    }
-
     if (action === "index") {
       const [kospi, kosdaq] = await Promise.all([
         fetchIndexPrice("0001", "코스피"),

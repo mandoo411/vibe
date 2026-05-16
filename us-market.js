@@ -5,26 +5,43 @@
   const API = "/api/us-market-data";
   const FETCH_TIMEOUT_MS = 20000;
   const POLL_MS = 5 * 60 * 1000;
-  const CHART_FETCH_TIMEOUT_MS = 8000;
+  const CLIENT_CACHE_MS = 5 * 60 * 1000;
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
-  const CHART_CACHE_MAX = 24;
 
-  let lwChartsScriptPromise = null;
-  const chartCache = new Map();
+  const TAB_CONFIG = {
+    "market-cap": {
+      label: "\uc2dc\ucd1d TOP50",
+      action: "market-cap",
+      valueKey: "marketCap",
+      valueLabel: "\uc2dc\uac00\ucd1d\uc561",
+      valueFormat: fmtUsdCompact,
+    },
+    gainers: {
+      label: "\uc0c1\uc2b9\ub960 TOP50",
+      action: "gainers",
+      valueKey: "volume",
+      valueLabel: "\uac70\ub798\ub7c9",
+      valueFormat: fmtNumberCompact,
+    },
+    volume: {
+      label: "\uac70\ub798\ub300\uae08 TOP50",
+      action: "volume",
+      valueKey: "tradingValue",
+      valueLabel: "\uac70\ub798\ub300\uae08",
+      valueFormat: fmtUsdCompact,
+    },
+  };
 
   const state = {
     indices: [],
     sectors: [],
-    gainerRows: [],
-    volumeRows: [],
-    openChartTicker: null,
-    openChartTable: null,
-    candlePeriod: "D",
-    chartBarsLimit: 200,
+    activeTab: "market-cap",
+    rowsByTab: {},
+    clientCache: new Map(),
+    openTicker: null,
+    chartPeriod: "D",
+    lwChartsScriptPromise: null,
     lwChart: null,
-    lwVolChart: null,
-    lwResizeObs: null,
-    lwBundle: null,
     pollTimer: null,
   };
 
@@ -43,13 +60,7 @@
       .replace(/"/g, "&quot;");
   }
 
-  function toNum(v) {
-    if (v == null || v === "") return null;
-    const n = Number(String(v).replace(/,/g, ""));
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function usDeltaClass(pct) {
+  function deltaClass(pct) {
     if (pct == null || !Number.isFinite(pct)) return "us-delta--flat";
     if (pct > 0) return "us-delta--up";
     if (pct < 0) return "us-delta--down";
@@ -57,40 +68,53 @@
   }
 
   function fmtPct(n) {
-    if (n == null || !Number.isFinite(n)) return "—";
+    if (n == null || !Number.isFinite(n)) return "-";
     const sign = n > 0 ? "+" : "";
     return `${sign}${n.toFixed(2)}%`;
   }
 
   function fmtUsdPrice(n) {
-    if (n == null || !Number.isFinite(n)) return "—";
+    if (n == null || !Number.isFinite(n)) return "-";
     return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function fmtUsdVol(n) {
-    if (n == null || !Number.isFinite(n) || n <= 0) return "—";
+  function fmtNumberCompact(n) {
+    if (n == null || !Number.isFinite(n)) return "-";
+    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
+    return String(Math.round(n));
+  }
+
+  function fmtUsdCompact(n) {
+    if (n == null || !Number.isFinite(n)) return "-";
+    if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
     if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
     if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
     if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
     return `$${Math.round(n)}`;
   }
 
-  function fmtPoints(n) {
-    if (n == null || !Number.isFinite(n)) return "";
-    const sign = n > 0 ? "+" : "";
-    return `${sign}${n.toFixed(2)}`;
-  }
+  async function fetchJson(action, timeoutMs = FETCH_TIMEOUT_MS, params = {}) {
+    const qs = new URLSearchParams({ action });
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null && value !== "") qs.set(key, String(value));
+    }
+    const cacheKey = qs.toString();
+    const cached = state.clientCache.get(cacheKey);
+    const now = Date.now();
+    if (cached && cached.expiresAt > now) return cached.value;
 
-  async function fetchJson(action, timeoutMs) {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, {
+      const res = await fetch(`${API}?${cacheKey}`, {
         cache: "no-store",
         signal: ctrl.signal,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      state.clientCache.set(cacheKey, { value: data, expiresAt: now + CLIENT_CACHE_MS });
       return data;
     } finally {
       clearTimeout(tid);
@@ -101,11 +125,11 @@
     const el = $("us-updated");
     if (!el) return;
     if (!iso) {
-      el.textContent = "갱신 시각 —";
+      el.textContent = "\uac31\uc2e0 \uc2dc\uac01 -";
       return;
     }
     const d = new Date(iso);
-    el.textContent = `마지막 갱신 ${d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST`;
+    el.textContent = `\ub9c8\uc9c0\ub9c9 \uac31\uc2e0 ${d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST`;
   }
 
   function renderIndices() {
@@ -113,13 +137,15 @@
     if (!el) return;
     el.innerHTML = state.indices
       .map((ix) => {
-        const cls = usDeltaClass(ix.changePct);
-        const pts = fmtPoints(ix.changePoints);
-        const pct = fmtPct(ix.changePct);
+        const cls = deltaClass(ix.changePct);
+        const pts =
+          ix.changePoints == null || !Number.isFinite(ix.changePoints)
+            ? ""
+            : `${ix.changePoints > 0 ? "+" : ""}${ix.changePoints.toFixed(2)}`;
         return `<div class="us-index-chip">
           <div class="us-index-chip__name">${escapeHtml(ix.name)}</div>
           <div class="us-index-chip__price">${escapeHtml(fmtUsdPrice(ix.price))}</div>
-          <div class="us-index-chip__sub ${cls}">${escapeHtml(pct)} ${pts ? `(${escapeHtml(pts)})` : ""}</div>
+          <div class="us-index-chip__sub ${cls}">${escapeHtml(fmtPct(ix.changePct))} ${pts ? `(${escapeHtml(pts)})` : ""}</div>
         </div>`;
       })
       .join("");
@@ -130,7 +156,7 @@
     if (!el) return;
     el.innerHTML = state.sectors
       .map((s) => {
-        const cls = usDeltaClass(s.changePct);
+        const cls = deltaClass(s.changePct);
         return `<div class="us-sector-card">
           <div class="us-sector-card__sym">${escapeHtml(s.label || s.symbol)}</div>
           <div class="us-sector-card__name">${escapeHtml(s.name)}</div>
@@ -140,38 +166,49 @@
       .join("");
   }
 
-  function stockRowHtml(r, tableKey) {
-    const cls = usDeltaClass(r.changePct);
-    const open =
-      state.openChartTicker === r.ticker && state.openChartTable === tableKey ? "true" : "false";
-    return `<tr class="us-stock-row" data-ticker="${escapeHtml(r.ticker)}" data-table="${escapeHtml(tableKey)}">
-      <td class="num">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
+  function renderRankHead() {
+    const cfg = TAB_CONFIG[state.activeTab];
+    const head = $("us-rank-head");
+    if (!head) return;
+    head.innerHTML = `<th class="num">\uc21c\uc704</th>
+      <th>\uc885\ubaa9\uba85</th>
+      <th>\ud2f0\ucee4</th>
+      <th class="num">\ud604\uc7ac\uac00</th>
+      <th class="num">\ub4f1\ub77d\ub960</th>
+      <th class="num">${escapeHtml(cfg.valueLabel)}</th>`;
+  }
+
+  function rankRowHtml(row) {
+    const cfg = TAB_CONFIG[state.activeTab];
+    const cls = deltaClass(row.changePct);
+    const open = state.openTicker === row.ticker ? "true" : "false";
+    return `<tr class="us-stock-row" data-ticker="${escapeHtml(row.ticker)}">
+      <td class="num">${row.rank != null ? escapeHtml(String(row.rank)) : "-"}</td>
       <td>
-        <button type="button" class="us-name-chart-btn" data-ticker="${escapeHtml(r.ticker)}" data-table="${escapeHtml(tableKey)}" aria-expanded="${open}">
-          ${escapeHtml(r.name)}
+        <button type="button" class="us-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open}">
+          ${escapeHtml(row.name || row.ticker)}
         </button>
-        <span class="us-ticker">${escapeHtml(r.ticker)}</span>
       </td>
-      <td class="num">${escapeHtml(fmtUsdPrice(r.price))}</td>
-      <td class="num"><span class="${cls}">${escapeHtml(fmtPct(r.changePct))}</span></td>
-      <td class="num">${escapeHtml(fmtUsdVol(r.tradingValue))}</td>
+      <td>${escapeHtml(row.ticker)}</td>
+      <td class="num">${escapeHtml(fmtUsdPrice(row.price))}</td>
+      <td class="num"><span class="${cls}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+      <td class="num">${escapeHtml(cfg.valueFormat(row[cfg.valueKey]))}</td>
     </tr>`;
   }
 
   function chartRowHtml(ticker) {
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(ticker)}">
-      <td colspan="5">
+      <td colspan="6">
         <div class="rt-chart-wrap">
-          <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
+          <div class="rt-chart-toolbar" role="toolbar" aria-label="Chart period">
+            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">D</button>
+            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">W</button>
+            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">M</button>
           </div>
           <div class="rt-chart-body">
-            <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>
+            <p class="rt-chart-loading-msg" aria-live="polite">Loading chart...</p>
             <div class="rt-chart-panes rt-chart-panes--pending">
-              <div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div>
-              <div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div>
+              <div class="rt-lw-candle-host" role="region" aria-label="Candlestick chart"></div>
             </div>
           </div>
         </div>
@@ -179,58 +216,49 @@
     </tr>`;
   }
 
-  function renderStockTable(bodyId, rows, tableKey) {
-    const body = $(bodyId);
+  function findOpenRow() {
+    const rows = state.rowsByTab[state.activeTab] || [];
+    return rows.find((row) => row.ticker === state.openTicker) || null;
+  }
+
+  function buildChartCandles(row) {
+    if (!row || row.price == null || !Number.isFinite(row.price)) return [];
+    const price = row.price;
+    const change = row.changePct == null || !Number.isFinite(row.changePct) ? 0 : row.changePct / 100;
+    const open = change === -1 ? price : price / (1 + change);
+    const high = Math.max(open, price);
+    const low = Math.min(open, price);
+    const d = new Date();
+    const time = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return [
+      {
+        time,
+        open: Number(open.toFixed(4)),
+        high: Number(high.toFixed(4)),
+        low: Number(low.toFixed(4)),
+        close: Number(price.toFixed(4)),
+      },
+    ];
+  }
+
+  function renderRankTable() {
+    renderRankHead();
+    const body = $("us-rank-tbody");
     if (!body) return;
+    const rows = state.rowsByTab[state.activeTab] || [];
     const parts = [];
-    for (const r of rows) {
-      parts.push(stockRowHtml(r, tableKey));
-      if (state.openChartTicker === r.ticker && state.openChartTable === tableKey) {
-        parts.push(chartRowHtml(r.ticker));
-      }
+    for (const row of rows) {
+      parts.push(rankRowHtml(row));
+      if (state.openTicker === row.ticker) parts.push(chartRowHtml(row.ticker));
     }
     body.innerHTML = parts.join("");
-    if (state.openChartTicker && state.openChartTable === tableKey) {
-      void mountLightweightChart(body);
-    }
+    if (state.openTicker) void mountChart(body);
   }
 
-  function renderAll() {
-    renderIndices();
-    renderSectors();
-    renderStockTable("us-gainers-tbody", state.gainerRows, "gainers");
-    renderStockTable("us-volume-tbody", state.volumeRows, "volume");
-  }
-
-  async function refreshAll() {
-    const errEl = $("us-error");
-    if (errEl) errEl.hidden = true;
-    try {
-      const [idxPack, secPack, gainPack, volPack] = await Promise.all([
-        fetchJson("indices", FETCH_TIMEOUT_MS),
-        fetchJson("sectors", FETCH_TIMEOUT_MS),
-        fetchJson("gainers", FETCH_TIMEOUT_MS),
-        fetchJson("volume", FETCH_TIMEOUT_MS),
-      ]);
-      state.indices = idxPack.indices || [];
-      state.sectors = secPack.sectors || [];
-      state.gainerRows = gainPack.stocks || [];
-      state.volumeRows = volPack.stocks || [];
-      const updatedAt = gainPack.updatedAt || idxPack.updatedAt || new Date().toISOString();
-      setUpdatedLabel(updatedAt);
-      renderAll();
-    } catch (e) {
-      console.error("[us-market]", e);
-      if (errEl) {
-        errEl.hidden = false;
-        errEl.textContent =
-          e && e.name === "AbortError"
-            ? "데이터를 불러오지 못했습니다. 새로고침 해주세요."
-            : e && e.message
-              ? e.message
-              : String(e);
-      }
-    }
+  function setTabs() {
+    document.querySelectorAll("[data-us-rank-tab]").forEach((btn) => {
+      btn.setAttribute("aria-selected", btn.getAttribute("data-us-rank-tab") === state.activeTab ? "true" : "false");
+    });
   }
 
   function raceWithTimeout(promise, ms, message) {
@@ -253,39 +281,30 @@
     if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
       return Promise.resolve();
     }
-    if (!lwChartsScriptPromise) {
-      lwChartsScriptPromise = new Promise((resolve, reject) => {
+    if (!state.lwChartsScriptPromise) {
+      state.lwChartsScriptPromise = new Promise((resolve, reject) => {
         const s = document.createElement("script");
         s.async = true;
         s.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
         s.crossOrigin = "anonymous";
         s.onload = () => {
-          if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
-            resolve();
-          } else {
-            lwChartsScriptPromise = null;
-            reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+          if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") resolve();
+          else {
+            state.lwChartsScriptPromise = null;
+            reject(new Error("Failed to load chart library."));
           }
         };
         s.onerror = () => {
-          lwChartsScriptPromise = null;
-          reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+          state.lwChartsScriptPromise = null;
+          reject(new Error("Failed to load chart library."));
         };
         document.head.appendChild(s);
       });
     }
-    return raceWithTimeout(lwChartsScriptPromise, timeoutMs, "차트 라이브러리 로드 시간이 초과되었습니다.");
+    return raceWithTimeout(state.lwChartsScriptPromise, timeoutMs, "Chart library load timed out.");
   }
 
-  function disposeLwChart() {
-    if (state.lwResizeObs) {
-      try {
-        state.lwResizeObs.disconnect();
-      } catch (e) {
-        /* noop */
-      }
-      state.lwResizeObs = null;
-    }
+  function disposeChart() {
     if (state.lwChart) {
       try {
         state.lwChart.remove();
@@ -294,136 +313,41 @@
       }
       state.lwChart = null;
     }
-    if (state.lwVolChart) {
-      try {
-        state.lwVolChart.remove();
-      } catch (e) {
-        /* noop */
-      }
-      state.lwVolChart = null;
-    }
-    state.lwBundle = null;
   }
 
-  function chartCacheKey(ticker, period) {
-    return `${String(ticker).toUpperCase()}|${String(period || "D").toUpperCase()}`;
-  }
-
-  function setChartRowLoading(chartTr, on) {
-    if (!chartTr) return;
-    const msg = chartTr.querySelector(".rt-chart-loading-msg");
-    const panes = chartTr.querySelector(".rt-chart-panes");
+  function setChartLoading(chartTr, on) {
+    const msg = chartTr && chartTr.querySelector(".rt-chart-loading-msg");
+    const panes = chartTr && chartTr.querySelector(".rt-chart-panes");
     if (msg) msg.hidden = !on;
     if (panes) panes.classList.toggle("rt-chart-panes--pending", !!on);
   }
 
-  function buildVolumeData(candles) {
-    return candles.map((c) => {
-      let color = "#8a8580";
-      if (c.close > c.open) color = CANDLE_UP;
-      else if (c.close < c.open) color = CANDLE_DOWN;
-      return {
-        time: c.time,
-        value: Number.isFinite(c.volume) ? c.volume : 0,
-        color,
-      };
-    });
-  }
-
-  function linkLogicalRangeSync(a, b) {
-    const tsA = a.timeScale();
-    const tsB = b.timeScale();
-    if (typeof tsA.subscribeVisibleLogicalRangeChange !== "function") return;
-    let ignoreA = false;
-    let ignoreB = false;
-    tsA.subscribeVisibleLogicalRangeChange((range) => {
-      if (!range || ignoreA) return;
-      ignoreB = true;
-      try {
-        tsB.setVisibleLogicalRange(range);
-      } catch (e) {
-        /* noop */
-      }
-      ignoreB = false;
-    });
-    tsB.subscribeVisibleLogicalRangeChange((range) => {
-      if (!range || ignoreB) return;
-      ignoreA = true;
-      try {
-        tsA.setVisibleLogicalRange(range);
-      } catch (e) {
-        /* noop */
-      }
-      ignoreA = false;
-    });
-  }
-
-  function addHistogramSeriesCompat(chart, LC, opts) {
-    if (LC.HistogramSeries && typeof chart.addSeries === "function") {
-      return chart.addSeries(LC.HistogramSeries, opts);
-    }
-    if (typeof chart.addHistogramSeries === "function") {
-      return chart.addHistogramSeries(opts);
-    }
-    return null;
-  }
-
-  async function mountLightweightChart(body) {
-    if (!state.openChartTicker) return;
+  async function mountChart(body) {
     const chartTr = body.querySelector("tr.rt-chart-row");
     const panes = chartTr && chartTr.querySelector(".rt-chart-panes");
-    const candleHost = chartTr && chartTr.querySelector(".rt-lw-candle-host");
-    const volHost = chartTr && chartTr.querySelector(".rt-lw-volume-host");
-    if (!chartTr || !panes || !candleHost || !volHost) return;
+    const host = chartTr && chartTr.querySelector(".rt-lw-candle-host");
+    if (!chartTr || !panes || !host || !state.openTicker) return;
 
-    setChartRowLoading(chartTr, true);
+    setChartLoading(chartTr, true);
     try {
       await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
       const LC = window.LightweightCharts;
-      if (!LC || typeof LC.createChart !== "function") {
-        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
-        return;
-      }
+      disposeChart();
+      host.innerHTML = "";
 
-      if (
-        panes.dataset.mountedFor === state.openChartTicker &&
-        panes.dataset.mountedPeriod === state.candlePeriod &&
-        state.lwChart &&
-        state.lwVolChart
-      ) {
-        setChartRowLoading(chartTr, false);
-        return;
-      }
-
-      disposeLwChart();
-      candleHost.innerHTML = "";
-      volHost.innerHTML = "";
-
-      const w0 = Math.max(panes.clientWidth, 200);
-      const chartCandle = LC.createChart(candleHost, {
-        width: w0,
-        height: 240,
+      const w = Math.max(panes.clientWidth, 240);
+      const chart = LC.createChart(host, {
+        width: w,
+        height: 300,
         layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
         grid: {
           vertLines: { color: "rgba(212, 175, 55, 0.08)" },
           horzLines: { color: "rgba(212, 175, 55, 0.08)" },
         },
         rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-        timeScale: { visible: false, borderColor: "rgba(148, 130, 98, 0.35)" },
+        timeScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
       });
-      const chartVol = LC.createChart(volHost, {
-        width: w0,
-        height: 100,
-        layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
-        grid: {
-          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
-          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
-        },
-        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-        timeScale: { visible: true, borderColor: "rgba(148, 130, 98, 0.35)" },
-      });
-
-      const candleOpts = {
+      const opts = {
         upColor: CANDLE_UP,
         downColor: CANDLE_DOWN,
         borderUpColor: CANDLE_UP,
@@ -431,146 +355,121 @@
         wickUpColor: CANDLE_UP,
         wickDownColor: CANDLE_DOWN,
       };
-      let candle;
-      if (LC.CandlestickSeries && typeof chartCandle.addSeries === "function") {
-        candle = chartCandle.addSeries(LC.CandlestickSeries, candleOpts);
-      } else {
-        candle = chartCandle.addCandlestickSeries(candleOpts);
-      }
-      const vol = addHistogramSeriesCompat(chartVol, LC, {
-        priceFormat: { type: "volume" },
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      if (!vol) throw new Error("거래량 시리즈를 초기화하지 못했습니다.");
-
-      linkLogicalRangeSync(chartCandle, chartVol);
-      state.lwChart = chartCandle;
-      state.lwVolChart = chartVol;
-      panes.dataset.mountedFor = state.openChartTicker;
-      panes.dataset.mountedPeriod = state.candlePeriod;
-
-      const ro = new ResizeObserver(() => {
-        if (!state.lwChart || !state.lwVolChart || !panes.isConnected) return;
-        const w = panes.clientWidth;
-        if (w > 0) {
-          state.lwChart.applyOptions({ width: w, height: 240 });
-          state.lwVolChart.applyOptions({ width: w, height: 100 });
-        }
-      });
-      ro.observe(panes);
-      state.lwResizeObs = ro;
-
-      const ticker = state.openChartTicker;
-      const period = String(state.candlePeriod || "D").toUpperCase();
-      const ck = chartCacheKey(ticker, period);
-      let candles = chartCache.get(ck);
-      if (!candles) {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
-        try {
-          const res = await fetch(
-            `${API}?action=candle&ticker=${encodeURIComponent(ticker)}&period=${encodeURIComponent(period)}`,
-            { cache: "no-store", signal: ctrl.signal }
-          );
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-          candles = Array.isArray(data.candles) ? data.candles : [];
-          if (!candles.length) throw new Error("차트 데이터가 없습니다.");
-          while (chartCache.size >= CHART_CACHE_MAX) {
-            const first = chartCache.keys().next().value;
-            chartCache.delete(first);
-          }
-          chartCache.set(ck, candles);
-        } finally {
-          clearTimeout(tid);
-        }
-      }
-
-      const sliced = candles.slice(-state.chartBarsLimit);
-      candle.setData(sliced);
-      vol.setData(buildVolumeData(sliced));
-      chartCandle.timeScale().fitContent();
-      chartVol.timeScale().fitContent();
-      const r = chartCandle.timeScale().getVisibleLogicalRange();
-      if (r) chartVol.timeScale().setVisibleLogicalRange(r);
-
-      state.lwBundle = { chartCandle, chartVol, candle, vol, fullCandles: candles };
+      const candle =
+        LC.CandlestickSeries && typeof chart.addSeries === "function"
+          ? chart.addSeries(LC.CandlestickSeries, opts)
+          : chart.addCandlestickSeries(opts);
+      const candles = buildChartCandles(findOpenRow());
+      if (!candles.length) throw new Error("No chart data.");
+      candle.setData(candles);
+      chart.timeScale().fitContent();
+      state.lwChart = chart;
 
       body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
         const p = btn.getAttribute("data-rt-candle-period");
-        btn.setAttribute("aria-pressed", p === state.candlePeriod ? "true" : "false");
+        btn.setAttribute("aria-pressed", p === state.chartPeriod ? "true" : "false");
       });
     } catch (e) {
-      disposeLwChart();
-      delete panes.dataset.mountedFor;
-      delete panes.dataset.mountedPeriod;
-      const msg =
-        e && e.name === "AbortError"
-          ? "차트 불러오기 시간이 초과되었습니다."
-          : e && e.message
-            ? e.message
-            : String(e);
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msg)}</p>`;
-      volHost.innerHTML = "";
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e && e.message ? e.message : String(e))}</p>`;
     } finally {
-      setChartRowLoading(chartTr, false);
+      setChartLoading(chartTr, false);
     }
   }
 
-  function wireTables() {
-    ["us-gainers-tbody", "us-volume-tbody"].forEach((id) => {
-      const body = $(id);
-      if (!body || body.dataset.usWire === "1") return;
-      body.dataset.usWire = "1";
-      body.addEventListener("click", (ev) => {
-        const intervalBtn = ev.target.closest(".rt-chart-interval-btn");
-        if (intervalBtn && body.contains(intervalBtn)) {
-          const p = intervalBtn.getAttribute("data-rt-candle-period");
-          if (!p) return;
-          state.candlePeriod = p;
-          body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
-            btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
-          });
-          const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
-          if (panes) {
-            delete panes.dataset.mountedFor;
-            delete panes.dataset.mountedPeriod;
-          }
-          disposeLwChart();
-          void mountLightweightChart(body);
-          return;
-        }
+  async function loadBase() {
+    const [idxPack, secPack] = await Promise.all([fetchJson("indices"), fetchJson("sectors")]);
+    state.indices = idxPack.indices || [];
+    state.sectors = secPack.sectors || [];
+    setUpdatedLabel(idxPack.updatedAt || secPack.updatedAt || new Date().toISOString());
+    renderIndices();
+    renderSectors();
+  }
 
-        const btn = ev.target.closest(".us-name-chart-btn");
-        if (!btn || !body.contains(btn)) return;
-        const ticker = btn.getAttribute("data-ticker");
-        const tableKey = btn.getAttribute("data-table");
-        if (!ticker) return;
-        if (state.openChartTicker === ticker && state.openChartTable === tableKey) {
-          state.openChartTicker = null;
-          state.openChartTable = null;
-        } else {
-          state.openChartTicker = ticker;
-          state.openChartTable = tableKey;
-          state.candlePeriod = "D";
-        }
-        disposeLwChart();
-        renderAll();
+  async function loadActiveTab(force) {
+    const cfg = TAB_CONFIG[state.activeTab];
+    if (!force && state.rowsByTab[state.activeTab]) {
+      renderRankTable();
+      return;
+    }
+    const pack = await fetchJson(cfg.action);
+    state.rowsByTab[state.activeTab] = pack.stocks || [];
+    setUpdatedLabel(pack.updatedAt || new Date().toISOString());
+    renderRankTable();
+  }
+
+  async function refreshAll(force) {
+    const errEl = $("us-error");
+    if (errEl) errEl.hidden = true;
+    try {
+      if (force) state.clientCache.clear();
+      await loadBase();
+      await loadActiveTab(force);
+    } catch (e) {
+      console.error("[us-market]", e);
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent =
+          e && e.name === "AbortError"
+            ? "\ub370\uc774\ud130\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \uc0c8\ub85c\uace0\uce68 \ud574\uc8fc\uc138\uc694."
+            : e && e.message
+              ? e.message
+              : String(e);
+      }
+    }
+  }
+
+  function wireTabs() {
+    document.querySelectorAll("[data-us-rank-tab]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const tab = btn.getAttribute("data-us-rank-tab");
+        if (!TAB_CONFIG[tab] || tab === state.activeTab) return;
+        state.activeTab = tab;
+        state.openTicker = null;
+        disposeChart();
+        setTabs();
+        renderRankTable();
+        await loadActiveTab(false);
       });
+    });
+  }
+
+  function wireTable() {
+    const body = $("us-rank-tbody");
+    if (!body || body.dataset.usWire === "1") return;
+    body.dataset.usWire = "1";
+    body.addEventListener("click", (ev) => {
+      const intervalBtn = ev.target.closest(".rt-chart-interval-btn");
+      if (intervalBtn && body.contains(intervalBtn)) {
+        const p = intervalBtn.getAttribute("data-rt-candle-period");
+        if (!p) return;
+        state.chartPeriod = p;
+        disposeChart();
+        void mountChart(body);
+        return;
+      }
+
+      const btn = ev.target.closest(".us-name-chart-btn");
+      if (!btn || !body.contains(btn)) return;
+      const ticker = btn.getAttribute("data-ticker");
+      state.openTicker = state.openTicker === ticker ? null : ticker;
+      state.chartPeriod = "D";
+      disposeChart();
+      renderRankTable();
     });
   }
 
   function startPolling() {
     if (state.pollTimer) clearInterval(state.pollTimer);
     state.pollTimer = setInterval(() => {
-      refreshAll().catch((e) => console.error("[us-market] poll", e));
+      refreshAll(true).catch((e) => console.error("[us-market] poll", e));
     }, POLL_MS);
   }
 
   async function init() {
-    wireTables();
-    await refreshAll();
+    wireTabs();
+    wireTable();
+    setTabs();
+    await refreshAll(false);
     startPolling();
   }
 

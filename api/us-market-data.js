@@ -1,39 +1,44 @@
 /**
- * 미국 주식 시장 데이터 프록시 (Finnhub + KIS)
- * GET ?action=indices|sectors|gainers|volume|candle
+ * 미국 주식 시장 데이터 프록시 (KIS Open API)
+ * GET ?action=indices|sectors|market-cap|gainers|volume|candle
  */
 
-const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(
   /\/+$/,
   ""
 );
-const FINNHUB_TOKEN = process.env.FINNHUB_API_KEY;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const FINNHUB_CALL_GAP_MS = 100;
-const KIS_TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
-const KIS_TRADE_PBMN_TR_ID = "HHDFS76320010";
+
+const INDEX_CHART_PATH = "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice";
+const INDEX_CHART_TR_ID = "FHKST03030100";
+const INDUSTRY_THEME_PATH = "/uapi/overseas-price/v1/quotations/industry-theme";
+const INDUSTRY_THEME_TR_ID = "HHDFS76370000";
+const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
+const MARKET_CAP_TR_ID = "HHDFS76350100";
+const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
+const UPDOWN_RATE_TR_ID = "HHDFS76290000";
+const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
+const TRADE_PBMN_TR_ID = "HHDFS76320010";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
-  { id: "sp500", name: "S&P 500", symbol: "^GSPC" },
-  { id: "dow", name: "다우", symbol: "^DJI" },
+  { id: "nasdaq", name: "나스닥", symbol: "NAS" },
+  { id: "sp500", name: "S&P 500", symbol: "SPX" },
+  { id: "dow", name: "다우", symbol: "DJI" },
 ];
 
-const SECTOR_ETFS = [
-  { symbol: "SOXX", name: "반도체", label: "SOXX" },
-  { symbol: "XLK", name: "기술", label: "XLK" },
-  { symbol: "XLV", name: "바이오", label: "XLV" },
-  { symbol: "XLE", name: "에너지", label: "XLE" },
-  { symbol: "XLF", name: "금융", label: "XLF" },
-  { symbol: "XLY", name: "소비재", label: "XLY" },
-  { symbol: "XLI", name: "산업재", label: "XLI" },
-  { symbol: "XLU", name: "유틸리티", label: "XLU" },
+const US_SECTORS = [
+  { code: "021", name: "기술", label: "TECH" },
+  { code: "023", name: "반도체", label: "SEMI" },
+  { code: "035", name: "바이오/헬스", label: "BIO" },
+  { code: "037", name: "에너지", label: "ENERGY" },
+  { code: "032", name: "금융", label: "FIN" },
+  { code: "025", name: "소비재", label: "CONS" },
+  { code: "026", name: "산업재", label: "IND" },
+  { code: "038", name: "유틸리티", label: "UTIL" },
 ];
 
+const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
-let lastFinnhubCallAt = 0;
-let finnhubQueue = Promise.resolve();
 
 function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
@@ -63,11 +68,6 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function requireFinnhubToken() {
-  if (!FINNHUB_TOKEN) throw new Error("Missing FINNHUB_API_KEY");
-  return FINNHUB_TOKEN;
-}
-
 function requireKisAuth() {
   const token = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
   const appkey = sanitizeStr(process.env.KIS_APP_KEY);
@@ -75,39 +75,6 @@ function requireKisAuth() {
   if (!token) throw new Error("Missing KIS_ACCESS_TOKEN");
   if (!appkey || !appsecret) throw new Error("Missing KIS_APP_KEY or KIS_APP_SECRET");
   return { token, appkey, appsecret };
-}
-
-function finnhubUrl(path, params = {}) {
-  const url = new URL(`${FINNHUB_BASE_URL}${path}`);
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
-  }
-  url.searchParams.set("token", requireFinnhubToken());
-  return url.toString();
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function runFinnhubRequest(task) {
-  const run = finnhubQueue.then(async () => {
-    const elapsed = Date.now() - lastFinnhubCallAt;
-    if (elapsed < FINNHUB_CALL_GAP_MS) await sleep(FINNHUB_CALL_GAP_MS - elapsed);
-    const result = await task();
-    lastFinnhubCallAt = Date.now();
-    return result;
-  });
-  finnhubQueue = run.catch(() => {});
-  return run;
-}
-
-function kisOutputRows(body) {
-  if (!body || typeof body !== "object") return [];
-  for (const key of ["output", "output1", "output2", "OUTPUT", "Output"]) {
-    if (Array.isArray(body[key])) return body[key];
-  }
-  return [];
 }
 
 function pickFirst(row, keys) {
@@ -119,19 +86,25 @@ function pickFirst(row, keys) {
   return "";
 }
 
-async function finnhubFetch(path, params) {
-  return runFinnhubRequest(async () => {
-    const res = await fetch(finnhubUrl(path, params), {
-      headers: { Accept: "application/json" },
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}: ${text.slice(0, 240)}`);
-    try {
-      return JSON.parse(text);
-    } catch {
-      throw new Error(`Finnhub invalid JSON: ${text.slice(0, 120)}`);
-    }
-  });
+function outputRows(body, preferred) {
+  if (!body || typeof body !== "object") return [];
+  if (preferred && Array.isArray(body[preferred])) return body[preferred];
+  for (const key of ["output", "output1", "output2", "OUTPUT", "Output"]) {
+    if (Array.isArray(body[key])) return body[key];
+  }
+  return [];
+}
+
+function outputObject(body, preferred) {
+  if (!body || typeof body !== "object") return {};
+  const value = preferred ? body[preferred] : null;
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  for (const key of ["output", "output1", "output2", "OUTPUT", "Output"]) {
+    const v = body[key];
+    if (v && typeof v === "object" && !Array.isArray(v)) return v;
+    if (Array.isArray(v) && v[0] && typeof v[0] === "object") return v[0];
+  }
+  return {};
 }
 
 async function kisGet(path, trId, params) {
@@ -140,6 +113,7 @@ async function kisGet(path, trId, params) {
   for (const [key, value] of Object.entries(params || {})) {
     url.searchParams.set(key, value == null ? "" : String(value));
   }
+
   const res = await fetch(url.toString(), {
     method: "GET",
     headers: {
@@ -185,50 +159,38 @@ async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
   return promise;
 }
 
-async function mapSequential(items, mapper) {
-  const out = [];
-  for (let i = 0; i < items.length; i++) {
-    out.push(await mapper(items[i], i));
-  }
-  return out;
+function ymd(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}${m}${d}`;
 }
 
-/** Finnhub quote — 현재가·등락률·등락포인트 */
-async function fetchQuote(symbol) {
-  return cached(`quote:${symbol}`, async () => {
-    const q = await finnhubFetch("/quote", { symbol });
-    const price = toNum(q.c);
-    const changePoints = round2(toNum(q.d));
-    const changePct = round2(toNum(q.dp));
-    const previousClose = round2(toNum(q.pc));
-    return {
-      symbol,
-      price: price != null ? round2(price) : null,
-      previousClose,
-      changePct,
-      changePoints,
-    };
-  });
+function indexDateRange() {
+  const to = new Date();
+  const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+  return { from: ymd(from), to: ymd(to) };
 }
 
-async function fetchQuoteBatch(symbols) {
-  const quotes = await mapSequential(symbols, (symbol) => fetchQuote(symbol));
-  const map = new Map();
-  for (const q of quotes) {
-    if (q && q.symbol) map.set(q.symbol, q);
-  }
-  return map;
+function normalizeTicker(raw) {
+  const s = sanitizeStr(raw).toUpperCase();
+  if (!s || s.length > 16) return "";
+  return s.replace(/[^A-Z0-9.^-]/g, "");
 }
 
-function mapKisTradeRow(row, rank) {
-  const ticker = sanitizeStr(
-    pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM", "ticker", "TICKER"])
-  );
+function normalizePeriod(raw) {
+  const p = sanitizeStr(raw).toUpperCase();
+  return p === "W" || p === "M" ? p : "D";
+}
+
+function mapRankRow(row, rank) {
+  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
   const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
   const price = round2(toNum(pickFirst(row, ["last", "LAST"])));
   const changePct = round2(toNum(pickFirst(row, ["rate", "RATE"])));
   const volume = toNum(pickFirst(row, ["tvol", "TVOL"]));
-  const amount = toNum(pickFirst(row, ["tamt", "TAMT"]));
+  const marketCap = toNum(pickFirst(row, ["tomv", "TOMV"]));
+  const tradingValue = toNum(pickFirst(row, ["tamt", "TAMT"]));
   return {
     rank,
     ticker,
@@ -236,84 +198,144 @@ function mapKisTradeRow(row, rank) {
     price,
     changePct,
     volume: volume != null ? Math.round(volume) : null,
-    tradingValue: amount != null ? Math.round(amount) : null,
+    marketCap: marketCap != null ? Math.round(marketCap) : null,
+    tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
   };
 }
 
-async function fetchKisNasdaqTradeRankingRows() {
-  return cached("kis:nasdaq:trade-pbmn", async () => {
-    const body = await kisGet(KIS_TRADE_PBMN_PATH, KIS_TRADE_PBMN_TR_ID, {
-      KEYB: "",
-      AUTH: "",
-      EXCD: "NAS",
-      NDAY: "0",
-      VOL_RANG: "0",
-      PRC1: "",
-      PRC2: "",
-    });
-    return kisOutputRows(body).map((row, i) => mapKisTradeRow(row, i + 1));
-  });
-}
-
-async function fetchNasdaqGainersTop20() {
-  const rows = await fetchKisNasdaqTradeRankingRows();
-  return rows
-    .filter((row) => row.ticker && row.price != null && row.changePct != null)
-    .sort((a, b) => (b.changePct || 0) - (a.changePct || 0))
-    .slice(0, 20)
-    .map((row, i) => ({ ...row, rank: i + 1 }));
-}
-
-async function fetchNasdaqVolumeTop20() {
-  const rows = await fetchKisNasdaqTradeRankingRows();
-  return rows
-    .filter((row) => row.ticker && row.price != null && row.tradingValue != null)
-    .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
-    .slice(0, 20)
-    .map((row, i) => ({ ...row, rank: i + 1 }));
-}
-
 async function fetchIndices() {
-  const items = [];
-  for (const idx of US_INDICES) {
-    const q = await fetchQuote(idx.symbol);
-    items.push({
-      id: idx.id,
-      name: idx.name,
-      symbol: idx.symbol,
-      price: q.price,
-      changePct: q.changePct,
-      changePoints: q.changePoints,
-    });
-  }
-  return items;
+  return cached("indices", async () => {
+    const range = indexDateRange();
+    const items = [];
+    for (const idx of US_INDICES) {
+      const body = await kisGet(INDEX_CHART_PATH, INDEX_CHART_TR_ID, {
+        FID_COND_MRKT_DIV_CODE: "N",
+        FID_INPUT_ISCD: idx.symbol,
+        FID_INPUT_DATE_1: range.from,
+        FID_INPUT_DATE_2: range.to,
+        FID_PERIOD_DIV_CODE: "D",
+      });
+      const out = outputObject(body, "output1");
+      items.push({
+        id: idx.id,
+        name: idx.name,
+        symbol: idx.symbol,
+        price: round2(toNum(pickFirst(out, ["ovrs_nmix_prpr", "OVRS_NMIX_PRPR"]))),
+        changePct: round2(toNum(pickFirst(out, ["prdy_ctrt", "PRDY_CTRT"]))),
+        changePoints: round2(toNum(pickFirst(out, ["ovrs_nmix_prdy_vrss", "OVRS_NMIX_PRDY_VRSS"]))),
+      });
+    }
+    return items;
+  });
 }
 
 async function fetchSectors() {
-  const symbols = SECTOR_ETFS.map((s) => s.symbol);
-  const batch = await fetchQuoteBatch(symbols);
-  return SECTOR_ETFS.map((s) => {
-    const q = batch.get(s.symbol) || {};
-    return {
-      symbol: s.symbol,
-      name: s.name,
-      label: s.label,
-      price: q.price ?? null,
-      changePct: q.changePct ?? null,
-    };
+  return cached("sectors", async () => {
+    const sectors = [];
+    for (const sector of US_SECTORS) {
+      const body = await kisGet(INDUSTRY_THEME_PATH, INDUSTRY_THEME_TR_ID, {
+        EXCD: "NAS",
+        VOL_RANG: "0",
+        KEYB: " ",
+        AUTH: " ",
+        ICOD: sector.code,
+      });
+      const rows = outputRows(body);
+      const rates = rows
+        .map((row) => toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])))
+        .filter((n) => n != null);
+      const avg = rates.length ? rates.reduce((sum, n) => sum + n, 0) / rates.length : null;
+      sectors.push({
+        symbol: sector.code,
+        name: sector.name,
+        label: sector.label,
+        changePct: round2(avg),
+        count: rates.length,
+      });
+    }
+    return sectors;
   });
 }
 
-function normalizeCandlePeriod(raw) {
-  const u = sanitizeStr(raw).toUpperCase();
-  if (u === "W" || u === "M") return u;
-  return "D";
+async function fetchMergedRanking(cacheKey, path, trId, params, sortKey) {
+  return cached(cacheKey, async () => {
+    const all = [];
+    for (const exchange of EXCHANGES) {
+      const body = await kisGet(path, trId, { EXCD: exchange, ...params });
+      const rows = outputRows(body).map((row, i) => ({
+        ...mapRankRow(row, all.length + i + 1),
+        exchange,
+      }));
+      all.push(...rows);
+    }
+    return all
+      .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
+      .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
+      .slice(0, 50)
+      .map((row, i) => ({ ...row, rank: i + 1 }));
+  });
 }
 
-function normalizeTicker(raw) {
-  const s = sanitizeStr(raw).toUpperCase();
-  if (!s || s.length > 12) return "";
-  return s.replace(/[^A-Z0-9.^\-]/g, "");
+function fetchMarketCapTop50() {
+  return fetchMergedRanking(
+    "ranking:market-cap",
+    MARKET_CAP_PATH,
+    MARKET_CAP_TR_ID,
+    { VOL_RANG: "0", KEYB: " ", AUTH: " " },
+    "marketCap"
+  );
+}
+
+function fetchGainersTop50() {
+  return fetchMergedRanking(
+    "ranking:gainers",
+    UPDOWN_RATE_PATH,
+    UPDOWN_RATE_TR_ID,
+    { GUBN: "1", NDAY: "0", VOL_RANG: "0", KEYB: " ", AUTH: " " },
+    "changePct"
+  );
+}
+
+function fetchTradeValueTop50() {
+  return fetchMergedRanking(
+    "ranking:trade-value",
+    TRADE_PBMN_PATH,
+    TRADE_PBMN_TR_ID,
+    { NDAY: "0", VOL_RANG: "0", KEYB: " ", AUTH: " ", PRC1: "", PRC2: "" },
+    "tradingValue"
+  );
+}
+
+function findCachedRankRow(ticker) {
+  const keys = ["ranking:market-cap", "ranking:gainers", "ranking:trade-value"];
+  for (const key of keys) {
+    const hit = memoryCache.get(key);
+    if (!hit || !Array.isArray(hit.value) || hit.expiresAt <= Date.now()) continue;
+    const row = hit.value.find((r) => r.ticker === ticker);
+    if (row) return row;
+  }
+  return null;
+}
+
+function fetchPseudoCandles(ticker) {
+  const row = findCachedRankRow(ticker);
+  if (!row || row.price == null) return [];
+  const price = row.price;
+  const change = row.changePct == null ? 0 : row.changePct / 100;
+  const prev = change === -1 ? price : price / (1 + change);
+  const high = Math.max(price, prev);
+  const low = Math.min(price, prev);
+  const today = new Date();
+  return [
+    {
+      time: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
+      open: round2(prev),
+      high: round2(high),
+      low: round2(low),
+      close: round2(price),
+      volume: row.volume || 0,
+    },
+  ];
 }
 
 function cachedPayload(key, loader) {
@@ -342,43 +364,44 @@ module.exports = async function handler(req, res) {
       json(res, 200, payload);
       return;
     }
-
     if (action === "sectors") {
       const payload = await cachedPayload("sectors", async () => ({ sectors: await fetchSectors() }));
       json(res, 200, payload);
       return;
     }
-
+    if (action === "market-cap") {
+      const payload = await cachedPayload("market-cap", async () => ({ stocks: await fetchMarketCapTop50() }));
+      json(res, 200, payload);
+      return;
+    }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers", async () => ({ stocks: await fetchNasdaqGainersTop20() }));
+      const payload = await cachedPayload("gainers", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
-
     if (action === "volume") {
-      const payload = await cachedPayload("volume", async () => ({ stocks: await fetchNasdaqVolumeTop20() }));
+      const payload = await cachedPayload("volume", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }
-
     if (action === "candle") {
       const ticker = normalizeTicker(req.query && req.query.ticker);
       if (!ticker) {
         json(res, 400, { error: "Missing or invalid ticker" });
         return;
       }
-      const period = normalizeCandlePeriod(req.query && req.query.period);
+      const period = normalizePeriod(req.query && req.query.period);
       const payload = await cachedPayload(`candle:${ticker}:${period}`, async () => ({
         ticker,
         period,
-        candles: [],
+        candles: await fetchPseudoCandles(ticker),
       }));
       json(res, 200, payload);
       return;
     }
 
     json(res, 400, {
-      error: "Unknown action. Use indices, sectors, gainers, volume, or candle.",
+      error: "Unknown action. Use indices, sectors, market-cap, gainers, volume, or candle.",
     });
   } catch (e) {
     console.error("[us-market-data]", action, e && e.message, e);

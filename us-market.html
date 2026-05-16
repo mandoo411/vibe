@@ -153,13 +153,38 @@
         color: var(--text-muted);
         letter-spacing: 0.08em;
       }
+      .us-rank-tabs {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        background: #0a0907;
+      }
+      .us-rank-tab {
+        flex: 1;
+        min-width: 0;
+        padding: 9px 10px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: #12100c;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .us-rank-tab[aria-selected="true"] {
+        color: var(--accent-bright);
+        border-color: var(--border-strong);
+        box-shadow: inset 0 -2px 0 0 var(--accent-bright);
+      }
       .us-scroll {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
       .us-table {
         width: 100%;
-        min-width: 520px;
+        min-width: 720px;
         border-collapse: collapse;
         font-family: var(--font-mono);
         font-size: 12px;
@@ -290,6 +315,21 @@
         color: #f8a8a8;
         font-size: 12px;
       }
+      @media (max-width: 768px) {
+        .us-index-strip {
+          grid-template-columns: 1fr;
+        }
+        .us-sector-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .us-rank-tabs {
+          flex-wrap: wrap;
+        }
+        .us-rank-tab {
+          flex: 1 1 30%;
+          font-size: 10px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -330,7 +370,7 @@
         </header>
         <div class="page-hero-sub">
           <div class="masthead__meta">
-            <span>Finnhub · 나스닥 주요 종목 중심</span>
+            <span>한국투자증권 · NASDAQ/NYSE 랭킹</span>
             <span>5분마다 자동 갱신</span>
           </div>
         </div>
@@ -350,43 +390,29 @@
           <div id="us-sectors" class="us-sector-grid"></div>
         </section>
 
-        <section class="us-section" aria-labelledby="us-sec-gainers">
-          <h2 class="us-section__title" id="us-sec-gainers">③ 상승률 TOP 20</h2>
+        <section class="us-section" aria-labelledby="us-sec-rankings">
+          <h2 class="us-section__title" id="us-sec-rankings">③ 미국 주식 TOP 50</h2>
           <div class="us-panel">
-            <div class="us-panel__head">나스닥 상승률 상위 · 종목명 클릭 시 차트</div>
-            <div class="us-scroll">
-              <table class="us-table" aria-label="나스닥 상승률 TOP 20">
-                <thead>
-                  <tr>
-                    <th class="num">순위</th>
-                    <th>종목</th>
-                    <th class="num">현재가</th>
-                    <th class="num">등락률</th>
-                    <th class="num">거래대금</th>
-                  </tr>
-                </thead>
-                <tbody id="us-gainers-tbody"></tbody>
-              </table>
+            <div class="us-panel__head">탭 클릭 시 해당 데이터만 불러옵니다 · 종목명 클릭 시 차트</div>
+            <div class="us-rank-tabs" role="tablist" aria-label="미국 주식 순위">
+              <button class="us-rank-tab" type="button" data-us-rank-tab="market-cap" role="tab" aria-selected="true">
+                시총 TOP50
+              </button>
+              <button class="us-rank-tab" type="button" data-us-rank-tab="gainers" role="tab" aria-selected="false">
+                상승률 TOP50
+              </button>
+              <button class="us-rank-tab" type="button" data-us-rank-tab="volume" role="tab" aria-selected="false">
+                거래대금 TOP50
+              </button>
             </div>
-          </div>
-        </section>
-
-        <section class="us-section" aria-labelledby="us-sec-volume">
-          <h2 class="us-section__title" id="us-sec-volume">④ 거래대금 TOP 20</h2>
-          <div class="us-panel">
-            <div class="us-panel__head">나스닥 거래대금 상위 · 종목명 클릭 시 차트</div>
             <div class="us-scroll">
-              <table class="us-table" aria-label="나스닥 거래대금 TOP 20">
+              <table class="us-table" aria-label="미국 주식 TOP 50">
                 <thead>
-                  <tr>
+                  <tr id="us-rank-head">
                     <th class="num">순위</th>
-                    <th>종목</th>
-                    <th class="num">현재가</th>
-                    <th class="num">등락률</th>
-                    <th class="num">거래대금</th>
                   </tr>
                 </thead>
-                <tbody id="us-volume-tbody"></tbody>
+                <tbody id="us-rank-tbody"></tbody>
               </table>
             </div>
           </div>

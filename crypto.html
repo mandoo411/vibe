@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d0b08" />
+    <title>TotalMoney AI · 암호화폐</title>
+    <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./daily-market.css" />
+    <link rel="stylesheet" href="./site-nav.css" />
+    <style>
+      .crypto-wrap {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+      .crypto-meta-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 16px;
+        padding: 8px 12px;
+        margin-bottom: 14px;
+        background: #0a0907;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .crypto-meta-bar__poll {
+        margin-left: auto;
+        color: var(--text-dim);
+      }
+      .crypto-section {
+        margin-bottom: 22px;
+      }
+      .crypto-section__title {
+        margin: 0 0 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--accent-bright);
+      }
+      .crypto-global-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .crypto-metric-card {
+        padding: 12px 14px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        font-family: var(--font-mono);
+      }
+      .crypto-metric-card__label {
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .crypto-metric-card__value {
+        margin-top: 8px;
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+      }
+      .crypto-metric-card__sub {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
+      .crypto-gauge {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+      }
+      .crypto-gauge__dial {
+        width: 62px;
+        height: 62px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at center, #12100c 0 52%, transparent 53%),
+          conic-gradient(#f87171 0 33%, #d4af37 33% 66%, #60a5fa 66% 100%);
+        box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.25);
+      }
+      .crypto-gauge__score {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--accent-bright);
+      }
+      .crypto-panel {
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        background: var(--bg-panel);
+        box-shadow: var(--sheet-shadow);
+        overflow: hidden;
+      }
+      .crypto-panel__head {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.08em;
+      }
+      .crypto-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .crypto-table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .crypto-table th,
+      .crypto-table td {
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+      }
+      .crypto-table th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #12100c;
+        color: var(--text-dim);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .crypto-table tr:hover td {
+        background: rgba(212, 175, 55, 0.04);
+      }
+      .crypto-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .crypto-name-btn {
+        font: inherit;
+        font-weight: 600;
+        color: var(--text);
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        text-align: left;
+      }
+      .crypto-name-btn:hover,
+      .crypto-name-btn:focus-visible {
+        color: var(--accent-bright);
+        text-decoration: underline;
+        outline: none;
+      }
+      .crypto-symbol {
+        display: block;
+        font-size: 10px;
+        color: var(--text-dim);
+        margin-top: 2px;
+      }
+      .crypto-delta--up {
+        color: #f87171;
+      }
+      .crypto-delta--down {
+        color: #60a5fa;
+      }
+      .crypto-delta--flat {
+        color: var(--text-muted);
+      }
+      .crypto-chart-row td {
+        padding: 0 !important;
+        background: #0c0a08;
+        border-bottom: 1px solid var(--border-strong);
+      }
+      .crypto-chart-box {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+      .crypto-chart-title {
+        margin: 0 0 12px;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+      }
+      .crypto-bar-grid {
+        display: grid;
+        gap: 8px;
+      }
+      .crypto-bar {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr) 72px;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .crypto-bar__track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(148, 130, 98, 0.22);
+      }
+      .crypto-bar__fill {
+        display: block;
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: var(--accent);
+      }
+      .crypto-bar__fill.crypto-delta--up {
+        background: #f87171;
+      }
+      .crypto-bar__fill.crypto-delta--down {
+        background: #60a5fa;
+      }
+      .crypto-error {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: rgba(248, 112, 112, 0.08);
+        border: 1px solid rgba(248, 112, 112, 0.35);
+        color: #f8a8a8;
+        font-size: 13px;
+        border-radius: var(--radius);
+      }
+      @media (max-width: 768px) {
+        .crypto-global-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .crypto-metric-card__value {
+          font-size: 17px;
+        }
+        .crypto-table {
+          min-width: 860px;
+          font-size: 11px;
+        }
+        .crypto-meta-bar__poll {
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="tm-site-header">
+        <div class="header-top">
+          <a class="header-top__link" href="./index.html" aria-label="TotalMoney AI 홈">
+            <img
+              class="header-top__logo"
+              src="./assets/totalmoney_ai.png"
+              alt=""
+              width="36"
+              height="36"
+              decoding="async"
+            />
+            <span class="header-top__title">TotalMoney AI</span>
+            <span class="header-top__tagline">Smarter Financial Decisions</span>
+          </a>
+        </div>
+
+        <nav class="tm-site-nav" aria-label="주요 메뉴">
+          <a class="tm-site-nav__link" href="./index.html">홈</a>
+          <a class="tm-site-nav__link" href="./daily-market.html">장마감 리포트</a>
+          <a class="tm-site-nav__link" href="./briefing.html">장전 브리핑</a>
+          <a class="tm-site-nav__link" href="./realtime.html">전광판</a>
+          <a class="tm-site-nav__link" href="./weekly-market.html">주간 일정</a>
+          <a class="tm-site-nav__link" href="./us-market.html">미국</a>
+          <a class="tm-site-nav__link" href="./crypto.html" aria-current="page">크립토</a>
+        </nav>
+      </header>
+
+      <div class="crypto-wrap">
+        <header class="masthead masthead--title-only">
+          <div class="masthead__copy">
+            <p class="masthead__kicker">Crypto Markets</p>
+            <h1 class="masthead__title">암호화폐</h1>
+          </div>
+        </header>
+        <div class="page-hero-sub">
+          <div class="masthead__meta">
+            <span>CoinMarketCap · TOP 50</span>
+            <span>5분마다 자동 갱신</span>
+          </div>
+        </div>
+
+        <div class="crypto-meta-bar" aria-live="polite">
+          <span id="crypto-updated">데이터 로딩 중…</span>
+          <span class="crypto-meta-bar__poll">갱신 주기 5분</span>
+        </div>
+
+        <section class="crypto-section" aria-labelledby="crypto-sec-global">
+          <h2 class="crypto-section__title" id="crypto-sec-global">① 글로벌 시장 현황</h2>
+          <div id="crypto-global" class="crypto-global-grid"></div>
+        </section>
+
+        <section class="crypto-section" aria-labelledby="crypto-sec-top50">
+          <h2 class="crypto-section__title" id="crypto-sec-top50">② 시총 TOP 50</h2>
+          <div class="crypto-panel">
+            <div class="crypto-panel__head">코인명 클릭 시 1h · 24h · 7d 등락률 차트</div>
+            <div class="crypto-scroll">
+              <table class="crypto-table" aria-label="암호화폐 시총 TOP 50">
+                <thead>
+                  <tr>
+                    <th class="num">순위</th>
+                    <th>코인명</th>
+                    <th>심볼</th>
+                    <th class="num">현재가</th>
+                    <th class="num">1h</th>
+                    <th class="num">24h</th>
+                    <th class="num">7d</th>
+                    <th class="num">시총</th>
+                    <th class="num">거래량</th>
+                  </tr>
+                </thead>
+                <tbody id="crypto-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <p id="crypto-error" class="crypto-error" hidden></p>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        const API = "/api/crypto-data";
+        const FETCH_TIMEOUT_MS = 20000;
+        const POLL_MS = 5 * 60 * 1000;
+        const state = {
+          global: null,
+          fearGreed: null,
+          coins: [],
+          openSymbol: null,
+          pollTimer: null,
+        };
+
+        function $(id) {
+          return document.getElementById(id);
+        }
+
+        function escapeHtml(s) {
+          return String(s ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function deltaClass(n) {
+          if (n == null || !Number.isFinite(n)) return "crypto-delta--flat";
+          if (n > 0) return "crypto-delta--up";
+          if (n < 0) return "crypto-delta--down";
+          return "crypto-delta--flat";
+        }
+
+        function fmtPct(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          const sign = n > 0 ? "+" : "";
+          return `${sign}${n.toFixed(2)}%`;
+        }
+
+        function fmtKrw(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          if (n >= 1e12) return `${(n / 1e12).toFixed(2)}조`;
+          if (n >= 1e8) return `${(n / 1e8).toFixed(1)}억`;
+          if (n >= 1e4) return `${Math.round(n / 1e4).toLocaleString("ko-KR")}만`;
+          return n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 });
+        }
+
+        function fmtPrice(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          return `₩${n.toLocaleString("ko-KR", {
+            minimumFractionDigits: n >= 100 ? 0 : 2,
+            maximumFractionDigits: n >= 100 ? 0 : 4,
+          })}`;
+        }
+
+        async function fetchJson(action) {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+          try {
+            const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, {
+              cache: "no-store",
+              signal: ctrl.signal,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            return data;
+          } finally {
+            clearTimeout(tid);
+          }
+        }
+
+        function setUpdatedLabel(iso) {
+          const el = $("crypto-updated");
+          if (!el) return;
+          if (!iso) {
+            el.textContent = "갱신 시각 -";
+            return;
+          }
+          const d = new Date(iso);
+          el.textContent = `마지막 갱신 ${d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} KST`;
+        }
+
+        function renderGlobal() {
+          const el = $("crypto-global");
+          if (!el) return;
+          const g = state.global || {};
+          const fg = state.fearGreed || {};
+          const score = fg.score == null ? "-" : String(fg.score);
+          el.innerHTML = `
+            <div class="crypto-metric-card">
+              <div class="crypto-metric-card__label">BTC Dominance</div>
+              <div class="crypto-metric-card__value">${escapeHtml(fmtPct(g.btcDominance))}</div>
+              <div class="crypto-metric-card__sub">비트코인 시총 점유율</div>
+            </div>
+            <div class="crypto-metric-card">
+              <div class="crypto-metric-card__label">Total Market Cap</div>
+              <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.totalMarketCap))}</div>
+              <div class="crypto-metric-card__sub">전체 암호화폐 시가총액</div>
+            </div>
+            <div class="crypto-metric-card">
+              <div class="crypto-metric-card__label">24h Volume</div>
+              <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.volume24h))}</div>
+              <div class="crypto-metric-card__sub">최근 24시간 거래량</div>
+            </div>
+            <div class="crypto-metric-card crypto-gauge">
+              <div class="crypto-gauge__dial"><span class="crypto-gauge__score">${escapeHtml(score)}</span></div>
+              <div>
+                <div class="crypto-metric-card__label">Fear & Greed</div>
+                <div class="crypto-metric-card__value">${escapeHtml(fg.rating || "-")}</div>
+                <div class="crypto-metric-card__sub">CNN 공포탐욕지수</div>
+              </div>
+            </div>`;
+        }
+
+        function coinRowHtml(c) {
+          const open = state.openSymbol === c.symbol ? "true" : "false";
+          return `<tr data-symbol="${escapeHtml(c.symbol)}">
+            <td class="num">${escapeHtml(c.rank)}</td>
+            <td>
+              <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}">
+                ${escapeHtml(c.name)}
+              </button>
+            </td>
+            <td>${escapeHtml(c.symbol)}</td>
+            <td class="num">${escapeHtml(fmtPrice(c.price))}</td>
+            <td class="num"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
+            <td class="num"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
+            <td class="num"><span class="${deltaClass(c.change7d)}">${escapeHtml(fmtPct(c.change7d))}</span></td>
+            <td class="num">₩${escapeHtml(fmtKrw(c.marketCap))}</td>
+            <td class="num">₩${escapeHtml(fmtKrw(c.volume24h))}</td>
+          </tr>`;
+        }
+
+        function barHtml(label, value) {
+          const abs = value == null || !Number.isFinite(value) ? 0 : Math.min(100, Math.abs(value) * 4);
+          const cls = deltaClass(value);
+          return `<div class="crypto-bar">
+            <span>${escapeHtml(label)}</span>
+            <span class="crypto-bar__track"><span class="crypto-bar__fill ${cls}" style="width:${abs}%"></span></span>
+            <span class="${cls}">${escapeHtml(fmtPct(value))}</span>
+          </div>`;
+        }
+
+        function chartRowHtml(c) {
+          return `<tr class="crypto-chart-row">
+            <td colspan="9">
+              <div class="crypto-chart-box">
+                <p class="crypto-chart-title">${escapeHtml(c.name)} 등락률 차트</p>
+                <div class="crypto-bar-grid">
+                  ${barHtml("1h", c.change1h)}
+                  ${barHtml("24h", c.change24h)}
+                  ${barHtml("7d", c.change7d)}
+                </div>
+              </div>
+            </td>
+          </tr>`;
+        }
+
+        function renderTable() {
+          const body = $("crypto-tbody");
+          if (!body) return;
+          const parts = [];
+          for (const c of state.coins) {
+            parts.push(coinRowHtml(c));
+            if (state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
+          }
+          body.innerHTML = parts.join("");
+        }
+
+        function wireTable() {
+          const body = $("crypto-tbody");
+          if (!body || body.dataset.cryptoWire === "1") return;
+          body.dataset.cryptoWire = "1";
+          body.addEventListener("click", (ev) => {
+            const btn = ev.target.closest(".crypto-name-btn");
+            if (!btn || !body.contains(btn)) return;
+            const symbol = btn.getAttribute("data-symbol");
+            state.openSymbol = state.openSymbol === symbol ? null : symbol;
+            renderTable();
+          });
+        }
+
+        async function refreshAll() {
+          const errEl = $("crypto-error");
+          if (errEl) errEl.hidden = true;
+          try {
+            const [globalPack, listingsPack, fearGreedPack] = await Promise.all([
+              fetchJson("global"),
+              fetchJson("listings"),
+              fetchJson("fear-greed"),
+            ]);
+            state.global = globalPack || {};
+            state.coins = listingsPack.coins || [];
+            state.fearGreed = fearGreedPack || {};
+            setUpdatedLabel(listingsPack.updatedAt || globalPack.updatedAt || new Date().toISOString());
+            renderGlobal();
+            renderTable();
+          } catch (e) {
+            console.error("[crypto]", e);
+            if (errEl) {
+              errEl.hidden = false;
+              errEl.textContent =
+                e && e.name === "AbortError"
+                  ? "데이터를 불러오지 못했습니다. 새로고침 해주세요."
+                  : e && e.message
+                    ? e.message
+                    : String(e);
+            }
+          }
+        }
+
+        function startPolling() {
+          if (state.pollTimer) clearInterval(state.pollTimer);
+          state.pollTimer = setInterval(() => {
+            refreshAll().catch((e) => console.error("[crypto] poll", e));
+          }, POLL_MS);
+        }
+
+        async function init() {
+          wireTable();
+          await refreshAll();
+          startPolling();
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

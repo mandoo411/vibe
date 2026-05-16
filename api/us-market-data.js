@@ -5,7 +5,8 @@
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const FINNHUB_TOKEN = process.env.FINNHUB_API_KEY;
-const CACHE_TTL_MS = 4 * 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const FINNHUB_CALL_GAP_MS = 100;
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
@@ -29,29 +30,22 @@ const NASDAQ_UNIVERSE = [
   { ticker: "MSFT", name: "Microsoft" },
   { ticker: "NVDA", name: "NVIDIA" },
   { ticker: "AMZN", name: "Amazon" },
-  { ticker: "META", name: "Meta Platforms" },
   { ticker: "GOOGL", name: "Alphabet A" },
-  { ticker: "GOOG", name: "Alphabet C" },
+  { ticker: "META", name: "Meta Platforms" },
   { ticker: "TSLA", name: "Tesla" },
   { ticker: "AVGO", name: "Broadcom" },
-  { ticker: "COST", name: "Costco" },
-  { ticker: "NFLX", name: "Netflix" },
+  { ticker: "JPM", name: "JPMorgan Chase" },
+  { ticker: "V", name: "Visa" },
   { ticker: "AMD", name: "AMD" },
-  { ticker: "ADBE", name: "Adobe" },
-  { ticker: "CSCO", name: "Cisco" },
-  { ticker: "PEP", name: "PepsiCo" },
+  { ticker: "NFLX", name: "Netflix" },
+  { ticker: "INTC", name: "Intel" },
   { ticker: "QCOM", name: "Qualcomm" },
-  { ticker: "TXN", name: "Texas Instruments" },
-  { ticker: "AMGN", name: "Amgen" },
-  { ticker: "INTU", name: "Intuit" },
-  { ticker: "ISRG", name: "Intuitive Surgical" },
-  { ticker: "BKNG", name: "Booking Holdings" },
-  { ticker: "HON", name: "Honeywell" },
-  { ticker: "AMAT", name: "Applied Materials" },
-  { ticker: "PANW", name: "Palo Alto Networks" },
+  { ticker: "MU", name: "Micron Technology" },
 ];
 
 const memoryCache = new Map();
+let lastFinnhubCallAt = 0;
+let finnhubQueue = Promise.resolve();
 
 function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
@@ -95,17 +89,35 @@ function finnhubUrl(path, params = {}) {
   return url.toString();
 }
 
-async function finnhubFetch(path, params) {
-  const res = await fetch(finnhubUrl(path, params), {
-    headers: { Accept: "application/json" },
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function runFinnhubRequest(task) {
+  const run = finnhubQueue.then(async () => {
+    const elapsed = Date.now() - lastFinnhubCallAt;
+    if (elapsed < FINNHUB_CALL_GAP_MS) await sleep(FINNHUB_CALL_GAP_MS - elapsed);
+    const result = await task();
+    lastFinnhubCallAt = Date.now();
+    return result;
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}: ${text.slice(0, 240)}`);
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Finnhub invalid JSON: ${text.slice(0, 120)}`);
-  }
+  finnhubQueue = run.catch(() => {});
+  return run;
+}
+
+async function finnhubFetch(path, params) {
+  return runFinnhubRequest(async () => {
+    const res = await fetch(finnhubUrl(path, params), {
+      headers: { Accept: "application/json" },
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}: ${text.slice(0, 240)}`);
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`Finnhub invalid JSON: ${text.slice(0, 120)}`);
+    }
+  });
 }
 
 async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
@@ -128,16 +140,11 @@ async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
   return promise;
 }
 
-async function mapWithConcurrency(items, limit, mapper) {
-  const out = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (next < items.length) {
-      const idx = next++;
-      out[idx] = await mapper(items[idx], idx);
-    }
-  });
-  await Promise.all(workers);
+async function mapSequential(items, mapper) {
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    out.push(await mapper(items[i], i));
+  }
   return out;
 }
 
@@ -160,7 +167,7 @@ async function fetchQuote(symbol) {
 }
 
 async function fetchQuoteBatch(symbols) {
-  const quotes = await mapWithConcurrency(symbols, 6, (symbol) => fetchQuote(symbol));
+  const quotes = await mapSequential(symbols, (symbol) => fetchQuote(symbol));
   const map = new Map();
   for (const q of quotes) {
     if (q && q.symbol) map.set(q.symbol, q);
@@ -181,7 +188,7 @@ function mapUniverseRow(stock, quote, tradingValue, rank) {
 }
 
 async function fetchNasdaqGainersTop20() {
-  const rows = await mapWithConcurrency(NASDAQ_UNIVERSE, 6, async (stock) => {
+  const rows = await mapSequential(NASDAQ_UNIVERSE, async (stock) => {
     const quote = await fetchQuote(stock.ticker);
     return mapUniverseRow(stock, quote, null, null);
   });
@@ -193,8 +200,9 @@ async function fetchNasdaqGainersTop20() {
 }
 
 async function fetchNasdaqVolumeTop20() {
-  const rows = await mapWithConcurrency(NASDAQ_UNIVERSE, 4, async (stock) => {
-    const [quote, volume] = await Promise.all([fetchQuote(stock.ticker), fetchLatestDailyVolume(stock.ticker)]);
+  const rows = await mapSequential(NASDAQ_UNIVERSE, async (stock) => {
+    const quote = await fetchQuote(stock.ticker);
+    const volume = await fetchLatestDailyVolume(stock.ticker);
     const tradingValue = quote.price != null && volume != null ? quote.price * volume : null;
     return mapUniverseRow(stock, quote, tradingValue, null);
   });
@@ -315,6 +323,13 @@ function normalizeTicker(raw) {
   return s.replace(/[^A-Z0-9.^\-]/g, "");
 }
 
+function cachedPayload(key, loader) {
+  return cached(`payload:${key}`, async () => {
+    const payload = await loader();
+    return { ...payload, updatedAt: new Date().toISOString() };
+  });
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
@@ -330,26 +345,26 @@ module.exports = async function handler(req, res) {
 
   try {
     if (action === "indices") {
-      const indices = await fetchIndices();
-      json(res, 200, { indices, updatedAt: new Date().toISOString() });
+      const payload = await cachedPayload("indices", async () => ({ indices: await fetchIndices() }));
+      json(res, 200, payload);
       return;
     }
 
     if (action === "sectors") {
-      const sectors = await fetchSectors();
-      json(res, 200, { sectors, updatedAt: new Date().toISOString() });
+      const payload = await cachedPayload("sectors", async () => ({ sectors: await fetchSectors() }));
+      json(res, 200, payload);
       return;
     }
 
     if (action === "gainers") {
-      const stocks = await fetchNasdaqGainersTop20();
-      json(res, 200, { stocks, updatedAt: new Date().toISOString() });
+      const payload = await cachedPayload("gainers", async () => ({ stocks: await fetchNasdaqGainersTop20() }));
+      json(res, 200, payload);
       return;
     }
 
     if (action === "volume") {
-      const stocks = await fetchNasdaqVolumeTop20();
-      json(res, 200, { stocks, updatedAt: new Date().toISOString() });
+      const payload = await cachedPayload("volume", async () => ({ stocks: await fetchNasdaqVolumeTop20() }));
+      json(res, 200, payload);
       return;
     }
 
@@ -360,8 +375,12 @@ module.exports = async function handler(req, res) {
         return;
       }
       const period = normalizeCandlePeriod(req.query && req.query.period);
-      const candles = await fetchFinnhubCandles(ticker, period);
-      json(res, 200, { ticker, period, candles });
+      const payload = await cachedPayload(`candle:${ticker}:${period}`, async () => ({
+        ticker,
+        period,
+        candles: await fetchFinnhubCandles(ticker, period),
+      }));
+      json(res, 200, payload);
       return;
     }
 

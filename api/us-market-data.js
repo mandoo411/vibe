@@ -1,10 +1,11 @@
 /**
- * 미국 주식 시장 데이터 프록시 (Yahoo Finance)
+ * 미국 주식 시장 데이터 프록시 (Finnhub)
  * GET ?action=indices|sectors|gainers|volume|candle
  */
 
-const YAHOO_BASE_URL = "https://query2.finance.yahoo.com";
-const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
+const FINNHUB_TOKEN = process.env.FINNHUB_API_KEY;
+const CACHE_TTL_MS = 4 * 60 * 1000;
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
@@ -23,7 +24,34 @@ const SECTOR_ETFS = [
   { symbol: "XLU", name: "유틸리티", label: "XLU" },
 ];
 
-const NASDAQ_EXCHANGES = new Set(["NMS", "NGM", "NCM", "NASDAQ", "Nasdaq", "NasdaqGS", "NasdaqGM"]);
+const NASDAQ_UNIVERSE = [
+  { ticker: "AAPL", name: "Apple" },
+  { ticker: "MSFT", name: "Microsoft" },
+  { ticker: "NVDA", name: "NVIDIA" },
+  { ticker: "AMZN", name: "Amazon" },
+  { ticker: "META", name: "Meta Platforms" },
+  { ticker: "GOOGL", name: "Alphabet A" },
+  { ticker: "GOOG", name: "Alphabet C" },
+  { ticker: "TSLA", name: "Tesla" },
+  { ticker: "AVGO", name: "Broadcom" },
+  { ticker: "COST", name: "Costco" },
+  { ticker: "NFLX", name: "Netflix" },
+  { ticker: "AMD", name: "AMD" },
+  { ticker: "ADBE", name: "Adobe" },
+  { ticker: "CSCO", name: "Cisco" },
+  { ticker: "PEP", name: "PepsiCo" },
+  { ticker: "QCOM", name: "Qualcomm" },
+  { ticker: "TXN", name: "Texas Instruments" },
+  { ticker: "AMGN", name: "Amgen" },
+  { ticker: "INTU", name: "Intuit" },
+  { ticker: "ISRG", name: "Intuitive Surgical" },
+  { ticker: "BKNG", name: "Booking Holdings" },
+  { ticker: "HON", name: "Honeywell" },
+  { ticker: "AMAT", name: "Applied Materials" },
+  { ticker: "PANW", name: "Palo Alto Networks" },
+];
+
+const memoryCache = new Map();
 
 function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
@@ -53,158 +81,134 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-async function yahooFetch(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "application/json",
-      Cookie: "B=1",
-      Referer: "https://finance.yahoo.com",
-    },
+function requireFinnhubToken() {
+  if (!FINNHUB_TOKEN) throw new Error("Missing FINNHUB_API_KEY");
+  return FINNHUB_TOKEN;
+}
+
+function finnhubUrl(path, params = {}) {
+  const url = new URL(`${FINNHUB_BASE_URL}${path}`);
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+  }
+  url.searchParams.set("token", requireFinnhubToken());
+  return url.toString();
+}
+
+async function finnhubFetch(path, params) {
+  const res = await fetch(finnhubUrl(path, params), {
+    headers: { Accept: "application/json" },
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}: ${text.slice(0, 240)}`);
+  if (!res.ok) throw new Error(`Finnhub HTTP ${res.status}: ${text.slice(0, 240)}`);
   try {
     return JSON.parse(text);
   } catch {
-    throw new Error(`Yahoo invalid JSON: ${text.slice(0, 120)}`);
+    throw new Error(`Finnhub invalid JSON: ${text.slice(0, 120)}`);
   }
 }
 
-/** v8 chart — 현재가·전일·등락률·등락포인트 */
-async function fetchChartQuote(symbol) {
-  const url = `${YAHOO_BASE_URL}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
-  const data = await yahooFetch(url);
-  const result = data?.chart?.result?.[0];
-  if (!result) throw new Error(`Empty chart: ${symbol}`);
+async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
+  const now = Date.now();
+  const hit = memoryCache.get(key);
+  if (hit && hit.value !== undefined && hit.expiresAt > now) return hit.value;
+  if (hit && hit.promise) return hit.promise;
 
-  const meta = result.meta || {};
-  let price = toNum(meta.regularMarketPrice);
-  let prev = toNum(meta.chartPreviousClose ?? meta.previousClose);
-
-  const closes = result.indicators?.quote?.[0]?.close;
-  if (Array.isArray(closes) && closes.length) {
-    const valid = closes.filter((c) => c != null && Number.isFinite(c));
-    if (valid.length >= 1 && price == null) price = valid[valid.length - 1];
-    if (valid.length >= 2 && prev == null) prev = valid[valid.length - 2];
-  }
-
-  let changePct = null;
-  let changePoints = null;
-  if (price != null && prev != null && prev !== 0) {
-    changePoints = round2(price - prev);
-    changePct = round2(((price - prev) / prev) * 100);
-  }
-
-  return {
-    symbol,
-    price: price != null ? round2(price) : null,
-    previousClose: prev != null ? round2(prev) : null,
-    changePct,
-    changePoints,
-  };
+  const promise = Promise.resolve()
+    .then(loader)
+    .then((value) => {
+      memoryCache.set(key, { value, expiresAt: now + ttlMs });
+      return value;
+    })
+    .catch((e) => {
+      memoryCache.delete(key);
+      throw e;
+    });
+  memoryCache.set(key, { promise, expiresAt: now + ttlMs });
+  return promise;
 }
 
-/** v7 quote — 배치 심볼 */
-async function fetchQuoteBatch(symbols) {
-  if (!symbols.length) return new Map();
-  const url = `${YAHOO_BASE_URL}/v7/finance/quote?symbols=${encodeURIComponent(symbols.join(","))}`;
-  const data = await yahooFetch(url);
-  const list = data?.quoteResponse?.result || [];
-  const map = new Map();
-  for (const q of list) {
-    const sym = sanitizeStr(q.symbol);
-    if (!sym) continue;
-    const price = toNum(q.regularMarketPrice);
-    const prev = toNum(q.regularMarketPreviousClose ?? q.previousClose);
-    let changePct = toNum(q.regularMarketChangePercent);
-    if (changePct == null && price != null && prev != null && prev !== 0) {
-      changePct = round2(((price - prev) / prev) * 100);
+async function mapWithConcurrency(items, limit, mapper) {
+  const out = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const idx = next++;
+      out[idx] = await mapper(items[idx], idx);
     }
-    let changePoints = toNum(q.regularMarketChange);
-    if (changePoints == null && price != null && prev != null) changePoints = round2(price - prev);
-    map.set(sym, {
-      symbol: sym,
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+/** Finnhub quote — 현재가·등락률·등락포인트 */
+async function fetchQuote(symbol) {
+  return cached(`quote:${symbol}`, async () => {
+    const q = await finnhubFetch("/quote", { symbol });
+    const price = toNum(q.c);
+    const changePoints = round2(toNum(q.d));
+    const changePct = round2(toNum(q.dp));
+    const previousClose = round2(toNum(q.pc));
+    return {
+      symbol,
       price: price != null ? round2(price) : null,
-      previousClose: prev != null ? round2(prev) : null,
+      previousClose,
       changePct,
       changePoints,
-    });
+    };
+  });
+}
+
+async function fetchQuoteBatch(symbols) {
+  const quotes = await mapWithConcurrency(symbols, 6, (symbol) => fetchQuote(symbol));
+  const map = new Map();
+  for (const q of quotes) {
+    if (q && q.symbol) map.set(q.symbol, q);
   }
   return map;
 }
 
-function isNasdaqQuote(q) {
-  const ex = sanitizeStr(q.exchange);
-  const full = sanitizeStr(q.fullExchangeName);
-  if (NASDAQ_EXCHANGES.has(ex)) return true;
-  return /nasdaq/i.test(full);
-}
-
-function pickDollarVolume(q) {
-  const price = toNum(q.regularMarketPrice);
-  const vol = toNum(q.regularMarketVolume);
-  if (price != null && vol != null) return price * vol;
-  return toNum(q.marketCap) || null;
-}
-
-async function fetchScreener(scrIds, count = 60) {
-  const url = `${YAHOO_BASE_URL}/v1/finance/screener/predefined/saved?scrIds=${encodeURIComponent(scrIds)}&count=${count}`;
-  const data = await yahooFetch(url);
-  return data?.finance?.result?.[0]?.quotes || [];
-}
-
-function mapScreenerRow(q, rank) {
-  const ticker = sanitizeStr(q.symbol);
-  const name = sanitizeStr(q.shortName || q.longName || ticker);
-  const price = round2(toNum(q.regularMarketPrice));
-  const changePct = round2(toNum(q.regularMarketChangePercent));
-  const dollarVol = pickDollarVolume(q);
+function mapUniverseRow(stock, quote, tradingValue, rank) {
+  const ticker = stock.ticker;
   return {
     rank,
     ticker,
-    name,
-    price,
-    changePct,
-    tradingValue: dollarVol != null ? Math.round(dollarVol) : null,
+    name: stock.name,
+    price: quote.price,
+    changePct: quote.changePct,
+    tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
   };
 }
 
 async function fetchNasdaqGainersTop20() {
-  const quotes = await fetchScreener("day_gainers", 80);
-  let nasdaq = quotes
-    .filter((q) => q && isNasdaqQuote(q))
-    .filter((q) => toNum(q.regularMarketChangePercent) != null)
-    .sort(
-      (a, b) =>
-        (toNum(b.regularMarketChangePercent) || 0) - (toNum(a.regularMarketChangePercent) || 0)
-    );
-  if (nasdaq.length < 10) {
-    nasdaq = [...quotes]
-      .filter((q) => toNum(q.regularMarketChangePercent) != null)
-      .sort(
-        (a, b) =>
-          (toNum(b.regularMarketChangePercent) || 0) - (toNum(a.regularMarketChangePercent) || 0)
-      );
-  }
-  return nasdaq.slice(0, 20).map((q, i) => mapScreenerRow(q, i + 1));
+  const rows = await mapWithConcurrency(NASDAQ_UNIVERSE, 6, async (stock) => {
+    const quote = await fetchQuote(stock.ticker);
+    return mapUniverseRow(stock, quote, null, null);
+  });
+  return rows
+    .filter((row) => row.price != null && row.changePct != null)
+    .sort((a, b) => (b.changePct || 0) - (a.changePct || 0))
+    .slice(0, 20)
+    .map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
 async function fetchNasdaqVolumeTop20() {
-  const quotes = await fetchScreener("most_actives", 80);
-  let nasdaq = quotes
-    .filter((q) => q && isNasdaqQuote(q))
-    .sort((a, b) => (pickDollarVolume(b) || 0) - (pickDollarVolume(a) || 0));
-  if (nasdaq.length < 10) {
-    nasdaq = [...quotes].sort((a, b) => (pickDollarVolume(b) || 0) - (pickDollarVolume(a) || 0));
-  }
-  return nasdaq.slice(0, 20).map((q, i) => mapScreenerRow(q, i + 1));
+  const rows = await mapWithConcurrency(NASDAQ_UNIVERSE, 4, async (stock) => {
+    const [quote, volume] = await Promise.all([fetchQuote(stock.ticker), fetchLatestDailyVolume(stock.ticker)]);
+    const tradingValue = quote.price != null && volume != null ? quote.price * volume : null;
+    return mapUniverseRow(stock, quote, tradingValue, null);
+  });
+  return rows
+    .filter((row) => row.price != null && row.tradingValue != null)
+    .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
+    .slice(0, 20)
+    .map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
 async function fetchIndices() {
   const items = [];
   for (const idx of US_INDICES) {
-    const q = await fetchChartQuote(idx.symbol);
+    const q = await fetchQuote(idx.symbol);
     items.push({
       id: idx.id,
       name: idx.name,
@@ -240,35 +244,38 @@ function ymdFromUnix(ts) {
   return `${y}-${m}-${day}`;
 }
 
+function unixNow() {
+  return Math.floor(Date.now() / 1000);
+}
+
 function normalizeCandlePeriod(raw) {
   const u = sanitizeStr(raw).toUpperCase();
   if (u === "W" || u === "M") return u;
   return "D";
 }
 
-async function fetchYahooCandles(symbol, periodDiv) {
-  const p = normalizeCandlePeriod(periodDiv);
-  let interval = "1d";
-  let range = "2y";
-  if (p === "W") {
-    interval = "1wk";
-    range = "5y";
-  } else if (p === "M") {
-    interval = "1mo";
-    range = "max";
-  }
-  const url = `${YAHOO_BASE_URL}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
-  const data = await yahooFetch(url);
-  const result = data?.chart?.result?.[0];
-  if (!result) return [];
+function candleRangeForPeriod(period) {
+  const to = unixNow();
+  const day = 24 * 60 * 60;
+  if (period === "W") return { resolution: "W", from: to - 5 * 365 * day, to };
+  if (period === "M") return { resolution: "M", from: to - 15 * 365 * day, to };
+  return { resolution: "D", from: to - 2 * 365 * day, to };
+}
 
-  const ts = result.timestamp || [];
-  const q = result.indicators?.quote?.[0] || {};
-  const opens = q.open || [];
-  const highs = q.high || [];
-  const lows = q.low || [];
-  const closes = q.close || [];
-  const vols = q.volume || [];
+async function fetchFinnhubCandles(symbol, periodDiv) {
+  const p = normalizeCandlePeriod(periodDiv);
+  const range = candleRangeForPeriod(p);
+  const data = await cached(`candle:${symbol}:${p}`, () =>
+    finnhubFetch("/stock/candle", { symbol, ...range })
+  );
+  if (data?.s && data.s !== "ok") return [];
+
+  const ts = data.t || [];
+  const opens = data.o || [];
+  const highs = data.h || [];
+  const lows = data.l || [];
+  const closes = data.c || [];
+  const vols = data.v || [];
 
   const bars = [];
   for (let i = 0; i < ts.length; i++) {
@@ -289,6 +296,17 @@ async function fetchYahooCandles(symbol, periodDiv) {
   }
   bars.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   return bars.slice(-200);
+}
+
+async function fetchLatestDailyVolume(symbol) {
+  return cached(`volume:${symbol}`, async () => {
+    const candles = await fetchFinnhubCandles(symbol, "D");
+    for (let i = candles.length - 1; i >= 0; i--) {
+      const vol = toNum(candles[i].volume);
+      if (vol != null && vol > 0) return vol;
+    }
+    return null;
+  });
 }
 
 function normalizeTicker(raw) {
@@ -342,7 +360,7 @@ module.exports = async function handler(req, res) {
         return;
       }
       const period = normalizeCandlePeriod(req.query && req.query.period);
-      const candles = await fetchYahooCandles(ticker, period);
+      const candles = await fetchFinnhubCandles(ticker, period);
       json(res, 200, { ticker, period, candles });
       return;
     }

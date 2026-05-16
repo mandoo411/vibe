@@ -1,12 +1,18 @@
 /**
- * 미국 주식 시장 데이터 프록시 (Finnhub)
+ * 미국 주식 시장 데이터 프록시 (Finnhub + KIS)
  * GET ?action=indices|sectors|gainers|volume|candle
  */
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
+const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(
+  /\/+$/,
+  ""
+);
 const FINNHUB_TOKEN = process.env.FINNHUB_API_KEY;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FINNHUB_CALL_GAP_MS = 100;
+const KIS_TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
+const KIS_TRADE_PBMN_TR_ID = "HHDFS76320010";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
@@ -23,24 +29,6 @@ const SECTOR_ETFS = [
   { symbol: "XLY", name: "소비재", label: "XLY" },
   { symbol: "XLI", name: "산업재", label: "XLI" },
   { symbol: "XLU", name: "유틸리티", label: "XLU" },
-];
-
-const NASDAQ_UNIVERSE = [
-  { ticker: "AAPL", name: "Apple" },
-  { ticker: "MSFT", name: "Microsoft" },
-  { ticker: "NVDA", name: "NVIDIA" },
-  { ticker: "AMZN", name: "Amazon" },
-  { ticker: "GOOGL", name: "Alphabet A" },
-  { ticker: "META", name: "Meta Platforms" },
-  { ticker: "TSLA", name: "Tesla" },
-  { ticker: "AVGO", name: "Broadcom" },
-  { ticker: "JPM", name: "JPMorgan Chase" },
-  { ticker: "V", name: "Visa" },
-  { ticker: "AMD", name: "AMD" },
-  { ticker: "NFLX", name: "Netflix" },
-  { ticker: "INTC", name: "Intel" },
-  { ticker: "QCOM", name: "Qualcomm" },
-  { ticker: "MU", name: "Micron Technology" },
 ];
 
 const memoryCache = new Map();
@@ -80,6 +68,15 @@ function requireFinnhubToken() {
   return FINNHUB_TOKEN;
 }
 
+function requireKisAuth() {
+  const token = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
+  const appkey = sanitizeStr(process.env.KIS_APP_KEY);
+  const appsecret = sanitizeStr(process.env.KIS_APP_SECRET);
+  if (!token) throw new Error("Missing KIS_ACCESS_TOKEN");
+  if (!appkey || !appsecret) throw new Error("Missing KIS_APP_KEY or KIS_APP_SECRET");
+  return { token, appkey, appsecret };
+}
+
 function finnhubUrl(path, params = {}) {
   const url = new URL(`${FINNHUB_BASE_URL}${path}`);
   for (const [key, value] of Object.entries(params)) {
@@ -105,6 +102,23 @@ async function runFinnhubRequest(task) {
   return run;
 }
 
+function kisOutputRows(body) {
+  if (!body || typeof body !== "object") return [];
+  for (const key of ["output", "output1", "output2", "OUTPUT", "Output"]) {
+    if (Array.isArray(body[key])) return body[key];
+  }
+  return [];
+}
+
+function pickFirst(row, keys) {
+  if (!row || typeof row !== "object") return "";
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
 async function finnhubFetch(path, params) {
   return runFinnhubRequest(async () => {
     const res = await fetch(finnhubUrl(path, params), {
@@ -118,6 +132,37 @@ async function finnhubFetch(path, params) {
       throw new Error(`Finnhub invalid JSON: ${text.slice(0, 120)}`);
     }
   });
+}
+
+async function kisGet(path, trId, params) {
+  const { token, appkey, appsecret } = requireKisAuth();
+  const url = new URL(path, KIS_BASE_URL);
+  for (const [key, value] of Object.entries(params || {})) {
+    url.searchParams.set(key, value == null ? "" : String(value));
+  }
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey,
+      appsecret,
+      tr_id: trId,
+      custtype: "P",
+    },
+  });
+  const text = await res.text();
+  let body;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new Error(`KIS invalid JSON HTTP ${res.status}: ${text.slice(0, 240)}`);
+  }
+  if (!res.ok) throw new Error(`KIS HTTP ${res.status}: ${text.slice(0, 240)}`);
+  if (body.rt_cd && body.rt_cd !== "0") {
+    throw new Error(`KIS rt_cd=${body.rt_cd} msg=${body.msg1 || body.msg_cd || ""}`);
+  }
+  return body;
 }
 
 async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
@@ -175,39 +220,54 @@ async function fetchQuoteBatch(symbols) {
   return map;
 }
 
-function mapUniverseRow(stock, quote, tradingValue, rank) {
-  const ticker = stock.ticker;
+function mapKisTradeRow(row, rank) {
+  const ticker = sanitizeStr(
+    pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM", "ticker", "TICKER"])
+  );
+  const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
+  const price = round2(toNum(pickFirst(row, ["last", "LAST"])));
+  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE"])));
+  const volume = toNum(pickFirst(row, ["tvol", "TVOL"]));
+  const amount = toNum(pickFirst(row, ["tamt", "TAMT"]));
   return {
     rank,
     ticker,
-    name: stock.name,
-    price: quote.price,
-    changePct: quote.changePct,
-    tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
+    name,
+    price,
+    changePct,
+    volume: volume != null ? Math.round(volume) : null,
+    tradingValue: amount != null ? Math.round(amount) : null,
   };
 }
 
-async function fetchNasdaqGainersTop20() {
-  const rows = await mapSequential(NASDAQ_UNIVERSE, async (stock) => {
-    const quote = await fetchQuote(stock.ticker);
-    return mapUniverseRow(stock, quote, null, null);
+async function fetchKisNasdaqTradeRankingRows() {
+  return cached("kis:nasdaq:trade-pbmn", async () => {
+    const body = await kisGet(KIS_TRADE_PBMN_PATH, KIS_TRADE_PBMN_TR_ID, {
+      KEYB: "",
+      AUTH: "",
+      EXCD: "NAS",
+      NDAY: "0",
+      VOL_RANG: "0",
+      PRC1: "",
+      PRC2: "",
+    });
+    return kisOutputRows(body).map((row, i) => mapKisTradeRow(row, i + 1));
   });
+}
+
+async function fetchNasdaqGainersTop20() {
+  const rows = await fetchKisNasdaqTradeRankingRows();
   return rows
-    .filter((row) => row.price != null && row.changePct != null)
+    .filter((row) => row.ticker && row.price != null && row.changePct != null)
     .sort((a, b) => (b.changePct || 0) - (a.changePct || 0))
     .slice(0, 20)
     .map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
 async function fetchNasdaqVolumeTop20() {
-  const rows = await mapSequential(NASDAQ_UNIVERSE, async (stock) => {
-    const quote = await fetchQuote(stock.ticker);
-    const volume = await fetchLatestDailyVolume(stock.ticker);
-    const tradingValue = quote.price != null && volume != null ? quote.price * volume : null;
-    return mapUniverseRow(stock, quote, tradingValue, null);
-  });
+  const rows = await fetchKisNasdaqTradeRankingRows();
   return rows
-    .filter((row) => row.price != null && row.tradingValue != null)
+    .filter((row) => row.ticker && row.price != null && row.tradingValue != null)
     .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
     .slice(0, 20)
     .map((row, i) => ({ ...row, rank: i + 1 }));
@@ -244,77 +304,10 @@ async function fetchSectors() {
   });
 }
 
-function ymdFromUnix(ts) {
-  const d = new Date(ts * 1000);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function unixNow() {
-  return Math.floor(Date.now() / 1000);
-}
-
 function normalizeCandlePeriod(raw) {
   const u = sanitizeStr(raw).toUpperCase();
   if (u === "W" || u === "M") return u;
   return "D";
-}
-
-function candleRangeForPeriod(period) {
-  const to = unixNow();
-  const day = 24 * 60 * 60;
-  if (period === "W") return { resolution: "W", from: to - 5 * 365 * day, to };
-  if (period === "M") return { resolution: "M", from: to - 15 * 365 * day, to };
-  return { resolution: "D", from: to - 2 * 365 * day, to };
-}
-
-async function fetchFinnhubCandles(symbol, periodDiv) {
-  const p = normalizeCandlePeriod(periodDiv);
-  const range = candleRangeForPeriod(p);
-  const data = await cached(`candle:${symbol}:${p}`, () =>
-    finnhubFetch("/stock/candle", { symbol, ...range })
-  );
-  if (data?.s && data.s !== "ok") return [];
-
-  const ts = data.t || [];
-  const opens = data.o || [];
-  const highs = data.h || [];
-  const lows = data.l || [];
-  const closes = data.c || [];
-  const vols = data.v || [];
-
-  const bars = [];
-  for (let i = 0; i < ts.length; i++) {
-    const open = toNum(opens[i]);
-    const high = toNum(highs[i]);
-    const low = toNum(lows[i]);
-    const close = toNum(closes[i]);
-    if (open == null || high == null || low == null || close == null) continue;
-    const vol = toNum(vols[i]);
-    bars.push({
-      time: ymdFromUnix(ts[i]),
-      open,
-      high,
-      low,
-      close,
-      volume: vol != null && vol >= 0 ? vol : 0,
-    });
-  }
-  bars.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-  return bars.slice(-200);
-}
-
-async function fetchLatestDailyVolume(symbol) {
-  return cached(`volume:${symbol}`, async () => {
-    const candles = await fetchFinnhubCandles(symbol, "D");
-    for (let i = candles.length - 1; i >= 0; i--) {
-      const vol = toNum(candles[i].volume);
-      if (vol != null && vol > 0) return vol;
-    }
-    return null;
-  });
 }
 
 function normalizeTicker(raw) {
@@ -378,7 +371,7 @@ module.exports = async function handler(req, res) {
       const payload = await cachedPayload(`candle:${ticker}:${period}`, async () => ({
         ticker,
         period,
-        candles: await fetchFinnhubCandles(ticker, period),
+        candles: [],
       }));
       json(res, 200, payload);
       return;

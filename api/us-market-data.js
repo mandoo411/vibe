@@ -3,8 +3,8 @@
  * GET ?action=indices|sectors|gainers|volume|candle
  */
 
-const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+const YAHOO_BASE_URL = "https://query2.finance.yahoo.com";
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
@@ -55,7 +55,12 @@ function json(res, status, body) {
 
 async function yahooFetch(url) {
   const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+    headers: {
+      "User-Agent": USER_AGENT,
+      Accept: "application/json",
+      Cookie: "B=1",
+      Referer: "https://finance.yahoo.com",
+    },
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}: ${text.slice(0, 240)}`);
@@ -68,7 +73,7 @@ async function yahooFetch(url) {
 
 /** v8 chart — 현재가·전일·등락률·등락포인트 */
 async function fetchChartQuote(symbol) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
+  const url = `${YAHOO_BASE_URL}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
   const data = await yahooFetch(url);
   const result = data?.chart?.result?.[0];
   if (!result) throw new Error(`Empty chart: ${symbol}`);
@@ -103,7 +108,7 @@ async function fetchChartQuote(symbol) {
 /** v7 quote — 배치 심볼 */
 async function fetchQuoteBatch(symbols) {
   if (!symbols.length) return new Map();
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbols.join(","))}`;
+  const url = `${YAHOO_BASE_URL}/v7/finance/quote?symbols=${encodeURIComponent(symbols.join(","))}`;
   const data = await yahooFetch(url);
   const list = data?.quoteResponse?.result || [];
   const map = new Map();
@@ -144,7 +149,7 @@ function pickDollarVolume(q) {
 }
 
 async function fetchScreener(scrIds, count = 60) {
-  const url = `https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds=${encodeURIComponent(scrIds)}&count=${count}`;
+  const url = `${YAHOO_BASE_URL}/v1/finance/screener/predefined/saved?scrIds=${encodeURIComponent(scrIds)}&count=${count}`;
   const data = await yahooFetch(url);
   return data?.finance?.result?.[0]?.quotes || [];
 }
@@ -252,7 +257,7 @@ async function fetchYahooCandles(symbol, periodDiv) {
     interval = "1mo";
     range = "max";
   }
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
+  const url = `${YAHOO_BASE_URL}/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
   const data = await yahooFetch(url);
   const result = data?.chart?.result?.[0];
   if (!result) return [];

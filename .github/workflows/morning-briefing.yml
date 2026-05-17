@@ -38,8 +38,16 @@ jobs:
       - name: Create .env from secrets
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
         run: |
           printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env
+          printf 'KIS_ACCESS_TOKEN=%s\n' "$KIS_ACCESS_TOKEN" >> .env
+          printf 'KIS_APP_KEY=%s\n' "$KIS_APP_KEY" >> .env
+          printf 'KIS_APP_SECRET=%s\n' "$KIS_APP_SECRET" >> .env
+          printf 'NEWSAPI_KEY=%s\n' "$NEWSAPI_KEY" >> .env
 
       - name: Run morning briefing
         run: npm run sync:briefing
@@ -49,11 +57,11 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/briefing.json; then
-            echo "::notice::No changes to data/briefing.json"
+          if [ -z "$(git status --porcelain -- public/data/morning-briefing.json)" ]; then
+            echo "::notice::No changes to public/data/morning-briefing.json"
           else
             STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
-            git add data/briefing.json
+            git add public/data/morning-briefing.json
             git commit -m "chore(data): morning briefing ${STAMP}"
             git pull --rebase origin main
             git push

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * 장전 브리핑 — 미국 지수·VIX·공포탐욕·환율/원자재·BTC·미국 상승주·섹터 ETF 수집
- * → Claude 분석 → data/briefing.json
+ * 장전 브리핑 데이터 수집
+ * - 미국시장, 주요 종목, 섹터 ETF, 환율/원자재, crypto, 국내 뉴스 수집
+ * - Claude 분석
+ * - public/data/morning-briefing.json 저장
  *
  * 필수: ANTHROPIC_API_KEY
- * 선택: TARGET_DATE=YYYY-MM-DD (기본: 오늘 KST)
- *       ANTHROPIC_MODEL (기본 claude-sonnet-4-5)
- *       OUTPUT_PATH (기본 ./data/briefing.json)
+ * 권장: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, NEWSAPI_KEY
  */
 
 import fs from "node:fs/promises";
@@ -17,94 +17,185 @@ import Anthropic from "@anthropic-ai/sdk";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
+const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
+const KIS_INDEX_PATH = "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice";
+const KIS_INDEX_TR_ID = "FHKST03030100";
+const KIS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const KIS_PRICE_TR_ID = "HHDFS00000300";
+const EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
+const COINGECKO_URL =
+  "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true&include_market_cap=true";
+const NEWSAPI_URL = "https://newsapi.org/v2/everything";
+const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "public/data/morning-briefing.json");
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+
 const US_INDICES = [
-  { id: "dow", name: "다우", symbol: "^DJI" },
-  { id: "nasdaq", name: "나스닥", symbol: "^IXIC" },
-  { id: "sp500", name: "S&P 500", symbol: "^GSPC" },
+  { id: "sp500", name: "S&P 500", kisSymbol: "SPX", yahooSymbol: "^GSPC" },
+  { id: "nasdaq", name: "나스닥", kisSymbol: "NAS", yahooSymbol: "^IXIC" },
+  { id: "dow", name: "다우존스", kisSymbol: "DJI", yahooSymbol: "^DJI" },
 ];
 
-const FX_COMMODITIES = [
-  { id: "usdkrw", name: "달러/원", symbol: "KRW=X" },
-  { id: "wti", name: "WTI 유가", symbol: "CL=F" },
-  { id: "gold", name: "금", symbol: "GC=F" },
-];
+const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];
 
 const SECTOR_ETFS = [
-  { symbol: "XLK", name: "기술(XLK)" },
-  { symbol: "SOXX", name: "반도체(SOXX)" },
-  { symbol: "XLV", name: "헬스케어(XLV)" },
-  { symbol: "XLE", name: "에너지(XLE)" },
-  { symbol: "XLF", name: "금융(XLF)" },
-  { symbol: "XLY", name: "임의소비(XLY)" },
-  { symbol: "XLI", name: "산업재(XLI)" },
-  { symbol: "XLU", name: "유틸리티(XLU)" },
+  { symbol: "XLK", sector: "기술" },
+  { symbol: "XLF", sector: "금융" },
+  { symbol: "XLE", sector: "에너지" },
+  { symbol: "XLV", sector: "헬스케어" },
+  { symbol: "XLI", sector: "산업" },
+  { symbol: "XLY", sector: "소비재" },
+  { symbol: "XLP", sector: "필수소비" },
+  { symbol: "XLU", sector: "유틸리티" },
+  { symbol: "XLB", sector: "소재" },
+  { symbol: "XLRE", sector: "부동산" },
 ];
 
-const NASDAQ_EXCHANGES = new Set(["NMS", "NGM", "NCM", "NASDAQ", "Nasdaq", "NasdaqGS", "NasdaqGM"]);
+const COMMODITIES = [
+  { id: "wti", name: "WTI유가", symbol: "CL=F" },
+  { id: "gold", name: "금", symbol: "GC=F" },
+  { id: "silver", name: "은", symbol: "SI=F" },
+  { id: "copper", name: "구리", symbol: "HG=F" },
+];
 
-function seoulYmd(d = new Date()) {
-  return new Intl.DateTimeFormat("sv-SE", {
+const NEWS_RSS_FEEDS = [
+  { url: "https://rss.hankyung.com/economy.xml", source: "한국경제" },
+  { url: "https://www.mk.co.kr/rss/30000001/", source: "매일경제" },
+];
+
+function requireEnv(name) {
+  const value = String(process.env[name] || "").trim();
+  if (!value) throw new Error(`Missing env: ${name}`);
+  return value;
+}
+
+function optionalEnv(name) {
+  return String(process.env[name] || "").trim();
+}
+
+function sanitizeStr(value) {
+  return value == null ? "" : String(value).trim();
+}
+
+function toNumber(value) {
+  if (value == null || value === "") return null;
+  const normalized = typeof value === "string" ? value.replace(/[%,$,\s]/g, "").replace(/^\+/, "") : value;
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+function round2(value) {
+  const n = toNumber(value);
+  return n == null ? null : Math.round(n * 100) / 100;
+}
+
+function pickFirst(row, keys) {
+  if (!row || typeof row !== "object") return "";
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
+function seoulDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(d);
+  }).formatToParts(date);
+  const get = (type) => parts.find((p) => p.type === type)?.value || "";
+  return { year: get("year"), month: get("month"), day: get("day") };
 }
 
-function requireEnv(name) {
-  const v = process.env[name];
-  if (!v || !String(v).trim()) {
-    console.error(`Missing env: ${name}`);
-    process.exit(1);
-  }
-  return String(v).trim();
+function seoulYmd(date = new Date()) {
+  const { year, month, day } = seoulDateParts(date);
+  return `${year}-${month}-${day}`;
 }
 
-function sanitizeStr(v) {
-  return v == null ? "" : String(v).trim();
+function compactYmd(date = new Date()) {
+  return seoulYmd(date).replace(/-/g, "");
 }
 
-function toNumberOrNull(v) {
-  if (v === "" || v == null) return null;
-  if (typeof v === "string") {
-    const s = v.trim().replace(/%/g, "").replace(/,/g, "").replace(/\s/g, "").replace(/^\+/, "");
-    if (s === "" || s === "-" || s === ".") return null;
-    const n = Number(s);
-    return Number.isFinite(n) ? n : null;
-  }
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
+function addDaysKst(ymd, days) {
+  const date = new Date(`${ymd}T12:00:00+09:00`);
+  date.setDate(date.getDate() + days);
+  return seoulYmd(date);
 }
 
-function round2(n) {
-  if (n == null || !Number.isFinite(n)) return null;
-  return Math.round(n * 100) / 100;
+function kstIso(ymd, hhmm) {
+  return `${ymd}T${hhmm}:00+09:00`;
+}
+
+function newsWindow(now = new Date()) {
+  const today = seoulYmd(now);
+  const yesterday = addDaysKst(today, -1);
+  return {
+    from: kstIso(yesterday, "15:30"),
+    to: kstIso(today, "06:00"),
+  };
+}
+
+function inNewsWindow(value, window) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date >= new Date(window.from) && date <= new Date(window.to);
+}
+
+function kstTimeLabel(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(date)
+    .replace(/\.$/, "");
 }
 
 function delay(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseJsonFromAssistant(text) {
-  const s = String(text || "").trim();
-  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fence ? fence[1].trim() : s;
-  return JSON.parse(raw);
+function decodeXml(value) {
+  return String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
-async function fetchJson(url, opts = {}) {
+async function fetchText(url, opts = {}) {
   const res = await fetch(url, {
     ...opts,
     headers: {
-      "User-Agent": USER_AGENT,
-      Accept: "application/json",
+      "user-agent": USER_AGENT,
+      accept: "*/*",
       ...(opts.headers || {}),
     },
   });
   const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${url}: ${text.slice(0, 280)}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 280)}`);
+  return text;
+}
+
+async function fetchJson(url, opts = {}) {
+  const text = await fetchText(url, {
+    ...opts,
+    headers: {
+      accept: "application/json",
+      ...(opts.headers || {}),
+    },
+  });
   try {
     return JSON.parse(text);
   } catch {
@@ -112,382 +203,373 @@ async function fetchJson(url, opts = {}) {
   }
 }
 
-/** Yahoo Finance v8 chart — 종가·전일 대비 등락률 */
+function kisAuth() {
+  const token = optionalEnv("KIS_ACCESS_TOKEN");
+  const appkey = optionalEnv("KIS_APP_KEY");
+  const appsecret = optionalEnv("KIS_APP_SECRET");
+  if (!token || !appkey || !appsecret) throw new Error("Missing KIS_ACCESS_TOKEN, KIS_APP_KEY, or KIS_APP_SECRET");
+  return { token, appkey, appsecret };
+}
+
+function isKisTokenError(body) {
+  const blob = `${body?.msg_cd || ""} ${body?.msg1 || ""} ${body?.message || ""}`;
+  return /EGW00121|기간이 만료|기간 만료|토큰|token/i.test(blob);
+}
+
+async function kisGet(pathname, trId, params) {
+  const { token, appkey, appsecret } = kisAuth();
+  const url = new URL(pathname, KIS_BASE_URL);
+  for (const [key, value] of Object.entries(params || {})) {
+    url.searchParams.set(key, value == null ? "" : String(value));
+  }
+  const json = await fetchJson(url.toString(), {
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey,
+      appsecret,
+      tr_id: trId,
+      custtype: "P",
+    },
+  });
+  if (isKisTokenError(json)) throw new Error("KIS_ACCESS_TOKEN expired or invalid (EGW00121)");
+  if (json.rt_cd && json.rt_cd !== "0") throw new Error(`KIS rt_cd=${json.rt_cd} msg=${json.msg1 || json.msg_cd || ""}`);
+  return json;
+}
+
+function outputObject(body, preferred) {
+  const value = preferred ? body?.[preferred] : null;
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  for (const key of ["output", "output1", "output2", "OUTPUT"]) {
+    const candidate = body?.[key];
+    if (candidate && typeof candidate === "object" && !Array.isArray(candidate)) return candidate;
+    if (Array.isArray(candidate) && candidate[0] && typeof candidate[0] === "object") return candidate[0];
+  }
+  return {};
+}
+
 async function fetchYahooQuote(symbol) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
   const json = await fetchJson(url);
   const result = json?.chart?.result?.[0];
   if (!result) throw new Error(`Yahoo chart empty: ${symbol}`);
-
   const meta = result.meta || {};
-  let price = toNumberOrNull(meta.regularMarketPrice);
-  let prev = toNumberOrNull(meta.chartPreviousClose ?? meta.previousClose);
+  const closes = result.indicators?.quote?.[0]?.close || [];
+  const validCloses = Array.isArray(closes) ? closes.filter((n) => n != null && Number.isFinite(Number(n))) : [];
+  const price = round2(meta.regularMarketPrice ?? validCloses.at(-1));
+  const previousClose = round2(meta.chartPreviousClose ?? meta.previousClose ?? validCloses.at(-2));
+  const changePoints = price != null && previousClose != null ? round2(price - previousClose) : null;
+  const changePct = price != null && previousClose ? round2((changePoints / previousClose) * 100) : null;
+  return { symbol, price, previousClose, changePoints, changePct };
+}
 
-  const closes = result.indicators?.quote?.[0]?.close;
-  if (Array.isArray(closes) && closes.length) {
-    const valid = closes.filter((c) => c != null && Number.isFinite(c));
-    if (valid.length >= 1 && price == null) price = valid[valid.length - 1];
-    if (valid.length >= 2 && prev == null) prev = valid[valid.length - 2];
-  }
-
-  let changePct = null;
-  if (price != null && prev != null && prev !== 0) {
-    changePct = round2(((price - prev) / prev) * 100);
-  }
-
+async function fetchKisIndex(index) {
+  const body = await kisGet(KIS_INDEX_PATH, KIS_INDEX_TR_ID, {
+    FID_COND_MRKT_DIV_CODE: "N",
+    FID_INPUT_ISCD: index.kisSymbol,
+    FID_INPUT_DATE_1: compactYmd(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
+    FID_INPUT_DATE_2: compactYmd(),
+    FID_PERIOD_DIV_CODE: "D",
+  });
+  const out = outputObject(body, "output1");
   return {
-    symbol,
-    price: price != null ? round2(price) : null,
-    previousClose: prev != null ? round2(prev) : null,
-    changePct,
+    id: index.id,
+    name: index.name,
+    symbol: index.kisSymbol,
+    close: round2(pickFirst(out, ["ovrs_nmix_prpr", "OVRS_NMIX_PRPR"])),
+    previousClose: null,
+    changePct: round2(pickFirst(out, ["prdy_ctrt", "PRDY_CTRT"])),
+    changePoints: round2(pickFirst(out, ["ovrs_nmix_prdy_vrss", "OVRS_NMIX_PRDY_VRSS"])),
   };
 }
 
-async function fetchUsIndices() {
-  const out = [];
-  for (const idx of US_INDICES) {
-    const q = await fetchYahooQuote(idx.symbol);
-    out.push({
-      id: idx.id,
-      name: idx.name,
-      symbol: idx.symbol,
-      close: q.price,
-      previousClose: q.previousClose,
+async function fetchUsMarket() {
+  const indices = [];
+  for (const index of US_INDICES) {
+    try {
+      indices.push(await fetchKisIndex(index));
+    } catch {
+      const q = await fetchYahooQuote(index.yahooSymbol);
+      indices.push({
+        id: index.id,
+        name: index.name,
+        symbol: index.yahooSymbol,
+        close: q.price,
+        previousClose: q.previousClose,
+        changePct: q.changePct,
+        changePoints: q.changePoints,
+      });
+    }
+    await delay(250);
+  }
+  return { indices };
+}
+
+async function fetchKisStock(symbol) {
+  const body = await kisGet(KIS_PRICE_PATH, KIS_PRICE_TR_ID, {
+    AUTH: "",
+    EXCD: "NAS",
+    SYMB: symbol,
+  });
+  const out = outputObject(body);
+  const price = round2(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR"]));
+  const changePct = round2(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]));
+  const changePoints = round2(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"]));
+  return { symbol, price, changePct, changePoints };
+}
+
+async function fetchTopStocks() {
+  const rows = [];
+  for (const symbol of TOP_STOCKS) {
+    try {
+      rows.push(await fetchKisStock(symbol));
+    } catch {
+      const q = await fetchYahooQuote(symbol);
+      rows.push({ symbol, price: q.price, changePct: q.changePct, changePoints: q.changePoints });
+    }
+    await delay(250);
+  }
+  return rows;
+}
+
+async function fetchSectors() {
+  const rows = [];
+  for (const etf of SECTOR_ETFS) {
+    const q = await fetchYahooQuote(etf.symbol);
+    rows.push({
+      symbol: etf.symbol,
+      sector: etf.sector,
+      name: `${etf.sector} (${etf.symbol})`,
+      price: q.price,
       changePct: q.changePct,
     });
-    await delay(350);
+    await delay(250);
   }
-  return out;
+  return rows;
 }
 
-async function fetchVix() {
-  const q = await fetchYahooQuote("^VIX");
+async function fetchForex() {
+  const json = await fetchJson(EXCHANGE_RATE_URL);
+  const rates = json?.rates || {};
+  const usdKrw = round2(rates.KRW);
+  const usdJpy = round2(rates.JPY);
+  const usdCny = round2(rates.CNY);
+  const eurUsd = rates.EUR ? round2(1 / rates.EUR) : null;
   return {
-    symbol: "^VIX",
-    name: "VIX",
-    value: q.price,
-    previousClose: q.previousClose,
-    changePct: q.changePct,
+    rates: {
+      "USD/KRW": usdKrw,
+      "USD/JPY": usdJpy,
+      "USD/CNY": usdCny,
+      "EUR/USD": eurUsd,
+    },
+    base: "USD",
+    updatedAt: sanitizeStr(json?.time_last_update_utc || ""),
   };
 }
 
-async function fetchFearGreed() {
-  const url = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
-  const json = await fetchJson(url);
-  const fg = json?.fear_and_greed || json?.fear_and_greed_historical?.data?.[0];
-  const score = toNumberOrNull(json?.fear_and_greed?.score ?? fg?.score);
-  const rating = sanitizeStr(json?.fear_and_greed?.rating ?? fg?.rating);
-  const previousScore = toNumberOrNull(
-    json?.fear_and_greed?.previous_close ?? json?.fear_and_greed?.previousClose ?? fg?.previous_close
-  );
-  const timestamp = sanitizeStr(json?.fear_and_greed?.timestamp ?? fg?.x);
-  return { score, rating, previousScore, timestamp };
-}
-
-async function fetchFxCommodities() {
-  const out = [];
-  for (const item of FX_COMMODITIES) {
+async function fetchCommodities() {
+  const rows = [];
+  for (const item of COMMODITIES) {
     const q = await fetchYahooQuote(item.symbol);
-    out.push({
+    rows.push({
       id: item.id,
       name: item.name,
       symbol: item.symbol,
       price: q.price,
-      previousClose: q.previousClose,
       changePct: q.changePct,
+      changePoints: q.changePoints,
     });
-    await delay(350);
+    await delay(250);
   }
-  return out;
+  return rows;
 }
 
-async function fetchBitcoin() {
-  const priceUrl =
-    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,krw&include_24hr_change=true";
-  const globalUrl = "https://api.coingecko.com/api/v3/global";
-  const [priceJson, globalJson] = await Promise.all([fetchJson(priceUrl), fetchJson(globalUrl)]);
-  const btc = priceJson?.bitcoin || {};
-  const dominance = toNumberOrNull(globalJson?.data?.market_cap_percentage?.btc);
-  return {
-    usd: round2(btc.usd),
-    krw: round2(btc.krw),
-    changePct24h: round2(btc.usd_24h_change),
-    dominancePct: round2(dominance),
+async function fetchForexAndCommodities() {
+  const [forex, commodities] = await Promise.all([fetchForex(), fetchCommodities()]);
+  return { ...forex, commodities };
+}
+
+async function fetchCrypto() {
+  const json = await fetchJson(COINGECKO_URL);
+  const map = {
+    bitcoin: "BTC",
+    ethereum: "ETH",
+    solana: "SOL",
   };
-}
-
-function isNasdaqQuote(q) {
-  const ex = sanitizeStr(q.exchange);
-  const full = sanitizeStr(q.fullExchangeName);
-  if (NASDAQ_EXCHANGES.has(ex)) return true;
-  if (/nasdaq/i.test(full)) return true;
-  return false;
-}
-
-/** 나스닥 상승률 상위 — Yahoo predefined screener 후 거래소 필터 */
-async function fetchUsGainersTop10() {
-  const url =
-    "https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved?scrIds=day_gainers&count=50";
-  const json = await fetchJson(url);
-  const quotes =
-    json?.finance?.result?.[0]?.quotes ||
-    json?.finance?.result?.quotes ||
-    [];
-
-  const nasdaq = quotes
-    .filter((q) => q && isNasdaqQuote(q))
-    .filter((q) => toNumberOrNull(q.regularMarketChangePercent) != null)
-    .sort(
-      (a, b) =>
-        (toNumberOrNull(b.regularMarketChangePercent) || 0) -
-        (toNumberOrNull(a.regularMarketChangePercent) || 0)
-    );
-
-  const picked = (nasdaq.length >= 5 ? nasdaq : quotes).slice(0, 10);
-
-  return picked.map((q, i) => ({
-    rank: i + 1,
-    ticker: sanitizeStr(q.symbol),
-    name: sanitizeStr(q.shortName || q.longName || q.symbol),
-    changePct: round2(toNumberOrNull(q.regularMarketChangePercent)),
-    sector: sanitizeStr(q.sector || q.sectorDisp || ""),
-    exchange: sanitizeStr(q.exchange || q.fullExchangeName),
+  const assets = Object.entries(map).map(([id, symbol]) => ({
+    id,
+    symbol,
+    priceUsd: round2(json?.[id]?.usd),
+    changePct24h: round2(json?.[id]?.usd_24h_change),
+    marketCapUsd: round2(json?.[id]?.usd_market_cap),
   }));
+  return { assets };
 }
 
-async function fetchSectorEtfs() {
-  const out = [];
-  for (const etf of SECTOR_ETFS) {
-    const sym = etf.symbol;
-    const q = await fetchYahooQuote(sym);
-    out.push({
-      symbol: sym,
-      name: etf.name,
-      price: q.price,
-      previousClose: q.previousClose,
-      changePct: q.changePct,
-    });
-    await delay(350);
-  }
-  return out;
+function normalizeNewsApi(data, window) {
+  const rows = Array.isArray(data?.articles) ? data.articles : [];
+  return rows
+    .map((row) => ({
+      title: sanitizeStr(row.title),
+      url: sanitizeStr(row.url),
+      source: sanitizeStr(row.source?.name || "NewsAPI"),
+      publishedAt: sanitizeStr(row.publishedAt),
+    }))
+    .filter((row) => row.title && row.url && inNewsWindow(row.publishedAt, window))
+    .slice(0, 30);
 }
 
-function buildClaudePayload(data) {
-  const lines = [];
-  lines.push(`대상 날짜(KST): ${data.ymd}`);
-  lines.push("");
-  lines.push("=== 미국 3대 지수 (전일 마감) ===");
-  for (const x of data.usIndices) {
-    lines.push(
-      `${x.name} (${x.symbol}): 종가 ${x.close ?? "—"}, 등락률 ${x.changePct != null ? (x.changePct > 0 ? "+" : "") + x.changePct + "%" : "—"}`
-    );
+function normalizeRss(xml, source, window) {
+  const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
+  return items
+    .map((item) => {
+      const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
+      const url = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
+      const publishedAt = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
+      return { title, url, source, publishedAt: publishedAt ? new Date(publishedAt).toISOString() : "" };
+    })
+    .filter((row) => row.title && row.url && inNewsWindow(row.publishedAt, window))
+    .slice(0, 30);
+}
+
+async function fetchNewsApi(window) {
+  const apiKey = optionalEnv("NEWSAPI_KEY");
+  if (!apiKey) return [];
+  const url = new URL(NEWSAPI_URL);
+  url.searchParams.set("q", "주식 코스피 코스닥 증시");
+  url.searchParams.set("language", "ko");
+  url.searchParams.set("sortBy", "publishedAt");
+  url.searchParams.set("pageSize", "30");
+  url.searchParams.set("from", window.from);
+  url.searchParams.set("to", window.to);
+  url.searchParams.set("apiKey", apiKey);
+  const json = await fetchJson(url);
+  return normalizeNewsApi(json, window);
+}
+
+async function fetchRssNews(window) {
+  for (const feed of NEWS_RSS_FEEDS) {
+    try {
+      const xml = await fetchText(feed.url, { headers: { accept: "application/rss+xml, application/xml, text/xml" } });
+      const rows = normalizeRss(xml, feed.source, window);
+      if (rows.length) return rows;
+    } catch (error) {
+      console.warn(`[morning-briefing] ${feed.source} RSS failed: ${error instanceof Error ? error.message : error}`);
+    }
   }
-  lines.push("");
-  lines.push("=== VIX ===");
-  lines.push(
-    `VIX: ${data.vix?.value ?? "—"}, 등락률 ${data.vix?.changePct != null ? data.vix.changePct + "%" : "—"}`
+  return [];
+}
+
+async function fetchDomesticNews() {
+  const window = newsWindow();
+  try {
+    const newsApiRows = await fetchNewsApi(window);
+    if (newsApiRows.length) return newsApiRows;
+  } catch (error) {
+    console.warn(`[morning-briefing] NewsAPI failed: ${error instanceof Error ? error.message : error}`);
+  }
+  return fetchRssNews(window);
+}
+
+function parseClaudeJson(text) {
+  const raw = String(text || "").trim();
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const body = fenced ? fenced[1].trim() : raw;
+  const start = body.indexOf("{");
+  const end = body.lastIndexOf("}");
+  if (start < 0 || end < start) throw new Error("Claude response did not contain JSON");
+  return JSON.parse(body.slice(start, end + 1));
+}
+
+function buildAnalysisInput(data) {
+  return JSON.stringify(
+    {
+      usMarket: data.usMarket,
+      topStocks: data.topStocks,
+      sectors: data.sectors,
+      forex: data.forex,
+      crypto: data.crypto,
+      news: data.news,
+    },
+    null,
+    2
   );
-  lines.push("");
-  lines.push("=== CNN 공포탐욕지수 ===");
-  lines.push(
-    `점수 ${data.fearGreed?.score ?? "—"} (${data.fearGreed?.rating || "—"}), 이전 ${data.fearGreed?.previousScore ?? "—"}`
-  );
-  lines.push("");
-  lines.push("=== 환율·원자재 ===");
-  for (const x of data.fxCommodities) {
-    lines.push(
-      `${x.name}: ${x.price ?? "—"}, 등락률 ${x.changePct != null ? x.changePct + "%" : "—"}`
-    );
-  }
-  lines.push("");
-  lines.push("=== 비트코인 (CoinGecko) ===");
-  lines.push(
-    `USD ${data.bitcoin?.usd ?? "—"}, KRW ${data.bitcoin?.krw ?? "—"}, 24h ${data.bitcoin?.changePct24h ?? "—"}%, 도미넌스 ${data.bitcoin?.dominancePct ?? "—"}%`
-  );
-  lines.push("");
-  lines.push("=== 미국(나스닥) 상승 TOP10 ===");
-  for (const g of data.usGainers) {
-    lines.push(
-      `#${g.rank} ${g.ticker} ${g.name} ${g.changePct != null ? "+" + g.changePct + "%" : "—"} [${g.sector || "섹터 미상"}]`
-    );
-  }
-  lines.push("");
-  lines.push("=== 섹터 ETF 등락률 ===");
-  for (const e of data.sectorEtfs) {
-    lines.push(`${e.symbol} ${e.name}: ${e.changePct != null ? e.changePct + "%" : "—"}`);
-  }
-  if (data.errors?.length) {
-    lines.push("");
-    lines.push("=== 수집 경고 ===");
-    data.errors.forEach((err) => lines.push(`- ${err}`));
-  }
-  return lines.join("\n");
 }
 
-async function analyzeWithClaude({ apiKey, model, data }) {
-  const client = new Anthropic({ apiKey });
-  const userText = buildClaudePayload(data);
-
-  const system = `당신은 한국 주식 시장 장전 브리핑 애널리스트입니다.
-입력은 미국 마감·VIX·공포탐욕·환율/원자재·비트코인·미국 상승주·섹터 ETF 데이터입니다.
-
-반드시 아래 JSON 객체만 출력하세요. 마크다운·코드펜스·설명 금지.
-
-{
-  "oneLiner": "오늘 국내시장 한줄 요약 (한국어 1문장, 40~80자)",
-  "sectorsTop3": ["주목 섹터1", "주목 섹터2", "주목 섹터3"],
-  "flowOutlook": "미국→국내 수급 예상 흐름 (한국어 2~4문장)",
-  "strategyPoints": "오늘 전략 포인트 (한국어 2~4문장, 불릿 없이 문단)"
-}
-
-규칙:
-- 입력 데이터에 근거해 작성. 없는 수치는 만들지 마세요.
-- 투자 권유·단정적 예측은 피하고, 맥락·리스크 균형을 유지하세요.
-- sectorsTop3는 한국 투자자 관점의 섹터/테마 키워드 3개(짧게).`;
-
+async function analyzeWithClaude(data) {
+  const client = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
   const msg = await client.messages.create({
-    model,
-    max_tokens: 2048,
-    system,
-    messages: [{ role: "user", content: userText }],
+    model: MODEL,
+    max_tokens: 1800,
+    system: `당신은 한국 주식 시장 장전 브리핑 애널리스트입니다.
+입력 데이터만 근거로 한국어 JSON 객체만 반환하세요. 마크다운, 코드펜스, 설명은 금지입니다.
+스키마:
+{
+  "keyIssues": ["오늘 주목할 핵심 이슈 1", "오늘 주목할 핵심 이슈 2", "오늘 주목할 핵심 이슈 3"],
+  "domesticImpact": "국내 증시 영향 분석 2~4문장",
+  "watchSectors": ["오늘 주목 섹터/종목 1", "오늘 주목 섹터/종목 2", "오늘 주목 섹터/종목 3"]
+}
+투자 권유나 단정은 피하고, 리스크와 조건을 함께 언급하세요.`,
+    messages: [{ role: "user", content: buildAnalysisInput(data) }],
   });
-
-  const block = msg.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-  const parsed = parseJsonFromAssistant(block.text);
-
+  const block = msg.content.find((item) => item.type === "text");
+  const parsed = parseClaudeJson(block?.text || "");
   return {
-    oneLiner: sanitizeStr(parsed.oneLiner),
-    sectorsTop3: Array.isArray(parsed.sectorsTop3)
-      ? parsed.sectorsTop3.map((s) => sanitizeStr(s)).filter(Boolean).slice(0, 3)
-      : [],
-    flowOutlook: sanitizeStr(parsed.flowOutlook),
-    strategyPoints: sanitizeStr(parsed.strategyPoints),
+    keyIssues: Array.isArray(parsed.keyIssues) ? parsed.keyIssues.map(sanitizeStr).filter(Boolean).slice(0, 3) : [],
+    domesticImpact: sanitizeStr(parsed.domesticImpact),
+    watchSectors: Array.isArray(parsed.watchSectors) ? parsed.watchSectors.map(sanitizeStr).filter(Boolean).slice(0, 5) : [],
   };
 }
 
-async function safeRun(label, fn, errors) {
+async function safeCollect(label, fallback, fn, errors) {
   try {
     return await fn();
-  } catch (e) {
-    const msg = `${label}: ${e && e.message ? e.message : String(e)}`;
-    console.error("[morning-briefing]", msg);
-    errors.push(msg);
-    return null;
+  } catch (error) {
+    const message = `${label}: ${error instanceof Error ? error.message : error}`;
+    console.error("[morning-briefing]", message);
+    errors.push(message);
+    return fallback;
   }
 }
 
 async function main() {
-  const targetYmd = process.env.TARGET_DATE?.trim() || seoulYmd();
-  const model = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-5";
-  const outputPath = path.resolve(process.cwd(), process.env.OUTPUT_PATH?.trim() || "./data/briefing.json");
-  const apiKey = requireEnv("ANTHROPIC_API_KEY");
-
   const errors = [];
-  const generatedAt = new Date().toISOString();
+  const updatedAt = kstIso(seoulYmd(), "06:00");
 
-  console.log("[morning-briefing] collecting", { targetYmd });
-
-  const usIndices =
-    (await safeRun("usIndices", fetchUsIndices, errors)) || US_INDICES.map((i) => ({
-      id: i.id,
-      name: i.name,
-      symbol: i.symbol,
-      close: null,
-      previousClose: null,
-      changePct: null,
-    }));
-
-  const vix =
-    (await safeRun("vix", fetchVix, errors)) || {
-      symbol: "^VIX",
-      name: "VIX",
-      value: null,
-      previousClose: null,
-      changePct: null,
-    };
-
-  const fearGreed =
-    (await safeRun("fearGreed", fetchFearGreed, errors)) || {
-      score: null,
-      rating: "",
-      previousScore: null,
-      timestamp: "",
-    };
-
-  const fxCommodities =
-    (await safeRun("fxCommodities", fetchFxCommodities, errors)) ||
-    FX_COMMODITIES.map((i) => ({
-      id: i.id,
-      name: i.name,
-      symbol: i.symbol,
-      price: null,
-      previousClose: null,
-      changePct: null,
-    }));
-
-  const bitcoin =
-    (await safeRun("bitcoin", fetchBitcoin, errors)) || {
-      usd: null,
-      krw: null,
-      changePct24h: null,
-      dominancePct: null,
-    };
-
-  const usGainers = (await safeRun("usGainers", fetchUsGainersTop10, errors)) || [];
-
-  const sectorEtfs =
-    (await safeRun("sectorEtfs", fetchSectorEtfs, errors)) ||
-    SECTOR_ETFS.map((e) => ({
-      symbol: e.symbol,
-      name: e.name,
-      price: null,
-      previousClose: null,
-      changePct: null,
-    }));
+  const usMarket = await safeCollect("usMarket", { indices: [] }, fetchUsMarket, errors);
+  const topStocks = await safeCollect("topStocks", [], fetchTopStocks, errors);
+  const sectors = await safeCollect("sectors", [], fetchSectors, errors);
+  const forex = await safeCollect("forex", { rates: {}, commodities: [] }, fetchForexAndCommodities, errors);
+  const crypto = await safeCollect("crypto", { assets: [] }, fetchCrypto, errors);
+  const news = await safeCollect("news", [], fetchDomesticNews, errors);
 
   const partial = {
-    ymd: targetYmd,
-    generatedAt,
-    usIndices,
-    vix,
-    fearGreed,
-    fxCommodities,
-    bitcoin,
-    usGainers,
-    sectorEtfs,
+    updatedAt,
+    usMarket,
+    topStocks,
+    sectors,
+    forex,
+    crypto,
+    news,
+    aiAnalysis: {
+      keyIssues: [],
+      domesticImpact: "",
+      watchSectors: [],
+    },
     errors,
   };
 
-  let analysis = {
-    oneLiner: "",
-    sectorsTop3: [],
-    flowOutlook: "",
-    strategyPoints: "",
-  };
+  partial.aiAnalysis = await safeCollect("aiAnalysis", partial.aiAnalysis, () => analyzeWithClaude(partial), errors);
 
-  try {
-    analysis = await analyzeWithClaude({ apiKey, model, data: partial });
-  } catch (e) {
-    const msg = `claude: ${e && e.message ? e.message : String(e)}`;
-    console.error("[morning-briefing]", msg);
-    errors.push(msg);
-  }
-
-  const briefing = {
-    ...partial,
-    analysis,
-  };
-
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, `${JSON.stringify(briefing, null, 2)}\n`, "utf8");
-  console.log("[morning-briefing] wrote", outputPath, {
+  await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
+  await fs.writeFile(OUTPUT_PATH, `${JSON.stringify(partial, null, 2)}\n`, "utf8");
+  console.log("[morning-briefing] wrote", OUTPUT_PATH, {
+    news: news.length,
     errors: errors.length,
-    gainers: usGainers.length,
   });
 }
 
-main().catch((e) => {
-  console.error("[morning-briefing] fatal", e);
+main().catch((error) => {
+  console.error("[morning-briefing] fatal", error);
   process.exit(1);
 });

@@ -9,10 +9,8 @@ const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestme
 );
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const INDEX_CHART_PATH = "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice";
-const INDEX_CHART_TR_ID = "FHKST03030100";
-const INDUSTRY_THEME_PATH = "/uapi/overseas-price/v1/quotations/industry-theme";
-const INDUSTRY_THEME_TR_ID = "HHDFS76370000";
+const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
 const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
 const MARKET_CAP_TR_ID = "HHDFS76350100";
 const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
@@ -21,20 +19,20 @@ const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
 const TRADE_PBMN_TR_ID = "HHDFS76320010";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "NAS" },
-  { id: "sp500", name: "S&P 500", symbol: "SPX" },
-  { id: "dow", name: "다우", symbol: "DJI" },
+  { id: "nasdaq", name: "나스닥", symbol: "QQQ", exchange: "NAS" },
+  { id: "sp500", name: "S&P 500", symbol: "SPY", exchange: "AMS" },
+  { id: "dow", name: "다우", symbol: "DIA", exchange: "AMS" },
 ];
 
 const US_SECTORS = [
-  { code: "021", name: "기술", label: "TECH" },
-  { code: "023", name: "반도체", label: "SEMI" },
-  { code: "035", name: "바이오/헬스", label: "BIO" },
-  { code: "037", name: "에너지", label: "ENERGY" },
-  { code: "032", name: "금융", label: "FIN" },
-  { code: "025", name: "소비재", label: "CONS" },
-  { code: "026", name: "산업재", label: "IND" },
-  { code: "038", name: "유틸리티", label: "UTIL" },
+  { symbol: "XLK", exchange: "AMS", name: "기술", label: "XLK" },
+  { symbol: "XLF", exchange: "AMS", name: "금융", label: "XLF" },
+  { symbol: "XLE", exchange: "AMS", name: "에너지", label: "XLE" },
+  { symbol: "XLV", exchange: "AMS", name: "바이오/헬스", label: "XLV" },
+  { symbol: "XLI", exchange: "AMS", name: "산업재", label: "XLI" },
+  { symbol: "XLP", exchange: "AMS", name: "소비재", label: "XLP" },
+  { symbol: "XLB", exchange: "AMS", name: "소재", label: "XLB" },
+  { symbol: "XLU", exchange: "AMS", name: "유틸리티", label: "XLU" },
 ];
 
 const EXCHANGES = ["NAS", "NYS"];
@@ -180,19 +178,6 @@ async function cached(key, loader, ttlMs = CACHE_TTL_MS) {
   return promise;
 }
 
-function ymd(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}${m}${d}`;
-}
-
-function indexDateRange() {
-  const to = new Date();
-  const from = new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
-  return { from: ymd(from), to: ymd(to) };
-}
-
 function normalizeTicker(raw) {
   const s = sanitizeStr(raw).toUpperCase();
   if (!s || s.length > 16) return "";
@@ -245,26 +230,34 @@ function mapRankRow(row, rank) {
   };
 }
 
+async function fetchOverseasQuote({ symbol, exchange }) {
+  const body = await kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, {
+    AUTH: "",
+    EXCD: exchange,
+    SYMB: symbol,
+  });
+  const out = outputObject(body);
+  return {
+    symbol,
+    exchange,
+    price: round2(toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))),
+    changePct: round2(toNum(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]))),
+    changePoints: round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"]))),
+  };
+}
+
 async function fetchIndices() {
   return cached("indices", async () => {
-    const range = indexDateRange();
     const items = [];
     for (const idx of US_INDICES) {
-      const body = await kisGet(INDEX_CHART_PATH, INDEX_CHART_TR_ID, {
-        FID_COND_MRKT_DIV_CODE: "N",
-        FID_INPUT_ISCD: idx.symbol,
-        FID_INPUT_DATE_1: range.from,
-        FID_INPUT_DATE_2: range.to,
-        FID_PERIOD_DIV_CODE: "D",
-      });
-      const out = outputObject(body, "output1");
+      const quote = await fetchOverseasQuote(idx);
       items.push({
         id: idx.id,
         name: idx.name,
         symbol: idx.symbol,
-        price: round2(toNum(pickFirst(out, ["ovrs_nmix_prpr", "OVRS_NMIX_PRPR"]))),
-        changePct: round2(toNum(pickFirst(out, ["prdy_ctrt", "PRDY_CTRT"]))),
-        changePoints: round2(toNum(pickFirst(out, ["ovrs_nmix_prdy_vrss", "OVRS_NMIX_PRDY_VRSS"]))),
+        price: quote.price,
+        changePct: quote.changePct,
+        changePoints: quote.changePoints,
       });
     }
     return items;
@@ -275,24 +268,13 @@ async function fetchSectors() {
   return cached("sectors", async () => {
     const sectors = [];
     for (const sector of US_SECTORS) {
-      const body = await kisGet(INDUSTRY_THEME_PATH, INDUSTRY_THEME_TR_ID, {
-        EXCD: "NAS",
-        VOL_RANG: "0",
-        KEYB: " ",
-        AUTH: " ",
-        ICOD: sector.code,
-      });
-      const rows = outputRows(body);
-      const rates = rows
-        .map((row) => toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])))
-        .filter((n) => n != null);
-      const avg = rates.length ? rates.reduce((sum, n) => sum + n, 0) / rates.length : null;
+      const quote = await fetchOverseasQuote(sector);
       sectors.push({
-        symbol: sector.code,
+        symbol: sector.symbol,
         name: sector.name,
         label: sector.label,
-        changePct: round2(avg),
-        count: rates.length,
+        changePct: quote.changePct,
+        price: quote.price,
       });
     }
     return sectors;
@@ -323,7 +305,15 @@ function fetchMarketCapTop50() {
     "ranking:market-cap",
     MARKET_CAP_PATH,
     MARKET_CAP_TR_ID,
-    (exchange) => ({ KEYB: " ", AUTH: " ", EXCD: exchange, VOL_RANG: "0" }),
+    (exchange) => ({
+      AUTH: "",
+      EXCD: exchange,
+      SYMB: "",
+      BYMD: "",
+      TRXN_TP: "1",
+      MKTL_TP: "1",
+      IN_CNT: "50",
+    }),
     "marketCap"
   );
 }

@@ -274,8 +274,8 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: flex-start;
-    gap: 4px 6px;
-    padding: 4px 6px;
+    gap: 3px 4px;
+    padding: 4px;
     margin: 0;
     border: 0;
     border-top: 1px solid var(--border);
@@ -283,8 +283,8 @@
     background: transparent;
     box-shadow: none;
     font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.02em;
+    font-size: 9px;
+    letter-spacing: 0;
   }
 
   .tm-site-nav__link {
@@ -295,12 +295,12 @@
     justify-content: center;
     min-width: 0;
     width: auto;
-    height: 30px;
-    min-height: 30px;
-    max-height: 30px;
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
     margin: 0;
-    padding: 0 6px;
-    font-size: 10px;
+    padding: 0 4px;
+    font-size: 9px;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;

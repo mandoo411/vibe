@@ -332,7 +332,7 @@
       const weekMeta = bundle.meta || {};
       const meta = { ...globalMeta, ...weekMeta };
 
-      els.mastheadTitle.textContent = meta.title || "주간 증시 일정";
+      els.mastheadTitle.textContent = meta.title || "일정";
       els.mastheadRange.innerHTML = `<strong>${escapeHtml(weekRangeLabelKo(mondayKey, fridayYmd))}</strong>`;
       els.mastheadUpdated.textContent = weekMeta.lastUpdated ? `업데이트: ${weekMeta.lastUpdated}` : "";
       els.mastheadTz.textContent = meta.timezoneNote || "";
@@ -344,7 +344,7 @@
       }
 
       try {
-        document.title = `${meta.title || "주간 증시 일정"} · ${weekRangeLabelKo(mondayKey, fridayYmd)}`;
+        document.title = `${meta.title || "일정"} · ${weekRangeLabelKo(mondayKey, fridayYmd)}`;
       } catch (_) {
         /* ignore */
       }

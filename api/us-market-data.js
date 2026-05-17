@@ -88,7 +88,11 @@ async function issueKisAccessToken() {
   const { appkey, appsecret } = requireKisAppCredentials();
   const res = await fetch(new URL("/oauth2/tokenP", KIS_BASE_URL).toString(), {
     method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      appkey,
+      appsecret,
+    },
     body: JSON.stringify({
       grant_type: "client_credentials",
       appkey,
@@ -103,7 +107,11 @@ async function issueKisAccessToken() {
     throw new Error(`KIS tokenP invalid JSON HTTP ${res.status}: ${text.slice(0, 240)}`);
   }
   if (!res.ok || !body.access_token) {
-    throw new Error(`KIS tokenP failed HTTP ${res.status}: ${text.slice(0, 240)}`);
+    const code = body.error_code || body.msg_cd || "";
+    const desc = body.error_description || body.msg1 || text.slice(0, 160);
+    throw new Error(
+      `KIS tokenP failed HTTP ${res.status}${code ? ` ${code}` : ""}: ${desc}. Check KIS_APP_KEY/KIS_APP_SECRET and app permission.`
+    );
   }
   const ttlSec = Math.max(60, Number(body.expires_in) || 23 * 60 * 60);
   kisIssuedToken = sanitizeStr(body.access_token);

@@ -157,6 +157,12 @@
           "Initial Jobless Claims": "신규 실업수당 청구",
           "Retail Sales m/m": "소매판매 (월간)",
           "Core Retail Sales m/m": "근원 소매판매 (월간)",
+          "Retail Sales YoY": "소매판매 (연간)",
+          "Retail Sales MoM": "소매판매 (월간)",
+          "Retail Sales y/y": "소매판매 (연간)",
+          "Retail Sales m/m": "소매판매 (월간)",
+          "Retail Sales Ex Autos m/m": "소매판매 (자동차 제외)",
+          "Core Retail Sales y/y": "근원 소매판매 (연간)",
           "ISM Manufacturing PMI": "ISM 제조업 PMI",
           "ISM Non-Manufacturing PMI": "ISM 서비스업 PMI",
           "ISM Services PMI": "ISM 서비스 PMI",
@@ -168,8 +174,14 @@
           "Building Permits": "건축허가",
           "Trade Balance": "무역수지",
           "Current Account": "경상수지",
+          "Current Account Balance": "경상수지",
+          "Government Budget": "정부 예산",
           "Durable Goods Orders m/m": "내구재 주문 (월간)",
           "Core Durable Goods Orders m/m": "근원 내구재 주문",
+          "Industrial Production m/m": "산업생산 (월간)",
+          "Industrial Production YoY": "산업생산 (연간)",
+          "Industrial Production MoM": "산업생산 (월간)",
+          "Industrial Production y/y": "산업생산 (연간)",
           "Industrial Production m/m": "산업생산 (월간)",
           "Capacity Utilization Rate": "설비가동률",
           "PCE Price Index m/m": "PCE 물가지수 (월간)",
@@ -183,6 +195,18 @@
           "Flash Services PMI": "서비스 PMI 속보치",
           "JOLTs Job Openings": "JOLTs 구인건수",
           "Treasury Secretary Press Conference": "재무장관 기자회견",
+          "Manufacturing PMI": "제조업 PMI",
+          "Services PMI": "서비스 PMI",
+          "Composite PMI": "복합 PMI",
+          "Business Confidence": "기업신뢰지수",
+          "Consumer Confidence": "소비자신뢰지수",
+          "Consumer Price Index MoM": "소비자물가지수 (월간)",
+          "Consumer Price Index YoY": "소비자물가지수 (연간)",
+          "Producer Price Index MoM": "생산자물가지수 (월간)",
+          "Producer Price Index YoY": "생산자물가지수 (연간)",
+          "Employment Change": "고용변화",
+          "Interest Rate Decision": "금리 결정",
+          "Foreign Exchange Reserves": "외환보유고",
           "RBA Hunter Speech": "RBA 헌터 총재 연설",
           "RBA Interest Rate Decision": "RBA 금리 결정",
           "Westpac Consumer Confidence": "웨스트팩 소비자신뢰",
@@ -282,7 +306,8 @@
 
         function itemsForDate(type, ymd) {
           const rows = state.data?.[type] || [];
-          return rows.filter((row) => row.date === ymd);
+          const sameDateRows = rows.filter((row) => row.date === ymd);
+          return type === "economicCalendar" ? sameDateRows.filter(isHighImpact) : sameDateRows;
         }
 
         function impactClass(impact) {
@@ -290,6 +315,14 @@
           if (key.includes("high")) return "impact-high";
           if (key.includes("medium")) return "impact-medium";
           return "impact-low";
+        }
+
+        function isHighImpact(row) {
+          const impact = row && row.impact;
+          const importance = Number(row && row.importance);
+          if (impact === 3 || impact === "3") return true;
+          if (String(impact || "").toLowerCase() === "high") return true;
+          return Number.isFinite(importance) && importance >= 3;
         }
 
         function translateIndicator(name) {
@@ -310,10 +343,11 @@
         }
 
         function renderEconomic(rows) {
-          if (!rows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
+          const highRows = (rows || []).filter(isHighImpact);
+          if (!highRows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
           return `<div class="schedule-table-wrap"><table class="schedule-table">
             <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>중요도</th></tr></thead>
-            <tbody>${rows
+            <tbody>${highRows
               .map(
                 (r) => `<tr class="${impactClass(r.impact)}">
                   <td>${escapeHtml(r.time || "—")}</td>

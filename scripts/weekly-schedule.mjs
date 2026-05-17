@@ -5,6 +5,8 @@ import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
+const NEWSAPI_URL = "https://newsapi.org/v2/top-headlines";
+const YONHAP_ECONOMY_RSS_URL = "https://www.yonhapnews.co.kr/rss/economy.xml";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
@@ -59,6 +61,39 @@ function timeLabelFromUnix(sec) {
   }).format(new Date(Number(sec) * 1000));
 }
 
+function kstNewsTimeLabel(value) {
+  const date = value ? new Date(value) : new Date();
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(date)
+    .replace(/\.$/, "");
+}
+
+function isHighImpact(row) {
+  const impact = row && row.impact;
+  const importance = Number(row && row.importance);
+  if (impact === 3 || impact === "3") return true;
+  if (String(impact || "").toLowerCase() === "high") return true;
+  return Number.isFinite(importance) && importance >= 3;
+}
+
+function decodeXml(s) {
+  return String(s || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
 async function fetchJson(url) {
   const res = await fetch(url, {
     headers: {
@@ -77,14 +112,30 @@ async function fetchJson(url) {
   }
 }
 
+async function fetchText(url, headers = {}) {
+  const res = await fetch(url, {
+    headers: {
+      accept: "*/*",
+      "user-agent": "TotalMoneyAI/1.0",
+      ...headers,
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
+  }
+  return text;
+}
+
 function normalizeEconomic(data) {
   const rows = Array.isArray(data?.economicCalendar) ? data.economicCalendar : [];
-  return rows.map((row) => ({
+  return rows.filter(isHighImpact).map((row) => ({
     date: String(row.date || row.time || "").slice(0, 10),
     event: row.event || "",
     country: row.country || "",
     time: String(row.time || "").slice(11, 16) || "",
-    impact: String(row.impact || "low").toLowerCase(),
+    impact: "high",
+    importance: 3,
     actual: row.actual ?? "",
     previous: row.previous ?? "",
     estimate: row.estimate ?? "",
@@ -113,6 +164,50 @@ function normalizeNews(data) {
     timeLabel: timeLabelFromUnix(row.datetime),
     source: row.source || "",
   }));
+}
+
+function normalizeNewsApi(data) {
+  const rows = Array.isArray(data?.articles) ? data.articles : [];
+  return rows.slice(0, 20).map((row) => ({
+    headline: row.title || "",
+    url: row.url || "",
+    datetime: row.publishedAt || null,
+    date: row.publishedAt ? seoulYmd(new Date(row.publishedAt)) : "",
+    timeLabel: kstNewsTimeLabel(row.publishedAt),
+    source: row.source && row.source.name ? row.source.name : "NewsAPI",
+  }));
+}
+
+function normalizeYonhapRss(xml) {
+  const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
+  return items.slice(0, 20).map((item) => {
+    const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
+    const link = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
+    const pubDate = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
+    return {
+      headline: title,
+      url: link,
+      datetime: pubDate || null,
+      date: pubDate ? seoulYmd(new Date(pubDate)) : "",
+      timeLabel: kstNewsTimeLabel(pubDate),
+      source: "연합뉴스",
+    };
+  });
+}
+
+async function fetchKoreanNews() {
+  const newsApiKey = String(process.env.NEWSAPI_KEY || "").trim();
+  if (newsApiKey) {
+    const url = new URL(NEWSAPI_URL);
+    url.searchParams.set("country", "kr");
+    url.searchParams.set("category", "business");
+    url.searchParams.set("pageSize", "20");
+    url.searchParams.set("apiKey", newsApiKey);
+    const text = await fetchText(url, { accept: "application/json" });
+    return normalizeNewsApi(JSON.parse(text));
+  }
+  const xml = await fetchText(YONHAP_ECONOMY_RSS_URL, { accept: "application/rss+xml, application/xml, text/xml" });
+  return normalizeYonhapRss(xml);
 }
 
 function parseClaudeJson(text) {
@@ -176,19 +271,14 @@ async function main() {
   earningsUrl.searchParams.set("to", to);
   earningsUrl.searchParams.set("token", token);
 
-  const newsUrl = new URL(`${FINNHUB_BASE_URL}/news`);
-  newsUrl.searchParams.set("category", "general");
-  newsUrl.searchParams.set("token", token);
-
-  const [economicRaw, earningsRaw, newsRaw] = await Promise.all([
+  const [economicRaw, earningsRaw, news] = await Promise.all([
     fetchJson(economicUrl),
     fetchJson(earningsUrl),
-    fetchJson(newsUrl),
+    fetchKoreanNews(),
   ]);
 
   const economicCalendar = normalizeEconomic(economicRaw);
   const earningsCalendar = normalizeEarnings(earningsRaw);
-  const news = normalizeNews(newsRaw);
   const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, news });
 
   const data = {

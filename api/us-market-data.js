@@ -19,6 +19,7 @@ const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
 const UPDOWN_RATE_TR_ID = "HHDFS76290000";
 const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
 const TRADE_PBMN_TR_ID = "HHDFS76320010";
+const US_RANKING_CURRENCY = "USD";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS" },
@@ -325,6 +326,7 @@ function fetchMarketCapTop50() {
     MARKET_CAP_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       VOL_RANG: "0",
@@ -340,6 +342,7 @@ function fetchGainersTop50() {
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       GUBN: "1",
       KEYB: "",
@@ -357,6 +360,7 @@ function fetchTradeValueTop50() {
     TRADE_PBMN_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       NDAY: "0",

@@ -57,11 +57,11 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ -z "$(git status --porcelain -- public/data/morning-briefing.json)" ]; then
-            echo "::notice::No changes to public/data/morning-briefing.json"
+          if [ -z "$(git status --porcelain -- data/morning-briefing.json)" ]; then
+            echo "::notice::No changes to data/morning-briefing.json"
           else
             STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
-            git add public/data/morning-briefing.json
+            git add data/morning-briefing.json
             git commit -m "chore(data): morning briefing ${STAMP}"
             git pull --rebase origin main
             git push

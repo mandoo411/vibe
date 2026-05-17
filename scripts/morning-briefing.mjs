@@ -3,7 +3,7 @@
  * 장전 브리핑 데이터 수집
  * - 미국시장, 주요 종목, 섹터 ETF, 환율/원자재, crypto, 국내 뉴스 수집
  * - Claude 분석
- * - public/data/morning-briefing.json 저장
+ * - data/morning-briefing.json 저장
  *
  * 필수: ANTHROPIC_API_KEY
  * 권장: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, NEWSAPI_KEY
@@ -26,7 +26,7 @@ const EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
 const COINGECKO_URL =
   "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true&include_market_cap=true";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
-const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "public/data/morning-briefing.json");
+const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefing.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 const US_INDICES = [

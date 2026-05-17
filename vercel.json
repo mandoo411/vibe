@@ -13,9 +13,11 @@
   },
   "routes": [
     { "handle": "filesystem" },
+    { "src": "/briefing.html", "dest": "/briefing.html" },
     { "src": "/realtime.html", "dest": "/realtime.html" },
     { "src": "/daily-market.html", "dest": "/daily-market.html" },
     { "src": "/weekly-market.html", "dest": "/weekly-market.html" },
+    { "src": "/weekly-market/?", "dest": "/weekly-market.html" },
     { "src": "/us-market.html", "dest": "/us-market.html" },
     { "src": "/crypto.html", "dest": "/crypto.html" },
     { "src": "/(.*)", "dest": "/index.html" }

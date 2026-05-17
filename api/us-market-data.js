@@ -93,6 +93,17 @@ function pickFirst(row, keys) {
   return "";
 }
 
+function pickNumberByPattern(row, pattern, excludePattern) {
+  if (!row || typeof row !== "object") return null;
+  for (const key of Object.keys(row)) {
+    if (!pattern.test(key)) continue;
+    if (excludePattern && excludePattern.test(key)) continue;
+    const value = toNum(row[key]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
 function outputRows(body, preferred) {
   if (!body || typeof body !== "object") return [];
   if (preferred && Array.isArray(body[preferred])) return body[preferred];
@@ -196,11 +207,31 @@ function normalizePeriod(raw) {
 function mapRankRow(row, rank) {
   const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
   const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
-  const price = round2(toNum(pickFirst(row, ["last", "LAST"])));
-  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE"])));
-  const volume = toNum(pickFirst(row, ["tvol", "TVOL"]));
-  const marketCap = toNum(pickFirst(row, ["tomv", "TOMV"]));
-  const tradingValue = toNum(pickFirst(row, ["tamt", "TAMT"]));
+  const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
+  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+  const volume = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
+  const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
+  const directTradingValue = toNum(
+    pickFirst(row, [
+      "tamt",
+      "TAMT",
+      "tr_pbmn",
+      "TR_PBMN",
+      "acml_tr_pbmn",
+      "ACML_TR_PBMN",
+      "hts_acml_tr_pbmn",
+      "HTS_ACML_TR_PBMN",
+      "ovrs_stck_tr_pbmn",
+      "OVRS_STCK_TR_PBMN",
+      "tradingValue",
+      "TRADING_VALUE",
+    ])
+  );
+  const patternTradingValue =
+    directTradingValue ??
+    pickNumberByPattern(row, /pbmn|tamt|trading.*value|trade.*value|amount/i, /tomv|mket|market|cap|avls/i);
+  const tradingValue =
+    patternTradingValue != null ? patternTradingValue : price != null && volume != null ? price * volume : null;
   const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
     rank: rawRank != null ? Math.round(rawRank) : rank,

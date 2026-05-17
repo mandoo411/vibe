@@ -207,6 +207,7 @@
       }
       .crypto-tv-widget {
         width: 100%;
+        max-width: 100%;
         height: 420px;
         border: 0;
         display: block;
@@ -229,11 +230,46 @@
           font-size: 17px;
         }
         .crypto-table {
-          min-width: 860px;
-          font-size: 11px;
+          min-width: 0;
+          table-layout: fixed;
+          font-size: 9px;
+        }
+        .crypto-table th,
+        .crypto-table td {
+          padding: 5px 4px;
+        }
+        .crypto-col-rank,
+        .crypto-col-1h,
+        .crypto-col-7d {
+          display: none;
+        }
+        .crypto-col-name {
+          width: 22%;
+        }
+        .crypto-col-symbol {
+          width: 12%;
+        }
+        .crypto-col-price {
+          width: 18%;
+        }
+        .crypto-col-24h {
+          width: 13%;
+        }
+        .crypto-col-mcap,
+        .crypto-col-volume {
+          width: 17.5%;
+        }
+        .crypto-name-btn {
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .crypto-chart-box {
+          padding: 8px;
         }
         .crypto-tv-widget {
-          height: 360px;
+          height: 320px;
         }
         .crypto-meta-bar__poll {
           margin-left: 0;
@@ -302,15 +338,15 @@
               <table class="crypto-table" aria-label="암호화폐 시총 TOP 100">
                 <thead>
                   <tr>
-                    <th class="num">순위</th>
-                    <th>코인명</th>
-                    <th>심볼</th>
-                    <th class="num">현재가</th>
-                    <th class="num">1h</th>
-                    <th class="num">24h</th>
-                    <th class="num">7d</th>
-                    <th class="num">시총</th>
-                    <th class="num">거래량</th>
+                    <th class="num crypto-col-rank">순위</th>
+                    <th class="crypto-col-name">코인명</th>
+                    <th class="crypto-col-symbol">심볼</th>
+                    <th class="num crypto-col-price">가격</th>
+                    <th class="num crypto-col-1h">1h</th>
+                    <th class="num crypto-col-24h">24H</th>
+                    <th class="num crypto-col-7d">7d</th>
+                    <th class="num crypto-col-mcap">시총</th>
+                    <th class="num crypto-col-volume">거래대금</th>
                   </tr>
                 </thead>
                 <tbody id="crypto-tbody"></tbody>
@@ -426,7 +462,7 @@
             <div class="crypto-metric-card">
               <div class="crypto-metric-card__label">24h Volume</div>
               <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.volume24h))}</div>
-              <div class="crypto-metric-card__sub">최근 24시간 거래량</div>
+              <div class="crypto-metric-card__sub">최근 24시간 거래대금</div>
             </div>
             <div class="crypto-metric-card crypto-gauge">
               <div class="crypto-gauge__dial"><span class="crypto-gauge__score">${escapeHtml(score)}</span></div>
@@ -441,19 +477,19 @@
         function coinRowHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
-            <td class="num">${escapeHtml(c.rank)}</td>
-            <td>
+            <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
+            <td class="crypto-col-name">
               <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}">
                 ${escapeHtml(c.name)}
               </button>
             </td>
-            <td>${escapeHtml(c.symbol)}</td>
-            <td class="num">${escapeHtml(fmtPrice(c.price))}</td>
-            <td class="num"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
-            <td class="num"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
-            <td class="num"><span class="${deltaClass(c.change7d)}">${escapeHtml(fmtPct(c.change7d))}</span></td>
-            <td class="num">₩${escapeHtml(fmtKrw(c.marketCap))}</td>
-            <td class="num">₩${escapeHtml(fmtKrw(c.volume24h))}</td>
+            <td class="crypto-col-symbol">${escapeHtml(c.symbol)}</td>
+            <td class="num crypto-col-price">${escapeHtml(fmtPrice(c.price))}</td>
+            <td class="num crypto-col-1h"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
+            <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
+            <td class="num crypto-col-7d"><span class="${deltaClass(c.change7d)}">${escapeHtml(fmtPct(c.change7d))}</span></td>
+            <td class="num crypto-col-mcap">₩${escapeHtml(fmtKrw(c.marketCap))}</td>
+            <td class="num crypto-col-volume">₩${escapeHtml(fmtKrw(c.volume24h))}</td>
           </tr>`;
         }
 

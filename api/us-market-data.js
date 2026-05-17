@@ -11,7 +11,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
-const OVERSEAS_INDEX_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const OVERSEAS_INDEX_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price-detail";
 const OVERSEAS_INDEX_PRICE_TR_ID = "HHDFS76200200";
 const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
 const MARKET_CAP_TR_ID = "HHDFS76350100";
@@ -326,7 +326,6 @@ function fetchMarketCapTop50() {
       BYMD: "",
       TRXN_TP: "1",
       MKTL_TP: "1",
-      IN_CNT: "50",
     }),
     "marketCap"
   );

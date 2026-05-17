@@ -275,11 +275,61 @@
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
         .us-rank-tabs {
-          flex-wrap: wrap;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 4px;
+          padding: 6px;
         }
         .us-rank-tab {
-          flex: 1 1 30%;
+          width: 100%;
+          padding: 8px 2px;
+          font-size: 9px;
+          letter-spacing: -0.04em;
+          white-space: nowrap;
+        }
+        .us-panel__head {
           font-size: 10px;
+          letter-spacing: 0.02em;
+        }
+        .us-table {
+          min-width: 0;
+          table-layout: fixed;
+          font-size: 10.5px;
+        }
+        .us-table th,
+        .us-table td {
+          padding: 5px 4px;
+        }
+        .us-table th:nth-child(1),
+        .us-table td:nth-child(1) {
+          width: 34px;
+        }
+        .us-table th:nth-child(2),
+        .us-table td:nth-child(2) {
+          width: auto;
+        }
+        .us-table th:nth-child(3),
+        .us-table td:nth-child(3) {
+          display: none;
+        }
+        .us-table th:nth-child(4),
+        .us-table td:nth-child(4) {
+          width: 72px;
+        }
+        .us-table th:nth-child(5),
+        .us-table td:nth-child(5) {
+          width: 58px;
+        }
+        .us-table th:nth-child(6),
+        .us-table td:nth-child(6) {
+          width: 70px;
+        }
+        .us-name-chart-btn {
+          display: block;
+          max-width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .us-tv-widget {
           height: 360px;

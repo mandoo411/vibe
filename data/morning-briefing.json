@@ -1,22 +1,252 @@
 {
-  "updatedAt": "",
+  "updatedAt": "2026-05-17T06:00:00+09:00",
   "usMarket": {
-    "indices": []
+    "indices": [
+      {
+        "id": "sp500",
+        "name": "S&P 500",
+        "symbol": "SPX",
+        "close": 7408.5,
+        "previousClose": null,
+        "changePct": -1.24,
+        "changePoints": -92.74
+      },
+      {
+        "id": "nasdaq",
+        "name": "나스닥",
+        "symbol": "NAS",
+        "close": 0,
+        "previousClose": null,
+        "changePct": 0,
+        "changePoints": 0
+      },
+      {
+        "id": "dow",
+        "name": "다우존스",
+        "symbol": "DJI",
+        "close": 0,
+        "previousClose": null,
+        "changePct": 0,
+        "changePoints": 0
+      }
+    ]
   },
-  "topStocks": [],
-  "sectors": [],
+  "topStocks": [
+    {
+      "symbol": "AAPL",
+      "price": 300.23,
+      "changePct": 0.68,
+      "changePoints": 2.02
+    },
+    {
+      "symbol": "MSFT",
+      "price": 421.92,
+      "changePct": 3.05,
+      "changePoints": 12.49
+    },
+    {
+      "symbol": "NVDA",
+      "price": 225.32,
+      "changePct": -4.42,
+      "changePoints": 10.42
+    },
+    {
+      "symbol": "AMZN",
+      "price": 264.14,
+      "changePct": -1.15,
+      "changePoints": 3.08
+    },
+    {
+      "symbol": "META",
+      "price": 614.23,
+      "changePct": -0.68,
+      "changePoints": 4.2
+    },
+    {
+      "symbol": "TSLA",
+      "price": 422.24,
+      "changePct": -4.75,
+      "changePoints": 21.06
+    },
+    {
+      "symbol": "GOOGL",
+      "price": 396.78,
+      "changePct": -1.07,
+      "changePoints": 4.29
+    },
+    {
+      "symbol": "AMD",
+      "price": 424.1,
+      "changePct": -5.69,
+      "changePoints": 25.6
+    },
+    {
+      "symbol": "PLTR",
+      "price": 133.99,
+      "changePct": 0.19,
+      "changePoints": 0.26
+    },
+    {
+      "symbol": "COIN",
+      "price": 195.43,
+      "changePct": -7.82,
+      "changePoints": 16.58
+    }
+  ],
+  "sectors": [
+    {
+      "symbol": "XLK",
+      "sector": "기술",
+      "name": "기술 (XLK)",
+      "price": 176.26,
+      "changePct": 0.42
+    },
+    {
+      "symbol": "XLF",
+      "sector": "금융",
+      "name": "금융 (XLF)",
+      "price": 51.1,
+      "changePct": -0.27
+    },
+    {
+      "symbol": "XLE",
+      "sector": "에너지",
+      "name": "에너지 (XLE)",
+      "price": 59.44,
+      "changePct": 6.71
+    },
+    {
+      "symbol": "XLV",
+      "sector": "헬스케어",
+      "name": "헬스케어 (XLV)",
+      "price": 145.1,
+      "changePct": 1.12
+    },
+    {
+      "symbol": "XLI",
+      "sector": "산업",
+      "name": "산업 (XLI)",
+      "price": 171.4,
+      "changePct": -1.04
+    },
+    {
+      "symbol": "XLY",
+      "sector": "소비재",
+      "name": "소비재 (XLY)",
+      "price": 116.53,
+      "changePct": -3.05
+    },
+    {
+      "symbol": "XLP",
+      "sector": "필수소비",
+      "name": "필수소비 (XLP)",
+      "price": 84.64,
+      "changePct": 0.55
+    },
+    {
+      "symbol": "XLU",
+      "sector": "유틸리티",
+      "name": "유틸리티 (XLU)",
+      "price": 43.87,
+      "changePct": -1.9
+    },
+    {
+      "symbol": "XLB",
+      "sector": "소재",
+      "name": "소재 (XLB)",
+      "price": 50.3,
+      "changePct": -2.5
+    },
+    {
+      "symbol": "XLRE",
+      "sector": "부동산",
+      "name": "부동산 (XLRE)",
+      "price": 43.23,
+      "changePct": -2.66
+    }
+  ],
   "forex": {
-    "rates": {},
-    "commodities": []
+    "rates": {
+      "USD/KRW": 1497.84,
+      "USD/JPY": 158.61,
+      "USD/CNY": 6.83,
+      "EUR/USD": 1.16
+    },
+    "base": "USD",
+    "updatedAt": "Sun, 17 May 2026 00:02:31 +0000",
+    "commodities": [
+      {
+        "id": "wti",
+        "name": "WTI유가",
+        "symbol": "CL=F",
+        "price": 101.02,
+        "changePct": -1.14,
+        "changePoints": -1.16
+      },
+      {
+        "id": "gold",
+        "name": "금",
+        "symbol": "GC=F",
+        "price": 4561.9,
+        "changePct": -2.47,
+        "changePoints": -115.7
+      },
+      {
+        "id": "silver",
+        "name": "은",
+        "symbol": "SI=F",
+        "price": 77.55,
+        "changePct": -8.9,
+        "changePoints": -7.58
+      },
+      {
+        "id": "copper",
+        "name": "구리",
+        "symbol": "HG=F",
+        "price": 6.3,
+        "changePct": -2.93,
+        "changePoints": -0.19
+      }
+    ]
   },
   "crypto": {
-    "assets": []
+    "assets": [
+      {
+        "id": "bitcoin",
+        "symbol": "BTC",
+        "priceUsd": 78130,
+        "changePct24h": -0.25,
+        "marketCapUsd": 1565019129509.37
+      },
+      {
+        "id": "ethereum",
+        "symbol": "ETH",
+        "priceUsd": 2185.35,
+        "changePct24h": -0.38,
+        "marketCapUsd": 263743277276.83
+      },
+      {
+        "id": "solana",
+        "symbol": "SOL",
+        "priceUsd": 86.91,
+        "changePct24h": -0.72,
+        "marketCapUsd": 50248315632.88
+      }
+    ]
   },
   "news": [],
   "aiAnalysis": {
-    "keyIssues": [],
-    "domesticImpact": "",
-    "watchSectors": []
+    "keyIssues": [
+      "미국 S&P500 1.24% 하락으로 증시 약세 지속, 나스닥과 다우존스 데이터는 미집계",
+      "에너지 섹터 6.71% 급등 vs 반도체·테슬라 4~5% 급락으로 섹터 양극화 심화",
+      "원달러 환율 1,497원대 유지, 금(-2.47%)·은(-8.9%) 등 안전자산 동반 약세"
+    ],
+    "domesticImpact": "미국 증시 하락과 반도체 주요주(NVDA -4.42%, AMD -5.69%) 약세로 국내 반도체 관련주에 부담이 예상됩니다. 다만 에너지 섹터 강세와 WTI유가 100달러 유지는 정유·화학주에 긍정적 요인이 될 수 있습니다. 원화 약세 지속으로 수출주는 환차익 기대감이 있으나, 테슬라 급락(-4.75%)은 2차전지 관련주 심리에 악재로 작용할 가능성이 있습니다.",
+    "watchSectors": [
+      "반도체: 미국 주요 반도체 동반 약세로 삼성전자·SK하이닉스 등 변동성 확대 가능",
+      "에너지·정유: 에너지 섹터 6.71% 급등과 WTI유가 100달러 상회로 SK이노베이션·에쓰오일 주목",
+      "2차전지: 테슬라 4.75% 급락으로 LG에너지솔루션·포스코퓨처엠 등 수급 부담 가능성"
+    ]
   },
   "errors": []
 }

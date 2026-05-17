@@ -170,6 +170,9 @@
         const INDICATOR_KO = {
           "Fed Interest Rate Decision": "연준 금리 결정",
           "FOMC Meeting Minutes": "FOMC 의사록",
+          "RBA Meeting Minutes": "RBA 통화정책 회의록",
+          "FOMC Minutes": "FOMC 의사록",
+          "Fed Minutes": "연준 의사록",
           "CPI m/m": "소비자물가 (월간)",
           "Core CPI m/m": "근원 소비자물가 (월간)",
           "CPI y/y": "소비자물가 (연간)",
@@ -220,6 +223,9 @@
           "Chicago PMI": "시카고 PMI",
           "Flash Manufacturing PMI": "제조업 PMI 속보치",
           "Flash Services PMI": "서비스 PMI 속보치",
+          "PMI Prel": "PMI (속보치)",
+          "Manufacturing PMI Prel": "제조업 PMI (속보치)",
+          "Services PMI Prel": "서비스 PMI (속보치)",
           "JOLTs Job Openings": "JOLTs 구인건수",
           "Treasury Secretary Press Conference": "재무장관 기자회견",
           "Manufacturing PMI": "제조업 PMI",
@@ -233,8 +239,18 @@
           "Producer Price Index YoY": "생산자물가지수 (연간)",
           "Inflation Rate YoY": "인플레이션율 (연간)",
           "Inflation Rate MoM": "인플레이션율 (월간)",
+          "Inflation Rate YoY Prel": "인플레이션율 (연간, 속보치)",
+          "Inflation Rate MoM Prel": "인플레이션율 (월간, 속보치)",
+          "CPI YoY Prel": "소비자물가 (연간, 속보치)",
+          "CPI MoM Prel": "소비자물가 (월간, 속보치)",
+          "Core Inflation Rate YoY": "근원 인플레이션율 (연간)",
+          "Core Inflation Rate MoM": "근원 인플레이션율 (월간)",
           "Employment Change": "고용변화",
           "Interest Rate Decision": "금리 결정",
+          "Monetary Policy Statement": "통화정책 성명",
+          "Press Conference": "기자회견",
+          "Speech": "연설",
+          "Testimony": "의회 증언",
           "Foreign Exchange Reserves": "외환보유고",
           "RBA Hunter Speech": "RBA 헌터 총재 연설",
           "RBA Interest Rate Decision": "RBA 금리 결정",
@@ -267,6 +283,11 @@
           "GDP Growth Rate": "GDP 성장률",
           "GDP Growth Rate QoQ": "GDP 성장률 (분기)",
           "GDP Growth Rate YoY": "GDP 성장률 (연간)",
+          "GDP YoY Prel": "GDP (연간, 속보치)",
+          "GDP QoQ Prel": "GDP (분기, 속보치)",
+          "GDP YoY Flash": "GDP (연간, flash)",
+          "GDP QoQ Flash": "GDP (분기, flash)",
+          "Unemployment Rate Prel": "실업률 (속보치)",
           "Balance of Trade": "무역수지",
           "Non-Oil Exports MoM": "비석유 수출 (월간)",
           "Non-Oil Exports YoY": "비석유 수출 (연간)",
@@ -511,8 +532,18 @@
             <article><h3>주목 실적 발표 종목</h3>${earnings.length ? `<ul>${earnings.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}</article>`;
         }
 
+        function isRecentNews(n) {
+          const raw = n?.publishedAt || n?.pubDate || n?.datetime || n?.date;
+          if (!raw) return false;
+          const pubDate = new Date(raw);
+          if (Number.isNaN(pubDate.getTime())) return false;
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          return pubDate >= sevenDaysAgo;
+        }
+
         function renderNews() {
-          const rows = state.data?.news || [];
+          const rows = (state.data?.news || []).filter(isRecentNews);
           $("news-list").innerHTML = rows.length
             ? rows
                 .slice(0, 20)
@@ -522,7 +553,7 @@
                   <i aria-hidden="true">→</i>
                 </a>`)
                 .join("")
-            : '<p class="empty-text">뉴스 없음</p>';
+            : '<p class="empty-text">최신 뉴스가 없습니다</p>';
         }
 
         async function load() {

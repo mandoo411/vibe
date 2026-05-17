@@ -64,6 +64,12 @@ function addDaysYmd(ymd, days) {
   return seoulYmd(date);
 }
 
+function sevenDaysAgoYmd(date = new Date()) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - 7);
+  return seoulYmd(d);
+}
+
 function ymdFromUnix(sec) {
   if (!sec) return "";
   return seoulYmd(new Date(Number(sec) * 1000));
@@ -93,6 +99,15 @@ function kstNewsTimeLabel(value) {
   })
     .format(date)
     .replace(/\.$/, "");
+}
+
+function isRecentNewsDate(value, now = new Date()) {
+  if (!value) return false;
+  const pubDate = new Date(value);
+  if (Number.isNaN(pubDate.getTime())) return false;
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return pubDate >= sevenDaysAgo;
 }
 
 function isHighImpact(row) {
@@ -200,7 +215,7 @@ function normalizeNewsApi(data) {
       timeLabel: kstNewsTimeLabel(row.publishedAt),
       source: row.source && row.source.name ? row.source.name : "NewsAPI",
     }))
-    .filter((row) => row.headline);
+    .filter((row) => row.headline && isRecentNewsDate(row.datetime));
 }
 
 function normalizeRss(xml, source) {
@@ -220,7 +235,7 @@ function normalizeRss(xml, source) {
         source,
       };
     })
-    .filter((row) => row.headline);
+    .filter((row) => row.headline && isRecentNewsDate(row.datetime));
 }
 
 async function fetchKoreanNewsRss() {
@@ -248,6 +263,7 @@ async function fetchKoreanNews() {
       url.searchParams.set("language", "ko");
       url.searchParams.set("sortBy", "publishedAt");
       url.searchParams.set("pageSize", "20");
+      url.searchParams.set("from", sevenDaysAgoYmd());
       url.searchParams.set("apiKey", newsApiKey);
       const text = await fetchText(url, { accept: "application/json" });
       const rows = normalizeNewsApi(JSON.parse(text));

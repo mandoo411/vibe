@@ -1,7 +1,7 @@
-# 한국투자증권 OAuth 액세스 토큰을 하루 1회 갱신해 저장소 Secret `KIS_ACCESS_TOKEN`에 반영합니다.
+# 한국투자증권 OAuth 액세스 토큰을 하루 1회 갱신해 GitHub/Vercel 환경변수에 반영합니다.
 #
 # 작업 중인 API/스크립트에서는 tokenP를 호출하지 않고, 이 스케줄에서만 발급합니다.
-# Vercel 등 다른 호스트의 환경변수는 자동 동기화되지 않습니다. 배포 환경에 KIS_ACCESS_TOKEN을 맞춰 주세요.
+# 필요 secrets: KIS_APP_KEY, KIS_APP_SECRET, GH_PAT_REPO_SECRETS_WRITE, VERCEL_TOKEN
 
 name: Refresh KIS access token
 
@@ -14,10 +14,18 @@ concurrency:
   group: refresh-kis-token
   cancel-in-progress: true
 
+env:
+  # Vercel 프로젝트 식별자 — 비밀이 아닙니다.
+  VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
+  VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Issue KIS OAuth token once daily
         id: kis
         env:
@@ -49,5 +57,29 @@ jobs:
             exit 1
           fi
           gh secret set KIS_ACCESS_TOKEN --repo "${{ github.repository }}" < kis_access_token.txt
-          rm -f kis_access_token.txt
           echo "KIS_ACCESS_TOKEN updated in GitHub Secrets."
+
+      - name: Update Vercel production KIS_ACCESS_TOKEN
+        if: steps.kis.outputs.issued == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "Missing VERCEL_TOKEN in repository secrets."
+            exit 1
+          fi
+          TOKEN_VALUE="$(cat kis_access_token.txt)"
+          npx --yes vercel@53.2.0 env rm KIS_ACCESS_TOKEN production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+          printf "%s" "$TOKEN_VALUE" | npx --yes vercel@53.2.0 env add KIS_ACCESS_TOKEN production --token "$VERCEL_TOKEN"
+          echo "KIS_ACCESS_TOKEN updated in Vercel Production environment."
+
+      - name: Redeploy Vercel production
+        if: steps.kis.outputs.issued == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes
+
+      - name: Cleanup token file
+        if: always()
+        run: rm -f kis_access_token.txt

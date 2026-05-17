@@ -19,7 +19,6 @@ const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
 const UPDOWN_RATE_TR_ID = "HHDFS76290000";
 const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
 const TRADE_PBMN_TR_ID = "HHDFS76320010";
-const US_RANKING_CURRENCY = "USD";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS" },
@@ -259,9 +258,9 @@ async function fetchOverseasIndexQuote({ symbol, exchange }) {
   return {
     symbol,
     exchange,
-    price: round2(toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "bstp_nmix_prpr", "BSTP_NMIX_PRPR"]))),
-    changePct: round2(toNum(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT", "bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT"]))),
-    changePoints: round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS", "bstp_nmix_prdy_vrss", "BSTP_NMIX_PRDY_VRSS"]))),
+    price: round2(toNum(pickFirst(out, ["ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR", "bstp_nmix_prpr", "BSTP_NMIX_PRPR", "last", "LAST"]))),
+    changePct: round2(toNum(pickFirst(out, ["prdy_ctrt", "PRDY_CTRT", "ovrs_nmix_prdy_ctrt", "OVRS_NMIX_PRDY_CTRT", "bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT", "rate", "RATE"]))),
+    changePoints: round2(toNum(pickFirst(out, ["ovrs_nmix_prdy_vrss", "OVRS_NMIX_PRDY_VRSS", "prdy_vrss", "PRDY_VRSS", "bstp_nmix_prdy_vrss", "BSTP_NMIX_PRDY_VRSS", "diff", "DIFF"]))),
   };
 }
 
@@ -326,7 +325,6 @@ function fetchMarketCapTop50() {
     MARKET_CAP_TR_ID,
     (exchange) => ({
       AUTH: "",
-      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       VOL_RANG: "0",
@@ -342,7 +340,6 @@ function fetchGainersTop50() {
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
       AUTH: "",
-      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       GUBN: "1",
       KEYB: "",
@@ -360,7 +357,6 @@ function fetchTradeValueTop50() {
     TRADE_PBMN_TR_ID,
     (exchange) => ({
       AUTH: "",
-      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       NDAY: "0",

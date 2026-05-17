@@ -201,8 +201,9 @@ function mapRankRow(row, rank) {
   const volume = toNum(pickFirst(row, ["tvol", "TVOL"]));
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV"]));
   const tradingValue = toNum(pickFirst(row, ["tamt", "TAMT"]));
+  const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
-    rank,
+    rank: rawRank != null ? Math.round(rawRank) : rank,
     ticker,
     name,
     price,
@@ -272,7 +273,7 @@ async function fetchMergedRanking(cacheKey, path, trId, params, sortKey) {
     const all = [];
     for (const exchange of EXCHANGES) {
       const body = await kisGet(path, trId, params(exchange));
-      const rows = outputRows(body).map((row, i) => ({
+      const rows = outputRows(body, "output2").map((row, i) => ({
         ...mapRankRow(row, all.length + i + 1),
         exchange,
       }));

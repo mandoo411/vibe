@@ -19,6 +19,7 @@ const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
 const UPDOWN_RATE_TR_ID = "HHDFS76290000";
 const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
 const TRADE_PBMN_TR_ID = "HHDFS76320010";
+const US_RANKING_CURRENCY = "0";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS" },
@@ -264,6 +265,14 @@ async function fetchOverseasIndexQuote({ symbol, exchange }) {
   };
 }
 
+async function fetchOverseasIndexRaw({ symbol, exchange }) {
+  return kisGet(OVERSEAS_INDEX_PRICE_PATH, OVERSEAS_INDEX_PRICE_TR_ID, {
+    AUTH: "",
+    EXCD: exchange,
+    SYMB: symbol,
+  });
+}
+
 async function fetchIndices() {
   return cached("indices", async () => {
     const items = [];
@@ -325,6 +334,7 @@ function fetchMarketCapTop50() {
     MARKET_CAP_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       VOL_RANG: "0",
@@ -340,6 +350,7 @@ function fetchGainersTop50() {
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       GUBN: "1",
       KEYB: "",
@@ -357,6 +368,7 @@ function fetchTradeValueTop50() {
     TRADE_PBMN_TR_ID,
     (exchange) => ({
       AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
       EXCD: exchange,
       KEYB: "",
       NDAY: "0",
@@ -424,6 +436,14 @@ module.exports = async function handler(req, res) {
     if (action === "indices") {
       const payload = await cachedPayload("indices", async () => ({ indices: await fetchIndices() }));
       json(res, 200, payload);
+      return;
+    }
+    if (action === "index-debug") {
+      const raw = [];
+      for (const idx of US_INDICES) {
+        raw.push({ id: idx.id, symbol: idx.symbol, exchange: idx.exchange, body: await fetchOverseasIndexRaw(idx) });
+      }
+      json(res, 200, { raw, updatedAt: new Date().toISOString() });
       return;
     }
     if (action === "sectors") {

@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0d0b08" />
-    <title>TotalMoney AI · 일정</title>
+    <title>TotalMoney AI · 매일 증시 일정</title>
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -48,24 +48,323 @@
       </header>
       <header class="masthead masthead--title-only">
         <div class="masthead__copy">
-          <p class="masthead__kicker">Market Week</p>
-          <h1 class="masthead__title" id="masthead-title">일정</h1>
+          <p class="masthead__kicker">Market Calendar</p>
+          <h1 class="masthead__title" id="masthead-title">매일 증시 일정</h1>
         </div>
       </header>
       <div class="page-hero-sub">
         <p class="masthead__notice" id="masthead-notice" hidden></p>
         <div class="masthead__meta">
-          <span id="masthead-range"></span>
-          <span id="masthead-updated"></span>
-          <span id="masthead-tz"></span>
+          <span id="weekly-updated">마지막 업데이트 확인 중…</span>
+          <span>매일 오전 6시 자동 업데이트</span>
         </div>
       </div>
 
-      <div class="tabs" id="tabs" role="tablist" aria-label="요일별 일정"></div>
+      <main class="schedule-page">
+        <section class="schedule-card calendar-card" aria-labelledby="calendar-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Monthly Calendar</p>
+              <h2 class="section-title" id="calendar-title">월간 달력</h2>
+            </div>
+            <div class="calendar-nav">
+              <button type="button" class="calendar-nav__btn" id="calendar-prev" aria-label="이전달">‹</button>
+              <strong class="calendar-nav__label" id="calendar-label">—</strong>
+              <button type="button" class="calendar-nav__btn" id="calendar-next" aria-label="다음달">›</button>
+            </div>
+          </div>
+          <div class="calendar-legend" aria-label="달력 표시 범례">
+            <span><i class="dot dot--economic"></i>경제지표</span>
+            <span><i class="dot dot--earnings"></i>실적발표</span>
+          </div>
+          <div class="month-calendar" id="month-calendar" aria-label="월간 일정 달력"></div>
+          <div class="selected-day" id="selected-day"></div>
+        </section>
 
-      <div class="panels" id="panels"></div>
+        <section class="schedule-card" aria-labelledby="today-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Today</p>
+              <h2 class="section-title" id="today-title">오늘 일정</h2>
+            </div>
+            <span class="section-date" id="today-date">—</span>
+          </div>
+          <div class="today-grid">
+            <article>
+              <h3 class="subsection-title">오늘 경제지표 발표</h3>
+              <div id="today-economic"></div>
+            </article>
+            <article>
+              <h3 class="subsection-title">오늘 실적 발표 종목</h3>
+              <div id="today-earnings"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="schedule-card" aria-labelledby="week-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">This Week</p>
+              <h2 class="section-title" id="week-title">이번주 일정</h2>
+            </div>
+            <span class="section-date" id="week-range">—</span>
+          </div>
+          <div class="week-tabs" id="week-tabs" role="tablist" aria-label="요일별 일정"></div>
+          <div class="week-panels" id="week-panels"></div>
+        </section>
+
+        <section class="schedule-card" aria-labelledby="ai-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Claude AI</p>
+              <h2 class="section-title" id="ai-title">Claude AI 주간 분석</h2>
+            </div>
+          </div>
+          <div class="analysis-grid" id="analysis-grid"></div>
+        </section>
+
+        <section class="schedule-card" aria-labelledby="news-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Market News</p>
+              <h2 class="section-title" id="news-title">주요 뉴스</h2>
+            </div>
+          </div>
+          <div class="news-list" id="news-list"></div>
+        </section>
+      </main>
     </div>
 
-    <script src="./weekly-market.js"></script>
+    <script>
+      (() => {
+        const DATA_URL = "./data/weekly-schedule.json";
+        const WD = ["일", "월", "화", "수", "목", "금", "토"];
+        const WEEKDAYS = ["월", "화", "수", "목", "금"];
+        const state = { data: null, month: null, selectedDate: null };
+        const $ = (id) => document.getElementById(id);
+
+        function seoulYmd(date = new Date()) {
+          return new Intl.DateTimeFormat("sv-SE", {
+            timeZone: "Asia/Seoul",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(date);
+        }
+
+        function addDays(ymd, days) {
+          const d = new Date(`${ymd}T12:00:00+09:00`);
+          d.setDate(d.getDate() + days);
+          return seoulYmd(d);
+        }
+
+        function monthKey(ymd) {
+          return String(ymd || seoulYmd()).slice(0, 7);
+        }
+
+        function monthKeyFromParts(year, monthIndex) {
+          const d = new Date(year, monthIndex, 1);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
+
+        function fmtDate(ymd) {
+          if (!ymd) return "—";
+          const [, m, d] = ymd.split("-");
+          return `${Number(m)}월 ${Number(d)}일 (${WD[new Date(`${ymd}T12:00:00+09:00`).getDay()]})`;
+        }
+
+        function escapeHtml(v) {
+          return String(v == null ? "" : v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function money(v) {
+          if (v == null || v === "") return "—";
+          const n = Number(v);
+          if (!Number.isFinite(n)) return escapeHtml(v);
+          return n >= 1_000_000 ? `${Math.round(n / 1_000_000).toLocaleString()}M` : n.toLocaleString();
+        }
+
+        function itemsForDate(type, ymd) {
+          const rows = state.data?.[type] || [];
+          return rows.filter((row) => row.date === ymd);
+        }
+
+        function impactClass(impact) {
+          const key = String(impact || "low").toLowerCase();
+          if (key.includes("high")) return "impact-high";
+          if (key.includes("medium")) return "impact-medium";
+          return "impact-low";
+        }
+
+        function renderEconomic(rows) {
+          if (!rows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
+          return `<div class="schedule-table-wrap"><table class="schedule-table">
+            <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>중요도</th></tr></thead>
+            <tbody>${rows
+              .map(
+                (r) => `<tr class="${impactClass(r.impact)}">
+                  <td>${escapeHtml(r.time || "—")}</td>
+                  <td><strong>${escapeHtml(r.event || "—")}</strong><span>${escapeHtml(r.country || "")}</span></td>
+                  <td>${escapeHtml(r.previous ?? "—")}</td>
+                  <td>${escapeHtml(r.estimate ?? "—")}</td>
+                  <td>${escapeHtml(r.impact || "low")}</td>
+                </tr>`
+              )
+              .join("")}</tbody>
+          </table></div>`;
+        }
+
+        function renderEarnings(rows) {
+          if (!rows.length) return '<p class="empty-text">실적 발표 일정 없음</p>';
+          return `<div class="earnings-grid">${rows
+            .map(
+              (r) => `<article class="earnings-card">
+                <strong>${escapeHtml(r.symbol || "—")}</strong>
+                <span>${escapeHtml(r.company || "—")}</span>
+                <small>${escapeHtml(r.hour || "시간 미정")} · EPS ${escapeHtml(r.epsEstimate ?? "—")} · 매출 ${money(r.revenueEstimate)}</small>
+              </article>`
+            )
+            .join("")}</div>`;
+        }
+
+        function renderSelectedDay(ymd) {
+          const economic = itemsForDate("economicCalendar", ymd);
+          const earnings = itemsForDate("earningsCalendar", ymd);
+          $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
+            ${economic.length || earnings.length ? `${renderEconomic(economic)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+        }
+
+        function renderCalendar() {
+          const [year, month] = state.month.split("-").map(Number);
+          const first = new Date(year, month - 1, 1);
+          const last = new Date(year, month, 0);
+          const today = seoulYmd();
+          $("calendar-label").textContent = `${year}년 ${month}월`;
+          const heads = WD.map((d) => `<div class="calendar-weekday">${d}</div>`).join("");
+          const blanks = Array.from({ length: first.getDay() }, () => '<div class="calendar-cell calendar-cell--blank"></div>').join("");
+          const days = Array.from({ length: last.getDate() }, (_, i) => {
+            const day = i + 1;
+            const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
+            const hasEconomic = itemsForDate("economicCalendar", ymd).length > 0;
+            const hasEarnings = itemsForDate("earningsCalendar", ymd).length > 0;
+            const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
+            const isToday = ymd === today ? " calendar-cell--today" : "";
+            return `<button type="button" class="calendar-cell${active}${isToday}" data-date="${ymd}">
+              <span>${day}</span>
+              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasEarnings ? '<b class="dot dot--earnings"></b>' : ""}</i>
+            </button>`;
+          }).join("");
+          $("month-calendar").innerHTML = heads + blanks + days;
+          $("month-calendar").querySelectorAll("[data-date]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              state.selectedDate = btn.dataset.date;
+              renderCalendar();
+              renderSelectedDay(state.selectedDate);
+            });
+          });
+        }
+
+        function renderToday() {
+          const ymd = seoulYmd();
+          const economic = itemsForDate("economicCalendar", ymd);
+          const earnings = itemsForDate("earningsCalendar", ymd);
+          $("today-date").textContent = fmtDate(ymd);
+          $("today-economic").innerHTML = economic.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+          $("today-earnings").innerHTML = earnings.length ? renderEarnings(earnings) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+        }
+
+        function startOfWeek(ymd) {
+          const d = new Date(`${ymd}T12:00:00+09:00`);
+          const day = d.getDay();
+          return addDays(ymd, day === 0 ? -6 : 1 - day);
+        }
+
+        function renderWeek() {
+          const monday = startOfWeek(seoulYmd());
+          const days = WEEKDAYS.map((_, i) => addDays(monday, i));
+          $("week-range").textContent = `${fmtDate(days[0])} ~ ${fmtDate(days[4])}`;
+          $("week-tabs").innerHTML = days
+            .map((ymd, i) => `<button type="button" class="week-tab" role="tab" aria-selected="${i === 0}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`)
+            .join("");
+          $("week-panels").innerHTML = days
+            .map((ymd, i) => `<section class="week-panel${i === 0 ? " is-active" : ""}" data-index="${i}">
+              <h3>${escapeHtml(fmtDate(ymd))}</h3>
+              ${renderEconomic(itemsForDate("economicCalendar", ymd))}
+              ${renderEarnings(itemsForDate("earningsCalendar", ymd))}
+            </section>`)
+            .join("");
+          $("week-tabs").querySelectorAll(".week-tab").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const idx = btn.dataset.index;
+              $("week-tabs").querySelectorAll(".week-tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.index === idx));
+              $("week-panels").querySelectorAll(".week-panel").forEach((p) => p.classList.toggle("is-active", p.dataset.index === idx));
+            });
+          });
+        }
+
+        function renderAnalysis() {
+          const ai = state.data?.analysis || {};
+          const top = ai.topEvents || [];
+          const impacts = ai.marketImpacts || [];
+          const earnings = ai.watchEarnings || [];
+          $("analysis-grid").innerHTML = `
+            <article><h3>이번주 핵심 이벤트 TOP5</h3>${top.length ? `<ol>${top.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}</article>
+            <article><h3>국내 시장 영향 분석</h3>${impacts.length ? `<ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}</article>
+            <article><h3>주목 실적 발표 종목</h3>${earnings.length ? `<ul>${earnings.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}</article>`;
+        }
+
+        function renderNews() {
+          const rows = state.data?.news || [];
+          $("news-list").innerHTML = rows.length
+            ? rows
+                .slice(0, 20)
+                .map((n) => `<a class="news-card" href="${escapeHtml(n.url || "#")}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(n.headline || "")}">
+                  <span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span>
+                  <strong>${escapeHtml(n.headline || "제목 없음")}</strong>
+                  <i aria-hidden="true">→</i>
+                </a>`)
+                .join("")
+            : '<p class="empty-text">뉴스 없음</p>';
+        }
+
+        async function load() {
+          try {
+            const res = await fetch(DATA_URL, { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            state.data = await res.json();
+            const today = seoulYmd();
+            state.month = monthKey(today);
+            state.selectedDate = today;
+            $("weekly-updated").textContent = state.data.meta?.lastUpdatedKst ? `마지막 업데이트: ${state.data.meta.lastUpdatedKst}` : "마지막 업데이트: —";
+            renderCalendar();
+            renderSelectedDay(today);
+            renderToday();
+            renderWeek();
+            renderAnalysis();
+            renderNews();
+          } catch (e) {
+            $("masthead-notice").hidden = false;
+            $("masthead-notice").textContent = `데이터를 불러오지 못했습니다: ${e instanceof Error ? e.message : e}`;
+          }
+        }
+
+        $("calendar-prev").addEventListener("click", () => {
+          const [y, m] = state.month.split("-").map(Number);
+          state.month = monthKeyFromParts(y, m - 2);
+          renderCalendar();
+        });
+        $("calendar-next").addEventListener("click", () => {
+          const [y, m] = state.month.split("-").map(Number);
+          state.month = monthKeyFromParts(y, m);
+          renderCalendar();
+        });
+
+        load();
+      })();
+    </script>
   </body>
 </html>

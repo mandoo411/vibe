@@ -1,0 +1,52 @@
+name: Weekly Schedule Sync
+
+on:
+  schedule:
+    # 매일 06:00 KST = 전날 21:00 UTC
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-schedule
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect weekly schedule
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/weekly-schedule.mjs
+
+      - name: Commit and push updated schedule
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/weekly-schedule.json; then
+            echo "::notice::No weekly schedule changes to commit"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+          git add data/weekly-schedule.json
+          git commit -m "chore(data): sync weekly schedule ${STAMP}"
+          git pull --rebase origin main
+          git push

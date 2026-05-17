@@ -661,3 +661,381 @@ a:hover {
     animation: none;
   }
 }
+
+/* Daily economic calendar page */
+.schedule-page {
+  display: grid;
+  gap: 18px;
+}
+
+.schedule-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--sheet-shadow);
+  overflow: hidden;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #0f0d09;
+}
+
+.section-kicker {
+  margin: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.section-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.section-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+}
+
+.calendar-nav__btn {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: #12100c;
+  color: var(--accent-bright);
+  cursor: pointer;
+}
+
+.calendar-legend {
+  display: flex;
+  gap: 14px;
+  padding: 10px 16px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.dot--economic {
+  background: var(--accent-bright);
+}
+
+.dot--earnings {
+  background: #f4efe2;
+}
+
+.month-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  padding: 14px 16px 16px;
+}
+
+.calendar-weekday,
+.calendar-cell {
+  min-height: 56px;
+  border: 1px solid var(--border);
+  background: #0f0d09;
+  color: var(--text);
+}
+
+.calendar-weekday {
+  min-height: auto;
+  padding: 8px 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.calendar-cell {
+  position: relative;
+  padding: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.calendar-cell--blank {
+  background: transparent;
+  border-color: transparent;
+}
+
+.calendar-cell--today {
+  border-color: var(--accent-bright);
+}
+
+.calendar-cell--active {
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: inset 0 -2px 0 var(--accent-bright);
+}
+
+.calendar-cell i {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.selected-day,
+.today-grid,
+.week-panel,
+.analysis-grid,
+.news-list {
+  padding: 16px;
+}
+
+.selected-day h3,
+.week-panel h3,
+.analysis-grid h3,
+.subsection-title {
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-bright);
+  letter-spacing: 0.06em;
+}
+
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.schedule-table-wrap {
+  overflow-x: auto;
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.schedule-table th,
+.schedule-table td {
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.schedule-table th {
+  color: var(--text-dim);
+  text-align: left;
+  font-size: 10px;
+}
+
+.schedule-table td span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-dim);
+}
+
+.impact-high strong,
+.impact-high td:last-child {
+  color: var(--accent-bright);
+}
+
+.impact-medium strong,
+.impact-medium td:last-child {
+  color: #f4efe2;
+}
+
+.impact-low strong,
+.impact-low td:last-child {
+  color: var(--text-dim);
+}
+
+.earnings-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.earnings-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: #0f0d09;
+}
+
+.earnings-card strong,
+.earnings-card span,
+.earnings-card small {
+  display: block;
+}
+
+.earnings-card span {
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.earnings-card small {
+  margin-top: 5px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}
+
+.week-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  background: #0a0907;
+}
+
+.week-tab {
+  flex: 1 0 96px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #12100c;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.week-tab span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.week-tab[aria-selected="true"] {
+  color: var(--accent-bright);
+  border-color: var(--border-strong);
+  box-shadow: inset 0 -2px 0 var(--accent-bright);
+}
+
+.week-panel {
+  display: none;
+}
+
+.week-panel.is-active {
+  display: block;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.analysis-grid article {
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: #0f0d09;
+}
+
+.analysis-grid ol,
+.analysis-grid ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.analysis-grid li + li {
+  margin-top: 7px;
+}
+
+.news-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.news-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 12px 34px 12px 12px;
+  border: 1px solid var(--border);
+  background: #0f0d09;
+  color: var(--text);
+}
+
+.news-card span {
+  display: block;
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.news-card strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.news-card i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-bright);
+  font-style: normal;
+}
+
+.empty-text {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .month-calendar {
+    padding: 12px;
+  }
+
+  .calendar-weekday,
+  .calendar-cell {
+    min-height: 42px;
+    font-size: 11px;
+  }
+
+  .today-grid,
+  .analysis-grid,
+  .news-list {
+    grid-template-columns: 1fr;
+  }
+}

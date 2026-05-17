@@ -8,6 +8,7 @@
     "dev": "npx --yes vercel@53.2.0 dev",
     "deploy": "npx --yes vercel@53.2.0 --prod",
     "sync:schedule": "node --env-file=.env scripts/telegram-weekly-schedule.mjs",
+    "sync:weekly": "node --env-file=.env scripts/weekly-schedule.mjs",
     "sync:daily": "node --env-file=.env scripts/telegram-daily-market.mjs",
     "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs",
     "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs"

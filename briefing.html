@@ -73,11 +73,11 @@
       }
 
       .briefing-change--up {
-        color: #75d28a;
+        color: #f87171;
       }
 
       .briefing-change--down {
-        color: #ff7b7b;
+        color: #60a5fa;
       }
 
       .briefing-news-list {
@@ -293,7 +293,7 @@
           renderAnalysis(data.aiAnalysis || {});
           renderRows("us-market-list", data.usMarket?.indices || [], (r) => r.name || r.symbol, (r) => `${fmtNumber(r.close)} ${fmtChange(r.changePct)}`);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
-          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => fmtChange(r.changePct));
+          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span></span>${fmtChange(r.changePct)}`);
           const forexRows = Object.entries(data.forex?.rates || {}).map(([pair, value]) => ({ pair, value }));
           const commodityRows = data.forex?.commodities || [];
           renderRows("forex-list", [...forexRows, ...commodityRows], (r) => r.pair || r.name, (r) => r.pair ? `<span>${fmtNumber(r.value, 4)}</span>` : `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);

@@ -291,13 +291,13 @@
           const data = await res.json();
           $("briefing-updated").textContent = data.updatedAt ? `마지막 업데이트: ${data.updatedAt}` : "미국 마감, 환율, 주요 뉴스";
           renderAnalysis(data.aiAnalysis || {});
-          renderRows("us-market-list", data.usMarket?.indices || [], (r) => r.name || r.symbol, (r) => `${fmtNumber(r.close)} ${fmtChange(r.changePct)}`);
+          renderRows("us-market-list", data.usMarket?.indices || [], (r) => r.name || r.symbol, (r) => `${fmtNumber(r.close, 0)} ${fmtChange(r.changePct)}`);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span></span>${fmtChange(r.changePct)}`);
           const forexRows = Object.entries(data.forex?.rates || {}).map(([pair, value]) => ({ pair, value }));
           const commodityRows = data.forex?.commodities || [];
           renderRows("forex-list", [...forexRows, ...commodityRows], (r) => r.pair || r.name, (r) => r.pair ? `<span>${fmtNumber(r.value, 4)}</span>` : `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
-          renderRows("crypto-list", data.crypto?.assets || [], (r) => r.symbol, (r) => `$${fmtNumber(r.priceUsd)} ${fmtChange(r.changePct24h)}`);
+          renderRows("crypto-list", data.crypto?.assets || [], (r) => r.symbol, (r) => `$${fmtNumber(r.priceUsd, 0)} ${fmtChange(r.changePct24h)}`);
           renderNews(data.news || []);
         } catch (error) {
           $("masthead-notice").hidden = false;

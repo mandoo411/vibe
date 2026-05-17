@@ -39,8 +39,6 @@ const US_SECTORS = [
 
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
-let kisIssuedToken = "";
-let kisIssuedTokenExpiresAt = 0;
 
 function isKisTokenError(body) {
   if (!body || typeof body !== "object") return false;
@@ -77,55 +75,13 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function requireKisAppCredentials() {
+function requireKisAuth() {
+  const token = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
   const appkey = sanitizeStr(process.env.KIS_APP_KEY);
   const appsecret = sanitizeStr(process.env.KIS_APP_SECRET);
+  if (!token) throw new Error("Missing KIS_ACCESS_TOKEN");
   if (!appkey || !appsecret) throw new Error("Missing KIS_APP_KEY or KIS_APP_SECRET");
-  return { appkey, appsecret };
-}
-
-async function issueKisAccessToken() {
-  const { appkey, appsecret } = requireKisAppCredentials();
-  const res = await fetch(new URL("/oauth2/tokenP", KIS_BASE_URL).toString(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      appkey,
-      appsecret,
-    },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      appkey,
-      appsecret,
-    }),
-  });
-  const text = await res.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    throw new Error(`KIS tokenP invalid JSON HTTP ${res.status}: ${text.slice(0, 240)}`);
-  }
-  if (!res.ok || !body.access_token) {
-    const code = body.error_code || body.msg_cd || "";
-    const desc = body.error_description || body.msg1 || text.slice(0, 160);
-    throw new Error(
-      `KIS tokenP failed HTTP ${res.status}${code ? ` ${code}` : ""}: ${desc}. Check KIS_APP_KEY/KIS_APP_SECRET and app permission.`
-    );
-  }
-  const ttlSec = Math.max(60, Number(body.expires_in) || 23 * 60 * 60);
-  kisIssuedToken = sanitizeStr(body.access_token);
-  kisIssuedTokenExpiresAt = Date.now() + Math.max(0, ttlSec - 300) * 1000;
-  return kisIssuedToken;
-}
-
-async function getKisAccessToken(forceRefresh = false) {
-  if (!forceRefresh) {
-    if (kisIssuedToken && kisIssuedTokenExpiresAt > Date.now()) return kisIssuedToken;
-    const envToken = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
-    if (envToken) return envToken;
-  }
-  return issueKisAccessToken();
+  return { token, appkey, appsecret };
 }
 
 function pickFirst(row, keys) {
@@ -158,9 +114,8 @@ function outputObject(body, preferred) {
   return {};
 }
 
-async function kisGet(path, trId, params, opts = {}) {
-  const { appkey, appsecret } = requireKisAppCredentials();
-  const token = await getKisAccessToken(!!opts.forceRefreshToken);
+async function kisGet(path, trId, params) {
+  const { token, appkey, appsecret } = requireKisAuth();
   const url = new URL(path, KIS_BASE_URL);
   for (const [key, value] of Object.entries(params || {})) {
     url.searchParams.set(key, value == null ? "" : String(value));
@@ -185,13 +140,7 @@ async function kisGet(path, trId, params, opts = {}) {
     throw new Error(`KIS invalid JSON HTTP ${res.status}: ${text.slice(0, 240)}`);
   }
   if (isKisTokenError(body)) {
-    if (!opts.retriedAfterTokenRefresh) {
-      return kisGet(path, trId, params, {
-        forceRefreshToken: true,
-        retriedAfterTokenRefresh: true,
-      });
-    }
-    throw new Error("KIS access token expired or invalid (EGW00121). Auto-refresh failed; check KIS_APP_KEY/KIS_APP_SECRET.");
+    throw new Error("KIS_ACCESS_TOKEN expired or invalid (EGW00121). Refresh the deployed KIS_ACCESS_TOKEN value.");
   }
   if (!res.ok) throw new Error(`KIS HTTP ${res.status}: ${text.slice(0, 240)}`);
   if (body.rt_cd && body.rt_cd !== "0") {

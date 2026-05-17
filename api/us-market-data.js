@@ -22,9 +22,9 @@ const TRADE_PBMN_TR_ID = "HHDFS76320010";
 const US_RANKING_CURRENCY = "0";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS" },
-  { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS" },
-  { id: "dow", name: "다우", symbol: "DJIA", exchange: "NYS" },
+  { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS", cnbcSymbol: ".IXIC" },
+  { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", cnbcSymbol: ".SPX" },
+  { id: "dow", name: "다우", symbol: "DJIA", exchange: "NYS", cnbcSymbol: ".DJI" },
 ];
 
 const US_SECTORS = [
@@ -265,26 +265,49 @@ async function fetchOverseasIndexQuote({ symbol, exchange }) {
   };
 }
 
-async function fetchOverseasIndexRaw({ symbol, exchange }) {
-  return kisGet(OVERSEAS_INDEX_PRICE_PATH, OVERSEAS_INDEX_PRICE_TR_ID, {
-    AUTH: "",
-    EXCD: exchange,
-    SYMB: symbol,
+async function fetchCnbcIndexQuotes() {
+  const url = "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=.IXIC|.SPX|.DJI&output=json";
+  const res = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      accept: "application/json",
+    },
   });
+  if (!res.ok) throw new Error(`CNBC HTTP ${res.status}`);
+  const body = await res.json();
+  const quotes = body && body.QuickQuoteResult && body.QuickQuoteResult.QuickQuote;
+  const rows = Array.isArray(quotes) ? quotes : quotes ? [quotes] : [];
+  const map = new Map();
+  for (const row of rows) {
+    const symbol = sanitizeStr(row.symbol);
+    const price = round2(toNum(row.last));
+    if (!symbol || price == null) continue;
+    map.set(symbol, {
+      price,
+      changePct: round2(toNum(row.change_pct)),
+      changePoints: round2(toNum(row.change)),
+    });
+  }
+  return map;
 }
 
 async function fetchIndices() {
   return cached("indices", async () => {
     const items = [];
+    let cnbcQuotes = null;
     for (const idx of US_INDICES) {
       const quote = await fetchOverseasIndexQuote(idx);
+      if (quote.price == null) {
+        cnbcQuotes = cnbcQuotes || (await fetchCnbcIndexQuotes());
+      }
+      const fallback = quote.price == null && cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
       items.push({
         id: idx.id,
         name: idx.name,
         symbol: idx.symbol,
-        price: quote.price,
-        changePct: quote.changePct,
-        changePoints: quote.changePoints,
+        price: quote.price ?? (fallback && fallback.price) ?? null,
+        changePct: quote.changePct ?? (fallback && fallback.changePct) ?? null,
+        changePoints: quote.changePoints ?? (fallback && fallback.changePoints) ?? null,
       });
     }
     return items;
@@ -436,14 +459,6 @@ module.exports = async function handler(req, res) {
     if (action === "indices") {
       const payload = await cachedPayload("indices", async () => ({ indices: await fetchIndices() }));
       json(res, 200, payload);
-      return;
-    }
-    if (action === "index-debug") {
-      const raw = [];
-      for (const idx of US_INDICES) {
-        raw.push({ id: idx.id, symbol: idx.symbol, exchange: idx.exchange, body: await fetchOverseasIndexRaw(idx) });
-      }
-      json(res, 200, { raw, updatedAt: new Date().toISOString() });
       return;
     }
     if (action === "sectors") {

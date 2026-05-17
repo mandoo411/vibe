@@ -6,18 +6,17 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const RSS_SOURCES = [
-  "https://www.yonhapnewstv.co.kr/feed/",
-  "https://rss.yna.co.kr/economy/rss.xml",
-  "https://rss.yna.co.kr/international/rss.xml",
-  "https://rss.hankyung.com/economy.xml",
-  "https://rss.hankyung.com/international.xml",
-  "https://rss.hankyung.com/finance.xml",
-  "https://rss.hankyung.com/stock.xml",
-  "https://www.mk.co.kr/rss/30100041/",
-  "https://www.mk.co.kr/rss/30200030/",
-  "https://rss.mt.co.kr/mt_isa/",
-  "https://rss.edaily.co.kr/edaily/RSSSvc.asmx/economy_news",
-  "https://rss.heraldcorp.com/rss/economy.xml",
+  { url: "https://www.mk.co.kr/rss/30100041/", name: "매일경제" },
+  { url: "https://www.yna.co.kr/rss/economy.xml", name: "연합뉴스" },
+  {
+    url: "https://finance.naver.com/news/news_list.naver?mode=LSS3D&section_id=101&section_id2=258&section_id3=401",
+    name: "네이버금융",
+  },
+  { url: "https://www.news1.kr/rss/economy", name: "뉴스1" },
+  { url: "https://www.asiae.co.kr/rss/stock.htm", name: "아시아경제" },
+  { url: "https://www.fnnews.com/rss/fn_realestate_stock.xml", name: "파이낸셜뉴스" },
+  { url: "https://www.sedaily.com/RSS/S.xml", name: "서울경제" },
+  { url: "https://news.bizwatch.co.kr/rss/finance.xml", name: "비즈니스워치" },
 ];
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
@@ -175,16 +174,6 @@ function normalizeEarnings(data) {
     .filter((row) => SP500_WATCHLIST_SET.has(row.symbol));
 }
 
-function rssSourceName(url) {
-  if (/yonhapnewstv\.co\.kr|yna\.co\.kr/i.test(url)) return "연합뉴스";
-  if (/mk\.co\.kr/i.test(url)) return "매일경제";
-  if (/hankyung\.com/i.test(url)) return "한국경제";
-  if (/mt\.co\.kr/i.test(url)) return "머니투데이";
-  if (/edaily\.co\.kr/i.test(url)) return "이데일리";
-  if (/heraldcorp\.com/i.test(url)) return "헤럴드경제";
-  return "뉴스";
-}
-
 function normalizeRss(xml, source) {
   const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
   return items
@@ -206,19 +195,33 @@ function normalizeRss(xml, source) {
     .slice(0, 5);
 }
 
-async function fetchRssSource(url) {
-  const xml = await fetchText(url, { accept: "application/rss+xml, application/xml, text/xml" });
-  return normalizeRss(xml, rssSourceName(url));
+async function fetchRssSource(source) {
+  const res = await fetch(source.url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      Accept: "application/rss+xml, application/xml, text/xml",
+    },
+    signal: AbortSignal.timeout(5000),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
+  }
+  const rows = normalizeRss(text, source.name);
+  console.log(`✅ ${source.name} 성공 (${rows.length}건)`);
+  return rows;
 }
 
 async function fetchKoreanNews() {
-  const settled = await Promise.allSettled(RSS_SOURCES.map((url) => fetchRssSource(url)));
+  const settled = await Promise.allSettled(RSS_SOURCES.map((source) => fetchRssSource(source)));
   const rows = [];
-  for (const result of settled) {
+  for (let i = 0; i < settled.length; i += 1) {
+    const result = settled[i];
+    const source = RSS_SOURCES[i];
     if (result.status === "fulfilled") {
       rows.push(...result.value);
     } else {
-      console.warn(`Korean RSS fetch failed: ${result.reason instanceof Error ? result.reason.message : result.reason}`);
+      console.log(`❌ ${source.name} 실패: ${result.reason instanceof Error ? result.reason.message : result.reason}`);
     }
   }
 

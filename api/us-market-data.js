@@ -13,10 +13,6 @@ const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
 const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
 const MARKET_CAP_TR_ID = "HHDFS76350100";
-const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
-const UPDOWN_RATE_TR_ID = "HHDFS76290000";
-const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
-const TRADE_PBMN_TR_ID = "HHDFS76320010";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "QQQ", exchange: "NAS" },
@@ -321,9 +317,16 @@ function fetchMarketCapTop50() {
 function fetchGainersTop50() {
   return fetchMergedRanking(
     "ranking:gainers",
-    UPDOWN_RATE_PATH,
-    UPDOWN_RATE_TR_ID,
-    (exchange) => ({ KEYB: " ", AUTH: " ", EXCD: exchange, GUBN: "1", NDAY: "0", VOL_RANG: "0" }),
+    MARKET_CAP_PATH,
+    MARKET_CAP_TR_ID,
+    (exchange) => ({
+      AUTH: "",
+      EXCD: exchange,
+      SYMB: "",
+      BYMD: "",
+      TRXN_TP: "2",
+      MKTL_TP: "0",
+    }),
     "changePct"
   );
 }
@@ -331,16 +334,15 @@ function fetchGainersTop50() {
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
     "ranking:trade-value",
-    TRADE_PBMN_PATH,
-    TRADE_PBMN_TR_ID,
+    MARKET_CAP_PATH,
+    MARKET_CAP_TR_ID,
     (exchange) => ({
-      KEYB: " ",
-      AUTH: " ",
+      AUTH: "",
       EXCD: exchange,
-      NDAY: "0",
-      VOL_RANG: "0",
-      PRC1: "",
-      PRC2: "",
+      SYMB: "",
+      BYMD: "",
+      TRXN_TP: "3",
+      MKTL_TP: "0",
     }),
     "tradingValue"
   );

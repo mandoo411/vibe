@@ -185,43 +185,55 @@ function normalizeNews(data) {
 
 function normalizeNewsApi(data) {
   const rows = Array.isArray(data?.articles) ? data.articles : [];
-  return rows.slice(0, 20).map((row) => ({
-    headline: row.title || "",
-    url: row.url || "",
-    datetime: row.publishedAt || null,
-    date: row.publishedAt ? seoulYmd(new Date(row.publishedAt)) : "",
-    timeLabel: kstNewsTimeLabel(row.publishedAt),
-    source: row.source && row.source.name ? row.source.name : "NewsAPI",
-  }));
+  return rows
+    .slice(0, 20)
+    .map((row) => ({
+      headline: row.title || "",
+      url: row.url || "",
+      datetime: row.publishedAt || null,
+      date: row.publishedAt ? seoulYmd(new Date(row.publishedAt)) : "",
+      timeLabel: kstNewsTimeLabel(row.publishedAt),
+      source: row.source && row.source.name ? row.source.name : "NewsAPI",
+    }))
+    .filter((row) => row.headline);
 }
 
 function normalizeYonhapRss(xml) {
   const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
-  return items.slice(0, 20).map((item) => {
-    const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
-    const link = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
-    const pubDate = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
-    return {
-      headline: title,
-      url: link,
-      datetime: pubDate || null,
-      date: pubDate ? seoulYmd(new Date(pubDate)) : "",
-      timeLabel: kstNewsTimeLabel(pubDate),
-      source: "연합뉴스",
-    };
-  });
+  return items
+    .slice(0, 20)
+    .map((item) => {
+      const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
+      const link = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
+      const pubDate = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
+      return {
+        headline: title,
+        url: link,
+        datetime: pubDate || null,
+        date: pubDate ? seoulYmd(new Date(pubDate)) : "",
+        timeLabel: kstNewsTimeLabel(pubDate),
+        source: "연합뉴스",
+      };
+    })
+    .filter((row) => row.headline);
 }
 
 async function fetchKoreanNews() {
   const newsApiKey = String(process.env.NEWSAPI_KEY || "").trim();
   if (newsApiKey) {
-    const url = new URL(NEWSAPI_URL);
-    url.searchParams.set("country", "kr");
-    url.searchParams.set("category", "business");
-    url.searchParams.set("pageSize", "20");
-    url.searchParams.set("apiKey", newsApiKey);
-    const text = await fetchText(url, { accept: "application/json" });
-    return normalizeNewsApi(JSON.parse(text));
+    try {
+      const url = new URL(NEWSAPI_URL);
+      url.searchParams.set("country", "kr");
+      url.searchParams.set("category", "business");
+      url.searchParams.set("pageSize", "20");
+      url.searchParams.set("apiKey", newsApiKey);
+      const text = await fetchText(url, { accept: "application/json" });
+      const rows = normalizeNewsApi(JSON.parse(text));
+      if (rows.length) return rows;
+      console.warn("NewsAPI returned no Korean business news; falling back to Yonhap RSS.");
+    } catch (error) {
+      console.warn(`NewsAPI fetch failed; falling back to Yonhap RSS: ${error instanceof Error ? error.message : error}`);
+    }
   }
   const xml = await fetchText(YONHAP_ECONOMY_RSS_URL, { accept: "application/rss+xml, application/xml, text/xml" });
   return normalizeYonhapRss(xml);

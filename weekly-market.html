@@ -229,6 +229,10 @@
           return seoulYmd(d);
         }
 
+        function kstDayOfWeek(ymd) {
+          return new Date(`${ymd}T12:00:00+09:00`).getUTCDay();
+        }
+
         function monthKey(ymd) {
           return String(ymd || seoulYmd()).slice(0, 7);
         }
@@ -241,7 +245,7 @@
         function fmtDate(ymd) {
           if (!ymd) return "—";
           const [, m, d] = ymd.split("-");
-          return `${Number(m)}월 ${Number(d)}일 (${WD[new Date(`${ymd}T12:00:00+09:00`).getDay()]})`;
+          return `${Number(m)}월 ${Number(d)}일 (${WD[kstDayOfWeek(ymd)]})`;
         }
 
         function escapeHtml(v) {
@@ -353,9 +357,10 @@
         }
 
         function startOfWeek(ymd) {
-          const d = new Date(`${ymd}T12:00:00+09:00`);
-          const day = d.getDay();
-          return addDays(ymd, day === 0 ? -6 : 1 - day);
+          const day = kstDayOfWeek(ymd);
+          if (day === 0) return addDays(ymd, 1);
+          if (day === 6) return addDays(ymd, 2);
+          return addDays(ymd, 1 - day);
         }
 
         function renderWeek() {

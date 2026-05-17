@@ -22,7 +22,7 @@ const TRADE_PBMN_TR_ID = "HHDFS76320010";
 const US_RANKING_CURRENCY = "0";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS", cnbcSymbol: ".IXIC" },
+  { id: "nasdaq", name: "나스닥", symbol: "NDX", cnbcSymbol: ".NDX", source: "cnbc" },
   { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", cnbcSymbol: ".SPX" },
   { id: "nasdaq-futures", name: "나스닥 선물", symbol: "NQ", cnbcSymbol: "@ND.1", source: "cnbc" },
 ];

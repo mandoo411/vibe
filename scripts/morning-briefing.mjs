@@ -30,7 +30,7 @@ const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefi
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", cnbcSymbol: ".IXIC", yahooSymbol: "^IXIC" },
+  { id: "nasdaq", name: "나스닥", cnbcSymbol: ".NDX", yahooSymbol: "^NDX" },
   { id: "sp500", name: "S&P 500", cnbcSymbol: ".SPX", yahooSymbol: "^GSPC" },
   { id: "nasdaq-futures", name: "나스닥선물", cnbcSymbol: "@ND.1", yahooSymbol: "NQ=F" },
 ];

@@ -24,7 +24,7 @@ const US_RANKING_CURRENCY = "0";
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS", cnbcSymbol: ".IXIC" },
   { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", cnbcSymbol: ".SPX" },
-  { id: "dow", name: "다우", symbol: "DJIA", exchange: "NYS", cnbcSymbol: ".DJI" },
+  { id: "nasdaq-futures", name: "나스닥 선물", symbol: "NQ", cnbcSymbol: "@ND.1", source: "cnbc" },
 ];
 
 const US_SECTORS = [
@@ -266,7 +266,8 @@ async function fetchOverseasIndexQuote({ symbol, exchange }) {
 }
 
 async function fetchCnbcIndexQuotes() {
-  const url = "https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=.IXIC|.SPX|.DJI&output=json";
+  const symbols = US_INDICES.map((idx) => idx.cnbcSymbol).filter(Boolean).join("|");
+  const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${encodeURIComponent(symbols)}&output=json`;
   const res = await fetch(url, {
     headers: {
       "user-agent": "Mozilla/5.0",
@@ -296,11 +297,14 @@ async function fetchIndices() {
     const items = [];
     let cnbcQuotes = null;
     for (const idx of US_INDICES) {
-      const quote = await fetchOverseasIndexQuote(idx);
-      if (quote.price == null) {
+      const quote =
+        idx.source === "cnbc"
+          ? { price: null, changePct: null, changePoints: null }
+          : await fetchOverseasIndexQuote(idx);
+      if (quote.price == null || idx.source === "cnbc") {
         cnbcQuotes = cnbcQuotes || (await fetchCnbcIndexQuotes());
       }
-      const fallback = quote.price == null && cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
+      const fallback = cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
       items.push({
         id: idx.id,
         name: idx.name,

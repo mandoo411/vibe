@@ -5,7 +5,7 @@
  *  → Claude로 "상승 이유 한 줄 + 테마 + 시황 요약(summary) + 특징주" 자동 분류
  *  → data/daily-market.json 의 days[targetYmd] (topGainers, summary, notableStocks 등) 에 저장
  *
- * 필수: KIS_APP_KEY, KIS_APP_SECRET, ANTHROPIC_API_KEY
+ * 필수: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, ANTHROPIC_API_KEY
  * 선택: TARGET_DATE=YYYY-MM-DD (기본: 오늘 KST)
  *       TOP_N (기본 30, 1~50)
  *       NEWS_PER_STOCK (기본 5, 1~10)
@@ -13,7 +13,6 @@
  *       KIS_BASE_URL (기본 https://openapi.koreainvestment.com:9443)
  *       ANTHROPIC_MODEL (기본 claude-sonnet-4-5)
  *       OUTPUT_PATH (기본 ./data/daily-market.json)
- *       KIS_TOKEN_CACHE (기본 ./.kis-token.json)
  *       KIS_NOTABLE_QUOTE_DELAY_MS (기본 150, 특징주 KIS 개별시세 호출 간격 ms)
  */
 
@@ -86,7 +85,11 @@ function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// ─── KIS OAuth 토큰 (24h 유효, 파일 캐시) ──────────────────
+// ─── KIS OAuth 토큰: 자동 발급 금지, 환경변수만 사용 ──────────────────
+function getKisToken() {
+  return requireEnv("KIS_ACCESS_TOKEN");
+}
+
 async function readJsonIfExists(filePath) {
   try {
     const raw = await fs.readFile(filePath, "utf8");
@@ -95,46 +98,6 @@ async function readJsonIfExists(filePath) {
     if (e && e.code === "ENOENT") return null;
     throw e;
   }
-}
-
-async function getKisToken({ baseUrl, appKey, appSecret, cachePath }) {
-  const cached = await readJsonIfExists(cachePath);
-  if (cached && cached.access_token && cached.expires_at && Date.now() < cached.expires_at - 60_000) {
-    return cached.access_token;
-  }
-
-  const res = await fetch(`${baseUrl}/oauth2/tokenP`, {
-    method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      grant_type: "client_credentials",
-      appkey: appKey,
-      appsecret: appSecret,
-    }),
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`KIS token HTTP ${res.status}: ${text}`);
-  }
-  let json;
-  try { json = JSON.parse(text); } catch (_) {
-    throw new Error(`KIS token: invalid JSON response: ${text.slice(0, 300)}`);
-  }
-  if (!json.access_token) {
-    throw new Error(`KIS token: no access_token in response: ${text.slice(0, 300)}`);
-  }
-  const ttlSec = Number(json.expires_in) || 86400;
-  const data = {
-    access_token: json.access_token,
-    token_type: json.token_type || "Bearer",
-    expires_at: Date.now() + ttlSec * 1000,
-  };
-  try {
-    await fs.writeFile(cachePath, JSON.stringify(data, null, 2) + "\n", "utf8");
-  } catch (e) {
-    console.warn("KIS token cache write failed:", e.message);
-  }
-  return data.access_token;
 }
 
 /** KIS FHPST01700000 output 등락률(%) — prdy_ctrt 외 필드명 변형 대응 */
@@ -691,7 +654,6 @@ async function main() {
   const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
 
   const baseUrl = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
-  const cachePath = path.resolve(process.env.KIS_TOKEN_CACHE || ".kis-token.json");
   const outputPath = path.resolve(process.env.OUTPUT_PATH || path.join("data", "daily-market.json"));
   const topN = Math.max(1, Math.min(50, Number(process.env.TOP_N) || 30));
   const perStock = Math.max(1, Math.min(10, Number(process.env.NEWS_PER_STOCK) || 5));
@@ -713,8 +675,8 @@ async function main() {
   let kisOAuthToken = null;
 
   if (!forceNaver) {
-    console.log("[1/6] KIS OAuth token...");
-    kisOAuthToken = await getKisToken({ baseUrl, appKey, appSecret, cachePath });
+    console.log("[1/6] KIS access token from env...");
+    kisOAuthToken = getKisToken();
 
     console.log("[2/6] KIS 상승률 랭킹 (KOSPI/KOSDAQ)...");
     const [kospi, kosdaq] = await Promise.all([
@@ -778,8 +740,8 @@ async function main() {
   }
 
   if (!kisOAuthToken) {
-    console.log("[2b/6] KIS OAuth (특징주 개별 시세 보강용)...");
-    kisOAuthToken = await getKisToken({ baseUrl, appKey, appSecret, cachePath });
+    console.log("[2b/6] KIS access token from env (특징주 개별 시세 보강용)...");
+    kisOAuthToken = getKisToken();
   }
 
   console.log(

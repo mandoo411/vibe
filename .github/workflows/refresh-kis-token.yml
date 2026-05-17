@@ -1,11 +1,6 @@
-# 한국투자증권 OAuth 액세스 토큰을 매일 갱신해 저장소 Secret `KIS_ACCESS_TOKEN`에 반영합니다.
+# 한국투자증권 OAuth 액세스 토큰을 하루 1회 갱신해 저장소 Secret `KIS_ACCESS_TOKEN`에 반영합니다.
 #
-# 필요한 Repository secrets:
-#   - KIS_APP_KEY, KIS_APP_SECRET : 한투 앱 키 (기존과 동일)
-#   - GH_PAT_REPO_SECRETS_WRITE : 이 저장소의 Actions secrets를 갱신할 수 있는 PAT
-#       (Classic: repo 범위 / Fine-grained: Repository → Secrets Read and write)
-#
-# 참고: GITHUB_TOKEN으로는 secrets 쓰기가 불가하므로 위 PAT가 필요합니다.
+# 작업 중인 API/스크립트에서는 tokenP를 호출하지 않고, 이 스케줄에서만 발급합니다.
 # Vercel 등 다른 호스트의 환경변수는 자동 동기화되지 않습니다. 배포 환경에 KIS_ACCESS_TOKEN을 맞춰 주세요.
 
 name: Refresh KIS access token
@@ -14,7 +9,6 @@ on:
   schedule:
     # 매일 08:00 KST ≈ 전날 23:00 UTC (KST = UTC+9)
     - cron: "0 23 * * *"
-  workflow_dispatch:
 
 concurrency:
   group: refresh-kis-token
@@ -24,7 +18,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Issue KIS OAuth token (tokenP)
+      - name: Issue KIS OAuth token once daily
         id: kis
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}

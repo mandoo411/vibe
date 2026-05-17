@@ -537,9 +537,9 @@
           if (!raw) return false;
           const pubDate = new Date(raw);
           if (Number.isNaN(pubDate.getTime())) return false;
-          const sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-          return pubDate >= sevenDaysAgo;
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return pubDate >= thirtyDaysAgo;
         }
 
         function renderNews() {
@@ -553,7 +553,7 @@
                   <i aria-hidden="true">→</i>
                 </a>`)
                 .join("")
-            : '<p class="empty-text">최신 뉴스가 없습니다</p>';
+            : '<p class="empty-text">뉴스를 불러올 수 없습니다</p>';
         }
 
         async function load() {

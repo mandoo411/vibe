@@ -5,12 +5,37 @@ import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
-const NEWSAPI_URL = "https://newsapi.org/v2/everything";
-const KOREAN_NEWS_QUERY = "주식 경제 증시";
-const KOREAN_NEWS_RSS_FEEDS = [
-  { url: "https://feeds.feedburner.com/NaverFinanceNews", source: "네이버 금융" },
-  { url: "https://rss.hankyung.com/economy.xml", source: "한국경제" },
-  { url: "https://www.mk.co.kr/rss/30000001/", source: "매일경제" },
+const RSS_SOURCES = [
+  "https://www.mk.co.kr/rss/30200030/",
+  "https://www.mk.co.kr/rss/30100041/",
+  "https://rss.hankyung.com/economy.xml",
+  "https://rss.hankyung.com/international.xml",
+  "https://rss.yna.co.kr/economy/rss.xml",
+  "https://rss.yna.co.kr/international/rss.xml",
+];
+const EXCLUDE_KEYWORDS = [
+  "결혼","이혼","열애","교제","임신","출산","사망","부고","빈소",
+  "드라마","영화","배우","가수","아이돌","콘서트","팬미팅",
+  "맛집","레시피","요리","카페","인테리어","인테리어",
+  "다이어트","운동","헬스","뷰티","패션","스타일",
+  "살인","폭행","성범죄","납치","교통사고","음주운전",
+  "날씨","미세먼지","황사","비","태풍",
+  "청약","분양","재건축","재개발","아파트",
+  "치매","건강","병원","의료보험",
+];
+const INCLUDE_KEYWORDS = [
+  "코스피","코스닥","증시","주식","펀드","ETF","채권","금리","환율",
+  "수출","수입","무역","경상수지","GDP","물가","CPI","인플레이션","기준금리",
+  "이란","전쟁","미중","관세","트럼프","제재","협상","외교","동맹",
+  "러시아","우크라이나","중동","이스라엘","하마스","가자","후티",
+  "OPEC","오펙","원유","유가","에너지",
+  "G7","G20","IMF","세계은행","WTO",
+  "반도체","AI","인공지능","빅테크","데이터센터","전기차","배터리",
+  "삼성","SK하이닉스","현대차","LG","포스코","카카오","네이버",
+  "엔비디아","애플","테슬라","아마존","구글","메타","마이크로소프트",
+  "연준","Fed","FOMC","ECB","금값","구리","달러","원화",
+  "비트코인","이더리움","암호화폐","크립토",
+  "영업이익","매출","실적","어닝","상장","공모","IPO",
 ];
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
@@ -64,29 +89,6 @@ function addDaysYmd(ymd, days) {
   return seoulYmd(date);
 }
 
-function sevenDaysAgoYmd(date = new Date()) {
-  const d = new Date(date);
-  d.setDate(d.getDate() - 7);
-  return seoulYmd(d);
-}
-
-function ymdFromUnix(sec) {
-  if (!sec) return "";
-  return seoulYmd(new Date(Number(sec) * 1000));
-}
-
-function timeLabelFromUnix(sec) {
-  if (!sec) return "";
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(new Date(Number(sec) * 1000));
-}
-
 function kstNewsTimeLabel(value) {
   const date = value ? new Date(value) : new Date();
   return new Intl.DateTimeFormat("ko-KR", {
@@ -105,9 +107,9 @@ function isRecentNewsDate(value, now = new Date()) {
   if (!value) return false;
   const pubDate = new Date(value);
   if (Number.isNaN(pubDate.getTime())) return false;
-  const sevenDaysAgo = new Date(now);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  return pubDate >= sevenDaysAgo;
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  return pubDate >= thirtyDaysAgo;
 }
 
 function isHighImpact(row) {
@@ -191,37 +193,26 @@ function normalizeEarnings(data) {
     .filter((row) => SP500_WATCHLIST_SET.has(row.symbol));
 }
 
-function normalizeNews(data) {
-  const rows = Array.isArray(data) ? data : [];
-  return rows.slice(0, 20).map((row) => ({
-    headline: row.headline || "",
-    url: row.url || "",
-    datetime: row.datetime || null,
-    date: ymdFromUnix(row.datetime),
-    timeLabel: timeLabelFromUnix(row.datetime),
-    source: row.source || "",
-  }));
+function rssSourceName(url) {
+  if (/mk\.co\.kr/i.test(url)) return "매일경제";
+  if (/hankyung\.com/i.test(url)) return "한국경제";
+  if (/yna\.co\.kr/i.test(url)) return "연합뉴스";
+  return "뉴스";
 }
 
-function normalizeNewsApi(data) {
-  const rows = Array.isArray(data?.articles) ? data.articles : [];
-  return rows
-    .slice(0, 20)
-    .map((row) => ({
-      headline: row.title || "",
-      url: row.url || "",
-      datetime: row.publishedAt || null,
-      date: row.publishedAt ? seoulYmd(new Date(row.publishedAt)) : "",
-      timeLabel: kstNewsTimeLabel(row.publishedAt),
-      source: row.source && row.source.name ? row.source.name : "NewsAPI",
-    }))
-    .filter((row) => row.headline && isRecentNewsDate(row.datetime));
+function keywordIncludes(title, keywords) {
+  const normalizedTitle = String(title || "").toLowerCase();
+  return keywords.some((keyword) => normalizedTitle.includes(String(keyword).toLowerCase()));
+}
+
+function passesNewsKeywordFilter(title) {
+  if (keywordIncludes(title, EXCLUDE_KEYWORDS)) return false;
+  return keywordIncludes(title, INCLUDE_KEYWORDS);
 }
 
 function normalizeRss(xml, source) {
   const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
   return items
-    .slice(0, 20)
     .map((item) => {
       const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
       const link = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
@@ -235,45 +226,37 @@ function normalizeRss(xml, source) {
         source,
       };
     })
-    .filter((row) => row.headline && isRecentNewsDate(row.datetime));
+    .filter((row) => row.headline && row.url && isRecentNewsDate(row.datetime) && passesNewsKeywordFilter(row.headline))
+    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
+    .slice(0, 6);
 }
 
-async function fetchKoreanNewsRss() {
-  let lastError = null;
-  for (const feed of KOREAN_NEWS_RSS_FEEDS) {
-    try {
-      const xml = await fetchText(feed.url, { accept: "application/rss+xml, application/xml, text/xml" });
-      const rows = normalizeRss(xml, feed.source);
-      if (rows.length) return rows;
-      console.warn(`${feed.source} RSS returned no news; trying next feed.`);
-    } catch (error) {
-      lastError = error;
-      console.warn(`${feed.source} RSS fetch failed; trying next feed: ${error instanceof Error ? error.message : error}`);
-    }
-  }
-  throw new Error(`All Korean news RSS feeds failed: ${lastError instanceof Error ? lastError.message : lastError || "no items"}`);
+async function fetchRssSource(url) {
+  const xml = await fetchText(url, { accept: "application/rss+xml, application/xml, text/xml" });
+  return normalizeRss(xml, rssSourceName(url));
 }
 
 async function fetchKoreanNews() {
-  const newsApiKey = String(process.env.NEWSAPI_KEY || "").trim();
-  if (newsApiKey) {
-    try {
-      const url = new URL(NEWSAPI_URL);
-      url.searchParams.set("q", KOREAN_NEWS_QUERY);
-      url.searchParams.set("language", "ko");
-      url.searchParams.set("sortBy", "publishedAt");
-      url.searchParams.set("pageSize", "20");
-      url.searchParams.set("from", sevenDaysAgoYmd());
-      url.searchParams.set("apiKey", newsApiKey);
-      const text = await fetchText(url, { accept: "application/json" });
-      const rows = normalizeNewsApi(JSON.parse(text));
-      if (rows.length) return rows;
-      console.warn("NewsAPI returned no Korean market news; falling back to Korean RSS feeds.");
-    } catch (error) {
-      console.warn(`NewsAPI fetch failed; falling back to Korean RSS feeds: ${error instanceof Error ? error.message : error}`);
+  const settled = await Promise.allSettled(RSS_SOURCES.map((url) => fetchRssSource(url)));
+  const rows = [];
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      rows.push(...result.value);
+    } else {
+      console.warn(`Korean RSS fetch failed: ${result.reason instanceof Error ? result.reason.message : result.reason}`);
     }
   }
-  return fetchKoreanNewsRss();
+
+  const seen = new Set();
+  return rows
+    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
+    .filter((row) => {
+      const key = row.headline.replace(/\s+/g, " ").trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 20);
 }
 
 function parseClaudeJson(text) {

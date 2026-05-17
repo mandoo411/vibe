@@ -896,31 +896,40 @@ a:hover {
 }
 
 .earnings-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-.earnings-card {
-  padding: 10px 12px;
+.earnings-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
   border: 1px solid var(--border);
-  background: #0f0d09;
-}
-
-.earnings-card strong,
-.earnings-card span,
-.earnings-card small {
-  display: block;
-}
-
-.earnings-card span {
-  margin-top: 2px;
-  color: var(--text-muted);
-}
-
-.earnings-card small {
-  margin-top: 5px;
-  color: var(--text-dim);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
   font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.earnings-pill:hover,
+.earnings-pill:focus-visible {
+  border-color: var(--border-strong);
+  background: rgba(212, 175, 55, 0.10);
+  outline: none;
+}
+
+.earnings-pill__symbol {
+  color: #c9a84c;
+  font-weight: 700;
+}
+
+.earnings-pill__name {
+  color: #f4efe2;
+  font-weight: 500;
 }
 
 .week-tabs {

@@ -140,6 +140,33 @@
         const DATA_URL = "./data/weekly-schedule.json";
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
         const WEEKDAYS = ["월", "화", "수", "목", "금"];
+        const SP500_WATCHLIST = [
+          "AAPL","MSFT","NVDA","GOOGL","GOOG","AMZN","META","TSLA",
+          "AMD","INTC","QCOM","AVGO","MU","AMAT","LRCX","KLAC","TXN","MRVL","ARM","SMCI",
+          "JPM","BAC","WFC","GS","MS","BLK","C","AXP","V","MA","PYPL",
+          "JNJ","UNH","LLY","PFE","ABBV","MRK","TMO","ABT","DHR",
+          "XOM","CVX","COP","SLB","EOG",
+          "WMT","HD","MCD","SBUX","NKE","TGT","COST","LOW",
+          "NFLX","DIS","CMCSA","T","VZ",
+          "CAT","BA","GE","HON","RTX","LMT","UPS","FDX",
+          "SPY","QQQ","IWM","DIA","GLD","SLV","TLT",
+          "PLTR","SNOW","CRM","NOW","UBER","ABNB","COIN","HOOD",
+          "SOFI","RIVN","NIO","BIDU","BABA","JD","PDD",
+          "RBLX","SNAP","ROKU","SPOT","ZM"
+        ];
+        const SP500_WATCHLIST_SET = new Set(SP500_WATCHLIST);
+        const COMPANY_NAMES = {
+          "AAPL":"애플","MSFT":"마이크로소프트","NVDA":"엔비디아",
+          "GOOGL":"구글","AMZN":"아마존","META":"메타","TSLA":"테슬라",
+          "AMD":"AMD","INTC":"인텔","QCOM":"퀄컴","AVGO":"브로드컴",
+          "MU":"마이크론","JPM":"JP모건","BAC":"뱅크오브아메리카",
+          "GS":"골드만삭스","MS":"모건스탠리","V":"비자","MA":"마스터카드",
+          "NFLX":"넷플릭스","DIS":"디즈니","WMT":"월마트","HD":"홈디포",
+          "PLTR":"팔란티어","COIN":"코인베이스","UBER":"우버",
+          "ABNB":"에어비앤비","BABA":"알리바바","NIO":"니오",
+          "RIVN":"리비안","RBLX":"로블록스","SPOT":"스포티파이",
+          "SNOW":"스노우플레이크","SMCI":"슈퍼마이크로"
+        };
         const INDICATOR_KO = {
           "Fed Interest Rate Decision": "연준 금리 결정",
           "FOMC Meeting Minutes": "FOMC 의사록",
@@ -312,6 +339,10 @@
           return type === "economicCalendar" ? sameDateRows.filter(isHighImpact) : sameDateRows;
         }
 
+        function filterWatchlistEarnings(rows) {
+          return (rows || []).filter((row) => SP500_WATCHLIST_SET.has(String(row.symbol || "").trim().toUpperCase()));
+        }
+
         function impactClass(impact) {
           const key = String(impact || "low").toLowerCase();
           if (key.includes("high")) return "impact-high";
@@ -364,21 +395,23 @@
         }
 
         function renderEarnings(rows) {
-          if (!rows.length) return '<p class="empty-text">실적 발표 일정 없음</p>';
-          return `<div class="earnings-grid">${rows
-            .map(
-              (r) => `<article class="earnings-card">
-                <strong>${escapeHtml(r.symbol || "—")}</strong>
-                <span>${escapeHtml(r.company || "—")}</span>
-                <small>${escapeHtml(r.hour || "시간 미정")} · EPS ${escapeHtml(r.epsEstimate ?? "—")} · 매출 ${money(r.revenueEstimate)}</small>
-              </article>`
-            )
+          const filtered = filterWatchlistEarnings(rows);
+          if (!filtered.length) return "";
+          return `<div class="earnings-grid">${filtered
+            .map((r) => {
+              const symbol = String(r.symbol || "").trim().toUpperCase();
+              const company = COMPANY_NAMES[symbol] || r.company || symbol;
+              return `<button type="button" class="earnings-pill" data-symbol="${escapeHtml(symbol)}" title="${escapeHtml(symbol)} ${escapeHtml(company)}">
+                <span class="earnings-pill__symbol">${escapeHtml(symbol)}</span>
+                <span class="earnings-pill__name">${escapeHtml(company)}</span>
+              </button>`;
+            })
             .join("")}</div>`;
         }
 
         function renderSelectedDay(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = itemsForDate("earningsCalendar", ymd);
+          const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
             ${economic.length || earnings.length ? `${renderEconomic(economic)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
@@ -416,10 +449,15 @@
         function renderToday() {
           const ymd = seoulYmd();
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = itemsForDate("earningsCalendar", ymd);
+          const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
+          const earningsWrap = $("today-earnings");
           $("today-date").textContent = fmtDate(ymd);
           $("today-economic").innerHTML = economic.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
-          $("today-earnings").innerHTML = earnings.length ? renderEarnings(earnings) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+          if (earningsWrap) {
+            const article = earningsWrap.closest("article");
+            if (article) article.hidden = !earnings.length;
+            earningsWrap.innerHTML = renderEarnings(earnings);
+          }
         }
 
         function startOfWeek(ymd) {
@@ -449,6 +487,16 @@
               $("week-tabs").querySelectorAll(".week-tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.index === idx));
               $("week-panels").querySelectorAll(".week-panel").forEach((p) => p.classList.toggle("is-active", p.dataset.index === idx));
             });
+          });
+        }
+
+        function wireEarningsLinks() {
+          document.addEventListener("click", (event) => {
+            const btn = event.target.closest(".earnings-pill");
+            if (!btn) return;
+            const symbol = btn.getAttribute("data-symbol");
+            if (!symbol) return;
+            window.open(`https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`, "_blank", "noopener,noreferrer");
           });
         }
 
@@ -492,6 +540,7 @@
             renderWeek();
             renderAnalysis();
             renderNews();
+            wireEarningsLinks();
           } catch (e) {
             $("masthead-notice").hidden = false;
             $("masthead-notice").textContent = `데이터를 불러오지 못했습니다: ${e instanceof Error ? e.message : e}`;

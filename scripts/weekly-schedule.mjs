@@ -9,6 +9,21 @@ const NEWSAPI_URL = "https://newsapi.org/v2/top-headlines";
 const YONHAP_ECONOMY_RSS_URL = "https://www.yonhapnews.co.kr/rss/economy.xml";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+const SP500_WATCHLIST = [
+  "AAPL","MSFT","NVDA","GOOGL","GOOG","AMZN","META","TSLA",
+  "AMD","INTC","QCOM","AVGO","MU","AMAT","LRCX","KLAC","TXN","MRVL","ARM","SMCI",
+  "JPM","BAC","WFC","GS","MS","BLK","C","AXP","V","MA","PYPL",
+  "JNJ","UNH","LLY","PFE","ABBV","MRK","TMO","ABT","DHR",
+  "XOM","CVX","COP","SLB","EOG",
+  "WMT","HD","MCD","SBUX","NKE","TGT","COST","LOW",
+  "NFLX","DIS","CMCSA","T","VZ",
+  "CAT","BA","GE","HON","RTX","LMT","UPS","FDX",
+  "SPY","QQQ","IWM","DIA","GLD","SLV","TLT",
+  "PLTR","SNOW","CRM","NOW","UBER","ABNB","COIN","HOOD",
+  "SOFI","RIVN","NIO","BIDU","BABA","JD","PDD",
+  "RBLX","SNAP","ROKU","SPOT","ZM"
+];
+const SP500_WATCHLIST_SET = new Set(SP500_WATCHLIST);
 
 function requireEnv(name) {
   const value = String(process.env[name] || "").trim();
@@ -144,14 +159,16 @@ function normalizeEconomic(data) {
 
 function normalizeEarnings(data) {
   const rows = Array.isArray(data?.earningsCalendar) ? data.earningsCalendar : [];
-  return rows.map((row) => ({
-    date: String(row.date || "").slice(0, 10),
-    symbol: row.symbol || "",
-    company: row.company || "",
-    hour: row.hour || "",
-    epsEstimate: row.epsEstimate ?? "",
-    revenueEstimate: row.revenueEstimate ?? "",
-  }));
+  return rows
+    .map((row) => ({
+      date: String(row.date || "").slice(0, 10),
+      symbol: String(row.symbol || "").trim().toUpperCase(),
+      company: row.company || "",
+      hour: row.hour || "",
+      epsEstimate: row.epsEstimate ?? "",
+      revenueEstimate: row.revenueEstimate ?? "",
+    }))
+    .filter((row) => SP500_WATCHLIST_SET.has(row.symbol));
 }
 
 function normalizeNews(data) {

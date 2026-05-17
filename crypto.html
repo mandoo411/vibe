@@ -285,19 +285,24 @@
           display: none;
         }
         .crypto-col-name {
-          width: 26%;
-        }
-        .crypto-col-symbol {
-          width: 14%;
-        }
-        .crypto-col-price {
           width: 22%;
         }
+        .crypto-col-symbol {
+          width: 12%;
+        }
+        .crypto-col-price {
+          width: 29%;
+        }
         .crypto-col-24h {
-          width: 16%;
+          width: 15%;
         }
         .crypto-col-mcap {
           width: 22%;
+        }
+        .crypto-col-price,
+        .crypto-col-mcap {
+          font-size: 10.5px;
+          letter-spacing: -0.05em;
         }
         .crypto-name-btn {
           max-width: 100%;
@@ -486,6 +491,9 @@
               minimumFractionDigits: n >= 100 ? 2 : 4,
               maximumFractionDigits: n >= 100 ? 2 : 6,
             })}`;
+          }
+          if (window.matchMedia("(max-width: 768px)").matches && n >= 1e8) {
+            return `₩${(n / 1e8).toFixed(2)}억`;
           }
           return `₩${n.toLocaleString("ko-KR", {
             minimumFractionDigits: n >= 100 ? 0 : 2,

@@ -292,6 +292,28 @@ async function fetchCnbcIndexQuotes() {
   return map;
 }
 
+async function fetchCnbcIndexQuote(symbol) {
+  const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${symbol}&output=json`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      accept: "application/json",
+    },
+  });
+  if (!res.ok) throw new Error(`CNBC HTTP ${res.status}`);
+  const body = await res.json();
+  const quote = Array.isArray(body?.QuickQuoteResult?.QuickQuote)
+    ? body.QuickQuoteResult.QuickQuote[0]
+    : body?.QuickQuoteResult?.QuickQuote;
+  const price = round2(toNum(quote && quote.last));
+  if (!quote || price == null) return null;
+  return {
+    price,
+    changePct: round2(toNum(quote.change_pct)),
+    changePoints: round2(toNum(quote.change)),
+  };
+}
+
 async function fetchIndices() {
   return cached("indices", async () => {
     const items = [];
@@ -304,7 +326,10 @@ async function fetchIndices() {
       if (quote.price == null || idx.source === "cnbc") {
         cnbcQuotes = cnbcQuotes || (await fetchCnbcIndexQuotes());
       }
-      const fallback = cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
+      let fallback = cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
+      if (!fallback && idx.source === "cnbc" && idx.cnbcSymbol) {
+        fallback = await fetchCnbcIndexQuote(idx.cnbcSymbol);
+      }
       items.push({
         id: idx.id,
         name: idx.name,

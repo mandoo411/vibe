@@ -140,6 +140,77 @@
         const DATA_URL = "./data/weekly-schedule.json";
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
         const WEEKDAYS = ["월", "화", "수", "목", "금"];
+        const INDICATOR_KO = {
+          "Fed Interest Rate Decision": "연준 금리 결정",
+          "FOMC Meeting Minutes": "FOMC 의사록",
+          "CPI m/m": "소비자물가 (월간)",
+          "Core CPI m/m": "근원 소비자물가 (월간)",
+          "CPI y/y": "소비자물가 (연간)",
+          "PPI m/m": "생산자물가 (월간)",
+          "Core PPI m/m": "근원 생산자물가 (월간)",
+          "GDP q/q": "GDP (분기)",
+          "Prelim GDP q/q": "GDP 속보치 (분기)",
+          "NFP": "비농업고용",
+          "Non-Farm Employment Change": "비농업고용 변화",
+          "Unemployment Rate": "실업률",
+          "ADP Non-Farm Employment Change": "ADP 비농업고용",
+          "Initial Jobless Claims": "신규 실업수당 청구",
+          "Retail Sales m/m": "소매판매 (월간)",
+          "Core Retail Sales m/m": "근원 소매판매 (월간)",
+          "ISM Manufacturing PMI": "ISM 제조업 PMI",
+          "ISM Non-Manufacturing PMI": "ISM 서비스업 PMI",
+          "ISM Services PMI": "ISM 서비스 PMI",
+          "CB Consumer Confidence": "CB 소비자신뢰지수",
+          "Michigan Consumer Sentiment": "미시간 소비자심리지수",
+          "New Home Sales": "신규 주택판매",
+          "Existing Home Sales": "기존 주택판매",
+          "Housing Starts": "주택착공건수",
+          "Building Permits": "건축허가",
+          "Trade Balance": "무역수지",
+          "Current Account": "경상수지",
+          "Durable Goods Orders m/m": "내구재 주문 (월간)",
+          "Core Durable Goods Orders m/m": "근원 내구재 주문",
+          "Industrial Production m/m": "산업생산 (월간)",
+          "Capacity Utilization Rate": "설비가동률",
+          "PCE Price Index m/m": "PCE 물가지수 (월간)",
+          "Core PCE Price Index m/m": "근원 PCE 물가지수",
+          "Personal Income m/m": "개인소득 (월간)",
+          "Personal Spending m/m": "개인소비 (월간)",
+          "Empire State Manufacturing Index": "엠파이어스테이트 제조업지수",
+          "Philadelphia Fed Manufacturing Index": "필라델피아 연준 제조업지수",
+          "Chicago PMI": "시카고 PMI",
+          "Flash Manufacturing PMI": "제조업 PMI 속보치",
+          "Flash Services PMI": "서비스 PMI 속보치",
+          "JOLTs Job Openings": "JOLTs 구인건수",
+          "Treasury Secretary Press Conference": "재무장관 기자회견",
+          "RBA Hunter Speech": "RBA 헌터 총재 연설",
+          "RBA Interest Rate Decision": "RBA 금리 결정",
+          "Westpac Consumer Confidence": "웨스트팩 소비자신뢰",
+          "Westpac Consumer Confidence Change": "웨스트팩 소비자신뢰 변화",
+          "Westpac Consumer Confidence Index": "웨스트팩 소비자신뢰지수",
+          "Australia CPI q/q": "호주 소비자물가 (분기)",
+          "ECB Interest Rate Decision": "ECB 금리 결정",
+          "ECB Press Conference": "ECB 기자회견",
+          "German CPI m/m": "독일 소비자물가 (월간)",
+          "German GDP q/q": "독일 GDP (분기)",
+          "German Ifo Business Climate": "독일 IFO 기업환경지수",
+          "Eurozone CPI y/y": "유로존 소비자물가 (연간)",
+          "Eurozone GDP q/q": "유로존 GDP (분기)",
+          "Eurozone PMI": "유로존 PMI",
+          "BOE Interest Rate Decision": "영란은행 금리 결정",
+          "UK CPI y/y": "영국 소비자물가 (연간)",
+          "UK GDP m/m": "영국 GDP (월간)",
+          "BOJ Interest Rate Decision": "일본은행 금리 결정",
+          "Japan CPI y/y": "일본 소비자물가 (연간)",
+          "Tankan Manufacturing Index": "단칸 제조업지수",
+          "China CPI y/y": "중국 소비자물가 (연간)",
+          "China GDP q/q": "중국 GDP (분기)",
+          "China Manufacturing PMI": "중국 제조업 PMI",
+          "Caixin Manufacturing PMI": "차이신 제조업 PMI",
+          "Commemoration of Atatürk, Youth and Sports Day": "아타튀르크 청소년 체육의 날 (터키)",
+          "G7 Summit": "G7 정상회의",
+          "G20 Summit": "G20 정상회의",
+        };
         const state = { data: null, month: null, selectedDate: null };
         const $ = (id) => document.getElementById(id);
 
@@ -200,6 +271,10 @@
           return "impact-low";
         }
 
+        function translateIndicator(name) {
+          return INDICATOR_KO[name] || name;
+        }
+
         function renderEconomic(rows) {
           if (!rows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
           return `<div class="schedule-table-wrap"><table class="schedule-table">
@@ -208,7 +283,7 @@
               .map(
                 (r) => `<tr class="${impactClass(r.impact)}">
                   <td>${escapeHtml(r.time || "—")}</td>
-                  <td><strong>${escapeHtml(r.event || "—")}</strong><span>${escapeHtml(r.country || "")}</span></td>
+                  <td><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
                   <td>${escapeHtml(r.previous ?? "—")}</td>
                   <td>${escapeHtml(r.estimate ?? "—")}</td>
                   <td>${escapeHtml(r.impact || "low")}</td>

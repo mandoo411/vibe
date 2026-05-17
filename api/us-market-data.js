@@ -40,6 +40,13 @@ const US_SECTORS = [
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
 
+function isKisTokenError(body) {
+  if (!body || typeof body !== "object") return false;
+  if (body.msg_cd === "EGW00121") return true;
+  const blob = `${body.msg1 || ""} ${body.message || ""} ${body.msg_cd || ""}`;
+  return /EGW00121|기간이 만료|기간 만료|토큰|token/i.test(String(blob));
+}
+
 function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
 }
@@ -131,6 +138,9 @@ async function kisGet(path, trId, params) {
     body = JSON.parse(text);
   } catch {
     throw new Error(`KIS invalid JSON HTTP ${res.status}: ${text.slice(0, 240)}`);
+  }
+  if (isKisTokenError(body)) {
+    throw new Error("KIS access token expired or invalid (EGW00121). Refresh KIS_ACCESS_TOKEN.");
   }
   if (!res.ok) throw new Error(`KIS HTTP ${res.status}: ${text.slice(0, 240)}`);
   if (body.rt_cd && body.rt_cd !== "0") {
@@ -261,7 +271,7 @@ async function fetchMergedRanking(cacheKey, path, trId, params, sortKey) {
   return cached(cacheKey, async () => {
     const all = [];
     for (const exchange of EXCHANGES) {
-      const body = await kisGet(path, trId, { EXCD: exchange, ...params });
+      const body = await kisGet(path, trId, params(exchange));
       const rows = outputRows(body).map((row, i) => ({
         ...mapRankRow(row, all.length + i + 1),
         exchange,
@@ -281,7 +291,7 @@ function fetchMarketCapTop50() {
     "ranking:market-cap",
     MARKET_CAP_PATH,
     MARKET_CAP_TR_ID,
-    { VOL_RANG: "0", KEYB: " ", AUTH: " " },
+    (exchange) => ({ KEYB: " ", AUTH: " ", EXCD: exchange, VOL_RANG: "0" }),
     "marketCap"
   );
 }
@@ -291,7 +301,7 @@ function fetchGainersTop50() {
     "ranking:gainers",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
-    { GUBN: "1", NDAY: "0", VOL_RANG: "0", KEYB: " ", AUTH: " " },
+    (exchange) => ({ KEYB: " ", AUTH: " ", EXCD: exchange, GUBN: "1", NDAY: "0", VOL_RANG: "0" }),
     "changePct"
   );
 }
@@ -301,7 +311,15 @@ function fetchTradeValueTop50() {
     "ranking:trade-value",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
-    { NDAY: "0", VOL_RANG: "0", KEYB: " ", AUTH: " ", PRC1: "", PRC2: "" },
+    (exchange) => ({
+      KEYB: " ",
+      AUTH: " ",
+      EXCD: exchange,
+      NDAY: "0",
+      VOL_RANG: "0",
+      PRC1: "",
+      PRC2: "",
+    }),
     "tradingValue"
   );
 }

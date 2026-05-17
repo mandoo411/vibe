@@ -6,7 +6,6 @@
   const FETCH_TIMEOUT_MS = 20000;
   const POLL_MS = 5 * 60 * 1000;
   const CLIENT_CACHE_MS = 5 * 60 * 1000;
-  const CHART_SCRIPT_TIMEOUT_MS = 8000;
 
   const TAB_CONFIG = {
     "market-cap": {
@@ -39,14 +38,8 @@
     rowsByTab: {},
     clientCache: new Map(),
     openTicker: null,
-    chartPeriod: "D",
-    lwChartsScriptPromise: null,
-    lwChart: null,
     pollTimer: null,
   };
-
-  const CANDLE_UP = "#26a69a";
-  const CANDLE_DOWN = "#ef5350";
 
   function $(id) {
     return document.getElementById(id);
@@ -197,48 +190,56 @@
   }
 
   function chartRowHtml(ticker) {
+    const row = findRowByTicker(ticker);
     return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(ticker)}">
       <td colspan="6">
         <div class="rt-chart-wrap">
-          <div class="rt-chart-toolbar" role="toolbar" aria-label="Chart period">
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">D</button>
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">W</button>
-            <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">M</button>
-          </div>
           <div class="rt-chart-body">
-            <p class="rt-chart-loading-msg" aria-live="polite">Loading chart...</p>
-            <div class="rt-chart-panes rt-chart-panes--pending">
-              <div class="rt-lw-candle-host" role="region" aria-label="Candlestick chart"></div>
-            </div>
+            <iframe
+              class="us-tv-widget"
+              title="${escapeHtml((row && row.name) || ticker)} TradingView chart"
+              src="${escapeHtml(tradingViewUrl(row || { ticker }))}"
+              loading="lazy"
+              allowtransparency="true"
+              scrolling="no"
+            ></iframe>
           </div>
         </div>
       </td>
     </tr>`;
   }
 
-  function findOpenRow() {
+  function findRowByTicker(ticker) {
     const rows = state.rowsByTab[state.activeTab] || [];
-    return rows.find((row) => row.ticker === state.openTicker) || null;
+    return rows.find((row) => row.ticker === ticker) || null;
   }
 
-  function buildChartCandles(row) {
-    if (!row || row.price == null || !Number.isFinite(row.price)) return [];
-    const price = row.price;
-    const change = row.changePct == null || !Number.isFinite(row.changePct) ? 0 : row.changePct / 100;
-    const open = change === -1 ? price : price / (1 + change);
-    const high = Math.max(open, price);
-    const low = Math.min(open, price);
-    const d = new Date();
-    const time = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return [
-      {
-        time,
-        open: Number(open.toFixed(4)),
-        high: Number(high.toFixed(4)),
-        low: Number(low.toFixed(4)),
-        close: Number(price.toFixed(4)),
-      },
-    ];
+  function tradingViewSymbol(row) {
+    const ticker = String((row && row.ticker) || "").toUpperCase().replace(/[^A-Z0-9.]/g, "");
+    if (!ticker) return "NASDAQ:AAPL";
+    const exchange = String((row && row.exchange) || "").toUpperCase();
+    const prefix = exchange === "NYS" ? "NYSE" : "NASDAQ";
+    return `${prefix}:${ticker}`;
+  }
+
+  function tradingViewUrl(row) {
+    const params = new URLSearchParams({
+      symbol: tradingViewSymbol(row),
+      interval: "D",
+      timezone: "Asia/Seoul",
+      theme: "dark",
+      style: "1",
+      locale: "kr",
+      toolbar_bg: "#0c0a08",
+      hide_side_toolbar: "0",
+      allow_symbol_change: "1",
+      save_image: "0",
+      calendar: "0",
+      studies: "[]",
+      withdateranges: "1",
+      hideideas: "1",
+    });
+    return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
   }
 
   function renderRankTable() {
@@ -252,128 +253,15 @@
       if (state.openTicker === row.ticker) parts.push(chartRowHtml(row.ticker));
     }
     body.innerHTML = parts.join("");
-    if (state.openTicker) void mountChart(body);
+    if (state.openTicker) {
+      body.querySelectorAll(".rt-chart-row").forEach((row) => row.classList.add("rt-chart-row--ready"));
+    }
   }
 
   function setTabs() {
     document.querySelectorAll("[data-us-rank-tab]").forEach((btn) => {
       btn.setAttribute("aria-selected", btn.getAttribute("data-us-rank-tab") === state.activeTab ? "true" : "false");
     });
-  }
-
-  function raceWithTimeout(promise, ms, message) {
-    return new Promise((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(message)), ms);
-      promise.then(
-        (v) => {
-          clearTimeout(t);
-          resolve(v);
-        },
-        (e) => {
-          clearTimeout(t);
-          reject(e);
-        }
-      );
-    });
-  }
-
-  function ensureLightweightCharts(timeoutMs) {
-    if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
-      return Promise.resolve();
-    }
-    if (!state.lwChartsScriptPromise) {
-      state.lwChartsScriptPromise = new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.async = true;
-        s.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
-        s.crossOrigin = "anonymous";
-        s.onload = () => {
-          if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") resolve();
-          else {
-            state.lwChartsScriptPromise = null;
-            reject(new Error("Failed to load chart library."));
-          }
-        };
-        s.onerror = () => {
-          state.lwChartsScriptPromise = null;
-          reject(new Error("Failed to load chart library."));
-        };
-        document.head.appendChild(s);
-      });
-    }
-    return raceWithTimeout(state.lwChartsScriptPromise, timeoutMs, "Chart library load timed out.");
-  }
-
-  function disposeChart() {
-    if (state.lwChart) {
-      try {
-        state.lwChart.remove();
-      } catch (e) {
-        /* noop */
-      }
-      state.lwChart = null;
-    }
-  }
-
-  function setChartLoading(chartTr, on) {
-    const msg = chartTr && chartTr.querySelector(".rt-chart-loading-msg");
-    const panes = chartTr && chartTr.querySelector(".rt-chart-panes");
-    if (msg) msg.hidden = !on;
-    if (panes) panes.classList.toggle("rt-chart-panes--pending", !!on);
-  }
-
-  async function mountChart(body) {
-    const chartTr = body.querySelector("tr.rt-chart-row");
-    const panes = chartTr && chartTr.querySelector(".rt-chart-panes");
-    const host = chartTr && chartTr.querySelector(".rt-lw-candle-host");
-    if (!chartTr || !panes || !host || !state.openTicker) return;
-
-    setChartLoading(chartTr, true);
-    try {
-      await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
-      const LC = window.LightweightCharts;
-      disposeChart();
-      host.innerHTML = "";
-
-      const w = Math.max(panes.clientWidth, 240);
-      const chart = LC.createChart(host, {
-        width: w,
-        height: 300,
-        layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
-        grid: {
-          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
-          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
-        },
-        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-        timeScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-      });
-      const opts = {
-        upColor: CANDLE_UP,
-        downColor: CANDLE_DOWN,
-        borderUpColor: CANDLE_UP,
-        borderDownColor: CANDLE_DOWN,
-        wickUpColor: CANDLE_UP,
-        wickDownColor: CANDLE_DOWN,
-      };
-      const candle =
-        LC.CandlestickSeries && typeof chart.addSeries === "function"
-          ? chart.addSeries(LC.CandlestickSeries, opts)
-          : chart.addCandlestickSeries(opts);
-      const candles = buildChartCandles(findOpenRow());
-      if (!candles.length) throw new Error("No chart data.");
-      candle.setData(candles);
-      chart.timeScale().fitContent();
-      state.lwChart = chart;
-
-      body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
-        const p = btn.getAttribute("data-rt-candle-period");
-        btn.setAttribute("aria-pressed", p === state.chartPeriod ? "true" : "false");
-      });
-    } catch (e) {
-      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(e && e.message ? e.message : String(e))}</p>`;
-    } finally {
-      setChartLoading(chartTr, false);
-    }
   }
 
   async function loadBase() {
@@ -425,7 +313,6 @@
         if (!TAB_CONFIG[tab] || tab === state.activeTab) return;
         state.activeTab = tab;
         state.openTicker = null;
-        disposeChart();
         setTabs();
         renderRankTable();
         await loadActiveTab(false);
@@ -438,22 +325,10 @@
     if (!body || body.dataset.usWire === "1") return;
     body.dataset.usWire = "1";
     body.addEventListener("click", (ev) => {
-      const intervalBtn = ev.target.closest(".rt-chart-interval-btn");
-      if (intervalBtn && body.contains(intervalBtn)) {
-        const p = intervalBtn.getAttribute("data-rt-candle-period");
-        if (!p) return;
-        state.chartPeriod = p;
-        disposeChart();
-        void mountChart(body);
-        return;
-      }
-
       const btn = ev.target.closest(".us-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const ticker = btn.getAttribute("data-ticker");
       state.openTicker = state.openTicker === ticker ? null : ticker;
-      state.chartPeriod = "D";
-      disposeChart();
       renderRankTable();
     });
   }

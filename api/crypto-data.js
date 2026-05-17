@@ -100,7 +100,7 @@ async function fetchGlobal() {
 async function fetchListings() {
   return cached("listings", async () => {
     const data = await cmcFetch("/v1/cryptocurrency/listings/latest", {
-      limit: 50,
+      limit: 100,
       convert: "KRW",
     });
     const rows = Array.isArray(data.data) ? data.data : [];

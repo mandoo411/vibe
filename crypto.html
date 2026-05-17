@@ -205,37 +205,12 @@
         font-size: 11px;
         letter-spacing: 0.08em;
       }
-      .crypto-bar-grid {
-        display: grid;
-        gap: 8px;
-      }
-      .crypto-bar {
-        display: grid;
-        grid-template-columns: 52px minmax(0, 1fr) 72px;
-        align-items: center;
-        gap: 10px;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-      .crypto-bar__track {
-        height: 10px;
-        overflow: hidden;
-        border-radius: 999px;
-        background: rgba(148, 130, 98, 0.22);
-      }
-      .crypto-bar__fill {
+      .crypto-tv-widget {
+        width: 100%;
+        height: 420px;
+        border: 0;
         display: block;
-        height: 100%;
-        width: 0;
-        border-radius: inherit;
-        background: var(--accent);
-      }
-      .crypto-bar__fill.crypto-delta--up {
-        background: #f87171;
-      }
-      .crypto-bar__fill.crypto-delta--down {
-        background: #60a5fa;
+        background: #0c0a08;
       }
       .crypto-error {
         margin-top: 12px;
@@ -256,6 +231,9 @@
         .crypto-table {
           min-width: 860px;
           font-size: 11px;
+        }
+        .crypto-tv-widget {
+          height: 360px;
         }
         .crypto-meta-bar__poll {
           margin-left: 0;
@@ -301,7 +279,7 @@
         </header>
         <div class="page-hero-sub">
           <div class="masthead__meta">
-            <span>CoinMarketCap · TOP 50</span>
+            <span>CoinMarketCap · TOP 100</span>
             <span>5분마다 자동 갱신</span>
           </div>
         </div>
@@ -316,12 +294,12 @@
           <div id="crypto-global" class="crypto-global-grid"></div>
         </section>
 
-        <section class="crypto-section" aria-labelledby="crypto-sec-top50">
-          <h2 class="crypto-section__title" id="crypto-sec-top50">② 시총 TOP 50</h2>
+        <section class="crypto-section" aria-labelledby="crypto-sec-top100">
+          <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 100</h2>
           <div class="crypto-panel">
-            <div class="crypto-panel__head">코인명 클릭 시 1h · 24h · 7d 등락률 차트</div>
+            <div class="crypto-panel__head">코인명 클릭 시 TradingView 차트 위젯 표시</div>
             <div class="crypto-scroll">
-              <table class="crypto-table" aria-label="암호화폐 시총 TOP 50">
+              <table class="crypto-table" aria-label="암호화폐 시총 TOP 100">
                 <thead>
                   <tr>
                     <th class="num">순위</th>
@@ -455,7 +433,7 @@
               <div>
                 <div class="crypto-metric-card__label">Fear & Greed</div>
                 <div class="crypto-metric-card__value">${escapeHtml(fg.rating || "-")}</div>
-                <div class="crypto-metric-card__sub">CNN 공포탐욕지수</div>
+                <div class="crypto-metric-card__sub">Alternative.me 공포탐욕지수</div>
               </div>
             </div>`;
         }
@@ -479,26 +457,46 @@
           </tr>`;
         }
 
-        function barHtml(label, value) {
-          const abs = value == null || !Number.isFinite(value) ? 0 : Math.min(100, Math.abs(value) * 4);
-          const cls = deltaClass(value);
-          return `<div class="crypto-bar">
-            <span>${escapeHtml(label)}</span>
-            <span class="crypto-bar__track"><span class="crypto-bar__fill ${cls}" style="width:${abs}%"></span></span>
-            <span class="${cls}">${escapeHtml(fmtPct(value))}</span>
-          </div>`;
+        function tradingViewSymbol(symbol) {
+          const s = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+          if (!s) return "CRYPTOCAP:TOTAL";
+          if (s === "USDT" || s === "USDC" || s === "DAI") return `CRYPTOCAP:${s}`;
+          return `BINANCE:${s}USDT`;
+        }
+
+        function tradingViewUrl(symbol) {
+          const params = new URLSearchParams({
+            symbol: tradingViewSymbol(symbol),
+            interval: "D",
+            timezone: "Asia/Seoul",
+            theme: "dark",
+            style: "1",
+            locale: "kr",
+            toolbar_bg: "#0c0a08",
+            hide_side_toolbar: "0",
+            allow_symbol_change: "1",
+            save_image: "0",
+            calendar: "0",
+            studies: "[]",
+            withdateranges: "1",
+            hideideas: "1",
+          });
+          return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
         }
 
         function chartRowHtml(c) {
           return `<tr class="crypto-chart-row">
             <td colspan="9">
               <div class="crypto-chart-box">
-                <p class="crypto-chart-title">${escapeHtml(c.name)} 등락률 차트</p>
-                <div class="crypto-bar-grid">
-                  ${barHtml("1h", c.change1h)}
-                  ${barHtml("24h", c.change24h)}
-                  ${barHtml("7d", c.change7d)}
-                </div>
+                <p class="crypto-chart-title">${escapeHtml(c.name)} · TradingView</p>
+                <iframe
+                  class="crypto-tv-widget"
+                  title="${escapeHtml(c.name)} TradingView chart"
+                  src="${escapeHtml(tradingViewUrl(c.symbol))}"
+                  loading="lazy"
+                  allowtransparency="true"
+                  scrolling="no"
+                ></iframe>
               </div>
             </td>
           </tr>`;

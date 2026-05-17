@@ -6,7 +6,6 @@
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
 const FEAR_GREED_URL = "https://api.alternative.me/fng/?limit=1";
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const KRW_PER_USD = 1450;
 
 const memoryCache = new Map();
 
@@ -23,11 +22,6 @@ function toNum(v) {
 function round2(n) {
   if (n == null || !Number.isFinite(n)) return null;
   return Math.round(n * 100) / 100;
-}
-
-function krwToUsd(n) {
-  if (n == null || !Number.isFinite(n)) return null;
-  return n / KRW_PER_USD;
 }
 
 function json(res, status, body) {
@@ -91,14 +85,18 @@ async function cmcFetch(path, params) {
 
 async function fetchGlobal() {
   return cached("global", async () => {
-    const data = await cmcFetch("/v1/global-metrics/quotes/latest", { convert: "KRW" });
-    const d = data && data.data ? data.data : {};
+    const [krwData, usdData] = await Promise.all([
+      cmcFetch("/v1/global-metrics/quotes/latest", { convert: "KRW" }),
+      cmcFetch("/v1/global-metrics/quotes/latest", { convert: "USD" }),
+    ]);
+    const d = krwData && krwData.data ? krwData.data : {};
+    const usdSource = usdData && usdData.data ? usdData.data : {};
     const krw = d.quote && d.quote.KRW ? d.quote.KRW : {};
-    const usd = d.quote && d.quote.USD ? d.quote.USD : {};
+    const usd = usdSource.quote && usdSource.quote.USD ? usdSource.quote.USD : {};
     const totalMarketCapKrw = Math.round(toNum(krw.total_market_cap) || 0) || null;
     const volume24hKrw = Math.round(toNum(krw.total_volume_24h) || 0) || null;
-    const totalMarketCapUsd = Math.round(toNum(usd.total_market_cap) || krwToUsd(totalMarketCapKrw) || 0) || null;
-    const volume24hUsd = Math.round(toNum(usd.total_volume_24h) || krwToUsd(volume24hKrw) || 0) || null;
+    const totalMarketCapUsd = Math.round(toNum(usd.total_market_cap) || 0) || null;
+    const volume24hUsd = Math.round(toNum(usd.total_volume_24h) || 0) || null;
     return {
       btcDominance: round2(toNum(d.btc_dominance)),
       totalMarketCap: totalMarketCapKrw,
@@ -114,15 +112,20 @@ async function fetchGlobal() {
 
 async function fetchListings() {
   return cached("listings", async () => {
-    const data = await cmcFetch("/v1/cryptocurrency/listings/latest", {
-      limit: 100,
-      convert: "KRW",
-    });
-    const rows = Array.isArray(data.data) ? data.data : [];
+    const params = { limit: 100 };
+    const [krwData, usdData] = await Promise.all([
+      cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "KRW" }),
+      cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "USD" }),
+    ]);
+    const rows = Array.isArray(krwData.data) ? krwData.data : [];
+    const usdById = new Map(
+      (Array.isArray(usdData.data) ? usdData.data : []).map((coin) => [String(coin.id), coin])
+    );
     return {
       coins: rows.map((coin, i) => {
         const krw = coin.quote && coin.quote.KRW ? coin.quote.KRW : {};
-        const usd = coin.quote && coin.quote.USD ? coin.quote.USD : {};
+        const usdCoin = usdById.get(String(coin.id)) || {};
+        const usd = usdCoin.quote && usdCoin.quote.USD ? usdCoin.quote.USD : {};
         const priceKrw = round2(toNum(krw.price));
         const marketCapKrw = Math.round(toNum(krw.market_cap) || 0) || null;
         const volume24hKrw = Math.round(toNum(krw.volume_24h) || 0) || null;
@@ -133,16 +136,16 @@ async function fetchListings() {
           symbol: sanitizeStr(coin.symbol),
           price: priceKrw,
           priceKrw,
-          priceUsd: round2(toNum(usd.price) || krwToUsd(priceKrw)),
+          priceUsd: round2(toNum(usd.price)),
           change1h: round2(toNum(krw.percent_change_1h ?? usd.percent_change_1h)),
           change24h: round2(toNum(krw.percent_change_24h ?? usd.percent_change_24h)),
           change7d: round2(toNum(krw.percent_change_7d ?? usd.percent_change_7d)),
           marketCap: marketCapKrw,
           marketCapKrw,
-          marketCapUsd: Math.round(toNum(usd.market_cap) || krwToUsd(marketCapKrw) || 0) || null,
+          marketCapUsd: Math.round(toNum(usd.market_cap) || 0) || null,
           volume24h: volume24hKrw,
           volume24hKrw,
-          volume24hUsd: Math.round(toNum(usd.volume_24h) || krwToUsd(volume24hKrw) || 0) || null,
+          volume24hUsd: Math.round(toNum(usd.volume_24h) || 0) || null,
         };
       }),
       updatedAt: new Date().toISOString(),

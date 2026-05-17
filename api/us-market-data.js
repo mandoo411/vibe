@@ -11,13 +11,15 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
+const OVERSEAS_INDEX_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const OVERSEAS_INDEX_PRICE_TR_ID = "HHDFS76200200";
 const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
 const MARKET_CAP_TR_ID = "HHDFS76350100";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "QQQ", exchange: "NAS" },
-  { id: "sp500", name: "S&P 500", symbol: "SPY", exchange: "AMS" },
-  { id: "dow", name: "다우", symbol: "DIA", exchange: "AMS" },
+  { id: "nasdaq", name: "나스닥", symbol: "COMP", exchange: "NAS" },
+  { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS" },
+  { id: "dow", name: "다우", symbol: "DJIA", exchange: "NYS" },
 ];
 
 const US_SECTORS = [
@@ -242,11 +244,27 @@ async function fetchOverseasQuote({ symbol, exchange }) {
   };
 }
 
+async function fetchOverseasIndexQuote({ symbol, exchange }) {
+  const body = await kisGet(OVERSEAS_INDEX_PRICE_PATH, OVERSEAS_INDEX_PRICE_TR_ID, {
+    AUTH: "",
+    EXCD: exchange,
+    SYMB: symbol,
+  });
+  const out = outputObject(body);
+  return {
+    symbol,
+    exchange,
+    price: round2(toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "bstp_nmix_prpr", "BSTP_NMIX_PRPR"]))),
+    changePct: round2(toNum(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT", "bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT"]))),
+    changePoints: round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS", "bstp_nmix_prdy_vrss", "BSTP_NMIX_PRDY_VRSS"]))),
+  };
+}
+
 async function fetchIndices() {
   return cached("indices", async () => {
     const items = [];
     for (const idx of US_INDICES) {
-      const quote = await fetchOverseasQuote(idx);
+      const quote = await fetchOverseasIndexQuote(idx);
       items.push({
         id: idx.id,
         name: idx.name,

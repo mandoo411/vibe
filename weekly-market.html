@@ -210,6 +210,23 @@
           "Commemoration of Atatürk, Youth and Sports Day": "아타튀르크 청소년 체육의 날 (터키)",
           "G7 Summit": "G7 정상회의",
           "G20 Summit": "G20 정상회의",
+          "GDP Growth Annualized 1st Est": "GDP 성장률 연율 1차 추정",
+          "GDP Growth Rate": "GDP 성장률",
+          "GDP Growth Rate QoQ": "GDP 성장률 (분기)",
+          "GDP Growth Rate YoY": "GDP 성장률 (연간)",
+          "Balance of Trade": "무역수지",
+          "Non-Oil Exports MoM": "비석유 수출 (월간)",
+          "Non-Oil Exports YoY": "비석유 수출 (연간)",
+          "Consumer Inflation Expectations": "소비자 인플레이션 기대",
+          "House Price Index YoY": "주택가격지수 (연간)",
+          "Composite NZ PCI": "뉴질랜드 복합 PCI",
+          "Services NZ PSI": "뉴질랜드 서비스 PSI",
+          "Legislative Election": "의회 선거",
+          "Constitution Day": "제헌절",
+          "Liberation Day": "해방기념일",
+          "Ascension Day": "예수승천일",
+          "Victoria Day": "빅토리아 데이",
+          "Battle of Las Piedras": "라스 피에드라스 전투 기념일",
         };
         const state = { data: null, month: null, selectedDate: null };
         const $ = (id) => document.getElementById(id);
@@ -276,7 +293,20 @@
         }
 
         function translateIndicator(name) {
-          return INDICATOR_KO[name] || name;
+          const raw = String(name || "").trim();
+          if (!raw) return raw;
+          if (INDICATOR_KO[raw]) return INDICATOR_KO[raw];
+          const withoutLeadingDate = raw.replace(/^\d{1,2}\s+[A-Za-z]{3,9}\s+/, "").trim();
+          if (INDICATOR_KO[withoutLeadingDate]) return INDICATOR_KO[withoutLeadingDate];
+          const normalized = withoutLeadingDate
+            .replace(/\bMoM\b/g, "m/m")
+            .replace(/\bYoY\b/g, "y/y")
+            .replace(/\bQoQ\b/g, "q/q")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (INDICATOR_KO[normalized]) return INDICATOR_KO[normalized];
+          const partial = Object.keys(INDICATOR_KO).find((key) => normalized.includes(key) || key.includes(normalized));
+          return partial ? INDICATOR_KO[partial] : raw;
         }
 
         function renderEconomic(rows) {

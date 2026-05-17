@@ -830,15 +830,16 @@ a:hover {
 }
 
 .schedule-table-wrap {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .schedule-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 0;
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: 11px;
+  table-layout: fixed;
 }
 
 .schedule-table th,
@@ -852,6 +853,25 @@ a:hover {
   color: var(--text-dim);
   text-align: left;
   font-size: 10px;
+}
+
+.schedule-table th:nth-child(1),
+.schedule-table td:nth-child(1) {
+  width: 3.5rem;
+}
+
+.schedule-table th:nth-child(3),
+.schedule-table td:nth-child(3),
+.schedule-table th:nth-child(4),
+.schedule-table td:nth-child(4),
+.schedule-table th:nth-child(5),
+.schedule-table td:nth-child(5) {
+  width: 4.5rem;
+}
+
+.schedule-table td {
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .schedule-table td span {

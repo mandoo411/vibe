@@ -54,6 +54,42 @@
         text-transform: uppercase;
         color: var(--accent-bright);
       }
+      .crypto-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .crypto-section-head .crypto-section__title {
+        margin-bottom: 0;
+      }
+      .crypto-currency-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: #0a0907;
+      }
+      .crypto-currency-btn {
+        min-width: 38px;
+        height: 26px;
+        border: 0;
+        border-radius: 2px;
+        background: transparent;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .crypto-currency-btn[aria-pressed="true"] {
+        background: rgba(212, 175, 55, 0.12);
+        color: var(--accent-bright);
+        box-shadow: inset 0 -2px 0 var(--accent-bright);
+      }
       .crypto-global-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -226,6 +262,10 @@
         .crypto-global-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+        .crypto-section-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
         .crypto-metric-card__value {
           font-size: 17px;
         }
@@ -331,7 +371,13 @@
         </section>
 
         <section class="crypto-section" aria-labelledby="crypto-sec-top100">
-          <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 100</h2>
+          <div class="crypto-section-head">
+            <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 100</h2>
+            <div class="crypto-currency-toggle" role="group" aria-label="표시 통화">
+              <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="true">원</button>
+              <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="false">달러</button>
+            </div>
+          </div>
           <div class="crypto-panel">
             <div class="crypto-panel__head">코인명 클릭 시 TradingView 차트 위젯 표시</div>
             <div class="crypto-scroll">
@@ -370,6 +416,7 @@
           global: null,
           fearGreed: null,
           coins: [],
+          currency: "KRW",
           openSymbol: null,
           pollTimer: null,
         };
@@ -407,8 +454,35 @@
           return n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 });
         }
 
+        function fmtUsd(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+          if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+          if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+          if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+          return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+        }
+
+        function moneyValue(row, key) {
+          const suffix = state.currency === "USD" ? "Usd" : "Krw";
+          const converted = row[`${key}${suffix}`];
+          if (converted != null && Number.isFinite(converted)) return converted;
+          return state.currency === "KRW" ? row[key] ?? null : null;
+        }
+
+        function fmtMoney(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          return state.currency === "USD" ? `$${fmtUsd(n)}` : `₩${fmtKrw(n)}`;
+        }
+
         function fmtPrice(n) {
           if (n == null || !Number.isFinite(n)) return "-";
+          if (state.currency === "USD") {
+            return `$${n.toLocaleString("en-US", {
+              minimumFractionDigits: n >= 100 ? 2 : 4,
+              maximumFractionDigits: n >= 100 ? 2 : 6,
+            })}`;
+          }
           return `₩${n.toLocaleString("ko-KR", {
             minimumFractionDigits: n >= 100 ? 0 : 2,
             maximumFractionDigits: n >= 100 ? 0 : 4,
@@ -476,6 +550,9 @@
 
         function coinRowHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
+          const price = moneyValue(c, "price");
+          const marketCap = moneyValue(c, "marketCap");
+          const volume24h = moneyValue(c, "volume24h");
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
             <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
             <td class="crypto-col-name">
@@ -484,13 +561,19 @@
               </button>
             </td>
             <td class="crypto-col-symbol">${escapeHtml(c.symbol)}</td>
-            <td class="num crypto-col-price">${escapeHtml(fmtPrice(c.price))}</td>
+            <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
             <td class="num crypto-col-1h"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
             <td class="num crypto-col-7d"><span class="${deltaClass(c.change7d)}">${escapeHtml(fmtPct(c.change7d))}</span></td>
-            <td class="num crypto-col-mcap">₩${escapeHtml(fmtKrw(c.marketCap))}</td>
-            <td class="num crypto-col-volume">₩${escapeHtml(fmtKrw(c.volume24h))}</td>
+            <td class="num crypto-col-mcap">${escapeHtml(fmtMoney(marketCap))}</td>
+            <td class="num crypto-col-volume">${escapeHtml(fmtMoney(volume24h))}</td>
           </tr>`;
+        }
+
+        function syncCurrencyButtons() {
+          document.querySelectorAll("[data-crypto-currency]").forEach((btn) => {
+            btn.setAttribute("aria-pressed", btn.getAttribute("data-crypto-currency") === state.currency ? "true" : "false");
+          });
         }
 
         function tradingViewSymbol(symbol) {
@@ -562,6 +645,18 @@
           });
         }
 
+        function wireCurrencyToggle() {
+          document.querySelectorAll("[data-crypto-currency]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const next = btn.getAttribute("data-crypto-currency");
+              if (next !== "KRW" && next !== "USD") return;
+              state.currency = next;
+              syncCurrencyButtons();
+              renderTable();
+            });
+          });
+        }
+
         async function refreshAll() {
           const errEl = $("crypto-error");
           if (errEl) errEl.hidden = true;
@@ -577,6 +672,7 @@
             setUpdatedLabel(listingsPack.updatedAt || globalPack.updatedAt || new Date().toISOString());
             renderGlobal();
             renderTable();
+            syncCurrencyButtons();
           } catch (e) {
             console.error("[crypto]", e);
             if (errEl) {
@@ -600,6 +696,7 @@
 
         async function init() {
           wireTable();
+          wireCurrencyToggle();
           await refreshAll();
           startPolling();
         }

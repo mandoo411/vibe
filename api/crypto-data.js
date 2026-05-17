@@ -85,13 +85,18 @@ async function cmcFetch(path, params) {
 
 async function fetchGlobal() {
   return cached("global", async () => {
-    const data = await cmcFetch("/v1/global-metrics/quotes/latest", { convert: "KRW" });
+    const data = await cmcFetch("/v1/global-metrics/quotes/latest", { convert: "KRW,USD" });
     const d = data && data.data ? data.data : {};
-    const quote = d.quote && d.quote.KRW ? d.quote.KRW : {};
+    const krw = d.quote && d.quote.KRW ? d.quote.KRW : {};
+    const usd = d.quote && d.quote.USD ? d.quote.USD : {};
     return {
       btcDominance: round2(toNum(d.btc_dominance)),
-      totalMarketCap: Math.round(toNum(quote.total_market_cap) || 0) || null,
-      volume24h: Math.round(toNum(quote.total_volume_24h) || 0) || null,
+      totalMarketCap: Math.round(toNum(krw.total_market_cap) || 0) || null,
+      volume24h: Math.round(toNum(krw.total_volume_24h) || 0) || null,
+      totalMarketCapKrw: Math.round(toNum(krw.total_market_cap) || 0) || null,
+      volume24hKrw: Math.round(toNum(krw.total_volume_24h) || 0) || null,
+      totalMarketCapUsd: Math.round(toNum(usd.total_market_cap) || 0) || null,
+      volume24hUsd: Math.round(toNum(usd.total_volume_24h) || 0) || null,
       updatedAt: new Date().toISOString(),
     };
   });
@@ -101,23 +106,30 @@ async function fetchListings() {
   return cached("listings", async () => {
     const data = await cmcFetch("/v1/cryptocurrency/listings/latest", {
       limit: 100,
-      convert: "KRW",
+      convert: "KRW,USD",
     });
     const rows = Array.isArray(data.data) ? data.data : [];
     return {
       coins: rows.map((coin, i) => {
-        const quote = coin.quote && coin.quote.KRW ? coin.quote.KRW : {};
+        const krw = coin.quote && coin.quote.KRW ? coin.quote.KRW : {};
+        const usd = coin.quote && coin.quote.USD ? coin.quote.USD : {};
         return {
           rank: toNum(coin.cmc_rank) || i + 1,
           id: toNum(coin.id),
           name: sanitizeStr(coin.name),
           symbol: sanitizeStr(coin.symbol),
-          price: round2(toNum(quote.price)),
-          change1h: round2(toNum(quote.percent_change_1h)),
-          change24h: round2(toNum(quote.percent_change_24h)),
-          change7d: round2(toNum(quote.percent_change_7d)),
-          marketCap: Math.round(toNum(quote.market_cap) || 0) || null,
-          volume24h: Math.round(toNum(quote.volume_24h) || 0) || null,
+          price: round2(toNum(krw.price)),
+          priceKrw: round2(toNum(krw.price)),
+          priceUsd: round2(toNum(usd.price)),
+          change1h: round2(toNum(krw.percent_change_1h ?? usd.percent_change_1h)),
+          change24h: round2(toNum(krw.percent_change_24h ?? usd.percent_change_24h)),
+          change7d: round2(toNum(krw.percent_change_7d ?? usd.percent_change_7d)),
+          marketCap: Math.round(toNum(krw.market_cap) || 0) || null,
+          marketCapKrw: Math.round(toNum(krw.market_cap) || 0) || null,
+          marketCapUsd: Math.round(toNum(usd.market_cap) || 0) || null,
+          volume24h: Math.round(toNum(krw.volume_24h) || 0) || null,
+          volume24hKrw: Math.round(toNum(krw.volume_24h) || 0) || null,
+          volume24hUsd: Math.round(toNum(usd.volume_24h) || 0) || null,
         };
       }),
       updatedAt: new Date().toISOString(),

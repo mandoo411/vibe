@@ -83,6 +83,28 @@
     return `${y}년 ${m}월 ${d}일 (${w})`;
   }
 
+  function holidayName(ymd) {
+    const md = String(ymd || "").slice(5);
+    const fixedHolidays = {
+      "01-01": "신정",
+      "03-01": "삼일절",
+      "05-05": "어린이날",
+      "06-06": "현충일",
+      "08-15": "광복절",
+      "10-03": "개천절",
+      "10-09": "한글날",
+      "12-25": "성탄절",
+    };
+    return fixedHolidays[md] || "";
+  }
+
+  function marketClosedReason(ymd) {
+    const day = ymdWeekday(ymd);
+    if (day === 0) return "주말(일요일)";
+    if (day === 6) return "주말(토요일)";
+    return holidayName(ymd);
+  }
+
   function monthLabel(ymd) {
     const { y, m } = ymdParts(ymd);
     return `${y}년 ${m}월`;
@@ -188,10 +210,20 @@
     if (els.dayPrep) {
       els.dayPrep.hidden = !empty;
       if (empty && els.dayPrepTitle) {
+        const closedReason = marketClosedReason(ymd);
         const isToday = ymd === seoulYmd();
-        els.dayPrepTitle.textContent = isToday
-          ? "오늘 장마감 리포트 데이터 준비 중입니다"
-          : `${headlineKo(ymd)} 장마감 리포트 데이터가 아직 없습니다`;
+        els.dayPrep.classList.toggle("day-prep--closed", Boolean(closedReason));
+        els.dayPrepTitle.textContent = closedReason
+          ? `${closedReason} 휴장입니다`
+          : isToday
+            ? "오늘 장마감 리포트 데이터 준비 중입니다"
+            : `${headlineKo(ymd)} 장마감 리포트 데이터가 아직 없습니다`;
+        const hint = els.dayPrep.querySelector(".day-prep__hint");
+        if (hint) {
+          hint.textContent = closedReason
+            ? "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다."
+            : "장 마감 후 자동으로 업데이트됩니다.";
+        }
       }
     }
 

@@ -291,44 +291,6 @@
           return `${Number(m)}월 ${Number(d)}일 (${WD[kstDayOfWeek(ymd)]})`;
         }
 
-        function holidayName(ymd) {
-          const md = String(ymd || "").slice(5);
-          const fixedHolidays = {
-            "01-01": "신정",
-            "03-01": "삼일절",
-            "05-05": "어린이날",
-            "06-06": "현충일",
-            "08-15": "광복절",
-            "10-03": "개천절",
-            "10-09": "한글날",
-            "12-25": "성탄절",
-          };
-          return fixedHolidays[md] || "";
-        }
-
-        function marketClosedReason(ymd) {
-          const day = kstDayOfWeek(ymd);
-          if (day === 0) return "주말(일요일)";
-          if (day === 6) return "주말(토요일)";
-          const fixed = holidayName(ymd);
-          if (fixed) return fixed;
-          const holidayEvent = (state.data?.economicCalendar || []).find((row) => {
-            if (row.date !== ymd) return false;
-            const name = String(row.event || "");
-            return /holiday|constitution day|liberation day|victoria day|ascension day/i.test(name);
-          });
-          return holidayEvent ? translateIndicator(holidayEvent.event) : "";
-        }
-
-        function renderClosedNotice(ymd) {
-          const reason = marketClosedReason(ymd);
-          if (!reason) return "";
-          return `<div class="market-closed">
-            <strong>휴장</strong>
-            <span>${escapeHtml(reason)}로 국내 증시는 열리지 않습니다.</span>
-          </div>`;
-        }
-
         function escapeHtml(v) {
           return String(v == null ? "" : v)
             .replace(/&/g, "&amp;")
@@ -418,7 +380,6 @@
           const economic = itemsForDate("economicCalendar", ymd);
           const earnings = itemsForDate("earningsCalendar", ymd);
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${renderClosedNotice(ymd)}
             ${economic.length || earnings.length ? `${renderEconomic(economic)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
 
@@ -457,9 +418,7 @@
           const economic = itemsForDate("economicCalendar", ymd);
           const earnings = itemsForDate("earningsCalendar", ymd);
           $("today-date").textContent = fmtDate(ymd);
-          $("today-economic").innerHTML = `${renderClosedNotice(ymd)}${
-            economic.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>'
-          }`;
+          $("today-economic").innerHTML = economic.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
           $("today-earnings").innerHTML = earnings.length ? renderEarnings(earnings) : '<p class="empty-text">오늘 주요 일정 없음</p>';
         }
 

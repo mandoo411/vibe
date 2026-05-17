@@ -8,6 +8,12 @@ const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const RSS_SOURCES = [
   { url: "https://www.mk.co.kr/rss/30100041/", name: "매일경제" },
   { url: "https://www.yna.co.kr/rss/economy.xml", name: "연합뉴스" },
+  { url: "https://rss.yna.co.kr/economy/rss.xml", name: "연합뉴스 경제" },
+  { url: "https://rss.hankyung.com/stock.xml", name: "한국경제 증권" },
+  { url: "https://rss.hankyung.com/finance.xml", name: "한국경제 금융" },
+  { url: "https://rss.mt.co.kr/mt_isa/", name: "머니투데이" },
+  { url: "https://rss.edaily.co.kr/edaily/RSSSvc.asmx/economy_news", name: "이데일리 경제" },
+  { url: "https://rss.heraldcorp.com/rss/economy.xml", name: "헤럴드경제" },
   {
     url: "https://finance.naver.com/news/news_list.naver?mode=LSS3D&section_id=101&section_id2=258&section_id3=401",
     name: "네이버금융",
@@ -198,7 +204,7 @@ function normalizeRss(xml, source) {
 async function fetchRssSource(source) {
   const res = await fetch(source.url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "User-Agent": "Mozilla/5.0",
       Accept: "application/rss+xml, application/xml, text/xml",
     },
     signal: AbortSignal.timeout(5000),

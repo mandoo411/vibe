@@ -103,54 +103,36 @@
         margin-left: auto;
         color: var(--text-dim);
       }
-      .rt-tabs-outer {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-        margin: 0 0 0;
-        padding: 0 0 2px;
-      }
       .rt-tabs {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: stretch;
-        justify-content: center;
-        gap: 0;
-        max-width: 100%;
-        border: 1px solid rgba(212, 175, 55, 0.28);
-        border-bottom: none;
-        border-radius: 4px 4px 0 0;
-        background: linear-gradient(180deg, #12100d 0%, #0b0907 100%);
-        box-shadow: inset 0 1px 0 rgba(212, 175, 55, 0.06);
-      }
-      .rt-tab-sep {
-        width: 1px;
-        align-self: stretch;
-        min-height: 40px;
-        background: rgba(212, 175, 55, 0.45);
-        flex-shrink: 0;
+        gap: 6px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        background: #0a0907;
       }
       .rt-tab {
         appearance: none;
-        border: 0;
+        flex: 1;
+        min-width: 0;
+        border: 1px solid var(--border);
+        border-radius: 3px;
         margin: 0;
-        padding: 14px 40px;
+        padding: 9px 10px;
         cursor: pointer;
-        background: transparent;
+        background: #12100c;
         display: flex;
-        flex-direction: row;
         align-items: center;
         justify-content: center;
-        min-width: 0;
-        border-bottom: 2px solid transparent;
         transition:
           color 0.15s ease,
-          border-color 0.15s ease;
+          border-color 0.15s ease,
+          box-shadow 0.15s ease;
         font-family: var(--font-mono);
         font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: none;
+        letter-spacing: 0;
         line-height: 1.25;
         white-space: nowrap;
       }
@@ -158,9 +140,9 @@
         color: rgba(148, 138, 124, 0.88);
       }
       .rt-tab[aria-selected="true"] {
-        color: #d4af37;
-        border-bottom-color: #d4af37;
-        background: rgba(212, 175, 55, 0.06);
+        color: var(--accent-bright);
+        border-color: var(--border-strong);
+        box-shadow: inset 0 -2px 0 0 var(--accent-bright);
       }
       .rt-tab[aria-selected="false"]:hover {
         color: #d4af37;
@@ -724,20 +706,17 @@
           <span id="rt-conn" class="rt-conn"></span>
         </div>
 
-        <div class="rt-tabs-outer">
+        <div class="rt-panel" role="tabpanel">
+          <div class="rt-panel__head">
+            <div class="rt-panel__head-title" id="rt-table-title">시가총액 TOP 30</div>
+          </div>
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
               시가총액 TOP 30
             </button>
-            <span class="rt-tab-sep" aria-hidden="true"></span>
             <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
               상승률 TOP 50
             </button>
-          </div>
-        </div>
-        <div class="rt-panel" role="tabpanel">
-          <div class="rt-panel__head">
-            <div class="rt-panel__head-title" id="rt-table-title">시가총액 TOP 30</div>
           </div>
           <div class="rt-scroll">
             <table class="rt-table" aria-label="실시간 시세">

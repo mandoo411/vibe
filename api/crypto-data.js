@@ -1,10 +1,10 @@
 /**
- * 암호화폐 시장 데이터 프록시 (CoinMarketCap + CNN Fear & Greed)
+ * 암호화폐 시장 데이터 프록시 (CoinMarketCap + Alternative.me Fear & Greed)
  * GET ?action=global|listings|fear-greed
  */
 
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
-const FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
+const FEAR_GREED_URL = "https://api.alternative.me/fng/?limit=1";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const memoryCache = new Map();
@@ -126,22 +126,9 @@ async function fetchListings() {
 }
 
 function normalizeFearGreed(data) {
-  const source = data && (data.fear_and_greed || data.fearGreed || data);
-  const score = toNum(
-    source &&
-      (source.score ??
-        source.value ??
-        source.fear_and_greed_score ??
-        source.fearGreedScore)
-  );
-  const rating =
-    sanitizeStr(
-      source &&
-        (source.rating ??
-          source.value_text ??
-          source.fear_and_greed_rating ??
-          source.fearGreedRating)
-    ) || "";
+  const source = data && Array.isArray(data.data) ? data.data[0] : null;
+  const score = toNum(source && source.value);
+  const rating = sanitizeStr(source && source.value_classification);
   return {
     score: score == null ? null : Math.round(score),
     rating,

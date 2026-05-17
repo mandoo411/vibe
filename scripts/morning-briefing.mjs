@@ -30,9 +30,9 @@ const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefi
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 const US_INDICES = [
-  { id: "sp500", name: "S&P 500", kisSymbol: "SPX", yahooSymbol: "^GSPC" },
-  { id: "nasdaq", name: "나스닥", kisSymbol: "NAS", yahooSymbol: "^IXIC" },
-  { id: "dow", name: "다우존스", kisSymbol: "DJI", yahooSymbol: "^DJI" },
+  { id: "nasdaq", name: "나스닥", cnbcSymbol: ".IXIC", yahooSymbol: "^IXIC" },
+  { id: "sp500", name: "S&P 500", cnbcSymbol: ".SPX", yahooSymbol: "^GSPC" },
+  { id: "nasdaq-futures", name: "나스닥선물", cnbcSymbol: "@ND.1", yahooSymbol: "NQ=F" },
 ];
 
 const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];
@@ -58,8 +58,46 @@ const COMMODITIES = [
 ];
 
 const NEWS_RSS_FEEDS = [
+  { url: "https://www.mk.co.kr/rss/30100041/", source: "매일경제 증권" },
   { url: "https://rss.hankyung.com/economy.xml", source: "한국경제" },
+  { url: "https://rss.hankyung.com/stock.xml", source: "한국경제 증권" },
+  { url: "https://rss.hankyung.com/finance.xml", source: "한국경제 금융" },
   { url: "https://www.mk.co.kr/rss/30000001/", source: "매일경제" },
+  { url: "https://rss.yna.co.kr/economy/rss.xml", source: "연합뉴스 경제" },
+  { url: "https://rss.mt.co.kr/mt_isa/", source: "머니투데이" },
+  { url: "https://rss.edaily.co.kr/edaily/RSSSvc.asmx/economy_news", source: "이데일리 경제" },
+  { url: "https://rss.heraldcorp.com/rss/economy.xml", source: "헤럴드경제" },
+  { url: "https://www.asiae.co.kr/rss/stock.htm", source: "아시아경제 증권" },
+];
+const MARKET_NEWS_KEYWORDS = [
+  "주식",
+  "증시",
+  "코스피",
+  "코스닥",
+  "증권",
+  "종목",
+  "상장",
+  "ipo",
+  "etf",
+  "투자",
+  "개미",
+  "외국인",
+  "기관",
+  "거래소",
+  "시총",
+  "실적",
+  "반도체",
+  "배터리",
+  "금융",
+  "기업",
+  "환율",
+  "금리",
+  "삼성",
+  "sk",
+  "현대",
+  "lg",
+  "네이버",
+  "카카오",
 ];
 
 function requireEnv(name) {
@@ -141,6 +179,15 @@ function inNewsWindow(value, window) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
   return date >= new Date(window.from) && date <= new Date(window.to);
+}
+
+function isWithinHours(value, hours, now = new Date()) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const threshold = new Date(now);
+  threshold.setHours(threshold.getHours() - hours);
+  return date >= threshold;
 }
 
 function kstTimeLabel(value) {
@@ -263,44 +310,54 @@ async function fetchYahooQuote(symbol) {
   return { symbol, price, previousClose, changePoints, changePct };
 }
 
-async function fetchKisIndex(index) {
-  const body = await kisGet(KIS_INDEX_PATH, KIS_INDEX_TR_ID, {
-    FID_COND_MRKT_DIV_CODE: "N",
-    FID_INPUT_ISCD: index.kisSymbol,
-    FID_INPUT_DATE_1: compactYmd(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)),
-    FID_INPUT_DATE_2: compactYmd(),
-    FID_PERIOD_DIV_CODE: "D",
+async function fetchCnbcQuotes(indices) {
+  const symbols = indices.map((index) => index.cnbcSymbol).filter(Boolean).join("|");
+  const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${encodeURIComponent(symbols)}&output=json`;
+  const json = await fetchJson(url, {
+    headers: {
+      accept: "application/json",
+    },
   });
-  const out = outputObject(body, "output1");
-  return {
-    id: index.id,
-    name: index.name,
-    symbol: index.kisSymbol,
-    close: round2(pickFirst(out, ["ovrs_nmix_prpr", "OVRS_NMIX_PRPR"])),
-    previousClose: null,
-    changePct: round2(pickFirst(out, ["prdy_ctrt", "PRDY_CTRT"])),
-    changePoints: round2(pickFirst(out, ["ovrs_nmix_prdy_vrss", "OVRS_NMIX_PRDY_VRSS"])),
-  };
+  const quotes = json?.QuickQuoteResult?.QuickQuote;
+  const rows = Array.isArray(quotes) ? quotes : quotes ? [quotes] : [];
+  const map = new Map();
+  for (const row of rows) {
+    const symbol = sanitizeStr(row.symbol);
+    const price = round2(row.last);
+    if (!symbol || price == null || row.code === "1") continue;
+    map.set(symbol, {
+      symbol,
+      price,
+      previousClose: round2(row.previous_day_closing),
+      changePct: round2(row.change_pct),
+      changePoints: round2(row.change),
+    });
+  }
+  return map;
 }
 
 async function fetchUsMarket() {
+  let cnbcQuotes = new Map();
+  try {
+    cnbcQuotes = await fetchCnbcQuotes(US_INDICES);
+  } catch (error) {
+    console.warn(`[morning-briefing] CNBC indices failed: ${error instanceof Error ? error.message : error}`);
+  }
   const indices = [];
   for (const index of US_INDICES) {
-    try {
-      indices.push(await fetchKisIndex(index));
-    } catch {
-      const q = await fetchYahooQuote(index.yahooSymbol);
-      indices.push({
-        id: index.id,
-        name: index.name,
-        symbol: index.yahooSymbol,
-        close: q.price,
-        previousClose: q.previousClose,
-        changePct: q.changePct,
-        changePoints: q.changePoints,
-      });
+    let q = cnbcQuotes.get(index.cnbcSymbol);
+    if (!q || q.price == null) {
+      q = await fetchYahooQuote(index.yahooSymbol);
     }
-    await delay(250);
+    indices.push({
+      id: index.id,
+      name: index.name,
+      symbol: index.cnbcSymbol || index.yahooSymbol,
+      close: q.price,
+      previousClose: q.previousClose,
+      changePct: q.changePct,
+      changePoints: q.changePoints,
+    });
   }
   return { indices };
 }
@@ -406,7 +463,7 @@ async function fetchCrypto() {
   return { assets };
 }
 
-function normalizeNewsApi(data, window) {
+function normalizeNewsApi(data, window, { strictWindow = true } = {}) {
   const rows = Array.isArray(data?.articles) ? data.articles : [];
   return rows
     .map((row) => ({
@@ -415,11 +472,10 @@ function normalizeNewsApi(data, window) {
       source: sanitizeStr(row.source?.name || "NewsAPI"),
       publishedAt: sanitizeStr(row.publishedAt),
     }))
-    .filter((row) => row.title && row.url && inNewsWindow(row.publishedAt, window))
-    .slice(0, 30);
+    .filter((row) => row.title && row.url && (!strictWindow || inNewsWindow(row.publishedAt, window)));
 }
 
-function normalizeRss(xml, source, window) {
+function normalizeRss(xml, source, window, { strictWindow = true } = {}) {
   const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
   return items
     .map((item) => {
@@ -428,8 +484,7 @@ function normalizeRss(xml, source, window) {
       const publishedAt = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
       return { title, url, source, publishedAt: publishedAt ? new Date(publishedAt).toISOString() : "" };
     })
-    .filter((row) => row.title && row.url && inNewsWindow(row.publishedAt, window))
-    .slice(0, 30);
+    .filter((row) => row.title && row.url && row.publishedAt && (!strictWindow || inNewsWindow(row.publishedAt, window)));
 }
 
 async function fetchNewsApi(window) {
@@ -439,7 +494,7 @@ async function fetchNewsApi(window) {
   url.searchParams.set("q", "주식 코스피 코스닥 증시");
   url.searchParams.set("language", "ko");
   url.searchParams.set("sortBy", "publishedAt");
-  url.searchParams.set("pageSize", "30");
+  url.searchParams.set("pageSize", "20");
   url.searchParams.set("from", window.from);
   url.searchParams.set("to", window.to);
   url.searchParams.set("apiKey", apiKey);
@@ -448,27 +503,54 @@ async function fetchNewsApi(window) {
 }
 
 async function fetchRssNews(window) {
+  const rows = [];
   for (const feed of NEWS_RSS_FEEDS) {
     try {
       const xml = await fetchText(feed.url, { headers: { accept: "application/rss+xml, application/xml, text/xml" } });
-      const rows = normalizeRss(xml, feed.source, window);
-      if (rows.length) return rows;
+      const strictRows = normalizeRss(xml, feed.source, window);
+      const fallbackRows = strictRows.length ? [] : normalizeRss(xml, feed.source, window, { strictWindow: false });
+      const feedRows = strictRows.length ? strictRows : fallbackRows.filter((row) => isWithinHours(row.publishedAt, 72));
+      console.log(`[morning-briefing] ${feed.source} RSS ${feedRows.length}건`);
+      rows.push(...feedRows.slice(0, 20));
     } catch (error) {
       console.warn(`[morning-briefing] ${feed.source} RSS failed: ${error instanceof Error ? error.message : error}`);
     }
   }
-  return [];
+  return rows;
+}
+
+function dedupeNews(rows) {
+  const seen = new Set();
+  return rows
+    .filter((row) => row.title && row.url)
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    .filter((row) => {
+      const key = row.title.replace(/\s+/g, " ").trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function isMarketNews(row) {
+  const text = `${row.title || ""} ${row.url || ""}`.toLowerCase();
+  return MARKET_NEWS_KEYWORDS.some((keyword) => text.includes(keyword.toLowerCase()));
 }
 
 async function fetchDomesticNews() {
   const window = newsWindow();
+  const rows = [];
   try {
     const newsApiRows = await fetchNewsApi(window);
-    if (newsApiRows.length) return newsApiRows;
+    rows.push(...newsApiRows);
   } catch (error) {
     console.warn(`[morning-briefing] NewsAPI failed: ${error instanceof Error ? error.message : error}`);
   }
-  return fetchRssNews(window);
+  rows.push(...(await fetchRssNews(window)));
+  const unique = dedupeNews(rows);
+  const marketNews = unique.filter(isMarketNews);
+  const fill = unique.filter((row) => !marketNews.includes(row));
+  return [...marketNews, ...fill].slice(0, 20);
 }
 
 function parseClaudeJson(text) {

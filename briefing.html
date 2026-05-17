@@ -45,16 +45,31 @@
       }
 
       .briefing-row {
-        display: flex;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: minmax(92px, 1fr) minmax(120px, auto);
+        align-items: baseline;
         gap: 12px;
         font-size: 13px;
         color: var(--text-muted);
       }
 
       .briefing-row strong {
+        min-width: 0;
         color: var(--text);
         font-weight: 600;
+      }
+
+      .briefing-row__value {
+        display: inline-grid;
+        grid-template-columns: minmax(72px, auto) minmax(58px, auto);
+        gap: 10px;
+        justify-content: end;
+        align-items: baseline;
+        font-family: var(--font-mono);
+        color: var(--accent-bright);
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
       }
 
       .briefing-change--up {
@@ -110,6 +125,14 @@
       @media (max-width: 768px) {
         .briefing-grid {
           grid-template-columns: 1fr;
+        }
+        .briefing-row {
+          grid-template-columns: minmax(80px, 1fr) minmax(108px, auto);
+          gap: 8px;
+        }
+        .briefing-row__value {
+          grid-template-columns: minmax(62px, auto) minmax(52px, auto);
+          gap: 6px;
         }
       }
     </style>
@@ -234,7 +257,7 @@
 
       function renderRows(id, rows, getLabel, getValue) {
         $(id).innerHTML = rows && rows.length
-          ? rows.map((row) => `<li class="briefing-row"><strong>${escapeHtml(getLabel(row))}</strong>${getValue(row)}</li>`).join("")
+          ? rows.map((row) => `<li class="briefing-row"><strong>${escapeHtml(getLabel(row))}</strong><span class="briefing-row__value">${getValue(row)}</span></li>`).join("")
           : '<li class="empty-text">데이터 없음</li>';
       }
 
@@ -252,8 +275,9 @@
       }
 
       function renderNews(rows) {
-        $("news-list").innerHTML = rows && rows.length
-          ? rows.map((n) => `<a class="briefing-news-card" href="${escapeHtml(n.url || "#")}" target="_blank" rel="noopener noreferrer">
+        const list = Array.isArray(rows) ? rows.slice(0, 20) : [];
+        $("news-list").innerHTML = list.length
+          ? list.map((n) => `<a class="briefing-news-card" href="${escapeHtml(n.url || "#")}" target="_blank" rel="noopener noreferrer">
               <span>${escapeHtml(n.source || "뉴스")} · ${escapeHtml(fmtNewsTime(n.publishedAt))}</span>
               <strong>${escapeHtml(n.title || "제목 없음")}</strong>
             </a>`).join("")

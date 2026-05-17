@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-05-17 15:07 KST",
+    "lastUpdatedKst": "2026-05-17 15:24 KST",
     "from": "2026-05-17",
     "to": "2026-05-31",
     "source": "finnhub+claude"
@@ -476,188 +476,108 @@
   ],
   "analysis": {
     "topEvents": [
-      "5월 20일 엔비디아(NVDA) 실적 발표 - AI 반도체 시장 선도 기업의 실적이 글로벌 기술주 향방 결정",
-      "5월 20일 FOMC 의사록 공개 - 연준의 금리 정책 방향성과 인플레이션 대응 전략 확인 가능",
-      "5월 18일 중국 산업생산·소매판매 발표 - 중국 경제 회복세 점검으로 아시아 시장 영향 예상",
-      "5월 28일 미국 근원 PCE 물가지수 발표 - 연준이 가장 중시하는 인플레이션 지표로 금리 전망 좌우",
-      "5월 21일 미국 주택착공·건축허가 발표 - 부동산 시장 회복 여부로 경기 모멘텀 판단"
+      "5월 20일 FOMC 의사록 공개로 미국 통화정책 방향성 확인 예정",
+      "5월 20일 엔비디아(NVDA) 실적 발표로 AI 반도체 업황 점검",
+      "5월 18일 중국 산업생산 및 소매판매 지표 발표로 중국 경기 회복세 확인",
+      "5월 28일 미국 근원 PCE 물가지수 및 GDP 2차 추정치 발표로 경기 전망 가늠",
+      "5월 21일 미국 주택착공 및 건축허가 지표로 부동산 시장 동향 파악"
     ],
     "marketImpacts": [
-      "엔비디아 실적 호조 시 국내 반도체(삼성전자, SK하이닉스) 및 2차전지 관련주 동반 상승 기대",
-      "FOMC 의사록에서 매파적 기조 확인 시 원/달러 환율 상승과 외국인 자금 이탈 우려",
-      "중국 경제지표 부진 시 국내 수출 관련주(화학, 철강, 기계) 약세 전망",
-      "미국 근원 PCE 상승 시 금리 인하 기대 후퇴로 코스피 밸류에이션 부담 증가",
-      "주요 글로벌 기업 실적 시즌으로 변동성 확대, 안전자산 선호 심리 강화 가능"
+      "FOMC 의사록과 PCE 물가지수 발표는 한국 증시의 외국인 자금 흐름에 직접적 영향 예상",
+      "엔비디아 실적은 국내 반도체 관련주(삼성전자, SK하이닉스 등)의 단기 방향성 결정",
+      "중국 경제지표 부진 시 국내 수출 관련주 및 화장품·소비재 업종 부담 가능",
+      "국민연금 5월 28일 자산배분 결정으로 국내 주식시장 수급 변화 예상",
+      "미국 주택 관련 지표 악화 시 글로벌 경기 둔화 우려로 코스피 변동성 확대 가능"
     ],
     "watchEarnings": [
-      "NVDA(엔비디아) - AI 반도체 수요와 실적 가이던스가 국내 반도체 업종 방향성 제시",
-      "WMT(월마트) - 미국 소비 트렌드 확인으로 글로벌 소비재 섹터 전망 가늠",
-      "CRM(세일즈포스) - 클라우드 및 SaaS 기업 실적으로 IT 서비스 업종 영향",
-      "COST(코스트코) - 유통 대형주 실적으로 소비 심리와 인플레이션 압력 파악",
-      "PDD(핀둬둬) - 중국 이커머스 동향으로 아시아 소비 시장 건전성 점검",
-      "BIDU(바이두) - 중국 빅테크 실적으로 중국 경제 회복 신호 확인",
-      "HD(홈디포) - 주택 관련 소비 지표로 미국 부동산 시장 온도 측정"
+      "NVDA(엔비디아) - AI 반도체 수요 및 국내 반도체 밸류체인 영향",
+      "WMT(월마트) - 미국 소비 트렌드 및 유통업 전망",
+      "HD(홈디포) - 미국 주택시장 및 건자재 수요 확인",
+      "CRM(세일즈포스) - 클라우드 및 SaaS 업황 점검",
+      "PDD(핀둬둬) - 중국 소비 회복세 및 이커머스 동향",
+      "BIDU(바이두) - 중국 AI 및 검색광고 시장 전망",
+      "COST(코스트코) - 글로벌 소비심리 및 회원제 유통 트렌드"
     ]
   },
   "news": [
     {
-      "headline": "“골목상권과 금융 잇겠다”...우리은행, ‘이음상담센터’ 신설",
-      "url": "https://www.mk.co.kr/news/economy/12050244",
-      "datetime": "Sun, 17 May 2026 15:06:13 +09:00",
+      "headline": "반도체 황금기에 역대급 성과급… 전자부품업 2월 평균 임금총액 2500만원 돌파",
+      "url": "https://www.mk.co.kr/news/economy/12050246",
+      "datetime": "Sun, 17 May 2026 15:10:54 +09:00",
       "date": "2026-05-17",
-      "timeLabel": "05. 17. 15:06",
+      "timeLabel": "05. 17. 15:10",
       "source": "매일경제"
     },
     {
-      "headline": "의료대란 끝났는데 국민들은 “못믿겠다”...응급의료 신뢰율 54% 그쳐",
-      "url": "https://www.mk.co.kr/news/it/12050243",
-      "datetime": "Sun, 17 May 2026 15:06:02 +09:00",
+      "headline": "‘현금보다 앱’ 시대…전자금융업 매출 1년 새 1.6조 증가",
+      "url": "https://www.mk.co.kr/news/economy/12050204",
+      "datetime": "Sun, 17 May 2026 13:24:43 +09:00",
       "date": "2026-05-17",
-      "timeLabel": "05. 17. 15:06",
+      "timeLabel": "05. 17. 13:24",
       "source": "매일경제"
     },
     {
-      "headline": "난치성 전립선암도 포기마세요...새 치료 길 열어주는 남자",
-      "url": "https://www.mk.co.kr/news/it/12050240",
-      "datetime": "Sun, 17 May 2026 14:59:06 +09:00",
+      "headline": "할리스에서 커피 사고 베트남 송금까지…KB의 원화 스테이블코인 실험",
+      "url": "https://www.mk.co.kr/news/economy/12050200",
+      "datetime": "Sun, 17 May 2026 12:59:42 +09:00",
       "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:59",
+      "timeLabel": "05. 17. 12:59",
       "source": "매일경제"
     },
     {
-      "headline": "“인천 공원서 80대가 10대 학생 4명 폭행”…경찰 수사 나서",
-      "url": "https://www.mk.co.kr/news/society/12050238",
-      "datetime": "Sun, 17 May 2026 14:51:01 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:51",
+      "headline": "“숨만 쉬었는데 돈이 줄줄 새네”…고물가 시대 ‘실속 경쟁’ 나선 카드사들",
+      "url": "https://www.mk.co.kr/news/economy/12050022",
+      "datetime": "Sat, 16 May 2026 15:19:29 +09:00",
+      "date": "2026-05-16",
+      "timeLabel": "05. 16. 15:19",
       "source": "매일경제"
     },
     {
-      "headline": "“너 죽고 나 죽자” 했더니 33번 찔렀다…30년 사실혼 남편 살해한 60대",
-      "url": "https://www.mk.co.kr/news/society/12050235",
-      "datetime": "Sun, 17 May 2026 14:33:01 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:33",
+      "headline": "“이젠 코인으로 커피 사는 시대”…카드사들 스테이블코인 결제 전쟁",
+      "url": "https://www.mk.co.kr/news/economy/12049948",
+      "datetime": "Sat, 16 May 2026 11:01:48 +09:00",
+      "date": "2026-05-16",
+      "timeLabel": "05. 16. 11:01",
       "source": "매일경제"
     },
     {
-      "headline": "[단독] SK, 울산 석화사업 리밸런싱 속도…그룹자산 통합매각 추진",
-      "url": "https://www.mk.co.kr/news/business/12050233",
-      "datetime": "Sun, 17 May 2026 14:30:25 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:30",
+      "headline": "[속보] 트럼프 “시진핑과 북한에 대해 논의했다”",
+      "url": "https://www.mk.co.kr/news/world/12049535",
+      "datetime": "Fri, 15 May 2026 20:11:49 +09:00",
+      "date": "2026-05-15",
+      "timeLabel": "05. 15. 20:11",
       "source": "매일경제"
     },
     {
-      "headline": "아리팍 60억 신고가 찍었다…양도세 중과 전부터 수억씩 ‘껑충’",
-      "url": "https://www.mk.co.kr/news/realestate/12050230",
-      "datetime": "Sun, 17 May 2026 14:26:54 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:26",
+      "headline": "국민연금, 향후 5년 자산배분 28일에 결정…국내주식 매도 시기 주목",
+      "url": "https://www.mk.co.kr/news/economy/12049491",
+      "datetime": "Fri, 15 May 2026 19:20:34 +09:00",
+      "date": "2026-05-15",
+      "timeLabel": "05. 15. 19:20",
       "source": "매일경제"
     },
     {
-      "headline": "“더 잘하지 못한 제 잘못”…아이유, ‘21세기 대군부인’ 논란 눈물로 사과",
-      "url": "https://www.mk.co.kr/news/culture/12050229",
-      "datetime": "Sun, 17 May 2026 14:26:22 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:26",
+      "headline": "북한군, 모스크바 붉은광장서 행진…러시아 전승절 열병식 첫 참가",
+      "url": "https://www.mk.co.kr/news/politics/12042467",
+      "datetime": "Sun, 10 May 2026 11:14:58 +09:00",
+      "date": "2026-05-10",
+      "timeLabel": "05. 10. 11:14",
       "source": "매일경제"
     },
     {
-      "headline": "길 가는 여성 하체만 몰래…33차례 촬영한 50대 남성 벌금형",
-      "url": "https://www.mk.co.kr/news/society/12050228",
-      "datetime": "Sun, 17 May 2026 14:25:21 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:25",
+      "headline": "“자폭·자결 선택한 영웅들”…김정은, 러시아 파병기념관 세웠다",
+      "url": "https://www.mk.co.kr/news/politics/12028046",
+      "datetime": "Mon, 27 Apr 2026 10:47:20 +09:00",
+      "date": "2026-04-27",
+      "timeLabel": "04. 27. 10:47",
       "source": "매일경제"
     },
     {
-      "headline": "김성보 서울시장 권한대행, 영동대로 지하공간 공사 현장 점검",
-      "url": "https://www.mk.co.kr/news/realestate/12050226",
-      "datetime": "Sun, 17 May 2026 14:21:20 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:21",
-      "source": "매일경제"
-    },
-    {
-      "headline": "몸매 드러나는 레깅스…운동 효과 높이려 입었더니 몸에 해롭다고?",
-      "url": "https://www.mk.co.kr/news/world/12050225",
-      "datetime": "Sun, 17 May 2026 14:20:18 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:20",
-      "source": "매일경제"
-    },
-    {
-      "headline": "영남대 사이버감성연구소, 춘계 국제세미나 개최",
-      "url": "https://www.mk.co.kr/news/society/12050223",
-      "datetime": "Sun, 17 May 2026 14:15:03 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:15",
-      "source": "매일경제"
-    },
-    {
-      "headline": "라이더·캠핑족 취향 저격…이마트24, 난지한강공원 체류형 편의점",
-      "url": "https://www.mk.co.kr/news/business/12050218",
-      "datetime": "Sun, 17 May 2026 14:10:15 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:10",
-      "source": "매일경제"
-    },
-    {
-      "headline": "파리바게뜨, KT 고객 1만원 이상 구매 시 4000원 할인",
-      "url": "https://www.mk.co.kr/news/business/12050216",
-      "datetime": "Sun, 17 May 2026 14:09:11 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:09",
-      "source": "매일경제"
-    },
-    {
-      "headline": "“미용실·식당서 사용 가능”…대형마트, 고유가 피해지원금 사용처 안내",
-      "url": "https://www.mk.co.kr/news/business/12050215",
-      "datetime": "Sun, 17 May 2026 14:08:11 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:08",
-      "source": "매일경제"
-    },
-    {
-      "headline": "행복감 가장 떨어지는 시기는 고1…“입시 부담 커요”",
-      "url": "https://www.mk.co.kr/news/society/12050214",
-      "datetime": "Sun, 17 May 2026 14:07:45 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:07",
-      "source": "매일경제"
-    },
-    {
-      "headline": "옛 추억에 갇혀 사는 치매 환자...기억 스위치 고장 때문",
-      "url": "https://www.mk.co.kr/news/it/12050213",
-      "datetime": "Sun, 17 May 2026 14:05:35 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:05",
-      "source": "매일경제"
-    },
-    {
-      "headline": "공공배달앱 ‘서울배달+땡겨요’로 2만원 이상 결제하면 5000원 할인쿠폰 …최대 40% 할인",
-      "url": "https://www.mk.co.kr/news/society/12050212",
-      "datetime": "Sun, 17 May 2026 14:03:30 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 14:03",
-      "source": "매일경제"
-    },
-    {
-      "headline": "“SNS서 알게된 中남자 만나러 캄보디아로”…기다린건 납치범이었다",
-      "url": "https://www.mk.co.kr/news/society/12050211",
-      "datetime": "Sun, 17 May 2026 13:56:01 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 13:56",
-      "source": "매일경제"
-    },
-    {
-      "headline": "편의점 디저트의 진화…‘제철 생과일’ 샌드위치, 사계절 내내 즐긴다",
-      "url": "https://www.mk.co.kr/news/business/12050210",
-      "datetime": "Sun, 17 May 2026 13:55:29 +09:00",
-      "date": "2026-05-17",
-      "timeLabel": "05. 17. 13:55",
+      "headline": "러시아 내무장관 방북…미중정상회담 앞두고 북·중·러 고위급 외교 확대",
+      "url": "https://www.mk.co.kr/news/politics/12022897",
+      "datetime": "Tue, 21 Apr 2026 15:03:33 +09:00",
+      "date": "2026-04-21",
+      "timeLabel": "04. 21. 15:03",
       "source": "매일경제"
     }
   ]

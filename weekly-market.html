@@ -537,9 +537,9 @@
           if (!raw) return false;
           const pubDate = new Date(raw);
           if (Number.isNaN(pubDate.getTime())) return false;
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return pubDate >= thirtyDaysAgo;
+          const fortyEightHoursAgo = new Date();
+          fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
+          return pubDate >= fortyEightHoursAgo;
         }
 
         function renderNews() {

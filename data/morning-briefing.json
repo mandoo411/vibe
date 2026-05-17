@@ -3,31 +3,31 @@
   "usMarket": {
     "indices": [
       {
+        "id": "nasdaq",
+        "name": "나스닥",
+        "symbol": ".IXIC",
+        "close": 26225.15,
+        "previousClose": 26635.22,
+        "changePct": -1.54,
+        "changePoints": -410.08
+      },
+      {
         "id": "sp500",
         "name": "S&P 500",
-        "symbol": "SPX",
+        "symbol": ".SPX",
         "close": 7408.5,
-        "previousClose": null,
+        "previousClose": 7501.24,
         "changePct": -1.24,
         "changePoints": -92.74
       },
       {
-        "id": "nasdaq",
-        "name": "나스닥",
-        "symbol": "NAS",
-        "close": 0,
-        "previousClose": null,
-        "changePct": 0,
-        "changePoints": 0
-      },
-      {
-        "id": "dow",
-        "name": "다우존스",
-        "symbol": "DJI",
-        "close": 0,
-        "previousClose": null,
-        "changePct": 0,
-        "changePoints": 0
+        "id": "nasdaq-futures",
+        "name": "나스닥선물",
+        "symbol": "@ND.1",
+        "close": 29173,
+        "previousClose": 29687.75,
+        "changePct": -1.73,
+        "changePoints": -514.75
       }
     ]
   },
@@ -214,38 +214,159 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78130,
-        "changePct24h": -0.25,
-        "marketCapUsd": 1565019129509.37
+        "priceUsd": 78117,
+        "changePct24h": -0.37,
+        "marketCapUsd": 1564788238058.09
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2185.35,
-        "changePct24h": -0.38,
-        "marketCapUsd": 263743277276.83
+        "priceUsd": 2185.22,
+        "changePct24h": -0.46,
+        "marketCapUsd": 263736403746.87
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 86.91,
-        "changePct24h": -0.72,
-        "marketCapUsd": 50248315632.88
+        "priceUsd": 86.82,
+        "changePct24h": -0.81,
+        "marketCapUsd": 50201103489.47
       }
     ]
   },
-  "news": [],
+  "news": [
+    {
+      "title": "HD현대중공업, 울산 환경 정화 봉사",
+      "url": "https://www.mk.co.kr/news/business/12050332",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:02:25.000Z"
+    },
+    {
+      "title": "“8천피 찍고 빠질 줄 알았지”…지난주 곱버스ETF에 몰린 돈 3276억",
+      "url": "https://www.mk.co.kr/news/stock/12050308",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:50:14.000Z"
+    },
+    {
+      "title": "[매일경제TV] K증시 반도체 이을 새 주도주는?",
+      "url": "https://www.mk.co.kr/news/culture/12050304",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:35:45.000Z"
+    },
+    {
+      "title": "“잘 사면 따블인데, 연10% 이자 쯤이야”…빚투 광풍에 증권사 이자수익 6천억",
+      "url": "https://www.mk.co.kr/news/stock/12050287",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:01:11.000Z"
+    },
+    {
+      "title": "[주末머니]MSCI 5월 정기변경서 3종목 편출된 이유 보니",
+      "url": "https://www.asiae.co.kr/article/2026051416464186026",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-16T08:29:00.000Z"
+    },
+    {
+      "title": "삼성·하이닉스 너무 올랐나…팔아도 더 불어난 외국인 자산 [주末머니]",
+      "url": "https://www.asiae.co.kr/article/2026051416171277975",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-16T07:57:00.000Z"
+    },
+    {
+      "title": "남은 음식 꼼꼼히 보관했는데…플라스틱 용기에 넣어두면 해롭다?",
+      "url": "https://www.mk.co.kr/news/it/12050333",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:02:30.000Z"
+    },
+    {
+      "title": "\"AI자격시험 1급 합격하니, 직원도 따라와\"",
+      "url": "https://www.mk.co.kr/news/business/12050330",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:02:23.000Z"
+    },
+    {
+      "title": "오늘의 운세 2026년 5월 18일 月(음력 4월 2일)",
+      "url": "https://www.mk.co.kr/news/society/12050324",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:02:21.000Z"
+    },
+    {
+      "title": "분담금이 아깝지 않은 잠원동 재건축",
+      "url": "https://www.mk.co.kr/news/realestate/12050322",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:01:35.000Z"
+    },
+    {
+      "title": "강남도 뛰어들었다…공공복합개발 후보 44곳 몰려",
+      "url": "https://www.mk.co.kr/news/realestate/12050320",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:01:34.000Z"
+    },
+    {
+      "title": "'명가' 롯데건설 수익·재무 둘다 잡아",
+      "url": "https://www.mk.co.kr/news/realestate/12050321",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:01:34.000Z"
+    },
+    {
+      "title": "인천 송도신도시 대단지 주목",
+      "url": "https://www.mk.co.kr/news/realestate/12050318",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T08:01:33.000Z"
+    },
+    {
+      "title": "국힘 “삼전 사태는 노란봉투법 탓”…與 “악의적 왜곡, 사후 조정에 최선”",
+      "url": "https://www.mk.co.kr/news/business/12050307",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:49:52.000Z"
+    },
+    {
+      "title": "편견 깬 無장애 연극 '당신 좋을 대로'",
+      "url": "https://www.mk.co.kr/news/culture/12050302",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:35:44.000Z"
+    },
+    {
+      "title": "[MBN] 나의 스물네번째 직업은 '자연인'",
+      "url": "https://www.mk.co.kr/news/culture/12050303",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:35:44.000Z"
+    },
+    {
+      "title": "칸에 도착한 좀비 바이러스 … 연상호, 세계를 감염시키다",
+      "url": "https://www.mk.co.kr/news/culture/12050301",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:35:43.000Z"
+    },
+    {
+      "title": "생필품 무료 지원에 10만명 몰렸다…‘그냥드림’ 전국 280곳으로 확대",
+      "url": "https://www.mk.co.kr/news/economy/12050299",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:18:04.000Z"
+    },
+    {
+      "title": "위성락 “韓美, 전작권 환수 시기 의견 근접”",
+      "url": "https://www.mk.co.kr/news/politics/12050295",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:12:12.000Z"
+    },
+    {
+      "title": "정청래 “암살모의, 참담하고 괴롭다…자수 후 선처 호소하라”",
+      "url": "https://www.mk.co.kr/news/politics/12050293",
+      "source": "매일경제",
+      "publishedAt": "2026-05-17T07:05:47.000Z"
+    }
+  ],
   "aiAnalysis": {
     "keyIssues": [
-      "미국 S&P500 1.24% 하락으로 증시 약세 지속, 나스닥과 다우존스 데이터는 미집계",
-      "에너지 섹터 6.71% 급등 vs 반도체·테슬라 4~5% 급락으로 섹터 양극화 심화",
-      "원달러 환율 1,497원대 유지, 금(-2.47%)·은(-8.9%) 등 안전자산 동반 약세"
+      "미국 증시 급락 지속 - 나스닥 1.54%, S&P500 1.24% 하락, 나스닥 선물 1.73% 추가 하락으로 반도체·기술주 압박 우려",
+      "에너지 섹터 강세 속 반도체 약세 - XLE 6.71% 급등 반면 NVDA -4.42%, AMD -5.69%, TSLA -4.75% 하락으로 섹터 차별화 심화",
+      "원달러 환율 1,497원대 유지 - 달러 강세와 함께 금 -2.47%, 은 -8.9% 급락으로 안전자산 선호 약화, 비트코인도 소폭 하락"
     ],
-    "domesticImpact": "미국 증시 하락과 반도체 주요주(NVDA -4.42%, AMD -5.69%) 약세로 국내 반도체 관련주에 부담이 예상됩니다. 다만 에너지 섹터 강세와 WTI유가 100달러 유지는 정유·화학주에 긍정적 요인이 될 수 있습니다. 원화 약세 지속으로 수출주는 환차익 기대감이 있으나, 테슬라 급락(-4.75%)은 2차전지 관련주 심리에 악재로 작용할 가능성이 있습니다.",
+    "domesticImpact": "미국 반도체 주요 종목의 급락세가 삼성전자·SK하이닉스 등 국내 반도체 관련주에 부담 요인으로 작용할 가능성이 있습니다. 다만 에너지 섹터의 6% 이상 급등과 WTI 100달러 돌파는 정유·화학주에 긍정적 영향을 줄 수 있습니다. 개인투자자들의 곱버스 ETF 집중(3,276억원) 현상은 단기 변동성 확대 시 급격한 청산 위험을 내포하고 있어 주의가 필요합니다. MSCI 정기변경 편출 종목들은 외국인 매도 압력이 예상됩니다.",
     "watchSectors": [
-      "반도체: 미국 주요 반도체 동반 약세로 삼성전자·SK하이닉스 등 변동성 확대 가능",
-      "에너지·정유: 에너지 섹터 6.71% 급등과 WTI유가 100달러 상회로 SK이노베이션·에쓰오일 주목",
-      "2차전지: 테슬라 4.75% 급락으로 LG에너지솔루션·포스코퓨처엠 등 수급 부담 가능성"
+      "반도체 - 미국 주요 반도체주 약세로 삼성전자·SK하이닉스 등 국내 대표 종목 변동성 확대 가능, 외국인 자산 변화 주시 필요",
+      "에너지·정유 - XLE 6.71% 급등 및 WTI 100달러 돌파로 S-Oil, SK이노베이션 등 정유·화학주 수혜 기대",
+      "MSCI 편출 종목 - 정기변경으로 편출된 3종목은 외국인 매도세 지속 우려, 해당 종목 및 경쟁사 상대 강도 비교 필요"
     ]
   },
   "errors": []

@@ -971,9 +971,7 @@
   }
 
   function getTableTitle() {
-    if (state.tab === "cap") return "시가총액 TOP 30";
-    if (state.tab === "gainers") return "상승률 TOP 50";
-    return "실시간 시세";
+    return "탭 클릭 시 해당 데이터만 불러옵니다 · 종목명 클릭 시 차트";
   }
 
   function renderIndexes() {

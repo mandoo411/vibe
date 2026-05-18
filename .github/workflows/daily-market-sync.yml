@@ -6,7 +6,7 @@ name: Daily Market Sync
 # 프런트엔드의 isDayEmpty()가 빈 상태로 처리합니다.
 #
 # KIS_ACCESS_TOKEN 등 장기 토큰/Secret 갱신은 refresh-kis-token.yml 전용.
-# 이 워크플로에는 OAuth 재발급·Secret 반영 Step 없음(sync:kis가 APP_KEY/SECRET으로 발급).
+# 이 워크플로에는 OAuth 재발급·Secret 반영 Step 없음. refresh-kis-token.yml이 갱신한 KIS_ACCESS_TOKEN만 사용.
 on:
   schedule:
     - cron: "10 7 * * 1-5"
@@ -51,6 +51,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
@@ -61,6 +62,7 @@ jobs:
             printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY"
             printf 'KIS_APP_KEY=%s\n'        "$KIS_APP_KEY"
             printf 'KIS_APP_SECRET=%s\n'     "$KIS_APP_SECRET"
+            printf 'KIS_ACCESS_TOKEN=%s\n'   "$KIS_ACCESS_TOKEN"
             printf 'TELEGRAM_TOKEN=%s\n'     "$TELEGRAM_TOKEN"
             printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
             printf 'TELEGRAM_SESSION=%s\n' "$TELEGRAM_SESSION"

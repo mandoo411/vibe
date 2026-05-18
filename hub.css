@@ -193,7 +193,7 @@ a.hub-card:focus-visible {
     align-items: start;
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: auto;
-    gap: 10px;
+    gap: 8px;
   }
 
   .page.page--hub .hub-card,
@@ -204,7 +204,7 @@ a.hub-card:focus-visible {
     align-self: stretch;
     width: 100%;
     max-width: 100%;
-    padding: 10px 10px 12px;
+    padding: 8px 8px 9px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -248,16 +248,16 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card__icon {
     flex-shrink: 0;
-    width: 50px;
-    height: 50px;
-    margin: 0 0 8px;
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    margin: 0 0 5px;
+    border-radius: 9px;
   }
 
   .page.page--hub .hub-card__title {
     flex-shrink: 0;
-    margin: 0 0 6px;
-    font-size: 12px;
+    margin: 0 0 4px;
+    font-size: 11.5px;
     font-weight: 700;
     line-height: 1.25;
     text-align: center;
@@ -274,15 +274,15 @@ a.hub-card:focus-visible {
     border-top: none;
     width: 100%;
     max-width: 100%;
-    gap: 6px;
+    gap: 4px;
     justify-content: center;
     align-items: center;
-    font-size: 9px;
+    font-size: 8.5px;
   }
 
   .page.page--hub .hub-card__status {
-    padding: 2px 6px;
-    font-size: 9px;
+    padding: 1px 5px;
+    font-size: 8.5px;
     letter-spacing: 0.04em;
   }
 
@@ -293,7 +293,11 @@ a.hub-card:focus-visible {
   }
 
   .page.page--hub .hub-card__chev {
-    font-size: 11px;
+    font-size: 10px;
     margin-left: 0;
+  }
+
+  .page.page--hub .hub-live-last {
+    display: none;
   }
 }

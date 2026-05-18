@@ -213,7 +213,7 @@ body.is-kr-market-open .tm-live-badge {
     justify-content: flex-start;
     width: 100%;
     height: auto;
-    min-height: 88px;
+    min-height: 92px;
     max-height: none;
     padding: 0;
     margin-bottom: 12px;
@@ -232,13 +232,13 @@ body.is-kr-market-open .tm-live-badge {
 
   .header-top {
     box-sizing: border-box;
-    flex: 0 0 48px;
+    flex: 0 0 52px;
     width: 100%;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
     margin: 0;
-    padding: 0 8px 0 8px;
+    padding: 0 10px 0 10px;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -254,7 +254,7 @@ body.is-kr-market-open .tm-live-badge {
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 9px;
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -270,12 +270,12 @@ body.is-kr-market-open .tm-live-badge {
     grid-row: unset;
     align-self: center;
     display: block;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    max-width: 36px;
-    max-height: 36px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
     flex-shrink: 0;
     object-fit: cover;
   }
@@ -291,7 +291,7 @@ body.is-kr-market-open .tm-live-badge {
     flex: 1 1 auto;
     margin: 0;
     padding: 0;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     line-height: 1.15;
     white-space: nowrap;
@@ -307,12 +307,12 @@ body.is-kr-market-open .tm-live-badge {
     height: auto;
     min-height: 40px;
     max-height: none;
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: center;
-    justify-content: flex-start;
-    gap: 4px;
-    padding: 4px;
+    justify-content: stretch;
+    gap: 3px;
+    padding: 4px 5px 5px;
     margin: 0;
     border: 0;
     border-top: 1px solid var(--border);
@@ -320,24 +320,24 @@ body.is-kr-market-open .tm-live-badge {
     background: transparent;
     box-shadow: none;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: 0;
   }
 
   .tm-site-nav__link {
     box-sizing: border-box;
-    flex: 0 1 auto;
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
     min-width: 0;
-    width: auto;
-    height: 30px;
-    min-height: 30px;
-    max-height: 30px;
+    width: 100%;
+    height: 31px;
+    min-height: 31px;
+    max-height: 31px;
     margin: 0;
-    padding: 0 4px;
-    font-size: 9px;
+    padding: 0 2px;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;
@@ -349,5 +349,16 @@ body.is-kr-market-open .tm-live-badge {
     font-weight: 600;
     border-radius: 0;
     box-shadow: inset 0 -2px 0 0 var(--accent-bright);
+  }
+
+  .tm-live-badge {
+    margin-left: 2px;
+    font-size: 7px;
+    letter-spacing: 0.02em;
+  }
+
+  .tm-live-badge::before {
+    width: 5px;
+    height: 5px;
   }
 }

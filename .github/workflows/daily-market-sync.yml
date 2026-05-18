@@ -1,7 +1,7 @@
 name: Daily Market Sync
 
-# 평일 17:00 KST (= 08:00 UTC) 자동 실행
-# 한국 증시 마감 이후 KIS API + Naver 뉴스 + Claude 분류 실행
+# 평일 16:10 KST (= 07:10 UTC) 자동 실행
+# 한국 증시 마감 이후 KIS API + Naver 뉴스 + Telegram + Claude 분류 실행
 # 한국 공휴일에도 동작하지만 sync:kis가 더미(0%) 데이터를 받으면
 # 프런트엔드의 isDayEmpty()가 빈 상태로 처리합니다.
 #
@@ -9,7 +9,7 @@ name: Daily Market Sync
 # 이 워크플로에는 OAuth 재발급·Secret 반영 Step 없음(sync:kis가 APP_KEY/SECRET으로 발급).
 on:
   schedule:
-    - cron: "0 8 * * 1-5"
+    - cron: "10 7 * * 1-5"
   workflow_dispatch:
 
 # data/daily-market.json 자동 커밋을 위해 쓰기 권한 필요
@@ -53,6 +53,9 @@ jobs:
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           {
             printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY"
@@ -60,6 +63,9 @@ jobs:
             printf 'KIS_APP_SECRET=%s\n'     "$KIS_APP_SECRET"
             printf 'TELEGRAM_TOKEN=%s\n'     "$TELEGRAM_TOKEN"
             printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
+            printf 'TELEGRAM_SESSION=%s\n' "$TELEGRAM_SESSION"
+            printf 'TELEGRAM_API_ID=%s\n' "$TELEGRAM_API_ID"
+            printf 'TELEGRAM_API_HASH=%s\n' "$TELEGRAM_API_HASH"
           } > .env
 
       - name: Sync KIS top 30 + Naver news + Claude

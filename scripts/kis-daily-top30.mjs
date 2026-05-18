@@ -20,10 +20,53 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
+import { TelegramClient } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+const TELEGRAM_CHANNEL_LIMIT = 50;
+const TELEGRAM_MSG_PER_CHANNEL = 12;
+const TELEGRAM_TOTAL_TIMEOUT = 60000;
+const TELEGRAM_MACRO_KEYWORDS = [
+  "거시경제",
+  "매크로",
+  "macro",
+  "경제",
+  "시황",
+  "증시",
+  "코스피",
+  "코스닥",
+  "금리",
+  "환율",
+  "달러",
+  "채권",
+  "유가",
+  "원자재",
+  "뉴스",
+  "리포트",
+  "분석",
+  "스톡허브",
+  "stockhub",
+];
+const TELEGRAM_STOCK_KEYWORDS = [
+  ...TELEGRAM_MACRO_KEYWORDS,
+  "주식",
+  "투자",
+  "반도체",
+  "2차전지",
+  "바이오",
+  "방산",
+  "원전",
+  "로봇",
+  "조선",
+  "상승",
+  "하락",
+  "급등",
+  "급락",
+  "%",
+];
 
 // ─── 기본 헬퍼 ────────────────────────────────────────────
 function seoulYmd(d = new Date()) {
@@ -83,6 +126,104 @@ function stripHtml(s) {
 
 function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function compactText(value, limit = 180) {
+  const clean = stripHtml(value).replace(/\s+/g, " ").trim();
+  if (clean.length <= limit) return clean;
+  return `${clean.slice(0, limit - 1)}…`;
+}
+
+async function withTimeout(promise, ms, label, onTimeout = () => {}) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      onTimeout();
+      reject(new Error(`${label} timeout ${ms}ms`));
+    }, ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function telegramChannelScore(channelName) {
+  const name = String(channelName || "").toLowerCase();
+  if (name.includes("거시경제")) return 0;
+  if (name.includes("스톡허브") || name.includes("stockhub")) return 1;
+  if (TELEGRAM_MACRO_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()))) return 2;
+  if (/(주식|증시|stock|news|뉴스|시황)/i.test(name)) return 3;
+  return 9;
+}
+
+async function collectTelegramMacroMessages() {
+  const session = process.env.TELEGRAM_SESSION;
+  const apiId = Number.parseInt(process.env.TELEGRAM_API_ID || "", 10);
+  const apiHash = process.env.TELEGRAM_API_HASH;
+  if (!session || !apiId || !apiHash) {
+    console.log("  Telegram session env 없음: 텔레그램 메시지 수집 생략");
+    return [];
+  }
+
+  const client = new TelegramClient(new StringSession(session), apiId, apiHash, { connectionRetries: 3 });
+  return withTimeout(
+    (async () => {
+      try {
+        await client.connect();
+        const dialogs = await client.getDialogs({});
+        const channels = dialogs
+          .filter((dialog) => dialog.isChannel || dialog.isGroup)
+          .map((dialog) => ({ ...dialog, score: telegramChannelScore(dialog.name) }))
+          .sort((a, b) => a.score - b.score)
+          .slice(0, TELEGRAM_CHANNEL_LIMIT);
+        const since = new Date(Date.now() - 8 * 60 * 60 * 1000);
+        const results = await Promise.allSettled(
+          channels.map(async (channel) => {
+            try {
+              const messages = await client.getMessages(channel.entity, { limit: TELEGRAM_MSG_PER_CHANNEL });
+              return messages
+                .filter((msg) => msg.message && new Date(Number(msg.date) * 1000) >= since)
+                .map((msg) => ({
+                  channel: channel.name || "unknown",
+                  score: channel.score,
+                  text: stripHtml(msg.message),
+                  date: new Date(Number(msg.date) * 1000),
+                }));
+            } catch (error) {
+              console.log(`  Telegram 채널 읽기 실패: ${channel.name || "unknown"} - ${error.message}`);
+              return [];
+            }
+          })
+        );
+        const messages = results
+          .filter((result) => result.status === "fulfilled")
+          .flatMap((result) => result.value)
+          .filter((msg) => TELEGRAM_STOCK_KEYWORDS.some((keyword) => msg.text.includes(keyword)))
+          .sort((a, b) => a.score - b.score || b.date - a.date)
+          .slice(0, 60);
+        console.log(`  Telegram macro messages: ${messages.length}건`);
+        return messages;
+      } finally {
+        await Promise.resolve(client.disconnect()).catch(() => {});
+      }
+    })(),
+    TELEGRAM_TOTAL_TIMEOUT,
+    "Telegram macro collection",
+    () => Promise.resolve(client.disconnect()).catch(() => {})
+  ).catch((error) => {
+    console.log(`  Telegram 메시지 수집 실패: ${error.message}`);
+    return [];
+  });
+}
+
+function telegramMessagesForPrompt(messages) {
+  if (!messages.length) return "텔레그램 거시경제 메시지 없음";
+  return messages
+    .slice(0, 40)
+    .map((msg) => `- [${msg.channel}] ${compactText(msg.text, 180)}`)
+    .join("\n");
 }
 
 // ─── KIS OAuth 토큰: 자동 발급 금지, 환경변수만 사용 ──────────────────
@@ -563,7 +704,7 @@ async function finalizeNotableStocks(raw, topGainers, kisCtx) {
   }));
 }
 
-async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, indexes }) {
+async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, indexes, telegramMessages }) {
   const client = new Anthropic({ apiKey });
 
   const lines = [];
@@ -586,13 +727,16 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
       news.forEach((t) => lines.push(`  - ${t}`));
     }
   });
+  lines.push("");
+  lines.push("=== 텔레그램 거시경제/시황 메시지 (최근 8시간, 거시경제 관련 채널 우선) ===");
+  lines.push(telegramMessagesForPrompt(telegramMessages));
 
   const system = `당신은 한국 주식 데이터 큐레이터입니다. 입력은 ${targetYmd}일 한국 증시 상승률 상위 종목 목록과 각 종목 네이버 뉴스 헤드라인입니다.
 
 요구 출력은 다음 JSON 객체(키 네 개)뿐입니다. 마크다운, 코드펜스, 주석, 설명을 절대 추가하지 마세요.
 
 {
-  "marketSummary": "한국어 시황 요약 3~5문장. 지수·자금·대표 테마를 뉴스·지수 종가 근거로만 서술.",
+  "marketSummary": "한국어 시황 요약 3~5문장. 지수·자금·대표 테마를 뉴스·지수 종가·텔레그램 거시경제 메시지 근거로만 서술.",
   "notableStocks": [
     { "name": "삼성전자", "code": "005930", "change": null, "tradingValue": "1조 2000억", "note": "거래대금·뉴스 기준 한 줄 요약" }
   ],
@@ -605,7 +749,9 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 }
 
 규칙(marketSummary):
-- 입력에 제시된 지수 종가(있다면)와 종목 뉴스 헤드라인만 근거로 작성.
+- 입력에 제시된 지수 종가(있다면), 종목 뉴스 헤드라인, 텔레그램 거시경제/시황 메시지만 근거로 작성.
+- 텔레그램 메시지는 거시경제·시황 채널을 가장 우선적으로 참고하고, 총평에 실제 메시지의 핵심 표현이나 채널명을 자연스럽게 반영.
+- 텔레그램 메시지가 크립토 중심이면 국내 증시 총평에는 보조적으로만 사용.
 - 추측·단정적 투자 권유 금지. 문장은 완결형 한국어.
 
 규칙(notableStocks):
@@ -622,7 +768,7 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 - theme는 1개 단일 한국어 키워드. 추천 목록: "AI 반도체", "2차전지", "바이오·신약", "로봇·휴머노이드", "조선·LNG", "방산", "원전·SMR", "AI 전력·인프라", "엔터·콘텐츠", "K뷰티", "정유·화학", "건설", "리튬·희토류", "우주·항공", "철강·소재", "유통·소비재", "금융", "테마성 단기상승", "관리종목·실적", "기타". 적절한 항목이 없으면 "기타".
 
 규칙(topNews):
-- 입력으로 받은 종목별 뉴스 헤드라인을 종합해, 그날 한국 증시 전체에 영향이 큰 핵심 뉴스 3~5개를 선정해 배열로 출력.
+- 입력으로 받은 종목별 뉴스 헤드라인과 텔레그램 거시경제 메시지를 종합해, 그날 한국 증시 전체에 영향이 큰 핵심 뉴스 3~5개를 선정해 배열로 출력.
 - title은 25자 내외, note는 1문장 이내(선택), source는 알면 적고 모르면 빈 문자열.
 - 종목 한 개에만 국한된 단순 회사 발표보다 시장·업종·정책·매크로 임팩트가 큰 뉴스를 우선.`;
 
@@ -771,9 +917,10 @@ async function main() {
   const noNewsCount = top.filter((s) => (newsMap.get(s.code) || []).length === 0).length;
   console.log(`  뉴스 수집 완료 (뉴스 없음: ${noNewsCount}종목)`);
 
-  console.log("[5/6] Claude 분석 (이유·테마 + 주요 뉴스)...");
+  console.log("[5/6] Telegram 거시경제 메시지 + Claude 분석 (이유·테마 + 주요 뉴스)...");
+  const telegramMessages = await collectTelegramMacroMessages();
   const ai = await classifyWithClaude({
-    apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes,
+    apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes, telegramMessages,
   });
 
   const byCode = new Map();
@@ -852,9 +999,14 @@ async function main() {
     indexes: indexes.length ? indexes : (existing.indexes || []),
     themes,
     news: topNews.length ? topNews : (existing.news || []),
+    telegramMessages: telegramMessages.slice(0, 40).map((msg) => ({
+      channel: msg.channel,
+      text: compactText(msg.text, 300),
+      date: msg.date.toISOString(),
+    })),
     topGainers,
     topGainersUpdatedAt: seoulYmd(new Date()),
-    topGainersSource: `${rankingSource}+Naver+Claude`,
+    topGainersSource: `${rankingSource}+Naver+Telegram+Claude`,
   };
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });

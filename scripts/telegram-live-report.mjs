@@ -22,28 +22,51 @@ const DATA_PATH = process.env.LIVE_REPORT_PATH || "data/live-report.json";
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
-const CHANNEL_LIMIT = 50;
-const MSG_PER_CHANNEL = 10;
+const CHANNEL_LIMIT = 60;
 const TOTAL_TIMEOUT = 60000;
-const PRIORITY_KEYWORDS = [
+const PRIORITY_1_KEYWORDS = [
+  "스톡허브",
+  "stockhub",
+  "거시경제",
+  "경제",
+  "시황",
   "주식",
   "증시",
   "코스피",
   "코스닥",
-  "크립토",
-  "비트",
-  "코인",
+  "매크로",
+  "macro",
   "뉴스",
-  "경제",
+  "news",
+  "리포트",
+  "분석",
   "투자",
   "stock",
-  "crypto",
-  "news",
-  "시황",
-  "매매",
+];
+const PRIORITY_2_KEYWORDS = [
   "트레이딩",
+  "매매",
   "선물",
   "옵션",
+  "차트",
+  "ETF",
+  "펀드",
+  "부동산",
+  "금리",
+  "환율",
+];
+const PRIORITY_3_KEYWORDS = [
+  "크립토",
+  "코인",
+  "비트",
+  "bitcoin",
+  "crypto",
+  "이더",
+  "리플",
+  "알트",
+  "NFT",
+  "defi",
+  "web3",
 ];
 const STOCK_KEYWORDS = [
   "주식",
@@ -416,6 +439,20 @@ async function withTimeout(promise, ms, label, onTimeout = () => {}) {
   }
 }
 
+function getChannelPriority(channelName) {
+  const name = String(channelName || "").toLowerCase();
+  if (PRIORITY_1_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()))) {
+    return { priority: 1, msgLimit: 20 };
+  }
+  if (PRIORITY_2_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()))) {
+    return { priority: 2, msgLimit: 10 };
+  }
+  if (PRIORITY_3_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()))) {
+    return { priority: 3, msgLimit: 3 };
+  }
+  return { priority: 4, msgLimit: 5 };
+}
+
 async function collectTelegramMessages() {
   const session = process.env.TELEGRAM_SESSION;
   const apiId = Number.parseInt(process.env.TELEGRAM_API_ID || "", 10);
@@ -432,26 +469,33 @@ async function collectTelegramMessages() {
         await client.connect();
         const dialogs = await client.getDialogs({});
         const allChannels = dialogs.filter((dialog) => dialog.isChannel || dialog.isGroup);
-        const priorityChannels = allChannels.filter((dialog) => {
-          const name = String(dialog.name || "").toLowerCase();
-          return PRIORITY_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()));
-        });
-        const prioritySet = new Set(priorityChannels);
-        const otherChannels = allChannels.filter((dialog) => !prioritySet.has(dialog));
-        const channels = [...priorityChannels, ...otherChannels].slice(0, CHANNEL_LIMIT);
+        const channels = allChannels
+          .map((channel) => ({
+            ...channel,
+            ...getChannelPriority(channel.name),
+          }))
+          .sort((a, b) => a.priority - b.priority)
+          .slice(0, CHANNEL_LIMIT);
         const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        const priorityCounts = channels.reduce((counts, channel) => {
+          counts[channel.priority] = (counts[channel.priority] || 0) + 1;
+          return counts;
+        }, {});
 
         console.log(`총 ${channels.length}개 채널 처리 시작`);
-        console.log(`우선순위 채널: ${priorityChannels.length}개`);
+        console.log(
+          `채널 우선순위: 1순위 ${priorityCounts[1] || 0}개, 2순위 ${priorityCounts[2] || 0}개, 3순위 ${priorityCounts[3] || 0}개, 미분류 ${priorityCounts[4] || 0}개`
+        );
 
         const results = await Promise.allSettled(
           channels.map(async (channel) => {
             try {
-              const messages = await client.getMessages(channel.entity, { limit: MSG_PER_CHANNEL });
+              const messages = await client.getMessages(channel.entity, { limit: channel.msgLimit });
               return messages
                 .filter((msg) => msg.message && new Date(Number(msg.date) * 1000) >= twoHoursAgo)
                 .map((msg) => ({
                   channel: channel.name || "unknown",
+                  priority: channel.priority,
                   text: stripHtml(msg.message),
                   date: new Date(Number(msg.date) * 1000),
                 }));
@@ -483,7 +527,10 @@ async function collectTelegramMessages() {
 }
 
 function filterStockMessages(messages) {
-  return messages.filter((msg) => STOCK_KEYWORDS.some((keyword) => msg.text.includes(keyword))).slice(0, 50);
+  return messages
+    .filter((msg) => STOCK_KEYWORDS.some((keyword) => msg.text.includes(keyword)))
+    .sort((a, b) => a.priority - b.priority || b.date - a.date)
+    .slice(0, 50);
 }
 
 function getStockMessages(stockName, messages) {
@@ -608,7 +655,7 @@ ${bluechipText(bluechipMovers, bluechipMessagesByName)}
     model: MODEL,
     max_tokens: 2000,
     system:
-      "당신은 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게 분석해주세요.\n텔레그램 채널의 실제 메시지를 근거로 설명하고\n왜 오르는지 이유와 맥락을 정확히 짚어주세요.\n추측이 아닌 실제 채널 메시지 근거를 반드시 언급하세요.\n이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
+      "당신은 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게 분석해주세요.\n텔레그램 채널의 실제 메시지를 근거로 설명하고\n왜 오르는지 이유와 맥락을 정확히 짚어주세요.\n추측이 아닌 실제 채널 메시지 근거를 반드시 언급하세요.\n스톡허브, 거시경제 관련 채널 메시지를 가장 중요하게 참고하고 우선적으로 인용하세요.\n크립토 채널 메시지는 크립토 관련 분석시에만 참고하세요.\n이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
     messages: [{ role: "user", content: user }],
   });
   const block = msg.content.find((item) => item.type === "text");

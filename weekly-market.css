@@ -727,6 +727,7 @@ a:hover {
 
 .calendar-legend {
   display: flex;
+  flex-wrap: wrap;
   gap: 14px;
   padding: 10px 16px 0;
   font-family: var(--font-mono);
@@ -749,6 +750,14 @@ a:hover {
 
 .dot--earnings {
   background: #f4efe2;
+}
+
+.dot--kr-ipo {
+  background: #e5484d;
+}
+
+.dot--kr-earnings {
+  background: #30a46c;
 }
 
 .month-calendar {
@@ -930,6 +939,56 @@ a:hover {
 .earnings-pill__name {
   color: #f4efe2;
   font-weight: 500;
+}
+
+.kr-schedule-block {
+  margin: 12px 0 0;
+}
+
+.kr-schedule-title {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-bright);
+  letter-spacing: 0.04em;
+}
+
+.kr-pill {
+  text-decoration: none;
+}
+
+.kr-pill--kospi {
+  background: rgba(212, 175, 55, 0.18);
+  border-color: rgba(212, 175, 55, 0.42);
+}
+
+.kr-pill--kosdaq {
+  background: rgba(60, 130, 246, 0.16);
+  border-color: rgba(60, 130, 246, 0.42);
+}
+
+.kr-pill--earnings {
+  background: rgba(48, 164, 108, 0.14);
+  border-color: rgba(48, 164, 108, 0.38);
+}
+
+.kr-earnings-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.kr-earnings-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.kr-earnings-group__label {
+  min-width: 4.8rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-bright);
 }
 
 .week-tabs {

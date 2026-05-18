@@ -77,7 +77,9 @@
           </div>
           <div class="calendar-legend" aria-label="달력 표시 범례">
             <span><i class="dot dot--economic"></i>경제지표</span>
-            <span><i class="dot dot--earnings"></i>실적발표</span>
+            <span><i class="dot dot--earnings"></i>미국실적</span>
+            <span><i class="dot dot--kr-ipo"></i>국내신규상장</span>
+            <span><i class="dot dot--kr-earnings"></i>국내실적</span>
           </div>
           <div class="month-calendar" id="month-calendar" aria-label="월간 일정 달력"></div>
           <div class="selected-day" id="selected-day"></div>
@@ -95,6 +97,14 @@
             <article>
               <h3 class="subsection-title">오늘 경제지표 발표</h3>
               <div id="today-economic"></div>
+            </article>
+            <article>
+              <h3 class="subsection-title">📋 신규상장</h3>
+              <div id="today-kr-ipo"></div>
+            </article>
+            <article>
+              <h3 class="subsection-title">💹 국내 실적발표</h3>
+              <div id="today-kr-earnings"></div>
             </article>
             <article>
               <h3 class="subsection-title">오늘 실적 발표 종목</h3>
@@ -366,6 +376,12 @@
           return (rows || []).filter((row) => SP500_WATCHLIST_SET.has(String(row.symbol || "").trim().toUpperCase()));
         }
 
+        function naverFinanceUrl(code, name) {
+          return code
+            ? `https://finance.naver.com/item/main.naver?code=${encodeURIComponent(code)}`
+            : `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(name || "")}`;
+        }
+
         function impactClass(impact) {
           const key = String(impact || "low").toLowerCase();
           if (key.includes("high")) return "impact-high";
@@ -432,11 +448,45 @@
             .join("")}</div>`;
         }
 
+        function renderKRIPO(rows, showTitle = true) {
+          if (!rows?.length) return "";
+          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="earnings-grid">${rows
+            .map((r) => {
+              const market = r.market || "신규상장";
+              return `<a class="earnings-pill kr-pill kr-pill--${market === "코스피" ? "kospi" : "kosdaq"}" href="${escapeHtml(naverFinanceUrl(r.code, r.name))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([r.name, r.market, r.sector].filter(Boolean).join(" · "))}">
+                <span class="earnings-pill__symbol">${escapeHtml(r.name || "종목명")}</span>
+                <span class="earnings-pill__name">${escapeHtml(market)}</span>
+              </a>`;
+            })
+            .join("")}</div></div>`;
+        }
+
+        function renderKREarnings(rows, showTitle = true) {
+          if (!rows?.length) return "";
+          const grouped = rows.reduce((acc, row) => {
+            const sector = row.sector || "기타";
+            (acc[sector] ||= []).push(row);
+            return acc;
+          }, {});
+          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">💹 국내 실적발표</h4>' : ""}<div class="kr-earnings-groups">${Object.entries(grouped)
+            .map(([sector, sectorRows]) => `<div class="kr-earnings-group">
+              <span class="kr-earnings-group__label">${escapeHtml(sector)}:</span>
+              <span class="earnings-grid">${sectorRows
+                .map((r) => `<a class="earnings-pill kr-pill kr-pill--earnings" href="${escapeHtml(naverFinanceUrl(r.code, r.name))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([r.name, r.sector].filter(Boolean).join(" · "))}">
+                  <span class="earnings-pill__symbol">${escapeHtml(r.name || "종목명")}</span>
+                </a>`)
+                .join("")}</span>
+            </div>`)
+            .join("")}</div></div>`;
+        }
+
         function renderSelectedDay(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
           const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
+          const krIPO = itemsForDate("krIPO", ymd);
+          const krEarnings = itemsForDate("krEarnings", ymd);
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${economic.length || earnings.length ? `${renderEconomic(economic)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+            ${economic.length || krIPO.length || krEarnings.length || earnings.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}${renderKREarnings(krEarnings)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
 
         function renderCalendar() {
@@ -452,11 +502,13 @@
             const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
             const hasEconomic = itemsForDate("economicCalendar", ymd).length > 0;
             const hasEarnings = itemsForDate("earningsCalendar", ymd).length > 0;
+            const hasKRIPO = itemsForDate("krIPO", ymd).length > 0;
+            const hasKREarnings = itemsForDate("krEarnings", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
             const isToday = ymd === today ? " calendar-cell--today" : "";
             return `<button type="button" class="calendar-cell${active}${isToday}" data-date="${ymd}">
               <span>${day}</span>
-              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasEarnings ? '<b class="dot dot--earnings"></b>' : ""}</i>
+              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasEarnings ? '<b class="dot dot--earnings"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}${hasKREarnings ? '<b class="dot dot--kr-earnings"></b>' : ""}</i>
             </button>`;
           }).join("");
           $("month-calendar").innerHTML = heads + blanks + days;
@@ -473,9 +525,23 @@
           const ymd = seoulYmd();
           const economic = itemsForDate("economicCalendar", ymd);
           const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
+          const krIPO = itemsForDate("krIPO", ymd);
+          const krEarnings = itemsForDate("krEarnings", ymd);
           const earningsWrap = $("today-earnings");
+          const krIpoWrap = $("today-kr-ipo");
+          const krEarningsWrap = $("today-kr-earnings");
           $("today-date").textContent = fmtDate(ymd);
-          $("today-economic").innerHTML = economic.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+          $("today-economic").innerHTML = economic.length || krIPO.length || krEarnings.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+          if (krIpoWrap) {
+            const article = krIpoWrap.closest("article");
+            if (article) article.hidden = !krIPO.length;
+            krIpoWrap.innerHTML = renderKRIPO(krIPO, false);
+          }
+          if (krEarningsWrap) {
+            const article = krEarningsWrap.closest("article");
+            if (article) article.hidden = !krEarnings.length;
+            krEarningsWrap.innerHTML = renderKREarnings(krEarnings, false);
+          }
           if (earningsWrap) {
             const article = earningsWrap.closest("article");
             if (article) article.hidden = !earnings.length;
@@ -501,6 +567,8 @@
             .map((ymd, i) => `<section class="week-panel${i === 0 ? " is-active" : ""}" data-index="${i}">
               <h3>${escapeHtml(fmtDate(ymd))}</h3>
               ${renderEconomic(itemsForDate("economicCalendar", ymd))}
+              ${renderKRIPO(itemsForDate("krIPO", ymd))}
+              ${renderKREarnings(itemsForDate("krEarnings", ymd))}
               ${renderEarnings(itemsForDate("earningsCalendar", ymd))}
             </section>`)
             .join("");

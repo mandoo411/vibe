@@ -41,6 +41,57 @@ const SP500_WATCHLIST = [
   "RBLX","SNAP","ROKU","SPOT","ZM"
 ];
 const SP500_WATCHLIST_SET = new Set(SP500_WATCHLIST);
+const KR_BLUECHIP = {
+  반도체: ["삼성전자", "SK하이닉스", "한미반도체", "HPSP"],
+  "2차전지": ["LG에너지솔루션", "삼성SDI", "에코프로비엠", "포스코퓨처엠"],
+  바이오: ["삼성바이오로직스", "셀트리온", "유한양행", "한미약품"],
+  자동차: ["현대차", "기아", "현대모비스"],
+  "IT/플랫폼": ["카카오", "네이버", "크래프톤"],
+  조선: ["HD현대중공업", "삼성중공업", "한화오션"],
+  방산: ["한화에어로스페이스", "LIG넥스원", "현대로템"],
+  금융: ["KB금융", "신한지주", "하나금융", "우리금융"],
+  "에너지/화학": ["LG화학", "롯데케미칼", "한화솔루션"],
+  "유통/소비": ["LG생활건강", "아모레퍼시픽", "CJ제일제당"],
+};
+const KR_BLUECHIP_CODES = {
+  삼성전자: "005930",
+  SK하이닉스: "000660",
+  한미반도체: "042700",
+  HPSP: "403870",
+  LG에너지솔루션: "373220",
+  삼성SDI: "006400",
+  에코프로비엠: "247540",
+  포스코퓨처엠: "003670",
+  삼성바이오로직스: "207940",
+  셀트리온: "068270",
+  유한양행: "000100",
+  한미약품: "128940",
+  현대차: "005380",
+  기아: "000270",
+  현대모비스: "012330",
+  카카오: "035720",
+  네이버: "035420",
+  크래프톤: "259960",
+  HD현대중공업: "329180",
+  삼성중공업: "010140",
+  한화오션: "042660",
+  한화에어로스페이스: "012450",
+  LIG넥스원: "079550",
+  현대로템: "064350",
+  KB금융: "105560",
+  신한지주: "055550",
+  하나금융: "086790",
+  우리금융: "316140",
+  LG화학: "051910",
+  롯데케미칼: "011170",
+  한화솔루션: "009830",
+  LG생활건강: "051900",
+  아모레퍼시픽: "090430",
+  CJ제일제당: "097950",
+};
+const KR_BLUECHIP_SECTOR = Object.fromEntries(
+  Object.entries(KR_BLUECHIP).flatMap(([sector, names]) => names.map((name) => [name, sector]))
+);
 
 function requireEnv(name) {
   const value = String(process.env[name] || "").trim();
@@ -74,6 +125,14 @@ function addDaysYmd(ymd, days) {
   const date = new Date(`${ymd}T12:00:00+09:00`);
   date.setDate(date.getDate() + days);
   return seoulYmd(date);
+}
+
+function ymdCompact(ymd) {
+  return String(ymd || "").replace(/-/g, "");
+}
+
+function isYmdInRange(ymd, from, to) {
+  return ymd && ymd >= from && ymd <= to;
 }
 
 function kstNewsTimeLabel(value) {
@@ -116,6 +175,56 @@ function decodeXml(s) {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .trim();
+}
+
+function stripHtml(value) {
+  return decodeXml(String(value || "").replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseHtmlRows(html) {
+  const rows = [];
+  const trMatches = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+  for (const tr of trMatches) {
+    const cells = [];
+    const cellRe = /<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi;
+    let match;
+    while ((match = cellRe.exec(tr)) !== null) {
+      const cell = stripHtml(match[1]);
+      if (cell) cells.push(cell);
+    }
+    if (cells.length) rows.push(cells);
+  }
+  return rows;
+}
+
+function parseKoreanScheduleDate(value, from, to) {
+  const text = String(value || "");
+  const full = text.match(/(20\d{2})[.\-/년\s]*(\d{1,2})[.\-/월\s]*(\d{1,2})/);
+  if (full) {
+    const ymd = `${full[1]}-${String(full[2]).padStart(2, "0")}-${String(full[3]).padStart(2, "0")}`;
+    return isYmdInRange(ymd, from, to) ? ymd : "";
+  }
+  const short = text.match(/(?:^|[^\d])(\d{1,2})[.\-/월\s]+(\d{1,2})(?:일)?/);
+  if (short) {
+    const year = from.slice(0, 4);
+    const ymd = `${year}-${String(short[1]).padStart(2, "0")}-${String(short[2]).padStart(2, "0")}`;
+    return isYmdInRange(ymd, from, to) ? ymd : "";
+  }
+  return "";
+}
+
+function parseWonNumber(value) {
+  const match = String(value || "").replace(/,/g, "").match(/(\d{3,})\s*원?/);
+  return match ? Number(match[1]) : null;
+}
+
+function inferMarket(text) {
+  if (/코스피|유가|KOSPI/i.test(text)) return "코스피";
+  if (/코스닥|KOSDAQ/i.test(text)) return "코스닥";
+  if (/코넥스|KONEX/i.test(text)) return "코넥스";
+  return "";
 }
 
 async function fetchJson(url) {
@@ -246,6 +355,111 @@ async function fetchKoreanNews() {
   return filtered.slice(0, 20);
 }
 
+function normalizeIpoRows(rows, from, to) {
+  const seen = new Set();
+  const out = [];
+  for (const cells of rows) {
+    const text = cells.join(" ");
+    const date = parseKoreanScheduleDate(text, from, to);
+    if (!date) continue;
+    const name =
+      cells.find((cell) => /[가-힣A-Za-z0-9]/.test(cell) && !/신규상장|상장일|공모가|코스피|코스닥|업종|시장/.test(cell) && !parseKoreanScheduleDate(cell, from, to)) ||
+      "";
+    if (!name || name.length > 30) continue;
+    const market = inferMarket(text);
+    const offeringPrice = parseWonNumber(text);
+    const sector = cells.find((cell) => /업|제조|서비스|바이오|소프트웨어|반도체|금융|화학|의료|기계|전기|전자/.test(cell)) || "";
+    const key = `${date}:${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ date, name, market, sector, offeringPrice });
+  }
+  return out;
+}
+
+async function fetchKRIPO(from, to) {
+  const sources = [
+    {
+      name: "KIND 신규상장",
+      url: `https://kind.krx.co.kr/disclosure/todaydisclosure.do?method=searchTodayDisclosureSub&currentPageSize=15&pageIndex=1&orderMode=0&orderStat=D&forward=todaydisclosure_sub&disclosureId=&heartGbList=&marketType=&searchCodeType=&repIsuSrtCd=&searchCorpName=&searchCorpNameType=0&bizCategory=&startDate=${ymdCompact(from)}&endDate=${ymdCompact(to)}&filterKind=${encodeURIComponent("신규상장")}`,
+    },
+    { name: "네이버 금융 신규상장", url: "https://finance.naver.com/research/debenture_list.naver" },
+    { name: "38커뮤니케이션 공모주", url: "https://www.38.co.kr/html/fund/index.htm?o=k" },
+  ];
+  const rows = [];
+  for (const source of sources) {
+    try {
+      const html = await fetchText(source.url, { "User-Agent": "Mozilla/5.0" });
+      const parsed = normalizeIpoRows(parseHtmlRows(html), from, to);
+      rows.push(...parsed);
+      console.log(`✅ ${source.name} 성공 (${parsed.length}건)`);
+    } catch (error) {
+      console.log(`❌ ${source.name} 실패: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  const seen = new Set();
+  return rows
+    .filter((row) => {
+      const key = `${row.date}:${row.name}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function normalizeKrEarningRows(rows, from, to) {
+  const seen = new Set();
+  const out = [];
+  for (const cells of rows) {
+    const text = cells.join(" ");
+    const date = parseKoreanScheduleDate(text, from, to);
+    if (!date) continue;
+    for (const [name, sector] of Object.entries(KR_BLUECHIP_SECTOR)) {
+      if (!text.includes(name)) continue;
+      const key = `${date}:${name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({
+        date,
+        name,
+        sector,
+        code: KR_BLUECHIP_CODES[name] || "",
+        epsEstimate: cells.find((cell) => /EPS|예상/.test(cell)) || "",
+        previousQuarter: cells.find((cell) => /전분기|직전|QoQ/.test(cell)) || "",
+      });
+    }
+  }
+  return out;
+}
+
+async function fetchKREarnings(from, to) {
+  const sources = [
+    { name: "네이버 금융 실적 캘린더", url: "https://finance.naver.com/research/earning_list.naver" },
+    { name: "KIND 공시", url: "https://kind.krx.co.kr" },
+  ];
+  const rows = [];
+  for (const source of sources) {
+    try {
+      const html = await fetchText(source.url, { "User-Agent": "Mozilla/5.0" });
+      const parsed = normalizeKrEarningRows(parseHtmlRows(html), from, to);
+      rows.push(...parsed);
+      console.log(`✅ ${source.name} 성공 (${parsed.length}건)`);
+    } catch (error) {
+      console.log(`❌ ${source.name} 실패: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  const seen = new Set();
+  return rows
+    .filter((row) => {
+      const key = `${row.date}:${row.name}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 function parseClaudeJson(text) {
   const raw = String(text || "").trim();
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -258,9 +472,9 @@ function parseClaudeJson(text) {
   return JSON.parse(body.slice(start, end + 1));
 }
 
-async function analyzeWithClaude({ economicCalendar, earningsCalendar, news }) {
+async function analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news }) {
   const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
-  const payload = { economicCalendar, earningsCalendar, news };
+  const payload = { economicCalendar, earningsCalendar, krIPO, krEarnings, news };
   const msg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1800,
@@ -268,7 +482,7 @@ async function analyzeWithClaude({ economicCalendar, earningsCalendar, news }) {
     messages: [
       {
         role: "user",
-        content: `아래 향후 2주 경제 일정, 실적 발표, 주요 뉴스를 바탕으로 한국어 JSON만 반환해줘.
+        content: `아래 향후 2주 경제 일정, 미국 실적 발표, 한국 신규상장, 국내 주요기업 실적 발표, 주요 뉴스를 바탕으로 한국어 JSON만 반환해줘.
 스키마:
 {
   "topEvents": ["이번주 핵심 이벤트 TOP5, 각 항목 1문장"],
@@ -307,15 +521,17 @@ async function main() {
   earningsUrl.searchParams.set("to", to);
   earningsUrl.searchParams.set("token", token);
 
-  const [economicRaw, earningsRaw, news] = await Promise.all([
+  const [economicRaw, earningsRaw, news, krIPO, krEarnings] = await Promise.all([
     fetchJson(economicUrl),
     fetchJson(earningsUrl),
     fetchKoreanNews(),
+    fetchKRIPO(today, to),
+    fetchKREarnings(today, to),
   ]);
 
   const economicCalendar = normalizeEconomic(economicRaw);
   const earningsCalendar = normalizeEarnings(earningsRaw);
-  const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, news });
+  const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news });
 
   const data = {
     meta: {
@@ -323,10 +539,12 @@ async function main() {
       lastUpdatedKst: seoulStamp(),
       from: today,
       to,
-      source: "finnhub+claude",
+      source: "finnhub+krx+naver+claude",
     },
     economicCalendar,
     earningsCalendar,
+    krIPO,
+    krEarnings,
     analysis,
     news,
   };

@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d0b08" />
+    <title>TotalMoney AI · 라이브 리포트</title>
+    <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./site-nav.js" defer></script>
+    <style>
+      .live-wrap {
+        display: grid;
+        gap: 16px;
+      }
+      .live-status {
+        padding: 9px 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        background: #0a0907;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      .live-index-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .live-index-card,
+      .live-card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg-panel);
+        box-shadow: var(--shadow);
+      }
+      .live-index-card {
+        padding: 14px 16px;
+        font-family: var(--font-mono);
+      }
+      .live-index-card__name {
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .live-index-card__value {
+        margin-top: 6px;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .live-index-card__change,
+      .live-delta {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .live-delta--up {
+        color: #f87171;
+      }
+      .live-delta--down {
+        color: #60a5fa;
+      }
+      .live-delta--flat {
+        color: var(--text-dim);
+      }
+      .live-section__title {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: var(--accent-bright);
+        letter-spacing: 0.08em;
+      }
+      .live-main-report {
+        padding: 16px;
+        border-color: rgba(240, 199, 90, 0.62);
+        box-shadow:
+          var(--sheet-shadow),
+          inset 0 1px 0 rgba(240, 199, 90, 0.12);
+      }
+      .live-report-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        font-family: var(--font-mono);
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      .live-report-time {
+        color: var(--accent-bright);
+        font-weight: 700;
+      }
+      .live-analysis {
+        white-space: pre-wrap;
+        line-height: 1.75;
+        color: var(--text);
+        font-size: 14px;
+      }
+      .live-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .live-tab {
+        appearance: none;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: #12100c;
+        color: var(--text-muted);
+        height: 32px;
+        padding: 0 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .live-tab[aria-selected="true"] {
+        color: var(--accent-bright);
+        border-color: var(--border-strong);
+        box-shadow: inset 0 -2px 0 var(--accent-bright);
+      }
+      .live-tab:disabled {
+        color: #5f5541;
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+      .live-table-card {
+        overflow: hidden;
+      }
+      .live-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .live-table th,
+      .live-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .live-table th {
+        text-align: left;
+        color: var(--text-dim);
+        background: #12100c;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .live-table .num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .live-empty {
+        padding: 16px;
+        color: var(--text-muted);
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius);
+        background: rgba(212, 175, 55, 0.04);
+      }
+      @media (max-width: 768px) {
+        .live-index-grid {
+          grid-template-columns: 1fr;
+        }
+        .live-table {
+          font-size: 11px;
+        }
+        .live-table th,
+        .live-table td {
+          padding: 7px 6px;
+        }
+        .live-hide-mobile {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="tm-site-header">
+        <div class="header-top">
+          <a class="header-top__link" href="./index.html" aria-label="TotalMoney AI 홈">
+            <img class="header-top__logo" src="./assets/totalmoney_ai.png" alt="" width="36" height="36" decoding="async" />
+            <span class="header-top__title">TotalMoney AI</span>
+            <span class="header-top__tagline">Smarter Financial Decisions</span>
+          </a>
+        </div>
+
+        <nav class="tm-site-nav" aria-label="주요 메뉴">
+          <a class="tm-site-nav__link" href="./index.html">홈</a>
+          <a class="tm-site-nav__link" href="./daily-market.html">장마감</a>
+          <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
+          <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
+          <a class="tm-site-nav__link" href="./live-report.html" aria-current="page">라이브 <span class="tm-live-badge" aria-label="장중 라이브">LIVE</span></a>
+          <a class="tm-site-nav__link" href="./us-market.html">미국</a>
+          <a class="tm-site-nav__link" href="./crypto.html">크립토</a>
+        </nav>
+      </header>
+
+      <header class="masthead masthead--title-only">
+        <div class="masthead__copy">
+          <p class="masthead__kicker">LIVE REPORT</p>
+          <h1 class="masthead__title">📺 장중 실시간 중계</h1>
+        </div>
+      </header>
+      <div class="page-hero-sub">
+        <div class="masthead__meta">
+          <span id="live-updated">마지막 업데이트: -</span>
+          <span>1시간마다 자동 업데이트</span>
+        </div>
+      </div>
+
+      <main class="live-wrap">
+        <div id="live-status" class="live-status">데이터 로딩 중...</div>
+
+        <section aria-labelledby="live-sec-index">
+          <h2 class="live-section__title" id="live-sec-index">① 현재 지수</h2>
+          <div id="live-indexes" class="live-index-grid"></div>
+        </section>
+
+        <section aria-labelledby="live-sec-report">
+          <h2 class="live-section__title" id="live-sec-report">② AI 중계 리포트</h2>
+          <article class="live-card live-main-report">
+            <div class="live-report-head">
+              <span>🎙️ Claude AI 분석</span>
+              <span id="live-report-time" class="live-report-time">-</span>
+            </div>
+            <div id="live-analysis" class="live-analysis">리포트 준비 중입니다.</div>
+          </article>
+        </section>
+
+        <section aria-labelledby="live-sec-timeline">
+          <h2 class="live-section__title" id="live-sec-timeline">③ 오늘 리포트 타임라인</h2>
+          <div id="live-tabs" class="live-tabs" role="tablist" aria-label="라이브 리포트 시간대"></div>
+        </section>
+
+        <section aria-labelledby="live-sec-top10">
+          <h2 class="live-section__title" id="live-sec-top10">④ 상승률 TOP10</h2>
+          <div class="live-card live-table-card">
+            <table class="live-table">
+              <thead>
+                <tr>
+                  <th class="num">순위</th>
+                  <th>종목명</th>
+                  <th class="num">현재가</th>
+                  <th class="num">등락률</th>
+                </tr>
+              </thead>
+              <tbody id="live-top10"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const DATA_URL = "./data/live-report.json";
+        const INDEX_API = "./api/kis-realtime-data?action=index";
+        const TIMES = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30"];
+        const WD = ["일", "월", "화", "수", "목", "금", "토"];
+        const state = { data: { date: "", reports: [] }, selected: "" };
+
+        const $ = (id) => document.getElementById(id);
+        const escapeHtml = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const toNum = (v) => {
+          if (v == null || v === "") return null;
+          const n = Number(String(v).replace(/,/g, ""));
+          return Number.isFinite(n) ? n : null;
+        };
+        const fmtNum = (v, digits = 0) => {
+          const n = toNum(v);
+          return n == null ? "-" : n.toLocaleString("ko-KR", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+        };
+        const fmtPct = (v) => {
+          const n = toNum(v);
+          if (n == null) return "-";
+          return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+        };
+        const deltaClass = (v) => {
+          const n = toNum(v);
+          if (!n) return "live-delta--flat";
+          return n > 0 ? "live-delta--up" : "live-delta--down";
+        };
+        const seoulNow = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+        const seoulYmd = (d = seoulNow()) => {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        };
+        const kstLabel = (d = seoulNow()) => `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} KST`;
+        const marketStatus = () => {
+          const now = seoulNow();
+          const day = now.getDay();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          if (day === 0 || day === 6) return "오늘은 주말 휴장입니다";
+          if (minutes < 9 * 60) return "장 시작을 기다리는 중입니다 (09:00)";
+          if (minutes > 15 * 60 + 30) return "오늘 장이 마감되었습니다";
+          return "장중 실시간 리포트 업데이트 중";
+        };
+        const reportMap = () => new Map((state.data.reports || []).map((r) => [r.time, r]));
+        const latestReport = () => [...(state.data.reports || [])].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
+
+        function renderIndexes(indexes) {
+          const latest = latestReport();
+          const fallback = latest
+            ? [
+                { label: "코스피", value: latest.kospi && latest.kospi.value, changePct: latest.kospi && latest.kospi.change },
+                { label: "코스닥", value: latest.kosdaq && latest.kosdaq.value, changePct: latest.kosdaq && latest.kosdaq.change },
+              ]
+            : [];
+          const rows = Array.isArray(indexes) && indexes.length ? indexes : fallback;
+          $("live-indexes").innerHTML = rows.map((row) => `<div class="live-index-card">
+            <div class="live-index-card__name">${escapeHtml(row.label || row.name)}</div>
+            <div class="live-index-card__value">${escapeHtml(row.value || fmtNum(row.price, 2))}</div>
+            <div class="live-index-card__change live-delta ${deltaClass(row.changePct ?? row.change)}">${escapeHtml(fmtPct(row.changePct ?? row.change))}</div>
+          </div>`).join("");
+        }
+
+        function renderTabs() {
+          const map = reportMap();
+          $("live-tabs").innerHTML = TIMES.map((time) => {
+            const has = map.has(time);
+            return `<button type="button" class="live-tab" role="tab" data-time="${time}" aria-selected="${state.selected === time ? "true" : "false"}" ${has ? "" : "disabled"}>${time}</button>`;
+          }).join("");
+          $("live-tabs").querySelectorAll("[data-time]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              state.selected = btn.getAttribute("data-time");
+              render();
+            });
+          });
+        }
+
+        function renderReport() {
+          const selected = reportMap().get(state.selected) || latestReport();
+          if (!selected) {
+            $("live-report-time").textContent = "-";
+            $("live-analysis").textContent = "아직 생성된 라이브 리포트가 없습니다.";
+            $("live-top10").innerHTML = '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
+            return;
+          }
+          $("live-report-time").textContent = `${selected.time} 리포트`;
+          $("live-analysis").textContent = selected.aiAnalysis || "AI 분석 준비 중입니다.";
+          const rows = Array.isArray(selected.top10) ? selected.top10.slice(0, 10) : [];
+          $("live-top10").innerHTML = rows.length
+            ? rows.map((row) => `<tr>
+              <td class="num">${escapeHtml(row.rank || "")}</td>
+              <td>${escapeHtml(row.name || row.code || "-")}</td>
+              <td class="num">${escapeHtml(fmtNum(row.price, 0))}</td>
+              <td class="num"><span class="live-delta ${deltaClass(row.rate)}">${escapeHtml(fmtPct(row.rate))}</span></td>
+            </tr>`).join("")
+            : '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
+        }
+
+        function render() {
+          $("live-status").textContent = marketStatus();
+          renderTabs();
+          renderReport();
+          const d = state.data.date || seoulYmd();
+          const latest = latestReport();
+          $("live-updated").textContent = `마지막 업데이트: ${d.replaceAll("-", ".")} ${latest ? latest.time : "--:--"} KST`;
+        }
+
+        async function load() {
+          try {
+            const [dataRes, indexRes] = await Promise.allSettled([
+              fetch(`${DATA_URL}?t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json()),
+              fetch(`${INDEX_API}&t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json()),
+            ]);
+            if (dataRes.status === "fulfilled") state.data = dataRes.value || state.data;
+            const latest = latestReport();
+            state.selected = latest ? latest.time : "";
+            renderIndexes(indexRes.status === "fulfilled" ? indexRes.value.indexes : null);
+            render();
+          } catch (error) {
+            $("live-status").textContent = `데이터 로딩 실패: ${error.message || error}`;
+            renderIndexes(null);
+            render();
+          }
+        }
+
+        load();
+        setInterval(load, 5 * 60 * 1000);
+      })();
+    </script>
+  </body>
+</html>

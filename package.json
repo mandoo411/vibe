@@ -11,7 +11,8 @@
     "sync:weekly": "node --env-file=.env scripts/weekly-schedule.mjs",
     "sync:daily": "node --env-file=.env scripts/telegram-daily-market.mjs",
     "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs",
-    "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs"
+    "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs",
+    "sync:live": "node --env-file=.env scripts/telegram-live-report.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0"

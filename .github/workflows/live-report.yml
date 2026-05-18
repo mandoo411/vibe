@@ -1,0 +1,56 @@
+name: Live Market Report
+
+on:
+  schedule:
+    - cron: "0 0 * * 1-5" # 09:00 KST
+    - cron: "30 0 * * 1-5" # 09:30 KST
+    - cron: "0 1 * * 1-5" # 10:00 KST
+    - cron: "30 1 * * 1-5" # 10:30 KST
+    - cron: "0 2 * * 1-5" # 11:00 KST
+    - cron: "30 2 * * 1-5" # 11:30 KST
+    - cron: "0 3 * * 1-5" # 12:00 KST
+    - cron: "30 3 * * 1-5" # 12:30 KST
+    - cron: "0 4 * * 1-5" # 13:00 KST
+    - cron: "30 4 * * 1-5" # 13:30 KST
+    - cron: "0 5 * * 1-5" # 14:00 KST
+    - cron: "30 5 * * 1-5" # 14:30 KST
+    - cron: "0 6 * * 1-5" # 15:00 KST
+    - cron: "30 6 * * 1-5" # 15:30 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-market-report
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: node scripts/telegram-live-report.mjs
+        env:
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GH_PAT_REPO_SECRETS_WRITE: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE }}

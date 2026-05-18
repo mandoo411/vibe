@@ -137,6 +137,40 @@ a.hub-card:focus-visible {
   display: none;
 }
 
+.hub-card--live-report.is-live {
+  border-color: rgba(240, 199, 90, 0.78);
+  box-shadow:
+    var(--sheet-shadow),
+    0 0 0 1px rgba(240, 199, 90, 0.18);
+}
+
+.hub-live-dot {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  color: #ff6b6b;
+  border-color: rgba(255, 56, 56, 0.42);
+  background: rgba(255, 56, 56, 0.08);
+}
+
+.hub-live-dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ff3838;
+  box-shadow: 0 0 8px rgba(255, 56, 56, 0.9);
+  animation: tmLivePulse 1s ease-in-out infinite;
+}
+
+.hub-card--live-report.is-live .hub-live-dot {
+  display: inline-flex;
+}
+
+.hub-live-last {
+  color: var(--text-dim);
+}
+
 /* ——— Hub home: 모바일(768px 이하) ——— PC(769px+)는 미적용 */
 @media (max-width: 768px) {
   .page.page--hub {

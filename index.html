@@ -17,6 +17,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./site-nav.js" defer></script>
     <link rel="stylesheet" href="./hub.css" />
   </head>
   <body>
@@ -39,12 +40,13 @@
 
         <nav class="tm-site-nav" aria-label="주요 메뉴">
           <a class="tm-site-nav__link" href="./index.html" aria-current="page">홈</a>
-          <a class="tm-site-nav__link" href="./daily-market.html">장마감 리포트</a>
+          <a class="tm-site-nav__link" href="./daily-market.html">장마감</a>
           <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
           <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
           <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
-          <a class="tm-site-nav__link" href="./us-market.html">미국주식</a>
-          <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="tm-site-nav__link" href="./live-report.html">라이브 <span class="tm-live-badge" aria-label="장중 라이브">LIVE</span></a>
+          <a class="tm-site-nav__link" href="./us-market.html">미국</a>
+          <a class="tm-site-nav__link" href="./crypto.html">크립토</a>
         </nav>
       </header>
 
@@ -105,6 +107,24 @@
           </div>
         </a>
 
+        <a class="hub-card hub-card--live-report" href="./live-report.html" role="listitem" id="hub-live-report-card">
+          <img
+            class="hub-card__icon"
+            src="./assets/icon-live.png"
+            alt=""
+            width="100"
+            height="100"
+            decoding="async"
+          />
+          <h2 class="hub-card__title">라이브 리포트</h2>
+          <p class="hub-card__desc">장중 실시간 AI 중계 • 30분마다 업데이트</p>
+          <div class="hub-card__meta">
+            <span class="hub-card__status hub-live-dot">LIVE</span>
+            <span class="hub-live-last" id="hub-live-report-meta">마지막 리포트 확인 중</span>
+            <span class="hub-card__chev" aria-hidden="true">→</span>
+          </div>
+        </a>
+
         <a class="hub-card" href="./briefing.html" role="listitem">
           <img
             class="hub-card__icon"
@@ -157,5 +177,36 @@
         </a>
       </div>
     </div>
+    <script>
+      (() => {
+        const card = document.getElementById("hub-live-report-card");
+        const meta = document.getElementById("hub-live-report-meta");
+        if (!card || !meta) return;
+        const seoulParts = () => {
+          const parts = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Seoul",
+            weekday: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }).formatToParts(new Date());
+          const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+          return { weekday: map.weekday, minutes: Number(map.hour) * 60 + Number(map.minute) };
+        };
+        const { weekday, minutes } = seoulParts();
+        const isLive = weekday !== "Sat" && weekday !== "Sun" && minutes >= 540 && minutes <= 930;
+        card.classList.toggle("is-live", isLive);
+        fetch("./data/live-report.json?t=" + Date.now(), { cache: "no-store" })
+          .then((res) => res.json())
+          .then((data) => {
+            const reports = Array.isArray(data.reports) ? data.reports : [];
+            const latest = reports.sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1);
+            meta.textContent = isLive ? "장중 실시간 중계중" : latest ? `마지막 리포트 ${latest.time}` : "장 시작 전 준비중";
+          })
+          .catch(() => {
+            meta.textContent = isLive ? "장중 실시간 중계중" : "마지막 리포트 대기";
+          });
+      })();
+    </script>
   </body>
 </html>

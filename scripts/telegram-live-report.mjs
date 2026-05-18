@@ -50,12 +50,7 @@ const BLUECHIP_LIST = [
   "포스코퓨처엠",
   "SK이노베이션",
   "LG전자",
-  "롯데케미칼",
   "현대건설",
-  "삼성엔지니어링",
-  "SK",
-  "LG",
-  "롯데지주",
   "한국전력",
   "KT",
 ];
@@ -82,26 +77,30 @@ const BLUECHIP_CODES = {
   포스코퓨처엠: "003670",
   SK이노베이션: "096770",
   LG전자: "066570",
-  롯데케미칼: "011170",
   현대건설: "000720",
-  삼성엔지니어링: "028050",
-  SK: "034730",
-  LG: "003550",
-  롯데지주: "004990",
   한국전력: "015760",
   KT: "030200",
 };
-const THEME_KEYWORDS = [
-  { name: "우주항공", emoji: "🚀", keywords: ["우주", "항공", "스페이스", "방산", "위성", "한화에어로"] },
-  { name: "바이오", emoji: "💊", keywords: ["바이오", "임상", "신약", "제약", "셀트리온", "치료제"] },
-  { name: "반도체", emoji: "💾", keywords: ["반도체", "HBM", "엔비디아", "하이닉스", "삼성전자"] },
-  { name: "2차전지", emoji: "🔋", keywords: ["2차전지", "배터리", "전고체", "리튬", "에코프로", "포스코퓨처엠"] },
-  { name: "원전", emoji: "⚛️", keywords: ["원전", "원자력", "두산에너빌리티", "SMR"] },
-  { name: "조선", emoji: "🚢", keywords: ["조선", "선박", "수주", "HD현대중공업"] },
-  { name: "로봇", emoji: "🤖", keywords: ["로봇", "휴머노이드", "자동화"] },
-  { name: "AI", emoji: "🧠", keywords: ["AI", "인공지능", "데이터센터", "소프트웨어"] },
-  { name: "자동차", emoji: "🚗", keywords: ["자동차", "전기차", "현대차", "기아", "모비스"] },
-];
+const THEME_KEYWORDS = {
+  우주항공: ["한화에어로스페이스", "AP위성", "켄코아에어로스페이스", "비투엔", "쎄트렉아이", "인텔리안테크", "AP우주항공"],
+  AI반도체: ["삼성전자", "SK하이닉스", "한미반도체", "리노공업", "HPSP", "이수페타시스"],
+  "2차전지": ["에코프로", "에코프로비엠", "포스코퓨처엠", "삼성SDI", "LG에너지솔루션", "엘앤에프"],
+  바이오: ["삼성바이오로직스", "셀트리온", "유한양행", "한미약품", "레고켐바이오"],
+  방산: ["한화에어로스페이스", "현대로템", "LIG넥스원", "한국항공우주"],
+  원전: ["두산에너빌리티", "한전기술", "비에이치아이", "우리기술"],
+  로봇: ["레인보우로보틱스", "HD현대", "두산로보틱스"],
+  스페이스X: ["AP위성", "켄코아에어로스페이스", "쎄트렉아이", "이노스페이스", "AP우주항공"],
+};
+const THEME_EMOJI = {
+  우주항공: "🚀",
+  AI반도체: "💾",
+  "2차전지": "🔋",
+  바이오: "💊",
+  방산: "🛡️",
+  원전: "⚛️",
+  로봇: "🤖",
+  스페이스X: "🚀",
+};
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -337,7 +336,7 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
 
 async function fetchNaverFinanceNews(code) {
   if (!code) return [];
-  const url = `https://finance.naver.com/item/news_news.naver?code=${encodeURIComponent(code)}`;
+  const url = `https://finance.naver.com/item/news_news.naver?code=${encodeURIComponent(code)}&page=1`;
   try {
     const res = await fetch(url, {
       headers: {
@@ -386,13 +385,18 @@ function rssTitlesForStock(pool, name, limit = 3) {
 }
 
 async function fetchNewsForRows(rows, rssPool) {
-  const map = new Map();
-  for (const row of rows) {
-    const titles = [
-      ...(await fetchNaverFinanceNews(row.code)),
-      ...rssTitlesForStock(rssPool, row.name, 3),
-    ];
-    map.set(row.code || row.name, uniqueTitles(titles, 3));
+  const settled = await Promise.allSettled(
+    rows.map(async (row) => {
+      const titles = [
+        ...(await fetchNaverFinanceNews(row.code)),
+        ...rssTitlesForStock(rssPool, row.name, 3),
+      ];
+      return [row.code || row.name, uniqueTitles(titles, 3)];
+    })
+  );
+  const map = new Map(rows.map((row) => [row.code || row.name, []]));
+  for (const result of settled) {
+    if (result.status === "fulfilled") map.set(result.value[0], result.value[1]);
   }
   return map;
 }
@@ -411,33 +415,58 @@ function formatTradingValue(value) {
   return `${n.toLocaleString("ko-KR")}원`;
 }
 
-function detectThemeForRow(row, newsTitles = []) {
-  const haystack = `${row.name || ""} ${newsTitles.join(" ")}`;
-  return THEME_KEYWORDS.find((theme) => theme.keywords.some((keyword) => haystack.includes(keyword))) || null;
+function detectThemeForRow(row) {
+  const name = String(row?.name || "");
+  if (!name) return null;
+  for (const [theme, stocks] of Object.entries(THEME_KEYWORDS)) {
+    if (stocks.some((stock) => name.includes(stock) || stock.includes(name))) {
+      return { name: theme, emoji: THEME_EMOJI[theme] || "📌" };
+    }
+  }
+  return null;
 }
 
-function buildThemeSummary(rows, newsMap) {
-  const themes = new Map();
-  for (const row of rows) {
-    const news = newsMap.get(row.code || row.name) || [];
-    const theme = detectThemeForRow(row, news);
-    if (!theme) continue;
-    if (!themes.has(theme.name)) themes.set(theme.name, { ...theme, rows: [] });
-    themes.get(theme.name).rows.push(row.name);
-  }
-  return [...themes.values()].slice(0, 6);
+function rssTitlesForTheme(pool, theme, stocks, limit = 3) {
+  return uniqueTitles(
+    pool.filter((title) => title.includes(theme) || stocks.some((stock) => title.includes(stock))),
+    limit
+  );
+}
+
+function buildThemeSummary(rows, rssPool) {
+  return Object.entries(THEME_KEYWORDS)
+    .map(([name, stocks]) => {
+      const matched = rows.filter((row) => {
+        const rowName = String(row.name || "");
+        return rowName && stocks.some((stock) => rowName.includes(stock) || stock.includes(rowName));
+      });
+      return {
+        name,
+        emoji: THEME_EMOJI[name] || "📌",
+        rows: matched.map((row) => row.name),
+        news: rssTitlesForTheme(rssPool, name, stocks, 3),
+      };
+    })
+    .filter((theme) => theme.rows.length >= 3)
+    .slice(0, 6);
 }
 
 function themeText(themes) {
   if (!themes.length) return "특정 테마 쏠림은 아직 뚜렷하지 않습니다.";
-  return themes.map((theme) => `${theme.emoji} ${theme.name}: ${theme.rows.slice(0, 6).join(", ")}`).join("\n");
+  return themes
+    .map((theme) => {
+      const newsLines = theme.news.length ? `\n   📰 ${theme.news.join("\n   📰 ")}` : "";
+      return `${theme.emoji} ${theme.name}: ${theme.rows.slice(0, 8).join(", ")}${newsLines}`;
+    })
+    .join("\n");
 }
 
 function newsText(newsMap, rows) {
   return rows
-    .map((row) => {
+    .map((row, index) => {
       const titles = newsMap.get(row.code || row.name) || [];
-      return `${row.name}: ${titles.length ? titles.join(", ") : "관련 뉴스 없음"}`;
+      const newsLines = titles.length ? titles.map((title) => `   📰 ${title}`).join("\n") : "   📰 관련 뉴스 없음";
+      return `${index + 1}. ${row.name} ${fmtPct(row.rate, 1)}\n${newsLines}`;
     })
     .join("\n");
 }
@@ -447,7 +476,9 @@ function bluechipText(rows, newsMap) {
   return rows
     .map((row) => {
       const titles = newsMap.get(row.code || row.name) || [];
-      return `${row.name} ${fmtPct(row.rate, 1)}: ${titles.length ? titles.join(", ") : "관련 뉴스 없음"}`;
+      const newsLines = titles.length ? titles.map((title) => `   📰 ${title}`).join("\n") : "   📰 관련 뉴스 없음";
+      const label = row.rate >= 5 ? "급등" : row.rate <= -5 ? "급락" : "주목";
+      return `${row.icon} ${row.name} ${fmtPct(row.rate, 1)} (${label})\n${newsLines}`;
     })
     .join("\n");
 }
@@ -486,7 +517,7 @@ ${bluechipText(bluechipMovers, bluechipNewsMap)}
     model: MODEL,
     max_tokens: 2000,
     system:
-      "당신은 주식시장 전문 해설가입니다. 야구 중계처럼 생동감 있고 흥미롭게 분석해주세요. 실제 뉴스와 데이터를 근거로 설명하고 왜 오르는지 이유와 맥락을 정확히 짚어주세요. 이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
+      "당신은 주식시장 전문 해설가입니다. 야구 중계처럼 생동감 있고 흥미롭게 분석해주세요. 실제 뉴스와 데이터를 근거로 설명하고 왜 오르는지 이유와 맥락을 정확히 짚어주세요. 추측이 아닌 실제 뉴스 근거를 반드시 언급하세요. 이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
     messages: [{ role: "user", content: user }],
   });
   const block = msg.content.find((item) => item.type === "text");
@@ -494,7 +525,7 @@ ${bluechipText(bluechipMovers, bluechipNewsMap)}
   return block.text.trim();
 }
 
-function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap, themes, bluechipMovers, bluechipNewsMap }) {
+function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap }) {
   const lines = [
     "📺 *TotalMoney AI - 라이브 리포트*",
     `📅 ${formatDateKo(ymd)} *${time}* 현재`,
@@ -506,37 +537,13 @@ function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, new
     mdText(aiAnalysis),
     "",
     "━━━━━━━━━━━━━━━",
-    "🔥 *오늘의 테마*",
+    "🏆 *상승률 TOP30*",
   ];
-
-  if (themes.length) {
-    themes.forEach((theme) => {
-      lines.push(`${theme.emoji} ${mdText(theme.name)}: ${mdText(theme.rows.slice(0, 5).join(", "))}`);
-    });
-  } else {
-    lines.push("테마 쏠림 감지 대기 중");
-  }
-
-  lines.push("", "━━━━━━━━━━━━━━━", "⚡ *특징주 알림*");
-  if (bluechipMovers.length) {
-    bluechipMovers.forEach((row) => {
-      lines.push(`${row.icon} ${mdText(row.name)} ${fmtPct(row.rate, 1)} (${row.desc})`);
-      const titles = bluechipNewsMap.get(row.code || row.name) || [];
-      titles.slice(0, 3).forEach((title) => lines.push(`📰 ${mdText(title)}`));
-      if (!titles.length) lines.push("📰 관련 뉴스 확인 중");
-      lines.push("");
-    });
-    if (lines.at(-1) === "") lines.pop();
-  } else {
-    lines.push("감지된 대형주 급등락 없음");
-  }
-
-  lines.push("", "━━━━━━━━━━━━━━━", "🏆 *상승률 TOP30*");
   top30.forEach((row) => {
     const theme = detectThemeForRow(row, newsMap.get(row.code || row.name) || []);
     const themeSuffix = theme ? ` ${theme.emoji}${mdText(theme.name)}` : "";
     const base = `${row.rank}위 ${mdText(row.name)} *${fmtPct(row.rate, 1)}*`;
-    lines.push(row.rank <= 10 ? `${base} ${formatWon(row.price)}${themeSuffix}` : `${base}${themeSuffix}`);
+    lines.push(`${base} ${formatWon(row.price)}${themeSuffix}`);
   });
   lines.push("", "━━━━━━━━━━━━━━━", `🔗 ${SITE_URL}/live-report.html`);
   return lines.join("\n");
@@ -606,7 +613,7 @@ async function main() {
 
   const rssPool = await fetchRssNewsPool();
   const newsMap = await fetchNewsForRows(rankings.slice(0, 10), rssPool);
-  const themes = buildThemeSummary(rankings, newsMap);
+  const themes = buildThemeSummary(rankings, rssPool);
   const bluechipMovers = await fetchBluechipMovers(token, appKey, appSecret);
   const bluechipNewsMap = await fetchNewsForRows(bluechipMovers, rssPool);
 
@@ -637,7 +644,7 @@ async function main() {
     aiAnalysis,
     top10,
     top30,
-    themes: themes.map((theme) => ({ name: theme.name, emoji: theme.emoji, stocks: theme.rows })),
+    themes: themes.map((theme) => ({ name: theme.name, emoji: theme.emoji, stocks: theme.rows, news: theme.news })),
     bluechipMovers: bluechipMovers.map((row) => ({
       name: row.name,
       code: row.code,
@@ -649,7 +656,7 @@ async function main() {
   };
 
   await sendTelegramMessage(
-    buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap, themes, bluechipMovers, bluechipNewsMap })
+    buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap })
   );
   await writeLiveReport({ date: ymd, ...payload });
   gitCommitAndPush(time);

@@ -244,8 +244,8 @@
           <div id="live-tabs" class="live-tabs" role="tablist" aria-label="라이브 리포트 시간대"></div>
         </section>
 
-        <section aria-labelledby="live-sec-top10">
-          <h2 class="live-section__title" id="live-sec-top10">④ 상승률 TOP10</h2>
+        <section aria-labelledby="live-sec-top30">
+          <h2 class="live-section__title" id="live-sec-top30">④ 상승률 TOP30</h2>
           <div class="live-card live-table-card">
             <table class="live-table">
               <thead>
@@ -256,7 +256,7 @@
                   <th class="num">등락률</th>
                 </tr>
               </thead>
-              <tbody id="live-top10"></tbody>
+              <tbody id="live-top30"></tbody>
             </table>
           </div>
         </section>
@@ -347,13 +347,17 @@
           if (!selected) {
             $("live-report-time").textContent = "-";
             $("live-analysis").textContent = "아직 생성된 라이브 리포트가 없습니다.";
-            $("live-top10").innerHTML = '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
+            $("live-top30").innerHTML = '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
             return;
           }
           $("live-report-time").textContent = `${selected.time} 리포트`;
           $("live-analysis").textContent = selected.aiAnalysis || "AI 분석 준비 중입니다.";
-          const rows = Array.isArray(selected.top10) ? selected.top10.slice(0, 10) : [];
-          $("live-top10").innerHTML = rows.length
+          const rows = Array.isArray(selected.top30)
+            ? selected.top30.slice(0, 30)
+            : Array.isArray(selected.top10)
+              ? selected.top10.slice(0, 30)
+              : [];
+          $("live-top30").innerHTML = rows.length
             ? rows.map((row) => `<tr>
               <td class="num">${escapeHtml(row.rank || "")}</td>
               <td>${escapeHtml(row.name || row.code || "-")}</td>

@@ -22,11 +22,7 @@ const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-const NEWS_RSS_SOURCES = [
-  "https://www.mk.co.kr/rss/30100041/",
-  "https://rss.hankyung.com/stock.xml",
-  "https://rss.hankyung.com/finance.xml",
-];
+const NAVER_SEARCH_RSS_URL = "https://search.naver.com/rss";
 const BLUECHIP_LIST = [
   "삼성전자",
   "SK하이닉스",
@@ -100,6 +96,16 @@ const THEME_EMOJI = {
   원전: "⚛️",
   로봇: "🤖",
   스페이스X: "🚀",
+};
+const THEME_SEARCH = {
+  우주항공: "스페이스X 상장 우주항공 주식",
+  AI반도체: "AI 반도체 엔비디아 주식",
+  "2차전지": "2차전지 배터리 주식",
+  바이오: "바이오 임상 신약 주식",
+  방산: "방산 수출 주식",
+  원전: "원전 SMR 주식",
+  로봇: "로봇 자동화 주식",
+  스페이스X: "스페이스X 상장 우주항공 주식",
 };
 
 function sleep(ms) {
@@ -334,63 +340,45 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
   return movers;
 }
 
-async function fetchNaverFinanceNews(code) {
-  if (!code) return [];
-  const url = `https://finance.naver.com/item/news_news.naver?code=${encodeURIComponent(code)}&page=1`;
+function parseRssTitles(xml, limit = 3) {
+  const titles = [];
+  const itemRe = /<item\b[\s\S]*?<\/item>/g;
+  const titleRe = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
+  let match;
+  while ((match = itemRe.exec(xml)) !== null) {
+    const title = match[0].match(titleRe)?.[1];
+    if (title) titles.push(title);
+  }
+  return uniqueTitles(titles, limit);
+}
+
+async function fetchNaverSearchNews(query, limit = 3) {
+  if (!query) return [];
+  const url = new URL(NAVER_SEARCH_RSS_URL);
+  url.searchParams.set("where", "news");
+  url.searchParams.set("query", query);
+  url.searchParams.set("sort", "1");
+  url.searchParams.set("pd", "1");
   try {
-    const res = await fetch(url, {
+    const res = await fetch(url.toString(), {
       headers: {
         "User-Agent": USER_AGENT,
         "Accept-Language": "ko,en;q=0.9",
       },
     });
     if (!res.ok) return [];
-    const html = new TextDecoder("euc-kr").decode(Buffer.from(await res.arrayBuffer()));
-    const titles = [];
-    const titleAttr = /title=["']([^"']+)["']/g;
-    let match;
-    while ((match = titleAttr.exec(html)) !== null) titles.push(match[1]);
-    const anchorText = /<a[^>]+href=["'][^"']*news_read\.naver[^"']*["'][^>]*>([\s\S]*?)<\/a>/g;
-    while ((match = anchorText.exec(html)) !== null) titles.push(match[1]);
-    return uniqueTitles(titles, 3);
+    const xml = await res.text();
+    return parseRssTitles(xml, limit);
   } catch (_) {
     return [];
   }
 }
 
-async function fetchRssNewsPool() {
-  const items = [];
-  for (const url of NEWS_RSS_SOURCES) {
-    try {
-      const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-      if (!res.ok) continue;
-      const xml = await res.text();
-      const itemRe = /<item\b[\s\S]*?<\/item>/g;
-      const titleRe = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
-      let match;
-      while ((match = itemRe.exec(xml)) !== null) {
-        const title = match[0].match(titleRe)?.[1];
-        if (title) items.push(stripHtml(title));
-      }
-    } catch (_) {
-      // RSS is an optional enrichment source.
-    }
-  }
-  return uniqueTitles(items, 120);
-}
-
-function rssTitlesForStock(pool, name, limit = 3) {
-  if (!name) return [];
-  return uniqueTitles(pool.filter((title) => title.includes(name)), limit);
-}
-
-async function fetchNewsForRows(rows, rssPool) {
+async function fetchNewsForRows(rows) {
   const settled = await Promise.allSettled(
     rows.map(async (row) => {
-      const titles = [
-        ...(await fetchNaverFinanceNews(row.code)),
-        ...rssTitlesForStock(rssPool, row.name, 3),
-      ];
+      let titles = await fetchNaverSearchNews(`${row.name} 주식`, 3);
+      if (!titles.length) titles = await fetchNaverSearchNews(row.name, 3);
       return [row.code || row.name, uniqueTitles(titles, 3)];
     })
   );
@@ -426,15 +414,8 @@ function detectThemeForRow(row) {
   return null;
 }
 
-function rssTitlesForTheme(pool, theme, stocks, limit = 3) {
-  return uniqueTitles(
-    pool.filter((title) => title.includes(theme) || stocks.some((stock) => title.includes(stock))),
-    limit
-  );
-}
-
-function buildThemeSummary(rows, rssPool) {
-  return Object.entries(THEME_KEYWORDS)
+async function buildThemeSummary(rows) {
+  const detected = Object.entries(THEME_KEYWORDS)
     .map(([name, stocks]) => {
       const matched = rows.filter((row) => {
         const rowName = String(row.name || "");
@@ -444,11 +425,22 @@ function buildThemeSummary(rows, rssPool) {
         name,
         emoji: THEME_EMOJI[name] || "📌",
         rows: matched.map((row) => row.name),
-        news: rssTitlesForTheme(rssPool, name, stocks, 3),
+        searchQuery: THEME_SEARCH[name] || `${name} 주식`,
+        news: [],
       };
     })
     .filter((theme) => theme.rows.length >= 3)
     .slice(0, 6);
+
+  const settled = await Promise.allSettled(
+    detected.map(async (theme) => ({
+      ...theme,
+      news: await fetchNaverSearchNews(theme.searchQuery, 3),
+    }))
+  );
+  return settled.map((result, index) =>
+    result.status === "fulfilled" ? result.value : detected[index]
+  );
 }
 
 function themeText(themes) {
@@ -456,7 +448,8 @@ function themeText(themes) {
   return themes
     .map((theme) => {
       const newsLines = theme.news.length ? `\n   📰 ${theme.news.join("\n   📰 ")}` : "";
-      return `${theme.emoji} ${theme.name}: ${theme.rows.slice(0, 8).join(", ")}${newsLines}`;
+      const label = theme.name === "우주항공" || theme.name === "스페이스X" ? "우주항공/스페이스X" : theme.name;
+      return `${theme.emoji} ${label}: ${theme.rows.slice(0, 8).join(", ")}${newsLines}`;
     })
     .join("\n");
 }
@@ -498,16 +491,18 @@ async function runClaude({ apiKey, time, kospi, kosdaq, top30, newsMap, themes, 
 === 상승률 TOP30 ===
 ${topRowsText(top30)}
 
-=== TOP10 종목별 관련 뉴스 ===
+=== TOP10 종목별 실시간 뉴스 ===
 ${newsText(newsMap, top30.slice(0, 10))}
 
-=== 오늘 감지된 테마 ===
+=== 오늘 핫 테마 뉴스 ===
 ${themeText(themes)}
 
 === 대형주 특징주 ===
 ${bluechipText(bluechipMovers, bluechipNewsMap)}
 
-위 데이터를 바탕으로:
+위 실제 뉴스를 반드시 인용해서 왜 이 종목들이 오르는지 설명해주세요.
+
+위 실제 뉴스와 데이터를 바탕으로:
 1. 🎙️ 현재 장세 총평 (3줄, 야구중계 스타일)
 2. 🔥 오늘의 핵심 테마와 이유 (뉴스 근거)
 3. ⚡ 특징주 분석 (대형주 급등락 이유)
@@ -611,11 +606,10 @@ async function main() {
 
   if (!rankings.length) throw new Error("상승률 TOP30 데이터가 비어 있습니다.");
 
-  const rssPool = await fetchRssNewsPool();
-  const newsMap = await fetchNewsForRows(rankings.slice(0, 10), rssPool);
-  const themes = buildThemeSummary(rankings, rssPool);
+  const newsMap = await fetchNewsForRows(rankings.slice(0, 10));
+  const themes = await buildThemeSummary(rankings);
   const bluechipMovers = await fetchBluechipMovers(token, appKey, appSecret);
-  const bluechipNewsMap = await fetchNewsForRows(bluechipMovers, rssPool);
+  const bluechipNewsMap = await fetchNewsForRows(bluechipMovers);
 
   const aiAnalysis = await runClaude({
     apiKey: anthropicKey,

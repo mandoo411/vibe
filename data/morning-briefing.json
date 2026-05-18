@@ -1,96 +1,96 @@
 {
-  "updatedAt": "2026-05-18T06:00:00+09:00",
+  "updatedAt": "2026-05-19T06:00:00+09:00",
   "usMarket": {
     "indices": [
       {
         "id": "nasdaq",
         "name": "나스닥",
         "symbol": ".NDX",
-        "close": 29125.2,
-        "previousClose": 29580.3,
-        "changePct": -1.54,
-        "changePoints": -455.1
+        "close": 28994.37,
+        "previousClose": 29125.2,
+        "changePct": -0.45,
+        "changePoints": -130.83
       },
       {
         "id": "sp500",
         "name": "S&P 500",
         "symbol": ".SPX",
-        "close": 7408.5,
-        "previousClose": 7501.24,
-        "changePct": -1.24,
-        "changePoints": -92.74
+        "close": 7403.05,
+        "previousClose": 7408.5,
+        "changePct": -0.07,
+        "changePoints": -5.45
       },
       {
         "id": "nasdaq-futures",
         "name": "나스닥선물",
         "symbol": "@ND.1",
-        "close": 29258.5,
-        "previousClose": 29231.75,
-        "changePct": 0.09,
-        "changePoints": 26.75
+        "close": 29150.25,
+        "previousClose": 29096,
+        "changePct": 0.19,
+        "changePoints": 54.25
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 300.23,
-      "changePct": 0.68,
-      "changePoints": 2.02
+      "price": 297.55,
+      "changePct": -0.89,
+      "changePoints": 2.68
     },
     {
       "symbol": "MSFT",
-      "price": 421.92,
-      "changePct": 3.05,
-      "changePoints": 12.49
+      "price": 423.3,
+      "changePct": 0.33,
+      "changePoints": 1.38
     },
     {
       "symbol": "NVDA",
-      "price": 225.32,
-      "changePct": -4.42,
-      "changePoints": 10.42
+      "price": 223.63,
+      "changePct": -0.75,
+      "changePoints": 1.69
     },
     {
       "symbol": "AMZN",
-      "price": 264.14,
-      "changePct": -1.15,
-      "changePoints": 3.08
+      "price": 265.01,
+      "changePct": 0.33,
+      "changePoints": 0.87
     },
     {
       "symbol": "META",
-      "price": 614.23,
-      "changePct": -0.68,
-      "changePoints": 4.2
+      "price": 611.49,
+      "changePct": -0.45,
+      "changePoints": 2.74
     },
     {
       "symbol": "TSLA",
-      "price": 422.24,
-      "changePct": -4.75,
-      "changePoints": 21.06
+      "price": 410.62,
+      "changePct": -2.75,
+      "changePoints": 11.62
     },
     {
       "symbol": "GOOGL",
-      "price": 396.78,
-      "changePct": -1.07,
-      "changePoints": 4.29
+      "price": 399.45,
+      "changePct": 0.67,
+      "changePoints": 2.67
     },
     {
       "symbol": "AMD",
-      "price": 424.1,
-      "changePct": -5.69,
-      "changePoints": 25.6
+      "price": 423.75,
+      "changePct": -0.08,
+      "changePoints": 0.35
     },
     {
       "symbol": "PLTR",
-      "price": 133.99,
-      "changePct": 0.19,
-      "changePoints": 0.26
+      "price": 134.69,
+      "changePct": 0.52,
+      "changePoints": 0.7
     },
     {
       "symbol": "COIN",
-      "price": 195.43,
-      "changePct": -7.82,
-      "changePoints": 16.58
+      "price": 189.89,
+      "changePct": -2.83,
+      "changePoints": 5.54
     }
   ],
   "sectors": [
@@ -98,114 +98,114 @@
       "symbol": "XLK",
       "sector": "기술",
       "name": "기술 (XLK)",
-      "price": 176.26,
-      "changePct": 0.42
+      "price": 174.36,
+      "changePct": -1.98
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
-      "price": 51.1,
-      "changePct": -0.27
+      "price": 51.74,
+      "changePct": 1.09
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
-      "price": 59.44,
-      "changePct": 6.71
+      "price": 60.58,
+      "changePct": 5.96
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
-      "price": 145.1,
-      "changePct": 1.12
+      "price": 145.72,
+      "changePct": 1.87
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
-      "price": 171.4,
-      "changePct": -1.04
+      "price": 170.75,
+      "changePct": -2.45
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
-      "price": 116.53,
-      "changePct": -3.05
+      "price": 116.32,
+      "changePct": -2.56
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
-      "price": 84.64,
-      "changePct": 0.55
+      "price": 85.9,
+      "changePct": 3.03
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
-      "price": 43.87,
-      "changePct": -1.9
+      "price": 43.94,
+      "changePct": -2.66
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
-      "price": 50.3,
-      "changePct": -2.5
+      "price": 50.22,
+      "changePct": -3.9
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
-      "price": 43.23,
-      "changePct": -2.66
+      "price": 43.75,
+      "changePct": -1.84
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1497.84,
-      "USD/JPY": 158.61,
-      "USD/CNY": 6.83,
+      "USD/KRW": 1497.53,
+      "USD/JPY": 158.76,
+      "USD/CNY": 6.82,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Sun, 17 May 2026 00:02:31 +0000",
+    "updatedAt": "Mon, 18 May 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 102.32,
-        "changePct": 0.14,
-        "changePoints": 0.14
+        "price": 102.49,
+        "changePct": 1.46,
+        "changePoints": 1.47
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4555,
-        "changePct": -2.62,
-        "changePoints": -122.6
+        "price": 4577.9,
+        "changePct": -2.55,
+        "changePoints": -119.8
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 77.04,
-        "changePct": -9.5,
-        "changePoints": -8.09
+        "price": 78.56,
+        "changePct": -11.62,
+        "changePoints": -10.33
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.3,
-        "changePct": -2.93,
-        "changePoints": -0.19
+        "price": 6.34,
+        "changePct": -4.52,
+        "changePoints": -0.3
       }
     ]
   },
@@ -214,159 +214,159 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 77859,
-        "changePct24h": -0.41,
-        "marketCapUsd": 1559585265419.38
+        "priceUsd": 77069,
+        "changePct24h": -1.11,
+        "marketCapUsd": 1542769390868.43
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2176.5,
-        "changePct24h": -0.16,
-        "marketCapUsd": 262670047863.57
+        "priceUsd": 2136.51,
+        "changePct24h": -1.85,
+        "marketCapUsd": 257564194220.6
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 86.08,
-        "changePct24h": -0.54,
-        "marketCapUsd": 49783703119.44
+        "priceUsd": 85.47,
+        "changePct24h": -0.78,
+        "marketCapUsd": 49346663911.33
       }
     ]
   },
   "news": [
     {
-      "title": "작년 증권사 해외법인 순익 2.7억달러→4.5억달러",
-      "url": "https://www.asiae.co.kr/article/2026051714113229394",
+      "title": "“삼성전자 1인당 평균 급여 1200만원이라는데…”",
+      "url": "https://www.mk.co.kr/news/business/12051324",
+      "source": "매일경제",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "\"코스피 1만 시대 생존전략, 주도주를 사라\"",
+      "url": "https://www.asiae.co.kr/article/2026051817012383567",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-05-17T21:00:00.000Z"
+      "publishedAt": "2026-05-18T21:00:00.000Z"
     },
     {
-      "title": "‘순살 GTX 삼성역’ 철판 덧댄다지만…책임놓고 정치권도 참전",
-      "url": "https://www.mk.co.kr/news/realestate/12050550",
+      "title": "[클릭 e종목]\"삼성화재, 보험업 내 '방어주' 입증…목표가 상향\"",
+      "url": "https://www.asiae.co.kr/article/2026051816520632810",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "[클릭 e종목]미래에셋증권, 적극적 투자와 해외법인 시너지 기대↑",
+      "url": "https://www.asiae.co.kr/article/2026051816264325124",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "[클릭 e종목]\"두산테스나, 내년 영업익 158% 성장 전망…목표가↑\"",
+      "url": "https://www.asiae.co.kr/article/2026051816244318921",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "[클릭 e종목]다음달 상장 스페이스X, 상장 이후 주목할 점은?",
+      "url": "https://www.asiae.co.kr/article/2026051816023899806",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "[클릭 e종목]저평가·배당주지만 수익이 아쉬운 ○○종목",
+      "url": "https://www.asiae.co.kr/article/2026051815110584800",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "[클릭 e종목]\"녹록지 않은 사업환경\"…목표가 1.5만→1.3만원으로 내린 이 종목",
+      "url": "https://www.asiae.co.kr/article/2026051815083565484",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T21:00:00.000Z"
+    },
+    {
+      "title": "“반도체 없는데 주식 이야기, 스트레스네요”…로봇·바이오는 주저앉았다",
+      "url": "https://www.mk.co.kr/news/stock/12051629",
       "source": "매일경제",
-      "publishedAt": "2026-05-17T20:39:48.000Z"
+      "publishedAt": "2026-05-18T20:56:22.000Z"
     },
     {
-      "title": "“출근하면서 100만원 벌었습니다”…‘단타개미’ 역대급이라는데",
-      "url": "https://www.mk.co.kr/news/stock/12050549",
+      "title": "美中 ‘관리된 안정’ 시대 돌입 ... “엔비디아 칩 풀리면 SK하이닉스에 호재”",
+      "url": "https://www.mk.co.kr/news/business/12051204",
       "source": "매일경제",
-      "publishedAt": "2026-05-17T20:38:56.000Z"
+      "publishedAt": "2026-05-18T19:00:00.000Z"
     },
     {
-      "title": "“코스피 아직 싸다” … 정부가 꺼내든 PBR 읽는 법 [주린이 ABC]",
-      "url": "https://www.mk.co.kr/news/stock/12050477",
+      "title": "카카오 노사 조정 연장…본사 첫 파업 불씨 여전",
+      "url": "https://www.mk.co.kr/news/business/12051523",
       "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
+      "publishedAt": "2026-05-18T14:01:28.000Z"
     },
     {
-      "title": "“외국인은 공매도, 개미는 풀매수”…21일 젠슨황 입에 달린 코스피",
-      "url": "https://www.mk.co.kr/news/stock/12050402",
+      "title": "“삼성전자 없애겠다니 너희가 깡패냐?”…내부서도 노조 비판 여론 확산",
+      "url": "https://www.mk.co.kr/news/business/12051501",
       "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
+      "publishedAt": "2026-05-18T13:43:50.000Z"
     },
     {
-      "title": "미중 ‘이란-대만’ 빅딜 가능성 ... 한국 증시 수혜 종목은?",
-      "url": "https://www.mk.co.kr/news/stock/12050309",
+      "title": "[속보] 카카오 지노위 조정 연장…사상 최초 본사 파업 위기 일단은 넘겼다",
+      "url": "https://www.mk.co.kr/news/business/12051484",
       "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
+      "publishedAt": "2026-05-18T13:16:32.000Z"
     },
     {
-      "title": "삼성노조 “회사 없애버려야.. 분사도 각오”",
-      "url": "https://www.mk.co.kr/news/business/12050539",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T15:30:36.000Z"
+      "title": "코스닥 상장사 '한국유니온제약', 유상증자… 부광약품에 제3자 배정",
+      "url": "https://www.asiae.co.kr/article/2026051820130437641",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T11:13:04.000Z"
     },
     {
-      "title": "두둑한 상여에 … 반도체 근로자 올초月2500만원씩 받았다",
-      "url": "https://www.mk.co.kr/news/economy/12050440",
+      "title": "“WGBI 편입 결정 후...외국인 채권자금, 환율 여파 커졌다”",
+      "url": "https://www.asiae.co.kr/article/2026051818023686339",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-05-18T09:02:36.000Z"
+    },
+    {
+      "title": "[단독] SK실트론 인수 앞둔 두산에 産銀, 2조5000억 금융 주선",
+      "url": "https://www.mk.co.kr/news/economy/12051263",
       "source": "매일경제 증권",
-      "publishedAt": "2026-05-17T08:48:54.000Z"
+      "publishedAt": "2026-05-18T08:52:31.000Z"
+    },
+    {
+      "title": "[단독] “삼성전자 총파업, 최악땐 성장률 0.5%p 하락”…靑, 한은 긴급보고서 분석",
+      "url": "https://www.mk.co.kr/news/politics/12051206",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-05-18T08:39:49.000Z"
+    },
+    {
+      "title": "[포토] 일자리 지원 나선 하나금융",
+      "url": "https://www.mk.co.kr/news/economy/12051149",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-05-18T08:32:45.000Z"
     },
     {
       "title": "[표] 외국환율고시표",
-      "url": "https://www.mk.co.kr/news/economy/12050421",
+      "url": "https://www.mk.co.kr/news/economy/12051150",
       "source": "매일경제 증권",
-      "publishedAt": "2026-05-17T08:44:52.000Z"
+      "publishedAt": "2026-05-18T08:32:45.000Z"
     },
     {
-      "title": "韓 국고채 금리 껑충…영끌족 부담 커질듯",
-      "url": "https://www.mk.co.kr/news/economy/12050417",
+      "title": "은행·카드·증권·보험 통합 '신한 슈퍼SOL' 앱 내달 출시",
+      "url": "https://www.mk.co.kr/news/economy/12051147",
       "source": "매일경제 증권",
-      "publishedAt": "2026-05-17T08:44:50.000Z"
-    },
-    {
-      "title": "금융고민 해결… 우리銀 상담센터 신설",
-      "url": "https://www.mk.co.kr/news/economy/12050418",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-05-17T08:44:50.000Z"
-    },
-    {
-      "title": "\"대기업·상용직 고용만 늘어…K자형 양극화 구조 고착화\"",
-      "url": "https://www.mk.co.kr/news/economy/12050346",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-05-17T08:16:24.000Z"
-    },
-    {
-      "title": "“마통 풀베팅, 강제청산 엔딩”…전쟁때보다 반대매매 더 늘었다",
-      "url": "https://www.mk.co.kr/news/stock/12050552",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T20:45:05.000Z"
-    },
-    {
-      "title": "SNS서 정청래 테러모의…민주당, 경찰에 수사의뢰·신변보호 요청",
-      "url": "https://www.mk.co.kr/news/politics/12050551",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T20:40:13.000Z"
-    },
-    {
-      "title": "“최소 8억은 번다”는 재건축 대장주…일단 37억 있어야 한답니다",
-      "url": "https://www.mk.co.kr/news/realestate/12050548",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T20:38:14.000Z"
-    },
-    {
-      "title": "“13억 청약 불안한데요”…그 ‘올파포’ 지금 30억입니다",
-      "url": "https://www.mk.co.kr/news/realestate/12050375",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
-    },
-    {
-      "title": "“이제 유가 말고 정제마진 보세요”…월가가 정유주 베팅하는 이유",
-      "url": "https://www.mk.co.kr/news/stock/12050300",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
-    },
-    {
-      "title": "일반고 자사고 전사고 ... 그래서 고등학교 어디 가라는 건데?",
-      "url": "https://www.mk.co.kr/news/society/12050237",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
-    },
-    {
-      "title": "“이보다 편할 수 없다” 입소문 하나로 1000억 찍은 토종신발",
-      "url": "https://www.mk.co.kr/news/business/12050316",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T19:00:00.000Z"
-    },
-    {
-      "title": "\"한미 팩트시트 충실이행 노력\"",
-      "url": "https://www.mk.co.kr/news/politics/12050538",
-      "source": "매일경제",
-      "publishedAt": "2026-05-17T15:25:14.000Z"
+      "publishedAt": "2026-05-18T08:32:44.000Z"
     }
   ],
   "aiAnalysis": {
     "keyIssues": [
-      "미국 증시 혼조 속 에너지 섹터 급등(+6.71%), 반도체·암호화폐 관련주는 큰 폭 하락(NVDA -4.42%, AMD -5.69%, COIN -7.82%)",
-      "원/달러 환율 1,497원대 상승, 국고채 금리 상승으로 '영끌족' 금융부담 증가 우려 부각",
-      "21일 엔비디아 CEO 젠슨 황 발표 앞두고 시장 관망세, 외국인 공매도와 개인투자자 매수 대립 구도"
+      "삼성전자 총파업 우려 지속 - 최악 시 성장률 0.5%p 하락 가능성 보고",
+      "미중 관계 안정 기대감 - 엔비디아 칩 공급 정상화 시 SK하이닉스 수혜 전망",
+      "에너지 섹터 급등(+5.96%) vs 소재(-3.9%)·기술(-1.98%) 섹터 약세"
     ],
-    "domesticImpact": "미국 증시의 혼조 흐름과 나스닥 선물의 소폭 반등(+0.09%)이 국내 증시 방향성에 영향을 줄 전망입니다. WTI 유가 소폭 상승(+0.14%)과 에너지 섹터 강세는 국내 정유주에 긍정적 요인이나, 반도체주는 NVDA·AMD 급락으로 압박받을 수 있습니다. 환율 상승과 금리 상승은 수출주에 일부 호재지만 내수·금융주에는 부담 요인이며, 21일 젠슨 황 발표를 앞두고 단기 변동성이 클 것으로 예상됩니다.",
+    "domesticImpact": "삼성전자 총파업 이슈가 국내 증시 최대 리스크 요인으로 부각되고 있으며, 청와대가 긴급 경제영향 분석을 진행 중입니다. 다만 미중 관계 개선 기대감과 엔비디아 칩 공급 정상화 전망은 SK하이닉스 등 반도체 관련주에 긍정적 요인이 될 수 있습니다. 나스닥 선물이 0.19% 상승 전환한 가운데 원달러 환율은 1497원대로 상승했으며, WTI유가 1.46% 상승은 정유·화학주에 영향을 줄 것으로 보입니다. 금융주는 방어적 수요가 예상되나 삼성전자 이슈로 인한 전반적 투심 위축 가능성을 경계해야 합니다.",
     "watchSectors": [
-      "에너지·정유: 유가 안정 속 정제마진 개선 기대감, 다만 국제 유가 변동성 점검 필요",
-      "반도체: 미국 반도체주 급락 영향 불가피, 엔비디아 CEO 발표 결과에 따라 방향성 갈릴 가능성",
-      "금융·부동산: 금리 상승과 원/달러 환율 상승으로 은행주 순이자마진 개선 여지 있으나 대출 부담 증가 리스크 공존"
+      "반도체 - SK하이닉스(미중 관계 개선 기대) vs 삼성전자(파업 리스크)",
+      "금융·보험 - 삼성화재, 미래에셋증권 등 방어주 수요 집중 전망",
+      "에너지·정유 - WTI유가 상승(+1.46%)에 따른 정유·화학주 모멘텀"
     ]
   },
   "errors": []

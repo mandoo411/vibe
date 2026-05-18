@@ -3,6 +3,8 @@
 import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import Anthropic from "@anthropic-ai/sdk";
+import { TelegramClient } from "telegram";
+import { StringSession } from "telegram/sessions/index.js";
 import {
   fmtNumber,
   fmtPct,
@@ -20,9 +22,81 @@ const DATA_PATH = process.env.LIVE_REPORT_PATH || "data/live-report.json";
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
 const KIS_GAP_MS = Math.max(0, Number(process.env.KIS_API_GAP_MS) || 700);
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
-const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-const NAVER_SEARCH_RSS_URL = "https://search.naver.com/rss";
+const CHANNEL_LIMIT = 50;
+const MSG_PER_CHANNEL = 10;
+const TOTAL_TIMEOUT = 60000;
+const PRIORITY_KEYWORDS = [
+  "주식",
+  "증시",
+  "코스피",
+  "코스닥",
+  "크립토",
+  "비트",
+  "코인",
+  "뉴스",
+  "경제",
+  "투자",
+  "stock",
+  "crypto",
+  "news",
+  "시황",
+  "매매",
+  "트레이딩",
+  "선물",
+  "옵션",
+];
+const STOCK_KEYWORDS = [
+  "주식",
+  "증시",
+  "코스피",
+  "코스닥",
+  "상한가",
+  "하한가",
+  "급등",
+  "급락",
+  "매수",
+  "매도",
+  "수급",
+  "외국인",
+  "기관",
+  "테마",
+  "섹터",
+  "실적",
+  "어닝",
+  "배당",
+  "공모",
+  "상장",
+  "IPO",
+  "반도체",
+  "AI",
+  "인공지능",
+  "2차전지",
+  "배터리",
+  "바이오",
+  "방산",
+  "스페이스X",
+  "SpaceX",
+  "우주",
+  "위성",
+  "원전",
+  "SMR",
+  "로봇",
+  "조선",
+  "금리",
+  "환율",
+  "달러",
+  "유가",
+  "금값",
+  "원자재",
+  "비트코인",
+  "이더리움",
+  "크립토",
+  "암호화폐",
+  "%",
+  "상승",
+  "하락",
+  "급반등",
+];
 const BLUECHIP_LIST = [
   "삼성전자",
   "SK하이닉스",
@@ -78,35 +152,16 @@ const BLUECHIP_CODES = {
   KT: "030200",
 };
 const THEME_KEYWORDS = {
-  우주항공: ["한화에어로스페이스", "AP위성", "켄코아에어로스페이스", "비투엔", "쎄트렉아이", "인텔리안테크", "AP우주항공"],
-  AI반도체: ["삼성전자", "SK하이닉스", "한미반도체", "리노공업", "HPSP", "이수페타시스"],
-  "2차전지": ["에코프로", "에코프로비엠", "포스코퓨처엠", "삼성SDI", "LG에너지솔루션", "엘앤에프"],
-  바이오: ["삼성바이오로직스", "셀트리온", "유한양행", "한미약품", "레고켐바이오"],
-  방산: ["한화에어로스페이스", "현대로템", "LIG넥스원", "한국항공우주"],
-  원전: ["두산에너빌리티", "한전기술", "비에이치아이", "우리기술"],
-  로봇: ["레인보우로보틱스", "HD현대", "두산로보틱스"],
-  스페이스X: ["AP위성", "켄코아에어로스페이스", "쎄트렉아이", "이노스페이스", "AP우주항공"],
+  "🚀 스페이스X/우주항공": ["스페이스X", "SpaceX", "우주항공", "위성", "발사체", "누리호", "이노스페이스", "우주"],
+  "💾 AI/반도체": ["AI", "인공지능", "반도체", "HBM", "엔비디아", "NVIDIA", "파운드리", "칩"],
+  "🔋 2차전지": ["2차전지", "배터리", "리튬", "양극재", "음극재", "전고체"],
+  "💊 바이오": ["임상", "신약", "FDA", "허가", "바이오시밀러", "항암"],
+  "🛡️ 방산": ["방산", "무기", "수출", "K방산", "미사일", "전투기"],
+  "⚛️ 원전": ["원전", "SMR", "핵연료", "원자력"],
+  "🤖 로봇": ["로봇", "자동화", "협동로봇", "휴머노이드"],
+  "🚢 조선": ["조선", "LNG선", "수주", "HD현대중공업"],
 };
-const THEME_EMOJI = {
-  우주항공: "🚀",
-  AI반도체: "💾",
-  "2차전지": "🔋",
-  바이오: "💊",
-  방산: "🛡️",
-  원전: "⚛️",
-  로봇: "🤖",
-  스페이스X: "🚀",
-};
-const THEME_SEARCH = {
-  우주항공: "스페이스X 상장 우주항공 주식",
-  AI반도체: "AI 반도체 엔비디아 주식",
-  "2차전지": "2차전지 배터리 주식",
-  바이오: "바이오 임상 신약 주식",
-  방산: "방산 수출 주식",
-  원전: "원전 SMR 주식",
-  로봇: "로봇 자동화 주식",
-  스페이스X: "스페이스X 상장 우주항공 주식",
-};
+const BLUECHIP_THRESHOLD = 3.0;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -326,7 +381,7 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
     const code = BLUECHIP_CODES[name];
     if (!code) continue;
     const quote = await fetchStockQuote(code, name, token, appKey, appSecret);
-    if (!quote || Math.abs(quote.rate || 0) < 3) continue;
+    if (!quote || Math.abs(quote.rate || 0) < BLUECHIP_THRESHOLD) continue;
     const abs = Math.abs(quote.rate);
     const type =
       quote.rate >= 5
@@ -340,53 +395,141 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
   return movers;
 }
 
-function parseRssTitles(xml, limit = 3) {
-  const titles = [];
-  const itemRe = /<item\b[\s\S]*?<\/item>/g;
-  const titleRe = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
-  let match;
-  while ((match = itemRe.exec(xml)) !== null) {
-    const title = match[0].match(titleRe)?.[1];
-    if (title) titles.push(title);
-  }
-  return uniqueTitles(titles, limit);
+function compactText(value, limit = 150) {
+  const clean = stripHtml(value).replace(/\s+/g, " ").trim();
+  if (clean.length <= limit) return clean;
+  return `${clean.slice(0, limit - 1)}…`;
 }
 
-async function fetchNaverSearchNews(query, limit = 3) {
-  if (!query) return [];
-  const url = new URL(NAVER_SEARCH_RSS_URL);
-  url.searchParams.set("where", "news");
-  url.searchParams.set("query", query);
-  url.searchParams.set("sort", "1");
-  url.searchParams.set("pd", "1");
+async function withTimeout(promise, ms, label, onTimeout = () => {}) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      onTimeout();
+      reject(new Error(`${label} timeout ${ms}ms`));
+    }, ms);
+  });
   try {
-    const res = await fetch(url.toString(), {
-      headers: {
-        "User-Agent": USER_AGENT,
-        "Accept-Language": "ko,en;q=0.9",
-      },
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
-    return parseRssTitles(xml, limit);
-  } catch (_) {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function collectTelegramMessages() {
+  const session = process.env.TELEGRAM_SESSION;
+  const apiId = Number.parseInt(process.env.TELEGRAM_API_ID || "", 10);
+  const apiHash = process.env.TELEGRAM_API_HASH;
+  if (!session || !apiId || !apiHash) {
+    console.log("텔레그램 세션 환경변수가 없어 채널 메시지 수집을 건너뜁니다.");
     return [];
   }
+
+  const client = new TelegramClient(new StringSession(session), apiId, apiHash, { connectionRetries: 3 });
+  return withTimeout(
+    (async () => {
+      try {
+        await client.connect();
+        const dialogs = await client.getDialogs({});
+        const allChannels = dialogs.filter((dialog) => dialog.isChannel || dialog.isGroup);
+        const priorityChannels = allChannels.filter((dialog) => {
+          const name = String(dialog.name || "").toLowerCase();
+          return PRIORITY_KEYWORDS.some((keyword) => name.includes(keyword.toLowerCase()));
+        });
+        const prioritySet = new Set(priorityChannels);
+        const otherChannels = allChannels.filter((dialog) => !prioritySet.has(dialog));
+        const channels = [...priorityChannels, ...otherChannels].slice(0, CHANNEL_LIMIT);
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+        console.log(`총 ${channels.length}개 채널 처리 시작`);
+        console.log(`우선순위 채널: ${priorityChannels.length}개`);
+
+        const results = await Promise.allSettled(
+          channels.map(async (channel) => {
+            try {
+              const messages = await client.getMessages(channel.entity, { limit: MSG_PER_CHANNEL });
+              return messages
+                .filter((msg) => msg.message && new Date(Number(msg.date) * 1000) >= twoHoursAgo)
+                .map((msg) => ({
+                  channel: channel.name || "unknown",
+                  text: stripHtml(msg.message),
+                  date: new Date(Number(msg.date) * 1000),
+                }));
+            } catch (error) {
+              console.log(`채널 읽기 실패: ${channel.name || "unknown"} - ${error.message}`);
+              return [];
+            }
+          })
+        );
+
+        const allMessages = results
+          .filter((result) => result.status === "fulfilled")
+          .flatMap((result) => result.value)
+          .filter((message) => message.text)
+          .sort((a, b) => b.date - a.date);
+        console.log(`총 ${allMessages.length}개 메시지 수집 완료`);
+        return allMessages;
+      } finally {
+        await Promise.resolve(client.disconnect()).catch(() => {});
+      }
+    })(),
+    TOTAL_TIMEOUT,
+    "Telegram message collection",
+    () => Promise.resolve(client.disconnect()).catch(() => {})
+  ).catch((error) => {
+    console.log(`텔레그램 메시지 수집 실패: ${error.message}`);
+    return [];
+  });
 }
 
-async function fetchNewsForRows(rows) {
-  const settled = await Promise.allSettled(
-    rows.map(async (row) => {
-      let titles = await fetchNaverSearchNews(`${row.name} 주식`, 3);
-      if (!titles.length) titles = await fetchNaverSearchNews(row.name, 3);
-      return [row.code || row.name, uniqueTitles(titles, 3)];
+function filterStockMessages(messages) {
+  return messages.filter((msg) => STOCK_KEYWORDS.some((keyword) => msg.text.includes(keyword))).slice(0, 50);
+}
+
+function getStockMessages(stockName, messages) {
+  return messages
+    .filter((message) => message.text.includes(stockName))
+    .slice(0, 3)
+    .map((message) => `[${message.channel}] ${compactText(message.text, 150)}`);
+}
+
+function buildStockMessageMap(rows, messages) {
+  return new Map(rows.map((row) => [row.name, getStockMessages(row.name, messages)]));
+}
+
+function buildThemeSummary(messages) {
+  return Object.entries(THEME_KEYWORDS)
+    .map(([name, keywords]) => ({
+      name,
+      messages: messages
+        .filter((message) => keywords.some((keyword) => message.text.includes(keyword)))
+        .slice(0, 3)
+        .map((message) => `[${message.channel}] ${compactText(message.text, 150)}`),
+    }))
+    .filter((theme) => theme.messages.length > 0)
+    .slice(0, 8);
+}
+
+function telegramMessagesText(messages) {
+  if (!messages.length) return "최근 2시간 내 수집된 주식 관련 메시지가 없습니다.";
+  return messages.map((message) => `${message.channel}: ${compactText(message.text, 150)}`).join("\n");
+}
+
+function stockMessagesText(rows, stockMessagesByName) {
+  return rows
+    .map((row, index) => {
+      const messages = stockMessagesByName.get(row.name) || [];
+      const lines = messages.length ? messages.map((message) => `   ${message}`).join("\n") : "   관련 메시지 없음";
+      return `${index + 1}. ${row.name} ${fmtPct(row.rate, 1)}\n${lines}`;
     })
-  );
-  const map = new Map(rows.map((row) => [row.code || row.name, []]));
-  for (const result of settled) {
-    if (result.status === "fulfilled") map.set(result.value[0], result.value[1]);
-  }
-  return map;
+    .join("\n");
+}
+
+function themeText(themes) {
+  if (!themes.length) return "감지된 테마 메시지 없음";
+  return themes
+    .map((theme) => `${theme.name}:\n${theme.messages.map((message) => `   ${message}`).join("\n")}`)
+    .join("\n");
 }
 
 function formatWon(value) {
@@ -403,75 +546,14 @@ function formatTradingValue(value) {
   return `${n.toLocaleString("ko-KR")}원`;
 }
 
-function detectThemeForRow(row) {
-  const name = String(row?.name || "");
-  if (!name) return null;
-  for (const [theme, stocks] of Object.entries(THEME_KEYWORDS)) {
-    if (stocks.some((stock) => name.includes(stock) || stock.includes(name))) {
-      return { name: theme, emoji: THEME_EMOJI[theme] || "📌" };
-    }
-  }
-  return null;
-}
-
-async function buildThemeSummary(rows) {
-  const detected = Object.entries(THEME_KEYWORDS)
-    .map(([name, stocks]) => {
-      const matched = rows.filter((row) => {
-        const rowName = String(row.name || "");
-        return rowName && stocks.some((stock) => rowName.includes(stock) || stock.includes(rowName));
-      });
-      return {
-        name,
-        emoji: THEME_EMOJI[name] || "📌",
-        rows: matched.map((row) => row.name),
-        searchQuery: THEME_SEARCH[name] || `${name} 주식`,
-        news: [],
-      };
-    })
-    .filter((theme) => theme.rows.length >= 3)
-    .slice(0, 6);
-
-  const settled = await Promise.allSettled(
-    detected.map(async (theme) => ({
-      ...theme,
-      news: await fetchNaverSearchNews(theme.searchQuery, 3),
-    }))
-  );
-  return settled.map((result, index) =>
-    result.status === "fulfilled" ? result.value : detected[index]
-  );
-}
-
-function themeText(themes) {
-  if (!themes.length) return "특정 테마 쏠림은 아직 뚜렷하지 않습니다.";
-  return themes
-    .map((theme) => {
-      const newsLines = theme.news.length ? `\n   📰 ${theme.news.join("\n   📰 ")}` : "";
-      const label = theme.name === "우주항공" || theme.name === "스페이스X" ? "우주항공/스페이스X" : theme.name;
-      return `${theme.emoji} ${label}: ${theme.rows.slice(0, 8).join(", ")}${newsLines}`;
-    })
-    .join("\n");
-}
-
-function newsText(newsMap, rows) {
-  return rows
-    .map((row, index) => {
-      const titles = newsMap.get(row.code || row.name) || [];
-      const newsLines = titles.length ? titles.map((title) => `   📰 ${title}`).join("\n") : "   📰 관련 뉴스 없음";
-      return `${index + 1}. ${row.name} ${fmtPct(row.rate, 1)}\n${newsLines}`;
-    })
-    .join("\n");
-}
-
-function bluechipText(rows, newsMap) {
+function bluechipText(rows, stockMessagesByName) {
   if (!rows.length) return "감지된 대형주 특징주 없음";
   return rows
     .map((row) => {
-      const titles = newsMap.get(row.code || row.name) || [];
-      const newsLines = titles.length ? titles.map((title) => `   📰 ${title}`).join("\n") : "   📰 관련 뉴스 없음";
+      const messages = stockMessagesByName.get(row.name) || [];
+      const messageLines = messages.length ? messages.map((message) => `   ${message}`).join("\n") : "   관련 메시지 없음";
       const label = row.rate >= 5 ? "급등" : row.rate <= -5 ? "급락" : "주목";
-      return `${row.icon} ${row.name} ${fmtPct(row.rate, 1)} (${label})\n${newsLines}`;
+      return `${row.icon} ${row.name} ${fmtPct(row.rate, 1)} (${label})\n${messageLines}`;
     })
     .join("\n");
 }
@@ -482,7 +564,18 @@ function topRowsText(rows) {
     .join("\n");
 }
 
-async function runClaude({ apiKey, time, kospi, kosdaq, top30, newsMap, themes, bluechipMovers, bluechipNewsMap }) {
+async function runClaude({
+  apiKey,
+  time,
+  kospi,
+  kosdaq,
+  top30,
+  stockMessages,
+  stockMessagesByName,
+  themes,
+  bluechipMovers,
+  bluechipMessagesByName,
+}) {
   const client = new Anthropic({ apiKey });
   const user = `현재 시각: ${time}
 코스피: ${fmtNumber(kospi.value, 2)} ${fmtPct(kospi.change, 2)}
@@ -491,28 +584,31 @@ async function runClaude({ apiKey, time, kospi, kosdaq, top30, newsMap, themes, 
 === 상승률 TOP30 ===
 ${topRowsText(top30)}
 
-=== TOP10 종목별 실시간 뉴스 ===
-${newsText(newsMap, top30.slice(0, 10))}
+=== 텔레그램 채널 실시간 메시지 (최근 2시간, ${stockMessages.length}개) ===
+${telegramMessagesText(stockMessages)}
 
-=== 오늘 핫 테마 뉴스 ===
+=== TOP10 종목별 관련 채널 메시지 ===
+${stockMessagesText(top30.slice(0, 10), stockMessagesByName)}
+
+=== 감지된 테마 및 채널 메시지 ===
 ${themeText(themes)}
 
 === 대형주 특징주 ===
-${bluechipText(bluechipMovers, bluechipNewsMap)}
+${bluechipText(bluechipMovers, bluechipMessagesByName)}
 
-위 실제 뉴스를 반드시 인용해서 왜 이 종목들이 오르는지 설명해주세요.
+위 실제 채널 메시지를 근거로:
+1. 🎙️ 현재 장세 총평 (3줄, 야구중계 스타일, 생동감있게)
+2. 🔥 오늘의 핵심 테마와 급등 이유 (채널 메시지 근거 필수 인용)
+3. ⚡ 대형주 특징주 분석
+4. 🏆 상승률 TOP30 전체 목록
+5. 🎯 다음 30분 관전 포인트`;
 
-위 실제 뉴스와 데이터를 바탕으로:
-1. 🎙️ 현재 장세 총평 (3줄, 야구중계 스타일)
-2. 🔥 오늘의 핵심 테마와 이유 (뉴스 근거)
-3. ⚡ 특징주 분석 (대형주 급등락 이유)
-4. 🎯 다음 30분 관전 포인트`;
 
   const msg = await client.messages.create({
     model: MODEL,
     max_tokens: 2000,
     system:
-      "당신은 주식시장 전문 해설가입니다. 야구 중계처럼 생동감 있고 흥미롭게 분석해주세요. 실제 뉴스와 데이터를 근거로 설명하고 왜 오르는지 이유와 맥락을 정확히 짚어주세요. 추측이 아닌 실제 뉴스 근거를 반드시 언급하세요. 이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
+      "당신은 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게 분석해주세요.\n텔레그램 채널의 실제 메시지를 근거로 설명하고\n왜 오르는지 이유와 맥락을 정확히 짚어주세요.\n추측이 아닌 실제 채널 메시지 근거를 반드시 언급하세요.\n이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
     messages: [{ role: "user", content: user }],
   });
   const block = msg.content.find((item) => item.type === "text");
@@ -520,7 +616,7 @@ ${bluechipText(bluechipMovers, bluechipNewsMap)}
   return block.text.trim();
 }
 
-function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap }) {
+function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 }) {
   const lines = [
     "📺 *TotalMoney AI - 라이브 리포트*",
     `📅 ${formatDateKo(ymd)} *${time}* 현재`,
@@ -535,10 +631,8 @@ function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, new
     "🏆 *상승률 TOP30*",
   ];
   top30.forEach((row) => {
-    const theme = detectThemeForRow(row, newsMap.get(row.code || row.name) || []);
-    const themeSuffix = theme ? ` ${theme.emoji}${mdText(theme.name)}` : "";
     const base = `${row.rank}위 ${mdText(row.name)} *${fmtPct(row.rate, 1)}*`;
-    lines.push(`${base} ${formatWon(row.price)}${themeSuffix}`);
+    lines.push(`${base} ${formatWon(row.price)}`);
   });
   lines.push("", "━━━━━━━━━━━━━━━", `🔗 ${SITE_URL}/live-report.html`);
   return lines.join("\n");
@@ -606,10 +700,12 @@ async function main() {
 
   if (!rankings.length) throw new Error("상승률 TOP30 데이터가 비어 있습니다.");
 
-  const newsMap = await fetchNewsForRows(rankings.slice(0, 10));
-  const themes = await buildThemeSummary(rankings);
+  const telegramMessages = await collectTelegramMessages();
+  const stockMessages = filterStockMessages(telegramMessages);
+  const stockMessagesByName = buildStockMessageMap(rankings.slice(0, 10), stockMessages);
+  const themes = buildThemeSummary(stockMessages);
   const bluechipMovers = await fetchBluechipMovers(token, appKey, appSecret);
-  const bluechipNewsMap = await fetchNewsForRows(bluechipMovers);
+  const bluechipMessagesByName = buildStockMessageMap(bluechipMovers, stockMessages);
 
   const aiAnalysis = await runClaude({
     apiKey: anthropicKey,
@@ -617,10 +713,11 @@ async function main() {
     kospi,
     kosdaq,
     top30: rankings,
-    newsMap,
+    stockMessages,
+    stockMessagesByName,
     themes,
     bluechipMovers,
-    bluechipNewsMap,
+    bluechipMessagesByName,
   });
   const top30 = rankings.map((row) => ({
     rank: row.rank,
@@ -638,19 +735,27 @@ async function main() {
     aiAnalysis,
     top10,
     top30,
-    themes: themes.map((theme) => ({ name: theme.name, emoji: theme.emoji, stocks: theme.rows, news: theme.news })),
+    telegramMessages: stockMessages.slice(0, 50).map((message) => ({
+      channel: message.channel,
+      text: compactText(message.text, 300),
+      date: message.date.toISOString(),
+    })),
+    stockMessages: Object.fromEntries(
+      [...stockMessagesByName.entries()].map(([name, messages]) => [name, messages])
+    ),
+    themes,
     bluechipMovers: bluechipMovers.map((row) => ({
       name: row.name,
       code: row.code,
       rate: row.rate,
       price: row.price,
       type: row.label,
-      news: bluechipNewsMap.get(row.code || row.name) || [],
+      messages: bluechipMessagesByName.get(row.name) || [],
     })),
   };
 
   await sendTelegramMessage(
-    buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30, newsMap })
+    buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
   );
   await writeLiveReport({ date: ymd, ...payload });
   gitCommitAndPush(time);

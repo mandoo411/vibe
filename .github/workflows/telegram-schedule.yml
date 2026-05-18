@@ -1,0 +1,39 @@
+name: Telegram Daily Schedule
+
+on:
+  schedule:
+    # 매일 06:00 KST = 전날 21:00 UTC
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "daily 또는 breaking"
+        required: false
+        default: "daily"
+
+concurrency:
+  group: telegram-schedule
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send Telegram schedule
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_SCHEDULE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'daily' }}
+        run: node scripts/telegram-schedule.mjs

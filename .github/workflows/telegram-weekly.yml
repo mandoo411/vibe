@@ -1,0 +1,33 @@
+name: Telegram Weekly Schedule
+
+on:
+  schedule:
+    # 매주 월요일 07:00 KST = 일요일 22:00 UTC
+    - cron: "0 22 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: telegram-weekly
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Send Telegram weekly schedule
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+        run: node scripts/telegram-weekly.mjs

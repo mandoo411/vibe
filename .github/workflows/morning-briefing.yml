@@ -42,12 +42,16 @@ jobs:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
           printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env
           printf 'KIS_ACCESS_TOKEN=%s\n' "$KIS_ACCESS_TOKEN" >> .env
           printf 'KIS_APP_KEY=%s\n' "$KIS_APP_KEY" >> .env
           printf 'KIS_APP_SECRET=%s\n' "$KIS_APP_SECRET" >> .env
           printf 'NEWSAPI_KEY=%s\n' "$NEWSAPI_KEY" >> .env
+          printf 'TELEGRAM_TOKEN=%s\n' "$TELEGRAM_TOKEN" >> .env
+          printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID" >> .env
 
       - name: Run morning briefing
         run: npm run sync:briefing
@@ -66,6 +70,9 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Send Telegram morning briefing
+        run: node --env-file=.env scripts/telegram-morning-briefing.mjs
 
       - name: Cleanup secrets
         if: always()

@@ -9,6 +9,9 @@
     },
     "api/crypto-data.js": {
       "maxDuration": 60
+    },
+    "api/world-market.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -20,6 +23,7 @@
     { "src": "/weekly-market/?", "dest": "/weekly-market.html" },
     { "src": "/us-market.html", "dest": "/us-market.html" },
     { "src": "/crypto.html", "dest": "/crypto.html" },
+    { "src": "/world-market.html", "dest": "/world-market.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

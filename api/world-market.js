@@ -11,9 +11,13 @@ function send(res, status, body) {
 }
 
 async function fmp(path, params = {}) {
-  const key = process.env.FMP_API_KEY;
+  const key =
+    process.env.FMP_API_KEY ||
+    process.env.FINANCIAL_MODELING_PREP_API_KEY ||
+    process.env.FINANCIALMODELINGPREP_API_KEY ||
+    process.env.FMP_KEY;
   if (!key) {
-    const error = new Error("Missing FMP_API_KEY");
+    const error = new Error("Missing FMP API key. Set FMP_API_KEY in Vercel environment variables.");
     error.statusCode = 503;
     throw error;
   }

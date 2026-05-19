@@ -61,10 +61,10 @@
         width: 34%;
       }
       .world-table col.world-col-num {
-        width: 11%;
+        width: 10.5rem;
       }
       .world-table col.world-col-country {
-        width: 10%;
+        width: 9rem;
       }
       .world-table tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.02);
@@ -97,9 +97,16 @@
       .world-table td.world-col-name {
         text-align: left;
       }
+      .world-table th.world-col-num,
+      .world-table td.world-col-num,
+      .world-table th.world-num,
+      .world-table td.world-num {
+        text-align: right;
+        padding-right: 12px;
+        padding-left: 8px;
+      }
       .world-num {
         font-family: var(--font-mono);
-        text-align: right;
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
       }
@@ -146,6 +153,11 @@
       }
       .world-delta--down {
         color: #60a5fa;
+      }
+      .world-table th.world-col-country,
+      .world-table td.world-col-country {
+        text-align: left;
+        padding-left: 10px;
       }
       .world-country {
         font-family: var(--font-mono);

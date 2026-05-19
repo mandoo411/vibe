@@ -1,25 +1,69 @@
 /* TotalMoney AI — 공통 상단 헤더 + 사이트 네비 (픽셀 고정 · 모든 페이지 동일) */
 
+.tm-market-ticker-wrap {
+  box-sizing: border-box;
+  width: calc(100% + 52px);
+  max-width: calc(1100px + 52px);
+  margin: -2px -26px 14px;
+  padding: 0;
+}
+
 .tm-market-ticker {
   box-sizing: border-box;
-  width: min(1100px, calc(100% - 36px));
-  margin: 10px auto 8px;
-  border: 1px solid var(--border);
-  background: #0a0907;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid rgba(201, 168, 76, 0.42);
+  border-top-color: rgba(212, 175, 55, 0.55);
+  border-bottom-color: rgba(120, 98, 48, 0.65);
+  background:
+    linear-gradient(180deg, rgba(22, 19, 14, 0.98) 0%, rgba(10, 9, 7, 0.99) 48%, rgba(6, 5, 4, 1) 100%);
+  box-shadow:
+    0 1px 0 rgba(212, 175, 55, 0.08) inset,
+    0 8px 22px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.tm-market-ticker__fin {
+  flex: 0 0 14px;
+  align-self: stretch;
+  background: linear-gradient(180deg, #1a1610 0%, #0a0907 100%);
+  border-top: 1px solid rgba(201, 168, 76, 0.35);
+  border-bottom: 1px solid rgba(90, 74, 38, 0.55);
+}
+
+.tm-market-ticker__fin--left {
+  border-right: 1px solid rgba(201, 168, 76, 0.22);
+  clip-path: polygon(0 0, 100% 0, 72% 50%, 100% 100%, 0 100%);
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.25);
+}
+
+.tm-market-ticker__fin--right {
+  border-left: 1px solid rgba(201, 168, 76, 0.22);
+  clip-path: polygon(28% 0, 100% 0, 100% 100%, 28% 100%, 0 50%);
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.25);
 }
 
 .tm-market-ticker__track {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: 14px;
-  min-height: 28px;
-  padding: 5px 10px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 6px 12px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tm-market-ticker__track::-webkit-scrollbar {
+  display: none;
 }
 
 .tm-market-ticker__item {
@@ -61,7 +105,7 @@
   width: 100%;
   height: 60px;
   padding: 0 12px;
-  margin-bottom: 16px;
+  margin-bottom: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-panel);
@@ -255,13 +299,19 @@ body.is-kr-market-open .tm-live-badge {
 
 /* 스마트폰·태블릿 좁은 폭: 픽셀 고정 헤더(모든 페이지 동일) */
 @media (max-width: 768px) {
-  .tm-market-ticker {
-    width: calc(100% - 20px);
-    margin: 8px auto 8px;
+  .tm-market-ticker-wrap {
+    width: calc(100% + 28px);
+    max-width: none;
+    margin: 0 -14px 12px;
+  }
+
+  .tm-market-ticker__fin {
+    flex-basis: 10px;
   }
 
   .tm-market-ticker__track {
-    gap: 12px;
+    gap: 10px;
+    padding: 5px 8px;
     font-size: 10px;
   }
 
@@ -277,7 +327,7 @@ body.is-kr-market-open .tm-live-badge {
     min-height: 92px;
     max-height: none;
     padding: 0;
-    margin-bottom: 12px;
+    margin-bottom: 0;
     gap: 0;
     overflow: visible;
     flex-shrink: 0;

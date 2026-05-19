@@ -18,13 +18,45 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  function relocateTicker(bar) {
+    const header = document.querySelector(".tm-site-header");
+    if (!header) return;
+    let wrap = bar.closest(".tm-market-ticker-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "tm-market-ticker-wrap";
+      bar.parentNode.insertBefore(wrap, bar);
+      wrap.appendChild(bar);
+    }
+    if (wrap.previousElementSibling !== header) {
+      header.insertAdjacentElement("afterend", wrap);
+    }
+  }
+
   function ensureTickerBar() {
-    if (document.querySelector(".tm-market-ticker")) return document.querySelector(".tm-market-ticker");
+    const found = document.querySelector(".tm-market-ticker");
+    if (found) {
+      relocateTicker(found);
+      return found;
+    }
     const bar = document.createElement("div");
     bar.className = "tm-market-ticker";
     bar.setAttribute("aria-label", "실시간 시장 지표");
-    bar.innerHTML = '<div class="tm-market-ticker__track">시장 지표 로딩 중…</div>';
-    document.body.insertBefore(bar, document.body.firstChild);
+    bar.innerHTML =
+      '<span class="tm-market-ticker__fin tm-market-ticker__fin--left" aria-hidden="true"></span>' +
+      '<div class="tm-market-ticker__track">시장 지표 로딩 중…</div>' +
+      '<span class="tm-market-ticker__fin tm-market-ticker__fin--right" aria-hidden="true"></span>';
+    const wrap = document.createElement("div");
+    wrap.className = "tm-market-ticker-wrap";
+    wrap.appendChild(bar);
+
+    const header = document.querySelector(".tm-site-header");
+    if (header && header.parentNode) {
+      header.insertAdjacentElement("afterend", wrap);
+    } else {
+      document.body.insertBefore(wrap, document.body.firstChild);
+    }
+
     return bar;
   }
 

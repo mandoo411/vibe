@@ -1,5 +1,6 @@
 (function () {
   function formatTickerValue(item) {
+    if (!item || item.value == null || item.value === "") return "—";
     const value = Number(item && item.value);
     if (!Number.isFinite(value)) return "—";
     const label = String(item.label || "");
@@ -10,6 +11,7 @@
   }
 
   function formatTickerPct(value) {
+    if (value == null || value === "") return "";
     const n = Number(value);
     if (!Number.isFinite(n)) return "";
     const sign = n > 0 ? "+" : "";

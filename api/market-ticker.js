@@ -36,8 +36,18 @@ async function kisGet(path, trId, params) {
   return body;
 }
 
+function firstNumeric(row, keys, { allowZero = true } = {}) {
+  for (const key of keys) {
+    const value = toNum(row?.[key]);
+    if (value == null) continue;
+    if (!allowZero && value === 0) continue;
+    return value;
+  }
+  return null;
+}
+
 function indexValue(row) {
-  return row?.nmix_prpr || row?.NMIX_PRPR || row?.bstp_nmix_prpr || row?.stck_prpr || "";
+  return firstNumeric(row, ["bstp_nmix_prpr", "BSTP_NMIX_PRPR", "nmix_prpr", "NMIX_PRPR", "nmix_nmix_prpr", "stck_prpr"], { allowZero: false });
 }
 
 async function domesticIndex(code, label) {
@@ -49,8 +59,8 @@ async function domesticIndex(code, label) {
   return {
     id: code,
     label,
-    value: toNum(indexValue(out)),
-    changePct: toNum(out?.prdy_ctrt || out?.bstp_nmix_prdy_ctrt || out?.nmix_prdy_ctrt),
+    value: indexValue(out),
+    changePct: firstNumeric(out, ["bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT", "prdy_ctrt", "nmix_prdy_ctrt"]),
   };
 }
 
@@ -74,6 +84,24 @@ async function finnhubQuote(symbol, label) {
   return { label, value: price, changePct };
 }
 
+async function yahooQuote(symbol, label) {
+  const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`);
+  const body = await res.json();
+  const meta = body?.chart?.result?.[0]?.meta || {};
+  const price = toNum(meta.regularMarketPrice);
+  const previous = toNum(meta.chartPreviousClose || meta.previousClose);
+  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  return { label, value: price, changePct };
+}
+
+async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
+  try {
+    const quote = await finnhubQuote(finnhubSymbol, label);
+    if (quote.value != null && quote.value !== 0) return quote;
+  } catch {}
+  return yahooQuote(yahooSymbol, label);
+}
+
 async function btc() {
   const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");
   const body = await res.json();
@@ -86,8 +114,8 @@ module.exports = async function handler(req, res) {
     domesticIndex("0001", "코스피"),
     domesticIndex("1001", "코스닥"),
     erUsdKrw(),
-    finnhubQuote("OANDA:WTI_USD", "WTI유가"),
-    finnhubQuote("OANDA:XAU_USD", "금시세"),
+    commodityQuote("OANDA:WTI_USD", "CL=F", "WTI유가"),
+    commodityQuote("OANDA:XAU_USD", "GC=F", "금시세"),
     btc(),
   ];
   const settled = await Promise.allSettled(tasks);

@@ -49,9 +49,15 @@
       }
       .world-table {
         width: 100%;
-        min-width: 760px;
+        min-width: 880px;
         border-collapse: collapse;
         font-size: 13px;
+      }
+      .world-table tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .world-table tbody tr:hover {
+        background: rgba(212, 175, 55, 0.04);
       }
       .world-table th,
       .world-table td {
@@ -104,6 +110,18 @@
       }
       .world-delta--down {
         color: #60a5fa;
+      }
+      .world-country {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+      .world-summary {
+        margin: 0 0 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-dim);
       }
       .world-status {
         margin: 0 0 10px;
@@ -164,17 +182,19 @@
         <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
         <button class="world-tab" type="button" data-type="revenue" aria-pressed="false">매출액</button>
       </div>
+      <p class="world-summary" id="world-summary">글로벌 시가총액 TOP100 · companiesmarketcap 순위 기준</p>
       <p class="world-status" id="world-status">데이터 로딩 중…</p>
       <section class="world-panel">
         <div class="world-scroll">
           <table class="world-table">
             <thead>
               <tr>
-                <th class="world-rank">순위</th>
-                <th>기업</th>
-                <th class="world-num">수치</th>
-                <th class="world-num">주가</th>
-                <th class="world-num">등락률</th>
+                <th class="world-rank">#</th>
+                <th>Name</th>
+                <th class="world-num">Market Cap</th>
+                <th class="world-num">Price</th>
+                <th class="world-num">Today</th>
+                <th>Country</th>
               </tr>
             </thead>
             <tbody id="world-body"></tbody>
@@ -187,6 +207,7 @@
       (() => {
         const state = { type: "marketCap" };
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
+        const valueLabels = { marketCap: "Market Cap", netIncome: "Net Income", revenue: "Revenue" };
         const $ = (id) => document.getElementById(id);
         function escapeHtml(value) {
           return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -226,19 +247,25 @@
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             const rows = Array.isArray(data.rows) ? data.rows : [];
-            $("world-status").textContent = `${labels[state.type]} TOP100 · 마지막 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`;
+            const withData = data.withData != null ? data.withData : rows.filter((r) => r.hasQuote).length;
+            $("world-summary").textContent =
+              state.type === "marketCap"
+                ? `Largest companies by market cap · TOP100 고정 순위 (${withData}개 시세 연동)`
+                : `${labels[state.type]} TOP100 · 실시간 순위`;
+            $("world-status").textContent = `${valueLabels[state.type]} · 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`;
             $("world-body").innerHTML = rows.length
               ? rows.map((row) => `<tr>
                 <td class="world-rank">${escapeHtml(row.rank)}</td>
-                <td><div class="world-company"><img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" onerror="this.style.visibility='hidden'"><div><strong>${escapeHtml(row.flag || "🌐")} ${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol)}</span></div></div></td>
+                <td><div class="world-company">${row.logo ? `<img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" onerror="this.style.visibility='hidden'">` : `<span class="world-logo" aria-hidden="true"></span>`}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol)}</span></div></div></td>
                 <td class="world-num">${escapeHtml(fmtMoney(row.value))}</td>
                 <td class="world-num">${escapeHtml(fmtPrice(row.price))}</td>
                 <td class="world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+                <td class="world-country">${escapeHtml(row.flag || "\u{1F310}")} ${escapeHtml(row.countryLabel || row.country || "")}</td>
               </tr>`).join("")
-              : '<tr><td colspan="5">데이터 없음</td></tr>';
+              : '<tr><td colspan="6">데이터 없음</td></tr>';
           } catch (error) {
             $("world-status").textContent = `글로벌 랭킹을 불러오지 못했습니다: ${error.message || error}`;
-            $("world-body").innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>';
+            $("world-body").innerHTML = '<tr><td colspan="6">데이터 없음</td></tr>';
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {

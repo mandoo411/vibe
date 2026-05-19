@@ -1,19 +1,9 @@
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
+const RANKED_COMPANIES = require("./world-market-ranked.js");
 
-/** 무료 플랜: 단일 US 심볼 quote만 안정적 (배치·.KS는 프리미엄) */
-const TOP_SYMBOLS = [
-  "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "BRK-B",
-  "JPM", "V", "JNJ", "WMT", "XOM", "MA", "PG", "HD", "CVX", "MRK",
-  "ABBV", "BAC", "KO", "PEP", "AVGO", "COST", "TMO", "MCD", "CSCO",
-  "ACN", "LIN", "DHR", "TXN", "NEE", "PM", "UNH", "RTX", "HON",
-  "QCOM", "IBM", "AMGN", "LOW", "INTU", "SBUX", "GE", "CAT", "BA",
-  "AMD", "INTC", "CRM", "NOW", "PLTR", "TSM", "ASML", "SAP", "NFLX",
-  "DIS", "GS", "MS", "AXP", "BLK", "ADBE", "PYPL", "UBER",
-];
-
-const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 12000);
-const QUOTE_CONCURRENCY = 6;
+const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 10000);
+const QUOTE_CONCURRENCY = 12;
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -21,7 +11,7 @@ function send(res, status, body) {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "GET, OPTIONS");
   res.setHeader("access-control-allow-headers", "content-type");
-  res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=600");
+  res.setHeader("cache-control", "s-maxage=600, stale-while-revalidate=900");
   res.end(JSON.stringify(body));
 }
 
@@ -104,26 +94,38 @@ function countryFlag(country) {
   if (/taiwan/.test(text)) return "🇹🇼";
   if (/japan/.test(text)) return "🇯🇵";
   if (/korea/.test(text)) return "🇰🇷";
+  if (/saudi/.test(text)) return "🇸🇦";
   if (/netherlands/.test(text)) return "🇳🇱";
   if (/france/.test(text)) return "🇫🇷";
   if (/germany/.test(text)) return "🇩🇪";
-  if (/united kingdom|uk/.test(text)) return "🇬🇧";
+  if (/united kingdom|uk|ireland/.test(text)) return "🇬🇧";
   if (/canada/.test(text)) return "🇨🇦";
   if (/switzerland/.test(text)) return "🇨🇭";
+  if (/denmark/.test(text)) return "🇩🇰";
   return "🌐";
+}
+
+function countryShort(country) {
+  const text = String(country || "");
+  if (/united states/i.test(text)) return "USA";
+  if (/south korea/i.test(text)) return "S. Korea";
+  if (/saudi/i.test(text)) return "Saudi Arabia";
+  if (/taiwan/i.test(text)) return "Taiwan";
+  if (/china/i.test(text)) return "China";
+  if (/netherlands/i.test(text)) return "Netherlands";
+  if (/germany/i.test(text)) return "Germany";
+  if (/denmark/i.test(text)) return "Denmark";
+  if (/ireland/i.test(text)) return "Ireland";
+  if (/united kingdom/i.test(text)) return "UK";
+  return text || "—";
 }
 
 function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
 
-function uniqueSymbols(symbols) {
-  return [...new Set(symbols.map((symbol) => String(symbol || "").trim().toUpperCase()).filter(Boolean))].filter(
-    (symbol) => !symbol.includes(".KS") && !symbol.includes(".KQ")
-  );
-}
-
 async function fetchQuoteOne(symbol) {
+  if (!symbol) return null;
   try {
     const rows = await fmpStable("/quote", { symbol });
     if (rows.length) return rows[0];
@@ -140,15 +142,16 @@ async function fetchQuoteOne(symbol) {
 }
 
 async function fetchQuotes(symbols) {
-  const unique = uniqueSymbols(symbols);
-  const out = [];
+  const unique = [...new Set(symbols.map((s) => String(s || "").trim().toUpperCase()).filter(Boolean))];
+  const out = new Map();
   for (let i = 0; i < unique.length; i += QUOTE_CONCURRENCY) {
     const chunk = unique.slice(i, i + QUOTE_CONCURRENCY);
     const rows = await Promise.all(chunk.map((symbol) => fetchQuoteOne(symbol)));
-    for (const row of rows) {
-      if (row) out.push(row);
-    }
-    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(120);
+    chunk.forEach((symbol, index) => {
+      const row = rows[index];
+      if (row) out.set(symbol, row);
+    });
+    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(80);
   }
   return out;
 }
@@ -167,39 +170,46 @@ function valueFor(type, row) {
   return toNum(row.revenue || row.marketCap);
 }
 
-function normalize(type, rows) {
-  return rows
-    .map((row) => {
-      const symbol = pickSymbol(row);
-      return {
-        symbol,
-        name: row.name || row.companyName || row.company || symbol,
-        value: valueFor(type, row),
-        price: toNum(row.price),
-        changePct: toNum(row.changesPercentage || row.changePercentage),
-        country: row.country || "US",
-        flag: countryFlag(row.country || "US"),
-        logo: `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`,
-      };
-    })
-    .filter((row) => row.symbol && row.value != null && row.value > 0)
-    .sort((a, b) => (b.value || 0) - (a.value || 0))
-    .slice(0, 100)
-    .map((row, index) => ({ rank: index + 1, ...row }));
+function buildRow(meta, quote, type, rank) {
+  const symbol = String(meta.symbol || "").trim().toUpperCase();
+  const q = quote || {};
+  const value = symbol ? valueFor(type, q) : null;
+  return {
+    rank,
+    symbol: symbol || "—",
+    name: meta.name || q.name || q.companyName || symbol,
+    value,
+    price: symbol ? toNum(q.price) : null,
+    changePct: symbol ? toNum(q.changesPercentage || q.changePercentage) : null,
+    country: meta.country || q.country || "",
+    countryLabel: countryShort(meta.country || q.country || ""),
+    flag: countryFlag(meta.country || q.country || ""),
+    logo: symbol ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png` : "",
+    hasQuote: Boolean(symbol && quote),
+  };
 }
 
 async function rowsFor(type) {
-  const quoteRows = await fetchQuotes(TOP_SYMBOLS);
-  if (quoteRows.length < 5) {
-    throw new Error(`FMP quote 데이터 부족 (${quoteRows.length}건). API 키·플랜을 확인하세요.`);
+  const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
+  const quoteMap = await fetchQuotes(fetchSymbols);
+
+  let rows = RANKED_COMPANIES.map((meta, index) => {
+    const symbol = String(meta.symbol || "").trim().toUpperCase();
+    const quote = symbol ? quoteMap.get(symbol) : null;
+    return buildRow(meta, quote, type, index + 1);
+  });
+
+  if (type === "marketCap") {
+    return rows;
   }
-  const bySymbol = new Map();
-  for (const row of quoteRows) {
-    const symbol = pickSymbol(row);
-    if (!symbol) continue;
-    bySymbol.set(symbol, { ...(bySymbol.get(symbol) || {}), ...row, symbol });
-  }
-  return normalize(type, [...bySymbol.values()]);
+
+  rows = rows
+    .filter((row) => row.value != null && row.value > 0)
+    .sort((a, b) => (b.value || 0) - (a.value || 0))
+    .slice(0, 100)
+    .map((row, index) => ({ ...row, rank: index + 1 }));
+
+  return rows;
 }
 
 module.exports = async function handler(req, res) {
@@ -208,7 +218,18 @@ module.exports = async function handler(req, res) {
   const type = ["marketCap", "netIncome", "revenue"].includes(req.query?.type) ? req.query.type : "marketCap";
   try {
     const rows = await rowsFor(type);
-    send(res, 200, { type, updatedAt: new Date().toISOString(), rows });
+    const withData = rows.filter((row) => row.hasQuote && row.value != null).length;
+    if (withData < 5) {
+      throw new Error(`FMP quote 데이터 부족 (${withData}건). API 키·플랜을 확인하세요.`);
+    }
+    send(res, 200, {
+      type,
+      order: type === "marketCap" ? "ranked" : "value",
+      total: rows.length,
+      withData,
+      updatedAt: new Date().toISOString(),
+      rows,
+    });
   } catch (error) {
     send(res, error.statusCode || 500, { error: error.message || String(error), rows: [] });
   }

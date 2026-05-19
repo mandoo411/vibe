@@ -126,6 +126,41 @@ function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
 
+function yahooSymbol(symbol) {
+  return String(symbol || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\./g, "-");
+}
+
+async function fetchYahooQuote(symbol) {
+  const ySym = yahooSymbol(symbol);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FMP_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=5d`,
+      { signal: controller.signal, headers: { "user-agent": "TotalMoneyAI/1.0" } }
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  const body = await res.json().catch(() => ({}));
+  const meta = body?.chart?.result?.[0]?.meta || {};
+  const price = toNum(meta.regularMarketPrice);
+  if (price == null) return null;
+  const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
+  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  return {
+    symbol,
+    price,
+    changesPercentage: changePct,
+    marketCap: toNum(meta.marketCap),
+    name: meta.longName || meta.shortName || symbol,
+  };
+}
+
 async function fetchQuoteOne(symbol) {
   if (!symbol) return null;
   const attempts = [
@@ -140,7 +175,11 @@ async function fetchQuoteOne(symbol) {
       if (!/premium|403|429|402|timeout/i.test(error.message || "")) throw error;
     }
   }
-  return null;
+  try {
+    return await fetchYahooQuote(symbol);
+  } catch {
+    return null;
+  }
 }
 
 async function fetchQuotes(symbols) {

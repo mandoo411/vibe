@@ -446,6 +446,7 @@ function normalizeNewsApi(data, window, { strictWindow = true } = {}) {
       url: sanitizeStr(row.url),
       source: sanitizeStr(row.source?.name || "NewsAPI"),
       publishedAt: sanitizeStr(row.publishedAt),
+      summary: stripHtml(row.description || row.content || ""),
     }))
     .filter((row) => row.title && row.url && (!strictWindow || inNewsWindow(row.publishedAt, window)));
 }
@@ -457,7 +458,8 @@ function normalizeRss(xml, source, window, { strictWindow = true } = {}) {
       const title = decodeXml((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
       const url = decodeXml((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
       const publishedAt = decodeXml((item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
-      return { title, url, source, publishedAt: publishedAt ? new Date(publishedAt).toISOString() : "" };
+      const summary = stripHtml(decodeXml((item.match(/<description>([\s\S]*?)<\/description>/) || [])[1]));
+      return { title, url, source, publishedAt: publishedAt ? new Date(publishedAt).toISOString() : "", summary };
     })
     .filter((row) => row.title && row.url && row.publishedAt && (!strictWindow || inNewsWindow(row.publishedAt, window)));
 }

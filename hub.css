@@ -77,6 +77,19 @@ a.hub-card:focus-visible {
   background: none;
 }
 
+.hub-card__emoji {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 120px;
+  height: 120px;
+  margin: 0 0 12px;
+  border-radius: 16px;
+  background: radial-gradient(circle at 35% 25%, rgba(212, 175, 55, 0.26), rgba(12, 10, 8, 0.96) 62%);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  font-size: 52px;
+}
+
 .hub-card__title {
   margin: 0 0 8px;
   font-size: 1.05rem;
@@ -252,6 +265,14 @@ a.hub-card:focus-visible {
     height: 42px;
     margin: 0 0 5px;
     border-radius: 9px;
+  }
+
+  .page.page--hub .hub-card__emoji {
+    width: 42px;
+    height: 42px;
+    margin: 0 0 5px;
+    border-radius: 9px;
+    font-size: 23px;
   }
 
   .page.page--hub .hub-card__title {

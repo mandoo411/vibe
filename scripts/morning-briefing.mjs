@@ -569,8 +569,15 @@ async function analyzeWithClaude(data) {
 {
   "keyIssues": ["오늘 주목할 핵심 이슈 1", "오늘 주목할 핵심 이슈 2", "오늘 주목할 핵심 이슈 3"],
   "domesticImpact": "국내 증시 영향 분석 2~4문장",
-  "watchSectors": ["오늘 주목 섹터/종목 1", "오늘 주목 섹터/종목 2", "오늘 주목 섹터/종목 3"]
+  "watchSectors": ["오늘 주목 섹터/종목 1", "오늘 주목 섹터/종목 2", "오늘 주목 섹터/종목 3"],
+  "marketComments": {
+    "USD/KRW": "환율 움직임 이유 1문장",
+    "WTI유가": "유가 움직임 이유 1문장",
+    "금": "금시세 움직임 이유 1문장",
+    "BTC": "비트코인 움직임 이유 1문장"
+  }
 }
+marketComments는 텔레그램 메시지와 입력된 가격/등락률을 근거로 1~2줄 이내로 작성하세요.
 투자 권유나 단정은 피하고, 리스크와 조건을 함께 언급하세요.`,
     messages: [{ role: "user", content: buildAnalysisInput(data) }],
   });
@@ -580,6 +587,7 @@ async function analyzeWithClaude(data) {
     keyIssues: Array.isArray(parsed.keyIssues) ? parsed.keyIssues.map(sanitizeStr).filter(Boolean).slice(0, 3) : [],
     domesticImpact: sanitizeStr(parsed.domesticImpact),
     watchSectors: Array.isArray(parsed.watchSectors) ? parsed.watchSectors.map(sanitizeStr).filter(Boolean).slice(0, 5) : [],
+    marketComments: parsed.marketComments && typeof parsed.marketComments === "object" ? parsed.marketComments : {},
   };
 }
 
@@ -617,6 +625,7 @@ async function main() {
       keyIssues: [],
       domesticImpact: "",
       watchSectors: [],
+      marketComments: {},
     },
     errors,
   };

@@ -352,7 +352,8 @@
     return arr
       .map((row) => {
         const chg = parseChange(row && row.changePct);
-        return `<span class="index-chip"><span class="index-chip__name">${escapeHtml(row && row.label)}</span><span class="index-chip__value">${escapeHtml(row && row.valueFormatted || row && row.value || "—")}</span>${chg == null ? "" : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`}</span>`;
+        const comment = sanitizeStr(row && row.comment);
+        return `<span class="index-chip index-chip--extra"><span class="index-chip__name">${escapeHtml(row && row.label)}</span><span class="index-chip__value">${escapeHtml(row && row.valueFormatted || row && row.value || "—")}</span>${chg == null ? "" : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`}${comment ? `<small>${escapeHtml(comment)}</small>` : ""}</span>`;
       })
       .join("");
   }

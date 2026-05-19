@@ -369,7 +369,7 @@ body.is-kr-market-open .tm-live-badge {
     min-height: 40px;
     max-height: none;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: center;
     justify-content: stretch;
     gap: 3px;
@@ -381,7 +381,7 @@ body.is-kr-market-open .tm-live-badge {
     background: transparent;
     box-shadow: none;
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: 9px;
     letter-spacing: 0;
   }
 
@@ -398,7 +398,7 @@ body.is-kr-market-open .tm-live-badge {
     max-height: 31px;
     margin: 0;
     padding: 0 2px;
-    font-size: 9.5px;
+    font-size: 9px;
     font-weight: 500;
     line-height: 1;
     white-space: nowrap;

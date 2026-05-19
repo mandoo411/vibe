@@ -743,7 +743,7 @@ async function finalizeNotableStocks(raw, topGainers, kisCtx) {
   }));
 }
 
-async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, indexes, telegramMessages }) {
+async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, indexes, telegramMessages, marketExtras }) {
   const client = new Anthropic({ apiKey });
 
   const lines = [];
@@ -769,6 +769,14 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
   lines.push("");
   lines.push("=== 텔레그램 거시경제/시황 메시지 (최근 8시간, 거시경제 관련 채널 우선) ===");
   lines.push(telegramMessagesForPrompt(telegramMessages));
+  if (marketExtras && marketExtras.length) {
+    lines.push("");
+    lines.push("=== 원자재/환율/BTC 현황 ===");
+    marketExtras.forEach((row) => {
+      const pct = row.changePct == null ? "—" : `${row.changePct > 0 ? "+" : ""}${Number(row.changePct).toFixed(2)}%`;
+      lines.push(`- ${row.label}: ${row.valueFormatted || row.value || "—"} (${pct})`);
+    });
+  }
 
   const system = `당신은 한국 주식 데이터 큐레이터입니다. 입력은 ${targetYmd}일 한국 증시 상승률 상위 종목 목록과 각 종목 네이버 뉴스 헤드라인입니다.
 
@@ -784,7 +792,13 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
   ],
   "topNews": [
     { "title": "뉴스 한 줄", "note": "왜 중요한지 1문장(선택)", "source": "출처(선택)" }
-  ]
+  ],
+  "marketExtraComments": {
+    "💱 원/달러": "환율 등락 이유 1문장",
+    "🛢️ WTI 유가": "유가 등락 이유 1문장",
+    "🥇 금시세": "금시세 등락 이유 1문장",
+    "₿ 비트코인": "비트코인 등락 이유 1문장"
+  }
 }
 
 규칙(marketSummary):
@@ -809,7 +823,11 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 규칙(topNews):
 - 입력으로 받은 종목별 뉴스 헤드라인과 텔레그램 거시경제 메시지를 종합해, 그날 한국 증시 전체에 영향이 큰 핵심 뉴스 3~5개를 선정해 배열로 출력.
 - title은 25자 내외, note는 1문장 이내(선택), source는 알면 적고 모르면 빈 문자열.
-- 종목 한 개에만 국한된 단순 회사 발표보다 시장·업종·정책·매크로 임팩트가 큰 뉴스를 우선.`;
+- 종목 한 개에만 국한된 단순 회사 발표보다 시장·업종·정책·매크로 임팩트가 큰 뉴스를 우선.
+
+규칙(marketExtraComments):
+- 원자재/환율/BTC 현황과 텔레그램 메시지 근거를 같이 반영해 각 항목별 1문장으로 작성.
+- 근거가 약하면 "관망 필요"처럼 조건을 붙이고 단정하지 마세요.`;
 
   const msg = await client.messages.create({
     model,
@@ -829,6 +847,7 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
     notableStocks: Array.isArray(parsed.notableStocks) ? parsed.notableStocks : [],
     stocks: parsed.stocks,
     topNews: Array.isArray(parsed.topNews) ? parsed.topNews : [],
+    marketExtraComments: parsed.marketExtraComments && typeof parsed.marketExtraComments === "object" ? parsed.marketExtraComments : {},
   };
 }
 
@@ -959,7 +978,7 @@ async function main() {
   console.log("[5/6] Telegram 거시경제 메시지 + Claude 분석 (이유·테마 + 주요 뉴스)...");
   const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
   const ai = await classifyWithClaude({
-    apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes, telegramMessages,
+    apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes, telegramMessages, marketExtras,
   });
 
   const byCode = new Map();
@@ -1038,7 +1057,10 @@ async function main() {
     indexes: indexes.length ? indexes : (existing.indexes || []),
     themes,
     news: topNews.length ? topNews : (existing.news || []),
-    marketExtras: marketExtras.length ? marketExtras : (existing.marketExtras || []),
+    marketExtras: (marketExtras.length ? marketExtras : (existing.marketExtras || [])).map((row) => ({
+      ...row,
+      comment: ai.marketExtraComments?.[row.label] || row.comment || "",
+    })),
     telegramMessages: telegramMessages.slice(0, 40).map((msg) => ({
       channel: msg.channel,
       text: compactText(msg.text, 300),

@@ -60,13 +60,16 @@ async function erUsdKrw() {
   return { label: "원/달러", value: toNum(body?.rates?.KRW), changePct: null };
 }
 
-async function yahooQuote(symbol, label) {
-  const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`);
+async function finnhubQuote(symbol, label) {
+  const token = process.env.FINNHUB_API_KEY;
+  if (!token) throw new Error("Missing FINNHUB_API_KEY");
+  const url = new URL("https://finnhub.io/api/v1/quote");
+  url.searchParams.set("symbol", symbol);
+  url.searchParams.set("token", token);
+  const res = await fetch(url);
   const body = await res.json();
-  const result = body?.chart?.result?.[0];
-  const meta = result?.meta || {};
-  const price = toNum(meta.regularMarketPrice);
-  const previous = toNum(meta.chartPreviousClose || meta.previousClose);
+  const price = toNum(body?.c);
+  const previous = toNum(body?.pc);
   const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
   return { label, value: price, changePct };
 }
@@ -83,8 +86,8 @@ module.exports = async function handler(req, res) {
     domesticIndex("0001", "코스피"),
     domesticIndex("1001", "코스닥"),
     erUsdKrw(),
-    yahooQuote("CL=F", "WTI유가"),
-    yahooQuote("GC=F", "금시세"),
+    finnhubQuote("OANDA:WTI_USD", "WTI유가"),
+    finnhubQuote("OANDA:XAU_USD", "금시세"),
     btc(),
   ];
   const settled = await Promise.allSettled(tasks);

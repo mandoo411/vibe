@@ -123,6 +123,18 @@
         grid-column: 1 / -1;
       }
 
+      .briefing-card--macro {
+        order: -3;
+      }
+
+      .briefing-card--us {
+        order: -2;
+      }
+
+      .briefing-card--news {
+        order: -1;
+      }
+
       .briefing-news-card.is-telegram {
         border-color: rgba(212, 175, 55, 0.62);
       }
@@ -179,6 +191,7 @@
           <a class="tm-site-nav__link" href="./live-report.html">LIVE-증시</a>
           <a class="tm-site-nav__link" href="./us-market.html">미증시</a>
           <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="tm-site-nav__link" href="./world-market.html">글로벌</a>
         </nav>
       </header>
       <header class="masthead masthead--title-only">
@@ -199,7 +212,7 @@
           <div id="ai-analysis"><p class="empty-text">브리핑 데이터를 불러오는 중입니다.</p></div>
         </section>
 
-        <section class="briefing-card">
+        <section class="briefing-card briefing-card--us">
           <h2>간밤 미국시장</h2>
           <ul class="briefing-list" id="us-market-list"></ul>
         </section>
@@ -214,8 +227,8 @@
           <ul class="briefing-list" id="sectors-list"></ul>
         </section>
 
-        <section class="briefing-card">
-          <h2>환율 & 원자재</h2>
+        <section class="briefing-card briefing-card--macro">
+          <h2>원자재/환율 현황</h2>
           <ul class="briefing-list" id="forex-list"></ul>
         </section>
 
@@ -224,8 +237,8 @@
           <ul class="briefing-list" id="crypto-list"></ul>
         </section>
 
-        <section class="briefing-card briefing-card--wide">
-          <h2>국내주식 관련 뉴스</h2>
+        <section class="briefing-card briefing-card--wide briefing-card--news">
+          <h2>주요 뉴스 (텔레그램)</h2>
           <div class="briefing-news-list" id="news-list"></div>
         </section>
       </main>
@@ -309,6 +322,25 @@
           : '<p class="empty-text">뉴스 없음</p>';
       }
 
+      function renderMacroList(data) {
+        const comments = data.aiAnalysis?.marketComments || {};
+        const rates = data.forex?.rates || {};
+        const commodities = Array.isArray(data.forex?.commodities) ? data.forex.commodities : [];
+        const crypto = (Array.isArray(data.crypto?.assets) ? data.crypto.assets : []).find((row) => row.symbol === "BTC");
+        const pickCommodity = (id) => commodities.find((row) => row.id === id);
+        const rows = [
+          { key: "USD/KRW", label: "💱 원/달러 환율", value: rates["USD/KRW"], changePct: null },
+          { key: "WTI유가", label: "🛢️ WTI 유가", value: pickCommodity("wti")?.price, changePct: pickCommodity("wti")?.changePct },
+          { key: "금", label: "🥇 금시세", value: pickCommodity("gold")?.price, changePct: pickCommodity("gold")?.changePct },
+          { key: "BTC", label: "₿ 비트코인", value: crypto?.priceUsd, changePct: crypto?.changePct24h, prefix: "$" },
+        ];
+        $("forex-list").innerHTML = rows.map((row) => `<li class="briefing-row">
+          <strong>${escapeHtml(row.label)}</strong>
+          <span class="briefing-row__value"><span>${escapeHtml(row.prefix || "")}${fmtNumber(row.value, row.key === "BTC" ? 0 : 2)}</span>${fmtChange(row.changePct)}</span>
+          ${comments[row.key] ? `<small style="grid-column:1/-1;color:var(--text-muted);line-height:1.45">${escapeHtml(comments[row.key])}</small>` : ""}
+        </li>`).join("");
+      }
+
       async function loadBriefing() {
         try {
           const res = await fetch(DATA_URL, { cache: "no-store" });
@@ -319,9 +351,7 @@
           renderRows("us-market-list", data.usMarket?.indices || [], (r) => r.name || r.symbol, (r) => `${fmtNumber(r.close, 0)} ${fmtChange(r.changePct)}`);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span></span>${fmtChange(r.changePct)}`);
-          const forexRows = Object.entries(data.forex?.rates || {}).map(([pair, value]) => ({ pair, value }));
-          const commodityRows = data.forex?.commodities || [];
-          renderRows("forex-list", [...forexRows, ...commodityRows], (r) => r.pair || r.name, (r) => r.pair ? `<span>${fmtNumber(r.value, 4)}</span>` : `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
+          renderMacroList(data);
           renderRows("crypto-list", data.crypto?.assets || [], (r) => r.symbol, (r) => `$${fmtNumber(r.priceUsd, 0)} ${fmtChange(r.changePct24h)}`);
           renderNews(data.news || []);
         } catch (error) {

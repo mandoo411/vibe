@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0d0b08" />
+    <title>TotalMoney AI · 글로벌 랭킹</title>
+    <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./site-nav.js" defer></script>
+    <style>
+      .world-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .world-tab {
+        border: 1px solid var(--border);
+        background: var(--bg-panel);
+        color: var(--text-muted);
+        min-height: 34px;
+        padding: 0 14px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .world-tab[aria-pressed="true"] {
+        color: var(--accent-bright);
+        border-color: var(--accent);
+        box-shadow: inset 0 -2px 0 var(--accent-bright);
+      }
+      .world-panel {
+        border: 1px solid var(--border-strong);
+        background: var(--bg-panel);
+        box-shadow: var(--sheet-shadow);
+        overflow: hidden;
+      }
+      .world-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .world-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .world-table th,
+      .world-table td {
+        padding: 9px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        vertical-align: middle;
+      }
+      .world-table th {
+        text-align: left;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: #12100c;
+      }
+      .world-rank,
+      .world-num {
+        font-family: var(--font-mono);
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .world-company {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+      .world-logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #0a0907;
+        object-fit: contain;
+      }
+      .world-company strong {
+        display: block;
+        color: var(--text);
+      }
+      .world-company span {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+      }
+      .world-delta--up {
+        color: #f87171;
+      }
+      .world-delta--down {
+        color: #60a5fa;
+      }
+      .world-status {
+        margin: 0 0 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+      @media (max-width: 768px) {
+        .world-table {
+          min-width: 680px;
+          font-size: 12px;
+        }
+        .world-table th,
+        .world-table td {
+          padding: 8px 7px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="tm-site-header">
+        <div class="header-top">
+          <a class="header-top__link" href="./index.html" aria-label="TotalMoney AI 홈">
+            <img class="header-top__logo" src="./assets/totalmoney_ai.png" alt="" width="36" height="36" decoding="async" />
+            <span class="header-top__title">TotalMoney AI</span>
+            <span class="header-top__tagline">Smarter Financial Decisions</span>
+          </a>
+        </div>
+        <nav class="tm-site-nav" aria-label="주요 메뉴">
+          <a class="tm-site-nav__link" href="./index.html">홈</a>
+          <a class="tm-site-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
+          <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
+          <a class="tm-site-nav__link" href="./live-report.html">LIVE-증시</a>
+          <a class="tm-site-nav__link" href="./us-market.html">미증시</a>
+          <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="tm-site-nav__link" href="./world-market.html" aria-current="page">글로벌</a>
+        </nav>
+      </header>
+
+      <header class="masthead masthead--title-only">
+        <div class="masthead__copy">
+          <p class="masthead__kicker">WORLD MARKET</p>
+          <h1 class="masthead__title">🌍 세계 기업 랭킹</h1>
+        </div>
+      </header>
+      <div class="page-hero-sub">
+        <div class="masthead__meta">
+          <span>FMP API 기반</span>
+          <span>실시간 업데이트</span>
+        </div>
+      </div>
+
+      <div class="world-toolbar" role="group" aria-label="글로벌 랭킹 기준">
+        <button class="world-tab" type="button" data-type="marketCap" aria-pressed="true">시가총액</button>
+        <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
+        <button class="world-tab" type="button" data-type="revenue" aria-pressed="false">매출액</button>
+      </div>
+      <p class="world-status" id="world-status">데이터 로딩 중…</p>
+      <section class="world-panel">
+        <div class="world-scroll">
+          <table class="world-table">
+            <thead>
+              <tr>
+                <th class="world-rank">순위</th>
+                <th>기업</th>
+                <th class="world-num">수치</th>
+                <th class="world-num">주가</th>
+                <th class="world-num">등락률</th>
+              </tr>
+            </thead>
+            <tbody id="world-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      (() => {
+        const state = { type: "marketCap" };
+        const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
+        const $ = (id) => document.getElementById(id);
+        function escapeHtml(value) {
+          return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+        function fmtMoney(value) {
+          const n = Number(value);
+          if (!Number.isFinite(n)) return "—";
+          const abs = Math.abs(n);
+          if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+          if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+          if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+          return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+        }
+        function fmtPrice(value) {
+          const n = Number(value);
+          return Number.isFinite(n) ? `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—";
+        }
+        function fmtPct(value) {
+          const n = Number(value);
+          if (!Number.isFinite(n)) return "—";
+          return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+        }
+        function deltaClass(value) {
+          const n = Number(value);
+          return n > 0 ? "world-delta--up" : n < 0 ? "world-delta--down" : "";
+        }
+        function syncTabs() {
+          document.querySelectorAll(".world-tab").forEach((btn) => {
+            btn.setAttribute("aria-pressed", btn.dataset.type === state.type ? "true" : "false");
+          });
+        }
+        async function load() {
+          syncTabs();
+          $("world-status").textContent = `${labels[state.type]} TOP100 불러오는 중…`;
+          try {
+            const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            const rows = Array.isArray(data.rows) ? data.rows : [];
+            $("world-status").textContent = `${labels[state.type]} TOP100 · 마지막 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`;
+            $("world-body").innerHTML = rows.length
+              ? rows.map((row) => `<tr>
+                <td class="world-rank">${escapeHtml(row.rank)}</td>
+                <td><div class="world-company"><img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" onerror="this.style.visibility='hidden'"><div><strong>${escapeHtml(row.flag || "🌐")} ${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol)}</span></div></div></td>
+                <td class="world-num">${escapeHtml(fmtMoney(row.value))}</td>
+                <td class="world-num">${escapeHtml(fmtPrice(row.price))}</td>
+                <td class="world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+              </tr>`).join("")
+              : '<tr><td colspan="5">데이터 없음</td></tr>';
+          } catch (error) {
+            $("world-status").textContent = `글로벌 랭킹을 불러오지 못했습니다: ${error.message || error}`;
+            $("world-body").innerHTML = '<tr><td colspan="5">데이터 없음</td></tr>';
+          }
+        }
+        document.querySelectorAll(".world-tab").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            state.type = btn.dataset.type;
+            load();
+          });
+        });
+        load();
+        setInterval(load, 5 * 60 * 1000);
+      })();
+    </script>
+  </body>
+</html>

@@ -138,18 +138,9 @@ function normalize(type, rows) {
 }
 
 async function rowsFor(type) {
-  let screenerRows = [];
-  try {
-    screenerRows = await fmp("/stock-screener", { marketCapMoreThan: "100000000000", limit: "100" });
-  } catch (error) {
-    if (type !== "marketCap") throw error;
-  }
-  if (type === "marketCap" && screenerRows.length) {
-    return normalize(type, screenerRows);
-  }
-  const quoteRows = await fetchQuotes(type === "marketCap" ? TOP_SYMBOLS : TOP_SYMBOLS.slice(0, 80));
+  const quoteRows = await fetchQuotes(TOP_SYMBOLS);
   const bySymbol = new Map();
-  for (const row of [...screenerRows, ...quoteRows]) {
+  for (const row of quoteRows) {
     const symbol = pickSymbol(row);
     if (!symbol) continue;
     bySymbol.set(symbol, { ...(bySymbol.get(symbol) || {}), ...row, symbol });

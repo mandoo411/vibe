@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0d0b08" />
     <title>TotalMoney AI · 글로벌 랭킹</title>
+    <!-- wm-build: 2026-05-19-v3 -->
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -230,13 +231,17 @@
         font-size: 12px;
         color: var(--text-dim);
       }
+      .world-panel--ranking {
+        margin-top: 0;
+      }
       @media (max-width: 768px) {
         .world-scroll {
-          overflow-x: hidden;
+          overflow-x: hidden !important;
         }
-        .world-table {
-          min-width: 0;
-          width: 100%;
+        .world-panel--ranking .world-table {
+          min-width: 0 !important;
+          width: 100% !important;
+          max-width: 100%;
           table-layout: fixed;
         }
         .world-table th,
@@ -276,8 +281,25 @@
           text-overflow: ellipsis;
           white-space: nowrap;
         }
-        .world-col-hide-mobile {
+        .world-col-hide-mobile,
+        .world-panel--ranking col.world-col-hide-mobile {
           display: none !important;
+          width: 0 !important;
+          max-width: 0 !important;
+          padding: 0 !important;
+          border: 0 !important;
+          visibility: collapse;
+        }
+        .world-panel--ranking .world-num {
+          font-size: 13px;
+        }
+        .world-panel--ranking .world-company span {
+          display: none;
+        }
+        .world-panel--ranking .world-logo {
+          flex: 0 0 28px;
+          width: 28px;
+          height: 28px;
         }
       }
     </style>
@@ -311,14 +333,7 @@
           <h1 class="masthead__title">🌍 세계 기업 랭킹</h1>
         </div>
       </header>
-      <div class="page-hero-sub">
-        <div class="masthead__meta">
-          <span>FMP API 기반</span>
-          <span>실시간 업데이트</span>
-        </div>
-      </div>
-
-      <section class="world-panel">
+      <section class="world-panel world-panel--ranking">
         <div class="world-toolbar" role="group" aria-label="글로벌 랭킹 기준">
           <button class="world-tab" type="button" data-type="marketCap" aria-pressed="true">시가총액</button>
           <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
@@ -446,34 +461,49 @@
             metricHeader.textContent = isMobile() ? valueLabelsMobile[state.type] : valueLabels[state.type];
           }
         }
+        function syncMobileTableLayout() {
+          const mobile = isMobile();
+          const scroll = document.querySelector(".world-scroll");
+          const table = document.querySelector(".world-table");
+          if (scroll) scroll.style.overflowX = mobile ? "hidden" : "";
+          if (table) table.style.minWidth = mobile ? "0" : "";
+          document.querySelectorAll(".world-col-hide-mobile").forEach((el) => {
+            el.hidden = mobile;
+          });
+        }
+        function rowHtml(row) {
+          const mobile = isMobile();
+          const spark =
+            sparklineSvg(row.sparkline, row.sparkUp) || '<span class="world-spark-empty">—</span>';
+          let html = `<tr>
+                <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
+                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
+                <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
+                <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
+                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>`;
+          if (!mobile) {
+            html += `<td class="world-col-spark world-col-hide-mobile">${spark}</td>
+                <td class="world-col-country world-col-hide-mobile">${countryCell(row)}</td>`;
+          }
+          return `${html}</tr>`;
+        }
+        function colSpan() {
+          return isMobile() ? 5 : 7;
+        }
         async function load() {
           syncTabs();
-          $("world-body").innerHTML = '<tr><td colspan="7" class="world-empty">불러오는 중…</td></tr>';
+          syncMobileTableLayout();
+          $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오는 중…</td></tr>`;
           try {
             const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             const rows = Array.isArray(data.rows) ? data.rows : [];
             $("world-body").innerHTML = rows.length
-              ? rows
-                  .map((row) => {
-                    const spark =
-                      sparklineSvg(row.sparkline, row.sparkUp) ||
-                      '<span class="world-spark-empty">—</span>';
-                    return `<tr>
-                <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
-                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
-                <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
-                <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
-                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
-                <td class="world-col-spark world-col-hide-mobile">${spark}</td>
-                <td class="world-col-country world-col-hide-mobile">${countryCell(row)}</td>
-              </tr>`;
-                  })
-                  .join("")
-              : '<tr><td colspan="7">데이터 없음</td></tr>';
+              ? rows.map((row) => rowHtml(row)).join("")
+              : `<tr><td colspan="${colSpan()}">데이터 없음</td></tr>`;
           } catch (error) {
-            $("world-body").innerHTML = `<tr><td colspan="7" class="world-empty">불러오지 못했습니다: ${escapeHtml(error.message || error)}</td></tr>`;
+            $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오지 못했습니다: ${escapeHtml(error.message || error)}</td></tr>`;
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {
@@ -484,7 +514,10 @@
         });
         load();
         setInterval(load, 5 * 60 * 1000);
-        window.matchMedia("(max-width: 768px)").addEventListener("change", () => syncTabs());
+        window.matchMedia("(max-width: 768px)").addEventListener("change", () => {
+          syncTabs();
+          load();
+        });
       })();
     </script>
   </body>

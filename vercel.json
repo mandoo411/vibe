@@ -1,5 +1,11 @@
 {
   "version": 2,
+  "headers": [
+    {
+      "source": "/world-market.html",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+    }
+  ],
   "functions": {
     "api/kis-realtime-data.js": {
       "maxDuration": 60

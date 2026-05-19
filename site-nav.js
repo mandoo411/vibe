@@ -42,10 +42,7 @@
     const bar = document.createElement("div");
     bar.className = "tm-market-ticker";
     bar.setAttribute("aria-label", "실시간 시장 지표");
-    bar.innerHTML =
-      '<span class="tm-market-ticker__fin tm-market-ticker__fin--left" aria-hidden="true"></span>' +
-      '<div class="tm-market-ticker__track">시장 지표 로딩 중…</div>' +
-      '<span class="tm-market-ticker__fin tm-market-ticker__fin--right" aria-hidden="true"></span>';
+    bar.innerHTML = '<div class="tm-market-ticker__track">시장 지표 로딩 중…</div>';
     const wrap = document.createElement("div");
     wrap.className = "tm-market-ticker-wrap";
     wrap.appendChild(bar);

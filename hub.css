@@ -77,6 +77,11 @@ a.hub-card:focus-visible {
   background: none;
 }
 
+.hub-card__icon--global {
+  object-fit: cover;
+  object-position: center 44%;
+}
+
 .hub-card__emoji {
   display: grid;
   place-items: center;

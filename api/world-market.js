@@ -135,6 +135,10 @@ function quoteSymbolFor(meta) {
   return String(meta.symbol || meta.yahooSymbol || "").trim().toUpperCase();
 }
 
+function chartSymbolFor(meta) {
+  return String(meta.yahooSymbol || meta.symbol || "").trim().toUpperCase();
+}
+
 function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
@@ -181,22 +185,48 @@ function mergeWithCache(meta, quote, rank) {
   if (entry?.netIncome != null) merged.netIncome = entry.netIncome;
   if (entry?.revenue != null) merged.revenue = entry.revenue;
   const livePrice = toNum(merged.price);
-  if (entry?.price != null && (livePrice == null || livePrice === 0)) merged.price = entry.price;
-  if (
-    entry?.changePct != null &&
-    merged.changesPercentage == null &&
-    merged.changePercentage == null
-  ) {
-    merged.changesPercentage = entry.changePct;
+  const cachePrice = toNum(entry?.price);
+  const krwLive =
+    /\.KS$/i.test(chartSymbolFor(meta)) && livePrice != null && livePrice > 5000 && cachePrice != null && cachePrice < 5000;
+  if (cachePrice != null && (livePrice == null || livePrice === 0 || krwLive)) {
+    merged.price = cachePrice;
+  }
+  const liveChg = toNum(merged.changesPercentage ?? merged.changePercentage);
+  const cacheChg = toNum(entry?.changePct);
+  const liveChgMissing = liveChg == null || (liveChg === 0 && cacheChg != null && cacheChg !== 0);
+  if (cacheChg != null && (liveChgMissing || Math.abs(liveChg) > 25)) {
+    merged.changesPercentage = cacheChg;
   }
   return Object.keys(merged).length ? merged : null;
 }
 
 function yahooSymbol(symbol) {
-  return String(symbol || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\./g, "-");
+  const s = String(symbol || "").trim().toUpperCase();
+  if (!s) return s;
+  if (/\.(KS|KQ|SR|HK|TW|T|SS|SZ|L|PA|DE|TO|AX|MI|SW|HE|AS|OL|ST|CO|MX|SA|BA|SN|JK|KL|IS|AT|VI|WA|F|BR|MC|LS|AT|VI)$/i.test(s)) {
+    return s;
+  }
+  return s.replace(/\./g, "-");
+}
+
+function changePctFromChart(body) {
+  const result = body?.chart?.result?.[0];
+  if (!result) return null;
+  const meta = result.meta || {};
+  const direct = toNum(meta.regularMarketChangePercent);
+  if (direct != null) return direct;
+  const closes = (result.indicators?.quote?.[0]?.close || []).filter((v) => v != null && Number.isFinite(v));
+  if (closes.length >= 2) {
+    const prev = closes[closes.length - 2];
+    const last = closes[closes.length - 1];
+    if (prev > 0) return ((last - prev) / prev) * 100;
+  }
+  const price = toNum(meta.regularMarketPrice);
+  const previous = toNum(meta.previousClose ?? meta.regularMarketPreviousClose);
+  if (price != null && previous != null && previous > 0) {
+    return ((price - previous) / previous) * 100;
+  }
+  return null;
 }
 
 function sparklineFromChart(body) {
@@ -224,8 +254,7 @@ async function fetchYahooChartQuote(symbol) {
   const meta = body?.chart?.result?.[0]?.meta || {};
   const price = toNum(meta.regularMarketPrice);
   if (price == null) return null;
-  const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
-  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  const changePct = changePctFromChart(body);
   const spark = sparklineFromChart(body);
   return {
     symbol,
@@ -256,24 +285,30 @@ async function fetchYahooSparklineOnly(symbol) {
   }
 }
 
-async function attachSparklines(quoteMap, symbols) {
-  const need = symbols.filter((sym) => {
-    const row = quoteMap.get(sym);
-    return row && !row.sparkline;
-  });
+async function attachSparklinesForCompanies(quoteMap, companies) {
   const SPARK_CONCURRENCY = 8;
-  for (let i = 0; i < need.length; i += SPARK_CONCURRENCY) {
-    const chunk = need.slice(i, i + SPARK_CONCURRENCY);
-    const sparks = await Promise.all(chunk.map((sym) => fetchYahooSparklineOnly(sym)));
-    chunk.forEach((sym, idx) => {
-      const row = quoteMap.get(sym);
+  for (let i = 0; i < companies.length; i += SPARK_CONCURRENCY) {
+    const chunk = companies.slice(i, i + SPARK_CONCURRENCY);
+    const sparks = await Promise.all(
+      chunk.map((meta) => {
+        const chartSym = chartSymbolFor(meta);
+        return chartSym ? fetchYahooSparklineOnly(chartSym) : Promise.resolve(null);
+      })
+    );
+    chunk.forEach((meta, idx) => {
+      const quoteKey = quoteSymbolFor(meta).toUpperCase();
+      if (!quoteKey) return;
+      const row = quoteMap.get(quoteKey);
       const spark = sparks[idx];
-      if (row && spark) {
+      if (!spark) return;
+      if (row) {
         row.sparkline = spark.points;
         row.sparkUp = spark.up;
+      } else {
+        quoteMap.set(quoteKey, { sparkline: spark.points, sparkUp: spark.up });
       }
     });
-    if (i + SPARK_CONCURRENCY < need.length) await sleep(60);
+    if (i + SPARK_CONCURRENCY < companies.length) await sleep(60);
   }
 }
 
@@ -369,11 +404,16 @@ async function fetchQuotes(symbols) {
     for (const symbol of unique) {
       const row = out.get(symbol);
       const cap = caps.get(symbol);
-      if (row && cap?.marketCap) row.marketCap = cap.marketCap;
-      else if (!row && cap) out.set(symbol, cap);
+      if (row && cap) {
+        if (cap.marketCap) row.marketCap = cap.marketCap;
+        if (cap.changesPercentage != null) row.changesPercentage = cap.changesPercentage;
+        if (cap.price != null) row.price = cap.price;
+      } else if (!row && cap) {
+        out.set(symbol, cap);
+      }
     }
   } catch {}
-  await attachSparklines(out, unique);
+  await attachSparklinesForCompanies(out, RANKED_COMPANIES);
   quoteCache = { at: Date.now(), map: out };
   return out;
 }

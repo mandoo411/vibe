@@ -10,7 +10,7 @@ module.exports = [
   { symbol: "", name: "Saudi Aramco", country: "Saudi Arabia", yahooSymbol: "2222.SR" },
   { symbol: "META", name: "Meta Platforms (Facebook)", country: "United States" },
   { symbol: "TSLA", name: "Tesla", country: "United States" },
-  { symbol: "SSNLF", name: "Samsung", country: "South Korea" },
+  { symbol: "SSNLF", name: "Samsung", country: "South Korea", yahooSymbol: "005930.KS" },
   { symbol: "WMT", name: "Walmart", country: "United States" },
   { symbol: "BRK.B", name: "Berkshire Hathaway", country: "United States" },
   { symbol: "LLY", name: "Eli Lilly", country: "United States" },

@@ -161,16 +161,27 @@ function cacheKeyFor(meta, rank) {
   return symbol || `rank:${rank}`;
 }
 
+function cacheEntryFor(meta, rank) {
+  return loadMarketCache().entries?.[cacheKeyFor(meta, rank)] || null;
+}
+
 function mergeWithCache(meta, quote, rank) {
-  const entry = loadMarketCache().entries?.[cacheKeyFor(meta, rank)];
-  if (!entry) return quote || null;
+  const entry = cacheEntryFor(meta, rank);
   const merged = { ...(quote || {}) };
-  if (entry.marketCap != null) merged.marketCap = entry.marketCap;
-  if (entry.price != null && merged.price == null) merged.price = entry.price;
-  if (entry.changePct != null && merged.changesPercentage == null && merged.changePercentage == null) {
+  if (!entry && !quote) return null;
+  if (entry?.marketCap != null) merged.marketCap = entry.marketCap;
+  if (entry?.netIncome != null) merged.netIncome = entry.netIncome;
+  if (entry?.revenue != null) merged.revenue = entry.revenue;
+  const livePrice = toNum(merged.price);
+  if (entry?.price != null && (livePrice == null || livePrice === 0)) merged.price = entry.price;
+  if (
+    entry?.changePct != null &&
+    merged.changesPercentage == null &&
+    merged.changePercentage == null
+  ) {
     merged.changesPercentage = entry.changePct;
   }
-  return merged;
+  return Object.keys(merged).length ? merged : null;
 }
 
 function yahooSymbol(symbol) {
@@ -335,23 +346,33 @@ function valueFor(type, row) {
 function buildRow(meta, quote, type, rank) {
   const symbol = String(meta.symbol || "").trim().toUpperCase();
   const q = mergeWithCache(meta, quote, rank) || {};
-  const cachedCap = toNum(q.marketCap);
+  const entry = cacheEntryFor(meta, rank);
+  const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
+  const netIncome = toNum(q.netIncome) ?? toNum(entry?.netIncome);
+  const revenue = toNum(q.revenue) ?? toNum(entry?.revenue);
   const value =
-    type === "marketCap" && cachedCap != null && cachedCap > 0
-      ? cachedCap
-      : symbol || cachedCap
-        ? valueFor(type, q)
-        : cachedCap;
+    type === "marketCap"
+      ? marketCap
+      : type === "netIncome"
+        ? netIncome ?? valueFor(type, q)
+        : revenue ?? valueFor(type, q);
   const price = toNum(q.price);
   const changePct = toNum(q.changesPercentage || q.changePercentage);
   const hasLiveOrCache = Boolean(
-    (symbol && quote) || price != null || (cachedCap != null && cachedCap > 0)
+    (symbol && quote) ||
+      price != null ||
+      (marketCap != null && marketCap > 0) ||
+      (netIncome != null && netIncome > 0) ||
+      (revenue != null && revenue > 0)
   );
   return {
     rank,
     symbol: symbol || "",
     name: meta.name || q.name || q.companyName || symbol,
     value,
+    marketCap,
+    netIncome,
+    revenue,
     price,
     changePct,
     country: meta.country || q.country || "",
@@ -375,15 +396,22 @@ async function rowsFor(type) {
     return buildRow(meta, quote, type, index + 1);
   });
 
-  rows = sortRowsByValue(rows);
+  rows = sortRowsByValue(rows, type);
   return rows;
 }
 
-function sortRowsByValue(rows) {
+function sortFieldFor(type) {
+  if (type === "netIncome") return "netIncome";
+  if (type === "revenue") return "revenue";
+  return "value";
+}
+
+function sortRowsByValue(rows, type) {
+  const field = sortFieldFor(type);
   return rows
     .sort((a, b) => {
-      const av = a.value != null && a.value > 0 ? a.value : 0;
-      const bv = b.value != null && b.value > 0 ? b.value : 0;
+      const av = a[field] != null && a[field] > 0 ? a[field] : 0;
+      const bv = b[field] != null && b[field] > 0 ? b[field] : 0;
       if (bv !== av) return bv - av;
       return (a.name || "").localeCompare(b.name || "");
     })

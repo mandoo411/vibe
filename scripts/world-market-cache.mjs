@@ -14,6 +14,8 @@ const RANKED = require("../api/world-market-ranked.js");
 
 const OUTPUT_PATH = path.resolve(process.env.WORLD_MARKET_CACHE_PATH || "data/world-market-cache.json");
 const CMC_HOME = "https://companiesmarketcap.com/";
+const CMC_EARNINGS_URL = "https://companiesmarketcap.com/most-profitable-companies/";
+const CMC_REVENUE_URL = "https://companiesmarketcap.com/largest-companies-by-revenue/";
 const USER_AGENT = "Mozilla/5.0 (compatible; TotalMoneyAI-WorldMarketCache/1.0)";
 const PAGE_SLEEP_MS = 280;
 
@@ -62,28 +64,40 @@ const SLUG_ALIASES = {
   "marsh-and-mclennan": "marsh-and-mclennan-companies",
 };
 
-function parseRowHtml(row) {
+function parseListingRow(row, valueField) {
   const sorts = [...row.matchAll(/data-sort="(-?\d+)"/g)].map((m) => Number(m[1]));
-  if (sorts.length < 4) return null;
+  if (sorts.length < 3) return null;
 
   const rank = sorts[0];
-  const marketCap = sorts[1];
-  const price = sorts[2] / 100;
-  const changePct = sorts[3] / 100;
+  const metric = sorts[1];
+  let price = null;
+  let changePct = null;
+  if (sorts.length >= 4) {
+    price = sorts[2] / 100;
+    changePct = sorts[3] / 100;
+  } else if (Math.abs(sorts[2]) <= 50000) {
+    changePct = sorts[2] / 100;
+  }
   const nameMatch = row.match(/company-name">([^<]+)</);
   const symbolMatch = row.match(/company-code">[\s\S]*?([A-Z0-9][A-Z0-9.-]{0,14})<\/div>/i);
+  const logoMatch = row.match(/company-logos\/64\/([A-Z0-9][A-Z0-9.-]{0,14})\./i);
 
-  return {
+  const out = {
     rank,
     name: nameMatch ? nameMatch[1].trim() : "",
-    symbol: symbolMatch ? symbolMatch[1].trim().toUpperCase() : "",
-    marketCap: marketCap > 0 ? marketCap : null,
+    symbol: symbolMatch
+      ? symbolMatch[1].trim().toUpperCase()
+      : logoMatch
+        ? logoMatch[1].trim().toUpperCase()
+        : "",
     price: price > 0 ? price : null,
     changePct: Number.isFinite(changePct) ? changePct : null,
   };
+  if (metric > 0) out[valueField] = metric;
+  return out;
 }
 
-function parseHomepage(html) {
+function parseListing(html, valueField) {
   const bySymbol = new Map();
   const byName = new Map();
   const rowRe = /<tr[\s\S]*?<\/tr>/gi;
@@ -91,13 +105,21 @@ function parseHomepage(html) {
 
   for (const row of rows) {
     if (!row.includes("rank-td") || !row.includes("company-name")) continue;
-    const parsed = parseRowHtml(row);
-    if (!parsed || !parsed.marketCap) continue;
+    const parsed = parseListingRow(row, valueField);
+    if (!parsed || !parsed[valueField]) continue;
     if (parsed.symbol) bySymbol.set(parsed.symbol, parsed);
     if (parsed.name) byName.set(normalizeName(parsed.name), parsed);
   }
 
   return { bySymbol, byName, rowCount: rows.length };
+}
+
+function lookupListing(meta, maps) {
+  const sym = String(meta.symbol || "").trim().toUpperCase();
+  if (sym && maps.bySymbol.has(sym)) return maps.bySymbol.get(sym);
+  const yahoo = String(meta.yahooSymbol || "").trim().toUpperCase();
+  if (yahoo && maps.bySymbol.has(yahoo)) return maps.bySymbol.get(yahoo);
+  return maps.byName.get(normalizeName(meta.name)) || null;
 }
 
 function parseCapFromPage(html) {
@@ -153,19 +175,19 @@ async function fetchCompanyBySlug(slug) {
   return row;
 }
 
-function lookupHome(meta, maps) {
-  const sym = String(meta.symbol || "").trim().toUpperCase();
-  if (sym && maps.bySymbol.has(sym)) return maps.bySymbol.get(sym);
-  const byNorm = maps.byName.get(normalizeName(meta.name));
-  if (byNorm) return byNorm;
-  return null;
-}
-
 async function main() {
-  console.log(`Fetching ${CMC_HOME}…`);
-  const homeHtml = await fetchHtml(CMC_HOME);
-  const maps = parseHomepage(homeHtml);
-  console.log(`Homepage index: ${maps.bySymbol.size} symbols (${maps.rowCount} table rows scanned)`);
+  console.log("Fetching companiesmarketcap listings…");
+  const [homeHtml, earningsHtml, revenueHtml] = await Promise.all([
+    fetchHtml(CMC_HOME),
+    fetchHtml(CMC_EARNINGS_URL),
+    fetchHtml(CMC_REVENUE_URL),
+  ]);
+  const capMaps = parseListing(homeHtml, "marketCap");
+  const earnMaps = parseListing(earningsHtml, "netIncome");
+  const revMaps = parseListing(revenueHtml, "revenue");
+  console.log(
+    `Indexes: cap=${capMaps.bySymbol.size} earn=${earnMaps.bySymbol.size} rev=${revMaps.bySymbol.size}`
+  );
 
   const entries = {};
   let withCap = 0;
@@ -177,7 +199,9 @@ async function main() {
     const rank = index + 1;
     const key = cacheKey(meta, rank);
 
-    let row = lookupHome(meta, maps);
+    let row = lookupListing(meta, capMaps);
+    const earnRow = lookupListing(meta, earnMaps);
+    const revRow = lookupListing(meta, revMaps);
     if (row) {
       fromHome += 1;
     } else {
@@ -224,8 +248,10 @@ async function main() {
       name: meta.name,
       symbol: String(meta.symbol || row.symbol || "").toUpperCase(),
       marketCap: row.marketCap,
-      price: row.price ?? null,
-      changePct: row.changePct ?? null,
+      netIncome: earnRow?.netIncome ?? null,
+      revenue: revRow?.revenue ?? null,
+      price: row.price ?? earnRow?.price ?? revRow?.price ?? null,
+      changePct: row.changePct ?? earnRow?.changePct ?? revRow?.changePct ?? null,
     };
     withCap += 1;
   }

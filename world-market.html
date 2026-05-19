@@ -49,7 +49,7 @@
       }
       .world-table {
         width: 100%;
-        min-width: 880px;
+        min-width: 1040px;
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 13px;
@@ -179,7 +179,7 @@
       }
       @media (max-width: 768px) {
         .world-table {
-          min-width: 680px;
+          min-width: 920px;
           font-size: 12px;
         }
         .world-table th,
@@ -241,6 +241,8 @@
               <col class="world-col-num" />
               <col class="world-col-num" />
               <col class="world-col-num" />
+              <col class="world-col-num" />
+              <col class="world-col-num" />
               <col class="world-col-country" />
             </colgroup>
             <thead>
@@ -250,6 +252,8 @@
                 <th class="world-col-num world-num">Market Cap</th>
                 <th class="world-col-num world-num">Price</th>
                 <th class="world-col-num world-num">Today</th>
+                <th class="world-col-num world-num">Net Income</th>
+                <th class="world-col-num world-num">Revenue</th>
                 <th class="world-col-country">Country</th>
               </tr>
             </thead>
@@ -334,15 +338,17 @@
               ? rows.map((row) => `<tr>
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
                 <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
-                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.value))}</td>
+                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.marketCap ?? row.value))}</td>
                 <td class="world-col-num world-num">${escapeHtml(fmtPrice(row.price))}</td>
                 <td class="world-col-num world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.netIncome))}</td>
+                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.revenue))}</td>
                 <td class="world-col-country world-country">${escapeHtml(row.flag || "\u{1F310}")} ${escapeHtml(row.countryLabel || row.country || "")}</td>
               </tr>`).join("")
-              : '<tr><td colspan="6">데이터 없음</td></tr>';
+              : '<tr><td colspan="8">데이터 없음</td></tr>';
           } catch (error) {
             $("world-status").textContent = `글로벌 랭킹을 불러오지 못했습니다: ${error.message || error}`;
-            $("world-body").innerHTML = '<tr><td colspan="6">데이터 없음</td></tr>';
+            $("world-body").innerHTML = '<tr><td colspan="8">데이터 없음</td></tr>';
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {

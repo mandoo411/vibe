@@ -1,4 +1,5 @@
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
+const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
 const TOP_SYMBOLS = [
   "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "BRK-B",
   "JPM", "V", "JNJ", "WMT", "XOM", "MA", "PG", "HD", "CVX", "MRK",
@@ -22,6 +23,14 @@ function send(res, status, body) {
 }
 
 async function fmp(path, params = {}) {
+  return fmpGet(`${FMP_BASE}${path}`, params);
+}
+
+async function fmpStable(path, params = {}) {
+  return fmpGet(`${FMP_STABLE_BASE}${path}`, params);
+}
+
+async function fmpGet(base, params = {}) {
   const key = String(
     process.env.FMP_API_KEY ||
     process.env.FINANCIAL_MODELING_PREP_API_KEY ||
@@ -34,7 +43,7 @@ async function fmp(path, params = {}) {
     error.statusCode = 503;
     throw error;
   }
-  const url = new URL(`${FMP_BASE}${path}`);
+  const url = new URL(base);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
   url.searchParams.set("apikey", key);
   const controller = new AbortController();
@@ -100,12 +109,12 @@ async function fetchQuotes(symbols) {
     const chunk = unique.slice(i, i + 100);
     if (!chunk.length) continue;
     try {
-      out.push(...(await fmp(`/quote/${chunk.join(",")}`)));
+      out.push(...(await fmpStable("/quote", { symbol: chunk.join(",") })));
     } catch (error) {
       if (!/FMP HTTP 403|FMP HTTP 429/.test(error.message || "")) throw error;
       for (const symbol of chunk) {
         try {
-          out.push(...(await fmp(`/quote/${encodeURIComponent(symbol)}`)));
+          out.push(...(await fmpStable("/quote", { symbol })));
         } catch (_) {
           // 무료 플랜에서 막히는 심볼은 건너뛰고 가능한 종목만 표시한다.
         }

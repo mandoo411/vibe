@@ -3,6 +3,9 @@ name: Live Market Report
 on:
   schedule:
     - cron: "55 23 * * 0-4" # 08:55 KST
+    - cron: "0 0 * * 1-5" # 09:00 KST
+    - cron: "10 0 * * 1-5" # 09:10 KST (09:00 리포트 보강)
+    - cron: "20 0 * * 1-5" # 09:20 KST (09:00 리포트 보강)
     - cron: "25 0 * * 1-5" # 09:25 KST
     - cron: "55 0 * * 1-5" # 09:55 KST
     - cron: "25 1 * * 1-5" # 10:25 KST

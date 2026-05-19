@@ -310,8 +310,12 @@
           if (minutes > 15 * 60 + 30) return "오늘 장이 마감되었습니다";
           return "장중 실시간 리포트 업데이트 중";
         };
-        const reportMap = () => new Map((state.data.reports || []).map((r) => [r.time, r]));
-        const latestReport = () => [...(state.data.reports || [])].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
+        const todayReports = () => {
+          const today = seoulYmd();
+          return (state.data.reports || []).filter((r) => (r.date || state.data.date) === today);
+        };
+        const reportMap = () => new Map(todayReports().map((r) => [r.time, r]));
+        const latestReport = () => [...todayReports()].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
 
         function renderIndexes(indexes) {
           const latest = latestReport();
@@ -372,7 +376,7 @@
           $("live-status").textContent = marketStatus();
           renderTabs();
           renderReport();
-          const d = state.data.date || seoulYmd();
+          const d = seoulYmd();
           const latest = latestReport();
           $("live-updated").textContent = `마지막 업데이트: ${d.replaceAll("-", ".")} ${latest ? latest.time : "--:--"} KST`;
         }

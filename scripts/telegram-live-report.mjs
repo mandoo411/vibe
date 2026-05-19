@@ -266,8 +266,8 @@ function assertMarketOpen() {
 
 function normalizeSlotTime(hhmm) {
   const [h, m] = hhmm.split(":").map(Number);
-  const rounded = m < 15 ? 0 : m < 45 ? 30 : 0;
-  const hour = m >= 45 ? h + 1 : h;
+  const rounded = m < 30 ? 0 : 30;
+  const hour = h;
   return `${String(hour).padStart(2, "0")}:${String(rounded).padStart(2, "0")}`;
 }
 

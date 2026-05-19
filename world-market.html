@@ -326,9 +326,13 @@
           if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
           return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        function fmtPrice(value) {
+        function fmtPrice(value, currency) {
           const n = Number(value);
-          return Number.isFinite(n) ? `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}` : "—";
+          if (!Number.isFinite(n)) return "—";
+          if (currency === "KRW") {
+            return `₩${n.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}`;
+          }
+          return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
         function fmtPct(value) {
           const n = Number(value);
@@ -419,7 +423,7 @@
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
                 <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
                 <td class="world-col-num world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
-                <td class="world-col-num world-num">${escapeHtml(fmtPrice(row.price))}</td>
+                <td class="world-col-num world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
                 <td class="world-col-num world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
                 <td class="world-col-spark">${spark}</td>
                 <td class="world-col-country">${countryCell(row)}</td>

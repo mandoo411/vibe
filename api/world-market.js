@@ -139,6 +139,27 @@ function chartSymbolFor(meta) {
   return String(meta.yahooSymbol || meta.symbol || "").trim().toUpperCase();
 }
 
+function isKrwStock(meta) {
+  return /\.KS$/i.test(chartSymbolFor(meta));
+}
+
+function mergeQuotesForMeta(meta, quoteMap) {
+  const qSym = quoteSymbolFor(meta).toUpperCase();
+  const chartSym = chartSymbolFor(meta).toUpperCase();
+  const primary = qSym ? quoteMap.get(qSym) : null;
+  const chart = chartSym && chartSym !== qSym ? quoteMap.get(chartSym) : null;
+  if (!primary && !chart) return null;
+  const merged = { ...(primary || {}), ...(chart || {}) };
+  if (isKrwStock(meta) && chart?.price != null) {
+    merged.price = chart.price;
+    merged.priceCurrency = "KRW";
+    if (chart.changesPercentage != null) merged.changesPercentage = chart.changesPercentage;
+    if (chart.sparkline) merged.sparkline = chart.sparkline;
+    if (chart.sparkUp != null) merged.sparkUp = chart.sparkUp;
+  }
+  return merged;
+}
+
 function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
@@ -186,9 +207,7 @@ function mergeWithCache(meta, quote, rank) {
   if (entry?.revenue != null) merged.revenue = entry.revenue;
   const livePrice = toNum(merged.price);
   const cachePrice = toNum(entry?.price);
-  const krwLive =
-    /\.KS$/i.test(chartSymbolFor(meta)) && livePrice != null && livePrice > 5000 && cachePrice != null && cachePrice < 5000;
-  if (cachePrice != null && (livePrice == null || livePrice === 0 || krwLive)) {
+  if (cachePrice != null && (livePrice == null || livePrice === 0) && !isKrwStock(meta)) {
     merged.price = cachePrice;
   }
   const liveChg = toNum(merged.changesPercentage ?? merged.changePercentage);
@@ -445,6 +464,7 @@ function valueFor(type, row) {
 function buildRow(meta, quote, type, rank) {
   const symbol = String(meta.symbol || "").trim().toUpperCase();
   const q = mergeWithCache(meta, quote, rank) || {};
+  if (isKrwStock(meta)) q.priceCurrency = "KRW";
   const entry = cacheEntryFor(meta, rank);
   const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
   const netIncome = toNum(q.netIncome) ?? toNum(entry?.netIncome);
@@ -473,6 +493,7 @@ function buildRow(meta, quote, type, rank) {
     netIncome,
     revenue,
     price,
+    priceCurrency: q.priceCurrency || (isKrwStock(meta) ? "KRW" : "USD"),
     changePct,
     sparkline: Array.isArray(q.sparkline) ? q.sparkline : null,
     sparkUp: q.sparkUp === true || q.sparkUp === false ? q.sparkUp : null,
@@ -489,13 +510,14 @@ async function rowsFor(type) {
     throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
   }
   const fetchSymbols = [
-    ...new Set(RANKED_COMPANIES.map((c) => quoteSymbolFor(c)).filter(Boolean)),
+    ...new Set(
+      RANKED_COMPANIES.flatMap((c) => [quoteSymbolFor(c), chartSymbolFor(c)].filter(Boolean))
+    ),
   ];
   const quoteMap = await fetchQuotes(fetchSymbols);
 
   let rows = RANKED_COMPANIES.map((meta, index) => {
-    const qSym = quoteSymbolFor(meta);
-    const quote = qSym ? quoteMap.get(qSym) : null;
+    const quote = mergeQuotesForMeta(meta, quoteMap);
     return buildRow(meta, quote, type, index + 1);
   });
 

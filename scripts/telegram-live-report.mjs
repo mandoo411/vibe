@@ -254,6 +254,23 @@ function seoulClock(date = new Date()) {
   };
 }
 
+const LIVE_SLOTS = [
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "11:30",
+  "12:00",
+  "12:30",
+  "13:00",
+  "13:30",
+  "14:00",
+  "14:30",
+  "15:00",
+  "15:30",
+];
+
 function assertMarketOpen() {
   const clock = seoulClock();
   const weekdayOpen = clock.weekday !== "Sat" && clock.weekday !== "Sun";
@@ -261,14 +278,36 @@ function assertMarketOpen() {
     console.log("현재 장 운영 시간이 아닙니다.");
     return null;
   }
-  return `${String(clock.hour).padStart(2, "0")}:${String(clock.minute).padStart(2, "0")}`;
+  return clock;
 }
 
-function normalizeSlotTime(hhmm) {
-  const [h, m] = hhmm.split(":").map(Number);
-  const rounded = m < 30 ? 0 : 30;
-  const hour = h;
-  return `${String(hour).padStart(2, "0")}:${String(rounded).padStart(2, "0")}`;
+function slotForClock(clock) {
+  const rounded = clock.minute < 30 ? 0 : 30;
+  return `${String(clock.hour).padStart(2, "0")}:${String(rounded).padStart(2, "0")}`;
+}
+
+async function slotAlreadyPublished(date, time) {
+  try {
+    const data = await readJson(DATA_PATH);
+    if (data.date !== date || !Array.isArray(data.reports)) return false;
+    return data.reports.some((report) => report.time === time);
+  } catch {
+    return false;
+  }
+}
+
+async function loadPreviousIndexes(date) {
+  try {
+    const data = await readJson(DATA_PATH);
+    if (data.date !== date || !Array.isArray(data.reports) || !data.reports.length) return null;
+    const last = data.reports[data.reports.length - 1];
+    if (last?.kospi?.value > 0 && last?.kosdaq?.value > 0) {
+      return { kospi: last.kospi, kosdaq: last.kosdaq };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }
 
 function kisHeaders(trId, token, appKey, appSecret, trCont = "") {
@@ -677,19 +716,21 @@ ${themeText(themes)}
 === 대형주 특징주 ===
 ${bluechipText(bluechipMovers, bluechipMessagesByName)}
 
-위 실제 채널 메시지를 근거로:
-1. 🎙️ 현재 장세 총평 (3줄, 야구중계 스타일, 생동감있게)
-2. 🔥 오늘의 핵심 테마와 급등 이유 (채널 메시지 근거 필수 인용)
-3. ⚡ 대형주 특징주 분석
-4. 🏆 상승률 TOP30 전체 목록
-5. 🎯 다음 30분 관전 포인트`;
+위 실제 채널 메시지를 근거로 아래를 **풍성하고 구체적으로** 작성하세요 (각 섹션 최소 4~8문장, TOP10 종목은 종목별 2~3문장):
+1. 🎙️ 현재 장세 총평 (야구 중계 스타일, 수급·지수·심리 포함)
+2. 📰 채널 핵심 뉴스 요약 (스톡허브·거시경제 채널 메시지 3~5건 인용, 채널명 병기)
+3. 🔥 오늘의 핵심 테마와 급등 이유 (테마별 대표 종목, 채널 메시지 인용 필수)
+4. ⚡ 대형주·특징주 심층 분석 (급등/급락 종목별 매수·매도 논리)
+5. 🏆 상승률 TOP10 집중 분석 (종목별 왜 올랐는지, 리스크 1줄)
+6. 📊 TOP30 한눈에 (간단 목록)
+7. 🎯 다음 30분 관전 포인트 (구체적 종목·이벤트·가격대)`;
 
 
   const msg = await client.messages.create({
     model: MODEL,
-    max_tokens: 2000,
+    max_tokens: 4500,
     system:
-      "당신은 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게 분석해주세요.\n텔레그램 채널의 실제 메시지를 근거로 설명하고\n왜 오르는지 이유와 맥락을 정확히 짚어주세요.\n추측이 아닌 실제 채널 메시지 근거를 반드시 언급하세요.\n스톡허브, 거시경제 관련 채널 메시지를 가장 중요하게 참고하고 우선적으로 인용하세요.\n크립토 채널 메시지는 크립토 관련 분석시에만 참고하세요.\n이모지를 적절히 사용해 읽기 쉽게 작성해주세요.",
+      "당신은 20년차 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게, 그러나 숫자와 사실은 정확히 분석해주세요.\n텔레그램 채널의 실제 메시지를 반드시 인용하고, 채널명을 함께 적어주세요.\n추측이 아닌 채널 메시지·지수·등락률 데이터에 근거하세요.\n스톡허브, 거시경제 채널을 최우선으로 참고하세요.\n크립토 채널은 크립토 관련일 때만 참고하세요.\n섹션 제목에 이모지를 사용하고, 종목 분석은 대충 쓰지 말고 구체적으로 작성하세요.",
     messages: [{ role: "user", content: user }],
   });
   const block = msg.content.find((item) => item.type === "text");
@@ -767,18 +808,41 @@ async function gitCommitAndPush(time) {
 }
 
 async function main() {
-  const rawTime = assertMarketOpen();
-  if (!rawTime) return;
-  const time = normalizeSlotTime(rawTime);
+  const clock = assertMarketOpen();
+  if (!clock) return;
+  const time = slotForClock(clock);
   const ymd = seoulYmd();
+
+  if (!LIVE_SLOTS.includes(time)) {
+    console.log(`슬롯 ${time} 은 발행 대상이 아닙니다.`);
+    return;
+  }
+
+  if (await slotAlreadyPublished(ymd, time) && process.env.LIVE_REPORT_FORCE !== "1") {
+    console.log(`슬롯 ${ymd} ${time} 이미 발행됨 — 건너뜀 (재발행: LIVE_REPORT_FORCE=1)`);
+    return;
+  }
+
+  console.log(`Live report slot: ${ymd} ${time} KST (clock ${clock.hour}:${clock.minute})`);
 
   const token = requireEnv("KIS_ACCESS_TOKEN");
   const appKey = requireEnv("KIS_APP_KEY");
   const appSecret = requireEnv("KIS_APP_SECRET");
   const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
 
-  const kospi = await fetchIndex("0001", "코스피", token, appKey, appSecret);
-  const kosdaq = await fetchIndex("1001", "코스닥", token, appKey, appSecret);
+  let kospi = await fetchIndex("0001", "코스피", token, appKey, appSecret);
+  let kosdaq = await fetchIndex("1001", "코스닥", token, appKey, appSecret);
+  if (!kospi?.value || !kosdaq?.value) {
+    const prev = await loadPreviousIndexes(ymd);
+    if (prev) {
+      if (!kospi?.value) kospi = { label: "코스피", ...prev.kospi };
+      if (!kosdaq?.value) kosdaq = { label: "코스닥", ...prev.kosdaq };
+      console.warn("지수 조회 실패 — 직전 슬롯 지수 사용");
+    }
+  }
+  if (!kospi?.value || !kosdaq?.value) {
+    throw new Error(`지수 조회 실패 (코스피=${kospi?.value}, 코스닥=${kosdaq?.value})`);
+  }
 
   const rankings = [
     ...(await fetchFluctuationRanking("0001", "KOSPI", token, appKey, appSecret)),
@@ -844,12 +908,17 @@ async function main() {
     })),
   };
 
-  await sendTelegramMessage(
-    buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
-  );
   await writeLiveReport({ date: ymd, ...payload });
   await gitCommitAndPush(time);
-  console.log(`Live report sent and saved: ${ymd} ${time}`);
+  try {
+    await sendTelegramMessage(
+      buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
+    );
+    console.log("Telegram channel posted.");
+  } catch (error) {
+    console.warn(`Telegram send failed (report saved): ${error.message || error}`);
+  }
+  console.log(`Live report saved: ${ymd} ${time}`);
 }
 
 main().catch((error) => {

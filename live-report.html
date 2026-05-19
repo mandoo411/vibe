@@ -28,6 +28,79 @@
         font-family: var(--font-mono);
         font-size: 11px;
         color: var(--text-muted);
+        line-height: 1.6;
+      }
+      .live-countdown {
+        color: var(--accent-bright);
+        font-weight: 600;
+      }
+      .live-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 0 0 10px;
+      }
+      .live-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+        background: #12100c;
+      }
+      .live-chip--done {
+        border-color: rgba(74, 222, 128, 0.35);
+        color: #86efac;
+      }
+      .live-chip--pending {
+        border-color: rgba(240, 199, 90, 0.35);
+        color: var(--accent-bright);
+      }
+      .live-news-list,
+      .live-theme-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .live-news-list li,
+      .live-theme-list li {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text);
+      }
+      .live-news-list li:last-child,
+      .live-theme-list li:last-child {
+        border-bottom: 0;
+      }
+      .live-news-list small,
+      .live-theme-list small {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+      }
+      .live-mover-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 8px;
+      }
+      .live-mover-card {
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: #12100c;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .live-mover-card strong {
+        color: var(--text);
       }
       .live-index-grid {
         display: grid;
@@ -242,11 +315,27 @@
 
         <section aria-labelledby="live-sec-timeline">
           <h2 class="live-section__title" id="live-sec-timeline">③ 오늘 리포트 타임라인</h2>
+          <div id="live-slot-chips" class="live-chip-list" aria-label="슬롯 발행 현황"></div>
           <div id="live-tabs" class="live-tabs" role="tablist" aria-label="라이브 리포트 시간대"></div>
         </section>
 
+        <section aria-labelledby="live-sec-news">
+          <h2 class="live-section__title" id="live-sec-news">④ 채널 뉴스 · 테마</h2>
+          <div class="live-card" style="padding: 12px 0">
+            <h3 class="live-section__title" style="margin: 0 12px 8px; font-size: 12px">핵심 뉴스</h3>
+            <ul id="live-news" class="live-news-list"></ul>
+            <h3 class="live-section__title" style="margin: 12px 12px 8px; font-size: 12px">테마</h3>
+            <ul id="live-themes" class="live-theme-list"></ul>
+          </div>
+        </section>
+
+        <section aria-labelledby="live-sec-movers">
+          <h2 class="live-section__title" id="live-sec-movers">⑤ 대형주 · 특징주</h2>
+          <div id="live-movers" class="live-mover-grid"></div>
+        </section>
+
         <section aria-labelledby="live-sec-top30">
-          <h2 class="live-section__title" id="live-sec-top30">④ 상승률 TOP30</h2>
+          <h2 class="live-section__title" id="live-sec-top30">⑥ 상승률 TOP30</h2>
           <div class="live-card live-table-card">
             <table class="live-table">
               <thead>
@@ -312,7 +401,33 @@
         };
         const todayReports = () => {
           const today = seoulYmd();
-          return (state.data.reports || []).filter((r) => (r.date || state.data.date) === today);
+          if (state.data.date !== today) return [];
+          return state.data.reports || [];
+        };
+        const slotMinutes = (time) => {
+          const [h, m] = time.split(":").map(Number);
+          return h * 60 + m;
+        };
+        const nextSlotTime = () => {
+          const now = seoulNow();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          for (const time of TIMES) {
+            if (slotMinutes(time) > minutes) return time;
+          }
+          return null;
+        };
+        const countdownLabel = () => {
+          const next = nextSlotTime();
+          if (!next) return "";
+          const now = seoulNow();
+          const target = new Date(now);
+          const [h, m] = next.split(":").map(Number);
+          target.setHours(h, m, 0, 0);
+          const diff = target.getTime() - now.getTime();
+          if (diff <= 0) return `곧 ${next} 리포트 업데이트`;
+          const min = Math.floor(diff / 60000);
+          const sec = Math.floor((diff % 60000) / 1000);
+          return `다음 업데이트 ${next}까지 ${min}분 ${sec}초`;
         };
         const reportMap = () => new Map(todayReports().map((r) => [r.time, r]));
         const latestReport = () => [...todayReports()].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
@@ -347,12 +462,55 @@
           });
         }
 
+        function renderSlotChips() {
+          const map = reportMap();
+          const now = seoulNow();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          $("live-slot-chips").innerHTML = TIMES.map((time) => {
+            const done = map.has(time);
+            const due = slotMinutes(time) <= minutes;
+            const cls = done ? "live-chip live-chip--done" : due ? "live-chip live-chip--pending" : "live-chip";
+            const mark = done ? "✓" : due ? "…" : "·";
+            return `<span class="${cls}">${mark} ${time}</span>`;
+          }).join("");
+        }
+
+        function renderExtras(selected) {
+          const news = Array.isArray(selected?.telegramMessages) ? selected.telegramMessages.slice(0, 12) : [];
+          $("live-news").innerHTML = news.length
+            ? news
+                .map(
+                  (item) => `<li>${escapeHtml(item.text || "")}<small>${escapeHtml(item.channel || "채널")}</small></li>`
+                )
+                .join("")
+            : '<li class="live-empty">채널 뉴스 준비 중</li>';
+          const themes = Array.isArray(selected?.themes) ? selected.themes : [];
+          $("live-themes").innerHTML = themes.length
+            ? themes
+                .map((theme) => {
+                  const msgs = (theme.messages || []).slice(0, 3).join(" · ");
+                  return `<li><strong>${escapeHtml(theme.name || "테마")}</strong> ${escapeHtml(msgs)}</li>`;
+                })
+                .join("")
+            : '<li class="live-empty">테마 분석 준비 중</li>';
+          const movers = Array.isArray(selected?.bluechipMovers) ? selected.bluechipMovers : [];
+          $("live-movers").innerHTML = movers.length
+            ? movers
+                .map((row) => {
+                  const msgs = (row.messages || []).slice(0, 2).join(" ");
+                  return `<div class="live-mover-card"><strong>${escapeHtml(row.name || "")}</strong> <span class="live-delta ${deltaClass(row.rate)}">${escapeHtml(fmtPct(row.rate))}</span><br>${escapeHtml(msgs || row.type || "")}</div>`;
+                })
+                .join("")
+            : '<div class="live-empty">대형주 특징주 데이터 준비 중</div>';
+        }
+
         function renderReport() {
           const selected = reportMap().get(state.selected) || latestReport();
           if (!selected) {
             $("live-report-time").textContent = "-";
             $("live-analysis").textContent = "아직 생성된 라이브 리포트가 없습니다.";
             $("live-top30").innerHTML = '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
+            renderExtras(null);
             return;
           }
           $("live-report-time").textContent = `${selected.time} 리포트`;
@@ -363,22 +521,36 @@
               ? selected.top10.slice(0, 30)
               : [];
           $("live-top30").innerHTML = rows.length
-            ? rows.map((row) => `<tr>
+            ? rows
+                .map(
+                  (row) => `<tr>
               <td class="num">${escapeHtml(row.rank || "")}</td>
               <td>${escapeHtml(row.name || row.code || "-")}</td>
               <td class="num">${escapeHtml(fmtNum(row.price, 0))}</td>
               <td class="num"><span class="live-delta ${deltaClass(row.rate)}">${escapeHtml(fmtPct(row.rate))}</span></td>
-            </tr>`).join("")
+            </tr>`
+                )
+                .join("")
             : '<tr><td colspan="4" class="live-empty">상승률 데이터 준비 중</td></tr>';
+          renderExtras(selected);
         }
 
         function render() {
-          $("live-status").textContent = marketStatus();
+          const cd = countdownLabel();
+          const map = reportMap();
+          const now = seoulNow();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          const missing = TIMES.filter((t) => slotMinutes(t) <= minutes && !map.has(t));
+          let status = marketStatus();
+          if (cd) status += ` · ${cd}`;
+          if (missing.length) status += ` · 미발행: ${missing.join(", ")}`;
+          $("live-status").innerHTML = `${escapeHtml(status)}${cd ? `<br><span class="live-countdown">${escapeHtml(cd)}</span>` : ""}`;
+          renderSlotChips();
           renderTabs();
           renderReport();
           const d = seoulYmd();
           const latest = latestReport();
-          $("live-updated").textContent = `마지막 업데이트: ${d.replaceAll("-", ".")} ${latest ? latest.time : "--:--"} KST`;
+          $("live-updated").textContent = `마지막 업데이트: ${d.replaceAll("-", ".")} ${latest ? latest.time : "--:--"} KST · 30분 슬롯`;
         }
 
         async function load() {
@@ -389,7 +561,8 @@
             ]);
             if (dataRes.status === "fulfilled") state.data = dataRes.value || state.data;
             const latest = latestReport();
-            state.selected = latest ? latest.time : "";
+            const prev = state.selected;
+            state.selected = prev && reportMap().has(prev) ? prev : latest ? latest.time : "";
             renderIndexes(indexRes.status === "fulfilled" ? indexRes.value.indexes : null);
             render();
           } catch (error) {
@@ -400,7 +573,10 @@
         }
 
         load();
-        setInterval(load, 5 * 60 * 1000);
+        setInterval(load, 60 * 1000);
+        setInterval(() => {
+          if (state.data.date === seoulYmd()) render();
+        }, 1000);
       })();
     </script>
   </body>

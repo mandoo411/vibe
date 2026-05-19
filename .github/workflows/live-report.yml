@@ -2,8 +2,9 @@ name: Live Market Report
 
 on:
   schedule:
-    # KST 09:00-15:30 (UTC 0-6) 평일, 5분마다 실행 — GitHub cron 누락·지연 대비
+    # KST 09:00-15:30 (UTC 0-6) 평일, 5분마다 + 정각/30분 보강 (14:00·14:30·15:00·15:30 포함)
     - cron: "*/5 0-6 * * 1-5"
+    - cron: "0,30 0-6 * * 1-5"
   workflow_dispatch:
 
 permissions:

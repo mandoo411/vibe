@@ -246,6 +246,7 @@
             const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            if (data.warning) $("world-status").textContent = data.warning;
             const rows = Array.isArray(data.rows) ? data.rows : [];
             const withData = data.withData != null ? data.withData : rows.filter((r) => r.hasQuote).length;
             $("world-summary").textContent =

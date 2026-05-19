@@ -4,6 +4,8 @@ const RANKED_COMPANIES = require("./world-market-ranked.js");
 
 const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 10000);
 const QUOTE_CONCURRENCY = 5;
+const QUOTE_CACHE_MS = 10 * 60 * 1000;
+let quoteCache = { at: 0, map: null };
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -126,23 +128,26 @@ function pickSymbol(row) {
 
 async function fetchQuoteOne(symbol) {
   if (!symbol) return null;
-  try {
-    const rows = await fmpStable("/quote", { symbol });
-    if (rows.length) return rows[0];
-  } catch (error) {
-    if (!/premium|403|429|402/i.test(error.message || "")) throw error;
-  }
-  try {
-    const rows = await fmp(`/quote/${encodeURIComponent(symbol)}`, {});
-    if (rows.length) return rows[0];
-  } catch (error) {
-    if (!/premium|403|429|402/i.test(error.message || "")) throw error;
+  const attempts = [
+    () => fmp(`/quote/${encodeURIComponent(symbol)}`, {}),
+    () => fmpStable("/quote", { symbol }),
+  ];
+  for (const attempt of attempts) {
+    try {
+      const rows = await attempt();
+      if (rows.length) return rows[0];
+    } catch (error) {
+      if (!/premium|403|429|402|timeout/i.test(error.message || "")) throw error;
+    }
   }
   return null;
 }
 
 async function fetchQuotes(symbols) {
   const unique = [...new Set(symbols.map((s) => String(s || "").trim().toUpperCase()).filter(Boolean))];
+  if (quoteCache.map && Date.now() - quoteCache.at < QUOTE_CACHE_MS) {
+    return quoteCache.map;
+  }
   const out = new Map();
   for (let i = 0; i < unique.length; i += QUOTE_CONCURRENCY) {
     const chunk = unique.slice(i, i + QUOTE_CONCURRENCY);
@@ -153,6 +158,7 @@ async function fetchQuotes(symbols) {
     });
     if (i + QUOTE_CONCURRENCY < unique.length) await sleep(150);
   }
+  quoteCache = { at: Date.now(), map: out };
   return out;
 }
 
@@ -199,6 +205,9 @@ function buildRow(meta, quote, type, rank) {
 }
 
 async function rowsFor(type) {
+  if (!Array.isArray(RANKED_COMPANIES) || RANKED_COMPANIES.length < 1) {
+    throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
+  }
   const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
   const quoteMap = await fetchQuotes(fetchSymbols);
 
@@ -227,17 +236,20 @@ module.exports = async function handler(req, res) {
   const type = ["marketCap", "netIncome", "revenue"].includes(req.query?.type) ? req.query.type : "marketCap";
   try {
     const rows = await rowsFor(type);
+    const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
     const withQuote = rows.filter((row) => row.hasQuote).length;
     const withData = rows.filter((row) => row.hasQuote && row.value != null && row.value > 0).length;
-    if (withQuote < 5) {
-      throw new Error(`FMP quote 데이터 부족 (${withQuote}건). API 키·플랜을 확인하세요.`);
-    }
+    const warning =
+      withQuote < 5
+        ? `FMP quote 일부만 조회됨 (${withQuote}/${rows.length}, 요청 ${fetchSymbols.length}개). 잠시 후 다시 시도하세요.`
+        : null;
     send(res, 200, {
       type,
       order: type === "marketCap" ? "ranked" : "value",
       total: rows.length,
       withQuote,
       withData,
+      warning,
       updatedAt: new Date().toISOString(),
       rows,
     });

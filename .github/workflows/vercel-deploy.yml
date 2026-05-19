@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "data/**"
+      - "agent-transcripts/**"
   workflow_dispatch:
 
 concurrency:

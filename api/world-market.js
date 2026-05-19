@@ -131,6 +131,19 @@ function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
 
+function companyLogoUrls(meta, symbol) {
+  if (symbol) {
+    const fmp = `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`;
+    return { logo: fmp, logoFallback: "" };
+  }
+  const yahoo = String(meta.yahooSymbol || "").trim();
+  if (yahoo) {
+    const cmc = `https://companiesmarketcap.com/img/company-logos/64/${encodeURIComponent(yahoo)}.png`;
+    return { logo: cmc, logoFallback: "" };
+  }
+  return { logo: "", logoFallback: "" };
+}
+
 function loadMarketCache() {
   if (fileCache.data && Date.now() - fileCache.at < 60_000) return fileCache.data;
   try {
@@ -344,7 +357,7 @@ function buildRow(meta, quote, type, rank) {
     country: meta.country || q.country || "",
     countryLabel: countryShort(meta.country || q.country || ""),
     flag: countryFlag(meta.country || q.country || ""),
-    logo: symbol ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png` : "",
+    ...companyLogoUrls(meta, symbol),
     hasQuote: hasLiveOrCache,
   };
 }

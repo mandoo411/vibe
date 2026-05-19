@@ -231,17 +231,53 @@
         color: var(--text-dim);
       }
       @media (max-width: 768px) {
+        .world-scroll {
+          overflow-x: hidden;
+        }
         .world-table {
-          min-width: 820px;
-          font-size: 12px;
+          min-width: 0;
+          width: 100%;
+          table-layout: fixed;
         }
         .world-table th,
         .world-table td {
-          padding: 8px 7px;
+          padding: 8px 6px;
         }
-        .world-spark {
-          width: 96px;
-          height: 30px;
+        .world-table col.world-col-rank {
+          width: 2.1rem;
+        }
+        .world-table col.world-col-name {
+          width: 34%;
+        }
+        .world-table col.world-col-metric {
+          width: 24%;
+        }
+        .world-table col.world-col-price {
+          width: 22%;
+        }
+        .world-table col.world-col-today {
+          width: 18%;
+        }
+        .world-table th.world-col-num,
+        .world-table td.world-col-num {
+          padding-right: 6px;
+          padding-left: 4px;
+        }
+        .world-company {
+          gap: 8px;
+        }
+        .world-company strong {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .world-company span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .world-col-hide-mobile {
+          display: none !important;
         }
       }
     </style>
@@ -293,21 +329,21 @@
             <colgroup>
               <col class="world-col-rank" />
               <col class="world-col-name" />
-              <col class="world-col-num" />
-              <col class="world-col-num" />
-              <col class="world-col-num" />
-              <col class="world-col-spark" />
-              <col class="world-col-country" />
+              <col class="world-col-num world-col-metric" />
+              <col class="world-col-num world-col-price" />
+              <col class="world-col-num world-col-today" />
+              <col class="world-col-spark world-col-hide-mobile" />
+              <col class="world-col-country world-col-hide-mobile" />
             </colgroup>
             <thead>
               <tr>
                 <th class="world-col-rank world-rank">#</th>
                 <th class="world-col-name">Name</th>
-                <th class="world-col-num world-num" id="world-metric-header">Market Cap</th>
-                <th class="world-col-num world-num">Price</th>
-                <th class="world-col-num world-num">Today</th>
-                <th class="world-col-spark">Price (30 days)</th>
-                <th class="world-col-country">Country</th>
+                <th class="world-col-num world-col-metric world-num" id="world-metric-header">Market Cap</th>
+                <th class="world-col-num world-col-price world-num">Price</th>
+                <th class="world-col-num world-col-today world-num">Today</th>
+                <th class="world-col-spark world-col-hide-mobile">Price (30 days)</th>
+                <th class="world-col-country world-col-hide-mobile">Country</th>
               </tr>
             </thead>
             <tbody id="world-body"></tbody>
@@ -321,6 +357,8 @@
         const state = { type: "marketCap" };
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
         const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
+        const valueLabelsMobile = { marketCap: "Mkt Cap", netIncome: "Earnings", revenue: "Revenue" };
+        const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
         const $ = (id) => document.getElementById(id);
         function escapeHtml(value) {
           return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -404,7 +442,9 @@
             btn.setAttribute("aria-pressed", btn.dataset.type === state.type ? "true" : "false");
           });
           const metricHeader = document.getElementById("world-metric-header");
-          if (metricHeader) metricHeader.textContent = valueLabels[state.type];
+          if (metricHeader) {
+            metricHeader.textContent = isMobile() ? valueLabelsMobile[state.type] : valueLabels[state.type];
+          }
         }
         async function load() {
           syncTabs();
@@ -423,11 +463,11 @@
                     return `<tr>
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
                 <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
-                <td class="world-col-num world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
-                <td class="world-col-num world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
-                <td class="world-col-num world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
-                <td class="world-col-spark">${spark}</td>
-                <td class="world-col-country">${countryCell(row)}</td>
+                <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
+                <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
+                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+                <td class="world-col-spark world-col-hide-mobile">${spark}</td>
+                <td class="world-col-country world-col-hide-mobile">${countryCell(row)}</td>
               </tr>`;
                   })
                   .join("")
@@ -444,6 +484,7 @@
         });
         load();
         setInterval(load, 5 * 60 * 1000);
+        window.matchMedia("(max-width: 768px)").addEventListener("change", () => syncTabs());
       })();
     </script>
   </body>

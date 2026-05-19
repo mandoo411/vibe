@@ -1,4 +1,13 @@
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
+const TOP_SYMBOLS = [
+  "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "BRK-B",
+  "JPM", "V", "JNJ", "WMT", "XOM", "MA", "PG", "HD", "CVX", "MRK",
+  "ABBV", "BAC", "KO", "PEP", "AVGO", "COST", "TMO", "MCD", "CSCO",
+  "ACN", "LIN", "DHR", "TXN", "NEE", "PM", "UNH", "RTX", "HON",
+  "QCOM", "IBM", "AMGN", "LOW", "INTU", "SBUX", "GE", "CAT", "BA",
+  "AMD", "INTC", "CRM", "NOW", "PLTR", "TSMC", "TSM", "ASML", "SAP",
+  "005930.KS", "000660.KS", "035420.KS",
+];
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -66,38 +75,44 @@ function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
 
-async function quoteMap(symbols) {
-  if (!symbols.length) return new Map();
-  const rows = await fmp(`/quote/${symbols.slice(0, 100).join(",")}`);
-  return new Map(rows.map((row) => [pickSymbol(row), row]));
+function uniqueSymbols(symbols) {
+  return [...new Set(symbols.map((symbol) => String(symbol || "").trim().toUpperCase()).filter(Boolean))];
 }
 
-async function profileMap(symbols) {
-  if (!symbols.length) return new Map();
-  const rows = await fmp(`/profile/${symbols.slice(0, 100).join(",")}`);
-  return new Map(rows.map((row) => [pickSymbol(row), row]));
+async function fetchQuotes(symbols) {
+  const out = [];
+  const unique = uniqueSymbols(symbols);
+  for (let i = 0; i < unique.length; i += 100) {
+    const chunk = unique.slice(i, i + 100);
+    if (!chunk.length) continue;
+    out.push(...(await fmp(`/quote/${chunk.join(",")}`)));
+  }
+  return out;
 }
 
-function valueFor(type, row, quote) {
-  if (type === "marketCap") return toNum(row.marketCap || row.marketCapTTM || quote?.marketCap);
-  if (type === "netIncome") return toNum(row.netIncome || row.netIncomeTTM || row.growthNetIncome);
-  return toNum(row.revenue || row.revenueTTM || row.growthRevenue || row.growthRevenuePerShare);
+function valueFor(type, row) {
+  if (type === "marketCap") return toNum(row.marketCap);
+  if (type === "netIncome") {
+    const eps = toNum(row.eps);
+    const shares = toNum(row.sharesOutstanding);
+    if (eps != null && shares != null) return eps * shares;
+    return toNum(row.netIncome);
+  }
+  return toNum(row.revenue);
 }
 
-function normalize(type, rows, quotes, profiles) {
+function normalize(type, rows) {
   return rows
     .map((row) => {
       const symbol = pickSymbol(row);
-      const quote = quotes.get(symbol) || {};
-      const profile = profiles.get(symbol) || {};
       return {
         symbol,
-        name: row.companyName || row.company || quote.name || profile.companyName || symbol,
-        value: valueFor(type, row, quote),
-        price: toNum(row.price || quote.price),
-        changePct: toNum(row.changesPercentage || row.changePercentage || quote.changesPercentage),
-        country: profile.country || row.country || "",
-        flag: countryFlag(profile.country || row.country),
+        name: row.name || row.companyName || row.company || symbol,
+        value: valueFor(type, row),
+        price: toNum(row.price),
+        changePct: toNum(row.changesPercentage || row.changePercentage),
+        country: row.country || "",
+        flag: countryFlag(row.country),
         logo: `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`,
       };
     })
@@ -108,17 +123,16 @@ function normalize(type, rows, quotes, profiles) {
 }
 
 async function rowsFor(type) {
-  if (type === "marketCap") {
-    const rows = await fmp("/stock-screener", { marketCapMoreThan: "100000000000", limit: "100" });
-    const symbols = rows.map(pickSymbol).filter(Boolean);
-    const [quotes, profiles] = await Promise.all([quoteMap(symbols), profileMap(symbols)]);
-    return normalize(type, rows, quotes, profiles);
+  const screenerRows = type === "marketCap" ? await fmp("/stock-screener", { marketCapMoreThan: "100000000000", limit: "100" }) : [];
+  const quoteSymbols = uniqueSymbols([...TOP_SYMBOLS, ...screenerRows.map(pickSymbol)]);
+  const quoteRows = await fetchQuotes(quoteSymbols);
+  const bySymbol = new Map();
+  for (const row of [...screenerRows, ...quoteRows]) {
+    const symbol = pickSymbol(row);
+    if (!symbol) continue;
+    bySymbol.set(symbol, { ...(bySymbol.get(symbol) || {}), ...row, symbol });
   }
-  const path = type === "netIncome" ? "/income-statement-growth" : "/financial-growth";
-  const rows = await fmp(path, { limit: "100" });
-  const symbols = rows.map(pickSymbol).filter(Boolean);
-  const [quotes, profiles] = await Promise.all([quoteMap(symbols), profileMap(symbols)]);
-  return normalize(type, rows, quotes, profiles);
+  return normalize(type, [...bySymbol.values()]);
 }
 
 module.exports = async function handler(req, res) {

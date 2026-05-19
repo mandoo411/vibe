@@ -280,7 +280,7 @@ function buildRow(meta, quote, type, rank) {
   const value = symbol ? valueFor(type, q) : null;
   return {
     rank,
-    symbol: symbol || "—",
+    symbol: symbol || "",
     name: meta.name || q.name || q.companyName || symbol,
     value,
     price: symbol ? toNum(q.price) : null,

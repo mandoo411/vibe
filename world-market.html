@@ -257,7 +257,7 @@
             $("world-body").innerHTML = rows.length
               ? rows.map((row) => `<tr>
                 <td class="world-rank">${escapeHtml(row.rank)}</td>
-                <td><div class="world-company">${row.logo ? `<img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" onerror="this.style.visibility='hidden'">` : `<span class="world-logo" aria-hidden="true"></span>`}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol)}</span></div></div></td>
+                <td><div class="world-company">${row.logo ? `<img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" onerror="this.style.visibility='hidden'">` : `<span class="world-logo" aria-hidden="true"></span>`}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
                 <td class="world-num">${escapeHtml(fmtMoney(row.value))}</td>
                 <td class="world-num">${escapeHtml(fmtPrice(row.price))}</td>
                 <td class="world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>

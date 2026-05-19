@@ -16,32 +16,46 @@
     <link rel="stylesheet" href="./site-nav.css" />
     <script src="./site-nav.js" defer></script>
     <style>
-      .world-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
-      }
-      .world-tab {
-        border: 1px solid var(--border);
-        background: var(--bg-panel);
-        color: var(--text-muted);
-        min-height: 34px;
-        padding: 0 14px;
-        font-family: var(--font-mono);
-        font-size: 12px;
-        cursor: pointer;
-      }
-      .world-tab[aria-pressed="true"] {
-        color: var(--accent-bright);
-        border-color: var(--accent);
-        box-shadow: inset 0 -2px 0 var(--accent-bright);
-      }
       .world-panel {
         border: 1px solid var(--border-strong);
         background: var(--bg-panel);
         box-shadow: var(--sheet-shadow);
         overflow: hidden;
+      }
+      .world-toolbar {
+        display: flex;
+        margin: 0;
+        padding: 0;
+        gap: 0;
+        border-bottom: 1px solid var(--border-strong);
+        background: #0f0d0a;
+      }
+      .world-tab {
+        flex: 1;
+        min-width: 0;
+        border: 0;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 0;
+        background: transparent;
+        color: var(--text-muted);
+        min-height: 42px;
+        padding: 0 14px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        cursor: pointer;
+        transition: color 0.15s, background 0.15s;
+      }
+      .world-tab:last-child {
+        border-right: 0;
+      }
+      .world-tab:hover {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .world-tab[aria-pressed="true"] {
+        color: var(--accent-bright);
+        background: var(--bg-panel);
+        box-shadow: inset 0 3px 0 var(--accent-bright);
       }
       .world-scroll {
         overflow-x: auto;
@@ -81,7 +95,7 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         vertical-align: middle;
       }
-      .world-table th {
+      .world-table thead th {
         text-align: left;
         font-family: var(--font-mono);
         font-size: 10px;
@@ -89,6 +103,7 @@
         letter-spacing: 0.08em;
         text-transform: uppercase;
         background: #12100c;
+        border-top: 0;
       }
       .world-table th.world-col-rank,
       .world-table td.world-col-rank {
@@ -208,17 +223,12 @@
         font-size: 14px;
         line-height: 1;
       }
-      .world-summary {
-        margin: 0 0 10px;
+      .world-empty {
+        text-align: center;
+        padding: 24px 12px;
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         color: var(--text-dim);
-      }
-      .world-status {
-        margin: 0 0 10px;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--text-muted);
       }
       @media (max-width: 768px) {
         .world-table {
@@ -272,15 +282,13 @@
         </div>
       </div>
 
-      <div class="world-toolbar" role="group" aria-label="글로벌 랭킹 기준">
-        <button class="world-tab" type="button" data-type="marketCap" aria-pressed="true">시가총액</button>
-        <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
-        <button class="world-tab" type="button" data-type="revenue" aria-pressed="false">매출액</button>
-      </div>
-      <p class="world-summary" id="world-summary">글로벌 시가총액 TOP100 · 시총 높은 순 실시간 정렬</p>
-      <p class="world-status" id="world-status">데이터 로딩 중…</p>
       <section class="world-panel">
-        <div class="world-scroll">
+        <div class="world-toolbar" role="group" aria-label="글로벌 랭킹 기준">
+          <button class="world-tab" type="button" data-type="marketCap" aria-pressed="true">시가총액</button>
+          <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
+          <button class="world-tab" type="button" data-type="revenue" aria-pressed="false">매출액</button>
+        </div>
+        <div class="world-scroll" aria-live="polite">
           <table class="world-table">
             <colgroup>
               <col class="world-col-rank" />
@@ -400,19 +408,12 @@
         }
         async function load() {
           syncTabs();
-          $("world-status").textContent = `${labels[state.type]} TOP100 불러오는 중…`;
+          $("world-body").innerHTML = '<tr><td colspan="7" class="world-empty">불러오는 중…</td></tr>';
           try {
             const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            if (data.warning) $("world-status").textContent = data.warning;
             const rows = Array.isArray(data.rows) ? data.rows : [];
-            const withData = data.withData != null ? data.withData : rows.filter((r) => r.hasQuote).length;
-            $("world-summary").textContent = `${labels[state.type]} TOP100 · 수치 높은 순 실시간 정렬 (${withData}개 데이터)`;
-            const cacheAt = data.cacheUpdatedAt
-              ? ` · 캐시 ${new Date(data.cacheUpdatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
-              : "";
-            $("world-status").textContent = `${valueLabels[state.type]} · 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}${cacheAt}`;
             $("world-body").innerHTML = rows.length
               ? rows
                   .map((row) => {
@@ -432,8 +433,7 @@
                   .join("")
               : '<tr><td colspan="7">데이터 없음</td></tr>';
           } catch (error) {
-            $("world-status").textContent = `글로벌 랭킹을 불러오지 못했습니다: ${error.message || error}`;
-            $("world-body").innerHTML = '<tr><td colspan="7">데이터 없음</td></tr>';
+            $("world-body").innerHTML = `<tr><td colspan="7" class="world-empty">불러오지 못했습니다: ${escapeHtml(error.message || error)}</td></tr>`;
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {

@@ -11,6 +11,7 @@ const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 1000
 const QUOTE_CONCURRENCY = 5;
 const QUOTE_CACHE_MS = 10 * 60 * 1000;
 let quoteCache = { at: 0, map: null };
+let usdKrwCache = { at: 0, rate: null };
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -143,6 +144,38 @@ function isKrwStock(meta) {
   return /\.KS$/i.test(chartSymbolFor(meta));
 }
 
+async function fetchUsdKrwRate() {
+  if (usdKrwCache.rate && Date.now() - usdKrwCache.at < QUOTE_CACHE_MS) {
+    return usdKrwCache.rate;
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FMP_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      "https://query1.finance.yahoo.com/v8/finance/chart/KRW=X?interval=1d&range=5d",
+      { signal: controller.signal, headers: { "user-agent": "TotalMoneyAI/1.0" } }
+    );
+    const body = await res.json().catch(() => ({}));
+    const rate = toNum(body?.chart?.result?.[0]?.meta?.regularMarketPrice);
+    if (rate != null && rate > 500 && rate < 3000) {
+      usdKrwCache = { at: Date.now(), rate };
+      return rate;
+    }
+  } catch {
+    // fallback below
+  } finally {
+    clearTimeout(timer);
+  }
+  return usdKrwCache.rate || 1380;
+}
+
+function krwToUsd(amount, usdKrwRate) {
+  const n = toNum(amount);
+  const rate = toNum(usdKrwRate);
+  if (n == null || rate == null || rate <= 0) return null;
+  return n / rate;
+}
+
 function mergeQuotesForMeta(meta, quoteMap) {
   const qSym = quoteSymbolFor(meta).toUpperCase();
   const chartSym = chartSymbolFor(meta).toUpperCase();
@@ -153,6 +186,7 @@ function mergeQuotesForMeta(meta, quoteMap) {
   if (isKrwStock(meta) && chart?.price != null) {
     merged.price = chart.price;
     merged.priceCurrency = "KRW";
+    merged.priceKrw = chart.price;
     if (chart.changesPercentage != null) merged.changesPercentage = chart.changesPercentage;
     if (chart.sparkline) merged.sparkline = chart.sparkline;
     if (chart.sparkUp != null) merged.sparkUp = chart.sparkUp;
@@ -461,10 +495,9 @@ function valueFor(type, row) {
   return toNum(row.revenue || row.marketCap);
 }
 
-function buildRow(meta, quote, type, rank) {
+function buildRow(meta, quote, type, rank, usdKrwRate) {
   const symbol = String(meta.symbol || "").trim().toUpperCase();
   const q = mergeWithCache(meta, quote, rank) || {};
-  if (isKrwStock(meta)) q.priceCurrency = "KRW";
   const entry = cacheEntryFor(meta, rank);
   const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
   const netIncome = toNum(q.netIncome) ?? toNum(entry?.netIncome);
@@ -475,7 +508,23 @@ function buildRow(meta, quote, type, rank) {
       : type === "netIncome"
         ? netIncome ?? valueFor(type, q)
         : revenue ?? valueFor(type, q);
-  const price = toNum(q.price);
+  let price = toNum(q.price);
+  if (isKrwStock(meta)) {
+    const krw =
+      toNum(q.priceKrw) ??
+      (price != null && price > 5000 ? price : null) ??
+      toNum(entry?.priceKrw);
+    if (krw != null) price = krwToUsd(krw, usdKrwRate) ?? price;
+    else if (price != null && price < 5000) {
+      // cache/CMC USD price already
+    } else if (price != null && price > 5000) {
+      price = krwToUsd(price, usdKrwRate);
+    }
+  }
+  let sparkline = Array.isArray(q.sparkline) ? q.sparkline : null;
+  if (isKrwStock(meta) && sparkline && usdKrwRate > 0) {
+    sparkline = sparkline.map((p) => p / usdKrwRate);
+  }
   const changePct = toNum(q.changesPercentage || q.changePercentage);
   const hasLiveOrCache = Boolean(
     (symbol && quote) ||
@@ -493,9 +542,9 @@ function buildRow(meta, quote, type, rank) {
     netIncome,
     revenue,
     price,
-    priceCurrency: q.priceCurrency || (isKrwStock(meta) ? "KRW" : "USD"),
+    priceCurrency: "USD",
     changePct,
-    sparkline: Array.isArray(q.sparkline) ? q.sparkline : null,
+    sparkline,
     sparkUp: q.sparkUp === true || q.sparkUp === false ? q.sparkUp : null,
     country: meta.country || q.country || "",
     countryLabel: countryShort(meta.country || q.country || ""),
@@ -514,11 +563,14 @@ async function rowsFor(type) {
       RANKED_COMPANIES.flatMap((c) => [quoteSymbolFor(c), chartSymbolFor(c)].filter(Boolean))
     ),
   ];
-  const quoteMap = await fetchQuotes(fetchSymbols);
+  const [quoteMap, usdKrwRate] = await Promise.all([
+    fetchQuotes(fetchSymbols),
+    fetchUsdKrwRate(),
+  ]);
 
   let rows = RANKED_COMPANIES.map((meta, index) => {
     const quote = mergeQuotesForMeta(meta, quoteMap);
-    return buildRow(meta, quote, type, index + 1);
+    return buildRow(meta, quote, type, index + 1, usdKrwRate);
   });
 
   rows = sortRowsByValue(rows, type);

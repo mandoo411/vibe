@@ -156,7 +156,7 @@ async function fetchYahooChartQuote(symbol) {
     symbol,
     price,
     changesPercentage: changePct,
-    marketCap: toNum(meta.marketCap),
+    marketCap: toNum(meta.marketCap ?? meta.regularMarketMarketCap),
     name: meta.longName || meta.shortName || symbol,
   };
 }
@@ -169,7 +169,7 @@ function mapYahooRow(symbol, q) {
     symbol,
     price,
     changesPercentage: toNum(q.regularMarketChangePercent),
-    marketCap: toNum(q.marketCap),
+    marketCap: toNum(q.marketCap ?? q.regularMarketMarketCap),
     name: q.longName || q.shortName || symbol,
   };
 }

@@ -9,6 +9,8 @@ const TOP_SYMBOLS = [
   "005930.KS", "000660.KS", "035420.KS",
 ];
 
+const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 12000);
+
 function send(res, status, body) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
@@ -33,7 +35,17 @@ async function fmp(path, params = {}) {
   const url = new URL(`${FMP_BASE}${path}`);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
   url.searchParams.set("apikey", key);
-  const res = await fetch(url);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FMP_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(url, { signal: controller.signal });
+  } catch (error) {
+    if (error && error.name === "AbortError") throw new Error(`FMP timeout ${path}`);
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   const text = await res.text();
   let body;
   try {
@@ -96,9 +108,12 @@ function valueFor(type, row) {
     const eps = toNum(row.eps);
     const shares = toNum(row.sharesOutstanding);
     if (eps != null && shares != null) return eps * shares;
+    const marketCap = toNum(row.marketCap);
+    const price = toNum(row.price);
+    if (eps != null && marketCap != null && price) return eps * (marketCap / price);
     return toNum(row.netIncome);
   }
-  return toNum(row.revenue);
+  return toNum(row.revenue || row.marketCap);
 }
 
 function normalize(type, rows) {
@@ -123,9 +138,16 @@ function normalize(type, rows) {
 }
 
 async function rowsFor(type) {
-  const screenerRows = type === "marketCap" ? await fmp("/stock-screener", { marketCapMoreThan: "100000000000", limit: "100" }) : [];
-  const quoteSymbols = uniqueSymbols([...TOP_SYMBOLS, ...screenerRows.map(pickSymbol)]);
-  const quoteRows = await fetchQuotes(quoteSymbols);
+  let screenerRows = [];
+  try {
+    screenerRows = await fmp("/stock-screener", { marketCapMoreThan: "100000000000", limit: "100" });
+  } catch (error) {
+    if (type !== "marketCap") throw error;
+  }
+  if (type === "marketCap" && screenerRows.length) {
+    return normalize(type, screenerRows);
+  }
+  const quoteRows = await fetchQuotes(type === "marketCap" ? TOP_SYMBOLS : TOP_SYMBOLS.slice(0, 80));
   const bySymbol = new Map();
   for (const row of [...screenerRows, ...quoteRows]) {
     const symbol = pickSymbol(row);

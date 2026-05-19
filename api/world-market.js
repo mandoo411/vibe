@@ -375,17 +375,19 @@ async function rowsFor(type) {
     return buildRow(meta, quote, type, index + 1);
   });
 
-  if (type === "marketCap") {
-    return rows;
-  }
-
-  rows = rows
-    .filter((row) => row.value != null && row.value > 0)
-    .sort((a, b) => (b.value || 0) - (a.value || 0))
-    .slice(0, 100)
-    .map((row, index) => ({ ...row, rank: index + 1 }));
-
+  rows = sortRowsByValue(rows);
   return rows;
+}
+
+function sortRowsByValue(rows) {
+  return rows
+    .sort((a, b) => {
+      const av = a.value != null && a.value > 0 ? a.value : 0;
+      const bv = b.value != null && b.value > 0 ? b.value : 0;
+      if (bv !== av) return bv - av;
+      return (a.name || "").localeCompare(b.name || "");
+    })
+    .map((row, index) => ({ ...row, rank: index + 1 }));
 }
 
 module.exports = async function handler(req, res) {
@@ -404,7 +406,7 @@ module.exports = async function handler(req, res) {
     const cacheMeta = loadMarketCache();
     send(res, 200, {
       type,
-      order: type === "marketCap" ? "ranked" : "value",
+      order: "value",
       total: rows.length,
       withQuote,
       withData,

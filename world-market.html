@@ -230,7 +230,7 @@
         <button class="world-tab" type="button" data-type="netIncome" aria-pressed="false">순이익</button>
         <button class="world-tab" type="button" data-type="revenue" aria-pressed="false">매출액</button>
       </div>
-      <p class="world-summary" id="world-summary">글로벌 시가총액 TOP100 · companiesmarketcap 순위 기준</p>
+      <p class="world-summary" id="world-summary">글로벌 시가총액 TOP100 · 시총 높은 순 실시간 정렬</p>
       <p class="world-status" id="world-status">데이터 로딩 중…</p>
       <section class="world-panel">
         <div class="world-scroll">
@@ -325,10 +325,7 @@
             if (data.warning) $("world-status").textContent = data.warning;
             const rows = Array.isArray(data.rows) ? data.rows : [];
             const withData = data.withData != null ? data.withData : rows.filter((r) => r.hasQuote).length;
-            $("world-summary").textContent =
-              state.type === "marketCap"
-                ? `Largest companies by market cap · TOP100 고정 순위 (${withData}개 시세 연동)`
-                : `${labels[state.type]} TOP100 · 실시간 순위`;
+            $("world-summary").textContent = `${labels[state.type]} TOP100 · 수치 높은 순 실시간 정렬 (${withData}개 데이터)`;
             const cacheAt = data.cacheUpdatedAt
               ? ` · 시총 캐시 ${new Date(data.cacheUpdatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
               : "";

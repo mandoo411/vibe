@@ -14,6 +14,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./assets/data-url.js"></script>
     <script src="./site-nav.js" defer></script>
     <style>
       .live-wrap {
@@ -355,7 +356,7 @@
 
     <script>
       (() => {
-        const DATA_URL = "./data/live-report.json";
+        const DATA_URL = tmDataUrl("data/live-report.json");
         const INDEX_API = "./api/kis-realtime-data?action=index";
         const TIMES = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30"];
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
@@ -556,7 +557,7 @@
         async function load() {
           try {
             const [dataRes, indexRes] = await Promise.allSettled([
-              fetch(`${DATA_URL}?t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json()),
+              tmFetchJson("data/live-report.json"),
               fetch(`${INDEX_API}&t=${Date.now()}`, { cache: "no-store" }).then((r) => r.json()),
             ]);
             if (dataRes.status === "fulfilled") state.data = dataRes.value || state.data;

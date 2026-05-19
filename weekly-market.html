@@ -17,6 +17,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./assets/data-url.js"></script>
     <script src="./site-nav.js" defer></script>
   </head>
   <body>
@@ -150,7 +151,7 @@
 
     <script>
       (() => {
-        const DATA_URL = "./data/weekly-schedule.json";
+        const DATA_URL = tmDataUrl("data/weekly-schedule.json");
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
         const WEEKDAYS = ["월", "화", "수", "목", "금"];
         const SP500_WATCHLIST = [
@@ -641,9 +642,7 @@
 
         async function load() {
           try {
-            const res = await fetch(DATA_URL, { cache: "no-store" });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            state.data = await res.json();
+            state.data = await tmFetchJson("data/weekly-schedule.json");
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;

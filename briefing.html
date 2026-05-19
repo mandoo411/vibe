@@ -17,6 +17,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./assets/data-url.js"></script>
     <script src="./site-nav.js" defer></script>
     <style>
       .briefing-grid {
@@ -240,7 +241,7 @@
       </main>
     </div>
     <script>
-      const DATA_URL = "./data/morning-briefing.json";
+      const DATA_URL = tmDataUrl("data/morning-briefing.json");
       const $ = (id) => document.getElementById(id);
 
       function escapeHtml(value) {
@@ -345,9 +346,7 @@
 
       async function loadBriefing() {
         try {
-          const res = await fetch(DATA_URL, { cache: "no-store" });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
+          const data = await tmFetchJson("data/morning-briefing.json");
           $("briefing-updated").textContent = data.updatedAt ? `마지막 업데이트: ${data.updatedAt}` : "미국 마감, 환율, 주요 뉴스";
           renderAnalysis(data.aiAnalysis || {});
           renderRows("us-market-list", data.usMarket?.indices || [], (r) => r.name || r.symbol, (r) => `${fmtNumber(r.close, 0)} ${fmtChange(r.changePct)}`);

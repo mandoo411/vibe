@@ -1,5 +1,13 @@
 (function () {
-  const DATA_URL = "./data/weekly-schedule.json";
+  const RAW_BASE = "https://raw.githubusercontent.com/mandoo411/vibe/main";
+  async function fetchDataJson() {
+    const path = "data/weekly-schedule.json";
+    for (const base of [`${RAW_BASE}/`, "./"]) {
+      const res = await fetch(`${base}${path}?t=${Date.now()}`, { cache: "no-store" });
+      if (res.ok) return res.json();
+    }
+    throw new Error("HTTP");
+  }
   const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
   const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -308,9 +316,7 @@
 
   async function load() {
     try {
-      const res = await fetch(DATA_URL, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
+      const raw = await fetchDataJson();
       const data = normalizeData(raw);
 
       const queryMonday = resolveMondayKeyFromQuery();

@@ -1,5 +1,9 @@
 {
   "version": 2,
+  "github": {
+    "silent": true
+  },
+  "ignoreCommand": "git diff HEAD^ HEAD --name-only | grep -qvE '^data/'",
   "headers": [
     {
       "source": "/world-market.html",

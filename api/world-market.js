@@ -116,15 +116,23 @@ function countryShort(country) {
   const text = String(country || "");
   if (/united states/i.test(text)) return "USA";
   if (/south korea/i.test(text)) return "S. Korea";
-  if (/saudi/i.test(text)) return "Saudi Arabia";
+  if (/saudi/i.test(text)) return "S. Arabia";
   if (/taiwan/i.test(text)) return "Taiwan";
   if (/china/i.test(text)) return "China";
+  if (/japan/i.test(text)) return "Japan";
   if (/netherlands/i.test(text)) return "Netherlands";
   if (/germany/i.test(text)) return "Germany";
+  if (/france/i.test(text)) return "France";
   if (/denmark/i.test(text)) return "Denmark";
   if (/ireland/i.test(text)) return "Ireland";
   if (/united kingdom/i.test(text)) return "UK";
+  if (/switzerland/i.test(text)) return "Switzerland";
+  if (/canada/i.test(text)) return "Canada";
   return text || "—";
+}
+
+function quoteSymbolFor(meta) {
+  return String(meta.symbol || meta.yahooSymbol || "").trim().toUpperCase();
 }
 
 function pickSymbol(row) {
@@ -191,6 +199,14 @@ function yahooSymbol(symbol) {
     .replace(/\./g, "-");
 }
 
+function sparklineFromChart(body) {
+  const result = body?.chart?.result?.[0];
+  const closes = (result?.indicators?.quote?.[0]?.close || []).filter((v) => v != null && Number.isFinite(v));
+  const points = closes.slice(-30);
+  if (points.length < 2) return null;
+  return { points, up: points[points.length - 1] >= points[0] };
+}
+
 async function fetchYahooChartQuote(symbol) {
   const ySym = yahooSymbol(symbol);
   const controller = new AbortController();
@@ -198,7 +214,7 @@ async function fetchYahooChartQuote(symbol) {
   let res;
   try {
     res = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=5d`,
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=1mo`,
       { signal: controller.signal, headers: { "user-agent": "TotalMoneyAI/1.0" } }
     );
   } finally {
@@ -210,13 +226,55 @@ async function fetchYahooChartQuote(symbol) {
   if (price == null) return null;
   const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
   const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  const spark = sparklineFromChart(body);
   return {
     symbol,
     price,
     changesPercentage: changePct,
     marketCap: toNum(meta.marketCap ?? meta.regularMarketMarketCap),
     name: meta.longName || meta.shortName || symbol,
+    sparkline: spark?.points || null,
+    sparkUp: spark?.up ?? null,
   };
+}
+
+async function fetchYahooSparklineOnly(symbol) {
+  const ySym = yahooSymbol(symbol);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FMP_TIMEOUT_MS);
+  try {
+    const res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=1mo`,
+      { signal: controller.signal, headers: { "user-agent": "TotalMoneyAI/1.0" } }
+    );
+    const body = await res.json().catch(() => ({}));
+    return sparklineFromChart(body);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function attachSparklines(quoteMap, symbols) {
+  const need = symbols.filter((sym) => {
+    const row = quoteMap.get(sym);
+    return row && !row.sparkline;
+  });
+  const SPARK_CONCURRENCY = 8;
+  for (let i = 0; i < need.length; i += SPARK_CONCURRENCY) {
+    const chunk = need.slice(i, i + SPARK_CONCURRENCY);
+    const sparks = await Promise.all(chunk.map((sym) => fetchYahooSparklineOnly(sym)));
+    chunk.forEach((sym, idx) => {
+      const row = quoteMap.get(sym);
+      const spark = sparks[idx];
+      if (row && spark) {
+        row.sparkline = spark.points;
+        row.sparkUp = spark.up;
+      }
+    });
+    if (i + SPARK_CONCURRENCY < need.length) await sleep(60);
+  }
 }
 
 function mapYahooRow(symbol, q) {
@@ -315,6 +373,7 @@ async function fetchQuotes(symbols) {
       else if (!row && cap) out.set(symbol, cap);
     }
   } catch {}
+  await attachSparklines(out, unique);
   quoteCache = { at: Date.now(), map: out };
   return out;
 }
@@ -367,7 +426,7 @@ function buildRow(meta, quote, type, rank) {
   );
   return {
     rank,
-    symbol: symbol || "",
+    symbol: symbol || String(meta.yahooSymbol || "").trim(),
     name: meta.name || q.name || q.companyName || symbol,
     value,
     marketCap,
@@ -375,6 +434,8 @@ function buildRow(meta, quote, type, rank) {
     revenue,
     price,
     changePct,
+    sparkline: Array.isArray(q.sparkline) ? q.sparkline : null,
+    sparkUp: q.sparkUp === true || q.sparkUp === false ? q.sparkUp : null,
     country: meta.country || q.country || "",
     countryLabel: countryShort(meta.country || q.country || ""),
     flag: countryFlag(meta.country || q.country || ""),
@@ -387,12 +448,14 @@ async function rowsFor(type) {
   if (!Array.isArray(RANKED_COMPANIES) || RANKED_COMPANIES.length < 1) {
     throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
   }
-  const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
+  const fetchSymbols = [
+    ...new Set(RANKED_COMPANIES.map((c) => quoteSymbolFor(c)).filter(Boolean)),
+  ];
   const quoteMap = await fetchQuotes(fetchSymbols);
 
   let rows = RANKED_COMPANIES.map((meta, index) => {
-    const symbol = String(meta.symbol || "").trim().toUpperCase();
-    const quote = symbol ? quoteMap.get(symbol) : null;
+    const qSym = quoteSymbolFor(meta);
+    const quote = qSym ? quoteMap.get(qSym) : null;
     return buildRow(meta, quote, type, index + 1);
   });
 
@@ -403,15 +466,22 @@ async function rowsFor(type) {
 function sortFieldFor(type) {
   if (type === "netIncome") return "netIncome";
   if (type === "revenue") return "revenue";
-  return "value";
+  return "marketCap";
+}
+
+function metricSortValue(row, field) {
+  const primary = row[field];
+  if (primary != null && primary > 0) return primary;
+  if (field === "marketCap" && row.value != null && row.value > 0) return row.value;
+  return 0;
 }
 
 function sortRowsByValue(rows, type) {
   const field = sortFieldFor(type);
   return rows
     .sort((a, b) => {
-      const av = a[field] != null && a[field] > 0 ? a[field] : 0;
-      const bv = b[field] != null && b[field] > 0 ? b[field] : 0;
+      const av = metricSortValue(a, field);
+      const bv = metricSortValue(b, field);
       if (bv !== av) return bv - av;
       return (a.name || "").localeCompare(b.name || "");
     })

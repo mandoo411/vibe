@@ -49,7 +49,7 @@
       }
       .world-table {
         width: 100%;
-        min-width: 1040px;
+        min-width: 920px;
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 13px;
@@ -58,13 +58,16 @@
         width: 3rem;
       }
       .world-table col.world-col-name {
-        width: 34%;
+        width: 32%;
       }
       .world-table col.world-col-num {
-        width: 10.5rem;
+        width: 9.5rem;
+      }
+      .world-table col.world-col-spark {
+        width: 8.5rem;
       }
       .world-table col.world-col-country {
-        width: 9rem;
+        width: 8.5rem;
       }
       .world-table tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.02);
@@ -104,6 +107,12 @@
         text-align: right;
         padding-right: 12px;
         padding-left: 8px;
+      }
+      .world-table th.world-col-spark,
+      .world-table td.world-col-spark {
+        text-align: center;
+        padding-left: 4px;
+        padding-right: 4px;
       }
       .world-num {
         font-family: var(--font-mono);
@@ -154,16 +163,50 @@
       .world-delta--down {
         color: #60a5fa;
       }
+      .world-spark {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+        height: 36px;
+        width: 120px;
+      }
+      .world-spark path {
+        fill: none;
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .world-spark--up path {
+        stroke: #4ade80;
+      }
+      .world-spark--down path {
+        stroke: #f87171;
+      }
+      .world-spark--flat path {
+        stroke: #94a3b8;
+      }
+      .world-spark-empty {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 11px;
+      }
       .world-table th.world-col-country,
       .world-table td.world-col-country {
         text-align: left;
         padding-left: 10px;
       }
       .world-country {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-family: var(--font-mono);
         font-size: 11px;
         color: var(--text-muted);
         white-space: nowrap;
+      }
+      .world-country__flag {
+        font-size: 14px;
+        line-height: 1;
       }
       .world-summary {
         margin: 0 0 10px;
@@ -179,12 +222,16 @@
       }
       @media (max-width: 768px) {
         .world-table {
-          min-width: 920px;
+          min-width: 820px;
           font-size: 12px;
         }
         .world-table th,
         .world-table td {
           padding: 8px 7px;
+        }
+        .world-spark {
+          width: 96px;
+          height: 30px;
         }
       }
     </style>
@@ -241,19 +288,17 @@
               <col class="world-col-num" />
               <col class="world-col-num" />
               <col class="world-col-num" />
-              <col class="world-col-num" />
-              <col class="world-col-num" />
+              <col class="world-col-spark" />
               <col class="world-col-country" />
             </colgroup>
             <thead>
               <tr>
                 <th class="world-col-rank world-rank">#</th>
                 <th class="world-col-name">Name</th>
-                <th class="world-col-num world-num">Market Cap</th>
+                <th class="world-col-num world-num" id="world-metric-header">Market Cap</th>
                 <th class="world-col-num world-num">Price</th>
                 <th class="world-col-num world-num">Today</th>
-                <th class="world-col-num world-num">Net Income</th>
-                <th class="world-col-num world-num">Revenue</th>
+                <th class="world-col-spark">Price (30 days)</th>
                 <th class="world-col-country">Country</th>
               </tr>
             </thead>
@@ -267,7 +312,7 @@
       (() => {
         const state = { type: "marketCap" };
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
-        const valueLabels = { marketCap: "Market Cap", netIncome: "Net Income", revenue: "Revenue" };
+        const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
         const $ = (id) => document.getElementById(id);
         function escapeHtml(value) {
           return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -294,6 +339,29 @@
           const n = Number(value);
           return n > 0 ? "world-delta--up" : n < 0 ? "world-delta--down" : "";
         }
+        function metricValue(row) {
+          if (state.type === "marketCap") return row.marketCap ?? row.value;
+          if (state.type === "netIncome") return row.netIncome ?? row.value;
+          return row.revenue ?? row.value;
+        }
+        function sparklineSvg(points, up) {
+          if (!Array.isArray(points) || points.length < 2) return "";
+          const w = 120;
+          const h = 36;
+          const min = Math.min(...points);
+          const max = Math.max(...points);
+          const range = max - min || 1;
+          const step = w / (points.length - 1);
+          let d = "";
+          points.forEach((p, i) => {
+            const x = (i * step).toFixed(1);
+            const y = (h - 3 - ((p - min) / range) * (h - 6)).toFixed(1);
+            d += `${i === 0 ? "M" : "L"}${x},${y} `;
+          });
+          const trend =
+            up === true ? "world-spark--up" : up === false ? "world-spark--down" : "world-spark--flat";
+          return `<svg class="world-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d.trim()}"/></svg>`;
+        }
         function worldLogoFail(img) {
           if (img.dataset.fallback && !img.dataset.triedFb) {
             img.dataset.triedFb = "1";
@@ -314,10 +382,17 @@
           const fb = row.logoFallback ? ` data-fallback="${escapeHtml(row.logoFallback)}"` : "";
           return `<img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" data-flag="${escapeHtml(flag)}"${fb} onerror="worldLogoFail(this)">`;
         }
+        function countryCell(row) {
+          const flag = row.flag || "\u{1F310}";
+          const label = row.countryLabel || row.country || "—";
+          return `<span class="world-country"><span class="world-country__flag" aria-hidden="true">${escapeHtml(flag)}</span><span>${escapeHtml(label)}</span></span>`;
+        }
         function syncTabs() {
           document.querySelectorAll(".world-tab").forEach((btn) => {
             btn.setAttribute("aria-pressed", btn.dataset.type === state.type ? "true" : "false");
           });
+          const metricHeader = document.getElementById("world-metric-header");
+          if (metricHeader) metricHeader.textContent = valueLabels[state.type];
         }
         async function load() {
           syncTabs();
@@ -331,24 +406,30 @@
             const withData = data.withData != null ? data.withData : rows.filter((r) => r.hasQuote).length;
             $("world-summary").textContent = `${labels[state.type]} TOP100 · 수치 높은 순 실시간 정렬 (${withData}개 데이터)`;
             const cacheAt = data.cacheUpdatedAt
-              ? ` · 시총 캐시 ${new Date(data.cacheUpdatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
+              ? ` · 캐시 ${new Date(data.cacheUpdatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
               : "";
             $("world-status").textContent = `${valueLabels[state.type]} · 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}${cacheAt}`;
             $("world-body").innerHTML = rows.length
-              ? rows.map((row) => `<tr>
+              ? rows
+                  .map((row) => {
+                    const spark =
+                      sparklineSvg(row.sparkline, row.sparkUp) ||
+                      '<span class="world-spark-empty">—</span>';
+                    return `<tr>
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
                 <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
-                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.marketCap ?? row.value))}</td>
+                <td class="world-col-num world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
                 <td class="world-col-num world-num">${escapeHtml(fmtPrice(row.price))}</td>
                 <td class="world-col-num world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
-                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.netIncome))}</td>
-                <td class="world-col-num world-num">${escapeHtml(fmtMoney(row.revenue))}</td>
-                <td class="world-col-country world-country">${escapeHtml(row.flag || "\u{1F310}")} ${escapeHtml(row.countryLabel || row.country || "")}</td>
-              </tr>`).join("")
-              : '<tr><td colspan="8">데이터 없음</td></tr>';
+                <td class="world-col-spark">${spark}</td>
+                <td class="world-col-country">${countryCell(row)}</td>
+              </tr>`;
+                  })
+                  .join("")
+              : '<tr><td colspan="7">데이터 없음</td></tr>';
           } catch (error) {
             $("world-status").textContent = `글로벌 랭킹을 불러오지 못했습니다: ${error.message || error}`;
-            $("world-body").innerHTML = '<tr><td colspan="8">데이터 없음</td></tr>';
+            $("world-body").innerHTML = '<tr><td colspan="7">데이터 없음</td></tr>';
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {

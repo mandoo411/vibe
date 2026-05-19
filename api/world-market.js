@@ -22,11 +22,13 @@ function send(res, status, body) {
 }
 
 async function fmp(path, params = {}) {
-  const key =
+  const key = String(
     process.env.FMP_API_KEY ||
     process.env.FINANCIAL_MODELING_PREP_API_KEY ||
     process.env.FINANCIALMODELINGPREP_API_KEY ||
-    process.env.FMP_KEY;
+    process.env.FMP_KEY ||
+    ""
+  ).trim();
   if (!key) {
     const error = new Error("Missing FMP API key. Set FMP_API_KEY in Vercel environment variables.");
     error.statusCode = 503;
@@ -54,7 +56,7 @@ async function fmp(path, params = {}) {
     throw new Error(`FMP invalid JSON: ${text.slice(0, 160)}`);
   }
   if (!res.ok) {
-    const error = new Error(`FMP HTTP ${res.status}`);
+    const error = new Error(`FMP HTTP ${res.status}: ${text.slice(0, 180)}`);
     error.statusCode = res.status;
     throw error;
   }
@@ -97,7 +99,18 @@ async function fetchQuotes(symbols) {
   for (let i = 0; i < unique.length; i += 100) {
     const chunk = unique.slice(i, i + 100);
     if (!chunk.length) continue;
-    out.push(...(await fmp(`/quote/${chunk.join(",")}`)));
+    try {
+      out.push(...(await fmp(`/quote/${chunk.join(",")}`)));
+    } catch (error) {
+      if (!/FMP HTTP 403|FMP HTTP 429/.test(error.message || "")) throw error;
+      for (const symbol of chunk) {
+        try {
+          out.push(...(await fmp(`/quote/${encodeURIComponent(symbol)}`)));
+        } catch (_) {
+          // 무료 플랜에서 막히는 심볼은 건너뛰고 가능한 종목만 표시한다.
+        }
+      }
+    }
   }
   return out;
 }

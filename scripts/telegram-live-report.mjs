@@ -308,24 +308,58 @@ function outputRows(json) {
 }
 
 function pickIndexValue(row) {
-  return row?.nmix_prpr || row?.NMIX_PRPR || row?.nmix_nmix_prpr || row?.bstp_nmix_prpr || row?.stck_prpr || "";
+  if (!row || typeof row !== "object") return null;
+  const keys = [
+    "nmix_prpr",
+    "NMIX_PRPR",
+    "nmix_nmix_prpr",
+    "NMIX_NMIX_PRPR",
+    "bstp_nmix_prpr",
+    "BSTP_NMIX_PRPR",
+    "stck_prpr",
+    "STCK_PRPR",
+  ];
+  for (const key of keys) {
+    const value = toNum(row[key]);
+    if (value != null && value !== 0) return value;
+  }
+  return null;
+}
+
+function indexPlausible(fidInputIscd, value) {
+  if (!Number.isFinite(value)) return false;
+  if (fidInputIscd === "0001") return value > 500 && value < 8000;
+  if (fidInputIscd === "1001") return value > 300 && value < 4000;
+  return true;
 }
 
 async function fetchIndex(fidInputIscd, label, token, appKey, appSecret) {
-  const json = await kisGet(
-    "/uapi/domestic-stock/v1/quotations/inquire-index-price",
-    "FHPUP02100000",
-    { fid_cond_mrkt_div_code: "J", fid_input_iscd: fidInputIscd },
-    token,
-    appKey,
-    appSecret
-  );
-  const row = outputRows(json)[0] || json.output || {};
-  return {
-    label,
-    value: toNum(pickIndexValue(row)),
-    change: toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt),
-  };
+  let lastError;
+  for (const fidCondMrktDivCode of ["J", "U"]) {
+    try {
+      const json = await kisGet(
+        "/uapi/domestic-stock/v1/quotations/inquire-index-price",
+        "FHPUP02100000",
+        { fid_cond_mrkt_div_code: fidCondMrktDivCode, fid_input_iscd: fidInputIscd },
+        token,
+        appKey,
+        appSecret
+      );
+      const row = outputRows(json)[0] || json.output || {};
+      const value = pickIndexValue(row);
+      if (indexPlausible(fidInputIscd, value)) {
+        return {
+          label,
+          value,
+          change: toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt),
+        };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (lastError) throw lastError;
+  return { label, value: 0, change: 0 };
 }
 
 function pickTradingValue(row) {
@@ -703,7 +737,7 @@ async function writeLiveReport(payload) {
   await fs.writeFile(DATA_PATH, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 
-function gitCommitAndPush(time) {
+async function gitCommitAndPush(time) {
   if (process.env.LIVE_REPORT_SKIP_GIT === "1") {
     console.log("LIVE_REPORT_SKIP_GIT=1, skip git commit/push.");
     return;
@@ -719,8 +753,17 @@ function gitCommitAndPush(time) {
     // git diff --quiet exits 1 when there are staged changes.
   }
   execFileSync("git", ["commit", "-m", `chore(data): live report ${seoulYmd()} ${time} KST`], { stdio: "inherit" });
-  execFileSync("git", ["pull", "--rebase", "origin", "main"], { stdio: "inherit" });
-  execFileSync("git", ["push", "origin", "HEAD:main"], { stdio: "inherit" });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      execFileSync("git", ["pull", "--rebase", "origin", "main"], { stdio: "inherit" });
+      execFileSync("git", ["push", "origin", "HEAD:main"], { stdio: "inherit" });
+      return;
+    } catch (error) {
+      if (attempt >= 3) throw error;
+      console.warn(`git push retry ${attempt + 1}/3`);
+      await sleep(2000 * (attempt + 1));
+    }
+  }
 }
 
 async function main() {
@@ -805,7 +848,7 @@ async function main() {
     buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
   );
   await writeLiveReport({ date: ymd, ...payload });
-  gitCommitAndPush(time);
+  await gitCommitAndPush(time);
   console.log(`Live report sent and saved: ${ymd} ${time}`);
 }
 

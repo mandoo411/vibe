@@ -2,10 +2,8 @@ name: Live Market Report
 
 on:
   schedule:
-    # 30분 슬롯 저장. GitHub cron 지연을 감안해 각 슬롯을 10분 간격으로 보강 실행.
-    # 예: 09:30 데이터는 09:30/09:40/09:50 중 성공한 실행이 09:30 슬롯을 갱신.
-    - cron: "0,10,20,30,40,50 0-5 * * 1-5" # 09:00-14:50 KST
-    - cron: "0,10,20,30 6 * * 1-5" # 15:00-15:30 KST
+    # KST 09:00-15:30 (UTC 0-6) 평일, 5분마다 실행 — GitHub cron 누락·지연 대비
+    - cron: "*/5 0-6 * * 1-5"
   workflow_dispatch:
 
 permissions:

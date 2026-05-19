@@ -1,0 +1,54 @@
+name: World Market Cache
+
+# 글로벌 TOP100 시가총액 캐시 (Yahoo → data/world-market-cache.json)
+on:
+  schedule:
+    # 평일 4회 (UTC 0,6,12,18 ≈ KST 09,15,21,03)
+    - cron: "0 0,6,12,18 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: world-market-cache
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Build world market cache
+        run: node scripts/world-market-cache.mjs
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+
+      - name: Commit data/world-market-cache.json
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/world-market-cache.json; then
+            echo "::notice::No cache changes to commit"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git add data/world-market-cache.json
+            git commit -m "chore(data): world market cap cache ${STAMP}"
+            git pull --rebase origin main
+            git push
+          fi

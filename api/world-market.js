@@ -1,6 +1,11 @@
+const fs = require("fs");
+const path = require("path");
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
 const RANKED_COMPANIES = require("./world-market-ranked.js");
+
+const CACHE_PATH = path.join(__dirname, "..", "data", "world-market-cache.json");
+let fileCache = { at: 0, data: null };
 
 const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 10000);
 const QUOTE_CONCURRENCY = 5;
@@ -126,6 +131,35 @@ function pickSymbol(row) {
   return String(row?.symbol || row?.ticker || "").trim().toUpperCase();
 }
 
+function loadMarketCache() {
+  if (fileCache.data && Date.now() - fileCache.at < 60_000) return fileCache.data;
+  try {
+    const raw = JSON.parse(fs.readFileSync(CACHE_PATH, "utf8"));
+    fileCache = { at: Date.now(), data: raw };
+    return raw;
+  } catch {
+    fileCache = { at: Date.now(), data: { entries: {} } };
+    return fileCache.data;
+  }
+}
+
+function cacheKeyFor(meta, rank) {
+  const symbol = String(meta.symbol || "").trim().toUpperCase();
+  return symbol || `rank:${rank}`;
+}
+
+function mergeWithCache(meta, quote, rank) {
+  const entry = loadMarketCache().entries?.[cacheKeyFor(meta, rank)];
+  if (!entry) return quote || null;
+  const merged = { ...(quote || {}) };
+  if (entry.marketCap != null) merged.marketCap = entry.marketCap;
+  if (entry.price != null && merged.price == null) merged.price = entry.price;
+  if (entry.changePct != null && merged.changesPercentage == null && merged.changePercentage == null) {
+    merged.changesPercentage = entry.changePct;
+  }
+  return merged;
+}
+
 function yahooSymbol(symbol) {
   return String(symbol || "")
     .trim()
@@ -201,18 +235,29 @@ async function fetchYahooQuotesBatch(symbols) {
   return out;
 }
 
+function hasFmpKey() {
+  return Boolean(
+    process.env.FMP_API_KEY ||
+      process.env.FINANCIAL_MODELING_PREP_API_KEY ||
+      process.env.FINANCIALMODELINGPREP_API_KEY ||
+      process.env.FMP_KEY
+  );
+}
+
 async function fetchQuoteOne(symbol) {
   if (!symbol) return null;
-  const attempts = [
-    () => fmp(`/quote/${encodeURIComponent(symbol)}`, {}),
-    () => fmpStable("/quote", { symbol }),
-  ];
-  for (const attempt of attempts) {
-    try {
-      const rows = await attempt();
-      if (rows.length) return rows[0];
-    } catch (error) {
-      if (!/premium|403|429|402|timeout/i.test(error.message || "")) throw error;
+  if (hasFmpKey()) {
+    const attempts = [
+      () => fmp(`/quote/${encodeURIComponent(symbol)}`, {}),
+      () => fmpStable("/quote", { symbol }),
+    ];
+    for (const attempt of attempts) {
+      try {
+        const rows = await attempt();
+        if (rows.length) return rows[0];
+      } catch (error) {
+        if (!/premium|403|429|402|timeout|missing fmp/i.test(error.message || "")) throw error;
+      }
     }
   }
   try {
@@ -276,20 +321,31 @@ function valueFor(type, row) {
 
 function buildRow(meta, quote, type, rank) {
   const symbol = String(meta.symbol || "").trim().toUpperCase();
-  const q = quote || {};
-  const value = symbol ? valueFor(type, q) : null;
+  const q = mergeWithCache(meta, quote, rank) || {};
+  const cachedCap = toNum(q.marketCap);
+  const value =
+    type === "marketCap" && cachedCap != null && cachedCap > 0
+      ? cachedCap
+      : symbol || cachedCap
+        ? valueFor(type, q)
+        : cachedCap;
+  const price = toNum(q.price);
+  const changePct = toNum(q.changesPercentage || q.changePercentage);
+  const hasLiveOrCache = Boolean(
+    (symbol && quote) || price != null || (cachedCap != null && cachedCap > 0)
+  );
   return {
     rank,
     symbol: symbol || "",
     name: meta.name || q.name || q.companyName || symbol,
     value,
-    price: symbol ? toNum(q.price) : null,
-    changePct: symbol ? toNum(q.changesPercentage || q.changePercentage) : null,
+    price,
+    changePct,
     country: meta.country || q.country || "",
     countryLabel: countryShort(meta.country || q.country || ""),
     flag: countryFlag(meta.country || q.country || ""),
     logo: symbol ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png` : "",
-    hasQuote: Boolean(symbol && quote),
+    hasQuote: hasLiveOrCache,
   };
 }
 
@@ -332,6 +388,7 @@ module.exports = async function handler(req, res) {
       withQuote < 5
         ? `FMP quote 일부만 조회됨 (${withQuote}/${rows.length}, 요청 ${fetchSymbols.length}개). 잠시 후 다시 시도하세요.`
         : null;
+    const cacheMeta = loadMarketCache();
     send(res, 200, {
       type,
       order: type === "marketCap" ? "ranked" : "value",
@@ -339,6 +396,7 @@ module.exports = async function handler(req, res) {
       withQuote,
       withData,
       warning,
+      cacheUpdatedAt: cacheMeta.updatedAt || null,
       updatedAt: new Date().toISOString(),
       rows,
     });

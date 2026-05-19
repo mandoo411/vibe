@@ -253,7 +253,10 @@
               state.type === "marketCap"
                 ? `Largest companies by market cap · TOP100 고정 순위 (${withData}개 시세 연동)`
                 : `${labels[state.type]} TOP100 · 실시간 순위`;
-            $("world-status").textContent = `${valueLabels[state.type]} · 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`;
+            const cacheAt = data.cacheUpdatedAt
+              ? ` · 시총 캐시 ${new Date(data.cacheUpdatedAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}`
+              : "";
+            $("world-status").textContent = `${valueLabels[state.type]} · 업데이트 ${new Date(data.updatedAt || Date.now()).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}${cacheAt}`;
             $("world-body").innerHTML = rows.length
               ? rows.map((row) => `<tr>
                 <td class="world-rank">${escapeHtml(row.rank)}</td>

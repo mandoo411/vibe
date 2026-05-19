@@ -14,6 +14,7 @@
     "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs",
     "sync:live": "node --env-file=.env scripts/telegram-live-report.mjs",
     "sync:crypto-news": "node --env-file=.env scripts/crypto-news.mjs",
+    "cache:world-market": "node scripts/world-market-cache.mjs",
     "create-session": "node scripts/create-telegram-session.mjs"
   },
   "dependencies": {

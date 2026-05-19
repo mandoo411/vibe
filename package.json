@@ -13,6 +13,7 @@
     "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs",
     "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs",
     "sync:live": "node --env-file=.env scripts/telegram-live-report.mjs",
+    "sync:crypto-news": "node --env-file=.env scripts/crypto-news.mjs",
     "create-session": "node scripts/create-telegram-session.mjs"
   },
   "dependencies": {

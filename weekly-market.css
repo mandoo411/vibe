@@ -1099,6 +1099,27 @@ a:hover {
   font-style: normal;
 }
 
+.news-card--telegram {
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(212, 175, 55, 0.06);
+}
+
+.news-card summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.news-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.news-card p {
+  margin: 9px 0 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
 .empty-text {
   margin: 0;
   color: var(--text-dim);

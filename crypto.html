@@ -259,6 +259,34 @@
         font-size: 13px;
         border-radius: var(--radius);
       }
+      .crypto-news-list {
+        display: grid;
+        gap: 9px;
+      }
+      .crypto-news-card {
+        border: 1px solid rgba(212, 175, 55, 0.45);
+        background: rgba(212, 175, 55, 0.06);
+        padding: 10px 12px;
+      }
+      .crypto-news-card summary {
+        cursor: pointer;
+        color: var(--text);
+        font-weight: 650;
+        line-height: 1.45;
+      }
+      .crypto-news-card__meta {
+        display: block;
+        margin-bottom: 4px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+      }
+      .crypto-news-card__body {
+        margin: 8px 0 0;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
       @media (max-width: 768px) {
         .crypto-global-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -412,6 +440,11 @@
           </div>
         </section>
 
+        <section class="crypto-section" aria-labelledby="crypto-sec-news">
+          <h2 class="crypto-section__title" id="crypto-sec-news">③ 크립토 뉴스</h2>
+          <div id="crypto-news-list" class="crypto-news-list" aria-live="polite"></div>
+        </section>
+
         <p id="crypto-error" class="crypto-error" hidden></p>
       </div>
     </div>
@@ -501,6 +534,31 @@
             minimumFractionDigits: n >= 100 ? 0 : 2,
             maximumFractionDigits: n >= 100 ? 0 : 4,
           })}`;
+        }
+
+        function fmtNewsTime(value) {
+          const d = new Date(value);
+          if (Number.isNaN(d.getTime())) return "";
+          return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+        }
+
+        async function refreshCryptoNews() {
+          const el = $("crypto-news-list");
+          if (!el) return;
+          try {
+            const res = await fetch("./data/crypto-news.json?t=" + Date.now(), { cache: "no-store" });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            const rows = Array.isArray(data.news) ? data.news.slice(0, 20) : [];
+            el.innerHTML = rows.length
+              ? rows.map((n) => `<details class="crypto-news-card">
+                <summary><span class="crypto-news-card__meta">${escapeHtml(n.channel || n.source || "텔레그램")} · ${escapeHtml(fmtNewsTime(n.publishedAt || n.datetime))}</span>${escapeHtml(n.title || n.headline || "제목 없음")}</summary>
+                <p class="crypto-news-card__body">${escapeHtml(n.summary || n.title || "")}</p>
+              </details>`).join("")
+              : '<p class="empty-text">크립토 뉴스 준비 중</p>';
+          } catch {
+            el.innerHTML = '<p class="empty-text">크립토 뉴스를 불러오지 못했습니다.</p>';
+          }
         }
 
         async function fetchJson(action) {
@@ -712,7 +770,9 @@
           wireTable();
           wireCurrencyToggle();
           await refreshAll();
+          await refreshCryptoNews();
           startPolling();
+          setInterval(refreshCryptoNews, 30 * 60 * 1000);
         }
 
         if (document.readyState === "loading") {

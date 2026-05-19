@@ -617,11 +617,23 @@
           $("news-list").innerHTML = rows.length
             ? rows
                 .slice(0, 20)
-                .map((n) => `<a class="news-card" href="${escapeHtml(n.url || "#")}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(n.headline || "")}">
-                  <span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span>
-                  <strong>${escapeHtml(n.headline || "제목 없음")}</strong>
-                  <i aria-hidden="true">→</i>
-                </a>`)
+                .map((n) => {
+                  const summary = n.summary || n.note || "";
+                  if (n.telegram || summary) {
+                    return `<details class="news-card news-card--telegram" title="${escapeHtml(n.headline || "")}">
+                      <summary><span>${escapeHtml(n.source || "Telegram")} · ${escapeHtml(n.timeLabel || "")}</span><strong>${escapeHtml(n.headline || "제목 없음")}</strong></summary>
+                      <p>${escapeHtml(summary || n.headline || "")}</p>
+                    </details>`;
+                  }
+                  if (n.url) {
+                    return `<a class="news-card" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(n.headline || "")}">
+                      <span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span>
+                      <strong>${escapeHtml(n.headline || "제목 없음")}</strong>
+                      <i aria-hidden="true">→</i>
+                    </a>`;
+                  }
+                  return `<div class="news-card"><span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span><strong>${escapeHtml(n.headline || "제목 없음")}</strong></div>`;
+                })
                 .join("")
             : '<p class="empty-text">뉴스를 불러올 수 없습니다</p>';
         }

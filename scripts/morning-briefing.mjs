@@ -13,13 +13,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
+import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
-const KIS_INDEX_PATH = "/uapi/overseas-price/v1/quotations/inquire-daily-chartprice";
-const KIS_INDEX_TR_ID = "FHKST03030100";
+const KIS_INDEX_PATH = "/uapi/overseas-price/v1/quotations/inquire-price";
+const KIS_INDEX_TR_ID = "HHDFS76200200";
 const KIS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const KIS_PRICE_TR_ID = "HHDFS00000300";
 const EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
@@ -30,9 +31,9 @@ const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefi
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", cnbcSymbol: ".NDX", yahooSymbol: "^NDX" },
-  { id: "sp500", name: "S&P 500", cnbcSymbol: ".SPX", yahooSymbol: "^GSPC" },
-  { id: "nasdaq-futures", name: "나스닥선물", cnbcSymbol: "@ND.1", yahooSymbol: "NQ=F" },
+  { id: "nasdaq", name: "나스닥", excd: "NAS", symb: "COMP" },
+  { id: "sp500", name: "S&P 500", excd: "NYS", symb: "SPX" },
+  { id: "dow", name: "다우", excd: "NYS", symb: "DJIA" },
 ];
 
 const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];
@@ -310,54 +311,28 @@ async function fetchYahooQuote(symbol) {
   return { symbol, price, previousClose, changePoints, changePct };
 }
 
-async function fetchCnbcQuotes(indices) {
-  const symbols = indices.map((index) => index.cnbcSymbol).filter(Boolean).join("|");
-  const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${encodeURIComponent(symbols)}&output=json`;
-  const json = await fetchJson(url, {
-    headers: {
-      accept: "application/json",
-    },
-  });
-  const quotes = json?.QuickQuoteResult?.QuickQuote;
-  const rows = Array.isArray(quotes) ? quotes : quotes ? [quotes] : [];
-  const map = new Map();
-  for (const row of rows) {
-    const symbol = sanitizeStr(row.symbol);
-    const price = round2(row.last);
-    if (!symbol || price == null || row.code === "1") continue;
-    map.set(symbol, {
-      symbol,
-      price,
-      previousClose: round2(row.previous_day_closing),
-      changePct: round2(row.change_pct),
-      changePoints: round2(row.change),
-    });
-  }
-  return map;
-}
-
 async function fetchUsMarket() {
-  let cnbcQuotes = new Map();
-  try {
-    cnbcQuotes = await fetchCnbcQuotes(US_INDICES);
-  } catch (error) {
-    console.warn(`[morning-briefing] CNBC indices failed: ${error instanceof Error ? error.message : error}`);
-  }
   const indices = [];
   for (const index of US_INDICES) {
-    let q = cnbcQuotes.get(index.cnbcSymbol);
-    if (!q || q.price == null) {
-      q = await fetchYahooQuote(index.yahooSymbol);
-    }
+    const body = await kisGet(KIS_INDEX_PATH, KIS_INDEX_TR_ID, {
+      AUTH: "",
+      EXCD: index.excd,
+      SYMB: index.symb,
+    });
+    const out = outputObject(body);
+    const close = round2(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr"]));
+    const changePct = round2(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]));
+    const changePoints = round2(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"]));
     indices.push({
       id: index.id,
       name: index.name,
-      symbol: index.cnbcSymbol || index.yahooSymbol,
-      close: q.price,
-      previousClose: q.previousClose,
-      changePct: q.changePct,
-      changePoints: q.changePoints,
+      symbol: `${index.excd}:${index.symb}`,
+      close,
+      previousClose: null,
+      changePct,
+      changePoints,
     });
+    await delay(250);
   }
   return { indices };
 }
@@ -538,6 +513,9 @@ function isMarketNews(row) {
 }
 
 async function fetchDomesticNews() {
+  const telegramMessages = await collectTelegramMessages({ hours: 3, channelLimit: 60 });
+  const telegramRows = telegramRowsForData(telegramMessages, 20);
+  if (telegramRows.length) return telegramRows;
   const window = newsWindow();
   const rows = [];
   try {
@@ -572,6 +550,7 @@ function buildAnalysisInput(data) {
       forex: data.forex,
       crypto: data.crypto,
       news: data.news,
+      telegramNews: data.news?.filter?.((row) => row.telegram) || [],
     },
     null,
     2
@@ -585,6 +564,7 @@ async function analyzeWithClaude(data) {
     max_tokens: 1800,
     system: `당신은 한국 주식 시장 장전 브리핑 애널리스트입니다.
 입력 데이터만 근거로 한국어 JSON 객체만 반환하세요. 마크다운, 코드펜스, 설명은 금지입니다.
+텔레그램 채널 뉴스가 있으면 RSS보다 우선 근거로 사용하고, 거시경제/미국주식/국내주식 채널 메시지를 가장 중요하게 반영하세요.
 스키마:
 {
   "keyIssues": ["오늘 주목할 핵심 이슈 1", "오늘 주목할 핵심 이슈 2", "오늘 주목할 핵심 이슈 3"],

@@ -12,6 +12,7 @@ import {
   SITE_URL,
   toNum,
 } from "./telegram-utils.mjs";
+import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
 const DATA_PATH = process.env.DAILY_MARKET_PATH || "data/daily-market.json";
 
@@ -88,6 +89,10 @@ function buildMessage(data) {
 async function main() {
   const data = await readJson(DATA_PATH);
   const message = buildMessage(data);
+  const telegramRows = telegramRowsForData(await collectTelegramMessages({ hours: 3, channelLimit: 60 }), 5);
+  if (telegramRows.length) {
+    console.log(`Daily market Telegram context collected: ${telegramRows.length}`);
+  }
   await sendTelegramMessage(message);
   console.log("Sent daily market Telegram message.");
 }

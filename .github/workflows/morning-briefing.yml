@@ -1,9 +1,9 @@
 name: Morning Briefing
 
-# 평일 07:00 KST = 전날 22:00 UTC (GitHub cron 일~목 UTC → 월~금 KST 장전)
+# 평일 07:30 KST = 전날 22:30 UTC (월~금 KST 장전)
 on:
   schedule:
-    - cron: "0 22 * * 0-4"
+    - cron: "30 22 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -44,6 +44,9 @@ jobs:
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY" > .env
           printf 'KIS_ACCESS_TOKEN=%s\n' "$KIS_ACCESS_TOKEN" >> .env
@@ -52,6 +55,9 @@ jobs:
           printf 'NEWSAPI_KEY=%s\n' "$NEWSAPI_KEY" >> .env
           printf 'TELEGRAM_TOKEN=%s\n' "$TELEGRAM_TOKEN" >> .env
           printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID" >> .env
+          printf 'TELEGRAM_SESSION=%s\n' "$TELEGRAM_SESSION" >> .env
+          printf 'TELEGRAM_API_ID=%s\n' "$TELEGRAM_API_ID" >> .env
+          printf 'TELEGRAM_API_HASH=%s\n' "$TELEGRAM_API_HASH" >> .env
 
       - name: Run morning briefing
         run: npm run sync:briefing

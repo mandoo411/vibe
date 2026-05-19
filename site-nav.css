@@ -1,5 +1,56 @@
 /* TotalMoney AI — 공통 상단 헤더 + 사이트 네비 (픽셀 고정 · 모든 페이지 동일) */
 
+.tm-market-ticker {
+  box-sizing: border-box;
+  width: min(1100px, calc(100% - 36px));
+  margin: 10px auto 8px;
+  border: 1px solid var(--border);
+  background: #0a0907;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tm-market-ticker__track {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 28px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tm-market-ticker__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.tm-market-ticker__item b {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.tm-market-ticker__item strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.tm-market-ticker__item em {
+  font-style: normal;
+  color: var(--text-muted);
+}
+
+.tm-market-ticker__item em.is-up {
+  color: #f87171;
+}
+
+.tm-market-ticker__item em.is-down {
+  color: #60a5fa;
+}
+
 .tm-site-header {
   box-sizing: border-box;
   display: flex;
@@ -204,6 +255,16 @@ body.is-kr-market-open .tm-live-badge {
 
 /* 스마트폰·태블릿 좁은 폭: 픽셀 고정 헤더(모든 페이지 동일) */
 @media (max-width: 768px) {
+  .tm-market-ticker {
+    width: calc(100% - 20px);
+    margin: 8px auto 8px;
+  }
+
+  .tm-market-ticker__track {
+    gap: 12px;
+    font-size: 10px;
+  }
+
   .tm-site-header {
     box-sizing: border-box;
     display: flex;

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
+import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const RSS_SOURCES = [
@@ -328,6 +329,19 @@ async function fetchRssSource(source) {
 }
 
 async function fetchKoreanNews() {
+  const telegramMessages = await collectTelegramMessages({ hours: 3, channelLimit: 60 });
+  const telegramRows = telegramRowsForData(telegramMessages, 20).map((row) => ({
+    headline: row.title,
+    url: "",
+    datetime: row.datetime,
+    date: row.datetime.slice(0, 10),
+    timeLabel: row.timeLabel,
+    source: row.source,
+    summary: row.summary,
+    telegram: true,
+  }));
+  if (telegramRows.length) return telegramRows;
+
   const settled = await Promise.allSettled(RSS_SOURCES.map((source) => fetchRssSource(source)));
   const rows = [];
   for (let i = 0; i < settled.length; i += 1) {

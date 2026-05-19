@@ -30,6 +30,7 @@
     dayPrepTitle: $("day-prep-title"),
     summary: $("day-summary"),
     indexes: $("day-indexes"),
+    marketExtras: $("day-market-extras"),
     notable: $("day-notable"),
     topGainers: $("day-topgainers"),
     topGainersMeta: $("day-topgainers-meta"),
@@ -230,6 +231,7 @@
     if (empty) {
       els.summary.textContent = "";
       els.indexes.innerHTML = "";
+      if (els.marketExtras) els.marketExtras.innerHTML = "";
       els.notable.innerHTML = "";
       if (els.topGainers) els.topGainers.innerHTML = "";
       if (els.topGainersMeta) els.topGainersMeta.textContent = "";
@@ -238,6 +240,7 @@
     } else {
       els.summary.textContent = (day && day.summary) || "";
       els.indexes.innerHTML = renderIndexes(day && day.indexes);
+      if (els.marketExtras) els.marketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
       els.notable.innerHTML = renderNotable(day && day.notableStocks);
       if (els.topGainers) {
         els.topGainers.innerHTML = renderTopGainers(day && day.topGainers);
@@ -304,6 +307,16 @@
         const note = sanitizeStr(n && n.note);
         const source = sanitizeStr(n && n.source);
         const url = typeof (n && n.url) === "string" && /^https?:\/\//i.test(n.url) ? n.url : "";
+        const summary = sanitizeStr(n && (n.summary || n.note));
+        if ((n && n.telegram) || (summary && !url)) {
+          return `<li class="news-item news-item--telegram">
+            <details>
+              <summary class="news-item__title">${title}</summary>
+              <p class="news-item__note">${escapeHtml(summary || n.title || "")}</p>
+              ${source ? `<p class="news-item__meta">${escapeHtml(source)}</p>` : ""}
+            </details>
+          </li>`;
+        }
         const titleHtml = url
           ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${title}</a>`
           : title;
@@ -330,6 +343,16 @@
           ? ""
           : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`;
         return `<span class="index-chip"><span class="index-chip__name">${name}</span><span class="index-chip__value">${value || "—"}</span>${chgHtml}</span>`;
+      })
+      .join("");
+  }
+
+  function renderMarketExtras(arr) {
+    if (!Array.isArray(arr) || !arr.length) return '<p class="empty-line">데이터 없음</p>';
+    return arr
+      .map((row) => {
+        const chg = parseChange(row && row.changePct);
+        return `<span class="index-chip"><span class="index-chip__name">${escapeHtml(row && row.label)}</span><span class="index-chip__value">${escapeHtml(row && row.valueFormatted || row && row.value || "—")}</span>${chg == null ? "" : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`}</span>`;
       })
       .join("");
   }

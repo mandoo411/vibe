@@ -67,6 +67,10 @@ const TELEGRAM_STOCK_KEYWORDS = [
   "급락",
   "%",
 ];
+const MARKET_EXTRA_URLS = {
+  fx: "https://open.er-api.com/v6/latest/USD",
+  btc: "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true",
+};
 
 // ─── 기본 헬퍼 ────────────────────────────────────────────
 function seoulYmd(d = new Date()) {
@@ -523,6 +527,41 @@ async function searchNaverNews(query, limit, { retries = 3 } = {}) {
   return [];
 }
 
+async function fetchYahooQuoteSimple(symbol) {
+  const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+  const json = await res.json();
+  const meta = json?.chart?.result?.[0]?.meta || {};
+  const price = toNumberOrNull(meta.regularMarketPrice);
+  const previous = toNumberOrNull(meta.chartPreviousClose || meta.previousClose);
+  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  return { price, changePct };
+}
+
+async function fetchMarketExtras() {
+  const out = [];
+  try {
+    const fx = await (await fetch(MARKET_EXTRA_URLS.fx)).json();
+    out.push({ label: "💱 원/달러", value: fx?.rates?.KRW || null, valueFormatted: fx?.rates?.KRW ? Number(fx.rates.KRW).toLocaleString("ko-KR", { maximumFractionDigits: 2 }) : "", changePct: null });
+  } catch {}
+  for (const item of [
+    { label: "🛢️ WTI 유가", symbol: "CL=F" },
+    { label: "🥇 금시세", symbol: "GC=F" },
+    { label: "📈 나스닥 선물", symbol: "NQ=F" },
+  ]) {
+    try {
+      const q = await fetchYahooQuoteSimple(item.symbol);
+      out.push({ label: item.label, value: q.price, valueFormatted: q.price == null ? "" : q.price.toLocaleString("ko-KR", { maximumFractionDigits: 2 }), changePct: q.changePct });
+    } catch {}
+  }
+  try {
+    const btc = await (await fetch(MARKET_EXTRA_URLS.btc)).json();
+    out.push({ label: "₿ 비트코인", value: btc?.bitcoin?.usd || null, valueFormatted: btc?.bitcoin?.usd ? `$${Math.round(btc.bitcoin.usd).toLocaleString("ko-KR")}` : "", changePct: btc?.bitcoin?.usd_24h_change ?? null });
+  } catch {}
+  return out;
+}
+
 async function fetchNewsForStocks(stocks, perStock, concurrency, perRequestDelayMs) {
   const out = new Map();
   let idx = 0;
@@ -918,7 +957,7 @@ async function main() {
   console.log(`  뉴스 수집 완료 (뉴스 없음: ${noNewsCount}종목)`);
 
   console.log("[5/6] Telegram 거시경제 메시지 + Claude 분석 (이유·테마 + 주요 뉴스)...");
-  const telegramMessages = await collectTelegramMacroMessages();
+  const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
   const ai = await classifyWithClaude({
     apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes, telegramMessages,
   });
@@ -999,6 +1038,7 @@ async function main() {
     indexes: indexes.length ? indexes : (existing.indexes || []),
     themes,
     news: topNews.length ? topNews : (existing.news || []),
+    marketExtras: marketExtras.length ? marketExtras : (existing.marketExtras || []),
     telegramMessages: telegramMessages.slice(0, 40).map((msg) => ({
       channel: msg.channel,
       text: compactText(msg.text, 300),

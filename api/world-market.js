@@ -1,16 +1,19 @@
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
+
+/** 무료 플랜: 단일 US 심볼 quote만 안정적 (배치·.KS는 프리미엄) */
 const TOP_SYMBOLS = [
   "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "BRK-B",
   "JPM", "V", "JNJ", "WMT", "XOM", "MA", "PG", "HD", "CVX", "MRK",
   "ABBV", "BAC", "KO", "PEP", "AVGO", "COST", "TMO", "MCD", "CSCO",
   "ACN", "LIN", "DHR", "TXN", "NEE", "PM", "UNH", "RTX", "HON",
   "QCOM", "IBM", "AMGN", "LOW", "INTU", "SBUX", "GE", "CAT", "BA",
-  "AMD", "INTC", "CRM", "NOW", "PLTR", "TSMC", "TSM", "ASML", "SAP",
-  "005930.KS", "000660.KS", "035420.KS",
+  "AMD", "INTC", "CRM", "NOW", "PLTR", "TSM", "ASML", "SAP", "NFLX",
+  "DIS", "GS", "MS", "AXP", "BLK", "ADBE", "PYPL", "UBER",
 ];
 
 const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 12000);
+const QUOTE_CONCURRENCY = 6;
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -20,6 +23,14 @@ function send(res, status, body) {
   res.setHeader("access-control-allow-headers", "content-type");
   res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=600");
   res.end(JSON.stringify(body));
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isPremiumError(text) {
+  return /premium|subscription|not available under your current/i.test(String(text || ""));
 }
 
 async function fmp(path, params = {}) {
@@ -52,12 +63,17 @@ async function fmpGet(base, params = {}) {
   try {
     res = await fetch(url, { signal: controller.signal });
   } catch (error) {
-    if (error && error.name === "AbortError") throw new Error(`FMP timeout ${path}`);
+    if (error && error.name === "AbortError") throw new Error(`FMP timeout ${base}`);
     throw error;
   } finally {
     clearTimeout(timer);
   }
   const text = await res.text();
+  if (isPremiumError(text)) {
+    const error = new Error(`FMP premium: ${text.slice(0, 120)}`);
+    error.statusCode = 402;
+    throw error;
+  }
   let body;
   try {
     body = JSON.parse(text);
@@ -69,7 +85,10 @@ async function fmpGet(base, params = {}) {
     error.statusCode = res.status;
     throw error;
   }
-  return Array.isArray(body) ? body : [];
+  if (body && typeof body === "object" && !Array.isArray(body) && body["Error Message"]) {
+    throw new Error(String(body["Error Message"]).slice(0, 180));
+  }
+  return Array.isArray(body) ? body : body ? [body] : [];
 }
 
 function toNum(value) {
@@ -99,27 +118,37 @@ function pickSymbol(row) {
 }
 
 function uniqueSymbols(symbols) {
-  return [...new Set(symbols.map((symbol) => String(symbol || "").trim().toUpperCase()).filter(Boolean))];
+  return [...new Set(symbols.map((symbol) => String(symbol || "").trim().toUpperCase()).filter(Boolean))].filter(
+    (symbol) => !symbol.includes(".KS") && !symbol.includes(".KQ")
+  );
+}
+
+async function fetchQuoteOne(symbol) {
+  try {
+    const rows = await fmpStable("/quote", { symbol });
+    if (rows.length) return rows[0];
+  } catch (error) {
+    if (!/premium|403|429|402/i.test(error.message || "")) throw error;
+  }
+  try {
+    const rows = await fmp(`/quote/${encodeURIComponent(symbol)}`, {});
+    if (rows.length) return rows[0];
+  } catch (error) {
+    if (!/premium|403|429|402/i.test(error.message || "")) throw error;
+  }
+  return null;
 }
 
 async function fetchQuotes(symbols) {
-  const out = [];
   const unique = uniqueSymbols(symbols);
-  for (let i = 0; i < unique.length; i += 100) {
-    const chunk = unique.slice(i, i + 100);
-    if (!chunk.length) continue;
-    try {
-      out.push(...(await fmpStable("/quote", { symbol: chunk.join(",") })));
-    } catch (error) {
-      if (!/FMP HTTP 403|FMP HTTP 429/.test(error.message || "")) throw error;
-      for (const symbol of chunk) {
-        try {
-          out.push(...(await fmpStable("/quote", { symbol })));
-        } catch (_) {
-          // 무료 플랜에서 막히는 심볼은 건너뛰고 가능한 종목만 표시한다.
-        }
-      }
+  const out = [];
+  for (let i = 0; i < unique.length; i += QUOTE_CONCURRENCY) {
+    const chunk = unique.slice(i, i + QUOTE_CONCURRENCY);
+    const rows = await Promise.all(chunk.map((symbol) => fetchQuoteOne(symbol)));
+    for (const row of rows) {
+      if (row) out.push(row);
     }
+    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(120);
   }
   return out;
 }
@@ -148,12 +177,12 @@ function normalize(type, rows) {
         value: valueFor(type, row),
         price: toNum(row.price),
         changePct: toNum(row.changesPercentage || row.changePercentage),
-        country: row.country || "",
-        flag: countryFlag(row.country),
+        country: row.country || "US",
+        flag: countryFlag(row.country || "US"),
         logo: `https://financialmodelingprep.com/image-stock/${encodeURIComponent(symbol)}.png`,
       };
     })
-    .filter((row) => row.symbol && row.value != null)
+    .filter((row) => row.symbol && row.value != null && row.value > 0)
     .sort((a, b) => (b.value || 0) - (a.value || 0))
     .slice(0, 100)
     .map((row, index) => ({ rank: index + 1, ...row }));
@@ -161,6 +190,9 @@ function normalize(type, rows) {
 
 async function rowsFor(type) {
   const quoteRows = await fetchQuotes(TOP_SYMBOLS);
+  if (quoteRows.length < 5) {
+    throw new Error(`FMP quote 데이터 부족 (${quoteRows.length}건). API 키·플랜을 확인하세요.`);
+  }
   const bySymbol = new Map();
   for (const row of quoteRows) {
     const symbol = pickSymbol(row);

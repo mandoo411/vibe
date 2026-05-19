@@ -12,7 +12,7 @@ module.exports = [
   { symbol: "TSLA", name: "Tesla", country: "United States" },
   { symbol: "SSNLF", name: "Samsung", country: "South Korea" },
   { symbol: "WMT", name: "Walmart", country: "United States" },
-  { symbol: "BRK-B", name: "Berkshire Hathaway", country: "United States" },
+  { symbol: "BRK.B", name: "Berkshire Hathaway", country: "United States" },
   { symbol: "LLY", name: "Eli Lilly", country: "United States" },
   { symbol: "", name: "SK hynix", country: "South Korea" },
   { symbol: "JPM", name: "JPMorgan Chase", country: "United States" },

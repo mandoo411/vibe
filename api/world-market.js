@@ -3,7 +3,7 @@ const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
 const RANKED_COMPANIES = require("./world-market-ranked.js");
 
 const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 10000);
-const QUOTE_CONCURRENCY = 12;
+const QUOTE_CONCURRENCY = 5;
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -151,13 +151,22 @@ async function fetchQuotes(symbols) {
       const row = rows[index];
       if (row) out.set(symbol, row);
     });
-    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(80);
+    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(150);
   }
   return out;
 }
 
+function marketCapFromQuote(row) {
+  const direct = toNum(row.marketCap ?? row.mktCap ?? row.marketCapitalization);
+  if (direct != null && direct > 0) return direct;
+  const price = toNum(row.price);
+  const shares = toNum(row.sharesOutstanding);
+  if (price != null && shares != null && shares > 0) return price * shares;
+  return null;
+}
+
 function valueFor(type, row) {
-  if (type === "marketCap") return toNum(row.marketCap);
+  if (type === "marketCap") return marketCapFromQuote(row);
   if (type === "netIncome") {
     const eps = toNum(row.eps);
     const shares = toNum(row.sharesOutstanding);
@@ -218,14 +227,16 @@ module.exports = async function handler(req, res) {
   const type = ["marketCap", "netIncome", "revenue"].includes(req.query?.type) ? req.query.type : "marketCap";
   try {
     const rows = await rowsFor(type);
-    const withData = rows.filter((row) => row.hasQuote && row.value != null).length;
-    if (withData < 5) {
-      throw new Error(`FMP quote 데이터 부족 (${withData}건). API 키·플랜을 확인하세요.`);
+    const withQuote = rows.filter((row) => row.hasQuote).length;
+    const withData = rows.filter((row) => row.hasQuote && row.value != null && row.value > 0).length;
+    if (withQuote < 5) {
+      throw new Error(`FMP quote 데이터 부족 (${withQuote}건). API 키·플랜을 확인하세요.`);
     }
     send(res, 200, {
       type,
       order: type === "marketCap" ? "ranked" : "value",
       total: rows.length,
+      withQuote,
       withData,
       updatedAt: new Date().toISOString(),
       rows,

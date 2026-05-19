@@ -47,21 +47,40 @@ function firstNumeric(row, keys, { allowZero = true } = {}) {
 }
 
 function indexValue(row) {
-  return firstNumeric(row, ["bstp_nmix_prpr", "BSTP_NMIX_PRPR", "nmix_prpr", "NMIX_PRPR", "nmix_nmix_prpr", "stck_prpr"], { allowZero: false });
+  return firstNumeric(row, ["nmix_prpr", "NMIX_PRPR", "nmix_nmix_prpr", "NMIX_NMIX_PRPR", "bstp_nmix_prpr", "BSTP_NMIX_PRPR", "stck_prpr", "STCK_PRPR", "prpr_nmix", "prpr"], { allowZero: false });
+}
+
+function indexPlausible(code, value) {
+  if (!Number.isFinite(value)) return false;
+  if (code === "0001") return value > 500 && value < 8000;
+  if (code === "1001") return value > 300 && value < 4000;
+  return true;
 }
 
 async function domesticIndex(code, label) {
-  const body = await kisGet("/uapi/domestic-stock/v1/quotations/inquire-index-price", "FHPUP02100000", {
-    fid_cond_mrkt_div_code: "J",
-    fid_input_iscd: code,
-  });
-  const out = Array.isArray(body.output) ? body.output[0] : body.output;
-  return {
-    id: code,
-    label,
-    value: indexValue(out),
-    changePct: firstNumeric(out, ["bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT", "prdy_ctrt", "nmix_prdy_ctrt"]),
-  };
+  let lastError;
+  for (const marketCode of ["J", "U"]) {
+    try {
+      const body = await kisGet("/uapi/domestic-stock/v1/quotations/inquire-index-price", "FHPUP02100000", {
+        fid_cond_mrkt_div_code: marketCode,
+        fid_input_iscd: code,
+      });
+      const out = Array.isArray(body.output) ? body.output[0] : body.output;
+      const value = indexValue(out);
+      if (indexPlausible(code, value)) {
+        return {
+          id: code,
+          label,
+          value,
+          changePct: firstNumeric(out, ["bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT", "prdy_ctrt", "nmix_prdy_ctrt"]),
+        };
+      }
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (lastError) throw lastError;
+  return { id: code, label, value: null, changePct: null };
 }
 
 async function erUsdKrw() {

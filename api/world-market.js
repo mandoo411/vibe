@@ -133,6 +133,34 @@ function yahooSymbol(symbol) {
     .replace(/\./g, "-");
 }
 
+async function fetchYahooChartQuote(symbol) {
+  const ySym = yahooSymbol(symbol);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FMP_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=5d`,
+      { signal: controller.signal, headers: { "user-agent": "TotalMoneyAI/1.0" } }
+    );
+  } finally {
+    clearTimeout(timer);
+  }
+  const body = await res.json().catch(() => ({}));
+  const meta = body?.chart?.result?.[0]?.meta || {};
+  const price = toNum(meta.regularMarketPrice);
+  if (price == null) return null;
+  const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
+  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  return {
+    symbol,
+    price,
+    changesPercentage: changePct,
+    marketCap: toNum(meta.marketCap),
+    name: meta.longName || meta.shortName || symbol,
+  };
+}
+
 function mapYahooRow(symbol, q) {
   if (!q) return null;
   const price = toNum(q.regularMarketPrice);
@@ -187,6 +215,11 @@ async function fetchQuoteOne(symbol) {
       if (!/premium|403|429|402|timeout/i.test(error.message || "")) throw error;
     }
   }
+  try {
+    return await fetchYahooChartQuote(symbol);
+  } catch {
+    return null;
+  }
 }
 
 async function fetchQuotes(symbols) {
@@ -194,17 +227,25 @@ async function fetchQuotes(symbols) {
   if (quoteCache.map && Date.now() - quoteCache.at < QUOTE_CACHE_MS) {
     return quoteCache.map;
   }
-  const out = await fetchYahooQuotesBatch(unique);
-  const missing = unique.filter((symbol) => !out.has(symbol));
-  for (let i = 0; i < missing.length; i += QUOTE_CONCURRENCY) {
-    const chunk = missing.slice(i, i + QUOTE_CONCURRENCY);
+  const out = new Map();
+  for (let i = 0; i < unique.length; i += QUOTE_CONCURRENCY) {
+    const chunk = unique.slice(i, i + QUOTE_CONCURRENCY);
     const rows = await Promise.all(chunk.map((symbol) => fetchQuoteOne(symbol)));
     chunk.forEach((symbol, index) => {
       const row = rows[index];
       if (row) out.set(symbol, row);
     });
-    if (i + QUOTE_CONCURRENCY < missing.length) await sleep(120);
+    if (i + QUOTE_CONCURRENCY < unique.length) await sleep(120);
   }
+  try {
+    const caps = await fetchYahooQuotesBatch(unique);
+    for (const symbol of unique) {
+      const row = out.get(symbol);
+      const cap = caps.get(symbol);
+      if (row && cap?.marketCap) row.marketCap = cap.marketCap;
+      else if (!row && cap) out.set(symbol, cap);
+    }
+  } catch {}
   quoteCache = { at: Date.now(), map: out };
   return out;
 }
@@ -212,6 +253,7 @@ async function fetchQuotes(symbols) {
 function marketCapFromQuote(row) {
   const direct = toNum(row.marketCap ?? row.mktCap ?? row.marketCapitalization);
   if (direct != null && direct > 0) return direct;
+  if (direct === 0) return null;
   const price = toNum(row.price);
   const shares = toNum(row.sharesOutstanding);
   if (price != null && shares != null && shares > 0) return price * shares;

@@ -1001,6 +1001,190 @@ details[open] .admin__summary {
   color: var(--pos);
 }
 
+/* --- 장마감 리포트 확장 섹션 --- */
+.daily-headline {
+  padding: 14px 16px;
+  border: 1px solid rgba(240, 199, 90, 0.45);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(240, 199, 90, 0.18) 0%, rgba(18, 16, 12, 0.95) 100%);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.day-block__subhead {
+  margin: 16px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-bright);
+  letter-spacing: 0.04em;
+}
+
+.day-block__hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.day-block--extras {
+  opacity: 0.92;
+}
+
+.supply-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.supply-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 12px;
+}
+
+.supply-card__market {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-bright);
+  margin-bottom: 8px;
+}
+
+.supply-card__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.supply-card__grid em {
+  display: inline-block;
+  min-width: 3.2em;
+  margin-right: 6px;
+  font-style: normal;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.daily-supply-comment {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.issue-stock-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.issue-stock-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: #12100c;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.issue-stock-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.sector-block h5 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--accent-bright);
+}
+
+.sector-block ul {
+  margin: 0 0 12px;
+  padding-left: 1.1em;
+  font-size: 13px;
+}
+
+.sector-summary {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.daily-checkpoints {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.daily-verdict {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.index-chip__tv {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.press-news-card {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid rgba(240, 199, 90, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(240, 199, 90, 0.08) 0%, #12100c 100%);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.press-news-card:hover {
+  border-color: rgba(240, 199, 90, 0.75);
+  text-decoration: none;
+}
+
+.press-news-card__source {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-bright);
+}
+
+.press-news-card__title {
+  display: block;
+  margin-top: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.press-news-card__preview {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.press-news-card__link {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-bright);
+}
+
 /* --- Mobile --- */
 @media (max-width: 639px) {
   .day-nav {

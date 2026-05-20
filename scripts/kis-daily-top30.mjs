@@ -22,6 +22,14 @@ import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
+import { analyzeDailyClosingReport } from "./daily-market-ai.mjs";
+import {
+  fetchSectorMoves,
+  fetchSupplyBothMarkets,
+  fetchVolumeTopMerged,
+  lookupSector,
+} from "./daily-market-kis-extra.mjs";
+import { fetchPressNewsAll } from "./live-report-site-news.mjs";
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 const USER_AGENT =
@@ -423,10 +431,13 @@ async function fetchNaverFinanceIndex(code, label) {
       change = isDown && num > 0 ? -num : num;
     }
   }
+  const tvMatch = html.match(/거래대금[^<]*<[^>]*>([\d,]+)/);
+  const tradingValue = tvMatch ? `${tvMatch[1]}억` : "";
   return {
     name: label,
     value: v ? v[1] : "",
     change,
+    tradingValue,
   };
 }
 
@@ -975,10 +986,43 @@ async function main() {
   const noNewsCount = top.filter((s) => (newsMap.get(s.code) || []).length === 0).length;
   console.log(`  뉴스 수집 완료 (뉴스 없음: ${noNewsCount}종목)`);
 
-  console.log("[5/6] Telegram 거시경제 메시지 + Claude 분석 (이유·테마 + 주요 뉴스)...");
+  console.log("[5/7] KIS 수급·업종·거래량 + 언론사 RSS...");
+  const kisCtx = { baseUrl, token: kisOAuthToken, appKey, appSecret };
+  const [supply, sectors, volumeLeaders, pressNewsAll] = await Promise.all([
+    fetchSupplyBothMarkets(kisCtx, targetYmd).catch((e) => {
+      console.warn(`  수급 조회 실패: ${e.message || e}`);
+      return [];
+    }),
+    fetchSectorMoves(kisCtx).catch((e) => {
+      console.warn(`  업종 조회 실패: ${e.message || e}`);
+      return [];
+    }),
+    fetchVolumeTopMerged(kisCtx, 20).catch((e) => {
+      console.warn(`  거래량 순위 실패: ${e.message || e}`);
+      return [];
+    }),
+    fetchPressNewsAll(targetYmd).catch((e) => {
+      console.warn(`  RSS 실패: ${e.message || e}`);
+      return [];
+    }),
+  ]);
+  console.log(`  수급 ${supply.length}건 · 업종 ${sectors.length}건 · 거래량 ${volumeLeaders.length}건 · RSS ${pressNewsAll.length}건`);
+
+  console.log("[6/7] Telegram 거시경제 메시지 + Claude 장마감 분석...");
   const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
-  const ai = await classifyWithClaude({
-    apiKey: anthropicKey, model, targetYmd, stocks: top, newsMap, indexes, telegramMessages, marketExtras,
+  const ai = await analyzeDailyClosingReport({
+    apiKey: anthropicKey,
+    model,
+    targetYmd,
+    indexes,
+    supply,
+    sectors,
+    topGainers: top,
+    volumeLeaders,
+    telegramMessages,
+    pressNews: pressNewsAll.slice(0, 25),
+    stocksForThemes: top,
+    newsMap,
   });
 
   const byCode = new Map();
@@ -1041,22 +1085,58 @@ async function main() {
     appKey,
     appSecret,
   });
-  const summary = sanitizeStr(ai.marketSummary);
+  const summary = sanitizeStr(ai.marketSummary) || sanitizeStr(ai.headlineIssue);
 
-  console.log("[6/6] daily-market.json 갱신...");
+  console.log("[7/7] daily-market.json 갱신...");
   const data = (await readJsonIfExists(outputPath)) || {
     meta: { title: "장마감 리포트", timezoneNote: "KST 기준. 특별한 표기가 없으면 종가 기준입니다." },
     days: {},
   };
   if (!data.days || typeof data.days !== "object") data.days = {};
   const existing = data.days[targetYmd] || {};
+  const pressNews = pressNewsAll.slice(0, 25).map((row) => ({
+    title: row.title,
+    url: row.url || "",
+    source: row.source,
+    pubDate: row.pubDate,
+    content: row.content || "",
+  }));
+
+  const mergedNews = [
+    ...topNews,
+    ...pressNews.map((n) => ({
+      title: n.title,
+      note: compactText(n.content, 120),
+      source: n.source,
+      url: n.url,
+    })),
+  ].filter((n) => n.title);
+
   data.days[targetYmd] = {
     ...existing,
     summary: summary || sanitizeStr(existing.summary),
+    headlineIssue: sanitizeStr(ai.headlineIssue) || sanitizeStr(existing.headlineIssue),
+    supplyComment: sanitizeStr(ai.supplyComment) || sanitizeStr(existing.supplyComment),
+    supply: supply.length ? supply : existing.supply || [],
+    sectorFlow: ai.sectorFlow && Object.keys(ai.sectorFlow).length ? ai.sectorFlow : existing.sectorFlow || {},
+    sectors: sectors.length ? sectors : existing.sectors || [],
+    issueStocks: Array.isArray(ai.issueStocks) && ai.issueStocks.length ? ai.issueStocks : existing.issueStocks || [],
+    tomorrowCheckpoints:
+      Array.isArray(ai.tomorrowCheckpoints) && ai.tomorrowCheckpoints.length
+        ? ai.tomorrowCheckpoints
+        : existing.tomorrowCheckpoints || [],
+    oneLineVerdict: sanitizeStr(ai.oneLineVerdict) || sanitizeStr(existing.oneLineVerdict),
+    aiAnalysis: {
+      issueStocks: ai.issueStocks || [],
+      sectorFlow: ai.sectorFlow || {},
+      tomorrowCheckpoints: ai.tomorrowCheckpoints || [],
+      oneLineVerdict: ai.oneLineVerdict || "",
+    },
     notableStocks: notableStocks.length ? notableStocks : (existing.notableStocks || []),
     indexes: indexes.length ? indexes : (existing.indexes || []),
     themes,
-    news: topNews.length ? topNews : (existing.news || []),
+    news: mergedNews.length ? mergedNews : (existing.news || []),
+    pressNews: pressNews.length ? pressNews : existing.pressNews || [],
     marketExtras: (marketExtras.length ? marketExtras : (existing.marketExtras || [])).map((row) => ({
       ...row,
       comment: ai.marketExtraComments?.[row.label] || row.comment || "",
@@ -1066,9 +1146,12 @@ async function main() {
       text: compactText(msg.text, 300),
       date: msg.date.toISOString(),
     })),
+    volumeLeaders: volumeLeaders.length
+      ? volumeLeaders.map((r) => ({ ...r, sector: r.sector || lookupSector(r.name) }))
+      : existing.volumeLeaders || [],
     topGainers,
     topGainersUpdatedAt: seoulYmd(new Date()),
-    topGainersSource: `${rankingSource}+Naver+Telegram+Claude`,
+    topGainersSource: `${rankingSource}+KIS+Naver+Telegram+Claude`,
   };
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });

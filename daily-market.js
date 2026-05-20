@@ -39,7 +39,15 @@
     dayBody: $("day-body"),
     dayPrep: $("day-prep"),
     dayPrepTitle: $("day-prep-title"),
+    headline: $("day-headline"),
     summary: $("day-summary"),
+    supply: $("day-supply"),
+    supplyComment: $("day-supply-comment"),
+    issueStocks: $("day-issue-stocks"),
+    sectorFlow: $("day-sector-flow"),
+    checkpoints: $("day-checkpoints"),
+    verdict: $("day-verdict"),
+    volumeLeaders: $("day-volume-leaders"),
     indexes: $("day-indexes"),
     marketExtras: $("day-market-extras"),
     notable: $("day-notable"),
@@ -188,13 +196,16 @@
         return chg != null && chg !== 0;
       });
 
+    const hasHeadline = sanitizeStr(day.headlineIssue).length > 0;
     return !(
+      hasHeadline ||
       hasSummary ||
       hasArr("indexes") ||
       hasArr("notableStocks") ||
       hasMeaningfulTopGainers ||
       hasArr("themes") ||
-      hasArr("news")
+      hasArr("news") ||
+      hasArr("pressNews")
     );
   }
 
@@ -240,7 +251,15 @@
     }
 
     if (empty) {
+      if (els.headline) els.headline.textContent = "";
       els.summary.textContent = "";
+      if (els.supply) els.supply.innerHTML = "";
+      if (els.supplyComment) els.supplyComment.textContent = "";
+      if (els.issueStocks) els.issueStocks.innerHTML = "";
+      if (els.sectorFlow) els.sectorFlow.innerHTML = "";
+      if (els.checkpoints) els.checkpoints.innerHTML = "";
+      if (els.verdict) els.verdict.textContent = "";
+      if (els.volumeLeaders) els.volumeLeaders.innerHTML = "";
       els.indexes.innerHTML = "";
       if (els.marketExtras) els.marketExtras.innerHTML = "";
       els.notable.innerHTML = "";
@@ -249,7 +268,19 @@
       els.themes.innerHTML = "";
       els.news.innerHTML = "";
     } else {
+      if (els.headline) {
+        els.headline.textContent = sanitizeStr(day.headlineIssue) || sanitizeStr(day.summary) || "";
+      }
       els.summary.textContent = (day && day.summary) || "";
+      if (els.supply) els.supply.innerHTML = renderSupply(day && day.supply);
+      if (els.supplyComment) {
+        els.supplyComment.textContent = sanitizeStr(day.supplyComment) || "";
+      }
+      if (els.issueStocks) els.issueStocks.innerHTML = renderIssueStocks(day && day.issueStocks);
+      if (els.sectorFlow) els.sectorFlow.innerHTML = renderSectorFlow(day && day.sectorFlow);
+      if (els.checkpoints) els.checkpoints.innerHTML = renderCheckpoints(day && day.tomorrowCheckpoints);
+      if (els.verdict) els.verdict.textContent = sanitizeStr(day.oneLineVerdict) || "";
+      if (els.volumeLeaders) els.volumeLeaders.innerHTML = renderVolumeLeaders(day && day.volumeLeaders);
       els.indexes.innerHTML = renderIndexes(day && day.indexes);
       if (els.marketExtras) els.marketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
       els.notable.innerHTML = renderNotable(day && day.notableStocks);
@@ -261,7 +292,7 @@
         els.topGainersMeta.textContent = ts ? `갱신: ${ts} · KIS+Naver+Claude` : "";
       }
       els.themes.innerHTML = renderThemes(day && day.themes);
-      els.news.innerHTML = renderNews(day && day.news);
+      els.news.innerHTML = renderNews(day);
     }
 
     renderArchive();
@@ -308,36 +339,143 @@
     </table>`;
   }
 
-  function renderNews(arr) {
-    if (!Array.isArray(arr) || !arr.length) {
-      return '<p class="empty-line">기록 없음</p>';
+  function fmtEok(n) {
+    if (n == null || !Number.isFinite(Number(n))) return "—";
+    const v = Number(n);
+    const sign = v > 0 ? "+" : "";
+    if (Math.abs(v) >= 10000) return `${sign}${(v / 10000).toFixed(1)}조`;
+    return `${sign}${Math.round(v).toLocaleString("ko-KR")}억`;
+  }
+
+  function renderSupply(arr) {
+    if (!Array.isArray(arr) || !arr.length) return '<p class="empty-line">수급 데이터 없음</p>';
+    return arr
+      .map((row) => {
+        const market = escapeHtml(row.market || "시장");
+        return `<div class="supply-card">
+          <span class="supply-card__market">${market}</span>
+          <div class="supply-card__grid">
+            <span><em>외국인</em>${escapeHtml(fmtEok(row.foreign))}</span>
+            <span><em>기관</em>${escapeHtml(fmtEok(row.institution))}</span>
+            <span><em>개인</em>${escapeHtml(fmtEok(row.retail))}</span>
+          </div>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function renderIssueStocks(arr) {
+    if (!Array.isArray(arr) || !arr.length) return '<p class="empty-line">이슈 종목 분석 없음</p>';
+    return `<ul class="issue-stock-list">${arr
+      .map((row) => {
+        const chg = parseChange(row.change);
+        return `<li class="issue-stock-card">
+          <div class="issue-stock-card__head">
+            <strong>${escapeHtml(row.name)}</strong>
+            <span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>
+          </div>
+          ${row.entryReason ? `<p><strong>진입 이유:</strong> ${escapeHtml(row.entryReason)}</p>` : ""}
+          ${row.background ? `<p><strong>배경:</strong> ${escapeHtml(row.background)}</p>` : ""}
+        </li>`;
+      })
+      .join("")}</ul>`;
+  }
+
+  function renderSectorFlow(flow) {
+    if (!flow || typeof flow !== "object") return '<p class="empty-line">섹터 데이터 없음</p>';
+    const strong = Array.isArray(flow.strong) ? flow.strong : [];
+    const weak = Array.isArray(flow.weak) ? flow.weak : [];
+    const block = (title, rows) =>
+      rows.length
+        ? `<div class="sector-block"><h5>${title}</h5><ul>${rows
+            .map((r) => {
+              const chg = parseChange(r.changePct);
+              return `<li><strong>${escapeHtml(r.name)}</strong> <span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>${r.reason ? ` — ${escapeHtml(r.reason)}` : ""}</li>`;
+            })
+            .join("")}</ul></div>`
+        : "";
+    return `${block("강한 섹터", strong)}${block("약한 섹터", weak)}${flow.summary ? `<p class="sector-summary">${escapeHtml(flow.summary)}</p>` : ""}`;
+  }
+
+  function renderCheckpoints(arr) {
+    if (!Array.isArray(arr) || !arr.length) return '<li class="empty-line">체크포인트 없음</li>';
+    return arr.map((p) => `<li>${escapeHtml(p)}</li>`).join("");
+  }
+
+  function renderVolumeLeaders(arr) {
+    if (!Array.isArray(arr) || !arr.length) return '<p class="empty-line">거래량 데이터 없음</p>';
+    const rows = arr
+      .map((s) => {
+        const chg = parseChange(s.change);
+        return `<tr>
+          <td><span class="topgainers__name">${escapeHtml(s.name)}</span>
+            ${s.sector ? `<span class="theme-chip">${escapeHtml(s.sector)}</span>` : ""}</td>
+          <td class="num">${escapeHtml(s.currentPrice || "—")}</td>
+          <td class="num"><span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span></td>
+        </tr>`;
+      })
+      .join("");
+    return `<table class="topgainers-table"><thead><tr><th>종목</th><th class="num">종가</th><th class="num">등락률</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderNews(day) {
+    const telegram = Array.isArray(day?.telegramMessages) ? day.telegramMessages : [];
+    const press = Array.isArray(day?.pressNews) ? day.pressNews : [];
+    const legacy = Array.isArray(day?.news) ? day.news : [];
+    const items = [];
+    for (const msg of telegram.slice(0, 15)) {
+      const text = sanitizeStr(msg.text);
+      items.push({
+        title: `[${sanitizeStr(msg.channel) || "텔레그램"}] ${text.slice(0, 80)}${text.length > 80 ? "…" : ""}`,
+        body: text,
+        source: msg.channel || "텔레그램",
+        telegram: true,
+      });
     }
-    return `<ul class="news-list">${arr
+    for (const n of press) {
+      items.push({
+        title: n.title,
+        body: n.content || "",
+        source: n.source,
+        url: n.url,
+      });
+    }
+    for (const n of legacy) {
+      if (!items.some((i) => i.title === n.title)) items.push(n);
+    }
+    if (!items.length) return '<p class="empty-line">기록 없음</p>';
+    return `<ul class="news-list">${items
       .map((n) => {
         const title = escapeHtml(n && n.title);
-        const note = sanitizeStr(n && n.note);
         const source = sanitizeStr(n && n.source);
         const url = typeof (n && n.url) === "string" && /^https?:\/\//i.test(n.url) ? n.url : "";
-        const summary = sanitizeStr(n && (n.summary || n.note));
-        if ((n && n.telegram) || (summary && !url)) {
+        const body = sanitizeStr(n && (n.body || n.note || n.summary));
+        const preview = body.length > 100 ? `${body.slice(0, 100)}…` : body;
+        if (n && n.telegram) {
           return `<li class="news-item news-item--telegram">
             <details>
               <summary class="news-item__title">${title}</summary>
-              <p class="news-item__note">${escapeHtml(summary || n.title || "")}</p>
+              <p class="news-item__note">${escapeHtml(body || preview)}</p>
               ${source ? `<p class="news-item__meta">${escapeHtml(source)}</p>` : ""}
             </details>
           </li>`;
         }
-        const titleHtml = url
-          ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${title}</a>`
-          : title;
-        const metaParts = [];
-        if (source) metaParts.push(escapeHtml(source));
-        if (url) metaParts.push('<span class="news__link">link</span>');
+        if (url) {
+          return `<li class="news-item news-item--press">
+            <a class="press-news-card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+              <span class="press-news-card__source">${escapeHtml(source)}</span>
+              <span class="press-news-card__title">${title}</span>
+              ${preview ? `<span class="press-news-card__preview">${escapeHtml(preview)}</span>` : ""}
+              <span class="press-news-card__link">원문 보기 →</span>
+            </a>
+          </li>`;
+        }
         return `<li class="news-item">
-          <p class="news-item__title">${titleHtml}</p>
-          ${note ? `<p class="news-item__note">${escapeHtml(note)}</p>` : ""}
-          ${metaParts.length ? `<p class="news-item__meta">${metaParts.join(" · ")}</p>` : ""}
+          <details>
+            <summary class="news-item__title">${title}</summary>
+            <p class="news-item__note">${escapeHtml(body)}</p>
+            ${source ? `<p class="news-item__meta">${escapeHtml(source)}</p>` : ""}
+          </details>
         </li>`;
       })
       .join("")}</ul>`;
@@ -353,7 +491,8 @@
         const chgHtml = chg == null
           ? ""
           : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`;
-        return `<span class="index-chip"><span class="index-chip__name">${name}</span><span class="index-chip__value">${value || "—"}</span>${chgHtml}</span>`;
+        const tv = row && row.tradingValue ? `<small class="index-chip__tv">거래대금 ${escapeHtml(row.tradingValue)}</small>` : "";
+        return `<span class="index-chip"><span class="index-chip__name">${name}</span><span class="index-chip__value">${value || "—"}</span>${chgHtml}${tv}</span>`;
       })
       .join("");
   }

@@ -94,42 +94,63 @@
               </div>
 
               <section class="day-block">
-                <h3 class="day-block__label">시황 요약</h3>
-                <!-- daily-market.js가 data/daily-market.json의 해당 날짜 day.summary를 #day-summary에 채웁니다 -->
-                <div id="day-summary" class="daily-summary"></div>
+                <h3 class="day-block__label">① 핵심 이슈 한 줄</h3>
+                <div id="day-headline" class="daily-headline"></div>
               </section>
 
               <section class="day-block">
-                <h3 class="day-block__label">지수 종가</h3>
+                <h3 class="day-block__label">② 지수 마감</h3>
                 <div id="day-indexes" class="index-row"></div>
               </section>
 
               <section class="day-block">
+                <h3 class="day-block__label">③ 수급 현황</h3>
+                <div id="day-supply" class="supply-grid"></div>
+                <p id="day-supply-comment" class="daily-supply-comment"></p>
+              </section>
+
+              <section class="day-block">
+                <h3 class="day-block__label">④ Claude AI 분석</h3>
+                <div id="day-summary" class="daily-summary"></div>
+                <h4 class="day-block__subhead">이슈 종목 분석</h4>
+                <div id="day-issue-stocks"></div>
+                <h4 class="day-block__subhead">섹터 흐름</h4>
+                <div id="day-sector-flow"></div>
+                <h4 class="day-block__subhead">내일 체크포인트</h4>
+                <ol id="day-checkpoints" class="daily-checkpoints"></ol>
+                <p id="day-verdict" class="daily-verdict"></p>
+              </section>
+
+              <section class="day-block day-block--extras">
                 <h3 class="day-block__label">원자재/환율</h3>
                 <div id="day-market-extras" class="index-row"></div>
               </section>
 
-              <section class="day-block">
+              <section class="day-block day-block--extras">
                 <h3 class="day-block__label">특징주</h3>
                 <div id="day-notable"></div>
               </section>
 
               <section class="day-block">
                 <h3 class="day-block__label">
-                  상승률 TOP 30
+                  ⑤ 거래량·상승률 TOP
                   <span class="day-block__sub" id="day-topgainers-meta"></span>
                 </h3>
+                <h4 class="day-block__subhead">거래량 상위 20</h4>
+                <div id="day-volume-leaders"></div>
+                <h4 class="day-block__subhead">상승률 TOP 30</h4>
                 <div id="day-topgainers"></div>
               </section>
 
               <section class="day-block">
-                <h3 class="day-block__label">테마별 강세</h3>
-                <div id="day-themes" class="theme-list"></div>
+                <h3 class="day-block__label">⑥ 주요 뉴스</h3>
+                <p class="day-block__hint">📡 텔레그램 · 📰 언론사 (탭하여 펼치기 / 원문 링크)</p>
+                <div id="day-news"></div>
               </section>
 
-              <section class="day-block">
-                <h3 class="day-block__label">주요 뉴스</h3>
-                <div id="day-news"></div>
+              <section class="day-block day-block--extras">
+                <h3 class="day-block__label">테마별 강세</h3>
+                <div id="day-themes" class="theme-list"></div>
               </section>
             </div>
           </article>

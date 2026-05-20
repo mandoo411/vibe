@@ -92,23 +92,47 @@
     };
   }
 
+  function ensureLiveNavLink() {
+    const link = document.querySelector('.tm-site-nav a[href*="live-report"]');
+    if (!link) return null;
+    link.classList.add("tm-site-nav__link--live-report");
+    if (!link.querySelector(".tm-nav-live-led")) {
+      const led = document.createElement("span");
+      led.className = "tm-nav-live-led";
+      led.setAttribute("aria-hidden", "true");
+      link.insertBefore(led, link.firstChild);
+    }
+    return link;
+  }
+
   function updateLiveState() {
+    const link = ensureLiveNavLink();
     try {
       const { weekday, minutes } = seoulParts();
       const weekdayOpen = weekday !== "Sat" && weekday !== "Sun";
       const marketOpen = weekdayOpen && minutes >= 9 * 60 && minutes <= 15 * 60 + 30;
       document.body.classList.toggle("is-kr-market-open", marketOpen);
+      if (link) {
+        link.classList.toggle("is-live", marketOpen);
+        link.classList.toggle("is-closed", !marketOpen);
+      }
     } catch (_) {
       document.body.classList.remove("is-kr-market-open");
+      if (link) {
+        link.classList.remove("is-live");
+        link.classList.add("is-closed");
+      }
     }
   }
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
+      ensureLiveNavLink();
       updateLiveState();
       updateTickerBar();
     }, { once: true });
   } else {
+    ensureLiveNavLink();
     updateLiveState();
     updateTickerBar();
   }

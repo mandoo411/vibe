@@ -508,8 +508,28 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
   return movers;
 }
 
+/** Claude API JSON 오류 방지 (깨진 서로게이트 쌍 제거) */
+function sanitizeUnicode(value) {
+  const s = String(value ?? "");
+  let out = "";
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const next = s.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        out += s[i] + s[i + 1];
+        i++;
+      }
+      continue;
+    }
+    if (code >= 0xdc00 && code <= 0xdfff) continue;
+    out += s[i];
+  }
+  return out;
+}
+
 function compactText(value, limit = 150) {
-  const clean = stripHtml(value).replace(/\s+/g, " ").trim();
+  const clean = sanitizeUnicode(stripHtml(value)).replace(/\s+/g, " ").trim();
   if (clean.length <= limit) return clean;
   return `${clean.slice(0, limit - 1)}…`;
 }
@@ -714,7 +734,7 @@ async function runClaude({
   bluechipMessagesByName,
 }) {
   const client = new Anthropic({ apiKey });
-  const user = `현재 시각: ${time}
+  const user = sanitizeUnicode(`현재 시각: ${time}
 코스피: ${fmtNumber(kospi.value, 2)} ${fmtPct(kospi.change, 2)}
 코스닥: ${fmtNumber(kosdaq.value, 2)} ${fmtPct(kosdaq.change, 2)}
 
@@ -740,8 +760,7 @@ ${bluechipText(bluechipMovers, bluechipMessagesByName)}
 4. ⚡ 대형주·특징주 심층 분석 (급등/급락 종목별 매수·매도 논리)
 5. 🏆 상승률 TOP10 집중 분석 (종목별 왜 올랐는지, 리스크 1줄)
 6. 📊 TOP30 한눈에 (간단 목록)
-7. 🎯 다음 30분 관전 포인트 (구체적 종목·이벤트·가격대)`;
-
+7. 🎯 다음 30분 관전 포인트 (구체적 종목·이벤트·가격대)`);
 
   const msg = await client.messages.create({
     model: MODEL,
@@ -945,13 +964,20 @@ async function main() {
     anthropicKey: requireEnv("ANTHROPIC_API_KEY"),
   };
 
+  const published = [];
   for (let i = 0; i < batch.length; i++) {
     const time = batch[i];
     const postTelegram = i === batch.length - 1;
-    await publishLiveReportSlot(ymd, time, creds, { postTelegram });
+    try {
+      await publishLiveReportSlot(ymd, time, creds, { postTelegram });
+      published.push(time);
+    } catch (error) {
+      console.error(`[${time}] 발행 실패:`, error.message || error);
+    }
   }
 
-  await gitCommitAndPush(batch[batch.length - 1]);
+  if (!published.length) throw new Error("발행된 슬롯이 없습니다.");
+  await gitCommitAndPush(published[published.length - 1]);
 }
 
 main().catch((error) => {

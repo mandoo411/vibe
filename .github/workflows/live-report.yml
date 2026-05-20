@@ -2,7 +2,8 @@ name: Live Market Report
 
 on:
   schedule:
-    # KST 09:05~15:35 평일, 30분 슬롯 직후 실행 (UTC 0-6, :05·:35)
+    # KST 장중(09:00~15:30) UTC 0-6 — 10분마다 + 30분 슬롯 직후 보강
+    - cron: "*/10 0-6 * * 1-5"
     - cron: "5,35 0-6 * * 1-5"
   workflow_dispatch:
 
@@ -15,6 +16,8 @@ concurrency:
 
 env:
   TZ: Asia/Seoul
+  # 스케줄 1회에 밀린 슬롯 최대 5개까지 보강 (기본 1)
+  LIVE_REPORT_MAX_CATCHUP: "5"
 
 jobs:
   report:

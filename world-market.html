@@ -158,6 +158,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
         font-size: 16px;
         line-height: 1;
         background: #1a1714;
@@ -214,15 +215,35 @@
       .world-country {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        font-family: var(--font-mono);
+        gap: 5px;
         font-size: 11px;
         color: var(--text-muted);
         white-space: nowrap;
       }
       .world-country__flag {
-        font-size: 14px;
+        font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+        font-size: 16px;
         line-height: 1;
+        flex-shrink: 0;
+      }
+      .world-country__label {
+        font-family: var(--font-mono);
+      }
+      .world-company-country {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 3px;
+        font-size: 10px;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      .world-company-country .world-country__flag {
+        font-size: 13px;
+      }
+      .world-company-country .world-country__label {
+        font-family: var(--font-mono);
+        font-size: 10px;
       }
       .world-empty {
         text-align: center;
@@ -447,12 +468,21 @@
           const fb = row.logoFallback ? ` data-fallback="${escapeHtml(row.logoFallback)}"` : "";
           return `<img class="world-logo" src="${escapeHtml(row.logo)}" alt="" width="32" height="32" loading="lazy" data-flag="${escapeHtml(flag)}"${fb} onerror="worldLogoFail(this)">`;
         }
-        function countryCell(row) {
+        function countryParts(row) {
           const flag = row.flag || "\u{1F310}";
           const label = row.countryLabel || row.country || "—";
           const full = row.country || label;
+          return { flag, label, full };
+        }
+        function countryCell(row) {
+          const { flag, label, full } = countryParts(row);
           const title = full !== label ? ` title="${escapeHtml(full)}"` : "";
-          return `<span class="world-country"${title}><span class="world-country__flag" aria-hidden="true">${escapeHtml(flag)}</span><span>${escapeHtml(label)}</span></span>`;
+          return `<span class="world-country"${title}><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
+        }
+        function countryInlineMobile(row) {
+          const { flag, label } = countryParts(row);
+          if (!label || label === "—") return "";
+          return `<span class="world-company-country"><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
         }
         function syncTabs() {
           document.querySelectorAll(".world-tab").forEach((btn) => {
@@ -479,7 +509,7 @@
             sparklineSvg(row.sparkline, row.sparkUp) || '<span class="world-spark-empty">—</span>';
           let html = `<tr>
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
-                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
+                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span>${mobile ? countryInlineMobile(row) : ""}</div></div></td>
                 <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
                 <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
                 <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>`;

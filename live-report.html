@@ -726,8 +726,15 @@
         function renderExtras(selected) {
           const news = Array.isArray(selected?.telegramMessages) ? selected.telegramMessages.slice(0, 12) : [];
           $("live-news").innerHTML = news.length
-            ? news.map((item) => newsItemHtml(item)).join("")
+            ? news.map((item) => newsItemHtml(item)).filter(Boolean).join("")
             : '<li class="live-empty">채널 뉴스 준비 중</li>';
+          const siteNews = Array.isArray(selected?.siteNews) ? selected.siteNews : [];
+          const siteEl = $("live-site-news");
+          if (siteEl) {
+            siteEl.innerHTML = siteNews.length
+              ? siteNews.map((item) => siteNewsItemHtml(item)).filter(Boolean).join("")
+              : '<li class="live-empty">장중 RSS 기사 없음 (다음 리포트 생성 시 반영)</li>';
+          }
           const themes = Array.isArray(selected?.themes) ? selected.themes : [];
           $("live-themes").innerHTML = themes.length
             ? themes

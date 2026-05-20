@@ -316,19 +316,23 @@
           display: none;
         }
         .crypto-col-name {
-          width: 34%;
+          width: 36%;
+          overflow: hidden;
+          max-width: 0;
         }
         .crypto-name-inline-symbol {
           font-family: var(--font-mono);
           font-size: 10px;
           font-weight: 500;
           color: var(--text-dim);
+          flex: 0 0 auto;
+          white-space: nowrap;
         }
         .crypto-col-price {
-          width: 29%;
+          width: 28%;
         }
         .crypto-col-24h {
-          width: 15%;
+          width: 14%;
         }
         .crypto-col-mcap {
           width: 22%;
@@ -339,11 +343,25 @@
           letter-spacing: -0.05em;
         }
         .crypto-name-btn {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          width: 100%;
+          min-width: 0;
           max-width: 100%;
+          overflow: hidden;
+          font-size: 11.5px;
+        }
+        .crypto-name-btn__rank {
+          flex: 0 0 auto;
+          white-space: nowrap;
+        }
+        .crypto-name-btn__label {
+          min-width: 0;
+          flex: 1 1 auto;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
-          font-size: 11.5px;
         }
         .crypto-symbol {
           font-size: 10.5px;
@@ -632,7 +650,10 @@
           const mobile = window.matchMedia("(max-width: 768px)").matches;
           if (mobile) {
             const prefix = coinRankPrefix(c);
-            return `${escapeHtml(prefix)}${escapeHtml(c.name)} <span class="crypto-name-inline-symbol">${escapeHtml(c.symbol)}</span>`;
+            const rankPart = prefix
+              ? `<span class="crypto-name-btn__rank">${escapeHtml(prefix.trim())}</span>`
+              : "";
+            return `${rankPart}<span class="crypto-name-btn__label">${escapeHtml(c.name)}</span><span class="crypto-name-inline-symbol">${escapeHtml(c.symbol)}</span>`;
           }
           return escapeHtml(c.name);
         }
@@ -644,7 +665,7 @@
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
             <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
             <td class="crypto-col-name">
-              <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}">
+              <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
                 ${coinNameButtonHtml(c, open)}
               </button>
             </td>

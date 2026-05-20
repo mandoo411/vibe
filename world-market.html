@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0d0b08" />
     <title>TotalMoney AI · 글로벌 랭킹</title>
-    <!-- wm-build: 2026-05-19-v3 -->
+    <!-- wm-build: 2026-05-20-mobile-fix -->
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -146,6 +146,11 @@
         gap: 10px;
         min-width: 0;
       }
+      .world-company > div {
+        min-width: 0;
+        flex: 1 1 0;
+        overflow: hidden;
+      }
       .world-logo {
         flex: 0 0 32px;
         width: 32px;
@@ -276,14 +281,18 @@
           width: 34%;
         }
         .world-table col.world-col-metric {
-          width: 26%;
+          width: 24%;
         }
-        .world-table col.world-col-country {
+        .world-table col.world-col-price {
           width: 22%;
         }
-        .world-table col.world-col-price,
         .world-table col.world-col-today {
-          display: none !important;
+          width: 18%;
+        }
+        .world-table td.world-col-name,
+        .world-table th.world-col-name {
+          overflow: hidden;
+          max-width: 0;
         }
         .world-table th.world-col-num,
         .world-table td.world-col-num {
@@ -367,20 +376,20 @@
               <col class="world-col-rank" />
               <col class="world-col-name" />
               <col class="world-col-num world-col-metric" />
-              <col class="world-col-num world-col-price world-col-hide-mobile" />
-              <col class="world-col-num world-col-today world-col-hide-mobile" />
+              <col class="world-col-num world-col-price" />
+              <col class="world-col-num world-col-today" />
               <col class="world-col-spark world-col-hide-mobile" />
-              <col class="world-col-country" />
+              <col class="world-col-country world-col-hide-mobile" />
             </colgroup>
             <thead>
               <tr>
                 <th class="world-col-rank world-rank">#</th>
-                <th class="world-col-name" id="world-name-header">Name</th>
+                <th class="world-col-name">Name</th>
                 <th class="world-col-num world-col-metric world-num" id="world-metric-header">Market Cap</th>
-                <th class="world-col-num world-col-price world-num world-col-hide-mobile">Price</th>
-                <th class="world-col-num world-col-today world-num world-col-hide-mobile">Today</th>
+                <th class="world-col-num world-col-price world-num">Price</th>
+                <th class="world-col-num world-col-today world-num">Today</th>
                 <th class="world-col-spark world-col-hide-mobile">Price (30 days)</th>
-                <th class="world-col-country" id="world-country-header">Country</th>
+                <th class="world-col-country world-col-hide-mobile">Country</th>
               </tr>
             </thead>
             <tbody id="world-body"></tbody>
@@ -394,7 +403,7 @@
         const state = { type: "marketCap" };
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
         const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
-        const valueLabelsMobile = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
+        const valueLabelsMobile = { marketCap: "Mkt Cap", netIncome: "Earnings", revenue: "Revenue" };
         const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
         const $ = (id) => document.getElementById(id);
         function escapeHtml(value) {
@@ -480,19 +489,19 @@
           const title = full !== label ? ` title="${escapeHtml(full)}"` : "";
           return `<span class="world-country"${title}><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
         }
+        function countryInlineMobile(row) {
+          const { flag, label } = countryParts(row);
+          if (!label || label === "—") return "";
+          return `<span class="world-company-country"><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
+        }
         function syncTabs() {
           document.querySelectorAll(".world-tab").forEach((btn) => {
             btn.setAttribute("aria-pressed", btn.dataset.type === state.type ? "true" : "false");
           });
-          const mobile = isMobile();
           const metricHeader = document.getElementById("world-metric-header");
           if (metricHeader) {
-            metricHeader.textContent = mobile ? valueLabelsMobile[state.type] : valueLabels[state.type];
+            metricHeader.textContent = isMobile() ? valueLabelsMobile[state.type] : valueLabels[state.type];
           }
-          const nameHeader = document.getElementById("world-name-header");
-          if (nameHeader) nameHeader.textContent = mobile ? "이름" : "Name";
-          const countryHeader = document.getElementById("world-country-header");
-          if (countryHeader) countryHeader.textContent = mobile ? "국가" : "Country";
         }
         function syncMobileTableLayout() {
           const mobile = isMobile();
@@ -510,20 +519,18 @@
             sparklineSvg(row.sparkline, row.sparkUp) || '<span class="world-spark-empty">—</span>';
           let html = `<tr>
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
-                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
+                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span>${mobile ? countryInlineMobile(row) : ""}</div></div></td>
                 <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
-                ${mobile ? "" : `<td class="world-col-num world-col-price world-num world-col-hide-mobile">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
-                <td class="world-col-num world-col-today world-num world-col-hide-mobile"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>`}
-          if (mobile) {
-            html += `<td class="world-col-country">${countryCell(row)}</td>`;
-          } else {
+                <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
+                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>`;
+          if (!mobile) {
             html += `<td class="world-col-spark world-col-hide-mobile">${spark}</td>
-                <td class="world-col-country">${countryCell(row)}</td>`;
+                <td class="world-col-country world-col-hide-mobile">${countryCell(row)}</td>`;
           }
           return `${html}</tr>`;
         }
         function colSpan() {
-          return isMobile() ? 4 : 7;
+          return isMobile() ? 5 : 7;
         }
         async function load() {
           syncTabs();

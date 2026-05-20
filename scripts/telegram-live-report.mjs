@@ -286,6 +286,11 @@ function slotForClock(clock) {
   return `${String(clock.hour).padStart(2, "0")}:${String(rounded).padStart(2, "0")}`;
 }
 
+function slotMinutes(time) {
+  const [h, m] = String(time).split(":").map(Number);
+  return h * 60 + m;
+}
+
 async function slotAlreadyPublished(date, time) {
   try {
     const data = await readJson(DATA_PATH);

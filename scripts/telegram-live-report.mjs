@@ -508,24 +508,22 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
   return movers;
 }
 
-/** Claude API JSON 오류 방지 (깨진 서로게이트 쌍 제거) */
+/** Claude API JSON 오류 방지 — 깨진 UTF-16/이모지 서로게이트 제거 */
 function sanitizeUnicode(value) {
   const s = String(value ?? "");
-  let out = "";
-  for (let i = 0; i < s.length; i++) {
-    const code = s.charCodeAt(i);
-    if (code >= 0xd800 && code <= 0xdbff) {
-      const next = s.charCodeAt(i + 1);
-      if (next >= 0xdc00 && next <= 0xdfff) {
-        out += s[i] + s[i + 1];
-        i++;
-      }
-      continue;
-    }
-    if (code >= 0xdc00 && code <= 0xdfff) continue;
-    out += s[i];
+  try {
+    return new TextDecoder("utf-8", { fatal: false }).decode(new TextEncoder().encode(s));
+  } catch {
+    return s.replace(/[\uD800-\uDFFF]/g, "").replace(/\uFFFD/g, "");
   }
-  return out;
+}
+
+/** Anthropic 요청 본문 직렬화 전 검증 */
+function ensureJsonSafe(value, maxLen = 120_000) {
+  let s = sanitizeUnicode(value);
+  if (s.length > maxLen) s = `${s.slice(0, maxLen - 1)}…`;
+  JSON.parse(JSON.stringify({ t: s }));
+  return s;
 }
 
 function compactText(value, limit = 150) {
@@ -734,7 +732,7 @@ async function runClaude({
   bluechipMessagesByName,
 }) {
   const client = new Anthropic({ apiKey });
-  const user = sanitizeUnicode(`현재 시각: ${time}
+  const user = ensureJsonSafe(`현재 시각: ${time}
 코스피: ${fmtNumber(kospi.value, 2)} ${fmtPct(kospi.change, 2)}
 코스닥: ${fmtNumber(kosdaq.value, 2)} ${fmtPct(kosdaq.change, 2)}
 
@@ -762,16 +760,19 @@ ${bluechipText(bluechipMovers, bluechipMessagesByName)}
 6. 📊 TOP30 한눈에 (간단 목록)
 7. 🎯 다음 30분 관전 포인트 (구체적 종목·이벤트·가격대)`);
 
+  const system = ensureJsonSafe(
+    "당신은 20년차 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게, 그러나 숫자와 사실은 정확히 분석해주세요.\n텔레그램 채널의 실제 메시지를 반드시 인용하고, 채널명을 함께 적어주세요.\n추측이 아닌 채널 메시지·지수·등락률 데이터에 근거하세요.\n스톡허브, 거시경제 채널을 최우선으로 참고하세요.\n크립토 채널은 크립토 관련일 때만 참고하세요.\n섹션 제목에 이모지를 사용하고, 종목 분석은 대충 쓰지 말고 구체적으로 작성하세요."
+  );
+
   const msg = await client.messages.create({
     model: MODEL,
     max_tokens: 4500,
-    system:
-      "당신은 20년차 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게, 그러나 숫자와 사실은 정확히 분석해주세요.\n텔레그램 채널의 실제 메시지를 반드시 인용하고, 채널명을 함께 적어주세요.\n추측이 아닌 채널 메시지·지수·등락률 데이터에 근거하세요.\n스톡허브, 거시경제 채널을 최우선으로 참고하세요.\n크립토 채널은 크립토 관련일 때만 참고하세요.\n섹션 제목에 이모지를 사용하고, 종목 분석은 대충 쓰지 말고 구체적으로 작성하세요.",
+    system,
     messages: [{ role: "user", content: user }],
   });
   const block = msg.content.find((item) => item.type === "text");
   if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-  return block.text.trim();
+  return sanitizeUnicode(block.text).trim();
 }
 
 function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 }) {

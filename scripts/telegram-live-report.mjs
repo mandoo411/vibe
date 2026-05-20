@@ -296,6 +296,18 @@ async function slotAlreadyPublished(date, time) {
   }
 }
 
+/** 장 시작 후 지난 슬롯 중 아직 JSON에 없는 시간 (오래된 순) */
+async function unpublishedDueSlots(ymd, clock) {
+  const force = process.env.LIVE_REPORT_FORCE === "1";
+  const due = LIVE_SLOTS.filter((t) => slotMinutes(t) <= clock.minutes);
+  if (force) return due;
+  const missing = [];
+  for (const time of due) {
+    if (!(await slotAlreadyPublished(ymd, time))) missing.push(time);
+  }
+  return missing;
+}
+
 async function loadPreviousIndexes(date) {
   try {
     const data = await readJson(DATA_PATH);
@@ -807,28 +819,9 @@ async function gitCommitAndPush(time) {
   }
 }
 
-async function main() {
-  const clock = assertMarketOpen();
-  if (!clock) return;
-  const time = slotForClock(clock);
-  const ymd = seoulYmd();
-
-  if (!LIVE_SLOTS.includes(time)) {
-    console.log(`슬롯 ${time} 은 발행 대상이 아닙니다.`);
-    return;
-  }
-
-  if (await slotAlreadyPublished(ymd, time) && process.env.LIVE_REPORT_FORCE !== "1") {
-    console.log(`슬롯 ${ymd} ${time} 이미 발행됨 — 건너뜀 (재발행: LIVE_REPORT_FORCE=1)`);
-    return;
-  }
-
-  console.log(`Live report slot: ${ymd} ${time} KST (clock ${clock.hour}:${clock.minute})`);
-
-  const token = requireEnv("KIS_ACCESS_TOKEN");
-  const appKey = requireEnv("KIS_APP_KEY");
-  const appSecret = requireEnv("KIS_APP_SECRET");
-  const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
+async function publishLiveReportSlot(ymd, time, creds, { postTelegram = false } = {}) {
+  const { token, appKey, appSecret, anthropicKey } = creds;
+  console.log(`Live report slot: ${ymd} ${time} KST`);
 
   let kospi = await fetchIndex("0001", "코스피", token, appKey, appSecret);
   let kosdaq = await fetchIndex("1001", "코스닥", token, appKey, appSecret);
@@ -837,11 +830,11 @@ async function main() {
     if (prev) {
       if (!kospi?.value) kospi = { label: "코스피", ...prev.kospi };
       if (!kosdaq?.value) kosdaq = { label: "코스닥", ...prev.kosdaq };
-      console.warn("지수 조회 실패 — 직전 슬롯 지수 사용");
+      console.warn(`[${time}] 지수 조회 실패 — 직전 슬롯 지수 사용`);
     }
   }
   if (!kospi?.value || !kosdaq?.value) {
-    throw new Error(`지수 조회 실패 (코스피=${kospi?.value}, 코스닥=${kosdaq?.value})`);
+    throw new Error(`[${time}] 지수 조회 실패 (코스피=${kospi?.value}, 코스닥=${kosdaq?.value})`);
   }
 
   const rankings = [
@@ -852,7 +845,7 @@ async function main() {
     .slice(0, 30)
     .map((row, index) => ({ ...row, rank: index + 1 }));
 
-  if (!rankings.length) throw new Error("상승률 TOP30 데이터가 비어 있습니다.");
+  if (!rankings.length) throw new Error(`[${time}] 상승률 TOP30 데이터가 비어 있습니다.`);
 
   const telegramMessages = await collectTelegramMessages();
   const stockMessages = filterStockMessages(telegramMessages);
@@ -882,7 +875,8 @@ async function main() {
   }));
   const top10 = top30.slice(0, 10);
 
-  const payload = {
+  await writeLiveReport({
+    date: ymd,
     time,
     kospi: { value: kospi.value, change: kospi.change },
     kosdaq: { value: kosdaq.value, change: kosdaq.change },
@@ -906,19 +900,53 @@ async function main() {
       type: row.label,
       messages: bluechipMessagesByName.get(row.name) || [],
     })),
+  });
+
+  if (postTelegram) {
+    try {
+      await sendTelegramMessage(
+        buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
+      );
+      console.log(`[${time}] Telegram channel posted.`);
+    } catch (error) {
+      console.warn(`[${time}] Telegram send failed (report saved): ${error.message || error}`);
+    }
+  }
+
+  console.log(`Live report saved: ${ymd} ${time}`);
+}
+
+async function main() {
+  const clock = assertMarketOpen();
+  if (!clock) return;
+  const ymd = seoulYmd();
+  const due = await unpublishedDueSlots(ymd, clock);
+
+  if (!due.length) {
+    console.log(`모든 due 슬롯 발행 완료 (${ymd}, ${clock.hour}:${String(clock.minute).padStart(2, "0")} KST)`);
+    return;
+  }
+
+  const maxCatch = Math.max(1, Number(process.env.LIVE_REPORT_MAX_CATCHUP) || 8);
+  const batch = due.slice(0, maxCatch);
+  console.log(
+    `미발행 ${due.length}개 (due≤${slotForClock(clock)}): 이번 실행 ${batch.join(", ")}${due.length > batch.length ? ` · 남음 ${due.slice(batch.length).join(", ")}` : ""}`
+  );
+
+  const creds = {
+    token: requireEnv("KIS_ACCESS_TOKEN"),
+    appKey: requireEnv("KIS_APP_KEY"),
+    appSecret: requireEnv("KIS_APP_SECRET"),
+    anthropicKey: requireEnv("ANTHROPIC_API_KEY"),
   };
 
-  await writeLiveReport({ date: ymd, ...payload });
-  await gitCommitAndPush(time);
-  try {
-    await sendTelegramMessage(
-      buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 })
-    );
-    console.log("Telegram channel posted.");
-  } catch (error) {
-    console.warn(`Telegram send failed (report saved): ${error.message || error}`);
+  for (let i = 0; i < batch.length; i++) {
+    const time = batch[i];
+    const postTelegram = i === batch.length - 1;
+    await publishLiveReportSlot(ymd, time, creds, { postTelegram });
   }
-  console.log(`Live report saved: ${ymd} ${time}`);
+
+  await gitCommitAndPush(batch[batch.length - 1]);
 }
 
 main().catch((error) => {

@@ -403,7 +403,11 @@
         const todayReports = () => {
           const today = seoulYmd();
           if (state.data.date !== today) return [];
-          return state.data.reports || [];
+          return Array.isArray(state.data.reports) ? state.data.reports : [];
+        };
+        const dataDateMismatch = () => {
+          const today = seoulYmd();
+          return Boolean(state.data.date && state.data.date !== today);
         };
         const slotMinutes = (time) => {
           const [h, m] = time.split(":").map(Number);
@@ -431,7 +435,17 @@
           return `다음 업데이트 ${next}까지 ${min}분 ${sec}초`;
         };
         const reportMap = () => new Map(todayReports().map((r) => [r.time, r]));
-        const latestReport = () => [...todayReports()].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
+        const latestReport = () => {
+          const reports = todayReports();
+          if (!reports.length) return null;
+          const now = seoulNow();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          const currentSlot = TIMES.filter((t) => slotMinutes(t) <= minutes).at(-1);
+          if (currentSlot && reports.some((r) => r.time === currentSlot)) {
+            return reports.find((r) => r.time === currentSlot);
+          }
+          return [...reports].sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1) || null;
+        };
 
         function renderIndexes(indexes) {
           const latest = latestReport();
@@ -543,6 +557,9 @@
           const minutes = now.getHours() * 60 + now.getMinutes();
           const missing = TIMES.filter((t) => slotMinutes(t) <= minutes && !map.has(t));
           let status = marketStatus();
+          if (dataDateMismatch()) {
+            status += ` · 데이터 날짜 ${state.data.date} (오늘 ${seoulYmd()} 리포트 생성 대기 — Actions 실행 중이면 곧 반영)`;
+          }
           if (cd) status += ` · ${cd}`;
           if (missing.length) status += ` · 미발행: ${missing.join(", ")}`;
           $("live-status").innerHTML = `${escapeHtml(status)}${cd ? `<br><span class="live-countdown">${escapeHtml(cd)}</span>` : ""}`;

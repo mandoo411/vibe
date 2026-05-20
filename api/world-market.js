@@ -3,6 +3,7 @@ const path = require("path");
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
 const RANKED_COMPANIES = require("./world-market-ranked.js");
+const KO_NAMES = require("./world-market-names-ko.js");
 
 const CACHE_PATH = path.join(__dirname, "..", "data", "world-market-cache.json");
 let fileCache = { at: 0, data: null };
@@ -551,10 +552,14 @@ function buildRow(meta, quote, type, rank, usdKrwRate) {
       (netIncome != null && netIncome > 0) ||
       (revenue != null && revenue > 0)
   );
+  const slug = meta.cmcSlug;
+  const nameKo = slug && KO_NAMES[slug] ? KO_NAMES[slug] : null;
+  const nameEn = meta.name || q.name || q.companyName || symbol;
   return {
     rank,
     symbol: symbol || String(meta.yahooSymbol || "").trim(),
-    name: meta.name || q.name || q.companyName || symbol,
+    name: nameKo || nameEn,
+    nameEn,
     value,
     marketCap,
     netIncome,

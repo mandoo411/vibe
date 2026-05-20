@@ -185,6 +185,8 @@ const THEME_KEYWORDS = {
   "🚢 조선": ["조선", "LNG선", "수주", "HD현대중공업"],
 };
 const BLUECHIP_THRESHOLD = 3.0;
+/** 코스피·코스닥 일반 종목 상한가 근접 (%) */
+const LIMIT_UP_MIN_RATE = 29;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -642,15 +644,32 @@ function filterStockMessages(messages) {
     .slice(0, 50);
 }
 
-function getStockMessages(stockName, messages) {
+function getStockMessages(stockName, messages, limit = 3) {
   return messages
     .filter((message) => message.text.includes(stockName))
-    .slice(0, 3)
-    .map((message) => `[${message.channel}] ${compactText(message.text, 150)}`);
+    .slice(0, limit)
+    .map((message) => `[${message.channel}] ${compactText(message.text, 400)}`);
 }
 
 function buildStockMessageMap(rows, messages) {
   return new Map(rows.map((row) => [row.name, getStockMessages(row.name, messages)]));
+}
+
+function buildLimitUpStocks(rankings, stockMessages) {
+  return rankings
+    .filter((row) => (row.rate ?? 0) >= LIMIT_UP_MIN_RATE)
+    .map((row) => {
+      const messages = getStockMessages(row.name, stockMessages, 3);
+      return {
+        name: row.name,
+        code: row.code,
+        rate: row.rate,
+        price: row.price,
+        rank: row.rank,
+        messages,
+        comment: messages[0] || "",
+      };
+    });
 }
 
 function buildThemeSummary(messages) {
@@ -886,6 +905,7 @@ async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = 
   const themes = buildThemeSummary(stockMessages);
   const bluechipMovers = await fetchBluechipMovers(token, appKey, appSecret);
   const bluechipMessagesByName = buildStockMessageMap(bluechipMovers, stockMessages);
+  const limitUpStocks = buildLimitUpStocks(rankings, stockMessages);
 
   const aiAnalysis = await runClaude({
     apiKey: anthropicKey,
@@ -925,14 +945,17 @@ async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = 
       [...stockMessagesByName.entries()].map(([name, messages]) => [name, messages])
     ),
     themes,
-    bluechipMovers: bluechipMovers.map((row) => ({
-      name: row.name,
-      code: row.code,
-      rate: row.rate,
-      price: row.price,
-      type: row.label,
-      messages: bluechipMessagesByName.get(row.name) || [],
-    })),
+    limitUpStocks,
+    bluechipMovers: bluechipMovers
+      .map((row) => ({
+        name: row.name,
+        code: row.code,
+        rate: row.rate,
+        price: row.price,
+        type: row.label,
+        messages: bluechipMessagesByName.get(row.name) || [],
+      }))
+      .filter((row) => row.messages.length > 0),
   });
 
   if (postTelegram) {

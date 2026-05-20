@@ -1,4 +1,4 @@
-/** GitHub main 기준 JSON (data/ 푸시만으로 갱신, Vercel 재배포 불필요) */
+/** data/*.json 로드 — Private repo: /api/repo-data, 폴백: 동일 출처 ./data/ */
 window.TM_RAW_BASE = "https://raw.githubusercontent.com/mandoo411/vibe/main";
 
 window.tmDataUrl = function tmDataUrl(path) {
@@ -6,11 +6,28 @@ window.tmDataUrl = function tmDataUrl(path) {
   return `${window.TM_RAW_BASE}/${p}`;
 };
 
-/** Raw 우선, 실패 시 동일 출처 ./data/ (비공개 저장소·최초 배포 전 폴백) */
+function tmIsLocalHost() {
+  if (typeof location === "undefined") return true;
+  const h = location.hostname;
+  return h === "localhost" || h === "127.0.0.1" || h === "";
+}
+
 window.tmFetchJson = async function tmFetchJson(path, options = {}) {
   const p = String(path || "").replace(/^\//, "");
-  const bust = options.cacheBust !== false ? `?t=${Date.now()}` : "";
-  const urls = [`${window.TM_RAW_BASE}/${p}${bust}`, `./${p}${bust}`];
+  if (!/^data\/[\w.-]+\.json$/i.test(p)) throw new Error(`Invalid path: ${p}`);
+
+  const bust = options.cacheBust !== false ? Date.now() : null;
+  const urls = [];
+
+  if (!tmIsLocalHost()) {
+    const q = new URLSearchParams({ path: p });
+    if (bust) q.set("t", String(bust));
+    urls.push(`/api/repo-data?${q}`);
+  }
+
+  urls.push(bust ? `./${p}?t=${bust}` : `./${p}`);
+  urls.push(bust ? `${window.TM_RAW_BASE}/${p}?t=${bust}` : `${window.TM_RAW_BASE}/${p}`);
+
   let lastErr;
   for (const url of urls) {
     try {

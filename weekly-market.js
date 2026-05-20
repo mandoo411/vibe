@@ -1,9 +1,12 @@
 (function () {
   const RAW_BASE = "https://raw.githubusercontent.com/mandoo411/vibe/main";
   async function fetchDataJson() {
+    if (typeof tmFetchJson === "function") return tmFetchJson("data/weekly-schedule.json");
     const path = "data/weekly-schedule.json";
-    for (const base of [`${RAW_BASE}/`, "./"]) {
-      const res = await fetch(`${base}${path}?t=${Date.now()}`, { cache: "no-store" });
+    const t = Date.now();
+    const urls = [`/api/repo-data?path=${encodeURIComponent(path)}&t=${t}`, `./${path}?t=${t}`, `${RAW_BASE}/${path}?t=${t}`];
+    for (const url of urls) {
+      const res = await fetch(url, { cache: "no-store" });
       if (res.ok) return res.json();
     }
     throw new Error("HTTP");

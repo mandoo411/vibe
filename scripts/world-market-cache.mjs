@@ -10,7 +10,26 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const RANKED = require("../api/world-market-ranked.js");
+
+async function loadRankedList() {
+  try {
+    const genPath = path.resolve("scripts/generate-world-market-ranked.mjs");
+    const gen = await import(`file://${genPath.replace(/\\/g, "/")}`);
+    const res = await fetch(CMC_HOME, {
+      headers: { "user-agent": USER_AGENT },
+    });
+    const html = await res.text();
+    if (!res.ok) throw new Error(`CMC HTTP ${res.status}`);
+    const rows = gen.parseCmcTop100FromHtml(html);
+    if (rows.length >= 90) {
+      console.log(`Using live CMC TOP${rows.length} for cache sync`);
+      return gen.cmcRowsToMetas(rows);
+    }
+  } catch (error) {
+    console.warn(`Live CMC ranked list failed, using file: ${error.message}`);
+  }
+  return require("../api/world-market-ranked.js");
+}
 
 const OUTPUT_PATH = path.resolve(process.env.WORLD_MARKET_CACHE_PATH || "data/world-market-cache.json");
 const CMC_HOME = "https://companiesmarketcap.com/";
@@ -176,6 +195,7 @@ async function fetchCompanyBySlug(slug) {
 }
 
 async function main() {
+  const RANKED = await loadRankedList();
   console.log("Fetching companiesmarketcap listings…");
   const [homeHtml, earningsHtml, revenueHtml] = await Promise.all([
     fetchHtml(CMC_HOME),

@@ -33,6 +33,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Regenerate TOP100 list from companiesmarketcap.com
+        run: node scripts/generate-world-market-ranked.mjs
+
       - name: Build world market cache
         run: node scripts/world-market-cache.mjs
         env:
@@ -43,12 +46,12 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/world-market-cache.json; then
+          git add api/world-market-ranked.js data/world-market-cache.json
+          if git diff --staged --quiet; then
             echo "::notice::No cache changes to commit"
           else
             STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
-            git add data/world-market-cache.json
-            git commit -m "chore(data): world market cap cache ${STAMP}"
+            git commit -m "chore(data): world market TOP100 + cap cache ${STAMP}"
             git pull --rebase origin main
             git push
           fi

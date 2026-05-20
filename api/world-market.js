@@ -349,9 +349,9 @@ async function attachSparklinesForCompanies(quoteMap, companies) {
       })
     );
     chunk.forEach((meta, idx) => {
-      const quoteKey = quoteSymbolFor(meta).toUpperCase();
+      const quoteKey = (quoteSymbolFor(meta) || chartSymbolFor(meta)).toUpperCase();
       if (!quoteKey) return;
-      const row = quoteMap.get(quoteKey);
+      const row = quoteMap.get(quoteKey) || quoteMap.get(chartSymbolFor(meta).toUpperCase());
       const spark = sparks[idx];
       if (!spark) return;
       if (row) {
@@ -496,7 +496,7 @@ function valueFor(type, row) {
 }
 
 function buildRow(meta, quote, type, rank, usdKrwRate) {
-  const symbol = String(meta.symbol || "").trim().toUpperCase();
+  const symbol = String(meta.symbol || meta.yahooSymbol || "").trim().toUpperCase();
   const q = mergeWithCache(meta, quote, rank) || {};
   const entry = cacheEntryFor(meta, rank);
   const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);

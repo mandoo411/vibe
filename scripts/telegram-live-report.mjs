@@ -307,7 +307,8 @@ async function slotAlreadyPublished(date, time) {
 /** 장 시작 후 지난 슬롯 중 아직 JSON에 없는 시간 (오래된 순) */
 async function unpublishedDueSlots(ymd, clock) {
   const force = process.env.LIVE_REPORT_FORCE === "1";
-  const due = LIVE_SLOTS.filter((t) => slotMinutes(t) <= clock.minutes);
+  const currentSlot = slotForClock(clock);
+  const due = LIVE_SLOTS.filter((t) => slotMinutes(t) <= slotMinutes(currentSlot));
   if (force) return due;
   const missing = [];
   for (const time of due) {
@@ -990,7 +991,17 @@ async function main() {
   const due = await unpublishedDueSlots(ymd, clock);
 
   if (!due.length) {
-    console.log(`모든 due 슬롯 발행 완료 (${ymd}, ${clock.hour}:${String(clock.minute).padStart(2, "0")} KST)`);
+    const pastUnpublished = [];
+    for (const t of LIVE_SLOTS.filter((s) => slotMinutes(s) <= clock.minutes)) {
+      if (!(await slotAlreadyPublished(ymd, t))) pastUnpublished.push(t);
+    }
+    if (pastUnpublished.length) {
+      console.warn(
+        `미발행 ${pastUnpublished.length}개 감지 (${pastUnpublished.join(", ")}) — 다음 스케줄 실행에서 보강 예정 (현재 ${slotForClock(clock)} 슬롯)`
+      );
+    } else {
+      console.log(`모든 due 슬롯 발행 완료 (${ymd}, ${clock.hour}:${String(clock.minute).padStart(2, "0")} KST)`);
+    }
     return;
   }
 

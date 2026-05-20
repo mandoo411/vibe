@@ -24,6 +24,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sync GITHUB_TOKEN for repo-data API
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_PAT:-}" ]; then
+            echo "GH_PAT_REPO_SECRETS_WRITE missing — skip GITHUB_TOKEN sync"
+            exit 0
+          fi
+          npx --yes vercel@53.2.0 env rm GITHUB_TOKEN production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
+          printf "%s" "$GH_PAT" | npx --yes vercel@53.2.0 env add GITHUB_TOKEN production --token "$VERCEL_TOKEN" --force
+          echo "GITHUB_TOKEN synced to Vercel production."
+
       - name: Deploy to Vercel production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

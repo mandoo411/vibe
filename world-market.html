@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0d0b08" />
     <title>TotalMoney AI · 글로벌 랭킹</title>
-    <!-- wm-build: 2026-05-20-ko-names -->
+    <!-- wm-build: 2026-05-20-mobile-accordion -->
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -260,6 +260,77 @@
       .world-panel--ranking {
         margin-top: 0;
       }
+      .world-col-hide-desktop {
+        display: none;
+      }
+      .world-name-btn {
+        font: inherit;
+        font-weight: 600;
+        color: var(--text);
+        background: none;
+        border: 0;
+        padding: 0;
+        cursor: pointer;
+        text-align: left;
+        max-width: 100%;
+      }
+      .world-name-btn:hover,
+      .world-name-btn:focus-visible {
+        color: var(--accent-bright);
+        text-decoration: underline;
+        outline: none;
+      }
+      .world-col-symbol {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      .world-detail-row td {
+        padding: 0 !important;
+        background: #0f0d0a;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .world-detail {
+        padding: 10px 12px 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .world-detail__stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        margin-bottom: 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+      }
+      .world-detail__stats dt {
+        margin: 0;
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .world-detail__stats dd {
+        margin: 2px 0 0;
+        color: var(--text);
+        font-weight: 600;
+      }
+      .world-detail__chart-label {
+        margin: 0 0 6px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .world-detail .world-spark {
+        width: 100%;
+        max-width: 100%;
+        height: 44px;
+      }
+      .world-row.is-open {
+        background: rgba(212, 175, 55, 0.06);
+      }
       @media (max-width: 768px) {
         .world-scroll {
           overflow-x: hidden !important;
@@ -274,25 +345,44 @@
         .world-table td {
           padding: 8px 6px;
         }
+        .world-col-hide-desktop {
+          display: table-cell !important;
+        }
         .world-table col.world-col-rank {
-          width: 2.1rem;
+          width: 1.9rem;
         }
         .world-table col.world-col-name {
-          width: 34%;
+          width: 30%;
+        }
+        .world-table col.world-col-symbol {
+          width: 14%;
         }
         .world-table col.world-col-metric {
-          width: 24%;
+          width: 26%;
         }
-        .world-table col.world-col-price {
-          width: 22%;
-        }
-        .world-table col.world-col-today {
+        .world-table col.world-col-country {
           width: 18%;
         }
         .world-table td.world-col-name,
         .world-table th.world-col-name {
           overflow: hidden;
           max-width: 0;
+        }
+        .world-table td.world-col-symbol,
+        .world-table th.world-col-symbol {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .world-name-btn {
+          display: block;
+          width: 100%;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          font-size: 12px;
+        }
+        .world-country__label {
+          display: none;
         }
         .world-table th.world-col-num,
         .world-table td.world-col-num {
@@ -324,13 +414,22 @@
         .world-panel--ranking .world-num {
           font-size: 13px;
         }
-        .world-panel--ranking .world-company span {
+        .world-panel--ranking .world-company .world-logo,
+        .world-panel--ranking .world-company span,
+        .world-panel--ranking .world-company-country {
           display: none;
         }
-        .world-panel--ranking .world-logo {
-          flex: 0 0 28px;
-          width: 28px;
-          height: 28px;
+        .world-panel--ranking .world-company {
+          display: block;
+        }
+        .world-panel--ranking .world-company > div {
+          display: none;
+        }
+        .world-table th.world-col-country,
+        .world-table td.world-col-country {
+          text-align: center;
+          padding-left: 4px;
+          padding-right: 4px;
         }
       }
     </style>
@@ -375,21 +474,23 @@
             <colgroup>
               <col class="world-col-rank" />
               <col class="world-col-name" />
+              <col class="world-col-symbol world-col-hide-desktop" />
               <col class="world-col-num world-col-metric" />
-              <col class="world-col-num world-col-price" />
-              <col class="world-col-num world-col-today" />
+              <col class="world-col-num world-col-price world-col-hide-mobile" />
+              <col class="world-col-num world-col-today world-col-hide-mobile" />
               <col class="world-col-spark world-col-hide-mobile" />
-              <col class="world-col-country world-col-hide-mobile" />
+              <col class="world-col-country" />
             </colgroup>
             <thead>
               <tr>
-                <th class="world-col-rank world-rank">#</th>
-                <th class="world-col-name">Name</th>
+                <th class="world-col-rank world-rank" id="world-th-rank">#</th>
+                <th class="world-col-name" id="world-th-name">Name</th>
+                <th class="world-col-symbol world-col-hide-desktop" id="world-th-symbol">Ticker</th>
                 <th class="world-col-num world-col-metric world-num" id="world-metric-header">Market Cap</th>
-                <th class="world-col-num world-col-price world-num">Price</th>
-                <th class="world-col-num world-col-today world-num">Today</th>
+                <th class="world-col-num world-col-price world-num world-col-hide-mobile">Price</th>
+                <th class="world-col-num world-col-today world-num world-col-hide-mobile">Today</th>
                 <th class="world-col-spark world-col-hide-mobile">Price (30 days)</th>
-                <th class="world-col-country world-col-hide-mobile">Country</th>
+                <th class="world-col-country" id="world-th-country">Country</th>
               </tr>
             </thead>
             <tbody id="world-body"></tbody>
@@ -400,10 +501,10 @@
 
     <script>
       (() => {
-        const state = { type: "marketCap" };
+        const state = { type: "marketCap", openKey: null, rows: [] };
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
         const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
-        const valueLabelsMobile = { marketCap: "Mkt Cap", netIncome: "Earnings", revenue: "Revenue" };
+        const metricHeadersMobile = { marketCap: "시총", netIncome: "순이익", revenue: "매출" };
         const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
         const $ = (id) => document.getElementById(id);
         function escapeHtml(value) {
@@ -489,19 +590,26 @@
           const title = full !== label ? ` title="${escapeHtml(full)}"` : "";
           return `<span class="world-country"${title}><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
         }
-        function countryInlineMobile(row) {
-          const { flag, label } = countryParts(row);
-          if (!label || label === "—") return "";
-          return `<span class="world-company-country"><span class="world-country__flag" aria-hidden="true">${flag}</span><span class="world-country__label">${escapeHtml(label)}</span></span>`;
+        function rowKey(row) {
+          return String(row.symbol || row.name || row.rank || "")
+            .trim()
+            .toUpperCase();
         }
         function syncTabs() {
           document.querySelectorAll(".world-tab").forEach((btn) => {
             btn.setAttribute("aria-pressed", btn.dataset.type === state.type ? "true" : "false");
           });
+          const mobile = isMobile();
           const metricHeader = document.getElementById("world-metric-header");
           if (metricHeader) {
-            metricHeader.textContent = isMobile() ? valueLabelsMobile[state.type] : valueLabels[state.type];
+            metricHeader.textContent = mobile ? metricHeadersMobile[state.type] : valueLabels[state.type];
           }
+          const thName = document.getElementById("world-th-name");
+          const thSymbol = document.getElementById("world-th-symbol");
+          const thCountry = document.getElementById("world-th-country");
+          if (thName) thName.textContent = mobile ? "이름" : "Name";
+          if (thSymbol) thSymbol.textContent = mobile ? "티커" : "Ticker";
+          if (thCountry) thCountry.textContent = mobile ? "국가" : "Country";
         }
         function syncMobileTableLayout() {
           const mobile = isMobile();
@@ -512,25 +620,84 @@
           document.querySelectorAll(".world-col-hide-mobile").forEach((el) => {
             el.hidden = mobile;
           });
+          document.querySelectorAll(".world-col-hide-desktop").forEach((el) => {
+            el.hidden = !mobile;
+          });
         }
-        function rowHtml(row) {
-          const mobile = isMobile();
+        function detailRowHtml(row) {
           const spark =
             sparklineSvg(row.sparkline, row.sparkUp) || '<span class="world-spark-empty">—</span>';
-          let html = `<tr>
+          return `<tr class="world-detail-row">
+              <td colspan="5">
+                <div class="world-detail">
+                  <dl class="world-detail__stats">
+                    <div><dt>가격</dt><dd>${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</dd></div>
+                    <div><dt>등락률</dt><dd class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</dd></div>
+                  </dl>
+                  <p class="world-detail__chart-label">30일 차트</p>
+                  ${spark}
+                </div>
+              </td>
+            </tr>`;
+        }
+        function mobileRowHtml(row) {
+          const key = rowKey(row);
+          const open = state.openKey === key;
+          const symbol = row.symbol || "—";
+          const main = `<tr class="world-row${open ? " is-open" : ""}" data-key="${escapeHtml(key)}">
                 <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
-                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span>${mobile ? countryInlineMobile(row) : ""}</div></div></td>
+                <td class="world-col-name">
+                  <button type="button" class="world-name-btn" data-key="${escapeHtml(key)}" aria-expanded="${open ? "true" : "false"}" title="${escapeHtml(row.name)}">
+                    ${escapeHtml(row.name)}
+                  </button>
+                </td>
+                <td class="world-col-symbol world-col-hide-desktop">${escapeHtml(symbol)}</td>
+                <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
+                <td class="world-col-country">${countryCell(row)}</td>
+              </tr>`;
+          return open ? `${main}${detailRowHtml(row)}` : main;
+        }
+        function desktopRowHtml(row) {
+          const spark =
+            sparklineSvg(row.sparkline, row.sparkUp) || '<span class="world-spark-empty">—</span>';
+          return `<tr>
+                <td class="world-col-rank world-rank">${escapeHtml(row.rank)}</td>
+                <td class="world-col-name"><div class="world-company">${logoCell(row)}<div><strong title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</strong><span>${escapeHtml(row.symbol || "—")}</span></div></div></td>
+                <td class="world-col-symbol world-col-hide-desktop" aria-hidden="true"></td>
                 <td class="world-col-num world-col-metric world-num">${escapeHtml(fmtMoney(metricValue(row)))}</td>
                 <td class="world-col-num world-col-price world-num">${escapeHtml(fmtPrice(row.price, row.priceCurrency))}</td>
-                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>`;
-          if (!mobile) {
-            html += `<td class="world-col-spark world-col-hide-mobile">${spark}</td>
-                <td class="world-col-country world-col-hide-mobile">${countryCell(row)}</td>`;
-          }
-          return `${html}</tr>`;
+                <td class="world-col-num world-col-today world-num"><span class="${deltaClass(row.changePct)}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+                <td class="world-col-spark world-col-hide-mobile">${spark}</td>
+                <td class="world-col-country">${countryCell(row)}</td>
+              </tr>`;
+        }
+        function rowHtml(row) {
+          return isMobile() ? mobileRowHtml(row) : desktopRowHtml(row);
         }
         function colSpan() {
-          return isMobile() ? 5 : 7;
+          return isMobile() ? 5 : 8;
+        }
+        function renderBody() {
+          const body = $("world-body");
+          if (!body) return;
+          if (!state.rows.length) {
+            body.innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">데이터 없음</td></tr>`;
+            return;
+          }
+          body.innerHTML = state.rows.map((row) => rowHtml(row)).join("");
+        }
+        function wireTable() {
+          const body = $("world-body");
+          if (!body || body.dataset.worldWire === "1") return;
+          body.dataset.worldWire = "1";
+          body.addEventListener("click", (ev) => {
+            if (!isMobile()) return;
+            const btn = ev.target.closest(".world-name-btn");
+            if (!btn || !body.contains(btn)) return;
+            const key = btn.getAttribute("data-key");
+            state.openKey = state.openKey === key ? null : key;
+            renderBody();
+          });
         }
         async function load() {
           syncTabs();
@@ -540,25 +707,30 @@
             const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            const rows = Array.isArray(data.rows) ? data.rows : [];
-            $("world-body").innerHTML = rows.length
-              ? rows.map((row) => rowHtml(row)).join("")
-              : `<tr><td colspan="${colSpan()}">데이터 없음</td></tr>`;
+            const keepOpen = state.openKey;
+            state.rows = Array.isArray(data.rows) ? data.rows : [];
+            state.openKey = keepOpen;
+            renderBody();
           } catch (error) {
+            state.rows = [];
             $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오지 못했습니다: ${escapeHtml(error.message || error)}</td></tr>`;
           }
         }
         document.querySelectorAll(".world-tab").forEach((btn) => {
           btn.addEventListener("click", () => {
             state.type = btn.dataset.type;
+            state.openKey = null;
             load();
           });
         });
+        wireTable();
         load();
         setInterval(load, 5 * 60 * 1000);
         window.matchMedia("(max-width: 768px)").addEventListener("change", () => {
+          state.openKey = null;
           syncTabs();
-          load();
+          syncMobileTableLayout();
+          renderBody();
         });
       })();
     </script>

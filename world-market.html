@@ -82,7 +82,7 @@
         width: 8.5rem;
       }
       .world-table col.world-col-country {
-        width: 8.5rem;
+        width: 9.25rem;
       }
       .world-table tbody tr:nth-child(even) {
         background: rgba(255, 255, 255, 0.02);
@@ -450,7 +450,9 @@
         function countryCell(row) {
           const flag = row.flag || "\u{1F310}";
           const label = row.countryLabel || row.country || "—";
-          return `<span class="world-country"><span class="world-country__flag" aria-hidden="true">${escapeHtml(flag)}</span><span>${escapeHtml(label)}</span></span>`;
+          const full = row.country || label;
+          const title = full !== label ? ` title="${escapeHtml(full)}"` : "";
+          return `<span class="world-country"${title}><span class="world-country__flag" aria-hidden="true">${escapeHtml(flag)}</span><span>${escapeHtml(label)}</span></span>`;
         }
         function syncTabs() {
           document.querySelectorAll(".world-tab").forEach((btn) => {

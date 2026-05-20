@@ -110,14 +110,25 @@ function countryFlag(country) {
   if (/canada/.test(text)) return "🇨🇦";
   if (/switzerland/.test(text)) return "🇨🇭";
   if (/denmark/.test(text)) return "🇩🇰";
+  if (/emirates|uae/.test(text)) return "🇦🇪";
+  if (/australia/.test(text)) return "🇦🇺";
+  if (/india/.test(text)) return "🇮🇳";
+  if (/spain/.test(text)) return "🇪🇸";
+  if (/italy/.test(text)) return "🇮🇹";
+  if (/brazil/.test(text)) return "🇧🇷";
+  if (/mexico/.test(text)) return "🇲🇽";
+  if (/singapore/.test(text)) return "🇸🇬";
+  if (/indonesia/.test(text)) return "🇮🇩";
   return "🌐";
 }
 
 function countryShort(country) {
   const text = String(country || "");
   if (/united states/i.test(text)) return "USA";
+  if (/united arab emirates|uae/i.test(text)) return "UAE";
   if (/south korea/i.test(text)) return "S. Korea";
   if (/saudi/i.test(text)) return "S. Arabia";
+  if (/united kingdom/i.test(text)) return "UK";
   if (/taiwan/i.test(text)) return "Taiwan";
   if (/china/i.test(text)) return "China";
   if (/japan/i.test(text)) return "Japan";
@@ -126,9 +137,16 @@ function countryShort(country) {
   if (/france/i.test(text)) return "France";
   if (/denmark/i.test(text)) return "Denmark";
   if (/ireland/i.test(text)) return "Ireland";
-  if (/united kingdom/i.test(text)) return "UK";
   if (/switzerland/i.test(text)) return "Switzerland";
   if (/canada/i.test(text)) return "Canada";
+  if (/australia/i.test(text)) return "Australia";
+  if (/india/i.test(text)) return "India";
+  if (/spain/i.test(text)) return "Spain";
+  if (/italy/i.test(text)) return "Italy";
+  if (/brazil/i.test(text)) return "Brazil";
+  if (/mexico/i.test(text)) return "Mexico";
+  if (/singapore/i.test(text)) return "Singapore";
+  if (/indonesia/i.test(text)) return "Indonesia";
   return text || "—";
 }
 

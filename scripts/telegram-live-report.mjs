@@ -519,17 +519,18 @@ function sanitizeUnicode(value) {
 }
 
 /** Anthropic 요청 본문 직렬화 전 검증 */
-function ensureJsonSafe(value, maxLen = 120_000) {
+function ensureJsonSafe(value, maxLen = 80_000) {
   let s = sanitizeUnicode(value);
-  if (s.length > maxLen) s = `${s.slice(0, maxLen - 1)}…`;
+  if (s.length > maxLen) s = `${sanitizeUnicode(s.slice(0, maxLen - 1))}…`;
   JSON.parse(JSON.stringify({ t: s }));
   return s;
 }
 
 function compactText(value, limit = 150) {
-  const clean = sanitizeUnicode(stripHtml(value)).replace(/\s+/g, " ").trim();
+  let clean = sanitizeUnicode(stripHtml(value)).replace(/\s+/g, " ").trim();
   if (clean.length <= limit) return clean;
-  return `${clean.slice(0, limit - 1)}…`;
+  clean = sanitizeUnicode(clean.slice(0, limit - 1));
+  return `${clean}…`;
 }
 
 async function withTimeout(promise, ms, label, onTimeout = () => {}) {
@@ -602,9 +603,9 @@ async function collectTelegramMessages() {
               return messages
                 .filter((msg) => msg.message && new Date(Number(msg.date) * 1000) >= twoHoursAgo)
                 .map((msg) => ({
-                  channel: channel.name || "unknown",
+                  channel: sanitizeUnicode(channel.name || "unknown"),
                   priority: channel.priority,
-                  text: stripHtml(msg.message),
+                  text: sanitizeUnicode(stripHtml(msg.message)),
                   date: new Date(Number(msg.date) * 1000),
                 }));
             } catch (error) {
@@ -667,7 +668,10 @@ function buildThemeSummary(messages) {
 
 function telegramMessagesText(messages) {
   if (!messages.length) return "최근 2시간 내 수집된 주식 관련 메시지가 없습니다.";
-  return messages.map((message) => `${message.channel}: ${compactText(message.text, 150)}`).join("\n");
+  return messages
+    .slice(0, 35)
+    .map((message) => `${sanitizeUnicode(message.channel)}: ${compactText(message.text, 120)}`)
+    .join("\n");
 }
 
 function stockMessagesText(rows, stockMessagesByName) {
@@ -812,7 +816,11 @@ async function writeLiveReport(payload) {
   data.reports.push(payload);
   data.reports.sort((a, b) => String(a.time).localeCompare(String(b.time)));
   await fs.mkdir("data", { recursive: true });
-  await fs.writeFile(DATA_PATH, JSON.stringify(data, null, 2) + "\n", "utf8");
+  await fs.writeFile(
+    DATA_PATH,
+    `${JSON.stringify(data, (_k, v) => (typeof v === "string" ? sanitizeUnicode(v) : v), 2)}\n`,
+    "utf8"
+  );
 }
 
 async function gitCommitAndPush(time) {
@@ -844,7 +852,7 @@ async function gitCommitAndPush(time) {
   }
 }
 
-async function publishLiveReportSlot(ymd, time, creds, { postTelegram = false } = {}) {
+async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = false } = {}) {
   const { token, appKey, appSecret, anthropicKey } = creds;
   console.log(`Live report slot: ${ymd} ${time} KST`);
 
@@ -872,8 +880,8 @@ async function publishLiveReportSlot(ymd, time, creds, { postTelegram = false } 
 
   if (!rankings.length) throw new Error(`[${time}] 상승률 TOP30 데이터가 비어 있습니다.`);
 
-  const telegramMessages = await collectTelegramMessages();
-  const stockMessages = filterStockMessages(telegramMessages);
+  const telegramMessages = shared.telegramMessages || [];
+  const stockMessages = shared.stockMessages || filterStockMessages(telegramMessages);
   const stockMessagesByName = buildStockMessageMap(rankings.slice(0, 10), stockMessages);
   const themes = buildThemeSummary(stockMessages);
   const bluechipMovers = await fetchBluechipMovers(token, appKey, appSecret);
@@ -952,10 +960,10 @@ async function main() {
     return;
   }
 
-  const maxCatch = Math.max(1, Number(process.env.LIVE_REPORT_MAX_CATCHUP) || 8);
+  const maxCatch = Math.max(1, Number(process.env.LIVE_REPORT_MAX_CATCHUP) || 1);
   const batch = due.slice(0, maxCatch);
   console.log(
-    `미발행 ${due.length}개 (due≤${slotForClock(clock)}): 이번 실행 ${batch.join(", ")}${due.length > batch.length ? ` · 남음 ${due.slice(batch.length).join(", ")}` : ""}`
+    `미발행 ${due.length}개 (due≤${slotForClock(clock)}): 이번 실행 ${batch.join(", ")}${due.length > batch.length ? ` · 남음 ${due.slice(batch.length).join(", ")} (다음 실행에서 계속)` : ""}`
   );
 
   const creds = {
@@ -965,19 +973,30 @@ async function main() {
     anthropicKey: requireEnv("ANTHROPIC_API_KEY"),
   };
 
+  console.log("텔레그램 메시지 1회 수집…");
+  const telegramMessages = await collectTelegramMessages();
+  const shared = {
+    telegramMessages,
+    stockMessages: filterStockMessages(telegramMessages),
+  };
+
   const published = [];
   for (let i = 0; i < batch.length; i++) {
     const time = batch[i];
     const postTelegram = i === batch.length - 1;
     try {
-      await publishLiveReportSlot(ymd, time, creds, { postTelegram });
+      await publishLiveReportSlot(ymd, time, creds, shared, { postTelegram });
       published.push(time);
     } catch (error) {
       console.error(`[${time}] 발행 실패:`, error.message || error);
     }
   }
 
-  if (!published.length) throw new Error("발행된 슬롯이 없습니다.");
+  if (!published.length) {
+    throw new Error(
+      "발행된 슬롯이 없습니다. 로그에서 Claude API·KIS 오류를 확인하세요. (미발행 슬롯은 다음 수동 실행 시 1개씩 보강)"
+    );
+  }
   await gitCommitAndPush(published[published.length - 1]);
 }
 

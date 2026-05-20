@@ -35,31 +35,55 @@
         color: var(--accent-bright);
         font-weight: 600;
       }
-      .live-chip-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin: 0 0 10px;
+      .live-timeline-panel {
+        padding: 12px 14px;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius);
+        background: #0a0907;
       }
-      .live-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
+      .live-timeline-panel .live-section__title {
+        margin-bottom: 10px;
+      }
+      .live-timeline {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 5px;
+      }
+      .live-timeline__btn {
+        appearance: none;
+        margin: 0;
+        padding: 7px 2px;
         border: 1px solid var(--border);
-        border-radius: 999px;
+        border-radius: 4px;
+        background: #12100c;
+        color: var(--text-dim);
         font-family: var(--font-mono);
         font-size: 10px;
-        color: var(--text-muted);
-        background: #12100c;
+        line-height: 1.2;
+        cursor: pointer;
+        text-align: center;
       }
-      .live-chip--done {
-        border-color: rgba(74, 222, 128, 0.35);
+      .live-timeline__btn--done {
+        border-color: rgba(74, 222, 128, 0.45);
         color: #86efac;
       }
-      .live-chip--pending {
-        border-color: rgba(240, 199, 90, 0.35);
+      .live-timeline__btn--active {
+        border-color: var(--accent-bright);
         color: var(--accent-bright);
+        background: rgba(240, 199, 90, 0.1);
+        font-weight: 700;
+      }
+      .live-timeline__btn--wait {
+        border-color: rgba(251, 191, 36, 0.35);
+        color: #fbbf24;
+      }
+      .live-timeline__btn:disabled {
+        opacity: 0.32;
+        cursor: not-allowed;
+      }
+      .live-timeline__btn:not(:disabled):not(.live-timeline__btn--active):hover {
+        border-color: var(--border-strong);
+        color: var(--text-muted);
       }
       .live-news-list,
       .live-theme-list {
@@ -180,33 +204,6 @@
         color: var(--text);
         font-size: 14px;
       }
-      .live-tabs {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .live-tab {
-        appearance: none;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: #12100c;
-        color: var(--text-muted);
-        height: 32px;
-        padding: 0 10px;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        cursor: pointer;
-      }
-      .live-tab[aria-selected="true"] {
-        color: var(--accent-bright);
-        border-color: var(--border-strong);
-        box-shadow: inset 0 -2px 0 var(--accent-bright);
-      }
-      .live-tab:disabled {
-        color: #5f5541;
-        cursor: not-allowed;
-        opacity: 0.45;
-      }
       .live-table-card {
         overflow: hidden;
       }
@@ -298,6 +295,11 @@
       <main class="live-wrap">
         <div id="live-status" class="live-status">데이터 로딩 중...</div>
 
+        <section class="live-timeline-panel" aria-labelledby="live-sec-timeline">
+          <h2 class="live-section__title" id="live-sec-timeline">오늘 리포트 · 30분 슬롯</h2>
+          <div id="live-timeline" class="live-timeline" role="tablist" aria-label="리포트 시간 선택"></div>
+        </section>
+
         <section aria-labelledby="live-sec-index">
           <h2 class="live-section__title" id="live-sec-index">① 현재 지수</h2>
           <div id="live-indexes" class="live-index-grid"></div>
@@ -314,14 +316,8 @@
           </article>
         </section>
 
-        <section aria-labelledby="live-sec-timeline">
-          <h2 class="live-section__title" id="live-sec-timeline">③ 오늘 리포트 타임라인</h2>
-          <div id="live-slot-chips" class="live-chip-list" aria-label="슬롯 발행 현황"></div>
-          <div id="live-tabs" class="live-tabs" role="tablist" aria-label="라이브 리포트 시간대"></div>
-        </section>
-
         <section aria-labelledby="live-sec-news">
-          <h2 class="live-section__title" id="live-sec-news">④ 채널 뉴스 · 테마</h2>
+          <h2 class="live-section__title" id="live-sec-news">③ 채널 뉴스 · 테마</h2>
           <div class="live-card" style="padding: 12px 0">
             <h3 class="live-section__title" style="margin: 0 12px 8px; font-size: 12px">핵심 뉴스</h3>
             <ul id="live-news" class="live-news-list"></ul>
@@ -331,12 +327,12 @@
         </section>
 
         <section aria-labelledby="live-sec-movers">
-          <h2 class="live-section__title" id="live-sec-movers">⑤ 대형주 · 특징주</h2>
+          <h2 class="live-section__title" id="live-sec-movers">④ 대형주 · 특징주</h2>
           <div id="live-movers" class="live-mover-grid"></div>
         </section>
 
         <section aria-labelledby="live-sec-top30">
-          <h2 class="live-section__title" id="live-sec-top30">⑥ 상승률 TOP30</h2>
+          <h2 class="live-section__title" id="live-sec-top30">⑤ 상승률 TOP30</h2>
           <div class="live-card live-table-card">
             <table class="live-table">
               <thead>
@@ -463,31 +459,29 @@
           </div>`).join("");
         }
 
-        function renderTabs() {
+        function renderTimeline() {
           const map = reportMap();
-          $("live-tabs").innerHTML = TIMES.map((time) => {
+          const now = seoulNow();
+          const minutes = now.getHours() * 60 + now.getMinutes();
+          const el = $("live-timeline");
+          if (!el) return;
+          el.innerHTML = TIMES.map((time) => {
             const has = map.has(time);
-            return `<button type="button" class="live-tab" role="tab" data-time="${time}" aria-selected="${state.selected === time ? "true" : "false"}" ${has ? "" : "disabled"}>${time}</button>`;
+            const due = slotMinutes(time) <= minutes;
+            const active = state.selected === time;
+            let cls = "live-timeline__btn";
+            if (active) cls += " live-timeline__btn--active";
+            else if (has) cls += " live-timeline__btn--done";
+            else if (due) cls += " live-timeline__btn--wait";
+            return `<button type="button" class="${cls}" role="tab" data-time="${time}" aria-selected="${active ? "true" : "false"}" ${has ? "" : "disabled"}>${time}</button>`;
           }).join("");
-          $("live-tabs").querySelectorAll("[data-time]").forEach((btn) => {
+          el.querySelectorAll("[data-time]").forEach((btn) => {
             btn.addEventListener("click", () => {
+              if (btn.disabled) return;
               state.selected = btn.getAttribute("data-time");
               render();
             });
           });
-        }
-
-        function renderSlotChips() {
-          const map = reportMap();
-          const now = seoulNow();
-          const minutes = now.getHours() * 60 + now.getMinutes();
-          $("live-slot-chips").innerHTML = TIMES.map((time) => {
-            const done = map.has(time);
-            const due = slotMinutes(time) <= minutes;
-            const cls = done ? "live-chip live-chip--done" : due ? "live-chip live-chip--pending" : "live-chip";
-            const mark = done ? "✓" : due ? "…" : "·";
-            return `<span class="${cls}">${mark} ${time}</span>`;
-          }).join("");
         }
 
         function renderExtras(selected) {
@@ -563,8 +557,7 @@
           if (cd) status += ` · ${cd}`;
           if (missing.length) status += ` · 미발행: ${missing.join(", ")}`;
           $("live-status").innerHTML = `${escapeHtml(status)}${cd ? `<br><span class="live-countdown">${escapeHtml(cd)}</span>` : ""}`;
-          renderSlotChips();
-          renderTabs();
+          renderTimeline();
           renderReport();
           const d = seoulYmd();
           const latest = latestReport();

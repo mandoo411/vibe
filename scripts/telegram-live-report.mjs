@@ -17,6 +17,7 @@ import {
   SITE_URL,
   toNum,
 } from "./telegram-utils.mjs";
+import { fetchIntradaySiteNews, filterSiteNewsForSlot } from "./live-report-site-news.mjs";
 
 const DATA_PATH = process.env.LIVE_REPORT_PATH || "data/live-report.json";
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
@@ -927,6 +928,7 @@ async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = 
     price: row.price,
   }));
   const top10 = top30.slice(0, 10);
+  const siteNews = filterSiteNewsForSlot(shared.siteNewsAll || [], ymd, time).slice(0, 15);
 
   await writeLiveReport({
     date: ymd,
@@ -941,6 +943,7 @@ async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = 
       text: compactText(message.text, 2500),
       date: message.date.toISOString(),
     })),
+    siteNews,
     stockMessages: Object.fromEntries(
       [...stockMessagesByName.entries()].map(([name, messages]) => [name, messages])
     ),
@@ -998,9 +1001,17 @@ async function main() {
 
   console.log("텔레그램 메시지 1회 수집…");
   const telegramMessages = await collectTelegramMessages();
+  let siteNewsAll = [];
+  try {
+    siteNewsAll = await fetchIntradaySiteNews(ymd);
+    console.log(`장중 RSS 뉴스 ${siteNewsAll.length}건 수집`);
+  } catch (error) {
+    console.warn(`장중 RSS 수집 실패: ${error instanceof Error ? error.message : error}`);
+  }
   const shared = {
     telegramMessages,
     stockMessages: filterStockMessages(telegramMessages),
+    siteNewsAll,
   };
 
   const published = [];

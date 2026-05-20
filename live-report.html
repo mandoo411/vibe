@@ -179,6 +179,56 @@
         color: var(--text-dim);
         text-align: right;
       }
+      .live-news-item--static .live-news-card {
+        cursor: default;
+      }
+      .live-news-subhead {
+        margin: 14px 12px 6px;
+        font-size: 11px;
+        color: var(--text-dim);
+        letter-spacing: 0.06em;
+      }
+      .live-site-news-card {
+        display: block;
+        margin: 10px 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, #12100c 100%);
+        text-decoration: none;
+        color: inherit;
+      }
+      .live-site-news-card:hover {
+        border-color: rgba(240, 199, 90, 0.55);
+        text-decoration: none;
+      }
+      .live-site-news-card__source {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: #93c5fd;
+        margin-bottom: 4px;
+      }
+      .live-site-news-card__title {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .live-site-news-card__summary {
+        margin: 8px 0 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--text-muted);
+      }
+      .live-site-news-card__link {
+        display: inline-block;
+        margin-top: 8px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--accent-bright);
+      }
       .live-theme-list li {
         padding: 10px 12px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -442,8 +492,10 @@
         <section aria-labelledby="live-sec-news">
           <h2 class="live-section__title" id="live-sec-news">③ 채널 뉴스 · 테마</h2>
           <div class="live-card" style="padding: 12px 0">
-            <h3 class="live-section__title" style="margin: 0 12px 8px; font-size: 12px">핵심 뉴스</h3>
+            <h3 class="live-section__title" style="margin: 0 12px 8px; font-size: 12px">텔레그램 채널</h3>
             <ul id="live-news" class="live-news-list"></ul>
+            <p class="live-news-subhead">증권·언론 (장중 기사, 제목 탭 시 원문)</p>
+            <ul id="live-site-news" class="live-news-list"></ul>
             <h3 class="live-section__title" style="margin: 12px 12px 8px; font-size: 12px">테마</h3>
             <ul id="live-themes" class="live-theme-list"></ul>
           </div>
@@ -624,30 +676,50 @@
           const { headline, bullets, full } = parseNewsText(item.text);
           const time = formatKstTime(item.date);
           const channel = item.channel || "채널";
-          const previewBullets = bullets.slice(0, 2);
-          const hasMore = bullets.length > 2 || full.length > 320;
-
-          const previewHtml = previewBullets.length
-            ? `<ul>${previewBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
-            : `<p>${escapeHtml(full.length > 200 ? `${full.slice(0, 199)}…` : full)}</p>`;
+          const bodyPlain = bullets.length ? bullets.join(" ") : full;
+          const canExpand = bodyPlain.length > headline.length + 80;
 
           const bodyHtml = bullets.length
             ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
             : `<p>${escapeHtml(full)}</p>`;
 
+          const cardInner = `
+                  <span class="live-news-channel">${escapeHtml(channel)}</span>
+                  <span class="live-news-headline">${escapeHtml(headline)}</span>
+                  ${canExpand ? '<span class="live-news-hint">탭하여 전체 보기 ▾</span>' : ""}`;
+
+          if (!canExpand) {
+            return `<li class="live-news-item live-news-item--static">
+              <div class="live-news-card">${cardInner}</div>
+              <div class="live-news-meta">${escapeHtml(time)} · ${escapeHtml(channel)}</div>
+            </li>`;
+          }
+
           return `<li>
             <details class="live-news-details">
               <summary class="live-news-summary">
-                <div class="live-news-card">
-                  <span class="live-news-channel">${escapeHtml(channel)}</span>
-                  <span class="live-news-headline">${escapeHtml(headline)}</span>
-                  <div class="live-news-preview">${previewHtml}</div>
-                  ${hasMore ? '<span class="live-news-hint">본문 탭하여 전체 보기 ▾</span>' : ""}
-                </div>
+                <div class="live-news-card">${cardInner}</div>
               </summary>
               <div class="live-news-body">${bodyHtml}</div>
               <div class="live-news-meta">${escapeHtml(time)} · ${escapeHtml(channel)}</div>
             </details>
+          </li>`;
+        }
+
+        function siteNewsItemHtml(item) {
+          const title = item.title || "제목 없음";
+          const url = item.url || "";
+          const summary = (item.summary || "").trim();
+          const time = formatKstTime(item.publishedAt);
+          const source = item.source || "뉴스";
+          if (!url) return "";
+          return `<li>
+            <a class="live-site-news-card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
+              <span class="live-site-news-card__source">${escapeHtml(source)} · ${escapeHtml(time)}</span>
+              <span class="live-site-news-card__title">${escapeHtml(title)}</span>
+              ${summary && summary !== title ? `<p class="live-site-news-card__summary">${escapeHtml(summary.slice(0, 220))}${summary.length > 220 ? "…" : ""}</p>` : ""}
+              <span class="live-site-news-card__link">원문 보기 →</span>
+            </a>
           </li>`;
         }
 
@@ -732,7 +804,7 @@
           renderExtras(selected);
         }
 
-        function render() {
+        function renderStatusOnly() {
           const cd = countdownLabel();
           const map = reportMap();
           const now = seoulNow();
@@ -746,10 +818,14 @@
           if (missing.length) status += ` · 미발행: ${missing.join(", ")}`;
           $("live-status").innerHTML = `${escapeHtml(status)}${cd ? `<br><span class="live-countdown">${escapeHtml(cd)}</span>` : ""}`;
           renderTimeline();
-          renderReport();
           const d = seoulYmd();
           const latest = latestReport();
           $("live-updated").textContent = `마지막 업데이트: ${d.replaceAll("-", ".")} ${latest ? latest.time : "--:--"} KST · 30분 슬롯`;
+        }
+
+        function render() {
+          renderStatusOnly();
+          renderReport();
         }
 
         async function load() {
@@ -774,7 +850,7 @@
         load();
         setInterval(load, 60 * 1000);
         setInterval(() => {
-          if (state.data.date === seoulYmd()) render();
+          if (state.data.date === seoulYmd()) renderStatusOnly();
         }, 1000);
       })();
     </script>

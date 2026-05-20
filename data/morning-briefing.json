@@ -1,7 +1,35 @@
 {
   "updatedAt": "2026-05-20T06:00:00+09:00",
   "usMarket": {
-    "indices": []
+    "indices": [
+      {
+        "id": "nasdaq",
+        "name": "나스닥",
+        "symbol": "^IXIC",
+        "close": 25870.71,
+        "previousClose": 26088.2,
+        "changePct": -0.83,
+        "changePoints": -217.49
+      },
+      {
+        "id": "sp500",
+        "name": "S&P 500",
+        "symbol": "^GSPC",
+        "close": 7353.61,
+        "previousClose": 7400.96,
+        "changePct": -0.64,
+        "changePoints": -47.35
+      },
+      {
+        "id": "dow",
+        "name": "다우",
+        "symbol": "^DJI",
+        "close": 49363.88,
+        "previousClose": 49760.56,
+        "changePct": -0.8,
+        "changePoints": -396.68
+      }
+    ]
   },
   "topStocks": [
     {
@@ -486,8 +514,5 @@
       "금": "인플레이션 우려 속 미 국채 수익률 급등으로 안전자산 수요 후퇴, -3.98% 급락하며 4491.7달러 기록",
       "BTC": "연준의 긴축 기조 유지 신호와 리스크 회피 심리 확산으로 소폭 약세(-0.22%) 지속, 76,869달러 수준 등락"
     }
-  },
-  "errors": [
-    "usMarket: HTTP 404: "
-  ]
+  }
 }

@@ -19,8 +19,6 @@ const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
-const KIS_INDEX_PATH = "/uapi/overseas-price/v1/quotations/inquire-price";
-const KIS_INDEX_TR_ID = "HHDFS76200200";
 const KIS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const KIS_PRICE_TR_ID = "HHDFS00000300";
 const EXCHANGE_RATE_URL = "https://open.er-api.com/v6/latest/USD";
@@ -30,10 +28,11 @@ const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefing.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
+/** KIS 해외지수 API는 404/빈 응답 — Yahoo·CNBC로 수집 (us-market-data.js와 동일 소스) */
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", excd: "NAS", symb: "COMP" },
-  { id: "sp500", name: "S&P 500", excd: "NYS", symb: "SPX" },
-  { id: "dow", name: "다우", excd: "NYS", symb: "DJIA" },
+  { id: "nasdaq", name: "나스닥", yahoo: "^IXIC", cnbc: ".IXIC" },
+  { id: "sp500", name: "S&P 500", yahoo: "^GSPC", cnbc: ".SPX" },
+  { id: "dow", name: "다우", yahoo: "^DJI", cnbc: ".DJI" },
 ];
 
 const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];
@@ -222,6 +221,19 @@ function decodeXml(value) {
     .trim();
 }
 
+function stripHtml(value) {
+  return String(value || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function fetchText(url, opts = {}) {
   const res = await fetch(url, {
     ...opts,
@@ -311,29 +323,65 @@ async function fetchYahooQuote(symbol) {
   return { symbol, price, previousClose, changePoints, changePct };
 }
 
+async function fetchCnbcIndexQuote(cnbcSymbol) {
+  const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${encodeURIComponent(cnbcSymbol)}&output=json`;
+  const json = await fetchJson(url);
+  const quote = Array.isArray(json?.QuickQuoteResult?.QuickQuote)
+    ? json.QuickQuoteResult.QuickQuote[0]
+    : json?.QuickQuoteResult?.QuickQuote;
+  const price = round2(toNumber(quote?.last));
+  if (!quote || price == null) throw new Error(`CNBC empty: ${cnbcSymbol}`);
+  return {
+    price,
+    changePct: round2(toNumber(quote.change_pct)),
+    changePoints: round2(toNumber(quote.change)),
+  };
+}
+
+async function fetchUsIndexQuote(index) {
+  try {
+    const q = await fetchYahooQuote(index.yahoo);
+    if (q.price != null) {
+      return {
+        id: index.id,
+        name: index.name,
+        symbol: index.yahoo,
+        close: q.price,
+        previousClose: q.previousClose,
+        changePct: q.changePct,
+        changePoints: q.changePoints,
+      };
+    }
+  } catch (error) {
+    console.warn(
+      `[morning-briefing] Yahoo ${index.yahoo} failed: ${error instanceof Error ? error.message : error}`
+    );
+  }
+  const c = await fetchCnbcIndexQuote(index.cnbc);
+  return {
+    id: index.id,
+    name: index.name,
+    symbol: index.cnbc,
+    close: c.price,
+    previousClose: null,
+    changePct: c.changePct,
+    changePoints: c.changePoints,
+  };
+}
+
 async function fetchUsMarket() {
   const indices = [];
   for (const index of US_INDICES) {
-    const body = await kisGet(KIS_INDEX_PATH, KIS_INDEX_TR_ID, {
-      AUTH: "",
-      EXCD: index.excd,
-      SYMB: index.symb,
-    });
-    const out = outputObject(body);
-    const close = round2(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr"]));
-    const changePct = round2(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]));
-    const changePoints = round2(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"]));
-    indices.push({
-      id: index.id,
-      name: index.name,
-      symbol: `${index.excd}:${index.symb}`,
-      close,
-      previousClose: null,
-      changePct,
-      changePoints,
-    });
+    try {
+      indices.push(await fetchUsIndexQuote(index));
+    } catch (error) {
+      console.warn(
+        `[morning-briefing] ${index.name} index failed: ${error instanceof Error ? error.message : error}`
+      );
+    }
     await delay(250);
   }
+  if (!indices.length) throw new Error("No US index quotes available");
   return { indices };
 }
 

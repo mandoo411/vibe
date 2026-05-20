@@ -918,7 +918,7 @@ async function publishLiveReportSlot(ymd, time, creds, shared, { postTelegram = 
     top30,
     telegramMessages: stockMessages.slice(0, 50).map((message) => ({
       channel: message.channel,
-      text: compactText(message.text, 300),
+      text: compactText(message.text, 2500),
       date: message.date.toISOString(),
     })),
     stockMessages: Object.fromEntries(

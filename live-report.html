@@ -91,7 +91,94 @@
         padding: 0;
         list-style: none;
       }
-      .live-news-list li,
+      .live-news-list li {
+        padding: 0 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .live-news-list li:last-child {
+        border-bottom: 0;
+      }
+      .live-news-details {
+        border: 0;
+        margin: 10px 0 0;
+      }
+      .live-news-summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 0;
+      }
+      .live-news-summary::-webkit-details-marker {
+        display: none;
+      }
+      .live-news-summary::marker {
+        content: "";
+      }
+      .live-news-card {
+        border: 1px solid rgba(236, 72, 153, 0.22);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(236, 72, 153, 0.1) 0%, rgba(18, 16, 12, 0.95) 100%);
+        padding: 10px 12px 8px;
+      }
+      .live-news-channel {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: #f9a8d4;
+        letter-spacing: 0.04em;
+        margin-bottom: 6px;
+      }
+      .live-news-headline {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+        color: var(--text);
+      }
+      .live-news-preview {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--text-muted);
+      }
+      .live-news-preview ul {
+        margin: 0;
+        padding-left: 1.1em;
+      }
+      .live-news-preview li {
+        margin: 4px 0;
+      }
+      .live-news-hint {
+        display: inline-block;
+        margin-top: 8px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--accent-bright);
+      }
+      .live-news-details[open] .live-news-hint {
+        display: none;
+      }
+      .live-news-body {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.12);
+        font-size: 13px;
+        line-height: 1.65;
+        color: var(--text);
+      }
+      .live-news-body ul {
+        margin: 0;
+        padding-left: 1.15em;
+      }
+      .live-news-body li {
+        margin: 6px 0;
+      }
+      .live-news-meta {
+        margin-top: 8px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        text-align: right;
+      }
       .live-theme-list li {
         padding: 10px 12px;
         border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -99,11 +186,9 @@
         line-height: 1.55;
         color: var(--text);
       }
-      .live-news-list li:last-child,
       .live-theme-list li:last-child {
         border-bottom: 0;
       }
-      .live-news-list small,
       .live-theme-list small {
         display: block;
         margin-top: 4px;
@@ -484,14 +569,66 @@
           });
         }
 
+        function parseNewsText(text) {
+          const raw = String(text || "").trim();
+          if (!raw) return { headline: "", bullets: [], full: "" };
+          const parts = raw.split(/\s*•\s*/).map((s) => s.trim()).filter(Boolean);
+          return {
+            headline: parts[0] || raw,
+            bullets: parts.slice(1),
+            full: raw,
+          };
+        }
+
+        function formatKstTime(iso) {
+          if (!iso) return "";
+          try {
+            return new Intl.DateTimeFormat("ko-KR", {
+              timeZone: "Asia/Seoul",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            }).format(new Date(iso));
+          } catch {
+            return "";
+          }
+        }
+
+        function newsItemHtml(item) {
+          const { headline, bullets, full } = parseNewsText(item.text);
+          const time = formatKstTime(item.date);
+          const channel = item.channel || "채널";
+          const previewBullets = bullets.slice(0, 2);
+          const hasMore = bullets.length > 2 || full.length > 320;
+
+          const previewHtml = previewBullets.length
+            ? `<ul>${previewBullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+            : `<p>${escapeHtml(full.length > 200 ? `${full.slice(0, 199)}…` : full)}</p>`;
+
+          const bodyHtml = bullets.length
+            ? `<ul>${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
+            : `<p>${escapeHtml(full)}</p>`;
+
+          return `<li>
+            <details class="live-news-details">
+              <summary class="live-news-summary">
+                <div class="live-news-card">
+                  <span class="live-news-channel">${escapeHtml(channel)}</span>
+                  <span class="live-news-headline">${escapeHtml(headline)}</span>
+                  <div class="live-news-preview">${previewHtml}</div>
+                  ${hasMore ? '<span class="live-news-hint">본문 탭하여 전체 보기 ▾</span>' : ""}
+                </div>
+              </summary>
+              <div class="live-news-body">${bodyHtml}</div>
+              <div class="live-news-meta">${escapeHtml(time)} · ${escapeHtml(channel)}</div>
+            </details>
+          </li>`;
+        }
+
         function renderExtras(selected) {
           const news = Array.isArray(selected?.telegramMessages) ? selected.telegramMessages.slice(0, 12) : [];
           $("live-news").innerHTML = news.length
-            ? news
-                .map(
-                  (item) => `<li>${escapeHtml(item.text || "")}<small>${escapeHtml(item.channel || "채널")}</small></li>`
-                )
-                .join("")
+            ? news.map((item) => newsItemHtml(item)).join("")
             : '<li class="live-empty">채널 뉴스 준비 중</li>';
           const themes = Array.isArray(selected?.themes) ? selected.themes : [];
           $("live-themes").innerHTML = themes.length

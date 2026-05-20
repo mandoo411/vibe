@@ -1,13 +1,11 @@
-name: Deploy Vercel
+# Vercel 일일 배포 한도(100회) 초과 후, 한도 리셋 시점에 main 최신 코드를 재배포합니다.
+# 09:00 KST = 00:00 UTC
+name: Deploy Vercel (catch-up)
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "data/**"
-      - "agent-transcripts/**"
-      - ".github/**"
+  schedule:
+    # 2026-05-21 09:00 KST (한도 리셋 후 미반영 커밋 배포)
+    - cron: "0 0 21 5 *"
   workflow_dispatch:
 
 concurrency:

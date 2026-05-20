@@ -246,60 +246,6 @@
         font-size: 10px;
         color: var(--text-dim);
       }
-      .live-mover-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 8px;
-      }
-      .live-mover-card {
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        background: #12100c;
-        font-size: 12px;
-        line-height: 1.5;
-      }
-      .live-mover-card strong {
-        color: var(--text);
-      }
-      .live-limitup-list {
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        display: grid;
-        gap: 10px;
-      }
-      .live-limitup-card {
-        border: 1px solid rgba(240, 199, 90, 0.35);
-        border-radius: var(--radius);
-        background: linear-gradient(180deg, rgba(240, 199, 90, 0.08) 0%, #12100c 100%);
-        padding: 12px 14px;
-      }
-      .live-limitup-card__head {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 8px;
-        margin-bottom: 8px;
-      }
-      .live-limitup-card__name {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--text);
-      }
-      .live-limitup-card__channel {
-        font-family: var(--font-mono);
-        font-size: 10px;
-        color: #f9a8d4;
-        margin-bottom: 6px;
-      }
-      .live-limitup-card__body {
-        font-size: 12px;
-        line-height: 1.6;
-        color: var(--text-muted);
-        white-space: pre-wrap;
-      }
       .live-index-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -501,15 +447,6 @@
           </div>
         </section>
 
-        <section aria-labelledby="live-sec-movers">
-          <h2 class="live-section__title" id="live-sec-movers">④ 대형주 · 특징주</h2>
-          <div id="live-movers" class="live-mover-grid"></div>
-        </section>
-
-        <section aria-labelledby="live-sec-limitup">
-          <h2 class="live-section__title" id="live-sec-limitup">⑤ 상한가 · 급등 코멘트</h2>
-          <ul id="live-limitup" class="live-limitup-list"></ul>
-        </section>
       </main>
     </div>
 
@@ -744,57 +681,6 @@
                 })
                 .join("")
             : '<li class="live-empty">테마 분석 준비 중</li>';
-          const movers = (Array.isArray(selected?.bluechipMovers) ? selected.bluechipMovers : []).filter(
-            (row) => Array.isArray(row.messages) && row.messages.length > 0
-          );
-          $("live-movers").innerHTML = movers.length
-            ? movers
-                .map((row) => {
-                  const msgs = (row.messages || []).slice(0, 2).join(" ");
-                  return `<div class="live-mover-card"><strong>${escapeHtml(row.name || "")}</strong> <span class="live-delta ${deltaClass(row.rate)}">${escapeHtml(fmtPct(row.rate))}</span><br>${escapeHtml(msgs)}</div>`;
-                })
-                .join("")
-            : '<div class="live-empty">채널 뉴스가 연결된 대형주만 표시됩니다</div>';
-          renderLimitUp(selected);
-        }
-
-        function parseStockComment(msg) {
-          const s = String(msg || "");
-          const m = s.match(/^\[([^\]]+)\]\s*([\s\S]*)$/);
-          return { channel: m?.[1] || "", text: m?.[2] || s };
-        }
-
-        function limitUpRows(selected) {
-          if (Array.isArray(selected?.limitUpStocks) && selected.limitUpStocks.length) {
-            return selected.limitUpStocks;
-          }
-          const src = Array.isArray(selected?.top30) ? selected.top30 : Array.isArray(selected?.top10) ? selected.top10 : [];
-          return src
-            .filter((row) => (toNum(row.rate) ?? 0) >= 29)
-            .map((row) => ({ ...row, messages: [], comment: "" }));
-        }
-
-        function renderLimitUp(selected) {
-          const rows = limitUpRows(selected);
-          $("live-limitup").innerHTML = rows.length
-            ? rows
-                .map((row) => {
-                  const primary = row.comment || (row.messages && row.messages[0]) || "";
-                  const parsed = parseStockComment(primary);
-                  const extra = (row.messages || []).slice(1, 3).map((m) => parseStockComment(m).text).filter(Boolean);
-                  const body = parsed.text || (extra.length ? extra.join("\n") : "");
-                  return `<li class="live-limitup-card">
-              <div class="live-limitup-card__head">
-                <span class="live-limitup-card__name">${escapeHtml(row.name || row.code || "-")}</span>
-                <span class="live-delta ${deltaClass(row.rate)}">${escapeHtml(fmtPct(row.rate))}</span>
-              </div>
-              ${parsed.channel ? `<div class="live-limitup-card__channel">${escapeHtml(parsed.channel)}</div>` : ""}
-              <div class="live-limitup-card__body">${body ? escapeHtml(body) : '<span class="live-empty">관련 채널 뉴스 없음 — 상단 AI 분석 참고</span>'}</div>
-              ${extra.length ? `<div class="live-limitup-card__body" style="margin-top:8px;border-top:1px dashed rgba(255,255,255,.1);padding-top:8px">${extra.map((t) => escapeHtml(t)).join("<br>")}</div>` : ""}
-            </li>`;
-                })
-                .join("")
-            : '<li class="live-empty">상한가 종목 없음</li>';
         }
 
         function renderReport() {
@@ -802,7 +688,6 @@
           if (!selected) {
             $("live-report-time").textContent = "-";
             $("live-analysis").textContent = "아직 생성된 라이브 리포트가 없습니다.";
-            $("live-limitup").innerHTML = '<li class="live-empty">상한가 데이터 준비 중</li>';
             renderExtras(null);
             return;
           }

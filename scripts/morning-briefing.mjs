@@ -29,10 +29,11 @@ const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefi
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 /** KIS 해외지수 API는 404/빈 응답 — Yahoo·CNBC로 수집 (us-market-data.js와 동일 소스) */
+/** 브리핑·미증시 공통: 나스닥 종합, S&P500, 나스닥 선물(야간/장전) */
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", yahoo: "^IXIC", cnbc: ".IXIC" },
+  { id: "nasdaq", name: "나스닥", yahoo: "^NDX", cnbc: ".NDX" },
   { id: "sp500", name: "S&P 500", yahoo: "^GSPC", cnbc: ".SPX" },
-  { id: "dow", name: "다우", yahoo: "^DJI", cnbc: ".DJI" },
+  { id: "nasdaq-futures", name: "나스닥 선물", yahoo: "NQ=F", cnbc: "@ND.1" },
 ];
 
 const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];

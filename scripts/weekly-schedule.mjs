@@ -217,15 +217,106 @@ function parseKoreanScheduleDate(value, from, to) {
 }
 
 function parseWonNumber(value) {
-  const match = String(value || "").replace(/,/g, "").match(/(\d{3,})\s*원?/);
-  return match ? Number(match[1]) : null;
+  const text = String(value || "");
+  const labeled = text.match(/공모가\s*[:：]?\s*([\d,]+)/i);
+  const won = text.match(/([\d,]{2,})\s*원\b/i);
+  const raw = (labeled || won || [])[1];
+  if (!raw) return null;
+  const n = Number(raw.replace(/,/g, ""));
+  if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return null;
+  if (n < 500 || n > 500000) return null;
+  return n;
 }
 
 function inferMarket(text) {
   if (/코스피|유가|KOSPI/i.test(text)) return "코스피";
-  if (/코스닥|KOSDAQ/i.test(text)) return "코스닥";
+  if (/코스닥|KOSDAQ|스팩/i.test(text)) return "코스닥";
   if (/코넥스|KONEX/i.test(text)) return "코넥스";
   return "";
+}
+
+function cleanIpoName(name) {
+  return decodeXml(String(name || ""))
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .replace(/\(구\.[^)]+\)/g, "")
+    .trim();
+}
+
+function isReadableKoreanName(name) {
+  const text = cleanIpoName(name);
+  if (!text || text.length > 40) return false;
+  if (text.includes("\uFFFD")) return false;
+  const hangul = (text.match(/[가-힣]/g) || []).length;
+  return hangul >= 2;
+}
+
+function parse38DateRange(value, from, to) {
+  const text = String(value || "");
+  const full = text.match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})~(?:20\d{2}\.)?(\d{1,2})\.(\d{1,2})/);
+  if (full) {
+    const ymd = `${full[1]}-${String(full[4]).padStart(2, "0")}-${String(full[5]).padStart(2, "0")}`;
+    return isYmdInRange(ymd, from, to) ? ymd : "";
+  }
+  const listing = text.match(/(\d{1,2})\/(\d{1,2})\s+[가-힣A-Za-z]/);
+  if (listing) {
+    const year = from.slice(0, 4);
+    const ymd = `${year}-${String(listing[1]).padStart(2, "0")}-${String(listing[2]).padStart(2, "0")}`;
+    return isYmdInRange(ymd, from, to) ? ymd : "";
+  }
+  return "";
+}
+
+function parse38PriceRange(value) {
+  const text = String(value || "").replace(/,/g, "");
+  const fixed = text.match(/(\d{2,6})(?:~\d+)?/);
+  if (!fixed) return null;
+  const n = Number(fixed[1]);
+  if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return null;
+  return n;
+}
+
+function to38Url(href) {
+  const path = String(href || "").replace(/&amp;/g, "&").trim();
+  if (!path) return "https://www.38.co.kr/html/fund/?o=r";
+  if (/^https?:\/\//i.test(path)) return path;
+  return `https://www.38.co.kr${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function parse38ListingRows(html, from, to) {
+  const seen = new Set();
+  const out = [];
+  const trs = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+  for (const tr of trs) {
+    const href = (tr.match(/href="([^"]+)"/i) || [])[1];
+    const cells = [];
+    const cellRe = /<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi;
+    let match;
+    while ((match = cellRe.exec(tr)) !== null) {
+      const cell = stripHtml(match[1]);
+      if (cell) cells.push(cell);
+    }
+    if (!cells.length) continue;
+    const name = cleanIpoName(cells[0]);
+    if (!isReadableKoreanName(name)) continue;
+    if (/종목명|공모|청약|비상장|일정|전체|매매/.test(name)) continue;
+    const date = parse38DateRange(cells[1] || cells[0], from, to);
+    if (!date) continue;
+    const key = `${date}:${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const market = inferMarket(`${name} ${cells.join(" ")}`);
+    out.push({
+      date,
+      name,
+      market,
+      sector: "",
+      offeringPrice: parse38PriceRange(cells[2]) ?? parseWonNumber(cells[2]),
+      url: to38Url(href),
+      code: "",
+    });
+  }
+  return out;
 }
 
 async function fetchJson(url) {
@@ -246,15 +337,29 @@ async function fetchJson(url) {
   }
 }
 
+function detectHtmlCharset(contentType, htmlSnippet) {
+  const fromHeader = String(contentType || "").match(/charset=([^;]+)/i);
+  if (fromHeader) return fromHeader[1].trim().toLowerCase();
+  const fromMeta = String(htmlSnippet || "").match(/charset\s*=\s*["']?([\w-]+)/i);
+  return fromMeta ? fromMeta[1].trim().toLowerCase() : "utf-8";
+}
+
 async function fetchText(url, headers = {}) {
   const res = await fetch(url, {
     headers: {
       accept: "*/*",
-      "user-agent": "TotalMoneyAI/1.0",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       ...headers,
     },
   });
-  const text = await res.text();
+  const buffer = await res.arrayBuffer();
+  const sniff = new TextDecoder("utf-8").decode(buffer.slice(0, 4096));
+  const charset = detectHtmlCharset(res.headers.get("content-type"), sniff);
+  const decoder =
+    charset === "euc-kr" || charset === "euc_kr" || charset === "ks_c_5601-1987"
+      ? new TextDecoder("euc-kr")
+      : new TextDecoder("utf-8");
+  const text = decoder.decode(buffer);
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
   }
@@ -369,42 +474,16 @@ async function fetchKoreanNews() {
   return filtered.slice(0, 20);
 }
 
-function normalizeIpoRows(rows, from, to) {
-  const seen = new Set();
-  const out = [];
-  for (const cells of rows) {
-    const text = cells.join(" ");
-    const date = parseKoreanScheduleDate(text, from, to);
-    if (!date) continue;
-    const name =
-      cells.find((cell) => /[가-힣A-Za-z0-9]/.test(cell) && !/신규상장|상장일|공모가|코스피|코스닥|업종|시장/.test(cell) && !parseKoreanScheduleDate(cell, from, to)) ||
-      "";
-    if (!name || name.length > 30) continue;
-    const market = inferMarket(text);
-    const offeringPrice = parseWonNumber(text);
-    const sector = cells.find((cell) => /업|제조|서비스|바이오|소프트웨어|반도체|금융|화학|의료|기계|전기|전자/.test(cell)) || "";
-    const key = `${date}:${name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ date, name, market, sector, offeringPrice });
-  }
-  return out;
-}
-
 async function fetchKRIPO(from, to) {
   const sources = [
-    {
-      name: "KIND 신규상장",
-      url: `https://kind.krx.co.kr/disclosure/todaydisclosure.do?method=searchTodayDisclosureSub&currentPageSize=15&pageIndex=1&orderMode=0&orderStat=D&forward=todaydisclosure_sub&disclosureId=&heartGbList=&marketType=&searchCodeType=&repIsuSrtCd=&searchCorpName=&searchCorpNameType=0&bizCategory=&startDate=${ymdCompact(from)}&endDate=${ymdCompact(to)}&filterKind=${encodeURIComponent("신규상장")}`,
-    },
-    { name: "네이버 금융 신규상장", url: "https://finance.naver.com/research/debenture_list.naver" },
-    { name: "38커뮤니케이션 공모주", url: "https://www.38.co.kr/html/fund/index.htm?o=k" },
+    { name: "38커뮤니케이션 상장일정", url: "https://www.38.co.kr/html/fund/?o=r" },
+    { name: "38커뮤니케이션 공모청약", url: "https://www.38.co.kr/html/fund/?o=n" },
   ];
   const rows = [];
   for (const source of sources) {
     try {
-      const html = await fetchText(source.url, { "User-Agent": "Mozilla/5.0" });
-      const parsed = normalizeIpoRows(parseHtmlRows(html), from, to);
+      const html = await fetchText(source.url);
+      const parsed = parse38ListingRows(html, from, to);
       rows.push(...parsed);
       console.log(`✅ ${source.name} 성공 (${parsed.length}건)`);
     } catch (error) {
@@ -413,6 +492,7 @@ async function fetchKRIPO(from, to) {
   }
   const seen = new Set();
   return rows
+    .filter((row) => isReadableKoreanName(row.name))
     .filter((row) => {
       const key = `${row.date}:${row.name}`;
       if (seen.has(key)) return false;

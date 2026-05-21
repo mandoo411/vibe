@@ -5,11 +5,12 @@
       {
         "id": "nasdaq",
         "name": "나스닥",
-        "symbol": "^IXIC",
-        "close": 26270.36,
-        "previousClose": 26402.34,
-        "changePct": -0.5,
-        "changePoints": -131.98
+        "symbol": "^NDX",
+        "close": 29297.697,
+        "previousClose": 29366.94,
+        "changePct": -0.24,
+        "changePoints": -69.24,
+        "live": false
       },
       {
         "id": "sp500",
@@ -18,16 +19,18 @@
         "close": 7432.97,
         "previousClose": 7444.25,
         "changePct": -0.15,
-        "changePoints": -11.28
+        "changePoints": -11.28,
+        "live": false
       },
       {
-        "id": "dow",
-        "name": "다우",
-        "symbol": "^DJI",
-        "close": 50009.35,
-        "previousClose": 49693.2,
-        "changePct": 0.64,
-        "changePoints": 316.15
+        "id": "nasdaq-futures",
+        "name": "나스닥 선물",
+        "symbol": "NQ=F",
+        "close": 29411.5,
+        "previousClose": 29096,
+        "changePct": 1.08,
+        "changePoints": 315.5,
+        "live": true
       }
     ]
   },

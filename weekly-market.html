@@ -83,29 +83,9 @@
       </div>
 
       <main class="schedule-page">
-        <section class="schedule-card calendar-card" aria-labelledby="calendar-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Monthly Calendar</p>
-              <h2 class="section-title" id="calendar-title">월간 달력</h2>
-            </div>
-            <div class="calendar-nav">
-              <button type="button" class="calendar-nav__btn" id="calendar-prev" aria-label="이전달">‹</button>
-              <strong class="calendar-nav__label" id="calendar-label">—</strong>
-              <button type="button" class="calendar-nav__btn" id="calendar-next" aria-label="다음달">›</button>
-            </div>
-          </div>
-          <div class="calendar-legend" aria-label="달력 표시 범례">
-            <span><i class="dot dot--economic"></i>경제지표</span>
-            <span><i class="dot dot--earnings"></i>미국실적</span>
-            <span><i class="dot dot--kr-ipo"></i>국내신규상장</span>
-            <span><i class="dot dot--kr-earnings"></i>국내실적</span>
-          </div>
-          <div class="month-calendar" id="month-calendar" aria-label="월간 일정 달력"></div>
-          <div class="selected-day" id="selected-day"></div>
-        </section>
-
-        <section class="schedule-card" aria-labelledby="today-title">
+        <div class="schedule-layout">
+        <div class="schedule-main">
+        <section class="schedule-card schedule-card--today" aria-labelledby="today-title">
           <div class="section-head">
             <div>
               <p class="section-kicker">Today</p>
@@ -164,6 +144,32 @@
           </div>
           <div class="news-list" id="news-list"></div>
         </section>
+        </div>
+
+        <aside class="schedule-aside">
+        <section class="schedule-card calendar-card" aria-labelledby="calendar-title">
+          <div class="section-head section-head--compact">
+            <div>
+              <p class="section-kicker">Calendar</p>
+              <h2 class="section-title section-title--compact" id="calendar-title">월간 달력</h2>
+            </div>
+            <div class="calendar-nav">
+              <button type="button" class="calendar-nav__btn" id="calendar-prev" aria-label="이전달">‹</button>
+              <strong class="calendar-nav__label" id="calendar-label">—</strong>
+              <button type="button" class="calendar-nav__btn" id="calendar-next" aria-label="다음달">›</button>
+            </div>
+          </div>
+          <div class="calendar-legend calendar-legend--compact" aria-label="달력 표시 범례">
+            <span><i class="dot dot--economic"></i>경제</span>
+            <span><i class="dot dot--earnings"></i>미실적</span>
+            <span><i class="dot dot--kr-ipo"></i>신규상장</span>
+            <span><i class="dot dot--kr-earnings"></i>국내실적</span>
+          </div>
+          <div class="month-calendar month-calendar--compact" id="month-calendar" aria-label="월간 일정 달력"></div>
+          <div class="selected-day selected-day--compact" id="selected-day"></div>
+        </section>
+        </aside>
+        </div>
       </main>
     </div>
 
@@ -379,6 +385,22 @@
             .replace(/"/g, "&quot;");
         }
 
+        function decodeHtmlText(v) {
+          return String(v == null ? "" : v)
+            .replace(/&nbsp;/gi, " ")
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function cleanIpoName(name) {
+          return decodeHtmlText(name).replace(/\(구\.[^)]+\)/g, "").trim();
+        }
+
         function money(v) {
           if (v == null || v === "") return "—";
           const n = Number(v);
@@ -400,6 +422,19 @@
           return code
             ? `https://finance.naver.com/item/main.naver?code=${encodeURIComponent(code)}`
             : `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(name || "")}`;
+        }
+
+        function ipoDetailUrl(row) {
+          const raw = String(row?.url || "").trim();
+          if (raw) return /^https?:\/\//i.test(raw) ? raw : `https://www.38.co.kr${raw.startsWith("/") ? raw : `/${raw}`}`;
+          if (row?.code) return naverFinanceUrl(row.code, row.name);
+          return `https://www.38.co.kr/html/fund/?o=r`;
+        }
+
+        function formatOfferingPrice(value) {
+          const n = Number(value);
+          if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return "";
+          return `${n.toLocaleString("ko-KR")}원`;
         }
 
         function impactClass(impact) {
@@ -470,12 +505,15 @@
 
         function renderKRIPO(rows, showTitle = true) {
           if (!rows?.length) return "";
-          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="earnings-grid">${rows
+          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
             .map((r) => {
-              const market = r.market || "신규상장";
-              return `<a class="earnings-pill kr-pill kr-pill--${market === "코스피" ? "kospi" : "kosdaq"}" href="${escapeHtml(naverFinanceUrl(r.code, r.name))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([r.name, r.market, r.sector].filter(Boolean).join(" · "))}">
-                <span class="earnings-pill__symbol">${escapeHtml(r.name || "종목명")}</span>
-                <span class="earnings-pill__name">${escapeHtml(market)}</span>
+              const name = cleanIpoName(r.name);
+              const market = r.market || (/스팩/i.test(name) ? "코스닥" : "신규상장");
+              const price = formatOfferingPrice(r.offeringPrice);
+              const marketClass = market === "코스피" ? "kospi" : "kosdaq";
+              return `<a class="kr-ipo-item kr-pill--${marketClass}" href="${escapeHtml(ipoDetailUrl(r))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([name, market, price].filter(Boolean).join(" · "))}">
+                <span class="kr-ipo-item__name">${escapeHtml(name || "종목명")}</span>
+                <span class="kr-ipo-item__meta">${escapeHtml(market)}${price ? ` · ${escapeHtml(price)}` : ""}</span>
               </a>`;
             })
             .join("")}</div></div>`;

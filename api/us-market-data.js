@@ -22,9 +22,9 @@ const TRADE_PBMN_TR_ID = "HHDFS76320010";
 const US_RANKING_CURRENCY = "0";
 
 const US_INDICES = [
-  { id: "nasdaq", name: "나스닥", symbol: "NDX", cnbcSymbol: ".NDX", source: "cnbc" },
-  { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", cnbcSymbol: ".SPX" },
-  { id: "nasdaq-futures", name: "나스닥 선물", symbol: "NQ", cnbcSymbol: "@ND.1", source: "cnbc" },
+  { id: "nasdaq", name: "나스닥", symbol: "NDX", yahoo: "^NDX", cnbcSymbol: ".NDX", source: "cnbc" },
+  { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", yahoo: "^GSPC", cnbcSymbol: ".SPX", source: "kis" },
+  { id: "nasdaq-futures", name: "나스닥 선물", symbol: "NQ", yahoo: "NQ=F", cnbcSymbol: "@ND.1", source: "cnbc" },
 ];
 
 const US_SECTORS = [
@@ -292,6 +292,26 @@ async function fetchCnbcIndexQuotes() {
   return map;
 }
 
+async function fetchYahooIndexQuote(yahooSymbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=5d`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      accept: "application/json",
+    },
+  });
+  if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}`);
+  const body = await res.json();
+  const meta = body?.chart?.result?.[0]?.meta;
+  const price = round2(toNum(meta?.regularMarketPrice));
+  const previousClose = round2(toNum(meta?.chartPreviousClose ?? meta?.previousClose));
+  if (price == null) throw new Error(`Yahoo empty: ${yahooSymbol}`);
+  const changePoints = price != null && previousClose != null ? round2(price - previousClose) : null;
+  const changePct =
+    price != null && previousClose ? round2((changePoints / previousClose) * 100) : null;
+  return { price, changePct, changePoints };
+}
+
 async function fetchCnbcIndexQuote(symbol) {
   const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${symbol}&output=json`;
   const res = await fetch(url, {
@@ -319,24 +339,42 @@ async function fetchIndices() {
     const items = [];
     let cnbcQuotes = null;
     for (const idx of US_INDICES) {
-      const quote =
-        idx.source === "cnbc"
-          ? { price: null, changePct: null, changePoints: null }
-          : await fetchOverseasIndexQuote(idx);
-      if (quote.price == null || idx.source === "cnbc") {
+      let quote = { price: null, changePct: null, changePoints: null };
+      if (idx.source !== "cnbc" && idx.exchange) {
+        try {
+          quote = await fetchOverseasIndexQuote(idx);
+        } catch (e) {
+          console.warn("[us-market-data] KIS index", idx.symbol, e && e.message);
+        }
+      }
+      if (quote.price == null) {
         cnbcQuotes = cnbcQuotes || (await fetchCnbcIndexQuotes());
       }
       let fallback = cnbcQuotes ? cnbcQuotes.get(idx.cnbcSymbol) : null;
-      if (!fallback && idx.source === "cnbc" && idx.cnbcSymbol) {
+      if (!fallback && idx.cnbcSymbol) {
         fallback = await fetchCnbcIndexQuote(idx.cnbcSymbol);
+      }
+      let price = quote.price ?? (fallback && fallback.price) ?? null;
+      let changePct = quote.changePct ?? (fallback && fallback.changePct) ?? null;
+      let changePoints = quote.changePoints ?? (fallback && fallback.changePoints) ?? null;
+      if (price == null && idx.yahoo) {
+        try {
+          const yahoo = await fetchYahooIndexQuote(idx.yahoo);
+          price = yahoo.price;
+          changePct = yahoo.changePct;
+          changePoints = yahoo.changePoints;
+        } catch (e) {
+          console.warn("[us-market-data] Yahoo", idx.yahoo, e && e.message);
+        }
       }
       items.push({
         id: idx.id,
         name: idx.name,
         symbol: idx.symbol,
-        price: quote.price ?? (fallback && fallback.price) ?? null,
-        changePct: quote.changePct ?? (fallback && fallback.changePct) ?? null,
-        changePoints: quote.changePoints ?? (fallback && fallback.changePoints) ?? null,
+        price,
+        changePct,
+        changePoints,
+        live: idx.id === "nasdaq-futures",
       });
     }
     return items;

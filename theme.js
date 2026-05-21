@@ -21,7 +21,7 @@
   function updateThemeIcon(theme) {
     const icon = document.getElementById("theme-icon");
     const btn = document.getElementById("theme-toggle");
-    const glyph = theme === "light" ? "☀️" : "🌙";
+    const glyph = theme === "light" ? "🌙" : "☀️";
     if (icon) {
       icon.className = theme === "light" ? "ti ti-moon" : "ti ti-sun";
       icon.textContent = "";

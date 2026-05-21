@@ -1,6 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="TotalMoney AI">
-  <rect width="32" height="32" rx="7" fill="#ffffff"/>
-  <rect x="3" y="3" width="26" height="26" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-  <text x="16" y="14.5" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="9" font-weight="700" fill="#2563eb">TM</text>
-  <text x="16" y="23" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="6.5" font-weight="700" letter-spacing="0.6" fill="#2563eb">AI</text>
+  <rect width="32" height="32" rx="7" fill="#2563eb"/>
+  <text
+    x="16"
+    y="21"
+    text-anchor="middle"
+    font-family="system-ui,Segoe UI,Helvetica,Arial,sans-serif"
+    font-size="15"
+    font-weight="800"
+    fill="#ffffff"
+    letter-spacing="-0.5"
+  >TM</text>
 </svg>

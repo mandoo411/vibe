@@ -20,12 +20,17 @@
 
   function updateThemeIcon(theme) {
     const icon = document.getElementById("theme-icon");
+    const btn = document.getElementById("theme-toggle");
+    const glyph = theme === "light" ? "☀️" : "🌙";
     if (icon) {
       icon.className = theme === "light" ? "ti ti-moon" : "ti ti-sun";
+      icon.textContent = "";
     }
-    const btn = document.querySelector(".tm-theme-toggle");
-    if (btn && !icon) {
-      btn.textContent = theme === "light" ? "☀️" : "🌙";
+    if (btn) {
+      btn.setAttribute("data-fallback", glyph);
+    }
+    if (!icon && btn) {
+      btn.textContent = glyph;
     }
   }
 
@@ -38,9 +43,12 @@
     } catch (_) {}
     setMetaThemeColor(next);
     updateThemeIcon(next);
-    const btn = document.querySelector(".tm-theme-toggle");
+    const btn = document.getElementById("theme-toggle");
     if (btn) {
-      btn.setAttribute("aria-label", next === "light" ? "다크 모드로 전환" : "라이트 모드로 전환");
+      btn.setAttribute(
+        "aria-label",
+        next === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"
+      );
       btn.setAttribute("title", next === "light" ? "다크 모드" : "라이트 모드");
     }
   }
@@ -50,25 +58,22 @@
     applyTheme(current === "light" ? "dark" : "light");
   }
 
-  function ensureThemeToggle() {
-    const header = document.querySelector(".tm-site-header");
-    if (!header || header.querySelector(".tm-theme-toggle")) return;
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "theme-toggle";
-    btn.className = "tm-theme-toggle";
-    btn.innerHTML = '<i class="ti ti-sun" id="theme-icon" aria-hidden="true"></i>';
+  function bindThemeToggle() {
+    const btn = document.getElementById("theme-toggle");
+    if (!btn || btn.dataset.tmBound === "1") return;
+    btn.dataset.tmBound = "1";
     btn.addEventListener("click", toggleTheme);
-    header.appendChild(btn);
-    applyTheme(getStoredTheme());
   }
 
-  applyTheme(getStoredTheme());
+  function initTheme() {
+    applyTheme(getStoredTheme());
+    bindThemeToggle();
+  }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ensureThemeToggle, { once: true });
+    document.addEventListener("DOMContentLoaded", initTheme, { once: true });
   } else {
-    ensureThemeToggle();
+    initTheme();
   }
 
   function tradingViewEmbedTheme() {

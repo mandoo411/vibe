@@ -79,36 +79,43 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 10px;
   width: 100%;
   height: 60px;
-  padding: 0 48px 0 12px;
+  padding: 0 10px 0 12px;
   margin-bottom: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-panel);
   box-shadow: var(--shadow);
+  overflow: visible;
 }
 
 .tm-theme-toggle,
 #theme-toggle {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 3;
-  display: inline-flex;
+  position: static;
+  flex: 0 0 34px;
+  flex-shrink: 0;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   width: 34px;
   height: 34px;
+  min-width: 34px;
+  max-width: 34px;
+  margin: 0 0 0 4px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-tertiary);
   color: var(--accent);
   font-size: 17px;
+  line-height: 1;
   cursor: pointer;
+  z-index: 30;
+  visibility: visible;
+  opacity: 1;
 }
 
 .tm-theme-toggle {
@@ -119,6 +126,21 @@
 .tm-theme-toggle i,
 #theme-toggle i {
   font-size: 18px;
+  line-height: 1;
+}
+
+/* Tabler CDN 실패 시(data-fallback) 이모지 표시 */
+.tm-theme-toggle[data-fallback] i,
+#theme-toggle[data-fallback] i {
+  font-size: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.tm-theme-toggle[data-fallback]::before,
+#theme-toggle[data-fallback]::before {
+  content: attr(data-fallback);
+  font-size: 16px;
   line-height: 1;
 }
 
@@ -138,7 +160,8 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  max-width: min(420px, 42vw);
   height: 100%;
   padding: 0;
   margin: 0;
@@ -151,7 +174,8 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   padding: 0;
   margin: 0;
   border: 0;
@@ -287,9 +311,10 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 4px;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
@@ -299,6 +324,14 @@
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.02em;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tm-site-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .tm-site-nav__link {
@@ -431,24 +464,25 @@ body.is-kr-market-open .tm-live-badge {
 
   .tm-site-header {
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "logo theme"
+      "nav nav";
+    align-items: center;
     width: 100%;
     height: auto;
     min-height: 92px;
     max-height: none;
-    padding: 0 44px 0 0;
+    padding: 0 8px 0 10px;
     margin-bottom: 0;
-    gap: 0;
+    gap: 0 8px;
     overflow: visible;
     flex-shrink: 0;
     border: 0;
     border-radius: var(--radius);
     background: var(--bg-panel);
-    /* border는 박스 높이를 잡아먹지 않도록 그림자로만 표현 */
     box-shadow:
       var(--shadow),
       0 0 0 1px var(--border),
@@ -457,19 +491,21 @@ body.is-kr-market-open .tm-live-badge {
 
   .header-top {
     box-sizing: border-box;
-    flex: 0 0 52px;
+    grid-area: logo;
     width: 100%;
     height: 52px;
     min-height: 52px;
     max-height: 52px;
     margin: 0;
-    padding: 0 10px 0 10px;
+    padding: 0 4px 0 0;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-start;
     min-width: 0;
+    max-width: none;
+    flex: none;
   }
 
   .logo-link,
@@ -507,7 +543,7 @@ body.is-kr-market-open .tm-live-badge {
 
   .tm-site-nav {
     box-sizing: border-box;
-    flex: 0 0 auto;
+    grid-area: nav;
     width: 100%;
     height: auto;
     min-height: 40px;
@@ -566,4 +602,16 @@ body.is-kr-market-open .tm-live-badge {
     width: 5px;
     height: 5px;
   }
+
+  .tm-site-header > .tm-theme-toggle,
+  .tm-site-header > #theme-toggle {
+    grid-area: theme;
+    position: static;
+    margin: 0;
+    align-self: center;
+    justify-self: end;
+    z-index: 40;
+    box-shadow: var(--shadow);
+  }
+
 }

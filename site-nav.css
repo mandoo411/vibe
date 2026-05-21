@@ -91,7 +91,8 @@
   box-shadow: var(--shadow);
 }
 
-.tm-theme-toggle {
+.tm-theme-toggle,
+#theme-toggle {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -105,12 +106,20 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-tertiary);
-  color: var(--text-primary);
+  color: var(--accent);
   font-size: 17px;
-  line-height: 1;
   cursor: pointer;
+}
+
+.tm-theme-toggle {
   touch-action: manipulation;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.tm-theme-toggle i,
+#theme-toggle i {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .tm-theme-toggle:hover,
@@ -168,9 +177,9 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
-  background: #000;
+  background: transparent;
   box-shadow:
     0 0 0 1px var(--accent-ring),
     0 2px 10px color-mix(in srgb, var(--bg-primary) 60%, transparent);
@@ -279,12 +288,12 @@
   margin-right: 5px;
   border-radius: 999px;
   flex-shrink: 0;
-  background: #ef4444;
+  background: var(--down-color);
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
 }
 
 .tm-site-nav__link--live-report.is-live .tm-nav-live-led {
-  background: #22c55e;
+  background: var(--up-color);
   box-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
   animation: tmNavLivePulse 1.2s ease-in-out infinite;
 }
@@ -427,7 +436,7 @@ body.is-kr-market-open .tm-live-badge {
     max-width: 40px;
     max-height: 40px;
     flex-shrink: 0;
-    object-fit: cover;
+    object-fit: contain;
   }
 
   .header-top__tagline {

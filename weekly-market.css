@@ -204,7 +204,7 @@ a:hover {
 
 .tab:hover {
   color: var(--text);
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--bg-tertiary) 55%, transparent);
 }
 
 .tab[aria-selected="true"] {
@@ -327,7 +327,7 @@ a:hover {
 
 .event {
   padding: 9px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
 
@@ -461,7 +461,7 @@ a:hover {
   align-items: baseline;
   gap: 6px 12px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
 
@@ -893,7 +893,7 @@ a:hover {
   padding: 4px 12px;
   border: 1px solid var(--border);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary);
   font-family: var(--font-mono);
   font-size: 12px;
   cursor: pointer;

@@ -223,14 +223,17 @@
   }
 
   function tradingViewUrl(row) {
+    const tv = window.tmTradingViewEmbedTheme
+      ? window.tmTradingViewEmbedTheme()
+      : { theme: "dark", toolbar_bg: "#1e2235" };
     const params = new URLSearchParams({
       symbol: tradingViewSymbol(row),
       interval: "D",
       timezone: "Asia/Seoul",
-      theme: "dark",
+      theme: tv.theme,
       style: "1",
       locale: "kr",
-      toolbar_bg: "#0c0a08",
+      toolbar_bg: tv.toolbar_bg,
       hide_side_toolbar: "0",
       allow_symbol_change: "1",
       save_image: "0",

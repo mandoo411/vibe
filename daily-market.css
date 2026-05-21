@@ -1,10 +1,10 @@
-/* Daily Market ??extends weekly-market.css (dark gold theme) */
+/* Daily Market — extends weekly-market.css (theme.css variables) */
 
 :root {
-  --pos: #f87070;
-  --neg: #6ec3ff;
-  --pos-bg: rgba(248, 112, 112, 0.10);
-  --neg-bg: rgba(110, 195, 255, 0.10);
+  --pos: var(--down-color);
+  --neg: var(--accent-secondary);
+  --pos-bg: var(--down-surface);
+  --neg-bg: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
 }
 
 /* --- Date navigation --- */
@@ -232,7 +232,7 @@
 .notable-table td {
   text-align: left;
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
@@ -291,7 +291,7 @@
 .topgainers-table td {
   text-align: left;
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
@@ -395,7 +395,7 @@
 /* Themes (reuse .theme-list from weekly, add leaders) */
 .theme {
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
 }
 
 .theme:first-child {
@@ -464,7 +464,7 @@
 
 .news-item {
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
 }
 
 .news-item:last-child {
@@ -883,9 +883,9 @@ details[open] .admin__summary {
 }
 
 .row-item__remove:hover {
-  background: rgba(248, 112, 112, 0.10);
+  background: var(--down-surface);
   color: var(--pos);
-  border-color: rgba(248, 112, 112, 0.4);
+  border-color: var(--down-border);
 }
 
 .theme-leaders {
@@ -950,11 +950,11 @@ details[open] .admin__summary {
 
 .btn--danger {
   color: var(--pos);
-  border-color: rgba(248, 112, 112, 0.4);
+  border-color: var(--down-border);
 }
 
 .btn--danger:hover {
-  background: rgba(248, 112, 112, 0.10);
+  background: var(--down-surface);
 }
 
 .btn--add {
@@ -1004,9 +1004,9 @@ details[open] .admin__summary {
 /* --- 장마감 리포트 확장 섹션 --- */
 .daily-headline {
   padding: 14px 16px;
-  border: 1px solid rgba(240, 199, 90, 0.45);
+  border: 1px solid var(--sheet-accent-border-strong);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(240, 199, 90, 0.18) 0%, rgba(18, 16, 12, 0.95) 100%);
+  background: var(--sheet-accent-gradient);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.55;
@@ -1143,16 +1143,16 @@ details[open] .admin__summary {
 .press-news-card {
   display: block;
   padding: 10px 12px;
-  border: 1px solid rgba(240, 199, 90, 0.28);
+  border: 1px solid var(--sheet-accent-border);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(240, 199, 90, 0.08) 0%, var(--bg-tertiary) 100%);
+  background: linear-gradient(180deg, var(--sheet-accent-soft) 0%, var(--bg-tertiary) 100%);
   text-decoration: none;
   color: inherit;
   transition: border-color 0.15s ease;
 }
 
 .press-news-card:hover {
-  border-color: rgba(240, 199, 90, 0.75);
+  border-color: var(--sheet-accent-border-strong);
   text-decoration: none;
 }
 

@@ -15,6 +15,10 @@
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
@@ -38,7 +42,7 @@
         flex: 1;
         min-width: 0;
         border: 0;
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        border-right: 1px solid var(--border);
         border-radius: 0;
         background: transparent;
         color: var(--text-muted);
@@ -54,7 +58,7 @@
       }
       .world-tab:hover {
         color: var(--text);
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--bg-tertiary);
       }
       .world-tab[aria-pressed="true"] {
         color: var(--accent-bright);
@@ -88,7 +92,7 @@
         width: 9.25rem;
       }
       .world-table tbody tr:nth-child(even) {
-        background: rgba(255, 255, 255, 0.02);
+        background: color-mix(in srgb, var(--bg-tertiary) 50%, transparent);
       }
       .world-table tbody tr:hover {
         background: var(--accent-dim);
@@ -96,7 +100,7 @@
       .world-table th,
       .world-table td {
         padding: 9px 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid var(--border);
         vertical-align: middle;
       }
       .world-table thead th {
@@ -292,11 +296,11 @@
       .world-detail-row td {
         padding: 0 !important;
         background: var(--bg-secondary);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid var(--border);
       }
       .world-detail {
         padding: 10px 12px 12px;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        border-top: 1px solid var(--border);
       }
       .world-detail__stats {
         display: flex;

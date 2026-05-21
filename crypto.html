@@ -17,6 +17,10 @@
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
@@ -36,7 +40,7 @@
         gap: 10px 16px;
         padding: 8px 12px;
         margin-bottom: 14px;
-        background: #0a0907;
+        background: var(--surface-bar);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
         font-family: var(--font-mono);
@@ -76,7 +80,7 @@
         padding: 3px;
         border: 1px solid var(--border);
         border-radius: 3px;
-        background: #0a0907;
+        background: var(--surface-bar);
       }
       .crypto-currency-btn {
         min-width: 38px;
@@ -191,6 +195,9 @@
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
+      .crypto-table tbody tr:nth-child(even) td {
+        background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
+      }
       .crypto-table tr:hover td {
         background: var(--accent-dim);
       }
@@ -232,7 +239,7 @@
       }
       .crypto-chart-row td {
         padding: 0 !important;
-        background: #0c0a08;
+        background: var(--surface-inset);
         border-bottom: 1px solid var(--border-strong);
       }
       .crypto-chart-box {
@@ -252,14 +259,14 @@
         height: 420px;
         border: 0;
         display: block;
-        background: #0c0a08;
+        background: var(--surface-inset);
       }
       .crypto-error {
         margin-top: 12px;
         padding: 10px 12px;
-        background: rgba(248, 112, 112, 0.08);
-        border: 1px solid rgba(248, 112, 112, 0.35);
-        color: #f8a8a8;
+        background: var(--down-surface);
+        border: 1px solid var(--down-border);
+        color: var(--down-text);
         font-size: 13px;
         border-radius: var(--radius);
       }
@@ -696,14 +703,17 @@
         }
 
         function tradingViewUrl(symbol) {
+          const tv = window.tmTradingViewEmbedTheme
+            ? window.tmTradingViewEmbedTheme()
+            : { theme: "dark", toolbar_bg: "#1e2235" };
           const params = new URLSearchParams({
             symbol: tradingViewSymbol(symbol),
             interval: "D",
             timezone: "Asia/Seoul",
-            theme: "dark",
+            theme: tv.theme,
             style: "1",
             locale: "kr",
-            toolbar_bg: "#0c0a08",
+            toolbar_bg: tv.toolbar_bg,
             hide_side_toolbar: "0",
             allow_symbol_change: "1",
             save_image: "0",

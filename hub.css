@@ -49,8 +49,8 @@ a.hub-card:focus-visible {
 .hub-card--soon {
   cursor: not-allowed;
   opacity: 0.92;
-  background: linear-gradient(180deg, #0a0907 0%, #0d0b09 55%, #080706 100%);
-  border-color: rgba(36, 32, 26, 0.95);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 55%, var(--bg-primary) 100%);
+  border-color: var(--border);
   box-shadow: none;
 }
 
@@ -59,27 +59,103 @@ a.hub-card:focus-visible {
   color: var(--text-muted);
 }
 
-/* 카드 아이콘 — 개별 PNG, 상단 중앙 */
-.hub-card__icon {
+/* 카드 아이콘 — Tabler (icon-box) */
+.icon-box {
   box-sizing: border-box;
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   align-self: center;
-  display: block;
-  width: 120px;
-  height: 120px;
   margin: 0 0 12px;
-  padding: 0;
-  border: none;
-  outline: none;
-  border-radius: 16px;
-  object-fit: cover;
-  box-shadow: none;
-  background: none;
+  background: var(--bg-secondary);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
-.hub-card__icon--global {
-  object-fit: cover;
-  object-position: center 44%;
+.icon-box i {
+  color: var(--accent);
+  font-size: 36px;
+  line-height: 1;
+}
+
+[data-theme="light"] .icon-box,
+body[data-theme="light"] .icon-box {
+  border: none;
+}
+
+[data-theme="light"] .icon-box.icon-market,
+body[data-theme="light"] .icon-box.icon-market {
+  background: #dbeafe;
+}
+[data-theme="light"] .icon-box.icon-market i,
+body[data-theme="light"] .icon-box.icon-market i {
+  color: #2563eb;
+}
+
+[data-theme="light"] .icon-box.icon-live,
+body[data-theme="light"] .icon-box.icon-live {
+  background: #dcfce7;
+}
+[data-theme="light"] .icon-box.icon-live i,
+body[data-theme="light"] .icon-box.icon-live i {
+  color: #16a34a;
+}
+
+[data-theme="light"] .icon-box.icon-calendar,
+body[data-theme="light"] .icon-box.icon-calendar {
+  background: #ede9fe;
+}
+[data-theme="light"] .icon-box.icon-calendar i,
+body[data-theme="light"] .icon-box.icon-calendar i {
+  color: #7c3aed;
+}
+
+[data-theme="light"] .icon-box.icon-live-report,
+body[data-theme="light"] .icon-box.icon-live-report {
+  background: #fce7f3;
+}
+[data-theme="light"] .icon-box.icon-live-report i,
+body[data-theme="light"] .icon-box.icon-live-report i {
+  color: #db2777;
+}
+
+[data-theme="light"] .icon-box.icon-briefing,
+body[data-theme="light"] .icon-box.icon-briefing {
+  background: #fef3c7;
+}
+[data-theme="light"] .icon-box.icon-briefing i,
+body[data-theme="light"] .icon-box.icon-briefing i {
+  color: #d97706;
+}
+
+[data-theme="light"] .icon-box.icon-us,
+body[data-theme="light"] .icon-box.icon-us {
+  background: #fee2e2;
+}
+[data-theme="light"] .icon-box.icon-us i,
+body[data-theme="light"] .icon-box.icon-us i {
+  color: #dc2626;
+}
+
+[data-theme="light"] .icon-box.icon-crypto,
+body[data-theme="light"] .icon-box.icon-crypto {
+  background: #ffedd5;
+}
+[data-theme="light"] .icon-box.icon-crypto i,
+body[data-theme="light"] .icon-box.icon-crypto i {
+  color: #ea580c;
+}
+
+[data-theme="light"] .icon-box.icon-world,
+body[data-theme="light"] .icon-box.icon-world {
+  background: #e0f2fe;
+}
+[data-theme="light"] .icon-box.icon-world i,
+body[data-theme="light"] .icon-box.icon-world i {
+  color: #0284c7;
 }
 
 .hub-card__emoji {
@@ -134,9 +210,9 @@ a.hub-card:focus-visible {
 }
 
 .hub-card__status--live {
-  color: #7cffb3;
-  border-color: rgba(124, 255, 179, 0.35);
-  background: rgba(124, 255, 179, 0.08);
+  color: var(--up-text);
+  border-color: var(--up-border);
+  background: var(--up-surface);
 }
 
 .hub-card__status--soon {
@@ -156,14 +232,14 @@ a.hub-card:focus-visible {
 }
 
 .hub-card--live-report.is-live {
-  border-color: rgba(34, 197, 94, 0.55);
+  border-color: var(--up-border);
   box-shadow:
     var(--sheet-shadow),
-    0 0 0 1px rgba(34, 197, 94, 0.2);
+    0 0 0 1px var(--up-surface);
 }
 
 .hub-card--live-report.is-closed {
-  border-color: rgba(239, 68, 68, 0.35);
+  border-color: var(--down-border);
 }
 
 .hub-market-led {
@@ -173,13 +249,13 @@ a.hub-card:focus-visible {
   margin-right: 6px;
   border-radius: 999px;
   vertical-align: middle;
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.65);
+  background: var(--down-color);
+  box-shadow: 0 0 8px var(--down-surface);
 }
 
 .hub-card--live-report.is-live .hub-market-led {
-  background: #22c55e;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.85);
+  background: var(--up-color);
+  box-shadow: 0 0 10px var(--up-surface);
   animation: tmLivePulse 1.2s ease-in-out infinite;
 }
 
@@ -191,15 +267,15 @@ a.hub-card:focus-visible {
 }
 
 .hub-card--live-report.is-live .hub-live-status {
-  color: #4ade80;
-  border-color: rgba(34, 197, 94, 0.45);
-  background: rgba(34, 197, 94, 0.1);
+  color: var(--up-text);
+  border-color: var(--up-border);
+  background: var(--up-surface);
 }
 
 .hub-card--live-report.is-closed .hub-live-status {
-  color: var(--up-color);
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.08);
+  color: var(--down-text);
+  border-color: var(--down-border);
+  background: var(--down-surface);
 }
 
 .hub-live-last {
@@ -247,7 +323,7 @@ a.hub-card:focus-visible {
     text-align: center;
     border: 1px solid transparent;
     background:
-      linear-gradient(180deg, #15120e 0%, #100e0b 100%) padding-box,
+      linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) padding-box,
       linear-gradient(145deg, var(--accent) 0%, var(--accent-secondary) 100%) border-box;
     box-shadow: var(--shadow);
     transition:
@@ -258,7 +334,7 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card--soon {
     background:
-      linear-gradient(180deg, var(--bg-secondary) 0%, #0c0a08 100%) padding-box,
+      linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) padding-box,
       linear-gradient(145deg, var(--accent) 0%, var(--accent-secondary) 100%) border-box;
     border: 1px solid transparent;
     opacity: 1;
@@ -281,12 +357,16 @@ a.hub-card:focus-visible {
     -webkit-tap-highlight-color: rgba(201, 168, 76, 0.15);
   }
 
-  .page.page--hub .hub-card__icon {
+  .page.page--hub .icon-box {
     flex-shrink: 0;
     width: 42px;
     height: 42px;
     margin: 0 0 5px;
     border-radius: 9px;
+  }
+
+  .page.page--hub .icon-box i {
+    font-size: 22px;
   }
 
   .page.page--hub .hub-card__emoji {

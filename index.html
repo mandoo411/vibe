@@ -17,6 +17,10 @@
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
@@ -62,14 +66,9 @@
 
       <div class="hub-grid" role="list">
         <a class="hub-card" href="./daily-market.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-market.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-market" aria-hidden="true">
+            <i class="ti ti-chart-bar"></i>
+          </div>
           <h2 class="hub-card__title">마감시황</h2>
           <p class="hub-card__desc">국내 증시 마감 흐름과 AI 요약</p>
           <div class="hub-card__meta">
@@ -79,14 +78,9 @@
         </a>
 
         <a class="hub-card" href="./realtime.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-live.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-live" aria-hidden="true">
+            <i class="ti ti-antenna-bars-5"></i>
+          </div>
           <h2 class="hub-card__title">실시간시세</h2>
           <p class="hub-card__desc">시총 TOP30 · 상승률 TOP50 · 종목 차트</p>
           <div class="hub-card__meta">
@@ -96,14 +90,9 @@
         </a>
 
         <a class="hub-card" href="./weekly-market.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-calendar.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-calendar" aria-hidden="true">
+            <i class="ti ti-calendar-event"></i>
+          </div>
           <h2 class="hub-card__title">일정</h2>
           <p class="hub-card__desc">경제지표 · 신규상장 · 국내외 실적</p>
           <div class="hub-card__meta">
@@ -113,14 +102,9 @@
         </a>
 
         <a class="hub-card hub-card--live-report is-closed" href="./live-report.html" role="listitem" id="hub-live-report-card">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-live-report.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-live-report" aria-hidden="true">
+            <i class="ti ti-device-tv"></i>
+          </div>
           <h2 class="hub-card__title"><span class="hub-market-led" aria-hidden="true"></span>LIVE-증시</h2>
           <p class="hub-card__desc">텔레그램 뉴스 기반 장중 AI 중계</p>
           <div class="hub-card__meta">
@@ -131,14 +115,9 @@
         </a>
 
         <a class="hub-card" href="./briefing.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-briefing.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-briefing" aria-hidden="true">
+            <i class="ti ti-news"></i>
+          </div>
           <h2 class="hub-card__title">브리핑</h2>
           <p class="hub-card__desc">미국 마감 · 환율 · 코인 시황 브리핑</p>
           <div class="hub-card__meta">
@@ -148,14 +127,9 @@
         </a>
 
         <a class="hub-card" href="./us-market.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-us.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-us" aria-hidden="true">
+            <i class="ti ti-flag"></i>
+          </div>
           <h2 class="hub-card__title">미증시</h2>
           <p class="hub-card__desc">나스닥 · S&amp;P500 · 선물 · 미국 TOP50</p>
           <div class="hub-card__meta">
@@ -165,14 +139,9 @@
         </a>
 
         <a class="hub-card" href="./crypto.html" role="listitem">
-          <img
-            class="hub-card__icon"
-            src="./assets/icon-crypto.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-crypto" aria-hidden="true">
+            <i class="ti ti-currency-bitcoin"></i>
+          </div>
           <h2 class="hub-card__title">암호화폐</h2>
           <p class="hub-card__desc">시총 TOP100 · 원/달러 전환 · 차트</p>
           <div class="hub-card__meta">
@@ -182,14 +151,9 @@
         </a>
 
         <a class="hub-card" href="./world-market.html" role="listitem">
-          <img
-            class="hub-card__icon hub-card__icon--global"
-            src="./assets/icon-global.png"
-            alt=""
-            width="100"
-            height="100"
-            decoding="async"
-          />
+          <div class="icon-box icon-world" aria-hidden="true">
+            <i class="ti ti-world"></i>
+          </div>
           <h2 class="hub-card__title">글로벌 랭킹</h2>
           <p class="hub-card__desc">세계 기업 시총 · 순이익 · 매출 순위</p>
           <div class="hub-card__meta">

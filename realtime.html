@@ -17,6 +17,10 @@
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
@@ -72,7 +76,7 @@
         gap: 10px 16px;
         padding: 8px 12px;
         margin-bottom: 14px;
-        background: #0a0907;
+        background: var(--surface-bar);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
         font-family: var(--font-mono);
@@ -88,10 +92,10 @@
         letter-spacing: 0.06em;
       }
       .rt-session--pre {
-        color: #9ecbff;
+        color: var(--status-pre);
       }
       .rt-session--open {
-        color: #7cffb3;
+        color: var(--status-open);
       }
       .rt-session--after {
         color: var(--accent-bright);
@@ -114,7 +118,7 @@
         gap: 6px;
         padding: 8px;
         border-bottom: 1px solid var(--border);
-        background: #0a0907;
+        background: var(--surface-bar);
       }
       .rt-tab {
         appearance: none;
@@ -141,7 +145,7 @@
         white-space: nowrap;
       }
       .rt-tab[aria-selected="false"] {
-        color: rgba(148, 138, 124, 0.88);
+        color: var(--text-secondary);
       }
       .rt-tab[aria-selected="true"] {
         color: var(--accent-bright);
@@ -246,6 +250,9 @@
         font-size: 10px;
         letter-spacing: 0.1em;
       }
+      .rt-table tbody tr:nth-child(even) td {
+        background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
+      }
       .rt-table tr:hover td {
         background: var(--accent-dim);
       }
@@ -308,9 +315,9 @@
       .rt-error {
         margin-top: 12px;
         padding: 10px 12px;
-        background: rgba(248, 112, 112, 0.08);
-        border: 1px solid rgba(248, 112, 112, 0.35);
-        color: #f8a8a8;
+        background: var(--down-surface);
+        border: 1px solid var(--down-border);
+        color: var(--down-text);
         font-size: 13px;
         border-radius: var(--radius);
       }
@@ -349,7 +356,7 @@
       .rt-chart-row td {
         padding: 0 !important;
         border-bottom: 1px solid var(--border-strong);
-        background: #0c0a08;
+        background: var(--surface-inset);
         vertical-align: top;
       }
       .rt-chart-wrap {
@@ -359,7 +366,7 @@
         border-top: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        background: #0c0a08;
+        background: var(--surface-inset);
       }
       .rt-chart-body {
         position: relative;
@@ -394,7 +401,7 @@
         gap: 6px;
         padding: 8px 8px 10px;
         border-bottom: 1px solid var(--border);
-        background: #0a0907;
+        background: var(--surface-bar);
         font-family: var(--font-mono);
         font-size: 11px;
       }
@@ -419,14 +426,14 @@
       .rt-chart-interval-btn:hover,
       .rt-chart-interval-btn:focus-visible {
         color: var(--text);
-        border-color: rgba(201, 162, 39, 0.45);
+        border-color: var(--sheet-accent-border);
         outline: none;
       }
       .rt-chart-interval-btn[aria-pressed="true"] {
         color: var(--accent-bright);
-        border-color: rgba(201, 162, 39, 0.55);
-        background: rgba(201, 162, 39, 0.1);
-        box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.12);
+        border-color: var(--sheet-accent-border-strong);
+        background: var(--sheet-accent-soft);
+        box-shadow: inset 0 0 0 1px var(--sheet-accent-soft);
       }
       .rt-chart-panes {
         display: flex;
@@ -444,8 +451,8 @@
       }
       .rt-chart-pane-sep {
         flex: 0 0 1px;
-        background: rgba(201, 162, 39, 0.45);
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+        background: var(--sheet-accent-border);
+        box-shadow: 0 1px 0 var(--border);
       }
       .rt-chart-pane--vol {
         position: relative;
@@ -464,7 +471,7 @@
         margin: 0;
         padding: 12px 14px;
         font-size: 13px;
-        color: #f8a8a8;
+        color: var(--down-text);
       }
       .rt-lw-ohlc-tooltip {
         position: absolute;
@@ -559,8 +566,8 @@
           max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         background:
           radial-gradient(ellipse 90% 60% at 50% 32%, var(--accent-dim) 0%, transparent 58%),
-          radial-gradient(ellipse 100% 45% at 50% 100%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
-          #0a0907;
+          radial-gradient(ellipse 100% 45% at 50% 100%, var(--sheet-accent-soft) 0%, transparent 50%),
+          var(--bg-primary);
         transition: opacity 0.35s ease, visibility 0.35s ease;
       }
       .rt-loading::before {

@@ -17,6 +17,10 @@
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
@@ -35,7 +39,7 @@
         gap: 10px 16px;
         padding: 8px 12px;
         margin-bottom: 14px;
-        background: #0a0907;
+        background: var(--surface-bar);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
         font-family: var(--font-mono);
@@ -162,7 +166,7 @@
         gap: 6px;
         padding: 8px;
         border-bottom: 1px solid var(--border);
-        background: #0a0907;
+        background: var(--surface-bar);
       }
       .us-rank-tab {
         flex: 1;
@@ -210,6 +214,9 @@
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
+      .us-table tbody tr:nth-child(even) td {
+        background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
+      }
       .us-table tr:hover td {
         background: var(--accent-dim);
       }
@@ -243,22 +250,22 @@
       .us-error {
         margin-top: 12px;
         padding: 10px 12px;
-        background: rgba(248, 112, 112, 0.08);
-        border: 1px solid rgba(248, 112, 112, 0.35);
-        color: #f8a8a8;
+        background: var(--down-surface);
+        border: 1px solid var(--down-border);
+        color: var(--down-text);
         font-size: 13px;
         border-radius: var(--radius);
       }
       .rt-chart-row td {
         padding: 0 !important;
         border-bottom: 1px solid var(--border-strong);
-        background: #0c0a08;
+        background: var(--surface-inset);
       }
       .rt-chart-wrap {
         width: 100%;
         min-height: 420px;
         border-top: 1px solid var(--border);
-        background: #0c0a08;
+        background: var(--surface-inset);
       }
       .rt-chart-body {
         position: relative;
@@ -269,7 +276,7 @@
         height: 420px;
         border: 0;
         display: block;
-        background: #0c0a08;
+        background: var(--surface-inset);
       }
       @media (max-width: 768px) {
         .us-index-strip {

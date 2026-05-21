@@ -479,11 +479,11 @@
             <tbody>${highRows
               .map(
                 (r) => `<tr class="${impactClass(r.impact)}">
-                  <td>${escapeHtml(r.time || "—")}</td>
-                  <td><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
-                  <td>${escapeHtml(r.previous ?? "—")}</td>
-                  <td>${escapeHtml(r.estimate ?? "—")}</td>
-                  <td>${escapeHtml(r.impact || "low")}</td>
+                  <td data-label="시간">${escapeHtml(r.time || "—")}</td>
+                  <td data-label="지표명"><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
+                  <td data-label="이전값">${escapeHtml(r.previous ?? "—")}</td>
+                  <td data-label="예측값">${escapeHtml(r.estimate ?? "—")}</td>
+                  <td data-label="중요도">${escapeHtml(r.impact || "low")}</td>
                 </tr>`
               )
               .join("")}</tbody>

@@ -26,7 +26,7 @@ BUTTON = """
           </button>"""
 
 MARKER = '          <a class="tm-site-nav__link" href="./world-market.html"'
-INSERT_AFTER = '          <a class="tm-site-nav__link" href="./world-market.html">글로벌 순위</a>\n'
+INSERT_AFTER = '          <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>\n'
 
 
 def main() -> None:

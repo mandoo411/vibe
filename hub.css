@@ -1,5 +1,9 @@
-/* TotalMoney AI — 메인 허브 (index, .page·허브 히어로 타이포는 weekly-market.css) */
+/* TotalMoney AI — 메인 허브 (index, 타이틀은 masthead · weekly-market.css) */
 /* PC·모바일 공통: .page 하단 패딩은 weekly-market.css만 사용(다른 탭과 동일 리듬) */
+
+.page--hub {
+  margin-top: 18px;
+}
 
 .hub-grid {
   display: grid;
@@ -284,7 +288,7 @@ body[data-theme="light"] .icon-box.icon-world i {
 
 /* ——— Hub home: 모바일(768px 이하) ——— PC(769px+)는 미적용 */
 @media (max-width: 768px) {
-  .page.page--hub {
+  .page--hub {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -292,11 +296,7 @@ body[data-theme="light"] .icon-box.icon-world i {
     min-height: 0;
   }
 
-  .page.page--hub .hub-hero {
-    flex-shrink: 0;
-  }
-
-  .page.page--hub .hub-grid {
+  .page--hub .hub-grid {
     display: grid;
     flex: 1 1 auto;
     min-height: 0;
@@ -307,8 +307,8 @@ body[data-theme="light"] .icon-box.icon-world i {
     gap: 8px;
   }
 
-  .page.page--hub .hub-card,
-  .page.page--hub a.hub-card {
+  .page--hub .hub-card,
+  .page--hub a.hub-card {
     box-sizing: border-box;
     height: auto;
     min-height: 0;
@@ -332,7 +332,7 @@ body[data-theme="light"] .icon-box.icon-world i {
       box-shadow 0.15s ease;
   }
 
-  .page.page--hub .hub-card--soon {
+  .page--hub .hub-card--soon {
     background:
       linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) padding-box,
       linear-gradient(145deg, var(--accent) 0%, var(--accent-secondary) 100%) border-box;
@@ -340,24 +340,24 @@ body[data-theme="light"] .icon-box.icon-world i {
     opacity: 1;
   }
 
-  .page.page--hub a.hub-card:hover {
+  .page--hub a.hub-card:hover {
     transform: none;
     border-color: transparent;
     box-shadow: var(--shadow);
   }
 
-  .page.page--hub .hub-card:active,
-  .page.page--hub a.hub-card:active {
+  .page--hub .hub-card:active,
+  .page--hub a.hub-card:active {
     transform: scale(0.97);
     filter: brightness(1.07);
   }
 
-  .page.page--hub a.hub-card {
+  .page--hub a.hub-card {
     flex: none;
     -webkit-tap-highlight-color: rgba(201, 168, 76, 0.15);
   }
 
-  .page.page--hub .icon-box {
+  .page--hub .icon-box {
     flex-shrink: 0;
     width: 42px;
     height: 42px;
@@ -365,11 +365,11 @@ body[data-theme="light"] .icon-box.icon-world i {
     border-radius: 9px;
   }
 
-  .page.page--hub .icon-box i {
+  .page--hub .icon-box i {
     font-size: 22px;
   }
 
-  .page.page--hub .hub-card__emoji {
+  .page--hub .hub-card__emoji {
     width: 42px;
     height: 42px;
     margin: 0 0 5px;
@@ -377,7 +377,7 @@ body[data-theme="light"] .icon-box.icon-world i {
     font-size: 23px;
   }
 
-  .page.page--hub .hub-card__title {
+  .page--hub .hub-card__title {
     flex-shrink: 0;
     margin: 0 0 4px;
     font-size: 11.5px;
@@ -386,11 +386,11 @@ body[data-theme="light"] .icon-box.icon-world i {
     text-align: center;
   }
 
-  .page.page--hub .hub-card__desc {
+  .page--hub .hub-card__desc {
     display: none;
   }
 
-  .page.page--hub .hub-card__meta {
+  .page--hub .hub-card__meta {
     flex-shrink: 0;
     margin: 0;
     padding: 0;
@@ -403,24 +403,24 @@ body[data-theme="light"] .icon-box.icon-world i {
     font-size: 8.5px;
   }
 
-  .page.page--hub .hub-card__status {
+  .page--hub .hub-card__status {
     padding: 1px 5px;
     font-size: 8.5px;
     letter-spacing: 0.04em;
   }
 
-  .page.page--hub .hub-card__status--soon {
+  .page--hub .hub-card__status--soon {
     background: transparent;
     border: 1px solid var(--accent);
     color: var(--accent);
   }
 
-  .page.page--hub .hub-card__chev {
+  .page--hub .hub-card__chev {
     font-size: 10px;
     margin-left: 0;
   }
 
-  .page.page--hub .hub-live-last {
+  .page--hub .hub-live-last {
     display: none;
   }
 }

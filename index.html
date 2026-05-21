@@ -32,7 +32,7 @@
     <link rel="stylesheet" href="./hub.css" />
   </head>
   <body>
-    <div class="page page--hub">
+    <div class="page">
       <header class="tm-site-header">
         <div class="header-top">
           <a class="logo-link header-top__link" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -73,11 +73,14 @@
         </button>
       </header>
 
-      <header class="hub-hero">
-        <p class="hub-hero__kicker">Market Hub</p>
-        <h1 class="hub-hero__title">한눈에 보는 시장 도구</h1>
+      <header class="masthead masthead--title-only">
+        <div class="masthead__copy">
+          <p class="masthead__kicker">Market Hub</p>
+          <h1 class="masthead__title">한눈에 보는 시장 도구</h1>
+        </div>
       </header>
 
+      <div class="page--hub">
       <div class="hub-grid" role="list">
         <a class="hub-card" href="./daily-market.html" role="listitem">
           <div class="icon-box icon-market" aria-hidden="true">
@@ -175,6 +178,7 @@
             <span class="hub-card__chev" aria-hidden="true">→</span>
           </div>
         </a>
+      </div>
       </div>
     </div>
     <script>

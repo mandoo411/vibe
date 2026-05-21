@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0d0b08" />
+    <meta name="theme-color" content="#131722" />
     <title>TotalMoney AI · 글로벌 랭킹</title>
     <!-- wm-build: 2026-05-20-mobile-accordion -->
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
@@ -13,6 +13,9 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script src="./theme.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
     <script src="./site-nav.js" defer></script>
@@ -29,7 +32,7 @@
         padding: 0;
         gap: 0;
         border-bottom: 1px solid var(--border-strong);
-        background: #0f0d0a;
+        background: var(--bg-secondary);
       }
       .world-tab {
         flex: 1;
@@ -88,7 +91,7 @@
         background: rgba(255, 255, 255, 0.02);
       }
       .world-table tbody tr:hover {
-        background: rgba(212, 175, 55, 0.04);
+        background: var(--accent-dim);
       }
       .world-table th,
       .world-table td {
@@ -103,7 +106,7 @@
         color: var(--text-dim);
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        background: #12100c;
+        background: var(--bg-tertiary);
         border-top: 0;
       }
       .world-table th.world-col-rank,
@@ -156,7 +159,7 @@
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background: #0a0907;
+        background: var(--bg-tertiary);
         object-fit: contain;
       }
       .world-logo--fallback {
@@ -166,7 +169,7 @@
         font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
         font-size: 16px;
         line-height: 1;
-        background: #1a1714;
+        background: var(--bg-tertiary);
       }
       .world-company strong {
         display: block;
@@ -180,10 +183,10 @@
         color: var(--text-dim);
       }
       .world-delta--up {
-        color: #f87171;
+        color: var(--up-color);
       }
       .world-delta--down {
-        color: #60a5fa;
+        color: var(--down-color);
       }
       .world-spark {
         display: block;
@@ -199,13 +202,13 @@
         stroke-linejoin: round;
       }
       .world-spark--up path {
-        stroke: #4ade80;
+        stroke: var(--up-color);
       }
       .world-spark--down path {
-        stroke: #f87171;
+        stroke: var(--down-color);
       }
       .world-spark--flat path {
-        stroke: #94a3b8;
+        stroke: var(--text-secondary);
       }
       .world-spark-empty {
         color: var(--text-dim);
@@ -288,7 +291,7 @@
       }
       .world-detail-row td {
         padding: 0 !important;
-        background: #0f0d0a;
+        background: var(--bg-secondary);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       }
       .world-detail {
@@ -329,7 +332,7 @@
         height: 44px;
       }
       .world-row.is-open {
-        background: rgba(212, 175, 55, 0.06);
+        background: var(--accent-dim);
       }
       @media (max-width: 768px) {
         .world-scroll {

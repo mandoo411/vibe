@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#0d0b08" />
+    <meta name="theme-color" content="#131722" />
     <title>TotalMoney AI · 실시간시세</title>
     <link rel="icon" type="image/png" href="./assets/totalmoney_ai.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -15,6 +15,9 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script src="./theme.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="stylesheet" href="./site-nav.css" />
@@ -91,7 +94,7 @@
         color: #7cffb3;
       }
       .rt-session--after {
-        color: #f0c75a;
+        color: var(--accent-bright);
       }
       .rt-session--closed {
         color: var(--text-dim);
@@ -122,7 +125,7 @@
         margin: 0;
         padding: 9px 10px;
         cursor: pointer;
-        background: #12100c;
+        background: var(--bg-tertiary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -146,16 +149,16 @@
         box-shadow: inset 0 -2px 0 0 var(--accent-bright);
       }
       .rt-tab[aria-selected="false"]:hover {
-        color: #d4af37;
+        color: var(--accent);
       }
       .rt-panel {
-        border: 1px solid rgba(212, 175, 55, 0.28);
-        border-top: 1px solid rgba(212, 175, 55, 0.18);
+        border: 1px solid var(--accent-highlight);
+        border-top: 1px solid var(--accent-dim);
         border-radius: 0 0 var(--radius) var(--radius);
         background: var(--bg-panel);
         box-shadow:
           var(--sheet-shadow),
-          inset 0 1px 0 rgba(212, 175, 55, 0.04);
+          inset 0 1px 0 var(--accent-dim);
         overflow: hidden;
       }
       .rt-scroll {
@@ -236,7 +239,7 @@
         position: sticky;
         top: 0;
         z-index: 1;
-        background: #12100c;
+        background: var(--bg-tertiary);
         color: var(--text-dim);
         font-weight: 600;
         text-transform: uppercase;
@@ -244,7 +247,7 @@
         letter-spacing: 0.1em;
       }
       .rt-table tr:hover td {
-        background: rgba(212, 175, 55, 0.04);
+        background: var(--accent-dim);
       }
       .rt-table .num {
         text-align: right;
@@ -320,7 +323,7 @@
         height: 10px;
         max-width: 100%;
         border-radius: 2px;
-        background: #2a2418;
+        background: var(--bg-tertiary);
       }
       .rt-name-chart-btn {
         font: inherit;
@@ -373,7 +376,7 @@
         justify-content: center;
         font-size: 13px;
         color: var(--text-muted);
-        background: rgba(12, 10, 8, 0.55);
+        background: color-mix(in srgb, var(--bg-primary), 0.55);
         pointer-events: none;
       }
       .rt-chart-loading-msg[hidden] {
@@ -403,7 +406,7 @@
         padding: 8px 6px;
         border-radius: 3px;
         border: 1px solid var(--border);
-        background: #12100c;
+        background: var(--bg-tertiary);
         color: var(--text-muted);
         font-family: var(--font-mono);
         font-size: 11px;
@@ -555,7 +558,7 @@
         padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
           max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         background:
-          radial-gradient(ellipse 90% 60% at 50% 32%, rgba(212, 175, 55, 0.11) 0%, transparent 58%),
+          radial-gradient(ellipse 90% 60% at 50% 32%, var(--accent-dim) 0%, transparent 58%),
           radial-gradient(ellipse 100% 45% at 50% 100%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
           #0a0907;
         transition: opacity 0.35s ease, visibility 0.35s ease;
@@ -567,14 +570,14 @@
         pointer-events: none;
         opacity: 0.55;
         background-image:
-          radial-gradient(circle at 10% 14%, rgba(212, 175, 55, 0.45) 0, rgba(212, 175, 55, 0) 1.5px),
-          radial-gradient(circle at 22% 78%, rgba(212, 175, 55, 0.35) 0, rgba(212, 175, 55, 0) 1px),
-          radial-gradient(circle at 88% 18%, rgba(212, 175, 55, 0.4) 0, rgba(212, 175, 55, 0) 1.5px),
-          radial-gradient(circle at 92% 62%, rgba(212, 175, 55, 0.3) 0, rgba(212, 175, 55, 0) 1px),
-          radial-gradient(circle at 6% 48%, rgba(212, 175, 55, 0.25) 0, rgba(212, 175, 55, 0) 1px),
-          radial-gradient(circle at 48% 8%, rgba(212, 175, 55, 0.28) 0, rgba(212, 175, 55, 0) 1px),
-          radial-gradient(circle at 72% 88%, rgba(212, 175, 55, 0.32) 0, rgba(212, 175, 55, 0) 1px),
-          radial-gradient(circle at 38% 92%, rgba(212, 175, 55, 0.22) 0, rgba(212, 175, 55, 0) 1px);
+          radial-gradient(circle at 10% 14%, var(--accent-highlight) 0, var(--accent-dim) 1.5px),
+          radial-gradient(circle at 22% 78%, var(--accent-highlight) 0, var(--accent-dim) 1px),
+          radial-gradient(circle at 88% 18%, var(--accent-highlight) 0, var(--accent-dim) 1.5px),
+          radial-gradient(circle at 92% 62%, var(--accent-highlight) 0, var(--accent-dim) 1px),
+          radial-gradient(circle at 6% 48%, var(--accent-highlight) 0, var(--accent-dim) 1px),
+          radial-gradient(circle at 48% 8%, var(--accent-highlight) 0, var(--accent-dim) 1px),
+          radial-gradient(circle at 72% 88%, var(--accent-highlight) 0, var(--accent-dim) 1px),
+          radial-gradient(circle at 38% 92%, var(--accent-highlight) 0, var(--accent-dim) 1px);
       }
       .rt-loading[hidden] {
         display: none;
@@ -603,12 +606,12 @@
         font-weight: 600;
         letter-spacing: 0.03em;
         line-height: 1.1;
-        background: linear-gradient(180deg, #f0d78c 0%, #d4af37 42%, #a67c1a 100%);
+        background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 42%, var(--accent-secondary) 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
         text-shadow: none;
-        filter: drop-shadow(0 2px 24px rgba(212, 175, 55, 0.35));
+        filter: drop-shadow(0 2px 24px var(--accent-highlight));
       }
       .rt-loading__logo-ai {
         font-style: italic;
@@ -628,10 +631,10 @@
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        border: 3px solid rgba(212, 175, 55, 0.22);
-        border-top-color: #d4af37;
-        border-right-color: rgba(212, 175, 55, 0.55);
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        border: 3px solid var(--accent-highlight);
+        border-top-color: var(--accent);
+        border-right-color: var(--accent-ring);
+        box-shadow: 0 0 20px var(--accent-dim);
         animation: rt-spin 0.8s linear infinite;
       }
       .rt-loading__text {

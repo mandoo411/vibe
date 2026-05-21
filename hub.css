@@ -31,7 +31,7 @@ a.hub-card {
   color: inherit;
   text-decoration: none;
   touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(212, 175, 55, 0.12);
+  -webkit-tap-highlight-color: var(--accent-dim);
 }
 
 a.hub-card:hover {
@@ -90,8 +90,8 @@ a.hub-card:focus-visible {
   height: 120px;
   margin: 0 0 12px;
   border-radius: 16px;
-  background: radial-gradient(circle at 35% 25%, rgba(212, 175, 55, 0.26), rgba(12, 10, 8, 0.96) 62%);
-  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: radial-gradient(circle at 35% 25%, var(--accent-highlight), color-mix(in srgb, var(--bg-primary) 96%, transparent) 62%);
+  border: 1px solid var(--accent-highlight);
   font-size: 52px;
 }
 
@@ -197,7 +197,7 @@ a.hub-card:focus-visible {
 }
 
 .hub-card--live-report.is-closed .hub-live-status {
-  color: #f87171;
+  color: var(--up-color);
   border-color: rgba(239, 68, 68, 0.4);
   background: rgba(239, 68, 68, 0.08);
 }
@@ -248,7 +248,7 @@ a.hub-card:focus-visible {
     border: 1px solid transparent;
     background:
       linear-gradient(180deg, #15120e 0%, #100e0b 100%) padding-box,
-      linear-gradient(145deg, #c9a84c 0%, #8b6914 100%) border-box;
+      linear-gradient(145deg, var(--accent) 0%, var(--accent-secondary) 100%) border-box;
     box-shadow: var(--shadow);
     transition:
       transform 0.12s ease,
@@ -258,8 +258,8 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card--soon {
     background:
-      linear-gradient(180deg, #0f0d0a 0%, #0c0a08 100%) padding-box,
-      linear-gradient(145deg, #c9a84c 0%, #8b6914 100%) border-box;
+      linear-gradient(180deg, var(--bg-secondary) 0%, #0c0a08 100%) padding-box,
+      linear-gradient(145deg, var(--accent) 0%, var(--accent-secondary) 100%) border-box;
     border: 1px solid transparent;
     opacity: 1;
   }
@@ -331,8 +331,8 @@ a.hub-card:focus-visible {
 
   .page.page--hub .hub-card__status--soon {
     background: transparent;
-    border: 1px solid #c9a84c;
-    color: #d4af37;
+    border: 1px solid var(--accent);
+    color: var(--accent);
   }
 
   .page.page--hub .hub-card__chev {

@@ -254,8 +254,8 @@ body[data-theme="light"] .icon-box.icon-world i {
 }
 
 .hub-card--live-report.is-live .hub-market-led {
-  background: var(--up-color);
-  box-shadow: 0 0 10px var(--up-surface);
+  background: var(--status-open);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--status-open) 45%, transparent);
   animation: tmLivePulse 1.2s ease-in-out infinite;
 }
 
@@ -267,9 +267,9 @@ body[data-theme="light"] .icon-box.icon-world i {
 }
 
 .hub-card--live-report.is-live .hub-live-status {
-  color: var(--up-text);
-  border-color: var(--up-border);
-  background: var(--up-surface);
+  color: var(--status-open);
+  border-color: color-mix(in srgb, var(--status-open) 45%, transparent);
+  background: color-mix(in srgb, var(--status-open) 12%, transparent);
 }
 
 .hub-card--live-report.is-closed .hub-live-status {

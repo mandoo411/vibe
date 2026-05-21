@@ -26,10 +26,12 @@
   --text-secondary: #5d606b;
   --accent: #2962ff;
   --accent-secondary: #26a69a;
-  --up-color: #26a69a;
+  /* 국내 주식 관례: 상승 빨강 · 하락 파랑 */
+  --up-color: #e53935;
   --up: var(--up-color);
-  --down-color: #ef5350;
+  --down-color: #2979ff;
   --down: var(--down-color);
+  --status-open: #22c55e;
   --border: rgba(0, 0, 0, 0.08);
   --sheet-shadow: 0 2px 10px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.08);
   --body-glow: none;
@@ -66,7 +68,6 @@
     color-mix(in srgb, var(--accent) 14%, transparent) 0%,
     var(--bg-secondary) 100%
   );
-  --status-open: var(--up-color);
   --status-pre: var(--accent-secondary);
   --down-surface: color-mix(in srgb, var(--down-color) 10%, transparent);
   --down-border: color-mix(in srgb, var(--down-color) 38%, transparent);
@@ -76,9 +77,39 @@
   --up-text: color-mix(in srgb, var(--up-color) 82%, var(--text-primary));
   --wait-border: color-mix(in srgb, var(--accent-secondary) 38%, transparent);
   --wait-text: color-mix(in srgb, var(--accent-secondary) 88%, var(--text-primary));
+}
+
+[data-theme="dark"] {
+  --status-open: #26a69a;
   color-scheme: dark;
 }
 
 [data-theme="light"] {
   color-scheme: light;
+}
+
+/* 등락률 공통 (상승/하락 색은 --up-color / --down-color) */
+.delta--pos,
+.briefing-change--up,
+.crypto-delta--up,
+.us-delta--up,
+.live-delta--up,
+.world-delta--up {
+  color: var(--up-color);
+}
+
+.delta--neg,
+.briefing-change--down,
+.crypto-delta--down,
+.us-delta--down,
+.live-delta--down,
+.world-delta--down {
+  color: var(--down-color);
+}
+
+.delta--flat,
+.crypto-delta--flat,
+.us-delta--flat,
+.live-delta--flat {
+  color: var(--text-secondary);
 }

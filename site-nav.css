@@ -80,10 +80,10 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 10px;
+  gap: 12px 10px;
   width: 100%;
   height: 60px;
-  padding: 0 10px 0 12px;
+  padding: 0 12px 0 14px;
   margin-bottom: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -104,7 +104,7 @@
   height: 34px;
   min-width: 34px;
   max-width: 34px;
-  margin: 0 0 0 4px;
+  margin: 0 0 0 8px;
   padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -160,11 +160,11 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  flex: 0 1 auto;
-  max-width: min(420px, 42vw);
+  flex: 0 0 auto;
+  max-width: min(360px, 38vw);
   height: 100%;
-  padding: 0;
-  margin: 0;
+  padding: 0 8px 0 0;
+  margin: 0 clamp(12px, 2.5vw, 28px) 0 0;
 }
 
 .logo-link,
@@ -311,13 +311,14 @@
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   gap: 4px;
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0;
-  padding: 0;
+  margin: 0 0 0 auto;
+  padding: 0 0 0 clamp(14px, 2vw, 22px);
   border: 0;
+  border-left: 1px solid var(--border);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -392,8 +393,8 @@
 }
 
 .tm-site-nav__link--live-report.is-live .tm-nav-live-led {
-  background: var(--up-color);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.85);
+  background: var(--status-open);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--status-open) 55%, transparent);
   animation: tmNavLivePulse 1.2s ease-in-out infinite;
 }
 
@@ -477,7 +478,8 @@ body.is-kr-market-open .tm-live-badge {
     max-height: none;
     padding: 0 8px 0 10px;
     margin-bottom: 0;
-    gap: 0 8px;
+    gap: 10px 8px;
+    row-gap: 10px;
     overflow: visible;
     flex-shrink: 0;
     border: 0;
@@ -497,7 +499,7 @@ body.is-kr-market-open .tm-live-badge {
     min-height: 52px;
     max-height: 52px;
     margin: 0;
-    padding: 0 4px 0 0;
+    padding: 0 6px 0 0;
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -553,10 +555,11 @@ body.is-kr-market-open .tm-live-badge {
     align-items: center;
     justify-content: stretch;
     gap: 3px;
-    padding: 4px 5px 5px;
+    padding: 8px 5px 5px;
     margin: 0;
     border: 0;
     border-top: 1px solid var(--border);
+    border-left: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;

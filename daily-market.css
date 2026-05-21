@@ -1,10 +1,10 @@
 /* Daily Market — extends weekly-market.css (theme.css variables) */
 
 :root {
-  --pos: var(--down-color);
-  --neg: var(--accent-secondary);
-  --pos-bg: var(--down-surface);
-  --neg-bg: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+  --pos: var(--up-color);
+  --neg: var(--down-color);
+  --pos-bg: var(--up-surface);
+  --neg-bg: var(--down-surface);
 }
 
 /* --- Date navigation --- */

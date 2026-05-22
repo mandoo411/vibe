@@ -1,10 +1,11 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-05-21 07:23 KST",
+    "lastUpdatedKst": "2026-05-22 15:41 KST",
     "from": "2026-05-21",
-    "to": "2026-06-04",
-    "source": "finnhub+krx+naver+claude"
+    "to": "2026-07-06",
+    "source": "finnhub+krx+naver+claude",
+    "ipoSource": "38-detail-listing-date"
   },
   "economicCalendar": [
     {
@@ -403,102 +404,21 @@
   ],
   "krIPO": [
     {
-      "date": "2026-05-19",
+      "date": "2026-06-05",
+      "name": "피스피스스튜디오",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2287",
+      "code": ""
+    },
+    {
+      "date": "2026-06-05",
       "name": "대신밸런스스팩20호",
       "market": "코스닥",
       "sector": "",
       "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-05-20",
-      "name": "피스피스스튜디오",
-      "market": "",
-      "sector": "",
-      "offeringPrice": 19000,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-05-26",
-      "name": "대신밸런스스팩20호",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2288&l=&page=1",
-      "code": ""
-    },
-    {
-      "date": "2026-05-27",
-      "name": "피스피스스튜디오",
-      "market": "",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2287&l=&page=1",
-      "code": ""
-    },
-    {
-      "date": "2026-06-02",
-      "name": "메리츠스팩2호",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-06-02",
-      "name": "레몬헬스케어",
-      "market": "",
-      "sector": "",
-      "offeringPrice": 7500,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-06-10",
-      "name": "레몬헬스케어",
-      "market": "",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2293&l=&page=1",
-      "code": ""
-    },
-    {
-      "date": "2026-06-10",
-      "name": "메리츠스팩2호",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2295&l=&page=1",
-      "code": ""
-    },
-    {
-      "date": "2026-06-12",
-      "name": "빅웨이브로보틱스",
-      "market": "",
-      "sector": "",
-      "offeringPrice": 22000,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-06-12",
-      "name": "져스텍",
-      "market": "",
-      "sector": "",
-      "offeringPrice": 10500,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
-      "code": ""
-    },
-    {
-      "date": "2026-06-15",
-      "name": "스트라드비젼",
-      "market": "",
-      "sector": "",
-      "offeringPrice": 12000,
-      "url": "https://www.38.co.kr/html/fund/?o=r",
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2288",
       "code": ""
     }
   ],

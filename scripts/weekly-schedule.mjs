@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
@@ -251,30 +252,12 @@ function isReadableKoreanName(name) {
   return hangul >= 2;
 }
 
-function parse38DateRange(value, from, to) {
-  const text = String(value || "");
-  const full = text.match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})~(?:20\d{2}\.)?(\d{1,2})\.(\d{1,2})/);
-  if (full) {
-    const ymd = `${full[1]}-${String(full[4]).padStart(2, "0")}-${String(full[5]).padStart(2, "0")}`;
-    return isYmdInRange(ymd, from, to) ? ymd : "";
-  }
-  const listing = text.match(/(\d{1,2})\/(\d{1,2})\s+[가-힣A-Za-z]/);
-  if (listing) {
-    const year = from.slice(0, 4);
-    const ymd = `${year}-${String(listing[1]).padStart(2, "0")}-${String(listing[2]).padStart(2, "0")}`;
-    return isYmdInRange(ymd, from, to) ? ymd : "";
-  }
-  return "";
-}
-
-function parse38PriceRange(value) {
-  const text = String(value || "").replace(/,/g, "");
-  const fixed = text.match(/(\d{2,6})(?:~\d+)?/);
-  if (!fixed) return null;
-  const n = Number(fixed[1]);
-  if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return null;
-  return n;
-}
+const IPO_DETAIL_SLEEP_MS = 220;
+const IPO_LIST_INDEX_URLS = [
+  "https://www.38.co.kr/html/fund/?o=r",
+  "https://www.38.co.kr/html/fund/?o=k",
+  "https://www.38.co.kr/html/ipo/ipo.htm",
+];
 
 function to38Url(href) {
   const path = String(href || "").replace(/&amp;/g, "&").trim();
@@ -283,40 +266,111 @@ function to38Url(href) {
   return `https://www.38.co.kr${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function parse38ListingRows(html, from, to) {
-  const seen = new Set();
-  const out = [];
-  const trs = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+function extract38FundNos(html) {
+  const decoded = String(html || "").replace(/&amp;/g, "&");
+  const nos = new Set();
+  for (const match of decoded.matchAll(/fund\/\?o=v&no=(\d+)/gi)) {
+    nos.add(match[1]);
+  }
+  return [...nos];
+}
+
+function normalizeIpoNameKey(name) {
+  return cleanIpoName(name)
+    .replace(/\(구\.[^)]+\)/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+function ymdFromDotDate(match) {
+  return `${match[1]}-${String(match[2]).padStart(2, "0")}-${String(match[3]).padStart(2, "0")}`;
+}
+
+function parse38DetailTableFields(html) {
+  let listingDate = "";
+  let market = "";
+  const trs = String(html || "").match(/<tr[\s\S]*?<\/tr>/gi) || [];
   for (const tr of trs) {
-    const href = (tr.match(/href="([^"]+)"/i) || [])[1];
     const cells = [];
     const cellRe = /<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi;
     let match;
     while ((match = cellRe.exec(tr)) !== null) {
-      const cell = stripHtml(match[1]);
-      if (cell) cells.push(cell);
+      cells.push(stripHtml(match[1]));
     }
     if (!cells.length) continue;
-    const name = cleanIpoName(cells[0]);
-    if (!isReadableKoreanName(name)) continue;
-    if (/종목명|공모|청약|비상장|일정|전체|매매/.test(name)) continue;
-    const date = parse38DateRange(cells[1] || cells[0], from, to);
-    if (!date) continue;
-    const key = `${date}:${name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const market = inferMarket(`${name} ${cells.join(" ")}`);
-    out.push({
-      date,
-      name,
-      market,
-      sector: "",
-      offeringPrice: parse38PriceRange(cells[2]) ?? parseWonNumber(cells[2]),
-      url: to38Url(href),
-      code: "",
-    });
+
+    for (let i = 0; i < cells.length - 1; i++) {
+      const label = cells[i].replace(/\s+/g, "");
+      const value = cells[i + 1] || "";
+      if (label === "상장일" || label === "신규상장일") {
+        const dm = value.match(/(20\d{2})\.(\d{1,2})\.(\d{1,2})/);
+        if (dm) listingDate = ymdFromDotDate(dm);
+      }
+      if (label === "시장구분") {
+        if (/코스닥/.test(value)) market = "코스닥";
+        else if (/코스피|유가증권/.test(value)) market = "코스피";
+      }
+    }
+
+    const listingIdx = cells.findIndex((c) => c.replace(/\s+/g, "") === "신규상장일");
+    if (listingIdx >= 0 && !listingDate) {
+      for (let j = listingIdx + 1; j < cells.length; j++) {
+        const dm = cells[j].match(/^(20\d{2})\.(\d{1,2})\.(\d{1,2})$/);
+        if (dm) {
+          listingDate = ymdFromDotDate(dm);
+          break;
+        }
+      }
+    }
   }
-  return out;
+  return { listingDate, market };
+}
+
+function parse38ConfirmedPrice(html) {
+  const text = String(html || "");
+  const patterns = [
+    /확정공모가\s*(?:&nbsp;|\s)*([\d,]+)/i,
+    /공모가\s*(?:&nbsp;|\s)*([\d,]+)\s*~\s*[\d,]+\s*원/i,
+    /공모가\s*(?:&nbsp;|\s)*([\d,]+)\s*원/i,
+  ];
+  for (const re of patterns) {
+    const match = text.match(re);
+    if (!match) continue;
+    const n = Number(match[1].replace(/,/g, ""));
+    if (Number.isFinite(n) && n >= 500 && n <= 500_000) return n;
+  }
+  return null;
+}
+
+function parse38DetailName(html) {
+  const title = decodeXml((String(html || "").match(/<title>([^<]+)/i) || [])[1] || "");
+  const fromTitle = title.match(/IPO공모\s*>\s*([^공모주청약\-]+)/i);
+  if (fromTitle) return cleanIpoName(fromTitle[1]);
+  const h1 = stripHtml((String(html || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || "");
+  return cleanIpoName(h1.replace(/공모주.*/i, ""));
+}
+
+function parse38DetailPage(html, no, from, to) {
+  const name = parse38DetailName(html);
+  if (!isReadableKoreanName(name)) return null;
+
+  const { listingDate: date, market } = parse38DetailTableFields(html);
+  if (!date || !isYmdInRange(date, from, to)) return null;
+  if (market !== "코스피" && market !== "코스닥") return null;
+
+  return {
+    date,
+    name,
+    market,
+    sector: "",
+    offeringPrice: parse38ConfirmedPrice(html),
+    url: `https://www.38.co.kr/html/fund/?o=v&no=${no}`,
+    code: "",
+  };
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchJson(url) {
@@ -475,31 +529,38 @@ async function fetchKoreanNews() {
 }
 
 async function fetchKRIPO(from, to) {
-  const sources = [
-    { name: "38커뮤니케이션 상장일정", url: "https://www.38.co.kr/html/fund/?o=r" },
-    { name: "38커뮤니케이션 공모청약", url: "https://www.38.co.kr/html/fund/?o=n" },
-  ];
-  const rows = [];
-  for (const source of sources) {
+  const fundNos = new Set();
+  for (const url of IPO_LIST_INDEX_URLS) {
     try {
-      const html = await fetchText(source.url);
-      const parsed = parse38ListingRows(html, from, to);
-      rows.push(...parsed);
-      console.log(`✅ ${source.name} 성공 (${parsed.length}건)`);
+      const html = await fetchText(url);
+      for (const no of extract38FundNos(html)) fundNos.add(no);
+      console.log(`✅ 38 IPO 목록 ${url.split("?")[1] || url} — fund no ${extract38FundNos(html).length}개`);
     } catch (error) {
-      console.log(`❌ ${source.name} 실패: ${error instanceof Error ? error.message : error}`);
+      console.log(`❌ 38 IPO 목록 실패: ${error instanceof Error ? error.message : error}`);
     }
   }
-  const seen = new Set();
-  return rows
-    .filter((row) => isReadableKoreanName(row.name))
-    .filter((row) => {
-      const key = `${row.date}:${row.name}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const byName = new Map();
+  const nos = [...fundNos].sort((a, b) => Number(a) - Number(b));
+  for (const no of nos) {
+    try {
+      const html = await fetchText(`https://www.38.co.kr/html/fund/?o=v&no=${no}`);
+      const row = parse38DetailPage(html, no, from, to);
+      if (!row) continue;
+      const key = normalizeIpoNameKey(row.name);
+      const prev = byName.get(key);
+      if (!prev || (row.offeringPrice && !prev.offeringPrice)) {
+        byName.set(key, row);
+      }
+    } catch (error) {
+      console.log(`❌ 38 상세 no=${no} 실패: ${error instanceof Error ? error.message : error}`);
+    }
+    await sleep(IPO_DETAIL_SLEEP_MS);
+  }
+
+  const rows = [...byName.values()].sort((a, b) => a.date.localeCompare(b.date));
+  console.log(`✅ 신규상장(확정) ${rows.length}건 — 코스피·코스닥 상장일만`);
+  return rows;
 }
 
 function normalizeKrEarningRows(rows, from, to) {
@@ -633,7 +694,7 @@ async function main() {
       lastUpdatedKst: seoulStamp(),
       from: today,
       to,
-      source: "finnhub+krx+naver+claude",
+      source: "finnhub+38-detail+naver+claude",
     },
     economicCalendar,
     earningsCalendar,
@@ -648,7 +709,15 @@ async function main() {
   console.log(`Wrote ${OUTPUT_PATH}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+export { fetchKRIPO, seoulYmd, addDaysYmd };
+
+const __weeklyScheduleMain = fileURLToPath(import.meta.url);
+const isCliEntry =
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__weeklyScheduleMain);
+
+if (isCliEntry) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

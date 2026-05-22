@@ -511,7 +511,7 @@
           return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
             .map((r) => {
               const name = cleanIpoName(r.name);
-              const market = r.market || (/스팩/i.test(name) ? "코스닥" : "신규상장");
+              const market = r.market || "—";
               const price = formatOfferingPrice(r.offeringPrice);
               const marketClass = market === "코스피" ? "kospi" : "kosdaq";
               return `<a class="kr-ipo-item kr-pill--${marketClass}" href="${escapeHtml(ipoDetailUrl(r))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([name, market, price].filter(Boolean).join(" · "))}">

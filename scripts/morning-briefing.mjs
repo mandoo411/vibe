@@ -13,6 +13,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
+import { buildFallbackBriefingAnalysis, isClaudeUnavailableError } from "./claude-utils.mjs";
 import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
 const USER_AGENT =
@@ -681,7 +682,17 @@ async function main() {
     errors,
   };
 
-  partial.aiAnalysis = await safeCollect("aiAnalysis", partial.aiAnalysis, () => analyzeWithClaude(partial), errors);
+  partial.aiAnalysis = await safeCollect("aiAnalysis", partial.aiAnalysis, async () => {
+    try {
+      return await analyzeWithClaude(partial);
+    } catch (error) {
+      if (isClaudeUnavailableError(error)) {
+        console.warn("[morning-briefing] Claude unavailable, rule-based fallback");
+        return buildFallbackBriefingAnalysis(partial);
+      }
+      throw error;
+    }
+  }, errors);
 
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await fs.writeFile(OUTPUT_PATH, `${JSON.stringify(partial, null, 2)}\n`, "utf8");

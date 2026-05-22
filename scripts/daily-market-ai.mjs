@@ -3,9 +3,15 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import {
+  buildFallbackDailyClosingReport,
+  ensureJsonSafe,
+  isClaudeUnavailableError,
+  sanitizeUnicode,
+} from "./claude-utils.mjs";
 
 function sanitizeStr(v) {
-  return v == null ? "" : String(v).trim();
+  return v == null ? "" : sanitizeUnicode(String(v).trim());
 }
 
 function parseJsonFromAssistant(text) {
@@ -138,29 +144,45 @@ export async function analyzeDailyClosingReport({
   stocksForThemes,
   newsMap,
 }) {
-  const client = new Anthropic({ apiKey });
-  const user = buildUserPrompt({
-    targetYmd,
-    indexes,
-    supply,
-    sectors,
-    topGainers,
-    volumeLeaders,
-    telegramMessages,
-    pressNews,
-  });
+  const user = ensureJsonSafe(
+    buildUserPrompt({
+      targetYmd,
+      indexes,
+      supply,
+      sectors,
+      topGainers,
+      volumeLeaders,
+      telegramMessages,
+      pressNews,
+    })
+  );
 
-  const msg = await client.messages.create({
-    model,
-    max_tokens: 3000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: user }],
-  });
-
-  const block = msg.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-  const parsed = parseJsonFromAssistant(block.text);
-  if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
+  let parsed;
+  try {
+    const client = new Anthropic({ apiKey });
+    const msg = await client.messages.create({
+      model,
+      max_tokens: 3000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = msg.content.find((b) => b.type === "text");
+    if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
+    parsed = parseJsonFromAssistant(block.text);
+    if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
+  } catch (error) {
+    console.warn(
+      `[daily-market-ai] Claude failed (${isClaudeUnavailableError(error) ? "billing/unavailable" : "error"}), using fallback:`,
+      error instanceof Error ? error.message : error
+    );
+    return buildFallbackDailyClosingReport({
+      targetYmd,
+      indexes,
+      supply,
+      sectors,
+      topGainers,
+    });
+  }
 
   const stocks = Array.isArray(parsed.stocks) ? parsed.stocks : [];
   if (stocksForThemes?.length && stocks.length !== stocksForThemes.length) {

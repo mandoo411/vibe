@@ -3,6 +3,12 @@
 import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import Anthropic from "@anthropic-ai/sdk";
+import {
+  buildFallbackLiveAnalysis,
+  ensureJsonSafe,
+  isClaudeUnavailableError,
+  sanitizeUnicode,
+} from "./claude-utils.mjs";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import {
@@ -512,24 +518,6 @@ async function fetchBluechipMovers(token, appKey, appSecret) {
   return movers;
 }
 
-/** Claude API JSON 오류 방지 — 깨진 UTF-16/이모지 서로게이트 제거 */
-function sanitizeUnicode(value) {
-  const s = String(value ?? "");
-  try {
-    return new TextDecoder("utf-8", { fatal: false }).decode(new TextEncoder().encode(s));
-  } catch {
-    return s.replace(/[\uD800-\uDFFF]/g, "").replace(/\uFFFD/g, "");
-  }
-}
-
-/** Anthropic 요청 본문 직렬화 전 검증 */
-function ensureJsonSafe(value, maxLen = 80_000) {
-  let s = sanitizeUnicode(value);
-  if (s.length > maxLen) s = `${sanitizeUnicode(s.slice(0, maxLen - 1))}…`;
-  JSON.parse(JSON.stringify({ t: s }));
-  return s;
-}
-
 function compactText(value, limit = 150) {
   let clean = sanitizeUnicode(stripHtml(value)).replace(/\s+/g, " ").trim();
   if (clean.length <= limit) return clean;
@@ -789,15 +777,29 @@ ${bluechipText(bluechipMovers, bluechipMessagesByName)}
     "당신은 20년차 주식시장 전문 해설가입니다.\n야구 중계처럼 생동감 있고 흥미롭게, 그러나 숫자와 사실은 정확히 분석해주세요.\n텔레그램 채널의 실제 메시지를 반드시 인용하고, 채널명을 함께 적어주세요.\n추측이 아닌 채널 메시지·지수·등락률 데이터에 근거하세요.\n스톡허브, 거시경제 채널을 최우선으로 참고하세요.\n크립토 채널은 크립토 관련일 때만 참고하세요.\n섹션 제목에 이모지를 사용하고, 종목 분석은 대충 쓰지 말고 구체적으로 작성하세요."
   );
 
-  const msg = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4500,
-    system,
-    messages: [{ role: "user", content: user }],
-  });
-  const block = msg.content.find((item) => item.type === "text");
-  if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-  return sanitizeUnicode(block.text).trim();
+  try {
+    const msg = await client.messages.create({
+      model: MODEL,
+      max_tokens: 4500,
+      system,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = msg.content.find((item) => item.type === "text");
+    if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
+    return sanitizeUnicode(block.text).trim();
+  } catch (error) {
+    console.warn(
+      `[live-report] Claude failed (${isClaudeUnavailableError(error) ? "billing/unavailable" : "error"}), using fallback:`,
+      error instanceof Error ? error.message : error
+    );
+    return buildFallbackLiveAnalysis({
+      time,
+      kospi,
+      kosdaq,
+      top30,
+      themes,
+    });
+  }
 }
 
 function buildTelegramMessage({ ymd, time, kospi, kosdaq, aiAnalysis, top30 }) {

@@ -560,6 +560,14 @@
         try {
           const data = await tmFetchJson("data/morning-briefing.json");
           $("briefing-updated").textContent = data.updatedAt ? `마지막 업데이트: ${data.updatedAt}` : "미국 마감, 환율, 주요 뉴스";
+          const errs = Array.isArray(data.errors) ? data.errors : [];
+          if (errs.length || data.aiAnalysis?._fallback) {
+            $("masthead-notice").hidden = false;
+            $("masthead-notice").textContent =
+              errs.some((e) => /credit balance|too low/i.test(String(e)))
+                ? "AI 분석 일시 중단(Anthropic 크레딧). 지수·뉴스·실시간 API는 정상 표시됩니다."
+                : `브리핑 일부 수집 오류: ${errs[0] || "AI 폴백"}`;
+          }
           renderAnalysis(data.aiAnalysis || {});
           await loadUsMarketLive(data.usMarket?.indices, data.topStocks, data.sectors);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);

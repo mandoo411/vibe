@@ -194,6 +194,42 @@ async function fetchCompanyBySlug(slug) {
   return row;
 }
 
+const TTM_UNITS = { billion: 1e9, million: 1e6, trillion: 1e12 };
+
+function parseTtmMetric(html, label) {
+  const re = new RegExp(
+    `${label} in 20\\d{2} \\(TTM\\):[\\s\\S]*?\\$([\\d.,]+)\\s*(Billion|Million|Trillion)\\s*USD`,
+    "i"
+  );
+  const match = html.match(re);
+  if (!match) return null;
+  const amount = Number(match[1].replace(/,/g, ""));
+  const mult = TTM_UNITS[String(match[2] || "").toLowerCase()];
+  if (!Number.isFinite(amount) || !mult) return null;
+  return amount * mult;
+}
+
+async function fetchCompanyTtmMetrics(slug) {
+  const resolved = SLUG_ALIASES[slug] || slug;
+  const base = `https://companiesmarketcap.com/${resolved}`;
+  const out = { netIncome: null, revenue: null };
+  try {
+    const earnHtml = await fetchHtml(`${base}/earnings/`);
+    out.netIncome =
+      parseTtmMetric(earnHtml, "Earnings") ?? parseTtmMetric(earnHtml, "Net income");
+  } catch (error) {
+    console.warn(`Earnings page failed ${resolved}: ${error.message}`);
+  }
+  await sleep(PAGE_SLEEP_MS);
+  try {
+    const revHtml = await fetchHtml(`${base}/revenue/`);
+    out.revenue = parseTtmMetric(revHtml, "Revenue");
+  } catch (error) {
+    console.warn(`Revenue page failed ${resolved}: ${error.message}`);
+  }
+  return out.netIncome != null || out.revenue != null ? out : null;
+}
+
 async function main() {
   const RANKED = await loadRankedList();
   console.log("Fetching companiesmarketcap listings…");
@@ -263,13 +299,25 @@ async function main() {
       continue;
     }
 
+    let netIncome = earnRow?.netIncome ?? null;
+    let revenue = revRow?.revenue ?? null;
+    if (netIncome == null || revenue == null) {
+      const ttm = await fetchCompanyTtmMetrics(cmcSlug(meta));
+      if (ttm) {
+        if (netIncome == null && ttm.netIncome != null) netIncome = ttm.netIncome;
+        if (revenue == null && ttm.revenue != null) revenue = ttm.revenue;
+        console.log(`TTM metrics: #${rank} ${meta.name} earn=${netIncome != null} rev=${revenue != null}`);
+      }
+      await sleep(PAGE_SLEEP_MS);
+    }
+
     entries[key] = {
       rank,
       name: meta.name,
       symbol: String(meta.symbol || row.symbol || "").toUpperCase(),
       marketCap: row.marketCap,
-      netIncome: earnRow?.netIncome ?? null,
-      revenue: revRow?.revenue ?? null,
+      netIncome,
+      revenue,
       price: row.price ?? earnRow?.price ?? revRow?.price ?? null,
       changePct: row.changePct ?? earnRow?.changePct ?? revRow?.changePct ?? null,
     };

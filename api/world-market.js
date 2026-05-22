@@ -248,7 +248,16 @@ function cacheKeyFor(meta, rank) {
 }
 
 function cacheEntryFor(meta, rank) {
-  return loadMarketCache().entries?.[cacheKeyFor(meta, rank)] || null;
+  const entries = loadMarketCache().entries || {};
+  const keys = [
+    String(meta.symbol || "").trim().toUpperCase(),
+    String(meta.yahooSymbol || "").trim().toUpperCase(),
+    cacheKeyFor(meta, rank),
+  ].filter(Boolean);
+  for (const key of keys) {
+    if (entries[key]) return entries[key];
+  }
+  return null;
 }
 
 function mergeWithCache(meta, quote, rank) {
@@ -500,18 +509,10 @@ function marketCapFromQuote(row) {
   return null;
 }
 
-function valueFor(type, row) {
-  if (type === "marketCap") return marketCapFromQuote(row);
-  if (type === "netIncome") {
-    const eps = toNum(row.eps);
-    const shares = toNum(row.sharesOutstanding);
-    if (eps != null && shares != null) return eps * shares;
-    const marketCap = toNum(row.marketCap);
-    const price = toNum(row.price);
-    if (eps != null && marketCap != null && price) return eps * (marketCap / price);
-    return toNum(row.netIncome);
-  }
-  return toNum(row.revenue || row.marketCap);
+function metricAmount(type, { marketCap, netIncome, revenue }) {
+  if (type === "marketCap") return marketCap;
+  if (type === "netIncome") return netIncome;
+  return revenue;
 }
 
 function buildRow(meta, quote, type, rank, usdKrwRate) {
@@ -521,12 +522,7 @@ function buildRow(meta, quote, type, rank, usdKrwRate) {
   const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
   const netIncome = toNum(q.netIncome) ?? toNum(entry?.netIncome);
   const revenue = toNum(q.revenue) ?? toNum(entry?.revenue);
-  const value =
-    type === "marketCap"
-      ? marketCap
-      : type === "netIncome"
-        ? netIncome ?? valueFor(type, q)
-        : revenue ?? valueFor(type, q);
+  const value = metricAmount(type, { marketCap, netIncome, revenue });
   let price = toNum(q.price);
   if (isKrwStock(meta)) {
     const krw =
@@ -609,8 +605,7 @@ function sortFieldFor(type) {
 function metricSortValue(row, field) {
   const primary = row[field];
   if (primary != null && primary > 0) return primary;
-  if (field === "marketCap" && row.value != null && row.value > 0) return row.value;
-  return 0;
+  return null;
 }
 
 function sortRowsByValue(rows, type) {
@@ -619,10 +614,16 @@ function sortRowsByValue(rows, type) {
     .sort((a, b) => {
       const av = metricSortValue(a, field);
       const bv = metricSortValue(b, field);
+      if (av == null && bv == null) return (a.name || "").localeCompare(b.name || "");
+      if (av == null) return 1;
+      if (bv == null) return -1;
       if (bv !== av) return bv - av;
       return (a.name || "").localeCompare(b.name || "");
     })
-    .map((row, index) => ({ ...row, rank: index + 1 }));
+    .map((row, index) => {
+      const metric = metricSortValue(row, field);
+      return { ...row, rank: index + 1, value: metric };
+    });
 }
 
 module.exports = async function handler(req, res) {

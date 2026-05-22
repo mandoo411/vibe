@@ -565,9 +565,11 @@
           return n > 0 ? "world-delta--up" : n < 0 ? "world-delta--down" : "";
         }
         function metricValue(row) {
-          if (state.type === "marketCap") return row.marketCap ?? row.value;
-          if (state.type === "netIncome") return row.netIncome ?? row.value;
-          return row.revenue ?? row.value;
+          const v = row.value;
+          if (v != null && v > 0) return v;
+          if (state.type === "marketCap") return row.marketCap;
+          if (state.type === "netIncome") return row.netIncome;
+          return row.revenue;
         }
         function sparklineSvg(points, up) {
           if (!Array.isArray(points) || points.length < 2) return "";

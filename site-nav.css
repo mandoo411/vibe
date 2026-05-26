@@ -174,6 +174,22 @@
   transform: translateY(0) scale(0.97);
 }
 
+.dark-mode .tm-theme-toggle,
+.dark-mode #theme-toggle,
+[data-theme="dark"] .tm-theme-toggle,
+[data-theme="dark"] #theme-toggle {
+  background: linear-gradient(145deg, #1e2460, #252c78);
+  color: #b0b8ff;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+}
+
+.dark-mode .tm-theme-toggle:hover,
+.dark-mode .tm-theme-toggle:focus-visible,
+[data-theme="dark"] .tm-theme-toggle:hover,
+[data-theme="dark"] .tm-theme-toggle:focus-visible {
+  background: linear-gradient(145deg, #252c78, #313a95);
+}
+
 .header-top {
   box-sizing: border-box;
   display: flex;
@@ -230,6 +246,21 @@
   color: #999;
 }
 
+.nav-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 8px;
+  border-radius: 5px;
+  font-family: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3339BF, #5560e8);
+  box-shadow: 0 6px 14px rgba(51, 57, 191, 0.18);
+}
+
 .dark-mode .nav-logo-box,
 [data-theme="dark"] .nav-logo-box {
   background: linear-gradient(145deg, #1e2460, #252c78) !important;
@@ -249,6 +280,13 @@
 .dark-mode .nav-brand-sub,
 [data-theme="dark"] .nav-brand-sub {
   color: #999;
+}
+
+.dark-mode .nav-ai-badge,
+[data-theme="dark"] .nav-ai-badge {
+  background: linear-gradient(145deg, #1e2460, #252c78);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+  color: #dfe3ff;
 }
 
 .tm-site-nav {

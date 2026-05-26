@@ -77,10 +77,16 @@ body.page-home-premium {
 
 body.page-home-premium .page {
   position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 18px 48px;
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
+  padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
 }
 
 body.page-home-premium .home-main-content {
-  padding: 24px 0 56px;
+  padding: 22px 0 56px;
 }
 
 body.page-home-premium .tm-site-header {
@@ -940,7 +946,7 @@ a.hub-card:hover .hub-card__chev {
   }
 
   body.page-home-premium .home-main-content {
-    padding: 20px 0 40px;
+    padding: 18px 0 40px;
   }
 
   body.page-home-premium .market-dashboard-title {

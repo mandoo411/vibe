@@ -79,6 +79,10 @@ body.page-home-premium .page {
   position: relative;
 }
 
+body.page-home-premium .home-main-content {
+  padding: 80px 40px 60px 40px;
+}
+
 body.page-home-premium .tm-site-header {
   border-radius: 28px;
   border: 1px solid var(--home-header-border);
@@ -142,8 +146,8 @@ body.page-home-premium .header-top__link.logo-link.home-brand-link {
 }
 
 body.page-home-premium .masthead {
-  padding: 40px 0 32px;
-  margin-top: 6px;
+  padding: 0 0 32px;
+  margin-top: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -329,6 +333,7 @@ body.page-home-premium .masthead__title {
 
 .page--hub {
   margin-top: 26px;
+  padding-bottom: 60px;
 }
 
 .hub-grid {
@@ -910,8 +915,13 @@ a.hub-card:hover .hub-card__chev {
     padding: 3px 10px !important;
   }
 
+  body.page-home-premium .home-main-content {
+    padding: 48px 16px 40px 16px;
+  }
+
   .page--hub {
     margin-top: 18px;
+    padding-bottom: 40px;
   }
 
   .hub-grid {

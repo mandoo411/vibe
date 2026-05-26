@@ -786,6 +786,13 @@ a:hover {
   color: var(--text-dim);
 }
 
+.dark-mode .calendar-weekday--sun,
+[data-theme="dark"] .calendar-weekday--sun,
+.dark-mode .calendar-cell--sun,
+[data-theme="dark"] .calendar-cell--sun {
+  color: #8892ff;
+}
+
 .calendar-cell {
   position: relative;
   padding: 8px;

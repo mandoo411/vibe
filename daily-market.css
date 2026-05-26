@@ -602,6 +602,13 @@
   color: var(--pos);
 }
 
+.dark-mode .archive-dow span:first-child,
+[data-theme="dark"] .archive-dow span:first-child,
+.dark-mode .cell--sun,
+[data-theme="dark"] .cell--sun {
+  color: #8892ff;
+}
+
 .cell--has::after {
   content: "";
   position: absolute;

@@ -555,7 +555,7 @@
           const last = new Date(year, month, 0);
           const today = seoulYmd();
           $("calendar-label").textContent = `${year}년 ${month}월`;
-          const heads = WD.map((d) => `<div class="calendar-weekday">${d}</div>`).join("");
+          const heads = WD.map((d, i) => `<div class="calendar-weekday${i === 0 ? " calendar-weekday--sun" : ""}">${d}</div>`).join("");
           const blanks = Array.from({ length: first.getDay() }, () => '<div class="calendar-cell calendar-cell--blank"></div>').join("");
           const days = Array.from({ length: last.getDate() }, (_, i) => {
             const day = i + 1;
@@ -566,7 +566,8 @@
             const hasKREarnings = itemsForDate("krEarnings", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
             const isToday = ymd === today ? " calendar-cell--today" : "";
-            return `<button type="button" class="calendar-cell${active}${isToday}" data-date="${ymd}">
+            const isSunday = new Date(year, month - 1, day).getDay() === 0 ? " calendar-cell--sun" : "";
+            return `<button type="button" class="calendar-cell${active}${isToday}${isSunday}" data-date="${ymd}">
               <span>${day}</span>
               <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasEarnings ? '<b class="dot dot--earnings"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}${hasKREarnings ? '<b class="dot dot--kr-earnings"></b>' : ""}</i>
             </button>`;

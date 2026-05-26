@@ -343,70 +343,6 @@
   text-decoration: none;
 }
 
-.tm-nav-live-led {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 5px;
-  border-radius: 999px;
-  flex-shrink: 0;
-  background: var(--down-color);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
-}
-
-.tm-site-nav__link--live-report.is-live .tm-nav-live-led {
-  background: var(--status-open);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--status-open) 55%, transparent);
-  animation: tmNavLivePulse 1.2s ease-in-out infinite;
-}
-
-@keyframes tmNavLivePulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.tm-live-badge {
-  display: none;
-  align-items: center;
-  gap: 3px;
-  margin-left: 5px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #ff6b6b;
-}
-
-.tm-live-badge::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #ff3838;
-  box-shadow: 0 0 8px rgba(255, 56, 56, 0.9);
-  animation: tmLivePulse 1s ease-in-out infinite;
-}
-
-body.is-kr-market-open .tm-live-badge {
-  display: inline-flex;
-}
-
-@keyframes tmLivePulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.85);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 /* 스마트폰·태블릿 좁은 폭: 픽셀 고정 헤더(모든 페이지 동일) */
 @media (max-width: 768px) {
   .tm-market-ticker-wrap {
@@ -543,17 +479,6 @@ body.is-kr-market-open .tm-live-badge {
   .tm-site-nav__link[aria-current="page"] {
     font-weight: 700;
     box-shadow: none;
-  }
-
-  .tm-live-badge {
-    margin-left: 2px;
-    font-size: 7px;
-    letter-spacing: 0.02em;
-  }
-
-  .tm-live-badge::before {
-    width: 5px;
-    height: 5px;
   }
 
   .tm-site-header > .tm-theme-toggle,

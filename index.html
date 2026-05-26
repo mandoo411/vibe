@@ -56,7 +56,6 @@
           <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
           <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
           <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
-          <a class="tm-site-nav__link" href="./live-report.html">LIVE-증시</a>
           <a class="tm-site-nav__link" href="./us-market.html">미증시</a>
           <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
           <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>
@@ -118,19 +117,6 @@
           </div>
         </a>
 
-        <a class="hub-card hub-card--live-report is-closed" href="./live-report.html" role="listitem" id="hub-live-report-card">
-          <div class="icon-box icon-live-report" aria-hidden="true">
-            <i class="ti ti-device-tv"></i>
-          </div>
-          <h2 class="hub-card__title"><span class="hub-market-led" aria-hidden="true"></span>LIVE-증시</h2>
-          <p class="hub-card__desc">텔레그램 뉴스 기반 장중 AI 중계</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-live-status" id="hub-live-status">확인 중</span>
-            <span class="hub-live-last" id="hub-live-report-meta">마지막 리포트 확인 중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
-
         <a class="hub-card" href="./briefing.html" role="listitem">
           <div class="icon-box icon-briefing" aria-hidden="true">
             <i class="ti ti-news"></i>
@@ -181,38 +167,5 @@
       </div>
       </div>
     </div>
-    <script>
-      (() => {
-        const card = document.getElementById("hub-live-report-card");
-        const meta = document.getElementById("hub-live-report-meta");
-        const statusEl = document.getElementById("hub-live-status");
-        if (!card || !meta) return;
-        const seoulParts = () => {
-          const parts = new Intl.DateTimeFormat("en-CA", {
-            timeZone: "Asia/Seoul",
-            weekday: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          }).formatToParts(new Date());
-          const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
-          return { weekday: map.weekday, minutes: Number(map.hour) * 60 + Number(map.minute) };
-        };
-        const { weekday, minutes } = seoulParts();
-        const isLive = weekday !== "Sat" && weekday !== "Sun" && minutes >= 540 && minutes <= 930;
-        card.classList.toggle("is-live", isLive);
-        card.classList.toggle("is-closed", !isLive);
-        if (statusEl) statusEl.textContent = isLive ? "장중" : weekday === "Sat" || weekday === "Sun" ? "휴장" : minutes > 930 ? "장마감" : "장 시작 전";
-        tmFetchJson("data/live-report.json")
-          .then((data) => {
-            const reports = Array.isArray(data.reports) ? data.reports : [];
-            const latest = reports.sort((a, b) => String(a.time).localeCompare(String(b.time))).at(-1);
-            meta.textContent = latest ? `최근 ${latest.time}` : isLive ? "리포트 준비 중" : "—";
-          })
-          .catch(() => {
-            meta.textContent = isLive ? "리포트 연결 중" : "—";
-          });
-      })();
-    </script>
   </body>
 </html>

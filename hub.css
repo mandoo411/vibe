@@ -4,9 +4,9 @@ body.page-home-premium {
   --font-sans: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
   background:
-    radial-gradient(circle at 0% 0%, var(--home-body-glow) 0%, transparent 32%),
-    radial-gradient(circle at 100% 0%, var(--home-body-glow-soft) 0%, transparent 28%),
-    linear-gradient(180deg, var(--home-body-top) 0%, var(--bg-primary) 34%);
+    radial-gradient(circle at 0% 0%, var(--page-body-glow) 0%, transparent 32%),
+    radial-gradient(circle at 100% 0%, var(--page-body-glow-soft) 0%, transparent 28%),
+    linear-gradient(180deg, var(--page-body-top) 0%, var(--bg-primary) 34%);
 }
 
 [data-theme="light"].page-home-premium {

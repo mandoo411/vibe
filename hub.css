@@ -165,6 +165,24 @@ body.page-home-premium .masthead__title {
   color: var(--home-title);
 }
 
+.market-live-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(51, 57, 191, 0.18);
+}
+
+[data-theme="dark"].page-home-premium .market-dashboard-title,
+.dark-mode.page-home-premium .market-dashboard-title {
+  color: white !important;
+}
+
+[data-theme="dark"].page-home-premium .market-sub,
+.dark-mode.page-home-premium .market-sub {
+  color: #aaa !important;
+}
+
 .menu-card {
   position: relative;
   display: flex;
@@ -874,6 +892,10 @@ a.hub-card:hover .hub-card__chev {
 
   body.page-home-premium .masthead__title {
     font-size: clamp(1.8rem, 9vw, 2.5rem);
+  }
+
+  .market-live-badge {
+    padding: 3px 10px !important;
   }
 
   .page--hub {

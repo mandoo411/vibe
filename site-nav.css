@@ -203,97 +203,15 @@
   text-decoration: none;
 }
 
-.logo-tm-box {
-  position: relative;
-  width: clamp(154px, 15vw, 178px);
-  height: 86px;
-  border-radius: 20px;
+.logo img {
   display: block;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border-strong, #cbd5e1) 72%, transparent);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.9));
-  box-shadow:
-    0 16px 32px color-mix(in srgb, var(--shadow-color, #131722) 10%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  width: auto;
+  max-width: 100%;
 }
 
-.logo-tm-box::before {
-  content: "";
-  position: absolute;
-  inset: 8px 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.logo-tm-box::after {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  background: url("./assets/logo-tma-wordmark.png?v=logo-20260526") center 53% / 124% auto no-repeat;
-}
-
-.logo-tm-text {
-  display: none;
-}
-
-.logo-ai-text {
-  display: none;
-}
-
-.logo-text-block {
-  display: none;
-}
-
-.logo-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.logo-main-text {
-  font-family: var(--font-sans);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  letter-spacing: -0.03em;
-  color: var(--text);
-}
-
-.logo-ai-badge {
-  font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  line-height: 1.2;
-  flex-shrink: 0;
-  color: #ffffff;
-  background: linear-gradient(135deg, #2563eb, #4338ca);
-  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
-}
-
-.logo-sub-text {
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-top: 0;
-  line-height: 1.35;
-  max-width: 180px;
-  color: var(--text-muted);
-  white-space: normal;
-}
-
-[data-theme="dark"] .logo-tm-box {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(226, 232, 240, 0.9));
-  border-color: color-mix(in srgb, #cbd5e1 84%, transparent);
-}
-
-[data-theme="light"] .logo-tm-box {
-  filter: none;
+.dark-mode .logo img,
+[data-theme="dark"] .logo img {
+  filter: brightness(0) invert(1);
 }
 
 .tm-site-nav {
@@ -427,22 +345,6 @@
   .header-top__link.logo-link {
     gap: 0;
     padding: 0;
-  }
-
-  .logo-tm-box {
-    width: min(136px, 36vw);
-    height: 72px;
-    border-radius: 16px;
-  }
-
-  .logo-tm-box::before {
-    inset: 7px 8px;
-    border-radius: 10px;
-  }
-
-  .logo-tm-box::after {
-    inset: 5px;
-    background-size: 126% auto;
   }
 
   .tm-site-nav {

@@ -82,7 +82,7 @@ body.page-home-premium .page {
 }
 
 body.page-home-premium .home-main-content {
-  padding: 0 0 56px;
+  padding: 32px 0 56px;
 }
 
 body.page-home-premium .tm-market-ticker__track {
@@ -168,19 +168,11 @@ body.page-home-premium .masthead__copy {
   overflow: hidden;
 }
 
-body.page-home-premium .page-header {
-  margin: 10px 0 18px;
-}
-
-body.page-home-premium .page-header__meta {
+body.page-home-premium .page-title-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-}
-
-body.page-home-premium .page-header__meta p {
-  margin: 0;
 }
 
 .market-live-badge {
@@ -372,7 +364,8 @@ body.page-home-premium .market-sub {
   align-items: stretch;
 }
 
-.hub-grid > *:last-child:nth-child(3n + 1) {
+.hub-grid > .menu-card:last-child:nth-child(3n + 1),
+.hub-grid > .hub-card:last-child:nth-child(3n + 1) {
   grid-column: 2 / 3;
 }
 
@@ -930,11 +923,13 @@ a.hub-card:hover .hub-card__chev {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hub-grid > *:last-child:nth-child(3n + 1) {
+  .hub-grid > .menu-card:last-child:nth-child(3n + 1),
+  .hub-grid > .hub-card:last-child:nth-child(3n + 1) {
     grid-column: auto;
   }
 
-  .hub-grid > *:last-child:nth-child(2n + 1) {
+  .hub-grid > .menu-card:last-child:nth-child(2n + 1),
+  .hub-grid > .hub-card:last-child:nth-child(2n + 1) {
     grid-column: 1 / -1;
     width: 100%;
     max-width: calc((100% - 22px) / 2);
@@ -957,14 +952,14 @@ a.hub-card:hover .hub-card__chev {
   }
 
   body.page-home-premium .home-main-content {
-    padding: 0 0 40px;
+    padding: 24px 0 40px;
   }
 
   body.page-home-premium .page-title {
     font-size: 28px;
   }
 
-  body.page-home-premium .page-header__meta {
+  body.page-home-premium .page-title-row {
     align-items: flex-start;
   }
 
@@ -1039,7 +1034,8 @@ a.hub-card:hover .hub-card__chev {
     grid-template-columns: 1fr;
   }
 
-  .hub-grid > *:last-child {
+  .hub-grid > .menu-card:last-child,
+  .hub-grid > .hub-card:last-child {
     grid-column: auto;
     max-width: none;
     justify-self: stretch;

@@ -215,6 +215,13 @@
   min-width: 0;
 }
 
+.nav-logo-box,
+.nav-logo-text,
+.nav-brand-name,
+.nav-brand-sub {
+  font-family: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
 .nav-brand-name {
   color: #1a1a2e;
 }

@@ -80,132 +80,154 @@
       </header>
 
       <div class="page--hub">
-      <div class="hub-grid" role="list">
-        <a class="hub-card hub-card--premium" href="./daily-market.html" role="listitem">
-          <div class="icon-box icon-market" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--market">
-              <span class="hub-tech-icon__grid"></span>
-              <span class="hub-tech-icon__bar hub-tech-icon__bar--1"></span>
-              <span class="hub-tech-icon__bar hub-tech-icon__bar--2"></span>
-              <span class="hub-tech-icon__bar hub-tech-icon__bar--3"></span>
-              <span class="hub-tech-icon__trend"></span>
-              <span class="hub-tech-icon__arrow"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">마감시황</h2>
-          <p class="hub-card__desc">국내 증시 마감 흐름과 AI 요약</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+        <div class="hub-grid" role="list">
+          <a
+            class="menu-card"
+            href="./daily-market.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-chart-candle" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">마감시황</h2>
+            <p class="menu-card__desc">국내 증시 마감 흐름과 AI 요약</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./realtime.html" role="listitem">
-          <div class="icon-box icon-live" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--live">
-              <span class="hub-tech-icon__prism hub-tech-icon__prism--1"></span>
-              <span class="hub-tech-icon__prism hub-tech-icon__prism--2"></span>
-              <span class="hub-tech-icon__prism hub-tech-icon__prism--3"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">실시간시세</h2>
-          <p class="hub-card__desc">시총 TOP30 · 상승률 TOP50 · 종목 차트</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+          <a
+            class="menu-card"
+            href="./briefing.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-news" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">브리핑</h2>
+            <p class="menu-card__desc">미국 마감 · 환율 · 코인 시황 브리핑</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./weekly-market.html" role="listitem">
-          <div class="icon-box icon-calendar" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--calendar">
-              <span class="hub-tech-icon__calendar-shell"></span>
-              <span class="hub-tech-icon__calendar-top"></span>
-              <span class="hub-tech-icon__calendar-pin hub-tech-icon__calendar-pin--1"></span>
-              <span class="hub-tech-icon__calendar-pin hub-tech-icon__calendar-pin--2"></span>
-              <span class="hub-tech-icon__calendar-dot hub-tech-icon__calendar-dot--1"></span>
-              <span class="hub-tech-icon__calendar-dot hub-tech-icon__calendar-dot--2"></span>
-              <span class="hub-tech-icon__calendar-dot hub-tech-icon__calendar-dot--3"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">일정</h2>
-          <p class="hub-card__desc">경제지표 · 신규상장 · 국내외 실적</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+          <a
+            class="menu-card"
+            href="./realtime.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-activity" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">실시간시세</h2>
+            <p class="menu-card__desc">시총 TOP30 · 상승률 TOP50 · 종목 차트</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./briefing.html" role="listitem">
-          <div class="icon-box icon-briefing" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--briefing">
-              <span class="hub-tech-icon__sheet hub-tech-icon__sheet--back"></span>
-              <span class="hub-tech-icon__sheet hub-tech-icon__sheet--mid"></span>
-              <span class="hub-tech-icon__sheet hub-tech-icon__sheet--front"></span>
-              <span class="hub-tech-icon__brief-line hub-tech-icon__brief-line--1"></span>
-              <span class="hub-tech-icon__brief-line hub-tech-icon__brief-line--2"></span>
-              <span class="hub-tech-icon__brief-chart"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">브리핑</h2>
-          <p class="hub-card__desc">미국 마감 · 환율 · 코인 시황 브리핑</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+          <a
+            class="menu-card"
+            href="./weekly-market.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-calendar-event" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">일정</h2>
+            <p class="menu-card__desc">경제지표 · 신규상장 · 국내외 실적</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./us-market.html" role="listitem">
-          <div class="icon-box icon-us" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--us">
-              <span class="hub-tech-icon__flag-panel"></span>
-              <span class="hub-tech-icon__flag-starfield"></span>
-              <span class="hub-tech-icon__flag-line"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">미증시</h2>
-          <p class="hub-card__desc">나스닥 · S&amp;P500 · 선물 · 미국 TOP50</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+          <a
+            class="menu-card"
+            href="./us-market.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-building-skyscraper" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">미증시</h2>
+            <p class="menu-card__desc">나스닥 · S&amp;P500 · 선물 · 미국 TOP50</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./crypto.html" role="listitem">
-          <div class="icon-box icon-crypto" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--crypto">
-              <span class="hub-tech-icon__coin-ring"></span>
-              <span class="hub-tech-icon__coin-core"></span>
-              <span class="hub-tech-icon__coin-symbol">₿</span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">암호화폐</h2>
-          <p class="hub-card__desc">시총 TOP100 · 원/달러 전환 · 차트</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
+          <a
+            class="menu-card"
+            href="./crypto.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-currency-bitcoin" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">암호화폐</h2>
+            <p class="menu-card__desc">시총 TOP100 · 원/달러 전환 · 차트</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
 
-        <a class="hub-card hub-card--premium" href="./world-market.html" role="listitem">
-          <div class="icon-box icon-world" aria-hidden="true">
-            <span class="hub-tech-icon hub-tech-icon--world">
-              <span class="hub-tech-icon__globe-core"></span>
-              <span class="hub-tech-icon__globe-meridian hub-tech-icon__globe-meridian--1"></span>
-              <span class="hub-tech-icon__globe-meridian hub-tech-icon__globe-meridian--2"></span>
-              <span class="hub-tech-icon__globe-parallel hub-tech-icon__globe-parallel--1"></span>
-              <span class="hub-tech-icon__globe-parallel hub-tech-icon__globe-parallel--2"></span>
-              <span class="hub-tech-icon__globe-ring"></span>
-            </span>
-          </div>
-          <h2 class="hub-card__title">글로벌 랭킹</h2>
-          <p class="hub-card__desc">세계 기업 시총 · 순이익 · 매출 순위</p>
-          <div class="hub-card__meta">
-            <span class="hub-card__status hub-card__status--live">운영중</span>
-            <span class="hub-card__chev" aria-hidden="true">→</span>
-          </div>
-        </a>
-      </div>
+          <a
+            class="menu-card"
+            href="./world-market.html"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-trophy" style="font-size:26px; color:#3339BF;"></i>
+            </div>
+            <h2 class="menu-card__title">글로벌랭킹</h2>
+            <p class="menu-card__desc">세계 기업 시총 · 수익 · 매출 순위</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
   </body>

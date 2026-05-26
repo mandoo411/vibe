@@ -142,7 +142,7 @@ body.page-home-premium .header-top__link.logo-link.home-brand-link {
 }
 
 body.page-home-premium .masthead {
-  padding: 10px 0 0;
+  padding: 40px 0 32px;
   margin-top: 6px;
   border: 0;
   background: transparent;
@@ -171,6 +171,13 @@ body.page-home-premium .masthead__title {
   justify-content: center;
   white-space: nowrap;
   box-shadow: 0 10px 20px rgba(51, 57, 191, 0.18);
+}
+
+.dark-mode .live-badge,
+[data-theme="dark"] .live-badge {
+  background: linear-gradient(135deg, #1e2460, #252c78) !important;
+  color: #b0b8ff !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="dark"].page-home-premium .market-dashboard-title,

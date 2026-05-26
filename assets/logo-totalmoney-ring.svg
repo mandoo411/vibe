@@ -1,31 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
-  <title id="title">TotalMoney AI icon</title>
-  <desc id="desc">Flat blue circle icon with a minimalist rising chart and dollar symbol.</desc>
+  <title id="title">TotalMoney AI logo</title>
+  <desc id="desc">Blue double-ring circle logo with stacked Total Money AI text.</desc>
   <defs>
-    <linearGradient id="tmFlatBlueLarge" x1="12%" y1="12%" x2="88%" y2="88%">
-      <stop offset="0%" stop-color="#1d4ed8" />
-      <stop offset="100%" stop-color="#4338ca" />
+    <linearGradient id="tmBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4f8ffb" />
+      <stop offset="100%" stop-color="#2563eb" />
     </linearGradient>
   </defs>
-  <circle cx="80" cy="80" r="72" fill="url(#tmFlatBlueLarge)" />
+  <circle cx="80" cy="80" r="72" fill="#ffffff" stroke="url(#tmBlue)" stroke-width="4" />
+  <circle cx="80" cy="80" r="64" fill="none" stroke="url(#tmBlue)" stroke-width="2.5" />
   <g
-    fill="none"
-    stroke="#ffffff"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="9"
-  >
-    <path d="M42 98 L67 98 L87 73 L111 73" />
-    <path d="M97 59 L111 73 L97 87" />
-  </g>
-  <text
-    x="50"
-    y="70"
-    fill="#ffffff"
-    font-family="Inter, Arial, sans-serif"
-    font-size="24"
+    fill="url(#tmBlue)"
+    font-family="Arial, Helvetica, sans-serif"
     font-weight="800"
+    text-anchor="middle"
+    letter-spacing="-1"
   >
-    $
-  </text>
+    <text x="80" y="62" font-size="27">TOTAL</text>
+    <text x="80" y="91" font-size="27">MONEY</text>
+    <text x="80" y="123" font-size="36">AI</text>
+  </g>
 </svg>

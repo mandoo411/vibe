@@ -204,13 +204,13 @@
 }
 
 .logo-tm-box {
-  width: 82px;
-  height: 82px;
-  border-radius: 50%;
+  width: clamp(184px, 18vw, 236px);
+  height: 72px;
+  border-radius: 0;
   display: block;
   flex-shrink: 0;
   box-sizing: border-box;
-  background: url("./assets/logo-totalmoney-ring.svg?v=flat-20260526") center / contain no-repeat;
+  background: url("./assets/logo-tma-wordmark.png?v=logo-20260526") left center / contain no-repeat;
   box-shadow: none;
 }
 
@@ -403,8 +403,8 @@
   }
 
   .logo-tm-box {
-    width: 64px;
-    height: 64px;
+    width: min(152px, 40vw);
+    height: 48px;
   }
 
   .tm-site-nav {

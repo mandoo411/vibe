@@ -92,6 +92,74 @@
     };
   }
 
+  function navContext() {
+    const header = document.querySelector(".tm-site-header");
+    const nav = header ? header.querySelector(".tm-site-nav") : null;
+    return { header, nav };
+  }
+
+  function setNavOpen(open) {
+    const { header } = navContext();
+    if (!header) return;
+    const toggle = header.querySelector(".tm-nav-toggle");
+    header.classList.toggle("is-nav-open", open);
+    if (!toggle) return;
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    const icon = toggle.querySelector(".tm-nav-toggle__icon");
+    const label = toggle.querySelector(".tm-nav-toggle__label");
+    if (icon) icon.textContent = open ? "×" : "☰";
+    if (label) label.textContent = open ? "닫기" : "메뉴";
+  }
+
+  function ensureNavToggle() {
+    const { header, nav } = navContext();
+    if (!header || !nav) return null;
+
+    if (!nav.id) nav.id = "tm-site-nav-menu";
+
+    let toggle = header.querySelector(".tm-nav-toggle");
+    if (!toggle) {
+      toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "tm-nav-toggle";
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-controls", nav.id);
+      toggle.innerHTML =
+        '<span class="tm-nav-toggle__icon" aria-hidden="true">☰</span><span class="tm-nav-toggle__label">메뉴</span>';
+      header.insertBefore(toggle, nav);
+    }
+
+    if (!header.dataset.navBound) {
+      toggle.addEventListener("click", () => {
+        const open = header.classList.contains("is-nav-open");
+        setNavOpen(!open);
+      });
+
+      nav.addEventListener("click", (event) => {
+        const link = event.target.closest("a");
+        if (link && window.innerWidth <= 768) setNavOpen(false);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (window.innerWidth > 768) return;
+        if (!header.contains(event.target)) setNavOpen(false);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") setNavOpen(false);
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) setNavOpen(false);
+      });
+
+      header.dataset.navBound = "true";
+    }
+
+    setNavOpen(false);
+    return toggle;
+  }
+
   function ensureLiveNavLink() {
     const link = document.querySelector('.tm-site-nav a[href*="live-report"]');
     if (!link) return null;
@@ -127,11 +195,13 @@
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
+      ensureNavToggle();
       ensureLiveNavLink();
       updateLiveState();
       updateTickerBar();
     }, { once: true });
   } else {
+    ensureNavToggle();
     ensureLiveNavLink();
     updateLiveState();
     updateTickerBar();

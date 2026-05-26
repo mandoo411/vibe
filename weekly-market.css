@@ -786,6 +786,11 @@ a:hover {
   color: var(--text-dim);
 }
 
+.calendar-weekday--sun,
+.calendar-cell--sun {
+  color: #e53935;
+}
+
 .dark-mode .calendar-weekday--sun,
 [data-theme="dark"] .calendar-weekday--sun,
 .dark-mode .calendar-cell--sun,

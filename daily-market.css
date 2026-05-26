@@ -130,7 +130,7 @@
 
 .dark-mode .loading-title,
 [data-theme="dark"] .loading-title {
-  color: white;
+  color: white !important;
 }
 
 .dark-mode .loading-bar-track,

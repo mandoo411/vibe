@@ -173,6 +173,11 @@ body.page-home-premium .masthead__title {
   box-shadow: 0 10px 20px rgba(51, 57, 191, 0.18);
 }
 
+.dark-mode h1,
+[data-theme="dark"] h1 {
+  color: white;
+}
+
 .dark-mode .live-badge,
 [data-theme="dark"] .live-badge {
   background: linear-gradient(135deg, #1e2460, #252c78) !important;
@@ -187,7 +192,7 @@ body.page-home-premium .masthead__title {
 
 [data-theme="dark"].page-home-premium .market-sub,
 .dark-mode.page-home-premium .market-sub {
-  color: #aaa !important;
+  color: #555 !important;
 }
 
 .menu-card {

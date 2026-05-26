@@ -210,8 +210,8 @@
   display: block;
   flex-shrink: 0;
   box-sizing: border-box;
-  background: url("./assets/logo-totalmoney-ring.svg") center / contain no-repeat;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--shadow-color, #131722) 10%, transparent);
+  background: url("./assets/logo-totalmoney-ring.svg?v=flat-20260526") center / contain no-repeat;
+  box-shadow: none;
 }
 
 .logo-tm-text {

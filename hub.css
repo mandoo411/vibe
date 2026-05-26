@@ -80,7 +80,7 @@ body.page-home-premium .page {
 }
 
 body.page-home-premium .home-main-content {
-  padding: 36px 18px 56px;
+  padding: 24px 0 56px;
 }
 
 body.page-home-premium .tm-site-header {
@@ -146,7 +146,7 @@ body.page-home-premium .header-top__link.logo-link.home-brand-link {
 }
 
 body.page-home-premium .masthead {
-  padding: 0 0 32px;
+  padding: 0 0 22px;
   margin-top: 0;
   border: 0;
   background: transparent;
@@ -161,6 +161,10 @@ body.page-home-premium .masthead.masthead--title-only {
 
 body.page-home-premium .masthead__copy {
   width: 100%;
+}
+
+body.page-home-premium .masthead__copy > div:first-child {
+  margin-bottom: 16px !important;
 }
 
 body.page-home-premium .masthead__kicker {
@@ -188,12 +192,12 @@ body.page-home-premium .masthead__title {
 }
 
 body.page-home-premium .market-dashboard-title {
-  font-size: 36px !important;
-  line-height: 1.08;
+  font-size: 40px !important;
+  line-height: 1.06;
 }
 
 body.page-home-premium .market-sub {
-  font-size: 14px !important;
+  font-size: 15px !important;
   line-height: 1.5;
 }
 
@@ -352,7 +356,7 @@ body.page-home-premium .market-sub {
 }
 
 .page--hub {
-  margin-top: 10px;
+  margin-top: 0;
   padding-bottom: 56px;
 }
 
@@ -936,19 +940,19 @@ a.hub-card:hover .hub-card__chev {
   }
 
   body.page-home-premium .home-main-content {
-    padding: 24px 12px 40px;
+    padding: 20px 0 40px;
   }
 
   body.page-home-premium .market-dashboard-title {
-    font-size: 30px !important;
+    font-size: 32px !important;
   }
 
   body.page-home-premium .market-sub {
-    font-size: 12px !important;
+    font-size: 13px !important;
   }
 
   .page--hub {
-    margin-top: 8px;
+    margin-top: 0;
     padding-bottom: 40px;
   }
 

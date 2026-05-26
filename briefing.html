@@ -543,10 +543,10 @@
         const crypto = (Array.isArray(data.crypto?.assets) ? data.crypto.assets : []).find((row) => row.symbol === "BTC");
         const pickCommodity = (id) => commodities.find((row) => row.id === id);
         const rows = [
-          { key: "USD/KRW", label: "💱 원/달러 환율", value: rates["USD/KRW"], changePct: null },
-          { key: "WTI유가", label: "🛢️ WTI 유가", value: pickCommodity("wti")?.price, changePct: pickCommodity("wti")?.changePct },
-          { key: "금", label: "🥇 금시세", value: pickCommodity("gold")?.price, changePct: pickCommodity("gold")?.changePct },
-          { key: "BTC", label: "₿ 비트코인", value: crypto?.priceUsd, changePct: crypto?.changePct24h, prefix: "$" },
+          { key: "USD/KRW", label: "원/달러 환율", value: rates["USD/KRW"], changePct: null },
+          { key: "WTI유가", label: "WTI 유가", value: pickCommodity("wti")?.price, changePct: pickCommodity("wti")?.changePct },
+          { key: "금", label: "금시세", value: pickCommodity("gold")?.price, changePct: pickCommodity("gold")?.changePct },
+          { key: "BTC", label: "비트코인", value: crypto?.priceUsd, changePct: crypto?.changePct24h, prefix: "$" },
         ];
         $("forex-list").innerHTML = rows.map((row) => `<li class="briefing-row">
           <strong>${escapeHtml(row.label)}</strong>

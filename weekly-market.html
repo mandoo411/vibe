@@ -105,7 +105,7 @@
               <div id="today-kr-ipo"></div>
             </article>
             <article>
-              <h3 class="subsection-title">💹 국내 실적발표</h3>
+              <h3 class="subsection-title">국내 실적발표</h3>
               <div id="today-kr-earnings"></div>
             </article>
             <article>
@@ -528,7 +528,7 @@
             (acc[sector] ||= []).push(row);
             return acc;
           }, {});
-          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">💹 국내 실적발표</h4>' : ""}<div class="kr-earnings-groups">${Object.entries(grouped)
+          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">국내 실적발표</h4>' : ""}<div class="kr-earnings-groups">${Object.entries(grouped)
             .map(([sector, sectorRows]) => `<div class="kr-earnings-group">
               <span class="kr-earnings-group__label">${escapeHtml(sector)}:</span>
               <span class="earnings-grid">${sectorRows

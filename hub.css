@@ -103,50 +103,30 @@ body.page-home-premium .tm-theme-toggle:focus-visible {
 }
 
 body.page-home-premium .header-top {
-  max-width: min(390px, 38vw);
+  max-width: min(220px, 24vw);
 }
 
 body.page-home-premium .logo-link.home-brand-link,
 body.page-home-premium .header-top__link.logo-link.home-brand-link {
-  gap: 16px;
+  gap: 0;
 }
 
 body.page-home-premium .home-brand-box {
-  width: clamp(152px, 16vw, 186px);
-  height: 106px;
-  border-radius: 24px;
+  width: clamp(166px, 16vw, 192px);
+  height: 92px;
+  border-radius: 22px;
 }
 
 body.page-home-premium .home-brand-box::before {
-  inset: 10px 12px;
-  border-radius: 18px;
+  inset: 8px 10px;
+  border-radius: 15px;
   background: rgba(255, 255, 255, 0.92);
 }
 
 body.page-home-premium .home-brand-box::after {
-  inset: 8px;
-  background-size: 152% auto;
-  background-position: center 54%;
-}
-
-body.page-home-premium .home-brand-copy {
-  display: flex;
-  padding-left: 16px;
-  border-left-color: var(--home-divider);
-}
-
-body.page-home-premium .home-brand-copy .logo-main-text {
-  font-size: 18px;
-  color: var(--home-title);
-}
-
-body.page-home-premium .home-brand-copy .logo-ai-badge {
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
-}
-
-body.page-home-premium .home-brand-copy .logo-sub-text {
-  max-width: 190px;
-  color: var(--home-desc);
+  inset: 6px;
+  background-size: 126% auto;
+  background-position: center 53%;
 }
 
 body.page-home-premium .masthead {
@@ -730,7 +710,7 @@ a.hub-card:hover .hub-card__chev {
 
 @media (max-width: 980px) {
   body.page-home-premium .header-top {
-    max-width: min(320px, 46vw);
+    max-width: min(200px, 30vw);
   }
 
   .hub-grid {
@@ -745,21 +725,13 @@ a.hub-card:hover .hub-card__chev {
 
   body.page-home-premium .home-brand-link,
   body.page-home-premium .header-top__link.logo-link.home-brand-link {
-    gap: 12px;
+    gap: 0;
   }
 
   body.page-home-premium .home-brand-box {
-    width: min(150px, 34vw);
-    height: 86px;
-    border-radius: 20px;
-  }
-
-  body.page-home-premium .home-brand-copy {
-    padding-left: 12px;
-  }
-
-  body.page-home-premium .home-brand-copy .logo-sub-text {
-    max-width: 150px;
+    width: min(162px, 28vw);
+    height: 82px;
+    border-radius: 18px;
   }
 
   body.page-home-premium .masthead__title {
@@ -819,12 +791,12 @@ a.hub-card:hover .hub-card__chev {
 
   body.page-home-premium .home-brand-link,
   body.page-home-premium .header-top__link.logo-link.home-brand-link {
-    gap: 10px;
+    gap: 0;
   }
 
   body.page-home-premium .home-brand-box {
-    width: 136px;
-    height: 76px;
+    width: 142px;
+    height: 72px;
   }
 
   .hub-grid {

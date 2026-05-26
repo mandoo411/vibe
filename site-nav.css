@@ -183,7 +183,7 @@
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 0;
   min-width: 0;
   width: auto;
   max-width: 100%;
@@ -205,9 +205,9 @@
 
 .logo-tm-box {
   position: relative;
-  width: clamp(142px, 14vw, 172px);
-  height: 92px;
-  border-radius: 22px;
+  width: clamp(154px, 15vw, 178px);
+  height: 86px;
+  border-radius: 20px;
   display: block;
   flex-shrink: 0;
   box-sizing: border-box;
@@ -222,17 +222,16 @@
 .logo-tm-box::before {
   content: "";
   position: absolute;
-  inset: 10px 12px;
-  border-radius: 16px;
+  inset: 8px 10px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.9);
 }
 
 .logo-tm-box::after {
   content: "";
   position: absolute;
-  inset: 8px;
-  background: url("./assets/logo-tma-wordmark.png?v=logo-20260526") center 54% / 148% auto no-repeat;
-  transform: scale(1.02);
+  inset: 6px;
+  background: url("./assets/logo-tma-wordmark.png?v=logo-20260526") center 53% / 124% auto no-repeat;
 }
 
 .logo-tm-text {
@@ -244,12 +243,7 @@
 }
 
 .logo-text-block {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding-left: 14px;
-  border-left: 1px solid color-mix(in srgb, var(--border-strong, #cbd5e1) 70%, transparent);
+  display: none;
 }
 
 .logo-title-row {
@@ -431,28 +425,24 @@
 
   .logo-link,
   .header-top__link.logo-link {
-    gap: 10px;
+    gap: 0;
     padding: 0;
   }
 
   .logo-tm-box {
-    width: min(132px, 34vw);
-    height: 74px;
-    border-radius: 18px;
+    width: min(136px, 36vw);
+    height: 72px;
+    border-radius: 16px;
   }
 
   .logo-tm-box::before {
-    inset: 8px 10px;
-    border-radius: 12px;
+    inset: 7px 8px;
+    border-radius: 10px;
   }
 
   .logo-tm-box::after {
-    inset: 7px;
-    background-size: 150% auto;
-  }
-
-  .logo-text-block {
-    display: none;
+    inset: 5px;
+    background-size: 126% auto;
   }
 
   .tm-site-nav {

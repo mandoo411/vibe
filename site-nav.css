@@ -238,6 +238,15 @@
   font-family: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+.nav-logo-box {
+  background: linear-gradient(145deg, #3339BF, #5560e8) !important;
+  box-shadow: 0 4px 14px rgba(51, 57, 191, 0.4) !important;
+}
+
+.nav-logo-text {
+  color: #ffffff !important;
+}
+
 .nav-brand-name {
   color: #1a1a2e;
 }

@@ -38,7 +38,6 @@
     railDow: $("rail-dow"),
     dayBody: $("day-body"),
     dayPrep: $("day-prep"),
-    dayPrepEyebrow: $("day-prep-eyebrow"),
     dayPrepTitle: $("day-prep-title"),
     dayPrepHint: $("day-prep-hint"),
     headline: $("day-headline"),
@@ -237,16 +236,13 @@
       if (empty && els.dayPrepTitle) {
         const closedReason = marketClosedReason(ymd);
         els.dayPrep.classList.toggle("day-prep--closed", Boolean(closedReason));
-        if (els.dayPrepEyebrow) {
-          els.dayPrepEyebrow.textContent = closedReason ? "MARKET CLOSED" : "UPDATING";
-        }
         els.dayPrepTitle.textContent = closedReason
           ? `${closedReason} 휴장입니다`
-          : "장 마감 후 업데이트";
+          : "오늘의 시황을 준비하고 있어요";
         if (els.dayPrepHint) {
           els.dayPrepHint.textContent = closedReason
             ? "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다."
-            : "평일 오후 3시 30분 · 자동 갱신";
+            : "장 마감 후 자동으로 업데이트됩니다";
         }
       }
     }

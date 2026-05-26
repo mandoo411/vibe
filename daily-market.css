@@ -110,66 +110,37 @@
 
 /* Empty state - data preparation in progress */
 .day-prep {
-  padding: 40px;
-  text-align: center;
-  background: var(--bg-elevated);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
 }
 
-.day-prep__eyebrow {
-  margin: 0;
-  font-size: 13px;
-  color: #555;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-weight: 600;
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
 }
 
-.day-prep__title {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0;
-  color: var(--text-primary, #1a1a2e);
+.loading-bar-inner {
+  animation: slide 1.8s ease-in-out infinite;
 }
 
-.day-prep__hint {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  letter-spacing: 0;
-  color: #666;
-}
-
-.day-prep--closed {
-  border-style: solid;
-  border-color: var(--accent-highlight);
-  background: var(--accent-dim);
-}
-
-.dark-mode .updating-title,
-[data-theme="dark"] .updating-title {
+.dark-mode .loading-title,
+[data-theme="dark"] .loading-title {
   color: white;
 }
 
-.day-prep--closed .day-prep__title::before {
-  content: "휴장";
-  display: inline-block;
-  margin-right: 8px;
-  padding: 2px 6px;
-  border: 1px solid var(--accent-highlight);
-  border-radius: 2px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--accent-bright);
-  vertical-align: 0.12em;
+.dark-mode .loading-bar-track,
+[data-theme="dark"] .loading-bar-track {
+  background: #1e2460 !important;
+}
+
+.dark-mode .loading-bar-inner,
+[data-theme="dark"] .loading-bar-inner {
+  background: linear-gradient(90deg, transparent, #8892ff, transparent) !important;
 }
 
 .day-body.is-empty > .day-block {

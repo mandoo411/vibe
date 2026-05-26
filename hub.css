@@ -88,18 +88,18 @@ body.page-home-premium .tm-site-header {
 }
 
 body.page-home-premium .tm-site-nav__link[aria-current="page"] {
-  background: linear-gradient(135deg, var(--home-brand-start), var(--home-brand-end));
-  box-shadow: 0 14px 30px var(--home-nav-shadow);
+  background: linear-gradient(135deg, #5560e8, #3339BF);
+  box-shadow: 0 14px 30px rgba(51, 57, 191, 0.26);
 }
 
 body.page-home-premium .tm-theme-toggle {
-  background: linear-gradient(135deg, var(--home-brand-start), var(--home-brand-end));
-  box-shadow: 0 16px 28px var(--home-nav-shadow);
+  background: linear-gradient(135deg, #5560e8, #3339BF);
+  box-shadow: 0 16px 28px rgba(51, 57, 191, 0.26);
 }
 
 body.page-home-premium .tm-theme-toggle:hover,
 body.page-home-premium .tm-theme-toggle:focus-visible {
-  background: linear-gradient(135deg, var(--home-brand-end), var(--home-brand-start));
+  background: linear-gradient(135deg, #6670f0, #4048cb);
 }
 
 body.page-home-premium .header-top {

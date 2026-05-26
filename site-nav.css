@@ -126,7 +126,7 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(135deg, #4f8ffb, #2563eb);
+  background: linear-gradient(135deg, #5560e8, #3339BF);
   color: #ffffff;
   font-size: 18px;
   line-height: 1;
@@ -134,7 +134,7 @@
   z-index: 30;
   visibility: visible;
   opacity: 1;
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.24);
+  box-shadow: 0 14px 28px rgba(51, 57, 191, 0.24);
 }
 
 .tm-theme-toggle {
@@ -165,7 +165,7 @@
 
 .tm-theme-toggle:hover,
 .tm-theme-toggle:focus-visible {
-  background: linear-gradient(135deg, #5c98ff, #2f6fe4);
+  background: linear-gradient(135deg, #6670f0, #4048cb);
   outline: none;
   transform: translateY(-1px);
 }
@@ -312,16 +312,16 @@
 .tm-site-nav__link[aria-current="page"] {
   color: #ffffff;
   font-weight: 600;
-  background: linear-gradient(135deg, #4f8ffb, #2563eb);
+  background: linear-gradient(135deg, #5560e8, #3339BF);
   border-color: transparent;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.26);
+  box-shadow: 0 12px 24px rgba(51, 57, 191, 0.26);
 }
 
 .tm-site-nav__link[aria-current="page"]:hover {
   color: #ffffff;
-  background: linear-gradient(135deg, #5c98ff, #2f6fe4);
+  background: linear-gradient(135deg, #6670f0, #4048cb);
   border-color: transparent;
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 14px 28px rgba(51, 57, 191, 0.3);
   text-decoration: none;
 }
 

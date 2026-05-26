@@ -212,40 +212,36 @@
 }
 
 .nav-logo-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 184px;
-  height: 56px;
   min-width: 0;
-  overflow: hidden;
-  border-radius: 12px;
 }
 
-.nav-logo {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  transform: scale(1.12);
-  filter: none;
+.nav-brand-name {
+  color: #1a1a2e;
 }
 
-.nav-logo--dark {
-  display: none;
+.nav-brand-sub {
+  color: #999;
 }
 
-[data-theme="dark"] .nav-logo--light,
-.dark-mode .nav-logo--light {
-  display: none;
+.dark-mode .nav-logo-box,
+[data-theme="dark"] .nav-logo-box {
+  background: linear-gradient(145deg, #1e2460, #252c78) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
 }
 
-[data-theme="dark"] .nav-logo--dark,
-.dark-mode .nav-logo--dark {
-  display: block;
+.dark-mode .nav-logo-text,
+[data-theme="dark"] .nav-logo-text {
+  color: #b0b8ff !important;
+}
+
+.dark-mode .nav-brand-name,
+[data-theme="dark"] .nav-brand-name {
+  color: white;
+}
+
+.dark-mode .nav-brand-sub,
+[data-theme="dark"] .nav-brand-sub {
+  color: #999;
 }
 
 .tm-site-nav {
@@ -379,16 +375,6 @@
   .header-top__link.logo-link {
     gap: 0;
     padding: 0;
-  }
-
-  .nav-logo-wrap {
-    width: 156px;
-    height: 48px;
-    border-radius: 10px;
-  }
-
-  .nav-logo {
-    transform: scale(1.1);
   }
 
   .tm-site-nav {

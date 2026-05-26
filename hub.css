@@ -88,6 +88,7 @@ a.hub-card:focus-visible {
 [data-theme="light"] .icon-box,
 body[data-theme="light"] .icon-box {
   border: none;
+  background: #dbeafe;
 }
 
 [data-theme="light"] .icon-box.icon-market,
@@ -99,58 +100,9 @@ body[data-theme="light"] .icon-box.icon-market i {
   color: #2563eb;
 }
 
-[data-theme="light"] .icon-box.icon-live,
-body[data-theme="light"] .icon-box.icon-live {
-  background: #dcfce7;
-}
-[data-theme="light"] .icon-box.icon-live i,
-body[data-theme="light"] .icon-box.icon-live i {
-  color: #16a34a;
-}
-
-[data-theme="light"] .icon-box.icon-calendar,
-body[data-theme="light"] .icon-box.icon-calendar {
-  background: #ede9fe;
-}
-[data-theme="light"] .icon-box.icon-calendar i,
-body[data-theme="light"] .icon-box.icon-calendar i {
-  color: #7c3aed;
-}
-
-[data-theme="light"] .icon-box.icon-briefing,
-body[data-theme="light"] .icon-box.icon-briefing {
-  background: #fef3c7;
-}
-[data-theme="light"] .icon-box.icon-briefing i,
-body[data-theme="light"] .icon-box.icon-briefing i {
-  color: #d97706;
-}
-
-[data-theme="light"] .icon-box.icon-us,
-body[data-theme="light"] .icon-box.icon-us {
-  background: #fee2e2;
-}
-[data-theme="light"] .icon-box.icon-us i,
-body[data-theme="light"] .icon-box.icon-us i {
-  color: #dc2626;
-}
-
-[data-theme="light"] .icon-box.icon-crypto,
-body[data-theme="light"] .icon-box.icon-crypto {
-  background: #ffedd5;
-}
-[data-theme="light"] .icon-box.icon-crypto i,
-body[data-theme="light"] .icon-box.icon-crypto i {
-  color: #ea580c;
-}
-
-[data-theme="light"] .icon-box.icon-world,
-body[data-theme="light"] .icon-box.icon-world {
-  background: #e0f2fe;
-}
-[data-theme="light"] .icon-box.icon-world i,
-body[data-theme="light"] .icon-box.icon-world i {
-  color: #0284c7;
+[data-theme="light"] .icon-box i,
+body[data-theme="light"] .icon-box i {
+  color: #2563eb;
 }
 
 .hub-card__emoji {

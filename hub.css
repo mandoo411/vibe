@@ -86,7 +86,11 @@ body.page-home-premium .page {
 }
 
 body.page-home-premium .home-main-content {
-  padding: 22px 0 56px;
+  padding: 22px 16px 56px;
+}
+
+body.page-home-premium .tm-market-ticker__track {
+  padding: 0 16px;
 }
 
 body.page-home-premium .tm-site-header {
@@ -946,7 +950,7 @@ a.hub-card:hover .hub-card__chev {
   }
 
   body.page-home-premium .home-main-content {
-    padding: 18px 0 40px;
+    padding: 18px 12px 40px;
   }
 
   body.page-home-premium .market-dashboard-title {

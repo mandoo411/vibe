@@ -43,6 +43,22 @@
   --body-glow: none;
 }
 
+body {
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(circle at 0% 0%, var(--page-body-glow) 0%, transparent 32%),
+    radial-gradient(circle at 100% 0%, var(--page-body-glow-soft) 0%, transparent 28%),
+    linear-gradient(180deg, var(--page-body-top) 0%, var(--bg-primary) 34%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
 [data-theme="dark"],
 [data-theme="light"] {
   --bg: var(--bg-primary);

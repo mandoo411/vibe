@@ -363,6 +363,22 @@
   text-decoration: none;
 }
 
+.dark-mode .tm-site-nav__link[aria-current="page"],
+[data-theme="dark"] .tm-site-nav__link[aria-current="page"] {
+  background: linear-gradient(145deg, #1e2460, #252c78);
+  color: #dfe3ff;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.38), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+}
+
+.dark-mode .tm-site-nav__link[aria-current="page"]:hover,
+.dark-mode .tm-site-nav__link[aria-current="page"]:focus-visible,
+[data-theme="dark"] .tm-site-nav__link[aria-current="page"]:hover,
+[data-theme="dark"] .tm-site-nav__link[aria-current="page"]:focus-visible {
+  background: linear-gradient(145deg, #252c78, #313a95);
+  color: #eef1ff;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.44), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
 /* 스마트폰·태블릿 좁은 폭: 픽셀 고정 헤더(모든 페이지 동일) */
 @media (max-width: 768px) {
   .tm-market-ticker-wrap {

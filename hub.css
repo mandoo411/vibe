@@ -92,6 +92,22 @@ body.page-home-premium .tm-site-nav__link[aria-current="page"] {
   box-shadow: 0 14px 30px rgba(51, 57, 191, 0.26);
 }
 
+[data-theme="dark"].page-home-premium .tm-site-nav__link[aria-current="page"],
+.dark-mode.page-home-premium .tm-site-nav__link[aria-current="page"] {
+  background: linear-gradient(145deg, #1e2460, #252c78);
+  color: #dfe3ff;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"].page-home-premium .tm-site-nav__link[aria-current="page"]:hover,
+[data-theme="dark"].page-home-premium .tm-site-nav__link[aria-current="page"]:focus-visible,
+.dark-mode.page-home-premium .tm-site-nav__link[aria-current="page"]:hover,
+.dark-mode.page-home-premium .tm-site-nav__link[aria-current="page"]:focus-visible {
+  background: linear-gradient(145deg, #252c78, #313a95);
+  color: #eef1ff;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
 body.page-home-premium .tm-theme-toggle {
   background: linear-gradient(135deg, #5560e8, #3339BF);
   box-shadow: 0 16px 28px rgba(51, 57, 191, 0.26);

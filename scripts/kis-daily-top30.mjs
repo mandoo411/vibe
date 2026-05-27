@@ -844,16 +844,34 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 - 원자재/환율/BTC 현황과 텔레그램 메시지 근거를 같이 반영해 각 항목별 1문장으로 작성.
 - 근거가 약하면 "관망 필요"처럼 조건을 붙이고 단정하지 마세요.`;
 
-  const msg = await client.messages.create({
+  const response = await client.messages.create({
     model,
     max_tokens: 8192,
     system,
     messages: [{ role: "user", content: lines.join("\n") }],
   });
 
-  const block = msg.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-  const parsed = parseJsonFromAssistant(block.text);
+  // Claude 응답 구조 디버깅 및 안전한 파싱
+  console.log("[debug] Claude response type:", response?.type);
+  console.log("[debug] Claude content:", JSON.stringify(response?.content?.slice?.(0, 1)));
+
+  // 안전한 텍스트 추출
+  let rawText = "";
+  if (response?.content && Array.isArray(response.content)) {
+    const textBlock = response.content.find((b) => b && b.type === "text");
+    rawText = textBlock?.text || "";
+  } else if (typeof response?.content === "string") {
+    rawText = response.content;
+  }
+  if (!rawText) throw new Error("Unexpected Claude response shape");
+
+  // 코드블록 제거
+  const cleanText = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+  const parsed = JSON.parse(cleanText);
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.stocks)) {
     throw new Error("Claude output missing stocks array");
   }

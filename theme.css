@@ -53,7 +53,21 @@ body {
 }
 
 @media (max-width: 768px) {
-  body {
+  /* 모바일: 긴 페이지에서 그라데이션이 늘어나 녹/청록 틴트가 나지 않도록 홈과 동일 단색 배경 */
+  [data-theme="dark"] {
+    --page-body-top: #131722;
+    --page-body-glow: transparent;
+    --page-body-glow-soft: transparent;
+  }
+
+  [data-theme="dark"] html,
+  [data-theme="dark"] body {
+    background-color: #131722;
+    background-image: none;
+    background-attachment: scroll;
+  }
+
+  [data-theme="light"] body {
     background-attachment: scroll;
   }
 }

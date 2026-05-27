@@ -168,13 +168,6 @@ body.page-home-premium .masthead__copy {
   overflow: hidden;
 }
 
-body.page-home-premium .page-title-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
 .market-live-badge {
   display: inline-flex;
   align-items: center;
@@ -187,12 +180,6 @@ body.page-home-premium .page-title-row {
   background: linear-gradient(135deg, #3339BF, #5560e8);
   color: white;
   box-shadow: 0 10px 20px rgba(51, 57, 191, 0.18);
-}
-
-body.page-home-premium .page-title {
-  font-size: 28px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
 }
 
 body.page-home-premium .market-sub {
@@ -953,14 +940,6 @@ a.hub-card:hover .hub-card__chev {
 
   body.page-home-premium .home-main-content {
     padding: 24px 0 40px;
-  }
-
-  body.page-home-premium .page-title {
-    font-size: 28px;
-  }
-
-  body.page-home-premium .page-title-row {
-    align-items: flex-start;
   }
 
   body.page-home-premium .market-sub {

@@ -82,7 +82,7 @@
         white-space: nowrap;
       }
 
-      .briefing-row__value > span:first-child {
+      .briefing-row__value > span:first-child:not(.briefing-change--up):not(.briefing-change--down) {
         color: var(--text);
       }
 
@@ -573,8 +573,8 @@
           }
           renderAnalysis(data.aiAnalysis || {});
           await loadUsMarketLive(data.usMarket?.indices, data.topStocks, data.sectors);
-          renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `${fmtNumber(r.price)} ${fmtChange(r.changePct)}`);
-          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span></span>${fmtChange(r.changePct)}`);
+          renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
+          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
           renderMacroList(data);
           renderNews(data.news || []);
         } catch (error) {

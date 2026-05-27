@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#131722" />
-    <title>TotalMoney AI · 글로벌 랭킹</title>
+    <title>TotalMoney AI · 글로벌랭킹</title>
     <!-- wm-build: 2026-05-20-mobile-accordion -->
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
     <link rel="apple-touch-icon" href="/assets/favicon.svg">
@@ -486,8 +486,8 @@
 
       <header class="masthead masthead--title-only">
         <div class="masthead__copy">
-          <p class="masthead__kicker">WORLD MARKET</p>
-          <h1 class="masthead__title">🌍 세계 기업 랭킹</h1>
+          <p class="masthead__kicker">GLOBAL RANKING</p>
+          <h1 class="masthead__title">글로벌랭킹</h1>
         </div>
       </header>
       <section class="world-panel world-panel--ranking">
@@ -529,11 +529,32 @@
     <script>
       (() => {
         const state = { type: "marketCap", openKey: null, rows: [] };
+        const STORAGE_KEY_PREFIX = "tm-world-market:";
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
         const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
         const metricHeadersMobile = { marketCap: "시총", netIncome: "순이익", revenue: "매출" };
         const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
         const $ = (id) => document.getElementById(id);
+        function cacheKey(type) {
+          return `${STORAGE_KEY_PREFIX}${type}`;
+        }
+        function readCachedRows(type) {
+          try {
+            const raw = sessionStorage.getItem(cacheKey(type));
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed?.rows) ? parsed.rows : [];
+          } catch {
+            return [];
+          }
+        }
+        function writeCachedRows(type, rows) {
+          try {
+            sessionStorage.setItem(cacheKey(type), JSON.stringify({ rows, savedAt: Date.now() }));
+          } catch {
+            // ignore storage quota / private mode
+          }
+        }
         function escapeHtml(value) {
           return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
@@ -731,16 +752,28 @@
         async function load() {
           syncTabs();
           syncMobileTableLayout();
-          $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오는 중…</td></tr>`;
+          const cachedRows = readCachedRows(state.type);
+          if (cachedRows.length) {
+            state.rows = cachedRows;
+            renderBody();
+          } else {
+            $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오는 중…</td></tr>`;
+          }
           try {
-            const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}&t=${Date.now()}`, { cache: "no-store" });
+            const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}`);
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             const keepOpen = state.openKey;
             state.rows = Array.isArray(data.rows) ? data.rows : [];
             state.openKey = keepOpen;
+            writeCachedRows(state.type, state.rows);
             renderBody();
           } catch (error) {
+            if (cachedRows.length) {
+              state.rows = cachedRows;
+              renderBody();
+              return;
+            }
             state.rows = [];
             $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오지 못했습니다: ${escapeHtml(error.message || error)}</td></tr>`;
           }

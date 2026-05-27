@@ -2,14 +2,16 @@
   const STORAGE_KEY = "theme";
 
   function normalizeTheme(value) {
-    return value === "light" ? "light" : "dark";
+    return value === "dark" ? "dark" : "light";
   }
 
   function getStoredTheme() {
     try {
-      return normalizeTheme(localStorage.getItem(STORAGE_KEY));
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "light" || stored === "dark") return stored;
+      return "light";
     } catch (_) {
-      return "dark";
+      return "light";
     }
   }
 
@@ -57,7 +59,7 @@
   }
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const current = document.documentElement.getAttribute("data-theme") || "light";
     applyTheme(current === "light" ? "dark" : "light");
   }
 

@@ -351,11 +351,6 @@ body.page-home-premium .market-sub {
   align-items: stretch;
 }
 
-.hub-grid > .menu-card:last-child:nth-child(3n + 1),
-.hub-grid > .hub-card:last-child:nth-child(3n + 1) {
-  grid-column: 2 / 3;
-}
-
 .hub-card {
   position: relative;
   display: flex;
@@ -909,19 +904,6 @@ a.hub-card:hover .hub-card__chev {
   .hub-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .hub-grid > .menu-card:last-child:nth-child(3n + 1),
-  .hub-grid > .hub-card:last-child:nth-child(3n + 1) {
-    grid-column: auto;
-  }
-
-  .hub-grid > .menu-card:last-child:nth-child(2n + 1),
-  .hub-grid > .hub-card:last-child:nth-child(2n + 1) {
-    grid-column: 1 / -1;
-    width: 100%;
-    max-width: calc((100% - 22px) / 2);
-    justify-self: center;
-  }
 }
 
 @media (max-width: 768px) {
@@ -1011,13 +993,6 @@ a.hub-card:hover .hub-card__chev {
 
   .hub-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hub-grid > .menu-card:last-child,
-  .hub-grid > .hub-card:last-child {
-    grid-column: auto;
-    max-width: none;
-    justify-self: stretch;
   }
 
   .hub-card,

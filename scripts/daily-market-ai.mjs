@@ -15,10 +15,18 @@ function sanitizeStr(v) {
 }
 
 function parseJsonFromAssistant(text) {
-  const s = String(text || "").trim();
-  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fence ? fence[1].trim() : s;
-  return JSON.parse(raw);
+  let claudeRawText = String(text || "").trim();
+
+  // 코드블록 제거
+  if (typeof claudeRawText === "string") {
+    claudeRawText = claudeRawText
+      .replace(/^```json\s*/im, "")
+      .replace(/^```\s*/im, "")
+      .replace(/```\s*$/im, "")
+      .trim();
+  }
+
+  return JSON.parse(claudeRawText);
 }
 
 function fmtPct(n) {

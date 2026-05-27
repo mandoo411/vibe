@@ -120,7 +120,7 @@ a:hover {
 
 .page-hero-sub {
   box-sizing: border-box;
-  margin: 10px 0 18px;
+  margin: 6px 0 12px;
 }
 
 .masthead__meta {
@@ -510,8 +510,14 @@ a:hover {
     padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
 
+  .masthead.masthead--title-only,
+  .hub-hero {
+    height: auto;
+    min-height: 72px;
+  }
+
   .page-hero-sub {
-    margin: 8px 0 14px;
+    margin: 6px 0 12px;
   }
 
   .masthead__meta {

@@ -28,7 +28,6 @@
     title: $("masthead-title"),
     range: $("masthead-range"),
     updated: $("masthead-updated"),
-    tz: $("masthead-tz"),
     notice: $("masthead-notice"),
     navPrev: $("nav-prev"),
     navNext: $("nav-next"),
@@ -220,7 +219,6 @@
     els.railDow.textContent = WD_KO[ymdWeekday(ymd)];
     els.range.innerHTML = `<strong>${escapeHtml(headlineKo(ymd))}</strong>`;
     els.updated.textContent = !empty && day && day.updatedAt ? `업데이트: ${day.updatedAt}` : "";
-    els.tz.textContent = state.meta.timezoneNote || "";
 
     try {
       document.title = `${state.meta.title || "장마감 리포트"} · ${headlineKo(ymd)}`;

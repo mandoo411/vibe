@@ -449,15 +449,14 @@
   }
 
   .tm-site-nav {
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 0;
-    right: 0;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: static;
     display: none;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     padding: 12px;
-    margin: 0;
+    margin: 10px 0 0;
     border: 1px solid color-mix(in srgb, var(--border-strong) 78%, transparent);
     border-radius: 18px;
     background: var(--bg-panel);

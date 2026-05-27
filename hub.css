@@ -157,8 +157,8 @@ body.page-home-premium .masthead {
 }
 
 body.page-home-premium .masthead.masthead--title-only {
-  height: 100px;
-  min-height: 100px;
+  height: auto;
+  min-height: 72px;
   overflow: hidden;
 }
 

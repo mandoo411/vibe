@@ -602,10 +602,14 @@ async function fetchNewsForStocks(stocks, perStock, concurrency, perRequestDelay
 
 // ─── Claude: 상승 이유 + 테마 ─────────────────────────────
 function parseJsonFromAssistant(text) {
-  const s = String(text || "").trim();
-  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const raw = fence ? fence[1].trim() : s;
-  return JSON.parse(raw);
+  // Claude 응답에서 코드블록 제거 후 파싱
+  const rawText = String(text || "");
+  const cleanText = rawText
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
+  return JSON.parse(cleanText);
 }
 
 /** 주식현재가 시세 — fid_input_iscd(6자리) + 시장구분으로 등락률(prdy_ctrt) 조회 */

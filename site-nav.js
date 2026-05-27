@@ -102,7 +102,9 @@
     const { header } = navContext();
     if (!header) return;
     const toggle = header.querySelector(".tm-nav-toggle");
+    const mobile = window.innerWidth <= 768;
     header.classList.toggle("is-nav-open", open);
+    document.body.classList.toggle("tm-mobile-nav-open", open && mobile);
     if (!toggle) return;
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
     const icon = toggle.querySelector(".tm-nav-toggle__icon");
@@ -143,6 +145,10 @@
       document.addEventListener("click", (event) => {
         if (window.innerWidth > 768) return;
         if (!header.contains(event.target)) setNavOpen(false);
+      });
+
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 768) setNavOpen(false);
       });
 
       document.addEventListener("keydown", (event) => {

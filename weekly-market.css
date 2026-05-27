@@ -520,6 +520,19 @@ a:hover {
     margin: 6px 0 12px;
   }
 
+  .masthead__title,
+  .hub-hero__title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  .masthead__kicker,
+  .hub-hero__kicker {
+    margin-bottom: 4px;
+    font-size: 10px;
+  }
+
   .masthead__meta {
     flex-direction: column;
     align-items: flex-start;

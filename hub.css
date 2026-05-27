@@ -89,14 +89,6 @@ body.page-home-premium .tm-market-ticker__track {
   padding: 0 16px;
 }
 
-body.page-home-premium .tm-site-header {
-  border-radius: 28px;
-  border: 1px solid var(--home-header-border);
-  background: var(--home-header-bg);
-  box-shadow: var(--home-header-shadow);
-  backdrop-filter: blur(18px);
-}
-
 body.page-home-premium .tm-site-nav__link[aria-current="page"] {
   background: linear-gradient(135deg, #5560e8, #3339BF);
   box-shadow: 0 14px 30px rgba(51, 57, 191, 0.26);
@@ -907,10 +899,6 @@ a.hub-card:hover .hub-card__chev {
 }
 
 @media (max-width: 768px) {
-  body.page-home-premium .tm-site-header {
-    border-radius: 22px;
-  }
-
   body.page-home-premium .home-brand-link,
   body.page-home-premium .header-top__link.logo-link.home-brand-link {
     gap: 0;

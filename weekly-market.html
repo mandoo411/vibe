@@ -618,14 +618,17 @@
         }
 
         function renderWeek() {
-          const monday = startOfWeek(seoulYmd());
+          const today = seoulYmd();
+          const monday = startOfWeek(today);
           const days = WEEKDAYS.map((_, i) => addDays(monday, i));
+          const todayIdx = days.indexOf(today);
+          const activeIndex = todayIdx >= 0 ? todayIdx : 0;
           $("week-range").textContent = `${fmtDate(days[0])} ~ ${fmtDate(days[4])}`;
           $("week-tabs").innerHTML = days
-            .map((ymd, i) => `<button type="button" class="week-tab" role="tab" aria-selected="${i === 0}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`)
+            .map((ymd, i) => `<button type="button" class="week-tab" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`)
             .join("");
           $("week-panels").innerHTML = days
-            .map((ymd, i) => `<section class="week-panel${i === 0 ? " is-active" : ""}" data-index="${i}">
+            .map((ymd, i) => `<section class="week-panel${i === activeIndex ? " is-active" : ""}" data-index="${i}">
               <h3>${escapeHtml(fmtDate(ymd))}</h3>
               ${renderEconomic(itemsForDate("economicCalendar", ymd))}
               ${renderKRIPO(itemsForDate("krIPO", ymd))}

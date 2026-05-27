@@ -109,6 +109,8 @@ const SYSTEM_PROMPT = `당신은 전문 주식 애널리스트입니다.
 일반 투자자도 이해하기 쉽게 설명해주세요.
 텔레그램 채널 메시지와 뉴스를 근거로 활용하세요.
 
+You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation. Just raw JSON starting with { and ending with }
+
 출력은 아래 JSON 객체 하나만 (마크다운·코드펜스 금지):
 
 {
@@ -170,17 +172,16 @@ export async function analyzeDailyClosingReport({
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({
       model,
-      max_tokens: 3000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: user }],
     });
 
-    const textBlock = response?.content?.find((b) => b.type === "text");
-    if (!textBlock?.text) throw new Error("Unexpected Claude response shape");
-    const rawText = textBlock.text
-      .replace(/^```json\s*/im, "")
-      .replace(/^```\s*/im, "")
-      .replace(/```\s*$/im, "")
+    let rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
+    // 코드블록 및 불필요한 텍스트 제거
+    rawText = rawText
+      .replace(/^[\s\S]*?({)/m, "$1") // { 이전 모든 텍스트 제거
+      .replace(/}[\s\S]*$/m, (m) => m.split("}")[0] + "}") // 마지막 } 이후 제거
       .trim();
     parsed = JSON.parse(rawText);
     if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");

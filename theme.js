@@ -65,15 +65,13 @@
     btn.addEventListener("click", toggleTheme);
   }
 
-  function initTheme() {
-    applyTheme(getStoredTheme());
-    bindThemeToggle();
-  }
+  // DOMContentLoaded 전에 적용해 페이지 전환 시 다크 모드 깜빡임 방지
+  applyTheme(getStoredTheme());
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initTheme, { once: true });
+    document.addEventListener("DOMContentLoaded", bindThemeToggle, { once: true });
   } else {
-    initTheme();
+    bindThemeToggle();
   }
 
   function tradingViewEmbedTheme() {

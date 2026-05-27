@@ -928,22 +928,104 @@ a.hub-card:hover .hub-card__chev {
     font-size: 12px;
   }
 
+  body.page-home-premium .masthead.masthead--title-only {
+    height: auto;
+    min-height: 72px;
+  }
+
+  body.page-home-premium .masthead__title.page-title {
+    font-size: 1.35rem;
+  }
+
+  body.page-home-premium .page-hero-sub {
+    margin: 6px 0 12px;
+  }
+
   .page--hub {
     margin-top: 0;
-    padding-bottom: 40px;
+    padding-bottom: 32px;
   }
 
   .hub-grid {
-    gap: 14px;
+    gap: 10px;
   }
 
-  .hub-card,
-  .menu-card {
+  /* 홈 메뉴 카드: 가로형 컴팩트 레이아웃으로 한 화면에 더 많이 표시 */
+  body.page-home-premium .menu-card {
+    display: grid !important;
+    grid-template-columns: 44px 1fr auto;
+    grid-template-areas:
+      "icon title status"
+      "icon desc arrow";
+    gap: 2px 10px;
+    align-items: center;
+    min-height: 0 !important;
+    padding: 10px 12px !important;
+  }
+
+  body.page-home-premium .menu-card .icon-box {
+    grid-area: icon;
+    align-self: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  body.page-home-premium .menu-card .icon-box i {
+    font-size: 22px !important;
+  }
+
+  body.page-home-premium .menu-card__title {
+    grid-area: title;
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.25;
+    text-align: left !important;
+  }
+
+  body.page-home-premium .menu-card__desc {
+    grid-area: desc;
+    flex: none;
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    text-align: left !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  body.page-home-premium .menu-card__footer {
+    display: contents;
+  }
+
+  body.page-home-premium .menu-card__status {
+    grid-area: status;
+    justify-self: end;
+    font-size: 0.7rem;
+    gap: 5px;
+  }
+
+  body.page-home-premium .menu-card__dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  body.page-home-premium .menu-card__arrow {
+    grid-area: arrow;
+    justify-self: end;
+    font-size: 0.9rem;
+    margin-left: 0;
+  }
+
+  .hub-card {
     min-height: 212px;
     padding: 18px 16px 16px;
   }
 
-  .icon-box {
+  .hub-card .icon-box {
     width: 84px;
     height: 84px;
     margin-bottom: 16px;
@@ -951,7 +1033,7 @@ a.hub-card:hover .hub-card__chev {
     align-self: center;
   }
 
-  .icon-box::before {
+  .hub-card .icon-box::before {
     inset: 8px;
     border-radius: 0.9rem;
   }
@@ -963,20 +1045,15 @@ a.hub-card:hover .hub-card__chev {
 
   .hub-card__title,
   .hub-card__desc,
-  .hub-card__meta,
-  .menu-card__title,
-  .menu-card__desc,
-  .menu-card__footer {
+  .hub-card__meta {
     text-align: center;
   }
 
-  .hub-card__meta,
-  .menu-card__footer {
+  .hub-card__meta {
     justify-content: center;
   }
 
-  .hub-card__chev,
-  .menu-card__arrow {
+  .hub-card__chev {
     margin-left: 0;
   }
 }

@@ -21,6 +21,7 @@
   function updateThemeIcon(theme) {
     const icon = document.getElementById("theme-icon");
     const btn = document.getElementById("theme-toggle");
+    // 라이트 모드: 원 안 달(다크로 전환) · 다크 모드: 태양(라이트로 전환)
     const glyph = theme === "light" ? "🌙" : "☀️";
     if (icon) {
       icon.className = theme === "light" ? "ti ti-moon" : "ti ti-sun";
@@ -37,7 +38,9 @@
   function applyTheme(theme) {
     const next = normalizeTheme(theme);
     document.documentElement.setAttribute("data-theme", next);
-    document.body.dataset.theme = next;
+    if (document.body) {
+      document.body.dataset.theme = next;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch (_) {}
@@ -68,10 +71,19 @@
   // DOMContentLoaded 전에 적용해 페이지 전환 시 다크 모드 깜빡임 방지
   applyTheme(getStoredTheme());
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", bindThemeToggle, { once: true });
-  } else {
+  function onDomReady() {
+    const current = document.documentElement.getAttribute("data-theme") || getStoredTheme();
+    if (document.body) {
+      document.body.dataset.theme = current;
+    }
+    updateThemeIcon(current);
     bindThemeToggle();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", onDomReady, { once: true });
+  } else {
+    onDomReady();
   }
 
   function tradingViewEmbedTheme() {

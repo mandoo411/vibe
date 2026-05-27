@@ -16,7 +16,7 @@
 
   // ─── State ────────────────────────────────────────────────
   const state = {
-    meta: { title: "장마감 리포트", timezoneNote: "" },
+    meta: { title: "마감시황", timezoneNote: "" },
     days: {},
     archiveAnchor: null,
     selected: null,
@@ -215,13 +215,14 @@
     const day = getDay(ymd);
     const empty = isDayEmpty(day);
 
+    if (els.title) els.title.textContent = "마감시황";
     els.railMd.textContent = shortDateDot(ymd);
     els.railDow.textContent = WD_KO[ymdWeekday(ymd)];
     els.range.innerHTML = `<strong>${escapeHtml(headlineKo(ymd))}</strong>`;
     els.updated.textContent = !empty && day && day.updatedAt ? `업데이트: ${day.updatedAt}` : "";
 
     try {
-      document.title = `${state.meta.title || "장마감 리포트"} · ${headlineKo(ymd)}`;
+      document.title = `${state.meta.title || "마감시황"} · ${headlineKo(ymd)}`;
     } catch (_) {
       /* ignore */
     }
@@ -669,7 +670,10 @@
   async function loadData() {
     try {
       const raw = await fetchDataJson();
-      if (raw && raw.meta) state.meta = { ...state.meta, ...raw.meta };
+      if (raw && raw.meta) {
+        state.meta = { ...state.meta, ...raw.meta };
+        if (state.meta.title === "장마감 리포트") state.meta.title = "마감시황";
+      }
       if (raw && raw.days && typeof raw.days === "object") state.days = raw.days;
     } catch (e) {
       console.warn("daily-market.json 불러오기 실패:", e);

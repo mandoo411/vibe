@@ -168,15 +168,21 @@ export async function analyzeDailyClosingReport({
   let parsed;
   try {
     const client = new Anthropic({ apiKey });
-    const msg = await client.messages.create({
+    const response = await client.messages.create({
       model,
       max_tokens: 3000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: user }],
     });
-    const block = msg.content.find((b) => b.type === "text");
-    if (!block || block.type !== "text") throw new Error("Unexpected Claude response shape");
-    parsed = parseJsonFromAssistant(block.text);
+
+    const textBlock = response?.content?.find((b) => b.type === "text");
+    if (!textBlock?.text) throw new Error("Unexpected Claude response shape");
+    const rawText = textBlock.text
+      .replace(/^```json\s*/im, "")
+      .replace(/^```\s*/im, "")
+      .replace(/```\s*$/im, "")
+      .trim();
+    parsed = JSON.parse(rawText);
     if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
   } catch (error) {
     console.warn(

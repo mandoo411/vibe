@@ -855,22 +855,8 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
   console.log("[debug] Claude response type:", response?.type);
   console.log("[debug] Claude content:", JSON.stringify(response?.content?.slice?.(0, 1)));
 
-  // 안전한 텍스트 추출
-  let rawText = "";
-  if (response?.content && Array.isArray(response.content)) {
-    const textBlock = response.content.find((b) => b && b.type === "text");
-    rawText = textBlock?.text || "";
-  } else if (typeof response?.content === "string") {
-    rawText = response.content;
-  }
-  if (!rawText) throw new Error("Unexpected Claude response shape");
-
-  // 코드블록 제거
-  const cleanText = rawText
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
+  const rawText = response?.content?.find?.(b => b.type === 'text')?.text || response?.content?.[0]?.text || '';
+  const cleanText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
   const parsed = JSON.parse(cleanText);
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.stocks)) {
     throw new Error("Claude output missing stocks array");

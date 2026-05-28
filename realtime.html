@@ -712,12 +712,22 @@
         border-bottom: 1px solid var(--border);
         font-family: inherit;
         font-size: 14px;
-        color: var(--text);
+        color: #131722;
         font-weight: 800;
         letter-spacing: -0.02em;
+        background: white;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
       }
       .rt-panel__head-title {
         letter-spacing: inherit;
+        display: block;
+      }
+      [data-theme="dark"] .rt-panel__head,
+      .dark-mode .rt-panel__head {
+        background: #1c2030;
+        color: #fff;
       }
       .rt-chart-quote-strip {
         padding: 8px 12px;

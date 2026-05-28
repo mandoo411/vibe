@@ -1096,7 +1096,7 @@
         }
       }
 
-      /* 초기 로딩 — 다크 배경 + 골드 포인트 */
+      /* 초기 로딩 — 현재 컨셉(블루/퍼플) 오버레이 */
       .rt-loading {
         position: fixed;
         inset: 0;
@@ -1107,10 +1107,19 @@
         padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
           max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
         background:
-          radial-gradient(ellipse 90% 60% at 50% 32%, var(--accent-dim) 0%, transparent 58%),
-          radial-gradient(ellipse 100% 45% at 50% 100%, var(--sheet-accent-soft) 0%, transparent 50%),
-          var(--bg-primary);
+          radial-gradient(circle at 18% 14%, rgba(51, 57, 191, 0.18), transparent 45%),
+          radial-gradient(circle at 78% 22%, rgba(85, 96, 232, 0.16), transparent 55%),
+          radial-gradient(circle at 40% 82%, rgba(200, 208, 255, 0.35), transparent 55%),
+          #f7f8ff;
         transition: opacity 0.35s ease, visibility 0.35s ease;
+      }
+      [data-theme="dark"] .rt-loading,
+      .dark-mode .rt-loading {
+        background:
+          radial-gradient(circle at 18% 14%, rgba(85, 96, 232, 0.22), transparent 52%),
+          radial-gradient(circle at 78% 22%, rgba(51, 57, 191, 0.18), transparent 55%),
+          radial-gradient(circle at 40% 82%, rgba(255, 255, 255, 0.06), transparent 55%),
+          #0f1320;
       }
       .rt-loading::before {
         content: "";
@@ -1118,15 +1127,15 @@
         inset: 0;
         pointer-events: none;
         opacity: 0.55;
-        background-image:
-          radial-gradient(circle at 10% 14%, var(--accent-highlight) 0, var(--accent-dim) 1.5px),
-          radial-gradient(circle at 22% 78%, var(--accent-highlight) 0, var(--accent-dim) 1px),
-          radial-gradient(circle at 88% 18%, var(--accent-highlight) 0, var(--accent-dim) 1.5px),
-          radial-gradient(circle at 92% 62%, var(--accent-highlight) 0, var(--accent-dim) 1px),
-          radial-gradient(circle at 6% 48%, var(--accent-highlight) 0, var(--accent-dim) 1px),
-          radial-gradient(circle at 48% 8%, var(--accent-highlight) 0, var(--accent-dim) 1px),
-          radial-gradient(circle at 72% 88%, var(--accent-highlight) 0, var(--accent-dim) 1px),
-          radial-gradient(circle at 38% 92%, var(--accent-highlight) 0, var(--accent-dim) 1px);
+        background: conic-gradient(
+          from 180deg,
+          rgba(51, 57, 191, 0) 0deg,
+          rgba(51, 57, 191, 0.20) 90deg,
+          rgba(85, 96, 232, 0.20) 180deg,
+          rgba(200, 208, 255, 0.18) 260deg,
+          rgba(51, 57, 191, 0) 360deg
+        );
+        filter: blur(40px);
       }
       .rt-loading[hidden] {
         display: none;
@@ -1139,60 +1148,79 @@
         flex-direction: column;
         align-items: center;
         text-align: center;
-        gap: 1.75rem;
+        gap: 14px;
         max-width: 28rem;
+        width: min(420px, 92vw);
+        padding: 18px 18px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 0.5px solid rgba(200, 210, 255, 0.7);
+        box-shadow: 0 10px 34px rgba(51, 57, 191, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+      }
+      [data-theme="dark"] .rt-loading__inner,
+      .dark-mode .rt-loading__inner {
+        background: rgba(18, 24, 40, 0.72);
+        border-color: rgba(255, 255, 255, 0.10);
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.04);
       }
       .rt-loading__brand {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 0.35rem;
+        gap: 2px;
       }
       .rt-loading__logo {
         margin: 0;
-        font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-        font-size: clamp(2.125rem, 7vw, 3.35rem);
-        font-weight: 600;
-        letter-spacing: 0.03em;
-        line-height: 1.1;
-        background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 42%, var(--accent-secondary) 100%);
+        font-family: var(--font-sans, "Noto Sans KR", -apple-system, sans-serif);
+        font-size: clamp(20px, 5.8vw, 26px);
+        font-weight: 900;
+        letter-spacing: -0.2px;
+        line-height: 1.15;
+        background: linear-gradient(135deg, #3339bf 0%, #5560e8 60%, #3339bf 100%);
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
         text-shadow: none;
-        filter: drop-shadow(0 2px 24px var(--accent-highlight));
       }
       .rt-loading__logo-ai {
-        font-style: italic;
-        font-weight: 500;
-        letter-spacing: 0.06em;
+        font-style: normal;
+        font-weight: 900;
+        letter-spacing: 0.02em;
       }
       .rt-loading__tagline {
         margin: 0;
-        font-family: "JetBrains Mono", ui-monospace, monospace;
-        font-size: clamp(9px, 2.1vw, 11px);
-        font-weight: 500;
-        letter-spacing: 0.32em;
-        text-transform: uppercase;
-        color: rgba(196, 184, 168, 0.72);
+        font-family: var(--font-sans, "Noto Sans KR", -apple-system, sans-serif);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: -0.1px;
+        color: rgba(19, 23, 34, 0.66);
+      }
+      [data-theme="dark"] .rt-loading__tagline,
+      .dark-mode .rt-loading__tagline {
+        color: rgba(255, 255, 255, 0.66);
       }
       .rt-loading__spinner {
         width: 48px;
         height: 48px;
         border-radius: 50%;
-        border: 3px solid var(--accent-highlight);
-        border-top-color: var(--accent);
-        border-right-color: var(--accent-ring);
-        box-shadow: 0 0 20px var(--accent-dim);
+        border: 3px solid rgba(51, 57, 191, 0.18);
+        border-top-color: #3339bf;
+        border-right-color: #5560e8;
+        box-shadow: 0 0 18px rgba(51, 57, 191, 0.22);
         animation: rt-spin 0.8s linear infinite;
       }
       .rt-loading__text {
         margin: 0;
         font-family: var(--font-sans, "Noto Sans KR", sans-serif);
-        font-size: clamp(14px, 3.5vw, 16px);
-        font-weight: 500;
-        letter-spacing: 0.02em;
-        color: rgba(200, 190, 175, 0.88);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.1px;
+        color: rgba(19, 23, 34, 0.84);
+      }
+      [data-theme="dark"] .rt-loading__text,
+      .dark-mode .rt-loading__text {
+        color: rgba(255, 255, 255, 0.84);
       }
       @keyframes rt-spin {
         to {

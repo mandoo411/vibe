@@ -468,8 +468,8 @@
           <div class="crypto-section-head">
             <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 100</h2>
             <div class="crypto-currency-toggle" role="group" aria-label="표시 통화">
-              <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="true">원</button>
-              <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="false">달러</button>
+              <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="false">원</button>
+              <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="true">달러</button>
             </div>
           </div>
           <div class="crypto-panel">
@@ -515,7 +515,7 @@
           global: null,
           fearGreed: null,
           coins: [],
-          currency: "KRW",
+          currency: "USD",
           openSymbol: null,
           pollTimer: null,
         };
@@ -577,9 +577,10 @@
         function fmtPrice(n) {
           if (n == null || !Number.isFinite(n)) return "-";
           if (state.currency === "USD") {
+            const digits = Math.abs(n) >= 1 ? 2 : 5;
             return `$${n.toLocaleString("en-US", {
-              minimumFractionDigits: n >= 100 ? 2 : 4,
-              maximumFractionDigits: n >= 100 ? 2 : 6,
+              minimumFractionDigits: digits,
+              maximumFractionDigits: digits,
             })}`;
           }
           if (window.matchMedia("(max-width: 768px)").matches && n >= 1e8) {

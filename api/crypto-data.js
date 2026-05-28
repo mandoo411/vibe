@@ -136,7 +136,7 @@ async function fetchListings() {
           symbol: sanitizeStr(coin.symbol),
           price: priceKrw,
           priceKrw,
-          priceUsd: round2(toNum(usd.price)),
+          priceUsd: toNum(usd.price),
           change1h: round2(toNum(krw.percent_change_1h ?? usd.percent_change_1h)),
           change24h: round2(toNum(krw.percent_change_24h ?? usd.percent_change_24h)),
           change7d: round2(toNum(krw.percent_change_7d ?? usd.percent_change_7d)),

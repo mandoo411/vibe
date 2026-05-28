@@ -1297,9 +1297,13 @@
       `<div class="rt-block rt-block--basic">`,
       `  <div class="rt-block__title">기본 정보</div>`,
       `  <div class="rt-basic-grid">`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">전일</div><div class="rt-basic-v">—</div><div class="rt-basic-k">시작</div><div class="rt-basic-v rt-basic-v--hi">${open}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">전일</div><div class="rt-basic-v">${escapeHtml(
+        data.prevClose != null ? fmtNum(data.prevClose) : "—"
+      )}</div><div class="rt-basic-k">시작</div><div class="rt-basic-v rt-basic-v--hi">${open}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div><div class="rt-basic-k">거래대금</div><div class="rt-basic-v">—</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div><div class="rt-basic-k">거래대금</div><div class="rt-basic-v">${escapeHtml(
+        data.tradingValue != null ? formatTradeVal(String(data.tradingValue)) : "—"
+      )}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">시총</div><div class="rt-basic-v">${mcap}</div><div class="rt-basic-k">PER</div><div class="rt-basic-v">${escapeHtml(finPer)}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">PBR</div><div class="rt-basic-v">${escapeHtml(finPbr)}</div><div class="rt-basic-k">EPS</div><div class="rt-basic-v">${escapeHtml(finEps)}</div></div>`,
       `  </div>`,

@@ -270,6 +270,8 @@ async function kisInquirePrice(stockCode6) {
   const change = toNum(row.prdy_vrss);
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
+  const tradingValue = toNum(row.acml_tr_pbmn || row.acml_tr_pbmn_krw || row.acml_tr_pbmn_won);
+  const prevClose = toNum(row.stck_sdpr || row.prdy_clpr || row.prdy_clpr_prpr || row.stck_prpr);
   const high = toNum(row.stck_hgpr);
   const low = toNum(row.stck_lwpr);
   const open = toNum(row.stck_oprc);
@@ -285,6 +287,8 @@ async function kisInquirePrice(stockCode6) {
     change: change == null ? 0 : Math.round(change),
     changeRate: changeRate == null ? 0 : Math.round(changeRate * 100) / 100,
     volume: volume == null ? 0 : Math.round(volume),
+    tradingValue: tradingValue == null ? null : Math.round(tradingValue),
+    prevClose: prevClose == null ? null : Math.round(prevClose),
     high: high == null ? 0 : Math.round(high),
     low: low == null ? 0 : Math.round(low),
     open: open == null ? 0 : Math.round(open),
@@ -296,6 +300,25 @@ async function kisInquirePrice(stockCode6) {
     per: financials.per,
     financials,
   };
+}
+
+async function naverGetJson(path) {
+  const url = `https://m.stock.naver.com${path}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`NAVER HTTP ${res.status}: ${text.slice(0, 120)}`);
+  return JSON.parse(text);
+}
+
+async function fetchNaverStockBasic(code6) {
+  const b = await naverGetJson(`/api/stock/${encodeURIComponent(code6)}/basic`);
+  return b && typeof b === "object" ? b : null;
+}
+
+async function fetchNaverStockPrice(code6) {
+  const arr = await naverGetJson(`/api/stock/${encodeURIComponent(code6)}/price?pageSize=1&page=1`);
+  const row = Array.isArray(arr) ? arr[0] : null;
+  return row && typeof row === "object" ? row : null;
 }
 
 async function kisGetJson(path, trId, params) {
@@ -507,22 +530,62 @@ module.exports = async function handler(req, res) {
   }
 
   json(res, 200, {
-    stockName: resolved.stockName,
-    stockCode: resolved.stockCode,
-    market: quote.market || "",
+    // 네이버(모바일) 값이 있는 경우 UI 표시값은 네이버 우선 (스크린샷 기준)
+    ...(await (async () => {
+      try {
+        const [nb, np] = await Promise.all([
+          fetchNaverStockBasic(resolved.stockCode),
+          fetchNaverStockPrice(resolved.stockCode),
+        ]);
+        const stockName = sanitizeStr(nb && nb.stockName) || resolved.stockName;
+        const market = sanitizeStr(nb && (nb.stockExchangeName || nb.stockExchangeType?.nameEng)) || quote.market || "";
+        const currentPrice = toNum(np && np.closePrice) ?? quote.currentPrice;
+        const change = toNum(np && np.compareToPreviousClosePrice) ?? quote.change;
+        const changeRate = toNum(np && np.fluctuationsRatio) ?? quote.changeRate;
+        const open = toNum(np && np.openPrice) ?? quote.open;
+        const high = toNum(np && np.highPrice) ?? quote.high;
+        const low = toNum(np && np.lowPrice) ?? quote.low;
+        const volume = toNum(np && np.accumulatedTradingVolume) ?? quote.volume;
+        const prevClose =
+          (nb && toNum(nb.closePrice) != null ? toNum(nb.closePrice) : null) ??
+          quote.prevClose ??
+          null;
+        return {
+          stockName,
+          stockCode: resolved.stockCode,
+          market,
+          prevClose,
+          currentPrice,
+          change,
+          changeRate,
+          open,
+          high,
+          low,
+          volume,
+        };
+      } catch {
+        return {
+          stockName: resolved.stockName,
+          stockCode: resolved.stockCode,
+          market: quote.market || "",
+          prevClose: quote.prevClose,
+          currentPrice: quote.currentPrice,
+          change: quote.change,
+          changeRate: quote.changeRate,
+          open: quote.open,
+          high: quote.high,
+          low: quote.low,
+          volume: quote.volume,
+        };
+      }
+    })()),
+    tradingValue: quote.tradingValue == null ? null : quote.tradingValue,
     marketCap: quote.marketCap == null ? null : quote.marketCap,
     marketCapRaw: quote.marketCapRaw || "",
     per: quote.per == null ? null : quote.per,
     financials: quote.financials || null,
     supply,
     profit,
-    currentPrice: quote.currentPrice,
-    change: quote.change,
-    changeRate: quote.changeRate,
-    volume: quote.volume,
-    high: quote.high,
-    low: quote.low,
-    open: quote.open,
     high52w: quote.high52w,
     low52w: quote.low52w,
     analysis,

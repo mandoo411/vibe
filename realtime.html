@@ -710,10 +710,11 @@
       .rt-panel__head {
         padding: 8px 12px;
         border-bottom: 1px solid var(--border);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--text-muted);
-        letter-spacing: 0.08em;
+        font-family: inherit;
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 800;
+        letter-spacing: -0.02em;
       }
       .rt-panel__head-title {
         letter-spacing: inherit;
@@ -1253,7 +1254,7 @@
       <div class="rt-wrap">
         <div class="rt-panel" role="tabpanel">
           <div class="rt-panel__head">
-            <div class="rt-panel__head-title" id="rt-table-title"></div>
+            <div class="rt-panel__head-title" id="rt-table-title">실시간시세</div>
           </div>
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">

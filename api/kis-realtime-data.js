@@ -672,6 +672,27 @@ function normalizeIndexLevelNumber(fidInputIscd, rawLevel) {
   return n0;
 }
 
+async function fetchNaverIndexPrice(indexCode) {
+  const code = String(indexCode || "").trim().toUpperCase();
+  if (code !== "KOSPI" && code !== "KOSDAQ") return null;
+  const url = `https://m.stock.naver.com/api/index/${encodeURIComponent(code)}/price?pageSize=1&page=1`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`NAVER index HTTP ${res.status}: ${text.slice(0, 160)}`);
+  const arr = JSON.parse(text);
+  const row = Array.isArray(arr) ? arr[0] : null;
+  if (!row || typeof row !== "object") return null;
+  const close = sanitizeStr(row.closePrice);
+  const ratio = toNum(row.fluctuationsRatio);
+  const n = Number(close.replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return {
+    value: n.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    changePct: ratio != null && Number.isFinite(ratio) ? ratio : null,
+    raw: row,
+  };
+}
+
 async function fetchIndexPrice(fidInputIscd, label) {
   let best = null;
   const iscdCandidates = (() => {
@@ -713,7 +734,7 @@ async function fetchIndexPrice(fidInputIscd, label) {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               });
-        if (!best && rawLevel && scaled != null) {
+        if (!best && rawLevel && scaled != null && Number.isFinite(scaled) && scaled > 0) {
           best = { id: fidInputIscd, label, value, changePct, raw: row };
         }
         if (rawLevel && plausible) {
@@ -734,6 +755,19 @@ async function fetchIndexPrice(fidInputIscd, label) {
     }
   }
   if (best) return best;
+
+  // KIS가 코스피를 간헐적으로 비워서 주는 경우가 있어, 최소 표시용으로 네이버 지수 API로 fallback
+  if (String(fidInputIscd) === "0001") {
+    try {
+      const nv = await fetchNaverIndexPrice("KOSPI");
+      if (nv && nv.value) {
+        return { id: fidInputIscd, label, value: nv.value, changePct: nv.changePct, raw: nv.raw };
+      }
+    } catch (e) {
+      console.warn("[kis-realtime-data][index] NAVER fallback failed", e && e.message);
+    }
+  }
+
   console.log("[kis-realtime-data][index] ← no plausible level", { label, fidInputIscd });
   return { id: fidInputIscd, label, value: "", changePct: null, raw: null };
 }

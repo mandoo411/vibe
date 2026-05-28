@@ -78,15 +78,40 @@
   padding: 6px 8px;
 }
 
-/* --- Main layout: full-width content, calendar toggled --- */
+/* --- Main layout: content + calendar on the right --- */
 .daily-main {
-  display: block;
   margin-bottom: 24px;
 }
 
+#main-content-area {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+#report-content {
+  flex: 1;
+  min-width: 0;
+}
+
 #calendar-panel {
+  width: 280px;
+  flex-shrink: 0;
   display: none;
-  margin-top: 20px;
+}
+
+#calendar-panel.visible {
+  display: block;
+}
+
+@media (max-width: 879px) {
+  #main-content-area {
+    flex-direction: column;
+  }
+
+  #calendar-panel {
+    width: 100%;
+  }
 }
 
 #calendar-toggle {

@@ -855,7 +855,7 @@
     if (tab === "cap") {
       const p = Math.max(1, Number(state.capPage) || 1);
       const ps = Math.max(1, Number(state.capPageSize) || 25);
-      return fetchJson(`market-cap&page=${encodeURIComponent(String(p))}&pageSize=${encodeURIComponent(String(ps))}`, FETCH_TIMEOUT_MS);
+      return fetchJson("market-cap", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
     }
     return fetchJson("gainers", FETCH_TIMEOUT_MS);
   }

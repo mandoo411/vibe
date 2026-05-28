@@ -26,6 +26,45 @@ function toNum(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+function pickFirstStr(obj, keys) {
+  if (!obj || typeof obj !== "object") return "";
+  for (const k of keys) {
+    if (obj[k] == null) continue;
+    const s = sanitizeStr(obj[k]);
+    if (s) return s;
+  }
+  return "";
+}
+
+function marketLabelFromRow(row) {
+  const hint = pickFirstStr(row, [
+    "mrkt_div_cls_code",
+    "MRKT_DIV_CLS_CODE",
+    "rprs_mrkt_kor_name",
+    "RPRS_MRKT_KOR_NAME",
+    "rprs_mrkt_name",
+    "RPRS_MRKT_NAME",
+    "mket_id",
+    "MKET_ID",
+  ]);
+  const blob = String(hint || "").toUpperCase();
+  if (/KOSDAQ|KQ|KONEX/.test(blob) || /코스닥/.test(hint)) return "KOSDAQ";
+  if (/KOSPI|KS|KRX/.test(blob) || /코스피|유가/.test(hint)) return "KOSPI";
+  return hint || "";
+}
+
+function parseMarketCapLike(row) {
+  const raw = pickFirstStr(row, [
+    "hts_avls",
+    "HTS_AVLS",
+    "stck_avls",
+    "STCK_AVLS",
+    "mrkt_tot_amt",
+    "MRKT_TOT_AMT",
+  ]);
+  return { raw, value: toNum(raw) };
+}
+
 function requireKisCreds() {
   const token = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
   const appkey = sanitizeStr(process.env.KIS_APP_KEY);
@@ -210,6 +249,9 @@ async function kisInquirePrice(stockCode6) {
   const open = toNum(row.stck_oprc);
   const high52w = toNum(row.w52_hgpr);
   const low52w = toNum(row.w52_lwpr);
+  const market = marketLabelFromRow(row);
+  const mcap = parseMarketCapLike(row);
+  const per = toNum(pickFirstStr(row, ["per", "PER", "stck_per", "STCK_PER"]));
 
   return {
     raw: row,
@@ -222,6 +264,10 @@ async function kisInquirePrice(stockCode6) {
     open: open == null ? 0 : Math.round(open),
     high52w: high52w == null ? 0 : Math.round(high52w),
     low52w: low52w == null ? 0 : Math.round(low52w),
+    market,
+    marketCap: mcap.value,
+    marketCapRaw: mcap.raw,
+    per,
   };
 }
 
@@ -335,6 +381,10 @@ module.exports = async function handler(req, res) {
   json(res, 200, {
     stockName: resolved.stockName,
     stockCode: resolved.stockCode,
+    market: quote.market || "",
+    marketCap: quote.marketCap == null ? null : quote.marketCap,
+    marketCapRaw: quote.marketCapRaw || "",
+    per: quote.per == null ? null : quote.per,
     currentPrice: quote.currentPrice,
     change: quote.change,
     changeRate: quote.changeRate,

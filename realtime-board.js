@@ -1178,6 +1178,248 @@
     renderTable();
   }
 
+  function formatMarketCapPretty(rawOrNum) {
+    const n = Number(String(rawOrNum == null ? "" : rawOrNum).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    // 단위 불확실(원/백만원/억원)일 수 있어, 너무 큰 값은 그대로 표기
+    if (n >= 1e12 && n <= 5e15) {
+      const jo = n / 1e12;
+      return `${jo.toFixed(2).replace(/\.?0+$/, "")}조`;
+    }
+    if (n >= 1e8 && n < 1e12) {
+      return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
+    }
+    return n.toLocaleString("ko-KR");
+  }
+
+  function buildStockResultSkeleton() {
+    return `<div class="rt-stock-loading"><span class="rt-spinner" aria-hidden="true"></span><span>종목 정보를 불러오는 중...</span></div>`;
+  }
+
+  function stockPanelHtml(data) {
+    const name = escapeHtml(data.stockName || "—");
+    const code = escapeHtml(data.stockCode || "");
+    const market = escapeHtml(data.market || "");
+    const badge = market ? `<span class="rt-badge">${market}</span>` : "";
+
+    const ch = Number(data.changeRate);
+    const cls = deltaClass(Number.isFinite(ch) ? ch : null);
+    const price = escapeHtml(fmtNum(data.currentPrice));
+    const pct = escapeHtml(fmtPct(Number.isFinite(ch) ? ch : null));
+
+    const open = escapeHtml(fmtNum(data.open));
+    const high = escapeHtml(fmtNum(data.high));
+    const low = escapeHtml(fmtNum(data.low));
+    const vol = escapeHtml(fmtNum(data.volume));
+    const hi52 = escapeHtml(fmtNum(data.high52w));
+    const lo52 = escapeHtml(fmtNum(data.low52w));
+    const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
+    const per = data.per == null || !Number.isFinite(Number(data.per)) ? "—" : Number(data.per).toFixed(2);
+
+    const aiHref = `/stock-analysis.html?code=${encodeURIComponent(String(data.stockCode || ""))}&name=${encodeURIComponent(
+      String(data.stockName || "")
+    )}`;
+
+    return [
+      `<div class="rt-stock-head">`,
+      `  <div class="rt-stock-title">`,
+      `    <span class="rt-stock-name">${name}</span>`,
+      `    <span class="rt-stock-code">${code}</span>`,
+      `    ${badge}`,
+      `  </div>`,
+      `  <div class="rt-stock-quote">`,
+      `    <span class="rt-stock-price">${price}</span>`,
+      `    <span class="delta ${cls}">${pct}</span>`,
+      `  </div>`,
+      `</div>`,
+
+      `<div class="rt-stock-grid">`,
+      `  <div class="rt-kv"><div class="rt-kv__k">시가</div><div class="rt-kv__v">${open}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">거래량</div><div class="rt-kv__v">${vol}</div></div>`,
+      `</div>`,
+
+      `<div class="rt-stock-grid">`,
+      `  <div class="rt-kv"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">시가총액</div><div class="rt-kv__v">${mcap}</div></div>`,
+      `  <div class="rt-kv"><div class="rt-kv__k">PER</div><div class="rt-kv__v">${escapeHtml(per)}</div></div>`,
+      `</div>`,
+
+      `<div class="rt-stock-chart">`,
+      `  <div class="rt-chart-wrap">`,
+      `    <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
+      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
+      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
+      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
+      `    </div>`,
+      `    <div class="rt-chart-body">`,
+      `      <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>`,
+      `      <div class="rt-chart-panes rt-chart-panes--pending">`,
+      `        <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
+      `        <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
+      `        <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+      `      </div>`,
+      `    </div>`,
+      `  </div>`,
+      `</div>`,
+
+      `<div class="rt-stock-actions">`,
+      `  <a class="rt-cta" href="${escapeHtml(aiHref)}">이 종목 AI 분석하기</a>`,
+      `</div>`,
+    ].join("");
+  }
+
+  async function mountStockPanelChart(panelEl, code6, periodUpper) {
+    const panes = panelEl.querySelector(".rt-chart-panes");
+    const candleHost = panelEl.querySelector(".rt-lw-candle-host");
+    const volHost = panelEl.querySelector(".rt-lw-volume-host");
+    const msg = panelEl.querySelector(".rt-chart-loading-msg");
+    if (!panes || !candleHost || !volHost) return;
+    if (msg) msg.hidden = false;
+    panes.classList.add("rt-chart-panes--pending");
+
+    try {
+      await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
+      const LC = window.LightweightCharts;
+      if (!LC || typeof LC.createChart !== "function") throw new Error("차트 라이브러리를 불러오지 못했습니다.");
+
+      // 기존 테이블 차트와 충돌 방지: 패널에서는 별도 인스턴스 사용 (간단히 host 비우고 재생성)
+      candleHost.innerHTML = "";
+      volHost.innerHTML = "";
+
+      const w0 = Math.max(panes.clientWidth, 200);
+      const hC0 = Math.max(candleHost.clientHeight, 80);
+      const hV0 = Math.max(volHost.clientHeight, 60);
+      const localization = buildChartLocalization(periodUpper);
+      const chartCommon = (width, height, timeScaleVisible) => ({
+        width: Math.max(width, 200),
+        height: Math.max(height, 60),
+        layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
+        localization,
+        grid: {
+          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
+          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
+        },
+        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
+        timeScale: {
+          visible: timeScaleVisible,
+          borderVisible: true,
+          borderColor: "rgba(148, 130, 98, 0.35)",
+          timeVisible: false,
+          secondsVisible: false,
+          allowBoldLabels: true,
+        },
+      });
+
+      const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
+      const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
+
+      const candleOpts = {
+        upColor: CANDLE_UP,
+        downColor: CANDLE_DOWN,
+        borderUpColor: CANDLE_UP,
+        borderDownColor: CANDLE_DOWN,
+        wickUpColor: CANDLE_UP,
+        wickDownColor: CANDLE_DOWN,
+      };
+      const candle =
+        LC.CandlestickSeries && typeof chartCandle.addSeries === "function"
+          ? chartCandle.addSeries(LC.CandlestickSeries, candleOpts)
+          : chartCandle.addCandlestickSeries(candleOpts);
+
+      const vol = addHistogramSeriesCompat(chartVol, LC, {
+        priceFormat: { type: "volume" },
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      if (!vol) throw new Error("거래량 시리즈를 초기화하지 못했습니다.");
+      linkLogicalRangeSync(chartCandle, chartVol);
+      wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, periodUpper);
+
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
+      try {
+        const res = await fetch(
+          `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodUpper)}`,
+          { cache: "no-store", signal: ctrl.signal }
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        const candles = Array.isArray(data.candles) ? data.candles : [];
+        if (!candles.length) throw new Error("차트 데이터가 없습니다.");
+        const sliced = sliceCandlesFromEnd(candles, state.chartBarsLimit || 200);
+        candle.setData(sliced);
+        vol.setData(buildVolumeHistogramData(sliced));
+        chartCandle.timeScale().fitContent();
+        chartVol.timeScale().fitContent();
+      } finally {
+        clearTimeout(tid);
+      }
+    } catch (e) {
+      const msgText =
+        e && e.name === "AbortError"
+          ? "차트 불러오기 시간이 초과되었습니다."
+          : e && e.message
+            ? e.message
+            : String(e);
+      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msgText)}</p>`;
+      volHost.innerHTML = "";
+    } finally {
+      if (msg) msg.hidden = true;
+      panes.classList.remove("rt-chart-panes--pending");
+    }
+  }
+
+  async function searchStock() {
+    const input = $("stock-search-input");
+    const btn = $("stock-search-btn");
+    const panel = $("stock-result-panel");
+    const q = input && input.value ? String(input.value).trim() : "";
+    if (!panel) return;
+    if (!q) {
+      panel.hidden = true;
+      if (input) input.focus();
+      return;
+    }
+    panel.hidden = false;
+    panel.innerHTML = buildStockResultSkeleton();
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+      if (data && data.error) {
+        panel.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(data.error)}</p>`;
+        return;
+      }
+
+      panel.innerHTML = stockPanelHtml(data);
+
+      // 차트 버튼(패널) 주기 전환
+      panel.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
+        b.addEventListener("click", () => {
+          const p = b.getAttribute("data-rt-candle-period") || "D";
+          panel.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
+            x.setAttribute("aria-pressed", x === b ? "true" : "false")
+          );
+          void mountStockPanelChart(panel, String(data.stockCode || ""), String(p).toUpperCase());
+        });
+      });
+
+      // 초기 차트 로드
+      void mountStockPanelChart(panel, String(data.stockCode || ""), "D");
+    } catch (e) {
+      panel.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  window.searchStock = searchStock;
+
   function makeWsPayload(trType, trId, trKey) {
     return JSON.stringify({
       header: {
@@ -1504,6 +1746,13 @@
   async function init() {
     setupTabs();
     wireTableChartAccordion();
+    const searchInput = $("stock-search-input");
+    if (searchInput && !searchInput.dataset.wired) {
+      searchInput.dataset.wired = "1";
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") searchStock();
+      });
+    }
     const err = $("rt-error");
     if (err) err.hidden = true;
     hideLoadingOverlay();

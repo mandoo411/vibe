@@ -673,6 +673,7 @@ function normalizeIndexLevelNumber(fidInputIscd, rawLevel) {
 }
 
 async function fetchIndexPrice(fidInputIscd, label) {
+  let best = null;
   for (const fidCondMrktDivCode of ["J", "U"]) {
     console.log("[kis-realtime-data][index] → inquire-index-price", {
       tr_id: "FHPUP02100000",
@@ -690,7 +691,7 @@ async function fetchIndexPrice(fidInputIscd, label) {
         },
         ""
       );
-      const o = json.output;
+      const o = json.output ?? json.output1 ?? json.output2;
       const row = Array.isArray(o) ? o[0] : o;
       if (!row || typeof row !== "object") continue;
       const rawLevel = pickIndexLevelRaw(row);
@@ -704,6 +705,9 @@ async function fetchIndexPrice(fidInputIscd, label) {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             });
+      if (!best && rawLevel && scaled != null) {
+        best = { id: fidInputIscd, label, value, changePct, raw: row };
+      }
       if (rawLevel && plausible) {
         console.log("[kis-realtime-data][index] ←", {
           label,
@@ -720,6 +724,7 @@ async function fetchIndexPrice(fidInputIscd, label) {
       console.warn("[kis-realtime-data][index] try failed", fidCondMrktDivCode, fidInputIscd, e && e.message);
     }
   }
+  if (best) return best;
   console.log("[kis-realtime-data][index] ← no plausible level", { label, fidInputIscd });
   return { id: fidInputIscd, label, value: "", changePct: null, raw: null };
 }

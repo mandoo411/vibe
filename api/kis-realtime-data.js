@@ -664,9 +664,12 @@ function indexLevelPlausible(fidInputIscd, rawLevel) {
 }
 
 function normalizeIndexLevelNumber(fidInputIscd, rawLevel) {
-  const n0 = Number(String(rawLevel).replace(/,/g, ""));
+  const raw = String(rawLevel ?? "").trim();
+  const n0 = Number(raw.replace(/,/g, ""));
   if (!Number.isFinite(n0)) return null;
   // 일부 환경에서 지수가 100배 스케일(예: 280000 = 2800.00)로 오는 경우가 있어 보정
+  // 이미 소수점이 포함된 값은 보정하지 않는다.
+  if (/[.]/.test(raw)) return n0;
   if (fidInputIscd === "0001" && n0 > 8000 && n0 < 800000) return n0 / 100;
   if (fidInputIscd === "1001" && n0 > 4000 && n0 < 400000) return n0 / 100;
   return n0;

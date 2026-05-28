@@ -823,12 +823,30 @@
     ]);
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
-    state.indexes = (idx.indexes || []).map((x) => ({
-      id: x.id,
-      label: x.label,
-      value: x.value,
-      changePct: x.changePct,
-    }));
+    function normIndexId(x) {
+      const idRaw = x && x.id != null ? String(x.id).trim() : "";
+      const label = x && x.label != null ? String(x.label).trim() : "";
+      if (idRaw === "0001" || label.includes("코스피")) return "0001";
+      if (idRaw === "1001" || label.includes("코스닥")) return "1001";
+      // 일부 응답에서 001/1 같은 값이 섞일 수 있어 정규화
+      if (idRaw === "001" || idRaw === "1") return "0001";
+      return idRaw;
+    }
+
+    const byId = new Map();
+    for (const x of idx.indexes || []) {
+      const id = normIndexId(x);
+      if (!id) continue;
+      byId.set(id, {
+        id,
+        label: x.label,
+        value: x.value,
+        changePct: x.changePct,
+      });
+    }
+    if (!byId.has("0001")) byId.set("0001", { id: "0001", label: "코스피", value: "", changePct: null });
+    if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
+    state.indexes = ["0001", "1001"].map((k) => byId.get(k));
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -1220,8 +1238,16 @@
       String(data.stockName || "")
     )}`;
 
+    const fin = data.financials || {};
+    const finPer = fin.per == null ? per : Number(fin.per).toFixed(2);
+    const finEps = fin.eps == null ? "—" : fmtNum(fin.eps);
+    const finPbr = fin.pbr == null ? "—" : String(fin.pbr);
+    const finBps = fin.bps == null ? "—" : fmtNum(fin.bps);
+    const finRoe = fin.roe == null ? "—" : `${Number(fin.roe).toFixed(2).replace(/\\.00$/, "")}%`;
+    const finFhr = fin.foreignHoldRate == null ? "—" : `${Number(fin.foreignHoldRate).toFixed(2).replace(/\\.00$/, "")}%`;
+
     return [
-      `<div class="rt-stock-head">`,
+      `<div class="rt-stock-head rt-stock-head--wide">`,
       `  <div class="rt-stock-title">`,
       `    <span class="rt-stock-name">${name}</span>`,
       `    <span class="rt-stock-code">${code}</span>`,
@@ -1233,37 +1259,56 @@
       `  </div>`,
       `</div>`,
 
-      `<div class="rt-stock-grid">`,
-      `  <div class="rt-kv"><div class="rt-kv__k">시가</div><div class="rt-kv__v">${open}</div></div>`,
-      `  <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
-      `  <div class="rt-kv rt-kv--lo"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">거래량</div><div class="rt-kv__v">${vol}</div></div>`,
-      `</div>`,
-
-      `<div class="rt-stock-grid">`,
-      `  <div class="rt-kv rt-kv--hi52"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
-      `  <div class="rt-kv rt-kv--lo52"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">시가총액</div><div class="rt-kv__v">${mcap}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">PER</div><div class="rt-kv__v">${escapeHtml(per)}</div></div>`,
-      `</div>`,
-
-      `<div class="rt-stock-chart">`,
-      `  <div class="rt-chart-wrap">`,
-      `    <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
-      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
-      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
-      `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
-        `      <button type="button" class="rt-chart-fin-btn" data-rt-stock-pane="fin" aria-pressed="false">재무정보</button>`,
-      `    </div>`,
-      `    <div class="rt-fin-panel" hidden></div>`,
-      `    <div class="rt-chart-body">`,
-      `      <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>`,
-      `      <div class="rt-chart-panes rt-chart-panes--pending">`,
-      `        <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
-      `        <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
-      `        <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+      `<div class="rt-stock-main">`,
+      `  <div class="rt-stock-chart-col">`,
+      `    <div class="rt-chart-wrap">`,
+      `      <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
+      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
+      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
+      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
+      `      </div>`,
+      `      <div class="rt-chart-body">`,
+      `        <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>`,
+      `        <div class="rt-chart-panes rt-chart-panes--pending">`,
+      `          <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
+      `          <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
+      `          <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+      `        </div>`,
       `      </div>`,
       `    </div>`,
+      `  </div>`,
+      `  <div class="rt-stock-side">`,
+      `    <div class="rt-side-grid">`,
+      `      <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">시작가</div><div class="rt-kv__v">${open}</div></div>`,
+      `      <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
+      `      <div class="rt-kv rt-kv--lo"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">거래량</div><div class="rt-kv__v">${vol}</div></div>`,
+      `      <div class="rt-kv rt-kv--hi52"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
+      `      <div class="rt-kv rt-kv--lo52"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">시가총액</div><div class="rt-kv__v">${mcap}</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">PER</div><div class="rt-kv__v">${escapeHtml(finPer)}</div></div>`,
+      `    </div>`,
+      `  </div>`,
+      `</div>`,
+
+      `<div class="rt-split">`,
+      `  <div class="rt-card">`,
+      `    <div class="rt-card__title">수급</div>`,
+      `    <div class="rt-trip-grid">`,
+      `      <div class="rt-kv"><div class="rt-kv__k">기관</div><div class="rt-kv__v">—</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">개인</div><div class="rt-kv__v">—</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">외국인</div><div class="rt-kv__v">—</div></div>`,
+      `    </div>`,
+      `    <div class="rt-card__sub">외국인 보유율: ${escapeHtml(finFhr)}</div>`,
+      `  </div>`,
+      `  <div class="rt-card">`,
+      `    <div class="rt-card__title">실적</div>`,
+      `    <div class="rt-trip-grid">`,
+      `      <div class="rt-kv"><div class="rt-kv__k">매출</div><div class="rt-kv__v">—</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">영업이익</div><div class="rt-kv__v">—</div></div>`,
+      `      <div class="rt-kv"><div class="rt-kv__k">당기순이익</div><div class="rt-kv__v">—</div></div>`,
+      `    </div>`,
+      `    <div class="rt-card__sub">기준일: —</div>`,
       `  </div>`,
       `</div>`,
 
@@ -1400,66 +1445,9 @@
 
       panel.innerHTML = stockPanelHtml(data);
 
-      const panesEl = panel.querySelector(".rt-chart-panes");
-      const bodyEl = panel.querySelector(".rt-chart-body");
-      const finEl = panel.querySelector(".rt-fin-panel");
-      const finBtn = panel.querySelector(".rt-chart-fin-btn");
-
-      function finValue(v, suffix) {
-        const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
-        if (!Number.isFinite(n)) return "—";
-        if (suffix) return `${n.toLocaleString("ko-KR")}${suffix}`;
-        return n.toLocaleString("ko-KR");
-      }
-
-      function finPct(v) {
-        const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
-        if (!Number.isFinite(n)) return "—";
-        return `${n.toFixed(2).replace(/\.?0+$/, "")}%`;
-      }
-
-      function renderFin() {
-        if (!finEl) return;
-        const f = data.financials || {};
-        const rows = [
-          ["PER", f.per ?? data.per],
-          ["EPS", f.eps],
-          ["PBR", f.pbr],
-          ["BPS", f.bps],
-          ["ROE", finPct(f.roe)],
-          ["부채비율", finPct(f.debtRatio)],
-          ["배당수익률", finPct(f.dividendYield)],
-          ["외국인 보유비율", finPct(f.foreignHoldRate)],
-          ["상장주식수", finValue(f.listedShares, "")],
-          ["액면가", finValue(f.parValue, "")],
-        ];
-        finEl.innerHTML = `<div class="rt-fin-grid">${rows
-          .map(([k, v]) => {
-            const vv = v == null || v === "" ? "—" : String(v);
-            return `<div class="rt-fin-row"><div class="rt-fin-k">${escapeHtml(
-              String(k)
-            )}</div><div class="rt-fin-v">${escapeHtml(vv)}</div></div>`;
-          })
-          .join("")}</div>`;
-      }
-
-      function showChart() {
-        if (finEl) finEl.hidden = true;
-        if (bodyEl) bodyEl.hidden = false;
-        if (finBtn) finBtn.setAttribute("aria-pressed", "false");
-      }
-
-      function showFin() {
-        renderFin();
-        if (bodyEl) bodyEl.hidden = true;
-        if (finEl) finEl.hidden = false;
-        if (finBtn) finBtn.setAttribute("aria-pressed", "true");
-      }
-
       // 차트 버튼(패널) 주기 전환
       panel.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
         b.addEventListener("click", () => {
-          showChart();
           const p = b.getAttribute("data-rt-candle-period") || "D";
           panel.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
             x.setAttribute("aria-pressed", x === b ? "true" : "false")
@@ -1467,14 +1455,6 @@
           void mountStockPanelChart(panel, String(data.stockCode || ""), String(p).toUpperCase());
         });
       });
-      if (finBtn) {
-        finBtn.addEventListener("click", () => {
-          const pressed = finBtn.getAttribute("aria-pressed") === "true";
-          if (pressed) showChart();
-          else showFin();
-        });
-      }
-
       // 초기 차트 로드
       void mountStockPanelChart(panel, String(data.stockCode || ""), "D");
     } catch (e) {
@@ -1645,12 +1625,23 @@
         fetchJson("session", FETCH_TIMEOUT_MS),
       ]);
 
-      state.indexes = (idxPack.indexes || []).map((x) => ({
-        id: x.id,
-        label: x.label,
-        value: x.value,
-        changePct: x.changePct,
-      }));
+      function normIndexId(x) {
+        const idRaw = x && x.id != null ? String(x.id).trim() : "";
+        const label = x && x.label != null ? String(x.label).trim() : "";
+        if (idRaw === "0001" || label.includes("코스피")) return "0001";
+        if (idRaw === "1001" || label.includes("코스닥")) return "1001";
+        if (idRaw === "001" || idRaw === "1") return "0001";
+        return idRaw;
+      }
+      const byId = new Map();
+      for (const x of idxPack.indexes || []) {
+        const id = normIndexId(x);
+        if (!id) continue;
+        byId.set(id, { id, label: x.label, value: x.value, changePct: x.changePct });
+      }
+      if (!byId.has("0001")) byId.set("0001", { id: "0001", label: "코스피", value: "", changePct: null });
+      if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
+      state.indexes = ["0001", "1001"].map((k) => byId.get(k));
       state.clockSession = sessPack.clock || null;
       state.marketTime = sessPack.marketTime || null;
 

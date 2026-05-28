@@ -117,17 +117,16 @@
       }
       .rt-tabs {
         display: flex;
+        gap: 8px;
+        align-items: center;
         flex-wrap: nowrap;
-        align-items: stretch;
-        gap: 6px;
         padding: 8px;
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
       }
       .rt-tab {
         appearance: none;
-        flex: 1;
-        min-width: 0;
+        flex: 0 0 auto;
         background: white;
         border: 0.5px solid rgba(200, 210, 255, 0.5);
         border-radius: 20px;
@@ -147,39 +146,46 @@
         line-height: 1.25;
         white-space: nowrap;
         color: #555;
+        width: auto;
       }
       .rt-tab-search input {
         height: 34px;
-        padding: 0 10px;
-        border-radius: 3px;
-        border: 1px solid var(--border);
-        background: var(--bg-panel);
-        color: var(--text);
+        flex: 1;
+        padding: 8px 16px;
+        font-size: 13px;
+        border: 1.5px solid #3339bf;
+        border-radius: 20px;
+        background: white;
+        color: #131722;
         font-family: inherit;
-        font-size: 11px;
         outline: none;
       }
       .rt-tab-search input::placeholder {
         color: var(--text-dim);
       }
       .rt-tab-search input:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+        box-shadow: 0 0 0 3px rgba(51, 57, 191, 0.14);
       }
       .rt-tab-search button {
         height: 34px;
-        padding: 0 10px;
-        border-radius: 3px;
-        border: 1px solid var(--border);
-        background: var(--bg-tertiary);
-        color: var(--accent-bright);
+        padding: 8px 20px;
+        background: #3339bf;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        font-size: 13px;
         font-family: inherit;
-        font-size: 11px;
-        font-weight: 700;
+        font-weight: 600;
         cursor: pointer;
       }
       .rt-tab-search button:hover {
-        border-color: var(--border-strong);
+        filter: brightness(1.03);
+      }
+      [data-theme="dark"] .rt-tab-search input,
+      .dark-mode .rt-tab-search input {
+        border-color: #5560e8;
+        background: #1c2030;
+        color: white;
       }
 
       .rt-stock-panel {
@@ -325,6 +331,50 @@
         justify-content: flex-end;
         margin-top: 12px;
       }
+
+      .rt-stock-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 200px;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .rt-stock-side {
+        width: 200px;
+      }
+      .rt-side-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .rt-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .rt-card {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg-tertiary);
+      }
+      .rt-card__title {
+        font-weight: 800;
+        font-size: 13px;
+        color: var(--text);
+        margin-bottom: 10px;
+        letter-spacing: -0.01em;
+      }
+      .rt-card__sub {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--text-dim);
+      }
+      .rt-trip-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
       .rt-stock-actions a {
         text-decoration: none;
       }
@@ -391,13 +441,31 @@
           min-width: 0;
         }
       }
+
+      @media (max-width: 768px) {
+        .rt-stock-main {
+          grid-template-columns: 1fr;
+        }
+        .rt-stock-side {
+          width: auto;
+        }
+        .rt-side-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .rt-split {
+          grid-template-columns: 1fr;
+        }
+        .rt-trip-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
       .rt-tab[aria-selected="false"] {
         background: white;
         border: 0.5px solid rgba(200, 210, 255, 0.5);
         color: #555;
       }
       .rt-tab[aria-selected="true"] {
-        background: linear-gradient(135deg, #3339bf, #5560e8);
+        background: #3339bf;
         color: white;
         border: none;
         border-radius: 20px;
@@ -1002,7 +1070,7 @@
             <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
               상승률 TOP 50
             </button>
-            <div class="rt-tab-search" style="display:flex; gap:8px; margin-left:auto;">
+            <div class="rt-tab-search" style="display:flex; gap:8px; flex: 1; margin-left:auto;">
               <input
                 type="text"
                 id="stock-search-input"

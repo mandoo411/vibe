@@ -75,6 +75,52 @@
         </button>
       </header>
 
+      <section
+        id="ai-stock-analysis"
+        aria-label="AI 종목분석"
+        style="max-width: 1120px; margin: 14px auto 22px; padding: 0 16px;"
+      >
+        <div
+          style="background: white; border-radius: 20px; padding: 18px 16px; box-shadow: 0 4px 16px rgba(51,57,191,0.08), inset 0 1px 1px rgba(255,255,255,1); border: 0.5px solid rgba(200,210,255,0.5);"
+        >
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
+            <h2 style="margin:0; font-size:16px; font-weight:900; letter-spacing:-0.2px; color:#131722;">AI 종목분석</h2>
+            <span
+              style="display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; background:rgba(74,58,255,0.10); color:#4A3AFF; font-size:11px; font-weight:900; letter-spacing:0.06em;"
+            >NEW</span>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input
+              id="ai-stock-query"
+              type="text"
+              placeholder="종목명 또는 티커를 입력하세요 (예: 삼성전자, AAPL)"
+              autocomplete="off"
+              style="flex:1; min-width: 220px; height: 40px; border-radius: 12px; border: 0.5px solid rgba(200,210,255,0.7); padding: 0 12px; font-size: 13px; outline: none;"
+            />
+            <button
+              id="ai-stock-submit"
+              type="button"
+              style="height: 40px; border-radius: 12px; border: 0.5px solid rgba(200,210,255,0.7); background: linear-gradient(135deg, #5560e8, #3339BF); color: white; font-size: 13px; font-weight: 900; padding: 0 14px; cursor: pointer;"
+            >
+              AI 분석
+            </button>
+          </div>
+
+          <p style="margin: 8px 0 0; font-size: 11px; color: #5d606b;">
+            검색어 입력 후 분석 버튼을 누르면 텔레그램으로 자동 전송됩니다. (연동 예정)
+          </p>
+
+          <div
+            id="ai-stock-result"
+            style="display:none; margin-top: 12px; padding: 12px; border-radius: 14px; background: #f6f7ff; border: 0.5px solid rgba(200,210,255,0.6); color: #131722; font-size: 13px; font-weight: 700;"
+            aria-live="polite"
+          >
+            분석 중...
+          </div>
+        </div>
+      </section>
+
       <header class="masthead masthead--title-only">
         <div class="masthead__copy">
           <p class="masthead__kicker page-label">MARKET HUB</p>
@@ -235,8 +281,73 @@
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
+
+          <a
+            class="menu-card"
+            href="#ai-stock-analysis"
+            role="listitem"
+            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
+          >
+            <div
+              class="icon-box"
+              aria-hidden="true"
+              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
+            >
+              <i class="ti ti-sparkles" style="font-size:26px; color:#4A3AFF;"></i>
+            </div>
+            <h2 class="menu-card__title" style="display:flex; align-items:center; gap:8px;">
+              <span>AI 종목분석</span>
+              <span
+                style="display:inline-flex; align-items:center; justify-content:center; height:18px; padding:0 7px; border-radius:999px; background:rgba(74,58,255,0.10); color:#4A3AFF; font-size:10px; font-weight:900; letter-spacing:0.06em;"
+              >NEW</span>
+            </h2>
+            <p class="menu-card__desc">종목명 입력 → AI 분석 결과 제공 (연동 예정)</p>
+            <div class="menu-card__footer">
+              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true" style="background:#4A3AFF;"></span>개발중</span>
+              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
+            </div>
+          </a>
           </div>
       </main>
     </div>
+
+    <script>
+      (function () {
+        const input = document.getElementById("ai-stock-query");
+        const btn = document.getElementById("ai-stock-submit");
+        const result = document.getElementById("ai-stock-result");
+        const section = document.getElementById("ai-stock-analysis");
+
+        function showResultLoading() {
+          if (!result) return;
+          result.style.display = "block";
+          result.textContent = "분석 중...";
+        }
+
+        function run() {
+          const q = (input && input.value ? String(input.value) : "").trim();
+          if (!q) {
+            if (input) input.focus();
+            return;
+          }
+          showResultLoading();
+        }
+
+        if (btn) btn.addEventListener("click", run);
+        if (input) {
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") run();
+          });
+        }
+
+        document.querySelectorAll('a[href="#ai-stock-analysis"]').forEach((a) => {
+          a.addEventListener("click", (e) => {
+            e.preventDefault();
+            if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (input) input.focus({ preventScroll: true });
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

@@ -52,7 +52,8 @@ function indexValue(row) {
 
 function indexPlausible(code, value) {
   if (!Number.isFinite(value)) return false;
-  if (code === "0001") return value > 500 && value < 8000;
+  // 코스피는 환경/지수 기준에 따라 8,000을 초과할 수 있음
+  if (code === "0001") return value > 500 && value < 20000;
   if (code === "1001") return value > 300 && value < 4000;
   return true;
 }

@@ -40,7 +40,10 @@
       }
       .page--realtime {
         overflow-x: hidden;
-        max-width: 100%;
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px 18px 48px;
       }
       .rt-panel,
       .rt-stock-panel,
@@ -409,6 +412,159 @@
         background: #1c2030;
         border: 0.5px solid rgba(255, 255, 255, 0.1);
         color: #aaa;
+      }
+
+      .rt-block {
+        margin-top: 12px;
+        padding: 14px;
+        border: 1px solid rgba(200, 210, 255, 0.5);
+        border-radius: 16px;
+        background: white;
+      }
+      [data-theme="dark"] .rt-block,
+      .dark-mode .rt-block {
+        background: #1c2030;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+      }
+      .rt-block__title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #131722;
+        margin-bottom: 10px;
+      }
+      [data-theme="dark"] .rt-block__title,
+      .dark-mode .rt-block__title {
+        color: #fff;
+      }
+      .rt-block__sub {
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.55);
+        margin-left: 6px;
+        font-size: 12px;
+      }
+      [data-theme="dark"] .rt-block__sub,
+      .dark-mode .rt-block__sub {
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .rt-basic-grid {
+        display: grid;
+        gap: 8px;
+      }
+      .rt-basic-row {
+        display: grid;
+        grid-template-columns: 64px 1fr 64px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 8px;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+      }
+      .rt-basic-row:first-child {
+        border-top: none;
+      }
+      [data-theme="dark"] .rt-basic-row,
+      .dark-mode .rt-basic-row {
+        border-top-color: rgba(255, 255, 255, 0.08);
+      }
+      .rt-basic-k {
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 12px;
+      }
+      [data-theme="dark"] .rt-basic-k,
+      .dark-mode .rt-basic-k {
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .rt-basic-v {
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: #131722;
+      }
+      [data-theme="dark"] .rt-basic-v,
+      .dark-mode .rt-basic-v {
+        color: #fff;
+      }
+      .rt-basic-v--hi {
+        color: #ef5350;
+      }
+      .rt-basic-v--lo {
+        color: #1565c0;
+      }
+      [data-theme="dark"] .rt-basic-v--hi,
+      .dark-mode .rt-basic-v--hi {
+        color: #26a69a;
+      }
+      [data-theme="dark"] .rt-basic-v--lo,
+      .dark-mode .rt-basic-v--lo {
+        color: #ef5350;
+      }
+
+      .rt-card3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .rt-mini {
+        padding: 12px;
+        border-radius: 14px;
+        background: #f6f6f2;
+      }
+      [data-theme="dark"] .rt-mini,
+      .dark-mode .rt-mini {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .rt-mini__k {
+        text-align: center;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.55);
+        margin-bottom: 8px;
+      }
+      [data-theme="dark"] .rt-mini__k,
+      .dark-mode .rt-mini__k {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .rt-mini__v {
+        text-align: center;
+        font-size: 16px;
+        font-weight: 800;
+        color: #131722;
+      }
+      [data-theme="dark"] .rt-mini__v,
+      .dark-mode .rt-mini__v {
+        color: #fff;
+      }
+      .rt-mini__v--pos {
+        color: #ef5350;
+      }
+      .rt-mini__v--neg {
+        color: #1565c0;
+      }
+      [data-theme="dark"] .rt-mini__v--pos,
+      .dark-mode .rt-mini__v--pos {
+        color: #26a69a;
+      }
+      [data-theme="dark"] .rt-mini__v--neg,
+      .dark-mode .rt-mini__v--neg {
+        color: #ef5350;
+      }
+      .rt-mini__sub {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.55);
+      }
+      [data-theme="dark"] .rt-mini__sub,
+      .dark-mode .rt-mini__sub {
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      @media (max-width: 768px) {
+        .rt-basic-row {
+          grid-template-columns: 54px 1fr 54px 1fr;
+        }
+        .rt-card3 {
+          grid-template-columns: 1fr;
+        }
       }
       .rt-cta {
         display: inline-flex;

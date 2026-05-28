@@ -1277,57 +1277,49 @@
       `  </div>`,
       `</div>`,
 
-      `<div class="rt-stock-main">`,
-      `  <div class="rt-stock-chart-col">`,
-      `    <button type="button" class="rt-chart-toggle" aria-expanded="false">차트 보기 ▼</button>`,
-      `    <div class="rt-chart-wrap">`,
-      `      <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기" hidden>`,
-      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
-      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
-      `        <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
-      `      </div>`,
-      `      <div class="rt-chart-body">`,
-      `        <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>`,
-      `        <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
-      `          <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
-      `          <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
-      `          <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
-      `        </div>`,
-      `      </div>`,
-      `    </div>`,
+      `<button type="button" class="rt-chart-toggle" aria-expanded="false">차트 보기 ▼</button>`,
+      `<div class="rt-chart-wrap" hidden>`,
+      `  <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기" hidden>`,
+      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
+      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
+      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
       `  </div>`,
-      `  <div class="rt-stock-side">`,
-      `    <div class="rt-side-grid">`,
-      `      <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">시작가</div><div class="rt-kv__v">${open}</div></div>`,
-      `      <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
-      `      <div class="rt-kv rt-kv--lo"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">거래량</div><div class="rt-kv__v">${vol}</div></div>`,
-      `      <div class="rt-kv rt-kv--hi52"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
-      `      <div class="rt-kv rt-kv--lo52"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">시가총액</div><div class="rt-kv__v">${mcap}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">PER</div><div class="rt-kv__v">${escapeHtml(finPer)}</div></div>`,
+      `  <div class="rt-chart-body">`,
+      `    <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
+      `    <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
+      `      <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
+      `      <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
+      `      <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
       `    </div>`,
       `  </div>`,
       `</div>`,
 
-      `<div class="rt-split">`,
-      `  <div class="rt-card">`,
-      `    <div class="rt-card__title">수급</div>`,
-      `    <div class="rt-trip-grid">`,
-      `      <div class="rt-kv"><div class="rt-kv__k">기관</div><div class="rt-kv__v">${escapeHtml(supInst)}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">개인</div><div class="rt-kv__v">${escapeHtml(supIndv)}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">외국인</div><div class="rt-kv__v">${escapeHtml(supFrgn)}</div></div>`,
-      `    </div>`,
-      `    <div class="rt-card__sub">외국인 보유율: ${escapeHtml(finFhr)}</div>`,
+      `<div class="rt-block rt-block--basic">`,
+      `  <div class="rt-block__title">기본 정보</div>`,
+      `  <div class="rt-basic-grid">`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">전일</div><div class="rt-basic-v">—</div><div class="rt-basic-k">시작</div><div class="rt-basic-v rt-basic-v--hi">${open}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div><div class="rt-basic-k">거래대금</div><div class="rt-basic-v">—</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">시총</div><div class="rt-basic-v">${mcap}</div><div class="rt-basic-k">PER</div><div class="rt-basic-v">${escapeHtml(finPer)}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">PBR</div><div class="rt-basic-v">${escapeHtml(finPbr)}</div><div class="rt-basic-k">EPS</div><div class="rt-basic-v">${escapeHtml(finEps)}</div></div>`,
       `  </div>`,
-      `  <div class="rt-card">`,
-      `    <div class="rt-card__title">실적</div>`,
-      `    <div class="rt-trip-grid">`,
-      `      <div class="rt-kv"><div class="rt-kv__k">매출</div><div class="rt-kv__v">${escapeHtml(pfRev)}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">영업이익</div><div class="rt-kv__v">${escapeHtml(pfOp)}</div></div>`,
-      `      <div class="rt-kv"><div class="rt-kv__k">당기순이익</div><div class="rt-kv__v">${escapeHtml(pfNet)}</div></div>`,
-      `    </div>`,
-      `    <div class="rt-card__sub">기준일: ${escapeHtml(pfDate)}</div>`,
+      `</div>`,
+
+      `<div class="rt-block">`,
+      `  <div class="rt-block__title">수급 현황 <span class="rt-block__sub">기준 ${escapeHtml(pfDate)}</span></div>`,
+      `  <div class="rt-card3">`,
+      `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v rt-mini__v--pos">${escapeHtml(supInst)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v rt-mini__v--neg">${escapeHtml(supIndv)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v rt-mini__v--neg">${escapeHtml(supFrgn)}</div><div class="rt-mini__sub">보유 ${escapeHtml(finFhr)}</div></div>`,
+      `  </div>`,
+      `</div>`,
+
+      `<div class="rt-block">`,
+      `  <div class="rt-block__title">실적 <span class="rt-block__sub">${escapeHtml(pfDate)} 기준</span></div>`,
+      `  <div class="rt-card3">`,
+      `    <div class="rt-mini"><div class="rt-mini__k">매출</div><div class="rt-mini__v">${escapeHtml(pfRev)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">영업이익</div><div class="rt-mini__v">${escapeHtml(pfOp)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">당기순이익</div><div class="rt-mini__v">${escapeHtml(pfNet)}</div></div>`,
       `  </div>`,
       `</div>`,
 
@@ -1468,6 +1460,7 @@
       const panesEl = panel.querySelector(".rt-chart-panes");
       const toolbarEl = panel.querySelector(".rt-chart-toolbar");
       const loadingMsg = panel.querySelector(".rt-chart-loading-msg");
+      const chartWrap = panel.querySelector(".rt-chart-wrap");
       let chartOpen = false;
 
       function applyChartVisibility(nextOpen) {
@@ -1477,6 +1470,7 @@
           toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
         }
         if (toolbarEl) toolbarEl.hidden = !chartOpen;
+        if (chartWrap) chartWrap.hidden = !chartOpen;
         if (panesEl) panesEl.style.display = chartOpen ? "" : "none";
         if (loadingMsg) loadingMsg.hidden = !chartOpen;
       }

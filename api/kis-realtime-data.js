@@ -674,6 +674,13 @@ function normalizeIndexLevelNumber(fidInputIscd, rawLevel) {
 
 async function fetchIndexPrice(fidInputIscd, label) {
   let best = null;
+  const iscdCandidates = (() => {
+    const base = String(fidInputIscd || "").trim();
+    const list = [base];
+    if (base === "0001") list.push("001", "1");
+    return [...new Set(list.filter(Boolean))];
+  })();
+
   for (const fidCondMrktDivCode of ["J", "U"]) {
     console.log("[kis-realtime-data][index] → inquire-index-price", {
       tr_id: "FHPUP02100000",
@@ -682,43 +689,45 @@ async function fetchIndexPrice(fidInputIscd, label) {
       label,
     });
     try {
-      const { json } = await kisGet(
-        "/uapi/domestic-stock/v1/quotations/inquire-index-price",
-        "FHPUP02100000",
-        {
-          fid_cond_mrkt_div_code: fidCondMrktDivCode,
-          fid_input_iscd: fidInputIscd,
-        },
-        ""
-      );
-      const o = json.output ?? json.output1 ?? json.output2;
-      const row = Array.isArray(o) ? o[0] : o;
-      if (!row || typeof row !== "object") continue;
-      const rawLevel = pickIndexLevelRaw(row);
-      const changePct = toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt);
-      const scaled = rawLevel ? normalizeIndexLevelNumber(fidInputIscd, rawLevel) : null;
-      const plausible = scaled != null && indexLevelPlausible(fidInputIscd, String(scaled));
-      const value =
-        scaled == null
-          ? ""
-          : scaled.toLocaleString("ko-KR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            });
-      if (!best && rawLevel && scaled != null) {
-        best = { id: fidInputIscd, label, value, changePct, raw: row };
-      }
-      if (rawLevel && plausible) {
-        console.log("[kis-realtime-data][index] ←", {
-          label,
-          fid_input_iscd: fidInputIscd,
-          fid_cond_mrkt_div_code: fidCondMrktDivCode,
-          rawLevel,
-          value,
-          changePct,
-          keysSample: Object.keys(row).filter((k) => /nmix|prpr|ctrt|bstp/i.test(k)).slice(0, 12),
-        });
-        return { id: fidInputIscd, label, value, changePct, raw: row };
+      for (const iscd of iscdCandidates) {
+        const { json } = await kisGet(
+          "/uapi/domestic-stock/v1/quotations/inquire-index-price",
+          "FHPUP02100000",
+          {
+            fid_cond_mrkt_div_code: fidCondMrktDivCode,
+            fid_input_iscd: iscd,
+          },
+          ""
+        );
+        const o = json.output ?? json.output1 ?? json.output2;
+        const row = Array.isArray(o) ? o[0] : o;
+        if (!row || typeof row !== "object") continue;
+        const rawLevel = pickIndexLevelRaw(row);
+        const changePct = toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt);
+        const scaled = rawLevel ? normalizeIndexLevelNumber(fidInputIscd, rawLevel) : null;
+        const plausible = scaled != null && indexLevelPlausible(fidInputIscd, String(scaled));
+        const value =
+          scaled == null
+            ? ""
+            : scaled.toLocaleString("ko-KR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              });
+        if (!best && rawLevel && scaled != null) {
+          best = { id: fidInputIscd, label, value, changePct, raw: row };
+        }
+        if (rawLevel && plausible) {
+          console.log("[kis-realtime-data][index] ←", {
+            label,
+            fid_input_iscd: fidInputIscd,
+            fid_cond_mrkt_div_code: fidCondMrktDivCode,
+            rawLevel,
+            value,
+            changePct,
+            keysSample: Object.keys(row).filter((k) => /nmix|prpr|ctrt|bstp/i.test(k)).slice(0, 12),
+          });
+          return { id: fidInputIscd, label, value, changePct, raw: row };
+        }
       }
     } catch (e) {
       console.warn("[kis-realtime-data][index] try failed", fidCondMrktDivCode, fidInputIscd, e && e.message);

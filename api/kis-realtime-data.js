@@ -694,6 +694,18 @@ async function fetchNaverIndexPrice(indexCode) {
 }
 
 async function fetchIndexPrice(fidInputIscd, label) {
+  // 코스피는 KIS가 간헐적으로 0 또는 빈 값으로 내려오는 경우가 있어 안정성 우선으로 네이버를 먼저 사용
+  if (String(fidInputIscd) === "0001") {
+    try {
+      const nv = await fetchNaverIndexPrice("KOSPI");
+      if (nv && nv.value) {
+        return { id: fidInputIscd, label, value: nv.value, changePct: nv.changePct, raw: nv.raw };
+      }
+    } catch (e) {
+      console.warn("[kis-realtime-data][index] NAVER primary failed", e && e.message);
+    }
+  }
+
   let best = null;
   const iscdCandidates = (() => {
     const base = String(fidInputIscd || "").trim();
@@ -755,18 +767,6 @@ async function fetchIndexPrice(fidInputIscd, label) {
     }
   }
   if (best) return best;
-
-  // KIS가 코스피를 간헐적으로 비워서 주는 경우가 있어, 최소 표시용으로 네이버 지수 API로 fallback
-  if (String(fidInputIscd) === "0001") {
-    try {
-      const nv = await fetchNaverIndexPrice("KOSPI");
-      if (nv && nv.value) {
-        return { id: fidInputIscd, label, value: nv.value, changePct: nv.changePct, raw: nv.raw };
-      }
-    } catch (e) {
-      console.warn("[kis-realtime-data][index] NAVER fallback failed", e && e.message);
-    }
-  }
 
   console.log("[kis-realtime-data][index] ← no plausible level", { label, fidInputIscd });
   return { id: fidInputIscd, label, value: "", changePct: null, raw: null };

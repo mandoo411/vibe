@@ -79,6 +79,9 @@
     capPage: 1,
     capPageSize: 25,
     capTotal: 0,
+    gainerPage: 1,
+    gainerPageSize: 25,
+    gainerTotal: 0,
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -852,45 +855,69 @@
   }
 
   async function fetchStocksJsonForTab(tab) {
+    const ps = 25;
     if (tab === "cap") {
       const p = Math.max(1, Number(state.capPage) || 1);
-      const ps = Math.max(1, Number(state.capPageSize) || 25);
       return fetchJson("market-cap", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
     }
-    return fetchJson("gainers", FETCH_TIMEOUT_MS);
+    const p = Math.max(1, Number(state.gainerPage) || 1);
+    return fetchJson("gainers", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
   }
 
-  function renderCapPager() {
-    const el = $("rt-cap-pager");
+  function pagerMetaForTab(tab) {
+    if (tab === "gainers") {
+      return {
+        pageKey: "gainerPage",
+        pageSize: state.gainerPageSize || 25,
+        total: Math.max(0, Number(state.gainerTotal) || 0) || 100,
+        cur: Math.max(1, Number(state.gainerPage) || 1),
+      };
+    }
+    return {
+      pageKey: "capPage",
+      pageSize: state.capPageSize || 25,
+      total: Math.max(0, Number(state.capTotal) || 0) || 100,
+      cur: Math.max(1, Number(state.capPage) || 1),
+    };
+  }
+
+  function renderTablePager() {
+    const el = $("rt-table-pager");
     if (!el) return;
-    const show = state.tab === "cap";
+    const show = state.tab === "cap" || state.tab === "gainers";
     el.hidden = !show;
     if (!show) return;
 
-    const total = Math.max(0, Number(state.capTotal) || 0);
-    const pageSize = Math.max(1, Number(state.capPageSize) || 25);
-    const pages = Math.max(1, Math.ceil((total || 100) / pageSize));
-    const cur = Math.max(1, Math.min(pages, Number(state.capPage) || 1));
+    const meta = pagerMetaForTab(state.tab);
+    const pages = Math.max(1, Math.ceil(meta.total / meta.pageSize));
+    const cur = Math.max(1, Math.min(pages, meta.cur));
 
     const btns = [];
     for (let i = 1; i <= pages; i++) {
       btns.push(
-        `<button type="button" class="rt-cap-page-btn" data-rt-cap-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
+        `<button type="button" data-rt-table-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
       );
     }
     el.innerHTML = btns.join("");
 
-    el.querySelectorAll("[data-rt-cap-page]").forEach((b) => {
+    el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
       b.addEventListener("click", async () => {
-        const next = Number(b.getAttribute("data-rt-cap-page") || "1") || 1;
-        if (next === state.capPage) return;
-        state.capPage = next;
+        const next = Number(b.getAttribute("data-rt-table-page") || "1") || 1;
+        const pm = pagerMetaForTab(state.tab);
+        if (next === pm.cur) return;
+        if (state.tab === "cap") state.capPage = next;
+        else state.gainerPage = next;
+        state.openChartCode = null;
         showTableSkeleton();
         try {
-          const pack = await fetchStocksJsonForTab("cap");
-          state.capTotal = Number(pack.total || pack.totalCount || 0) || state.capTotal;
-          applyStocksArrayToTab("cap", pack.stocks);
-          state.tabLoadedAt["cap"] = Date.now();
+          const pack = await fetchStocksJsonForTab(state.tab);
+          if (state.tab === "cap") {
+            state.capTotal = Number(pack.total || pack.totalCount || 0) || state.capTotal;
+          } else {
+            state.gainerTotal = Number(pack.total || pack.totalCount || 0) || state.gainerTotal;
+          }
+          applyStocksArrayToTab(state.tab, pack.stocks);
+          state.tabLoadedAt[state.tab] = Date.now();
           hideTableSkeleton();
           renderAll();
           if (state.ws && state.ws.readyState === 1) {
@@ -913,6 +940,7 @@
   async function refreshTabStocksOnly(tab) {
     const stockPack = await fetchStocksJsonForTab(tab);
     if (tab === "cap") state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
+    else if (tab === "gainers") state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -949,7 +977,11 @@
     if (!byId.has("0001")) byId.set("0001", { id: "0001", label: "코스피", value: "", changePct: null });
     if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
     state.indexes = ["0001", "1001"].map((k) => byId.get(k));
-    state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
+    if (tab === "gainers") {
+      state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
+    } else if (tab === "cap") {
+      state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
+    }
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -1179,30 +1211,11 @@
         </tr>`;
   }
 
-  function chartRowHtml(forCode) {
+  function detailRowHtml(forCode) {
     const cs = tableColSpan();
-    return `<tr class="rt-chart-row" data-chart-for="${escapeHtml(forCode)}">
+    return `<tr class="rt-detail-row" data-detail-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">
-            <div class="rt-chart-wrap">
-              <div class="rt-chart-quote-strip rt-chart-quote-strip--empty" aria-live="polite"></div>
-              <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>
-                <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>
-              </div>
-              <div class="rt-chart-body">
-                <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>
-                <div class="rt-chart-panes rt-chart-panes--pending">
-                  <div class="rt-chart-pane rt-chart-pane--candle">
-                    <div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div>
-                  </div>
-                  <div class="rt-chart-pane-sep" aria-hidden="true"></div>
-                  <div class="rt-chart-pane rt-chart-pane--vol">
-                    <div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div class="rt-detail-acc" data-detail-code="${escapeHtml(forCode)}">${buildStockResultSkeleton()}</div>
           </td>
         </tr>`;
   }
@@ -1232,30 +1245,34 @@
     tr.cells[5].textContent = formatStckAvls(readStckAvlsRaw(r));
   }
 
-  function syncChartDomAfterRows(body, rows) {
+  function syncDetailDomAfterRows(body, rows) {
     if (!state.openChartCode) return;
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
     if (!anchor) {
       state.openChartCode = null;
-      disposeLwChart();
       renderThead();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
-    let chartTr = body.querySelector("tr.rt-chart-row");
-    if (!chartTr) {
-      anchor.insertAdjacentHTML("afterend", chartRowHtml(state.openChartCode));
-      chartTr = body.querySelector("tr.rt-chart-row");
+    let detailTr = body.querySelector("tr.rt-detail-row");
+    if (!detailTr) {
+      anchor.insertAdjacentHTML("afterend", detailRowHtml(state.openChartCode));
+      detailTr = body.querySelector("tr.rt-detail-row");
     } else {
-      const expectedFor = state.openChartCode;
-      if (chartTr.getAttribute("data-chart-for") !== expectedFor) {
-        chartTr.setAttribute("data-chart-for", expectedFor);
+      if (detailTr.getAttribute("data-detail-for") !== state.openChartCode) {
+        detailTr.setAttribute("data-detail-for", state.openChartCode);
+        const host = detailTr.querySelector(".rt-detail-acc");
+        if (host) {
+          host.setAttribute("data-detail-code", state.openChartCode);
+          delete host.dataset.loadedFor;
+          host.innerHTML = buildStockResultSkeleton();
+        }
       }
-      anchor.after(chartTr);
+      anchor.after(detailTr);
     }
-    if (chartTr) chartTr.setAttribute("data-chart-for", state.openChartCode);
+    if (detailTr) detailTr.setAttribute("data-detail-for", state.openChartCode);
     syncNameChartButtonsAria(body);
-    void mountLightweightChart(body);
+    void mountTableDetailAccordion(body);
   }
 
   function syncTableChromeForTab() {
@@ -1273,7 +1290,6 @@
     renderThead();
     const rows = getCurrentRows();
     if (!state.openChartCode) {
-      disposeLwChart();
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;
     }
@@ -1291,21 +1307,20 @@
         applyRowToTr(stockRows[i], rows[i]);
       }
     } else {
-      disposeLwChart();
       const parts = [];
       for (const r of rows) {
         parts.push(stockRowHtml(r));
-        if (state.openChartCode === r.code) parts.push(chartRowHtml(r.code));
+        if (state.openChartCode === r.code) parts.push(detailRowHtml(r.code));
       }
       body.innerHTML = parts.join("");
     }
-    syncChartDomAfterRows(body, rows);
+    syncDetailDomAfterRows(body, rows);
   }
 
   function renderAll() {
     renderIndexes();
     renderMeta();
-    renderCapPager();
+    renderTablePager();
     renderTable();
   }
 
@@ -1327,7 +1342,113 @@
     return `<div class="rt-stock-loading"><span class="rt-spinner" aria-hidden="true"></span><span>종목 정보를 불러오는 중...</span></div>`;
   }
 
-  function stockPanelHtml(data) {
+  function supplyAmountCls(val, invert) {
+    if (val == null || !Number.isFinite(val)) return "";
+    if (invert) return val < 0 ? "rt-mini__v--inv-neg" : "rt-mini__v--inv-pos";
+    return val < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
+  }
+
+  function stockPanelChartShellHtml(chartId) {
+    return [
+      `<div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
+      `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
+      `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
+      `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
+      `</div>`,
+      `<div class="rt-chart-body">`,
+      `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
+      `  <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
+      `    <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
+      `    <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
+      `    <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+      `  </div>`,
+      `</div>`,
+    ].join("");
+  }
+
+  function wireStockPanelChart(panelEl, code6) {
+    const toggleBtn = panelEl.querySelector(".rt-chart-toggle");
+    const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : "";
+    const chartHost = targetId ? panelEl.querySelector(`#${CSS.escape(targetId)}`) : null;
+    if (!toggleBtn || !chartHost) return;
+
+    let chartOpen = false;
+
+    function setToggle(open) {
+      chartOpen = !!open;
+      toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
+      toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
+      chartHost.hidden = !chartOpen;
+      chartHost.style.display = chartOpen ? "" : "none";
+      if (!chartOpen) {
+        const panes = chartHost.querySelector(".rt-chart-panes");
+        if (panes) panes.style.display = "none";
+      }
+    }
+
+    setToggle(false);
+    toggleBtn.addEventListener("click", () => {
+      setToggle(!chartOpen);
+      if (!chartOpen) return;
+      if (!chartHost.dataset.mounted) {
+        chartHost.innerHTML = stockPanelChartShellHtml(targetId);
+        chartHost.dataset.mounted = "1";
+        const panes = chartHost.querySelector(".rt-chart-panes");
+        if (panes) panes.style.display = "";
+        chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
+          b.addEventListener("click", () => {
+            const p = b.getAttribute("data-rt-candle-period") || "D";
+            chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
+              x.setAttribute("aria-pressed", x === b ? "true" : "false")
+            );
+            void mountStockPanelChart(chartHost, code6, String(p).toUpperCase());
+          });
+        });
+      } else {
+        const panes = chartHost.querySelector(".rt-chart-panes");
+        if (panes) panes.style.display = "";
+      }
+      void mountStockPanelChart(chartHost, code6, "D");
+    });
+  }
+
+  function wireStockPanel(panelEl, data, opts) {
+    if (opts && typeof opts.onClose === "function") {
+      const closeBtn = panelEl.querySelector(".rt-stock-close");
+      if (closeBtn) closeBtn.addEventListener("click", opts.onClose);
+    }
+    wireStockPanelChart(panelEl, String(data.stockCode || ""));
+  }
+
+  async function mountTableDetailAccordion(body) {
+    if (!state.openChartCode) return;
+    const code = state.openChartCode;
+    const row = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
+    if (!row) return;
+    const host = row.querySelector(".rt-detail-acc");
+    if (!host || host.dataset.loadedFor === code) return;
+
+    host.innerHTML = buildStockResultSkeleton();
+    try {
+      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+      if (data && data.error) {
+        host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(data.error)}</p>`;
+        return;
+      }
+      if (state.openChartCode !== code) return;
+      host.innerHTML = stockPanelHtml(data, { accordion: true });
+      host.dataset.loadedFor = code;
+      wireStockPanel(host, data, {});
+    } catch (e) {
+      if (state.openChartCode !== code) return;
+      host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
+    }
+  }
+
+  function stockPanelHtml(data, opts) {
+    const accordion = !!(opts && opts.accordion);
     const name = escapeHtml(data.stockName || "—");
     const code = escapeHtml(data.stockCode || "");
     const market = escapeHtml(data.market || "");
@@ -1345,18 +1466,15 @@
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
-    const per = data.per == null || !Number.isFinite(Number(data.per)) ? "—" : Number(data.per).toFixed(2);
 
     const aiHref = `/stock-analysis.html?code=${encodeURIComponent(String(data.stockCode || ""))}&name=${encodeURIComponent(
       String(data.stockName || "")
     )}`;
 
     const fin = data.financials || {};
-    const finPer = fin.per == null ? per : Number(fin.per).toFixed(2);
+    const finPer = fin.per == null ? (data.per == null || !Number.isFinite(Number(data.per)) ? "—" : Number(data.per).toFixed(2)) : Number(fin.per).toFixed(2);
     const finEps = fin.eps == null ? "—" : fmtNum(fin.eps);
     const finPbr = fin.pbr == null ? "—" : String(fin.pbr);
-    const finBps = fin.bps == null ? "—" : fmtNum(fin.bps);
-    const finRoe = fin.roe == null ? "—" : `${Number(fin.roe).toFixed(2).replace(/\\.00$/, "")}%`;
     const finFhr = fin.foreignHoldRate == null ? "—" : `${Number(fin.foreignHoldRate).toFixed(2).replace(/\\.00$/, "")}%`;
 
     const sup = data.supply || {};
@@ -1366,12 +1484,9 @@
     const supInst = sup.institution == null ? "—" : formatKoMoneyEokSigned(sup.institution);
     const supIndv = sup.individual == null ? "—" : formatKoMoneyEokSigned(sup.individual);
     const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEokSigned(sup.foreigner);
-    const supInstCls =
-      supInstVal == null || !Number.isFinite(supInstVal) ? "" : supInstVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
-    const supIndvCls =
-      supIndvVal == null || !Number.isFinite(supIndvVal) ? "" : supIndvVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
-    const supFrgnCls =
-      supFrgnVal == null || !Number.isFinite(supFrgnVal) ? "" : supFrgnVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
+    const supInstCls = supplyAmountCls(supInstVal, false);
+    const supIndvCls = supplyAmountCls(supIndvVal, true);
+    const supFrgnCls = supplyAmountCls(supFrgnVal, true);
 
     const pf = data.profit || {};
     const pfRev = pf.revenue == null ? "—" : formatKoMoneyEok(pf.revenue);
@@ -1380,10 +1495,12 @@
     const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
-    const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
+    const closeBtn = accordion
+      ? ""
+      : `<button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`;
 
     return [
-      `<div class="rt-stock-head rt-stock-head--wide">`,
+      `<div class="rt-stock-head${accordion ? " rt-stock-head--acc" : " rt-stock-head--wide"}">`,
       `  <div class="rt-stock-title">`,
       `    <span class="rt-stock-name">${name}</span>`,
       `    <span class="rt-stock-code">${code}</span>`,
@@ -1392,27 +1509,27 @@
       `  <div class="rt-stock-quote">`,
       `    <span class="rt-stock-price">${price}</span>`,
       `    <span class="delta ${cls}">${pct}</span>`,
-      `    <button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`,
+      `    ${closeBtn}`,
       `  </div>`,
+      `</div>`,
+
+      `<div class="rt-stock-actions">`,
+      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
       `</div>`,
 
       `<div class="rt-block rt-block--basic">`,
       `  <div class="rt-block__title">기본 정보</div>`,
       `  <div class="rt-basic-grid">`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">전일</div><div class="rt-basic-v">${escapeHtml(
-        data.prevClose != null ? fmtNum(data.prevClose) : "—"
-      )}</div><div class="rt-basic-k">시작</div><div class="rt-basic-v rt-basic-v--hi">${open}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div><div class="rt-basic-k">거래대금</div><div class="rt-basic-v">${escapeHtml(
-        tvCalc != null ? formatTradeVal(String(tvCalc)) : data.tradingValue != null ? formatTradeVal(String(data.tradingValue)) : "—"
-      )}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">시가</div><div class="rt-basic-v">${open}</div><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">시총</div><div class="rt-basic-v">${mcap}</div><div class="rt-basic-k">PER</div><div class="rt-basic-v">${escapeHtml(finPer)}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">PBR</div><div class="rt-basic-v">${escapeHtml(finPbr)}</div><div class="rt-basic-k">EPS</div><div class="rt-basic-v">${escapeHtml(finEps)}</div></div>`,
+      `    <div class="rt-basic-row"><div class="rt-basic-k">52주 최고</div><div class="rt-basic-v rt-basic-v--hi">${hi52}</div><div class="rt-basic-k">52주 최저</div><div class="rt-basic-v rt-basic-v--lo">${lo52}</div></div>`,
       `  </div>`,
       `</div>`,
 
       `<div class="rt-block">`,
-      `  <div class="rt-block__title">수급 현황</div>`,
+      `  <div class="rt-block__title">수급</div>`,
       `  <div class="rt-card3">`,
       `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v ${escapeHtml(supInstCls)}">${escapeHtml(supInst)}</div></div>`,
       `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v ${escapeHtml(supIndvCls)}">${escapeHtml(supIndv)}</div></div>`,
@@ -1421,7 +1538,7 @@
       `</div>`,
 
       `<div class="rt-block">`,
-      `  <div class="rt-block__title">실적</div>`,
+      `  <div class="rt-block__title">실적 <span class="rt-block__sub">${escapeHtml(pfDate)}</span></div>`,
       `  <div class="rt-card3">`,
       `    <div class="rt-mini"><div class="rt-mini__k">매출</div><div class="rt-mini__v">${escapeHtml(pfRev)}</div></div>`,
       `    <div class="rt-mini"><div class="rt-mini__k">영업이익</div><div class="rt-mini__v">${escapeHtml(pfOp)}</div></div>`,
@@ -1430,11 +1547,7 @@
       `</div>`,
 
       `<div class="rt-stock-actions">`,
-      `  <a class="rt-cta" href="${escapeHtml(aiHref)}">이 종목 AI 분석하기</a>`,
-      `</div>`,
-
-      `<div class="rt-stock-actions">`,
-      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `  <a class="rt-cta" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `</div>`,
 
       `<div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
@@ -1568,7 +1681,6 @@
 
       panel.innerHTML = stockPanelHtml(data);
 
-      const closeBtn = panel.querySelector(".rt-stock-close");
       const hidePanel = () => {
         panel.hidden = true;
         panel.innerHTML = "";
@@ -1579,76 +1691,7 @@
           if (tabs) tabs.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch {}
       };
-      if (closeBtn) closeBtn.addEventListener("click", hidePanel);
-
-      const toggleBtn = panel.querySelector(".rt-chart-toggle");
-      const code6 = String(data.stockCode || "");
-      const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : "";
-      const chartHost = targetId ? document.getElementById(targetId) : null;
-      let chartOpen = false;
-
-      function chartHtml() {
-        return [
-          `<div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
-          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
-          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
-          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
-          `</div>`,
-          `<div class="rt-chart-body">`,
-          `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
-          `  <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
-          `    <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
-          `    <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
-          `    <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
-          `  </div>`,
-          `</div>`,
-        ].join("");
-      }
-
-      function setToggle(open) {
-        chartOpen = !!open;
-        if (toggleBtn) {
-          toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
-          toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
-        }
-        if (chartHost) {
-          chartHost.hidden = !chartOpen;
-          // hidden 속성이 CSS에 의해 무시되는 경우를 대비해 display도 같이 제어
-          chartHost.style.display = chartOpen ? "" : "none";
-          if (!chartOpen) {
-            const panes = chartHost.querySelector(".rt-chart-panes");
-            if (panes) panes.style.display = "none";
-          }
-        }
-      }
-
-      setToggle(false);
-      if (toggleBtn && chartHost) {
-        toggleBtn.addEventListener("click", () => {
-          setToggle(!chartOpen);
-          if (!chartOpen) return;
-          if (!chartHost.dataset.mounted) {
-            chartHost.innerHTML = chartHtml();
-            chartHost.dataset.mounted = "1";
-            // chartHtml()에서 panes는 display:none 이므로, 마운트 직전에 펼쳐준다.
-            const panes = chartHost.querySelector(".rt-chart-panes");
-            if (panes) panes.style.display = "";
-            chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
-              b.addEventListener("click", () => {
-                const p = b.getAttribute("data-rt-candle-period") || "D";
-                chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
-                  x.setAttribute("aria-pressed", x === b ? "true" : "false")
-                );
-                void mountStockPanelChart(chartHost, code6, String(p).toUpperCase());
-              });
-            });
-          } else {
-            const panes = chartHost.querySelector(".rt-chart-panes");
-            if (panes) panes.style.display = "";
-          }
-          void mountStockPanelChart(chartHost, code6, "D");
-        });
-      }
+      wireStockPanel(panel, data, { onClose: hidePanel });
     } catch (e) {
       panel.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
     } finally {
@@ -1730,7 +1773,7 @@
   function subscribeStocks(codes) {
     if (!state.ws || state.ws.readyState !== 1) return;
     const trId = ccnlTrIdForTab();
-    const limit = state.tab === "cap" ? 30 : 50;
+    const limit = 25;
     const list = codes
       .map((c) => String(c || "").replace(/\D/g, ""))
       .map((d) => (d.length <= 6 ? d.padStart(6, "0") : d.slice(-6)))
@@ -1808,11 +1851,9 @@
 
   async function refreshPartial() {
     try {
-      const stockPromise =
-        state.tab === "gainers" ? fetchJson("gainers", FETCH_TIMEOUT_MS) : fetchJson("market-cap", FETCH_TIMEOUT_MS);
+      const stockPack = await fetchStocksJsonForTab(state.tab);
 
-      const [stockPack, idxPack, sessPack] = await Promise.all([
-        stockPromise,
+      const [idxPack, sessPack] = await Promise.all([
         fetchJson("index", FETCH_TIMEOUT_MS),
         fetchJson("session", FETCH_TIMEOUT_MS),
       ]);
@@ -1838,11 +1879,11 @@
       state.marketTime = sessPack.marketTime || null;
 
       if (state.tab === "gainers") {
-        const { stocks } = stockPack;
-        state.gainerRows = (stocks || []).map((r) => ({ ...r, tab: "gainers" }));
+        state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
+        applyStocksArrayToTab("gainers", stockPack.stocks);
       } else {
-        const { stocks } = stockPack;
-        state.capRows = (stocks || []).map((r) => ({ ...r, tab: "cap" }));
+        state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
+        applyStocksArrayToTab("cap", stockPack.stocks);
       }
       state.tabLoadedAt[state.tab] = Date.now();
       renderAll();
@@ -1885,6 +1926,7 @@
         }
 
         if (state.tab === "cap") state.capPage = 1;
+        else state.gainerPage = 1;
 
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
@@ -1955,29 +1997,6 @@
     if (!body || body.dataset.rtChartWire === "1") return;
     body.dataset.rtChartWire = "1";
     body.addEventListener("click", (ev) => {
-      const intervalBtn = ev.target.closest(".rt-chart-interval-btn");
-      if (intervalBtn && body.contains(intervalBtn)) {
-        const p = intervalBtn.getAttribute("data-rt-candle-period");
-        if (!p) return;
-        if (state.candlePeriod === p && state.lwBundle && state.lwChart && state.lwVolChart) {
-          body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
-            btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
-          });
-          return;
-        }
-        state.candlePeriod = p;
-        body.querySelectorAll(".rt-chart-interval-btn").forEach((btn) => {
-          btn.setAttribute("aria-pressed", btn === intervalBtn ? "true" : "false");
-        });
-        const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
-        if (panes) {
-          delete panes.dataset.mountedFor;
-          delete panes.dataset.mountedPeriod;
-        }
-        disposeLwChart();
-        void mountLightweightChart(body);
-        return;
-      }
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const code = btn.getAttribute("data-code");
@@ -1986,7 +2005,6 @@
         state.openChartCode = null;
       } else {
         state.openChartCode = code;
-        state.candlePeriod = "D";
       }
       renderTable();
     });

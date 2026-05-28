@@ -629,7 +629,7 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   return rows;
 }
 
-async function fetchGainersMerged50() {
+async function fetchGainersMerged100() {
   const [kospi, kosdaq] = await Promise.all([
     fetchFluctuationRank("0001", "KOSPI"),
     fetchFluctuationRank("1001", "KOSDAQ"),
@@ -640,7 +640,7 @@ async function fetchGainersMerged50() {
   }
   const all = [...merged.values()].filter((r) => r.changePct != null);
   all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  return all.slice(0, 50).map((r, i) => ({ ...r, rank: i + 1 }));
+  return all.slice(0, 100).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
@@ -1069,11 +1069,17 @@ module.exports = async function handler(req, res) {
 
     if (action === "gainers") {
       try {
-        const stocks = await fetchGainersMerged50();
-        json(res, 200, { stocks });
+        const page = Math.max(1, Number(req.query && req.query.page) || 1);
+        const pageSizeRaw = Number(req.query && req.query.pageSize);
+        const pageSize = pageSizeRaw && Number.isFinite(pageSizeRaw) ? Math.max(1, Math.min(50, pageSizeRaw)) : 25;
+        const all = await fetchGainersMerged100();
+        const total = all.length;
+        const start = (page - 1) * pageSize;
+        const stocks = all.slice(start, start + pageSize);
+        json(res, 200, { total, page, pageSize, stocks });
       } catch (e) {
         console.error("[kis-realtime-data] action=gainers", e && e.message, e);
-        json(res, 200, { stocks: [] });
+        json(res, 200, { total: 0, page: 1, pageSize: 25, stocks: [] });
       }
       return;
     }

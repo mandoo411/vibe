@@ -140,37 +140,41 @@
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
       }
-      .rt-cap-pager {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        margin-left: 10px;
-        padding: 0 6px;
+      .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px 0;
       }
-      .rt-cap-page-btn {
+      .pagination button {
         appearance: none;
-        height: 30px;
-        padding: 0 10px;
-        border-radius: 999px;
-        border: 1px solid rgba(200, 210, 255, 0.5);
         background: white;
-        color: #555;
-        font-size: 12px;
+        border: 0.5px solid rgba(200, 210, 255, 0.5);
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 13px;
         font-family: inherit;
+        color: #555;
         cursor: pointer;
-        white-space: nowrap;
       }
-      .rt-cap-page-btn[aria-current="page"] {
+      .pagination button[aria-current="page"] {
         background: #3339bf;
-        border-color: #3339bf;
         color: white;
-        font-weight: 700;
+        border: none;
+        font-weight: 600;
       }
-      [data-theme="dark"] .rt-cap-page-btn,
-      .dark-mode .rt-cap-page-btn {
+      [data-theme="dark"] .pagination button,
+      .dark-mode .pagination button {
         background: #1c2030;
         border-color: rgba(255, 255, 255, 0.12);
         color: #aaa;
+      }
+      [data-theme="dark"] .pagination button[aria-current="page"],
+      .dark-mode .pagination button[aria-current="page"] {
+        background: #3339bf;
+        color: white;
+        border: none;
       }
       .rt-tab {
         appearance: none;
@@ -245,6 +249,15 @@
         border: 1px solid var(--border);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
+      }
+      .rt-detail-acc {
+        padding: 14px 12px 16px;
+        background: var(--bg-panel);
+      }
+      tr.rt-detail-row > td {
+        padding: 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-panel);
       }
       .rt-stock-head {
         display: flex;
@@ -586,12 +599,26 @@
       .rt-mini__v--neg {
         color: #1565c0;
       }
+      .rt-mini__v--inv-pos {
+        color: #1565c0;
+      }
+      .rt-mini__v--inv-neg {
+        color: #ef5350;
+      }
       [data-theme="dark"] .rt-mini__v--pos,
       .dark-mode .rt-mini__v--pos {
         color: #26a69a;
       }
       [data-theme="dark"] .rt-mini__v--neg,
       .dark-mode .rt-mini__v--neg {
+        color: #ef5350;
+      }
+      [data-theme="dark"] .rt-mini__v--inv-pos,
+      .dark-mode .rt-mini__v--inv-pos {
+        color: #1565c0;
+      }
+      [data-theme="dark"] .rt-mini__v--inv-neg,
+      .dark-mode .rt-mini__v--inv-neg {
         color: #ef5350;
       }
       .rt-mini__sub {
@@ -1327,9 +1354,8 @@
               시가총액 TOP 100
             </button>
             <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
-              상승률 TOP 50
+              상승률 TOP 100
             </button>
-            <div id="rt-cap-pager" class="rt-cap-pager" hidden></div>
             <div class="rt-tab-search" style="display:flex; gap:8px; margin-left:auto;">
               <input
                 type="text"
@@ -1357,6 +1383,7 @@
               </thead>
               <tbody id="rt-tbody"></tbody>
             </table>
+            <div id="rt-table-pager" class="pagination" hidden aria-label="페이지"></div>
           </div>
         </div>
 

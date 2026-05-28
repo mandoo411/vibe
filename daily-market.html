@@ -99,7 +99,8 @@
         <span class="day-nav__spacer"></span>
         <a class="day-nav__cross" href="./realtime.html">실시간시세 →</a>
         <a class="day-nav__cross" href="./weekly-market.html">일정 →</a>
-        </nav>
+        <button type="button" id="calendar-toggle" onclick="toggleCalendar()">📅 달력 보기</button>
+      </nav>
 
       <main class="daily-main">
         <section class="daily-detail" id="daily-detail" aria-live="polite">
@@ -184,7 +185,7 @@
           </article>
         </section>
 
-        <aside class="daily-archive" aria-label="날짜별 아카이브">
+        <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브" style="display:none">
           <header class="archive-head">
             <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
             <h2 class="archive-title" id="archive-title">—</h2>
@@ -200,6 +201,19 @@
 
     </div>
 
+    <script>
+      function toggleCalendar() {
+        const panel = document.getElementById("calendar-panel");
+        const btn = document.getElementById("calendar-toggle");
+        if (panel.style.display === "none" || !panel.style.display) {
+          panel.style.display = "block";
+          btn.textContent = "📅 달력 닫기";
+        } else {
+          panel.style.display = "none";
+          btn.textContent = "📅 달력 보기";
+        }
+      }
+    </script>
     <script src="./assets/data-url.js"></script>
     <script src="./daily-market.js"></script>
   </body>

@@ -51,6 +51,12 @@ function rankRangeForPage(page, pageSize) {
   return { page: pg, pageSize: ps, startRank, endRank, total: 100 };
 }
 
+/** KIS 순위 API 1회 ~30건 — endRank까지 필요한 연속조회 횟수 */
+function kisBatchCountForEndRank(endRank) {
+  const n = Math.max(1, Math.min(100, Number(endRank) || 25));
+  return Math.min(MARKET_CAP_RANK_MAX_PAGES, Math.max(1, Math.ceil(n / 30)));
+}
+
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
   if (!json || typeof json !== "object") return false;
@@ -485,8 +491,8 @@ function mapMarketCapKisRow(row, fallbackBoard) {
   };
 }
 
-/** KIS 시가총액 순위 — endRank까지 연속조회(페이지당 ~30건) 후 해당 구간만 반환 */
-async function fetchMarketCapKospiUpToRank(endRank, opts = {}) {
+/** KIS 시가총액 순위 — tr_cont로 누적, rank는 조회 순서(1부터)로 부여 (data_rank는 연속조회마다 1~30 리셋) */
+async function fetchMarketCapKospiSequential(endRank, opts = {}) {
   const logSample = opts.logSample !== false;
   const target = Math.max(1, Math.min(100, Number(endRank) || 25));
   const params = {
@@ -505,7 +511,8 @@ async function fetchMarketCapKospiUpToRank(endRank, opts = {}) {
   const seen = new Set();
   let trCont = "";
   let kisPages = 0;
-  for (let page = 0; page < MARKET_CAP_RANK_MAX_PAGES; page++) {
+
+  for (let kisPage = 0; kisPage < MARKET_CAP_RANK_MAX_PAGES && rows.length < target; kisPage++) {
     kisPages++;
     const { json, trCont: nextTr } = await kisGet(
       "/uapi/domestic-stock/v1/ranking/market-cap",
@@ -519,37 +526,63 @@ async function fetchMarketCapKospiUpToRank(endRank, opts = {}) {
       const mapped = mapMarketCapKisRow(row, "KOSPI");
       if (!mapped || seen.has(mapped.code)) continue;
       seen.add(mapped.code);
-      rows.push(mapped);
+      rows.push({ ...mapped, rank: rows.length + 1 });
     }
-    let maxRank = 0;
-    for (const r of rows) {
-      if (r.rank != null && r.rank > maxRank) maxRank = r.rank;
-    }
-    if (maxRank >= target) break;
+    if (rows.length >= target) break;
     const cont = String(nextTr || "").trim().toUpperCase();
     if (cont !== "M") break;
     trCont = "N";
   }
 
-  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
-  const filtered = rows.filter((r) => r.rank != null && r.rank >= 1 && r.rank <= target);
+  const sliced = rows.slice(0, target);
 
-  if (logSample && filtered.length > 0) {
-    console.log("[kis-realtime-data][market-cap] upToRank", {
+  if (logSample && sliced.length > 0) {
+    console.log("[kis-realtime-data][market-cap] sequential", {
       endRank: target,
       kisPages,
-      rowCount: filtered.length,
-      maxRank: filtered[filtered.length - 1]?.rank,
+      rowCount: sliced.length,
     });
   }
 
-  return filtered;
+  return sliced;
 }
 
-/** 시가총액 TOP100 — 페이지별 25건 (해당 순위 구간만 KIS 호출) */
+/** 시가총액 TOP100 — 페이지별 25건 (필요한 tr_cont 배치만 호출) */
 async function fetchMarketCapPage(page, pageSize = 25) {
-  const { startRank, endRank } = rankRangeForPage(page, pageSize);
-  const all = await fetchMarketCapKospiUpToRank(endRank, { logSample: false });
+  const { startRank, endRank, page: pg } = rankRangeForPage(page, pageSize);
+
+  if (pg === 1) {
+    const batch1 = await fetchMarketCapKospiSequential(30, { logSample: false });
+    rankPageCacheSet("market-cap:spill:26-30", batch1.slice(25, 30));
+    return batch1.slice(0, 25);
+  }
+
+  if (pg === 2) {
+    const spill = rankPageCacheGet("market-cap:spill:26-30");
+    const rows50 = await fetchMarketCapKospiSequential(50, { logSample: false });
+    if (spill && spill.length === 5) {
+      rankPageCacheSet("market-cap:spill:26-30", rows50.slice(25, 30));
+      return [...spill, ...rows50.slice(30, 50)];
+    }
+    return rows50.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
+  if (pg === 3) {
+    const rows80 = await fetchMarketCapKospiSequential(80, { logSample: false });
+    rankPageCacheSet("market-cap:spill:76-80", rows80.slice(75, 80));
+    return rows80.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
+  if (pg === 4) {
+    const spill = rankPageCacheGet("market-cap:spill:76-80");
+    const rows100 = await fetchMarketCapKospiSequential(100, { logSample: false });
+    if (spill && spill.length === 5) {
+      return [...spill, ...rows100.slice(80, 100)];
+    }
+    return rows100.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
+  const all = await fetchMarketCapKospiSequential(endRank, { logSample: false });
   return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }
 
@@ -615,22 +648,22 @@ async function fetchMarketCapKospi30() {
 
 /** 코스피 시가총액 상위 100 (스냅샷 등 레거시) */
 async function fetchMarketCapKospi100() {
-  return fetchMarketCapKospiUpToRank(100, { logSample: false });
+  return fetchMarketCapKospiSequential(100, { logSample: false });
 }
 
 /**
- * @param {{ closeOnly?: boolean }} [opts]
- *   closeOnly: fid_prc_cls_code=1 만 사용(등락률·전일대비 랭킹).
+ * 등락률 순위 — 지정 batchCount만큼 tr_cont 연속조회 (~30건/회)
+ * @param {number} batchCount 1=1~30위, 2=~60위, ...
  */
-async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
+async function fetchFluctuationMarketBatches(marketCode, marketLabel, batchCount, opts = {}) {
   const closeOnly = Boolean(opts.closeOnly);
+  const batches = Math.max(1, Math.min(FLUCTUATION_RANK_MAX_PAGES, Number(batchCount) || 1));
   const fluctuationSearchParams = (fidPrcCls) => ({
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20170",
     fid_input_iscd: marketCode,
     fid_rank_sort_cls_code: "0",
     fid_input_cnt_1: "0",
-    /** 1: 등락률(종가/전일대비 스크립트). 0: 현재가 */
     fid_prc_cls_code: fidPrcCls,
     fid_input_price_1: "",
     fid_input_price_2: "",
@@ -642,28 +675,19 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     fid_rsfl_rate2: "",
   });
 
-  /** 연속조회(tr_cont M→N)로 등락률 순위 원시 행 누적 — maxUniqueCodes 도달 시 조기 종료 */
-  async function fetchFluctuationRawRowsPaged(fidPrcCls, maxUniqueCodes) {
-    const params = fluctuationSearchParams(fidPrcCls);
+  async function fetchRawBatches(fidPrcCls) {
     const acc = [];
-    const seenCodes = new Set();
     let trCont = "";
-    const cap = maxUniqueCodes != null && Number.isFinite(Number(maxUniqueCodes)) ? Number(maxUniqueCodes) : null;
-    for (let page = 0; page < FLUCTUATION_RANK_MAX_PAGES; page++) {
+    for (let i = 0; i < batches; i++) {
       const { json, trCont: nextTr } = await kisGet(
         "/uapi/domestic-stock/v1/ranking/fluctuation",
         "FHPST01700000",
-        params,
+        fluctuationSearchParams(fidPrcCls),
         trCont
       );
       const part = kisOutputRows(json);
       if (!part.length) break;
       acc.push(...part);
-      for (const row of part) {
-        const c = sanitizeStr(row.stck_shrn_iscd);
-        if (c) seenCodes.add(c);
-      }
-      if (cap != null && seenCodes.size >= cap) break;
       const cont = String(nextTr || "").trim().toUpperCase();
       if (cont !== "M") break;
       trCont = "N";
@@ -671,7 +695,7 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     return acc;
   }
 
-  const mapRawRowsToRanked = (list) =>
+  const mapRawRows = (list) =>
     list
       .map((row) => {
         const code = sanitizeStr(row.stck_shrn_iscd);
@@ -687,22 +711,19 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
           changePct: toNum(row.prdy_ctrt),
           volume,
           tradingValue,
-          rank: toNum(row.data_rank),
         };
       })
       .filter((r) => r.code && r.name);
 
-  const maxRows = opts.maxRows != null && Number.isFinite(Number(opts.maxRows)) ? Number(opts.maxRows) : null;
-  const rawPrimary = await fetchFluctuationRawRowsPaged("1", maxRows);
+  const rawPrimary = await fetchRawBatches("1");
   const byCode = new Map();
-  for (const r of mapRawRowsToRanked(rawPrimary)) {
+  for (const r of mapRawRows(rawPrimary)) {
     if (!byCode.has(r.code)) byCode.set(r.code, r);
   }
   let rows = [...byCode.values()];
-  if (maxRows != null) rows = rows.slice(0, maxRows);
 
   if (!closeOnly && rows.length && rows.some((r) => !r.tradingValue)) {
-    const rawAlt = await fetchFluctuationRawRowsPaged("0", maxRows);
+    const rawAlt = await fetchRawBatches("0");
     const tvByCode = new Map();
     for (const row of rawAlt) {
       const c = sanitizeStr(row.stck_shrn_iscd);
@@ -714,22 +735,35 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   rows = rows.map((r) =>
     r.tradingValue ? r : { ...r, tradingValue: approxPbmnFromPriceVol(r.price, r.volume) || "" }
   );
+  return rows;
+}
+
+/**
+ * @param {{ closeOnly?: boolean, maxRows?: number }} [opts]
+ *   closeOnly: fid_prc_cls_code=1 만 사용(등락률·전일대비 랭킹).
+ */
+async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
+  const closeOnly = Boolean(opts.closeOnly);
+  const maxRows = opts.maxRows != null && Number.isFinite(Number(opts.maxRows)) ? Number(opts.maxRows) : null;
+  const batches = maxRows != null ? kisBatchCountForEndRank(maxRows) : FLUCTUATION_RANK_MAX_PAGES;
+  let rows = await fetchFluctuationMarketBatches(marketCode, marketLabel, batches, { closeOnly });
+  if (maxRows != null) rows = rows.slice(0, maxRows);
   console.log("[kis-api] fluctuation merged", {
     market: marketLabel,
     closeOnly,
     uniqueRows: rows.length,
-    maxPagesCap: FLUCTUATION_RANK_MAX_PAGES,
+    batches,
   });
   return rows;
 }
 
 async function fetchGainersMergedUpToRank(endRank) {
   const target = Math.max(1, Math.min(100, Number(endRank) || 25));
-  let perMarket = Math.max(30, target);
-  for (let attempt = 0; attempt < 5; attempt++) {
+  let batches = kisBatchCountForEndRank(target);
+  for (let attempt = 0; attempt < 4; attempt++) {
     const [kospi, kosdaq] = await Promise.all([
-      fetchFluctuationRank("0001", "KOSPI", { closeOnly: true, maxRows: perMarket }),
-      fetchFluctuationRank("1001", "KOSDAQ", { closeOnly: true, maxRows: perMarket }),
+      fetchFluctuationMarketBatches("0001", "KOSPI", batches, { closeOnly: true }),
+      fetchFluctuationMarketBatches("1001", "KOSDAQ", batches, { closeOnly: true }),
     ]);
     const merged = new Map();
     for (const r of [...kospi, ...kosdaq]) {
@@ -737,17 +771,48 @@ async function fetchGainersMergedUpToRank(endRank) {
     }
     const all = [...merged.values()].filter((r) => r.changePct != null);
     all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-    if (all.length >= target || perMarket >= 150) {
-      return all.slice(0, target).map((r, i) => ({ ...r, rank: i + 1 }));
-    }
-    perMarket += 30;
+    const ranked = all.slice(0, target).map((r, i) => ({ ...r, rank: i + 1 }));
+    if (ranked.length >= target || batches >= 4) return ranked;
+    batches += 1;
   }
   return [];
 }
 
-/** 상승률 TOP100 — 페이지별 25건 (해당 순위 구간만 KIS 호출) */
+/** 상승률 TOP100 — 페이지별 25건 (시가총액과 동일 배치·스필 캐시) */
 async function fetchGainersPage(page, pageSize = 25) {
-  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const { startRank, endRank, page: pg } = rankRangeForPage(page, pageSize);
+
+  if (pg === 1) {
+    const top30 = await fetchGainersMergedUpToRank(30);
+    rankPageCacheSet("gainers:spill:26-30", top30.slice(25, 30));
+    return top30.slice(0, 25);
+  }
+
+  if (pg === 2) {
+    const spill = rankPageCacheGet("gainers:spill:26-30");
+    const top50 = await fetchGainersMergedUpToRank(50);
+    rankPageCacheSet("gainers:spill:26-30", top50.slice(25, 30));
+    if (spill && spill.length === 5) {
+      return [...spill, ...top50.slice(30, 50)];
+    }
+    return top50.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
+  if (pg === 3) {
+    const top80 = await fetchGainersMergedUpToRank(80);
+    rankPageCacheSet("gainers:spill:76-80", top80.slice(75, 80));
+    return top80.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
+  if (pg === 4) {
+    const spill = rankPageCacheGet("gainers:spill:76-80");
+    const top100 = await fetchGainersMergedUpToRank(100);
+    if (spill && spill.length === 5) {
+      return [...spill, ...top100.slice(80, 100)];
+    }
+    return top100.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  }
+
   const all = await fetchGainersMergedUpToRank(endRank);
   return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }

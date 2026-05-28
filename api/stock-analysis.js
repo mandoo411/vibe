@@ -548,13 +548,23 @@ async function kisIncomeStatement(stockCode6) {
       kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430200", params);
     let json;
     try {
-      json = await tryOnce({ FID_COND_MRKT_DIV_CODE: "J", FID_INPUT_ISCD: stockCode6 });
+      // 문서(v1_국내주식-079): FID_DIV_CLS_CODE 필수 (0:년, 1:분기)
+      json = await tryOnce({ FID_DIV_CLS_CODE: "1", FID_COND_MRKT_DIV_CODE: "J", FID_INPUT_ISCD: stockCode6 });
     } catch {
-      json = await tryOnce({ fid_cond_mrkt_div_code: "J", fid_input_iscd: stockCode6 });
+      json = await tryOnce({ FID_DIV_CLS_CODE: "1", fid_cond_mrkt_div_code: "J", fid_input_iscd: stockCode6 });
     }
     let out = json.output ?? json.output1 ?? json.output2;
     if (out && !Array.isArray(out)) out = [out];
-    const row = Array.isArray(out) && out.length ? out[0] : null;
+    const row =
+      Array.isArray(out) && out.length
+        ? out
+            .slice()
+            .map((r) => ({
+              r,
+              y: sanitizeStr(r?.stac_yymm || r?.STAC_YYMM || r?.stacYm || r?.date),
+            }))
+            .sort((a, b) => Number(b.y || 0) - Number(a.y || 0))[0]?.r
+        : null;
     if (!row || typeof row !== "object") return null;
     const revenue =
       // 문서(v1_국내주식-079): sale_account = 매출액
@@ -562,8 +572,9 @@ async function kisIncomeStatement(stockCode6) {
       pickAnyNumberByRegex(row, [/sale_account/i, /sale_amt/i, /sale|sales|revenue/i]);
     const op =
       // income-statement에는 영업이익이 여러 형태로 있을 수 있어 후보 확장
-      toNum(row.bsop_prfi ?? row.oprt_prfi ?? row.operating_income ?? row.op_profit) ??
-      pickAnyNumberByRegex(row, [/bsop.*prfi|op.*prfi|oper.*income|op.*profit/i]);
+      // 문서(v1_국내주식-079): bsop_prti = 영업이익
+      toNum(row.bsop_prti ?? row.bsop_prfi ?? row.oprt_prfi ?? row.operating_income ?? row.op_profit) ??
+      pickAnyNumberByRegex(row, [/bsop.*prt[i1]|bsop.*prfi|op.*prfi|oper.*income|op.*profit/i]);
     const net =
       toNum(row.thtr_ntin ?? row.net_income ?? row.net_profit) ??
       pickAnyNumberByRegex(row, [/ntin|net.*income|net.*profit/i]);

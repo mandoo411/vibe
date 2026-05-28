@@ -178,10 +178,11 @@ export async function analyzeDailyClosingReport({
     });
 
     let rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
-    // 코드블록 및 불필요한 텍스트 제거
+    // 코드블록만 제거, JSON 내용은 건드리지 않음
     rawText = rawText
-      .replace(/^[\s\S]*?({)/m, "$1") // { 이전 모든 텍스트 제거
-      .replace(/}[\s\S]*$/m, (m) => m.split("}")[0] + "}") // 마지막 } 이후 제거
+      .replace(/^```json\s*/im, "")
+      .replace(/^```\s*/im, "")
+      .replace(/```\s*$/im, "")
       .trim();
     parsed = JSON.parse(rawText);
     if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");

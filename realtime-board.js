@@ -1492,6 +1492,9 @@
           if (!chartHost.dataset.mounted) {
             chartHost.innerHTML = chartHtml();
             chartHost.dataset.mounted = "1";
+            // chartHtml()에서 panes는 display:none 이므로, 마운트 직전에 펼쳐준다.
+            const panes = chartHost.querySelector(".rt-chart-panes");
+            if (panes) panes.style.display = "";
             chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
               b.addEventListener("click", () => {
                 const p = b.getAttribute("data-rt-candle-period") || "D";
@@ -1501,6 +1504,9 @@
                 void mountStockPanelChart(chartHost, code6, String(p).toUpperCase());
               });
             });
+          } else {
+            const panes = chartHost.querySelector(".rt-chart-panes");
+            if (panes) panes.style.display = "";
           }
           void mountStockPanelChart(chartHost, code6, "D");
         });

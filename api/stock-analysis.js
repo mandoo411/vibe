@@ -368,7 +368,20 @@ async function kisInquireInvestor(stockCode6) {
     FID_INPUT_ISCD: stockCode6,
   });
   const o = json.output ?? json.output1 ?? json.output2;
-  const row = Array.isArray(o) ? o[0] : o;
+  const pickLatest = (arr) => {
+    if (!Array.isArray(arr) || !arr.length) return null;
+    const withDate = arr
+      .map((r) => {
+        const d = sanitizeStr(r && (r.stck_bsop_date || r.bsop_date || r.date || r.STCK_BSOP_DATE));
+        const n = d && /^\d{8}$/.test(d) ? Number(d) : null;
+        return { r, n };
+      })
+      .filter((x) => x && x.r && typeof x.r === "object");
+    if (!withDate.length) return arr[0];
+    withDate.sort((a, b) => (b.n || 0) - (a.n || 0));
+    return withDate[0].r;
+  };
+  const row = Array.isArray(o) ? pickLatest(o) : o;
   if (!row || typeof row !== "object") return null;
 
   const institution =
@@ -386,7 +399,8 @@ async function kisInquireInvestor(stockCode6) {
 
 async function kisIncomeStatement(stockCode6) {
   try {
-    const json = await kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430100", {
+    // Income statement TR_ID: FHKST66430200 (66430100은 대차대조표로 알려짐)
+    const json = await kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430200", {
       FID_COND_MRKT_DIV_CODE: "J",
       FID_INPUT_ISCD: stockCode6,
     });

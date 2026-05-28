@@ -321,6 +321,95 @@ async function fetchNaverStockPrice(code6) {
   return row && typeof row === "object" ? row : null;
 }
 
+function stripTags(html) {
+  return String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseNaverFinanceNumber(cellText) {
+  const s = sanitizeStr(cellText)
+    .replace(/,/g, "")
+    .replace(/[^\d.-]/g, "");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * 네이버 금융(PC) 종목 메인에서 최근 분기 실적(매출/영업이익/당기순이익) 추출.
+ * - 반환 단위: 네이버 표기(억) 그대로 숫자
+ * - 구조 변경에 대비해 HTML 전체에서 행 단위로 방어적 파싱
+ */
+async function fetchNaverQuarterProfit(code6) {
+  const url = `https://finance.naver.com/item/main.nhn?code=${encodeURIComponent(code6)}`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      accept: "text/html,application/xhtml+xml",
+    },
+  });
+  const html = await res.text();
+  if (!res.ok || !html) return null;
+
+  // cop_analysis 구간을 우선적으로 좁히되, 실패 시 전체에서 검색
+  let scope = html;
+  const m = html.match(/<div class="section cop_analysis"[\s\S]*?<\/div>\s*<!--\s*\/\/\s*section cop_analysis\s*-->/i);
+  if (m && m[0]) scope = m[0];
+
+  // 분기 컬럼 라벨(YYYY.MM) 후보를 뽑아 마지막 값을 baseDate로 사용
+  const cols = [];
+  const thRe = /<th[^>]*scope=["']col["'][^>]*>([\s\S]*?)<\/th>/gi;
+  let th;
+  while ((th = thRe.exec(scope))) {
+    const t = stripTags(th[1]);
+    if (/^\d{4}\.\d{2}$/.test(t)) cols.push(t);
+  }
+  const baseDate = cols.length ? cols[cols.length - 1] : "";
+
+  function pickLatestFromRow(labelKorean) {
+    // labelKorean이 들어간 th를 찾고, 같은 tr의 td들을 전부 긁는다.
+    const rowRe = new RegExp(
+      `<tr[^>]*>[\\s\\S]*?<th[^>]*>[\\s\\S]*?${labelKorean}[\\s\\S]*?<\\/th>([\\s\\S]*?)<\\/tr>`,
+      "i"
+    );
+    const rm = scope.match(rowRe) || html.match(rowRe);
+    if (!rm || !rm[1]) return null;
+    const tds = [];
+    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    let td;
+    while ((td = tdRe.exec(rm[1]))) {
+      const txt = stripTags(td[1]);
+      tds.push(txt);
+    }
+    // 오른쪽(최근)부터 숫자 찾기 (빈칸/추정(E) 등 제외)
+    for (let i = tds.length - 1; i >= 0; i--) {
+      const n = parseNaverFinanceNumber(tds[i]);
+      if (n != null) return n;
+    }
+    return null;
+  }
+
+  const revenue = pickLatestFromRow("매출액");
+  const operatingProfit = pickLatestFromRow("영업이익");
+  const netIncome = pickLatestFromRow("당기순이익");
+
+  if (revenue == null && operatingProfit == null && netIncome == null) return null;
+  return {
+    revenue,
+    operatingProfit,
+    netIncome,
+    baseDate,
+    source: "naver",
+  };
+}
+
 async function kisGetJson(path, trId, params) {
   const { token, appkey, appsecret } = requireKisCreds();
   const url = new URL(path, kisBaseUrl());
@@ -394,16 +483,24 @@ async function kisInquireInvestor(stockCode6) {
     toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
     pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
 
-  return { institution, foreigner, individual, raw: row };
+  // 일부 응답은 문자열에 +, 공백, 콤마가 섞일 수 있음 → toNum에서 정규화됨
+  // 최신일자를 함께 내려서 UI에서 기준을 표시할 수 있게 함
+  const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
+  return { institution, foreigner, individual, baseDate, raw: row };
 }
 
 async function kisIncomeStatement(stockCode6) {
   try {
-    // Income statement TR_ID: FHKST66430200 (66430100은 대차대조표로 알려짐)
-    const json = await kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430200", {
-      FID_COND_MRKT_DIV_CODE: "J",
-      FID_INPUT_ISCD: stockCode6,
-    });
+    // Income statement TR_ID: FHKST66430200
+    // 환경에 따라 파라미터 키가 대소문자에 민감한 케이스가 있어 2번 시도
+    const tryOnce = async (params) =>
+      kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430200", params);
+    let json;
+    try {
+      json = await tryOnce({ FID_COND_MRKT_DIV_CODE: "J", FID_INPUT_ISCD: stockCode6 });
+    } catch {
+      json = await tryOnce({ fid_cond_mrkt_div_code: "J", fid_input_iscd: stockCode6 });
+    }
     let out = json.output ?? json.output1 ?? json.output2;
     if (out && !Array.isArray(out)) out = [out];
     const row = Array.isArray(out) && out.length ? out[0] : null;
@@ -417,7 +514,8 @@ async function kisIncomeStatement(stockCode6) {
       toNum(row.thtr_ntin ?? row.net_income ?? row.net_profit) ??
       pickAnyNumberByRegex(row, [/ntin|net.*income|net.*profit/i]);
     const baseDate = pickFirstStr(row, ["stac_yymm", "STAC_YYMM", "base_date", "BASE_DATE", "date"]);
-    return { revenue, operatingProfit: op, netIncome: net, baseDate, raw: row };
+    if (revenue == null && op == null && net == null) return null;
+    return { revenue, operatingProfit: op, netIncome: net, baseDate, source: "kis", raw: row };
   } catch {
     return null;
   }
@@ -541,6 +639,14 @@ module.exports = async function handler(req, res) {
     profit = await kisIncomeStatement(resolved.stockCode);
   } catch (e) {
     console.warn("[stock-analysis] income failed", e && e.message);
+  }
+  // 실적: KIS가 비거나 제한되면 네이버(PC) 분기 실적을 fallback으로 채움
+  if (!profit) {
+    try {
+      profit = await fetchNaverQuarterProfit(resolved.stockCode);
+    } catch (e) {
+      console.warn("[stock-analysis] naver profit failed", e && e.message);
+    }
   }
 
   json(res, 200, {

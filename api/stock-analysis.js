@@ -451,6 +451,57 @@ function pickAnyNumberByRegex(row, reList) {
   return null;
 }
 
+function yyyymmddKST() {
+  // Vercel 런타임이 UTC일 수 있으므로 Asia/Seoul 기준으로 날짜를 만든다.
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  // en-CA => YYYY-MM-DD
+  const s = fmt.format(new Date());
+  return s.replace(/-/g, "");
+}
+
+/**
+ * 종목별 투자자 매매동향(일별) — 문서 기준 TR
+ * - TR_ID: FHPTJ04160001
+ * - URL: /uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily
+ * - 핵심 필드: prsn_ntby_qty / frgn_ntby_qty / orgn_ntby_qty
+ */
+async function kisInvestorTradeByStockDaily(stockCode6) {
+  const json = await kisGetJson("/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily", "FHPTJ04160001", {
+    FID_COND_MRKT_DIV_CODE: "J",
+    FID_INPUT_ISCD: stockCode6,
+    FID_INPUT_DATE_1: yyyymmddKST(),
+    FID_ORG_ADJ_PRC: "",
+    FID_ETC_CLS_CODE: "1",
+  });
+  // 문서: output1(object), output2(array)
+  const rows = Array.isArray(json.output2) ? json.output2 : Array.isArray(json.output) ? json.output : null;
+  const row =
+    Array.isArray(rows) && rows.length
+      ? rows
+          .slice()
+          .map((r) => ({ r, d: sanitizeStr(r?.stck_bsop_date || r?.STCK_BSOP_DATE || r?.bsop_date || r?.date) }))
+          .sort((a, b) => Number(b.d || 0) - Number(a.d || 0))[0]?.r
+      : null;
+  if (!row || typeof row !== "object") return null;
+
+  const institution =
+    toNum(row.orgn_ntby_qty ?? row.orgn_ntby_vol ?? row.orgn_ntby) ??
+    pickAnyNumberByRegex(row, [/orgn.*ntby/i, /orgn.*net/i, /inst.*net/i]);
+  const foreigner =
+    toNum(row.frgn_ntby_qty ?? row.frgn_ntby_vol ?? row.frgn_ntby) ??
+    pickAnyNumberByRegex(row, [/frgn.*ntby/i, /frgn.*net/i, /foreign.*net/i]);
+  const individual =
+    toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
+    pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
+  const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
+  return { institution, foreigner, individual, baseDate, source: "FHPTJ04160001", raw: row };
+}
+
 async function kisInquireInvestor(stockCode6) {
   const json = await kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-investor", "FHKST01010900", {
     FID_COND_MRKT_DIV_CODE: "J",
@@ -506,10 +557,13 @@ async function kisIncomeStatement(stockCode6) {
     const row = Array.isArray(out) && out.length ? out[0] : null;
     if (!row || typeof row !== "object") return null;
     const revenue =
-      toNum(row.sale_amt ?? row.sales ?? row.revenue) ?? pickAnyNumberByRegex(row, [/sale|sales|revenue/i]);
+      // 문서(v1_국내주식-079): sale_account = 매출액
+      toNum(row.sale_account ?? row.sale_amt ?? row.sales ?? row.revenue) ??
+      pickAnyNumberByRegex(row, [/sale_account/i, /sale_amt/i, /sale|sales|revenue/i]);
     const op =
-      toNum(row.oprt_prfi ?? row.operating_income ?? row.op_profit) ??
-      pickAnyNumberByRegex(row, [/op.*prfi|oper.*income|op.*profit/i]);
+      // income-statement에는 영업이익이 여러 형태로 있을 수 있어 후보 확장
+      toNum(row.bsop_prfi ?? row.oprt_prfi ?? row.operating_income ?? row.op_profit) ??
+      pickAnyNumberByRegex(row, [/bsop.*prfi|op.*prfi|oper.*income|op.*profit/i]);
     const net =
       toNum(row.thtr_ntin ?? row.net_income ?? row.net_profit) ??
       pickAnyNumberByRegex(row, [/ntin|net.*income|net.*profit/i]);
@@ -631,7 +685,9 @@ module.exports = async function handler(req, res) {
   let supply = null;
   let profit = null;
   try {
-    supply = await kisInquireInvestor(resolved.stockCode);
+    // 문서 기반 TR을 우선 사용하고, 실패 시 기존 TR로 fallback
+    supply = await kisInvestorTradeByStockDaily(resolved.stockCode);
+    if (!supply) supply = await kisInquireInvestor(resolved.stockCode);
   } catch (e) {
     console.warn("[stock-analysis] investor failed", e && e.message);
   }

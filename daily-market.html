@@ -105,7 +105,7 @@
               aria-expanded="false"
               aria-controls="calendar-panel"
             >
-              📅 달력 보기
+              📅 달력
             </button>
           </nav>
 
@@ -216,7 +216,7 @@
         panel.classList.toggle("visible", open);
         document.body.classList.toggle("tm-mobile-calendar-open", open && mobile);
         btn.setAttribute("aria-expanded", open ? "true" : "false");
-        btn.textContent = open ? "📅 달력 닫기" : "📅 달력 보기";
+        btn.textContent = open ? "닫기" : "📅 달력";
       }
 
       function toggleCalendar() {

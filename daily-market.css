@@ -141,6 +141,52 @@ body.tm-mobile-calendar-open::before {
     grid-column: auto;
     grid-row: auto;
     margin-bottom: 0;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .day-nav__date {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .day-nav__btn,
+  .day-nav__today,
+  .day-nav__date input[type="date"],
+  #calendar-toggle {
+    font-size: 12px;
+    min-height: 34px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .day-nav__date input[type="date"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 118px;
+    padding: 6px 6px;
+  }
+
+  .day-nav__btn {
+    min-width: 32px;
+    padding: 6px 6px;
+  }
+
+  .day-nav__today {
+    padding: 6px 8px;
+  }
+
+  .day-nav__spacer {
+    flex: 1 1 6px;
+    min-width: 4px;
+  }
+
+  #calendar-toggle {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 
   #report-content {
@@ -1274,14 +1320,52 @@ details[open] .admin__summary {
 /* --- Mobile --- */
 @media (max-width: 639px) {
   .day-nav {
-    padding: 10px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .day-nav__date {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
   }
 
   .day-nav__btn,
   .day-nav__today,
+  .day-nav__date input[type="date"],
+  #calendar-toggle {
+    font-size: 12px;
+    min-height: 34px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
   .day-nav__date input[type="date"] {
-    font-size: 13px;
-    min-height: 38px;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 118px;
+    padding: 6px 6px;
+  }
+
+  .day-nav__btn {
+    min-width: 32px;
+    padding: 6px 6px;
+  }
+
+  .day-nav__today {
+    padding: 6px 8px;
+  }
+
+  .day-nav__spacer {
+    flex: 1 1 6px;
+    min-width: 4px;
+  }
+
+  #calendar-toggle {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 
   .day-nav__cross {

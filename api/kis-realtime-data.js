@@ -663,6 +663,15 @@ function indexLevelPlausible(fidInputIscd, rawLevel) {
   return true;
 }
 
+function normalizeIndexLevelNumber(fidInputIscd, rawLevel) {
+  const n0 = Number(String(rawLevel).replace(/,/g, ""));
+  if (!Number.isFinite(n0)) return null;
+  // 일부 환경에서 지수가 100배 스케일(예: 280000 = 2800.00)로 오는 경우가 있어 보정
+  if (fidInputIscd === "0001" && n0 > 8000 && n0 < 800000) return n0 / 100;
+  if (fidInputIscd === "1001" && n0 > 4000 && n0 < 400000) return n0 / 100;
+  return n0;
+}
+
 async function fetchIndexPrice(fidInputIscd, label) {
   for (const fidCondMrktDivCode of ["J", "U"]) {
     console.log("[kis-realtime-data][index] → inquire-index-price", {
@@ -686,8 +695,16 @@ async function fetchIndexPrice(fidInputIscd, label) {
       if (!row || typeof row !== "object") continue;
       const rawLevel = pickIndexLevelRaw(row);
       const changePct = toNum(row.prdy_ctrt || row.bstp_nmix_prdy_ctrt || row.nmix_prdy_ctrt);
-      const value = formatIndexDisplayValue(rawLevel);
-      if (rawLevel && indexLevelPlausible(fidInputIscd, rawLevel)) {
+      const scaled = rawLevel ? normalizeIndexLevelNumber(fidInputIscd, rawLevel) : null;
+      const plausible = scaled != null && indexLevelPlausible(fidInputIscd, String(scaled));
+      const value =
+        scaled == null
+          ? ""
+          : scaled.toLocaleString("ko-KR", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+      if (rawLevel && plausible) {
         console.log("[kis-realtime-data][index] ←", {
           label,
           fid_input_iscd: fidInputIscd,

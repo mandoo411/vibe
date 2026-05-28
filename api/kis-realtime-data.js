@@ -697,27 +697,17 @@ async function fetchNaverIndexPrice(indexCode) {
 }
 
 async function fetchIndexPrice(fidInputIscd, label) {
-  // 코스피는 KIS가 간헐적으로 0 또는 빈 값으로 내려오는 경우가 있어 안정성 우선으로 네이버를 먼저 사용
-  if (String(fidInputIscd) === "0001") {
-    try {
-      const nv = await fetchNaverIndexPrice("KOSPI");
-      if (nv && nv.value) {
-        return { id: fidInputIscd, label, value: nv.value, changePct: nv.changePct, raw: nv.raw };
-      }
-    } catch (e) {
-      console.warn("[kis-realtime-data][index] NAVER primary failed", e && e.message);
-    }
-  }
-
   let best = null;
   const iscdCandidates = (() => {
     const base = String(fidInputIscd || "").trim();
-    const list = [base];
-    if (base === "0001") list.push("001", "1");
+    // 코스피는 KIS index TR에서 0001을 사용 (요청값 고정)
+    const list = [base === "0001" ? "0001" : base];
     return [...new Set(list.filter(Boolean))];
   })();
 
-  for (const fidCondMrktDivCode of ["J", "U"]) {
+  // 코스피(0001)는 KIS 공식 파라미터: U + 0001
+  const condCandidates = String(fidInputIscd) === "0001" ? ["U"] : ["J", "U"];
+  for (const fidCondMrktDivCode of condCandidates) {
     console.log("[kis-realtime-data][index] → inquire-index-price", {
       tr_id: "FHPUP02100000",
       fid_cond_mrkt_div_code: fidCondMrktDivCode,

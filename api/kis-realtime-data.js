@@ -528,6 +528,11 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
+/** 코스피 시가총액 상위 100 (페이지네이션용) */
+async function fetchMarketCapKospi100() {
+  return fetchMarketCapRows("0001", 100, "KOSPI", { logSample: false });
+}
+
 /**
  * @param {{ closeOnly?: boolean }} [opts]
  *   closeOnly: fid_prc_cls_code=1 만 사용(등락률·전일대비 랭킹).
@@ -1051,8 +1056,14 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "market-cap") {
-      const stocks = await fetchMarketCapKospi30();
-      json(res, 200, { stocks });
+      const page = Math.max(1, Number(req.query && req.query.page) || 1);
+      const pageSizeRaw = Number(req.query && req.query.pageSize);
+      const pageSize = pageSizeRaw && Number.isFinite(pageSizeRaw) ? Math.max(1, Math.min(50, pageSizeRaw)) : 25;
+      const all = await fetchMarketCapKospi100();
+      const total = all.length;
+      const start = (page - 1) * pageSize;
+      const stocks = all.slice(start, start + pageSize);
+      json(res, 200, { total, page, pageSize, stocks });
       return;
     }
 

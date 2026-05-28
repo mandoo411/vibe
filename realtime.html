@@ -140,6 +140,38 @@
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
       }
+      .rt-cap-pager {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: 10px;
+        padding: 0 6px;
+      }
+      .rt-cap-page-btn {
+        appearance: none;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(200, 210, 255, 0.5);
+        background: white;
+        color: #555;
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .rt-cap-page-btn[aria-current="page"] {
+        background: #3339bf;
+        border-color: #3339bf;
+        color: white;
+        font-weight: 700;
+      }
+      [data-theme="dark"] .rt-cap-page-btn,
+      .dark-mode .rt-cap-page-btn {
+        background: #1c2030;
+        border-color: rgba(255, 255, 255, 0.12);
+        color: #aaa;
+      }
       .rt-tab {
         appearance: none;
         flex: 0 0 auto;
@@ -992,9 +1024,7 @@
         min-height: 0;
       }
       .rt-chart-pane-sep {
-        flex: 0 0 1px;
-        background: var(--sheet-accent-border);
-        box-shadow: 0 1px 0 var(--border);
+        display: none;
       }
       .rt-chart-pane--vol {
         position: relative;
@@ -1299,6 +1329,7 @@
             <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
               상승률 TOP 50
             </button>
+            <div id="rt-cap-pager" class="rt-cap-pager" hidden></div>
             <div class="rt-tab-search" style="display:flex; gap:8px; margin-left:auto;">
               <input
                 type="text"

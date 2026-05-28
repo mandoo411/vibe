@@ -76,6 +76,9 @@
     tab: "cap",
     capRows: [],
     gainerRows: [],
+    capPage: 1,
+    capPageSize: 25,
+    capTotal: 0,
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -835,13 +838,67 @@
   }
 
   async function fetchStocksJsonForTab(tab) {
-    const action = tab === "cap" ? "market-cap" : "gainers";
-    return fetchJson(action, FETCH_TIMEOUT_MS);
+    if (tab === "cap") {
+      const p = Math.max(1, Number(state.capPage) || 1);
+      const ps = Math.max(1, Number(state.capPageSize) || 25);
+      return fetchJson(`market-cap&page=${encodeURIComponent(String(p))}&pageSize=${encodeURIComponent(String(ps))}`, FETCH_TIMEOUT_MS);
+    }
+    return fetchJson("gainers", FETCH_TIMEOUT_MS);
+  }
+
+  function renderCapPager() {
+    const el = $("rt-cap-pager");
+    if (!el) return;
+    const show = state.tab === "cap";
+    el.hidden = !show;
+    if (!show) return;
+
+    const total = Math.max(0, Number(state.capTotal) || 0);
+    const pageSize = Math.max(1, Number(state.capPageSize) || 25);
+    const pages = Math.max(1, Math.ceil((total || 100) / pageSize));
+    const cur = Math.max(1, Math.min(pages, Number(state.capPage) || 1));
+
+    const btns = [];
+    for (let i = 1; i <= pages; i++) {
+      btns.push(
+        `<button type="button" class="rt-cap-page-btn" data-rt-cap-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
+      );
+    }
+    el.innerHTML = btns.join("");
+
+    el.querySelectorAll("[data-rt-cap-page]").forEach((b) => {
+      b.addEventListener("click", async () => {
+        const next = Number(b.getAttribute("data-rt-cap-page") || "1") || 1;
+        if (next === state.capPage) return;
+        state.capPage = next;
+        showTableSkeleton();
+        try {
+          const pack = await fetchStocksJsonForTab("cap");
+          state.capTotal = Number(pack.total || pack.totalCount || 0) || state.capTotal;
+          applyStocksArrayToTab("cap", pack.stocks);
+          state.tabLoadedAt["cap"] = Date.now();
+          hideTableSkeleton();
+          renderAll();
+          if (state.ws && state.ws.readyState === 1) {
+            unsubscribeAll();
+            subscribeStocks(getCurrentRows().map((r) => r.code));
+          }
+        } catch (e) {
+          hideTableSkeleton();
+          const errEl = $("rt-error");
+          if (errEl) {
+            errEl.hidden = false;
+            errEl.textContent = rtErrorTimeoutMessage(e);
+          }
+        }
+      });
+    });
   }
 
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
   async function refreshTabStocksOnly(tab) {
     const stockPack = await fetchStocksJsonForTab(tab);
+    if (tab === "cap") state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -878,6 +935,7 @@
     if (!byId.has("0001")) byId.set("0001", { id: "0001", label: "코스피", value: "", changePct: null });
     if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
     state.indexes = ["0001", "1001"].map((k) => byId.get(k));
+    state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -984,7 +1042,7 @@
     const cur = { ...list[i] };
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
-    if (patch.volume) cur.volume = patch.volume;
+    if (patch.volume != null && String(patch.volume).trim() !== "") cur.volume = patch.volume;
     if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
     if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
@@ -1233,6 +1291,7 @@
   function renderAll() {
     renderIndexes();
     renderMeta();
+    renderCapPager();
     renderTable();
   }
 
@@ -1529,7 +1588,15 @@
           toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
           toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
         }
-        if (chartHost) chartHost.hidden = !chartOpen;
+        if (chartHost) {
+          chartHost.hidden = !chartOpen;
+          // hidden 속성이 CSS에 의해 무시되는 경우를 대비해 display도 같이 제어
+          chartHost.style.display = chartOpen ? "" : "none";
+          if (!chartOpen) {
+            const panes = chartHost.querySelector(".rt-chart-panes");
+            if (panes) panes.style.display = "none";
+          }
+        }
       }
 
       setToggle(false);
@@ -1793,6 +1860,8 @@
           stockPanel.hidden = true;
           stockPanel.innerHTML = "";
         }
+
+        if (state.tab === "cap") state.capPage = 1;
 
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");

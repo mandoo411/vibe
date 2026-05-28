@@ -60,13 +60,15 @@ function indexPlausible(code, value) {
 
 async function domesticIndex(code, label) {
   let lastError;
-  for (const marketCode of ["J", "U"]) {
+  const marketCodes = code === "0001" ? ["U"] : ["J", "U"];
+  for (const marketCode of marketCodes) {
     try {
       const body = await kisGet("/uapi/domestic-stock/v1/quotations/inquire-index-price", "FHPUP02100000", {
         fid_cond_mrkt_div_code: marketCode,
         fid_input_iscd: code,
       });
-      const out = Array.isArray(body.output) ? body.output[0] : body.output;
+      const o = body.output ?? body.output1 ?? body.output2;
+      const out = Array.isArray(o) ? o[0] : o;
       const value = indexValue(out);
       if (indexPlausible(code, value)) {
         return {

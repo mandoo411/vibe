@@ -141,6 +141,22 @@
     return n.toLocaleString("ko-KR");
   }
 
+  function numFromMoneyish(v) {
+    const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** 사용자가 기대하는 거래대금: 현재가 × 누적거래량(원) */
+  function calcTradeValFromPriceVol(priceRaw, volRaw) {
+    const p = numFromMoneyish(priceRaw);
+    const v = numFromMoneyish(volRaw);
+    if (p == null || v == null || p <= 0 || v <= 0) return null;
+    const x = p * v;
+    if (!Number.isFinite(x) || x <= 0) return null;
+    if (x > Number.MAX_SAFE_INTEGER) return null;
+    return Math.round(x);
+  }
+
   /** 시가총액 원본(stck_avls 또는 API의 mcapEok) — 원 단위: 1조 이상 X.XX조, 미만 XXXX억 */
   function readStckAvlsRaw(r) {
     if (!r) return null;
@@ -1045,11 +1061,12 @@
   function stockRowHtml(r) {
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+    const tvCalc = calcTradeValFromPriceVol(r.price, r.volume);
 
     if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
-      const tv = formatTradeVal(r.tradingValue);
+      const tv = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
       const vol = fmtNum(r.volume);
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
@@ -1063,7 +1080,7 @@
 
     const ch = r.changePct;
     const cls = deltaClass(ch);
-    const tv = formatTradeVal(r.tradingValue);
+    const tv = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
     const mcap = formatStckAvls(readStckAvlsRaw(r));
     return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
@@ -1108,6 +1125,7 @@
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
+    const tvCalc = calcTradeValFromPriceVol(r.price, r.volume);
 
     if (state.tab === "gainers") {
       const ch = r.changePct;
@@ -1115,7 +1133,7 @@
       tr.cells[2].textContent = fmtNum(r.price);
       tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
       tr.cells[4].textContent = fmtNum(r.volume);
-      tr.cells[5].textContent = formatTradeVal(r.tradingValue);
+      tr.cells[5].textContent = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
       return;
     }
 
@@ -1123,7 +1141,7 @@
     const cls = deltaClass(ch);
     tr.cells[2].textContent = fmtNum(r.price);
     tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-    tr.cells[4].textContent = formatTradeVal(r.tradingValue);
+    tr.cells[4].textContent = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
     tr.cells[5].textContent = formatStckAvls(readStckAvlsRaw(r));
   }
 
@@ -1265,6 +1283,7 @@
     const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
+    const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
 
     return [
       `<div class="rt-stock-head rt-stock-head--wide">`,
@@ -1276,6 +1295,7 @@
       `  <div class="rt-stock-quote">`,
       `    <span class="rt-stock-price">${price}</span>`,
       `    <span class="delta ${cls}">${pct}</span>`,
+      `    <button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`,
       `  </div>`,
       `</div>`,
 
@@ -1287,7 +1307,7 @@
       )}</div><div class="rt-basic-k">시작</div><div class="rt-basic-v rt-basic-v--hi">${open}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div><div class="rt-basic-k">거래대금</div><div class="rt-basic-v">${escapeHtml(
-        data.tradingValue != null ? formatTradeVal(String(data.tradingValue)) : "—"
+        tvCalc != null ? formatTradeVal(String(tvCalc)) : data.tradingValue != null ? formatTradeVal(String(data.tradingValue)) : "—"
       )}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">시총</div><div class="rt-basic-v">${mcap}</div><div class="rt-basic-k">PER</div><div class="rt-basic-v">${escapeHtml(finPer)}</div></div>`,
       `    <div class="rt-basic-row"><div class="rt-basic-k">PBR</div><div class="rt-basic-v">${escapeHtml(finPbr)}</div><div class="rt-basic-k">EPS</div><div class="rt-basic-v">${escapeHtml(finEps)}</div></div>`,
@@ -1450,6 +1470,19 @@
       }
 
       panel.innerHTML = stockPanelHtml(data);
+
+      const closeBtn = panel.querySelector(".rt-stock-close");
+      const hidePanel = () => {
+        panel.hidden = true;
+        panel.innerHTML = "";
+        const input2 = $("stock-search-input");
+        if (input2) input2.value = "";
+        try {
+          const tabs = document.querySelector(".rt-tabs");
+          if (tabs) tabs.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch {}
+      };
+      if (closeBtn) closeBtn.addEventListener("click", hidePanel);
 
       const toggleBtn = panel.querySelector(".rt-chart-toggle");
       const code6 = String(data.stockCode || "");
@@ -1738,6 +1771,14 @@
         else state.tab = "cap";
         state.openChartCode = null;
         state.candlePeriod = "D";
+
+        // 탭 전환 시, 종목 검색 패널은 닫아서 테이블이 바로 보이게 함
+        const stockPanel = $("stock-result-panel");
+        if (stockPanel) {
+          stockPanel.hidden = true;
+          stockPanel.innerHTML = "";
+        }
+
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });

@@ -47,7 +47,6 @@
     sectorFlow: $("day-sector-flow"),
     checkpoints: $("day-checkpoints"),
     verdict: $("day-verdict"),
-    volumeLeaders: $("day-volume-leaders"),
     indexes: $("day-indexes"),
     marketExtras: $("day-market-extras"),
     notable: $("day-notable"),
@@ -255,7 +254,6 @@
       if (els.sectorFlow) els.sectorFlow.innerHTML = "";
       if (els.checkpoints) els.checkpoints.innerHTML = "";
       if (els.verdict) els.verdict.textContent = "";
-      if (els.volumeLeaders) els.volumeLeaders.innerHTML = "";
       els.indexes.innerHTML = "";
       if (els.marketExtras) els.marketExtras.innerHTML = "";
       els.notable.innerHTML = "";
@@ -276,7 +274,6 @@
       if (els.sectorFlow) els.sectorFlow.innerHTML = renderSectorFlow(day && day.sectorFlow);
       if (els.checkpoints) els.checkpoints.innerHTML = renderCheckpoints(day && day.tomorrowCheckpoints);
       if (els.verdict) els.verdict.textContent = sanitizeStr(day.oneLineVerdict) || "";
-      if (els.volumeLeaders) els.volumeLeaders.innerHTML = renderVolumeLeaders(day && day.volumeLeaders);
       els.indexes.innerHTML = renderIndexes(day && day.indexes);
       if (els.marketExtras) els.marketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
       els.notable.innerHTML = renderNotable(day && day.notableStocks);
@@ -396,22 +393,6 @@
   function renderCheckpoints(arr) {
     if (!Array.isArray(arr) || !arr.length) return '<li class="empty-line">체크포인트 없음</li>';
     return arr.map((p) => `<li>${escapeHtml(p)}</li>`).join("");
-  }
-
-  function renderVolumeLeaders(arr) {
-    if (!Array.isArray(arr) || !arr.length) return '<p class="empty-line">거래량 데이터 없음</p>';
-    const rows = arr
-      .map((s) => {
-        const chg = parseChange(s.change);
-        return `<tr>
-          <td><span class="topgainers__name">${escapeHtml(s.name)}</span>
-            ${s.sector ? `<span class="theme-chip">${escapeHtml(s.sector)}</span>` : ""}</td>
-          <td class="num">${escapeHtml(s.currentPrice || "—")}</td>
-          <td class="num"><span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span></td>
-        </tr>`;
-      })
-      .join("");
-    return `<table class="topgainers-table"><thead><tr><th>종목</th><th class="num">종가</th><th class="num">등락률</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderNews(day) {
@@ -611,6 +592,9 @@
     els.archiveGrid.querySelectorAll(".cell[data-ymd]").forEach((btn) => {
       btn.addEventListener("click", () => {
         select(btn.dataset.ymd, { syncArchive: false });
+        if (window.innerWidth <= 768 && typeof window.closeDailyCalendar === "function") {
+          window.closeDailyCalendar();
+        }
       });
     });
   }

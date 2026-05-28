@@ -88,20 +88,41 @@
         </div>
       </div>
 
-      <nav class="day-nav" aria-label="날짜 이동">
-        <button type="button" class="day-nav__btn" id="nav-prev" aria-label="이전 영업일">◀</button>
-        <label class="day-nav__date">
-          <span class="u-visually-hidden">날짜 선택</span>
-          <input type="date" id="nav-date" />
-        </label>
-        <button type="button" class="day-nav__btn" id="nav-next" aria-label="다음 영업일">▶</button>
-        <button type="button" class="day-nav__today" id="nav-today">오늘</button>
-        <span class="day-nav__spacer"></span>
-        <button type="button" id="calendar-toggle" onclick="toggleCalendar()">📅 달력 보기</button>
-      </nav>
+      <div class="daily-shell">
+        <div class="daily-nav-calendar">
+          <nav class="day-nav" aria-label="날짜 이동">
+            <button type="button" class="day-nav__btn" id="nav-prev" aria-label="이전 영업일">◀</button>
+            <label class="day-nav__date">
+              <span class="u-visually-hidden">날짜 선택</span>
+              <input type="date" id="nav-date" />
+            </label>
+            <button type="button" class="day-nav__btn" id="nav-next" aria-label="다음 영업일">▶</button>
+            <button type="button" class="day-nav__today" id="nav-today">오늘</button>
+            <span class="day-nav__spacer"></span>
+            <button
+              type="button"
+              id="calendar-toggle"
+              aria-expanded="false"
+              aria-controls="calendar-panel"
+            >
+              📅 달력 보기
+            </button>
+          </nav>
 
-      <main class="daily-main">
-        <div id="main-content-area">
+          <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브">
+            <header class="archive-head">
+              <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
+              <h2 class="archive-title" id="archive-title">—</h2>
+              <button type="button" class="archive-nav" id="archive-next" aria-label="다음 달">▶</button>
+            </header>
+            <div class="archive-dow">
+              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+            </div>
+            <div class="archive-grid" id="archive-grid" role="grid"></div>
+            <p class="archive-legend"><span class="archive-legend__dot"></span>기록 있음 · <span class="archive-legend__today">오늘</span></p>
+          </aside>
+        </div>
+
         <div id="report-content">
         <section class="daily-detail" id="daily-detail" aria-live="polite">
           <article class="day-sheet" id="day-sheet">
@@ -162,12 +183,9 @@
 
               <section class="day-block">
                 <h3 class="day-block__label">
-                  ⑤ 거래량·상승률 TOP
+                  ⑤ 상승률 TOP
                   <span class="day-block__sub" id="day-topgainers-meta"></span>
                 </h3>
-                <h4 class="day-block__subhead">거래량 상위 20</h4>
-                <div id="day-volume-leaders"></div>
-                <h4 class="day-block__subhead">상승률 TOP 30</h4>
                 <div id="day-topgainers"></div>
               </section>
 
@@ -185,32 +203,54 @@
           </article>
         </section>
         </div>
-
-        <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브">
-          <header class="archive-head">
-            <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
-            <h2 class="archive-title" id="archive-title">—</h2>
-            <button type="button" class="archive-nav" id="archive-next" aria-label="다음 달">▶</button>
-          </header>
-          <div class="archive-dow">
-            <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-          </div>
-          <div class="archive-grid" id="archive-grid" role="grid"></div>
-          <p class="archive-legend"><span class="archive-legend__dot"></span>기록 있음 · <span class="archive-legend__today">오늘</span></p>
-        </aside>
-        </div>
-      </main>
+      </div>
 
     </div>
 
     <script>
-      function toggleCalendar() {
+      function setDailyCalendarOpen(open) {
         const panel = document.getElementById("calendar-panel");
         const btn = document.getElementById("calendar-toggle");
-        panel.classList.toggle("visible");
-        const isVisible = panel.classList.contains("visible");
-        btn.textContent = isVisible ? "📅 달력 닫기" : "📅 달력 보기";
+        if (!panel || !btn) return;
+        const mobile = window.innerWidth <= 768;
+        panel.classList.toggle("visible", open);
+        document.body.classList.toggle("tm-mobile-calendar-open", open && mobile);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+        btn.textContent = open ? "📅 달력 닫기" : "📅 달력 보기";
       }
+
+      function toggleCalendar() {
+        const panel = document.getElementById("calendar-panel");
+        if (!panel) return;
+        setDailyCalendarOpen(!panel.classList.contains("visible"));
+      }
+
+      window.closeDailyCalendar = function () {
+        setDailyCalendarOpen(false);
+      };
+
+      (function bindDailyCalendar() {
+        const btn = document.getElementById("calendar-toggle");
+        const anchor = document.querySelector(".daily-nav-calendar");
+        if (!btn || !anchor) return;
+
+        btn.addEventListener("click", toggleCalendar);
+
+        document.addEventListener("click", (event) => {
+          if (window.innerWidth > 768) return;
+          const panel = document.getElementById("calendar-panel");
+          if (!panel || !panel.classList.contains("visible")) return;
+          if (anchor.contains(event.target)) return;
+          setDailyCalendarOpen(false);
+        });
+
+        window.addEventListener("resize", () => {
+          const panel = document.getElementById("calendar-panel");
+          if (!panel || !panel.classList.contains("visible")) return;
+          const mobile = window.innerWidth <= 768;
+          document.body.classList.toggle("tm-mobile-calendar-open", mobile);
+        });
+      })();
     </script>
     <script src="./assets/data-url.js"></script>
     <script src="./daily-market.js"></script>

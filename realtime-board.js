@@ -1235,14 +1235,14 @@
 
       `<div class="rt-stock-grid">`,
       `  <div class="rt-kv"><div class="rt-kv__k">시가</div><div class="rt-kv__v">${open}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
+      `  <div class="rt-kv rt-kv--hi"><div class="rt-kv__k">고가</div><div class="rt-kv__v">${high}</div></div>`,
+      `  <div class="rt-kv rt-kv--lo"><div class="rt-kv__k">저가</div><div class="rt-kv__v">${low}</div></div>`,
       `  <div class="rt-kv"><div class="rt-kv__k">거래량</div><div class="rt-kv__v">${vol}</div></div>`,
       `</div>`,
 
       `<div class="rt-stock-grid">`,
-      `  <div class="rt-kv"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
-      `  <div class="rt-kv"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
+      `  <div class="rt-kv rt-kv--hi52"><div class="rt-kv__k">52주 최고</div><div class="rt-kv__v">${hi52}</div></div>`,
+      `  <div class="rt-kv rt-kv--lo52"><div class="rt-kv__k">52주 최저</div><div class="rt-kv__v">${lo52}</div></div>`,
       `  <div class="rt-kv"><div class="rt-kv__k">시가총액</div><div class="rt-kv__v">${mcap}</div></div>`,
       `  <div class="rt-kv"><div class="rt-kv__k">PER</div><div class="rt-kv__v">${escapeHtml(per)}</div></div>`,
       `</div>`,
@@ -1253,7 +1253,9 @@
       `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
       `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
       `      <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
+        `      <button type="button" class="rt-chart-fin-btn" data-rt-stock-pane="fin" aria-pressed="false">재무정보</button>`,
       `    </div>`,
+      `    <div class="rt-fin-panel" hidden></div>`,
       `    <div class="rt-chart-body">`,
       `      <p class="rt-chart-loading-msg" aria-live="polite">차트 불러오는 중...</p>`,
       `      <div class="rt-chart-panes rt-chart-panes--pending">`,
@@ -1398,9 +1400,66 @@
 
       panel.innerHTML = stockPanelHtml(data);
 
+      const panesEl = panel.querySelector(".rt-chart-panes");
+      const bodyEl = panel.querySelector(".rt-chart-body");
+      const finEl = panel.querySelector(".rt-fin-panel");
+      const finBtn = panel.querySelector(".rt-chart-fin-btn");
+
+      function finValue(v, suffix) {
+        const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+        if (!Number.isFinite(n)) return "—";
+        if (suffix) return `${n.toLocaleString("ko-KR")}${suffix}`;
+        return n.toLocaleString("ko-KR");
+      }
+
+      function finPct(v) {
+        const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+        if (!Number.isFinite(n)) return "—";
+        return `${n.toFixed(2).replace(/\.?0+$/, "")}%`;
+      }
+
+      function renderFin() {
+        if (!finEl) return;
+        const f = data.financials || {};
+        const rows = [
+          ["PER", f.per ?? data.per],
+          ["EPS", f.eps],
+          ["PBR", f.pbr],
+          ["BPS", f.bps],
+          ["ROE", finPct(f.roe)],
+          ["부채비율", finPct(f.debtRatio)],
+          ["배당수익률", finPct(f.dividendYield)],
+          ["외국인 보유비율", finPct(f.foreignHoldRate)],
+          ["상장주식수", finValue(f.listedShares, "")],
+          ["액면가", finValue(f.parValue, "")],
+        ];
+        finEl.innerHTML = `<div class="rt-fin-grid">${rows
+          .map(([k, v]) => {
+            const vv = v == null || v === "" ? "—" : String(v);
+            return `<div class="rt-fin-row"><div class="rt-fin-k">${escapeHtml(
+              String(k)
+            )}</div><div class="rt-fin-v">${escapeHtml(vv)}</div></div>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function showChart() {
+        if (finEl) finEl.hidden = true;
+        if (bodyEl) bodyEl.hidden = false;
+        if (finBtn) finBtn.setAttribute("aria-pressed", "false");
+      }
+
+      function showFin() {
+        renderFin();
+        if (bodyEl) bodyEl.hidden = true;
+        if (finEl) finEl.hidden = false;
+        if (finBtn) finBtn.setAttribute("aria-pressed", "true");
+      }
+
       // 차트 버튼(패널) 주기 전환
       panel.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
         b.addEventListener("click", () => {
+          showChart();
           const p = b.getAttribute("data-rt-candle-period") || "D";
           panel.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
             x.setAttribute("aria-pressed", x === b ? "true" : "false")
@@ -1408,6 +1467,13 @@
           void mountStockPanelChart(panel, String(data.stockCode || ""), String(p).toUpperCase());
         });
       });
+      if (finBtn) {
+        finBtn.addEventListener("click", () => {
+          const pressed = finBtn.getAttribute("aria-pressed") === "true";
+          if (pressed) showChart();
+          else showFin();
+        });
+      }
 
       // 초기 차트 로드
       void mountStockPanelChart(panel, String(data.stockCode || ""), "D");

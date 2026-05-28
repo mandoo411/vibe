@@ -128,12 +128,12 @@
         appearance: none;
         flex: 1;
         min-width: 0;
-        border: 1px solid var(--border);
-        border-radius: 3px;
+        background: white;
+        border: 0.5px solid rgba(200, 210, 255, 0.5);
+        border-radius: 20px;
         margin: 0;
-        padding: 9px 10px;
+        padding: 8px 20px;
         cursor: pointer;
-        background: var(--bg-tertiary);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -141,12 +141,12 @@
           color 0.15s ease,
           border-color 0.15s ease,
           box-shadow 0.15s ease;
-        font-family: var(--font-mono);
-        font-size: 11px;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         letter-spacing: 0;
         line-height: 1.25;
         white-space: nowrap;
+        color: #555;
       }
       .rt-tab-search input {
         height: 34px;
@@ -268,6 +268,55 @@
         font-weight: 700;
         color: var(--text);
       }
+      .rt-kv--hi .rt-kv__v,
+      .rt-kv--hi52 .rt-kv__v {
+        color: #ef5350;
+      }
+      .rt-kv--lo .rt-kv__v,
+      .rt-kv--lo52 .rt-kv__v {
+        color: #1565c0;
+      }
+      [data-theme="dark"] .rt-kv--hi .rt-kv__v,
+      [data-theme="dark"] .rt-kv--hi52 .rt-kv__v,
+      .dark-mode .rt-kv--hi .rt-kv__v,
+      .dark-mode .rt-kv--hi52 .rt-kv__v {
+        color: #26a69a;
+      }
+      [data-theme="dark"] .rt-kv--lo .rt-kv__v,
+      [data-theme="dark"] .rt-kv--lo52 .rt-kv__v,
+      .dark-mode .rt-kv--lo .rt-kv__v,
+      .dark-mode .rt-kv--lo52 .rt-kv__v {
+        color: #ef5350;
+      }
+
+      .rt-fin-grid {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .rt-fin-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: baseline;
+        padding: 10px 10px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: var(--bg-tertiary);
+        font-family: var(--font-mono);
+      }
+      .rt-fin-k {
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .rt-fin-v {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
       .rt-stock-actions {
         display: flex;
         flex-wrap: wrap;
@@ -283,14 +332,14 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 36px;
-        padding: 0 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(200, 210, 255, 0.7);
-        background: linear-gradient(135deg, #5560e8, #3339bf);
-        color: #fff;
-        font-size: 12px;
-        font-weight: 900;
+        width: 100%;
+        border: none;
+        border-radius: var(--border-radius-md, 12px);
+        padding: 12px 24px;
+        font-size: 13px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #3339bf, #5560e8);
+        color: white;
         letter-spacing: -0.01em;
         cursor: pointer;
       }
@@ -343,15 +392,30 @@
         }
       }
       .rt-tab[aria-selected="false"] {
-        color: var(--text-secondary);
+        background: white;
+        border: 0.5px solid rgba(200, 210, 255, 0.5);
+        color: #555;
       }
       .rt-tab[aria-selected="true"] {
-        color: var(--accent-bright);
-        border-color: var(--border-strong);
-        box-shadow: inset 0 -2px 0 0 var(--accent-bright);
+        background: linear-gradient(135deg, #3339bf, #5560e8);
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 10px 22px rgba(51, 57, 191, 0.2);
       }
       .rt-tab[aria-selected="false"]:hover {
-        color: var(--accent);
+        color: #333;
+        border-color: rgba(160, 175, 255, 0.9);
+      }
+
+      [data-theme="dark"] .rt-tab[aria-selected="false"],
+      .dark-mode .rt-tab[aria-selected="false"] {
+        background: #1c2030;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+        color: #aaa;
       }
       .rt-panel {
         border: 1px solid var(--accent-highlight);

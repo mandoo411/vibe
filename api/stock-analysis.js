@@ -65,6 +65,32 @@ function parseMarketCapLike(row) {
   return { raw, value: toNum(raw) };
 }
 
+function parseFinancials(row) {
+  const per = toNum(pickFirstStr(row, ["per", "PER", "stck_per", "STCK_PER"]));
+  const eps = toNum(pickFirstStr(row, ["eps", "EPS", "stck_eps", "STCK_EPS"]));
+  const pbr = toNum(pickFirstStr(row, ["pbr", "PBR", "stck_pbr", "STCK_PBR"]));
+  const bps = toNum(pickFirstStr(row, ["bps", "BPS", "stck_bps", "STCK_BPS"]));
+  const roe = toNum(pickFirstStr(row, ["roe", "ROE"]));
+  const debtRatio = toNum(pickFirstStr(row, ["debt_rt", "DEBT_RT", "debt_ratio", "DEBT_RATIO", "bt_rt"]));
+  const dividendYield = toNum(pickFirstStr(row, ["div_yld", "DIV_YLD", "dividend_yield", "dvd_yld"]));
+  const foreignHoldRate = toNum(pickFirstStr(row, ["frgn_hldn_rt", "FRGN_HLDN_RT", "foreign_rate"]));
+  const listedShares = toNum(pickFirstStr(row, ["lstn_stcn", "LSTN_STCN", "listed_shares"]));
+  const parValue = toNum(pickFirstStr(row, ["par", "PAR", "par_value", "stck_par_pric"]));
+
+  return {
+    per,
+    eps,
+    pbr,
+    bps,
+    roe,
+    debtRatio,
+    dividendYield,
+    foreignHoldRate,
+    listedShares,
+    parValue,
+  };
+}
+
 function requireKisCreds() {
   const token = sanitizeStr(process.env.KIS_ACCESS_TOKEN);
   const appkey = sanitizeStr(process.env.KIS_APP_KEY);
@@ -251,7 +277,7 @@ async function kisInquirePrice(stockCode6) {
   const low52w = toNum(row.w52_lwpr);
   const market = marketLabelFromRow(row);
   const mcap = parseMarketCapLike(row);
-  const per = toNum(pickFirstStr(row, ["per", "PER", "stck_per", "STCK_PER"]));
+  const financials = parseFinancials(row);
 
   return {
     raw: row,
@@ -267,7 +293,8 @@ async function kisInquirePrice(stockCode6) {
     market,
     marketCap: mcap.value,
     marketCapRaw: mcap.raw,
-    per,
+    per: financials.per,
+    financials,
   };
 }
 
@@ -385,6 +412,7 @@ module.exports = async function handler(req, res) {
     marketCap: quote.marketCap == null ? null : quote.marketCap,
     marketCapRaw: quote.marketCapRaw || "",
     per: quote.per == null ? null : quote.per,
+    financials: quote.financials || null,
     currentPrice: quote.currentPrice,
     change: quote.change,
     changeRate: quote.changeRate,

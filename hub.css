@@ -329,6 +329,14 @@ body.page-home-premium .market-sub {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
+body.page-home-premium .ai-stock-section {
+  width: 100%;
+  max-width: none;
+  margin: 0 0 22px;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .page--hub {
   margin-top: 0;
   width: 100%;

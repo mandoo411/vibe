@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <title>TotalMoney AI · AI 종목분석</title>
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=2" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2" />
+    <link rel="shortcut icon" href="/favicon.ico?v=2" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./site-nav.css" />
+    <script src="./site-nav.js" defer></script>
+    <link rel="stylesheet" href="./hub.css" />
+  </head>
+  <body class="page-home-premium">
+    <div class="page">
+      <header class="tm-site-header">
+        <div class="header-top">
+          <a class="logo logo-link header-top__link home-brand-link" href="./index.html" aria-label="TotalMoney AI 홈">
+            <div class="nav-logo-wrap" style="display:flex; align-items:center; gap:12px;">
+              <div class="nav-logo-box" style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:20px; width:62px; height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 6px 16px rgba(51,57,191,0.2), inset 0 1px 2px rgba(255,255,255,0.9); gap:2px;">
+                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">TM</span>
+                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">AI</span>
+              </div>
+              <div style="line-height:1.35;">
+                <div class="nav-brand-name" style="font-size:15px; font-weight:800; letter-spacing:-0.3px;">TotalMoney</div>
+                <div style="display:flex; align-items:center; gap:5px; margin-top:2px;">
+                  <span class="nav-brand-sub" style="font-size:11px;">powered by</span>
+                  <span class="nav-ai-badge">AI</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <nav class="tm-site-nav" aria-label="주요 메뉴">
+          <a class="tm-site-nav__link" href="./index.html">홈</a>
+          <a class="tm-site-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
+          <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
+          <a class="tm-site-nav__link" href="./us-market.html">미국시장</a>
+          <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="tm-site-nav__link" href="/stock-analysis.html" aria-current="page">AI 종목분석</a>
+        </nav>
+        <button
+          type="button"
+          class="tm-theme-toggle"
+          id="theme-toggle"
+          aria-label="테마 전환"
+          title="테마 전환"
+        >
+          <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      <header class="masthead masthead--title-only">
+        <div class="masthead__copy">
+          <p class="masthead__kicker page-label">AI ANALYSIS</p>
+          <h1 class="masthead__title page-title">AI 종목분석</h1>
+        </div>
+      </header>
+
+      <section id="ai-stock-analysis" class="ai-stock-section" aria-label="AI 종목분석">
+        <div
+          style="background: white; border-radius: 20px; padding: 18px 16px; box-shadow: 0 4px 16px rgba(51,57,191,0.08), inset 0 1px 1px rgba(255,255,255,1); border: 0.5px solid rgba(200,210,255,0.5);"
+        >
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
+            <h2 style="margin:0; font-size:16px; font-weight:900; letter-spacing:-0.2px; color:#131722;">종목 검색</h2>
+            <span
+              style="display:inline-flex; align-items:center; justify-content:center; height:20px; padding:0 8px; border-radius:999px; background:rgba(74,58,255,0.10); color:#4A3AFF; font-size:11px; font-weight:900; letter-spacing:0.06em;"
+            >NEW</span>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input
+              id="ai-stock-query"
+              type="text"
+              placeholder="종목명 또는 티커를 입력하세요 (예: 삼성전자, AAPL)"
+              autocomplete="off"
+              style="flex:1; min-width: 220px; height: 40px; border-radius: 12px; border: 0.5px solid rgba(200,210,255,0.7); padding: 0 12px; font-size: 13px; outline: none;"
+            />
+            <button
+              id="ai-stock-submit"
+              type="button"
+              style="height: 40px; border-radius: 12px; border: 0.5px solid rgba(200,210,255,0.7); background: linear-gradient(135deg, #5560e8, #3339BF); color: white; font-size: 13px; font-weight: 900; padding: 0 14px; cursor: pointer;"
+            >
+              AI 분석
+            </button>
+          </div>
+
+          <p style="margin: 8px 0 0; font-size: 11px; color: #5d606b;">
+            검색어 입력 후 분석 버튼을 누르면 텔레그램으로 자동 전송됩니다. (연동 예정)
+          </p>
+
+          <div
+            id="ai-stock-result"
+            style="display:none; margin-top: 12px; padding: 12px; border-radius: 14px; background: #f6f7ff; border: 0.5px solid rgba(200,210,255,0.6); color: #131722; font-size: 13px; font-weight: 700;"
+            aria-live="polite"
+          >
+            분석 중...
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        const input = document.getElementById("ai-stock-query");
+        const btn = document.getElementById("ai-stock-submit");
+        const result = document.getElementById("ai-stock-result");
+
+        function showResultLoading() {
+          if (!result) return;
+          result.style.display = "block";
+          result.textContent = "분석 중...";
+        }
+
+        function run() {
+          const q = (input && input.value ? String(input.value) : "").trim();
+          if (!q) {
+            if (input) input.focus();
+            return;
+          }
+          showResultLoading();
+        }
+
+        if (btn) btn.addEventListener("click", run);
+        if (input) {
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") run();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

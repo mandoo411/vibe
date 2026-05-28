@@ -144,7 +144,7 @@
     return n.toLocaleString("ko-KR");
   }
 
-  function formatKoMoneyEok(raw) {
+  function formatKoMoneyEokSigned(raw) {
     if (raw == null || raw === "") return "—";
     const n0 = Number(String(raw).replace(/,/g, ""));
     if (!Number.isFinite(n0) || n0 === 0) return "0억";
@@ -157,6 +157,20 @@
       return `${sign}${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`;
     }
     return `${sign}${n.toLocaleString("ko-KR")}억`;
+  }
+
+  function formatKoMoneyEok(raw) {
+    if (raw == null || raw === "") return "—";
+    const n0 = Number(String(raw).replace(/,/g, ""));
+    if (!Number.isFinite(n0) || n0 === 0) return "0억";
+    const n = Math.abs(Math.round(n0));
+    const jo = Math.floor(n / 10000);
+    const eok = n % 10000;
+    if (jo > 0) {
+      if (eok === 0) return `${jo.toLocaleString("ko-KR")}조`;
+      return `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`;
+    }
+    return `${n.toLocaleString("ko-KR")}억`;
   }
 
   function numFromMoneyish(v) {
@@ -1346,9 +1360,18 @@
     const finFhr = fin.foreignHoldRate == null ? "—" : `${Number(fin.foreignHoldRate).toFixed(2).replace(/\\.00$/, "")}%`;
 
     const sup = data.supply || {};
-    const supInst = sup.institution == null ? "—" : formatKoMoneyEok(sup.institution);
-    const supIndv = sup.individual == null ? "—" : formatKoMoneyEok(sup.individual);
-    const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEok(sup.foreigner);
+    const supInstVal = sup.institution == null ? null : Number(String(sup.institution).replace(/,/g, ""));
+    const supIndvVal = sup.individual == null ? null : Number(String(sup.individual).replace(/,/g, ""));
+    const supFrgnVal = sup.foreigner == null ? null : Number(String(sup.foreigner).replace(/,/g, ""));
+    const supInst = sup.institution == null ? "—" : formatKoMoneyEokSigned(sup.institution);
+    const supIndv = sup.individual == null ? "—" : formatKoMoneyEokSigned(sup.individual);
+    const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEokSigned(sup.foreigner);
+    const supInstCls =
+      supInstVal == null || !Number.isFinite(supInstVal) ? "" : supInstVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
+    const supIndvCls =
+      supIndvVal == null || !Number.isFinite(supIndvVal) ? "" : supIndvVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
+    const supFrgnCls =
+      supFrgnVal == null || !Number.isFinite(supFrgnVal) ? "" : supFrgnVal < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
 
     const pf = data.profit || {};
     const pfRev = pf.revenue == null ? "—" : formatKoMoneyEok(pf.revenue);
@@ -1391,9 +1414,9 @@
       `<div class="rt-block">`,
       `  <div class="rt-block__title">수급 현황</div>`,
       `  <div class="rt-card3">`,
-      `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v rt-mini__v--pos">${escapeHtml(supInst)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v rt-mini__v--neg">${escapeHtml(supIndv)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v rt-mini__v--neg">${escapeHtml(supFrgn)}</div><div class="rt-mini__sub">보유 ${escapeHtml(finFhr)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v ${escapeHtml(supInstCls)}">${escapeHtml(supInst)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v ${escapeHtml(supIndvCls)}">${escapeHtml(supIndv)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v ${escapeHtml(supFrgnCls)}">${escapeHtml(supFrgn)}</div><div class="rt-mini__sub">보유 ${escapeHtml(finFhr)}</div></div>`,
       `  </div>`,
       `</div>`,
 

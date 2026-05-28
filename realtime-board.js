@@ -995,7 +995,14 @@
   function renderIndexes() {
     const el = $("rt-indexes");
     if (!el) return;
-    el.innerHTML = state.indexes
+    const rows = (state.indexes || []).filter(Boolean);
+    const kospi = rows.find((r) => r && r.id === "0001");
+    if (!kospi) {
+      console.log("[realtime-board] indexes missing KOSPI", { indexes: rows });
+    } else {
+      console.log("[realtime-board] KOSPI index", kospi);
+    }
+    el.innerHTML = rows
       .map((ix) => {
         const ch = ix.changePct;
         const cls = deltaClass(ch);

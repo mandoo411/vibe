@@ -1264,6 +1264,8 @@
     const pfNet = pf.netIncome == null ? "—" : fmtNum(pf.netIncome);
     const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
 
+    const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
+
     return [
       `<div class="rt-stock-head rt-stock-head--wide">`,
       `  <div class="rt-stock-title">`,
@@ -1274,23 +1276,6 @@
       `  <div class="rt-stock-quote">`,
       `    <span class="rt-stock-price">${price}</span>`,
       `    <span class="delta ${cls}">${pct}</span>`,
-      `  </div>`,
-      `</div>`,
-
-      `<button type="button" class="rt-chart-toggle" aria-expanded="false">차트 보기 ▼</button>`,
-      `<div class="rt-chart-wrap" hidden>`,
-      `  <div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기" hidden>`,
-      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
-      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
-      `    <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
-      `  </div>`,
-      `  <div class="rt-chart-body">`,
-      `    <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
-      `    <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
-      `      <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
-      `      <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
-      `      <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
-      `    </div>`,
       `  </div>`,
       `</div>`,
 
@@ -1310,7 +1295,7 @@
       `</div>`,
 
       `<div class="rt-block">`,
-      `  <div class="rt-block__title">수급 현황 <span class="rt-block__sub">기준 ${escapeHtml(pfDate)}</span></div>`,
+      `  <div class="rt-block__title">수급 현황</div>`,
       `  <div class="rt-card3">`,
       `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v rt-mini__v--pos">${escapeHtml(supInst)}</div></div>`,
       `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v rt-mini__v--neg">${escapeHtml(supIndv)}</div></div>`,
@@ -1319,7 +1304,7 @@
       `</div>`,
 
       `<div class="rt-block">`,
-      `  <div class="rt-block__title">실적 <span class="rt-block__sub">${escapeHtml(pfDate)} 기준</span></div>`,
+      `  <div class="rt-block__title">실적</div>`,
       `  <div class="rt-card3">`,
       `    <div class="rt-mini"><div class="rt-mini__k">매출</div><div class="rt-mini__v">${escapeHtml(pfRev)}</div></div>`,
       `    <div class="rt-mini"><div class="rt-mini__k">영업이익</div><div class="rt-mini__v">${escapeHtml(pfOp)}</div></div>`,
@@ -1330,6 +1315,12 @@
       `<div class="rt-stock-actions">`,
       `  <a class="rt-cta" href="${escapeHtml(aiHref)}">이 종목 AI 분석하기</a>`,
       `</div>`,
+
+      `<div class="rt-stock-actions">`,
+      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `</div>`,
+
+      `<div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
     ].join("");
   }
 
@@ -1461,46 +1452,59 @@
       panel.innerHTML = stockPanelHtml(data);
 
       const toggleBtn = panel.querySelector(".rt-chart-toggle");
-      const panesEl = panel.querySelector(".rt-chart-panes");
-      const toolbarEl = panel.querySelector(".rt-chart-toolbar");
-      const loadingMsg = panel.querySelector(".rt-chart-loading-msg");
-      const chartWrap = panel.querySelector(".rt-chart-wrap");
+      const code6 = String(data.stockCode || "");
+      const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : "";
+      const chartHost = targetId ? document.getElementById(targetId) : null;
       let chartOpen = false;
 
-      function applyChartVisibility(nextOpen) {
-        chartOpen = !!nextOpen;
+      function chartHtml() {
+        return [
+          `<div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
+          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="D" aria-pressed="true">일봉</button>`,
+          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
+          `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
+          `</div>`,
+          `<div class="rt-chart-body">`,
+          `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
+          `  <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
+          `    <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
+          `    <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
+          `    <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+          `  </div>`,
+          `</div>`,
+        ].join("");
+      }
+
+      function setToggle(open) {
+        chartOpen = !!open;
         if (toggleBtn) {
           toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
           toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
         }
-        if (toolbarEl) toolbarEl.hidden = !chartOpen;
-        if (chartWrap) chartWrap.hidden = !chartOpen;
-        if (panesEl) panesEl.style.display = chartOpen ? "" : "none";
-        if (loadingMsg) loadingMsg.hidden = !chartOpen;
+        if (chartHost) chartHost.hidden = !chartOpen;
       }
 
-      applyChartVisibility(false);
-      if (toggleBtn) {
+      setToggle(false);
+      if (toggleBtn && chartHost) {
         toggleBtn.addEventListener("click", () => {
-          applyChartVisibility(!chartOpen);
-          if (chartOpen) {
-            void mountStockPanelChart(panel, String(data.stockCode || ""), "D");
+          setToggle(!chartOpen);
+          if (!chartOpen) return;
+          if (!chartHost.dataset.mounted) {
+            chartHost.innerHTML = chartHtml();
+            chartHost.dataset.mounted = "1";
+            chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
+              b.addEventListener("click", () => {
+                const p = b.getAttribute("data-rt-candle-period") || "D";
+                chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
+                  x.setAttribute("aria-pressed", x === b ? "true" : "false")
+                );
+                void mountStockPanelChart(chartHost, code6, String(p).toUpperCase());
+              });
+            });
           }
+          void mountStockPanelChart(chartHost, code6, "D");
         });
       }
-
-      // 차트 버튼(패널) 주기 전환
-      panel.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
-        b.addEventListener("click", () => {
-          if (!chartOpen) applyChartVisibility(true);
-          const p = b.getAttribute("data-rt-candle-period") || "D";
-          panel.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
-            x.setAttribute("aria-pressed", x === b ? "true" : "false")
-          );
-          void mountStockPanelChart(panel, String(data.stockCode || ""), String(p).toUpperCase());
-        });
-      });
-      // 초기에는 차트 로드하지 않음 (토글 열릴 때 로드)
     } catch (e) {
       panel.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
     } finally {

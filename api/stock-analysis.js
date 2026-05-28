@@ -387,8 +387,8 @@ async function kisInquireInvestor(stockCode6) {
 async function kisIncomeStatement(stockCode6) {
   try {
     const json = await kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430100", {
-      fid_cond_mrkt_div_code: "J",
-      fid_input_iscd: stockCode6,
+      FID_COND_MRKT_DIV_CODE: "J",
+      FID_INPUT_ISCD: stockCode6,
     });
     let out = json.output ?? json.output1 ?? json.output2;
     if (out && !Array.isArray(out)) out = [out];
@@ -530,7 +530,7 @@ module.exports = async function handler(req, res) {
   }
 
   json(res, 200, {
-    // 네이버(모바일) 값이 있는 경우 UI 표시값은 네이버 우선 (스크린샷 기준)
+  // 네이버(모바일) 값이 있는 경우 UI 표시값은 네이버 우선 (스크린샷 기준)
     ...(await (async () => {
       try {
         const [nb, np] = await Promise.all([
@@ -547,9 +547,7 @@ module.exports = async function handler(req, res) {
         const low = toNum(np && np.lowPrice) ?? quote.low;
         const volume = toNum(np && np.accumulatedTradingVolume) ?? quote.volume;
         const prevClose =
-          (nb && toNum(nb.closePrice) != null ? toNum(nb.closePrice) : null) ??
-          quote.prevClose ??
-          null;
+          currentPrice != null && change != null ? currentPrice - change : quote.prevClose ?? null;
         return {
           stockName,
           stockCode: resolved.stockCode,

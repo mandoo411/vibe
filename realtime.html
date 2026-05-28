@@ -707,28 +707,7 @@
         -webkit-overflow-scrolling: touch;
         margin: 0 -2px;
       }
-      .rt-panel__head {
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--border);
-        font-family: inherit;
-        font-size: 14px;
-        color: #131722;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        background: white;
-        min-height: 40px;
-        display: flex;
-        align-items: center;
-      }
-      .rt-panel__head-title {
-        letter-spacing: inherit;
-        display: block;
-      }
-      [data-theme="dark"] .rt-panel__head,
-      .dark-mode .rt-panel__head {
-        background: #1c2030;
-        color: #fff;
-      }
+      /* rt-panel__head 제거됨 (masthead 사용) */
       .rt-chart-quote-strip {
         padding: 8px 12px;
         border-bottom: 1px solid var(--border);
@@ -1270,9 +1249,6 @@
 
       <div class="rt-wrap">
         <div class="rt-panel" role="tabpanel">
-          <div class="rt-panel__head">
-            <div class="rt-panel__head-title" id="rt-table-title">실시간시세</div>
-          </div>
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
               시가총액 TOP 30

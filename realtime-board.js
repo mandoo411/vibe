@@ -141,6 +141,21 @@
     return n.toLocaleString("ko-KR");
   }
 
+  function formatKoMoneyEok(raw) {
+    if (raw == null || raw === "") return "—";
+    const n0 = Number(String(raw).replace(/,/g, ""));
+    if (!Number.isFinite(n0) || n0 === 0) return "0억";
+    const sign = n0 < 0 ? "-" : "+";
+    const n = Math.abs(Math.round(n0));
+    const jo = Math.floor(n / 10000); // 1조 = 10,000억
+    const eok = n % 10000;
+    if (jo > 0) {
+      if (eok === 0) return `${sign}${jo.toLocaleString("ko-KR")}조`;
+      return `${sign}${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`;
+    }
+    return `${sign}${n.toLocaleString("ko-KR")}억`;
+  }
+
   function numFromMoneyish(v) {
     const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
     return Number.isFinite(n) ? n : null;
@@ -1272,14 +1287,14 @@
     const finFhr = fin.foreignHoldRate == null ? "—" : `${Number(fin.foreignHoldRate).toFixed(2).replace(/\\.00$/, "")}%`;
 
     const sup = data.supply || {};
-    const supInst = sup.institution == null ? "—" : fmtNum(sup.institution);
-    const supIndv = sup.individual == null ? "—" : fmtNum(sup.individual);
-    const supFrgn = sup.foreigner == null ? "—" : fmtNum(sup.foreigner);
+    const supInst = sup.institution == null ? "—" : formatKoMoneyEok(sup.institution);
+    const supIndv = sup.individual == null ? "—" : formatKoMoneyEok(sup.individual);
+    const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEok(sup.foreigner);
 
     const pf = data.profit || {};
-    const pfRev = pf.revenue == null ? "—" : fmtNum(pf.revenue);
-    const pfOp = pf.operatingProfit == null ? "—" : fmtNum(pf.operatingProfit);
-    const pfNet = pf.netIncome == null ? "—" : fmtNum(pf.netIncome);
+    const pfRev = pf.revenue == null ? "—" : formatKoMoneyEok(pf.revenue);
+    const pfOp = pf.operatingProfit == null ? "—" : formatKoMoneyEok(pf.operatingProfit);
+    const pfNet = pf.netIncome == null ? "—" : formatKoMoneyEok(pf.netIncome);
     const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;

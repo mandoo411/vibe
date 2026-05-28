@@ -499,7 +499,26 @@ async function kisInvestorTradeByStockDaily(stockCode6) {
     toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
     pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
   const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
-  return { institution, foreigner, individual, baseDate, source: "FHPTJ04160001", raw: row };
+  // 금액(원) 후보: *_ntby_tr_pbmn (백만원 단위로 쓰이는 케이스가 많음)
+  const instPbmn = toNum(row.orgn_ntby_tr_pbmn ?? row.orgn_ntby_pbmn ?? row.orgn_ntby_tr_amt ?? row.orgn_ntby_amt);
+  const frgnPbmn = toNum(row.frgn_ntby_tr_pbmn ?? row.frgn_ntby_pbmn ?? row.frgn_ntby_tr_amt ?? row.frgn_ntby_amt);
+  const prsnPbmn = toNum(row.prsn_ntby_tr_pbmn ?? row.prsn_ntby_pbmn ?? row.prsn_ntby_tr_amt ?? row.prsn_ntby_amt);
+
+  // pbmn(백만원) -> 억원: pbmn * 1e6 / 1e8 = pbmn / 100
+  const instEokFromPbmn = instPbmn == null ? null : Math.round(instPbmn / 100);
+  const frgnEokFromPbmn = frgnPbmn == null ? null : Math.round(frgnPbmn / 100);
+  const prsnEokFromPbmn = prsnPbmn == null ? null : Math.round(prsnPbmn / 100);
+
+  return {
+    // 기존 키는 유지하되, UI 요구사항에 맞춰 "금액(억원)"을 우선 전달한다.
+    institution: instEokFromPbmn != null ? instEokFromPbmn : institution,
+    foreigner: frgnEokFromPbmn != null ? frgnEokFromPbmn : foreigner,
+    individual: prsnEokFromPbmn != null ? prsnEokFromPbmn : individual,
+    baseDate,
+    unit: instEokFromPbmn != null || frgnEokFromPbmn != null || prsnEokFromPbmn != null ? "eok" : "qty",
+    source: "FHPTJ04160001",
+    raw: row,
+  };
 }
 
 async function kisInquireInvestor(stockCode6) {

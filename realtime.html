@@ -147,7 +147,8 @@
         margin-top: 16px;
         padding: 12px 0;
       }
-      .pagination button {
+      .pagination button,
+      .pagination .page-btn {
         appearance: none;
         background: white;
         border: 0.5px solid rgba(200, 210, 255, 0.5);
@@ -158,11 +159,21 @@
         color: #555;
         cursor: pointer;
       }
-      .pagination button[aria-current="page"] {
+      .pagination button[aria-current="page"],
+      .pagination .page-btn.active {
         background: #3339bf;
         color: white;
         border: none;
         font-weight: 600;
+      }
+      .rt-pager-loading {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 8px;
+      }
+      .rt-pager-loading .rt-spinner {
+        width: 18px;
+        height: 18px;
       }
       [data-theme="dark"] .pagination button,
       .dark-mode .pagination button {
@@ -1383,7 +1394,11 @@
               </thead>
               <tbody id="rt-tbody"></tbody>
             </table>
-            <div id="rt-table-pager" class="pagination" hidden aria-label="페이지"></div>
+            <div id="rt-table-pager" class="pagination" hidden aria-label="페이지">
+              <span id="rt-pager-loading" class="rt-pager-loading" hidden aria-live="polite">
+                <span class="rt-spinner" aria-hidden="true"></span>
+              </span>
+            </div>
           </div>
         </div>
 

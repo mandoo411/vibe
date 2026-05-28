@@ -78,10 +78,13 @@
     gainerRows: [],
     capPage: 1,
     capPageSize: 25,
-    capTotal: 0,
+    capTotal: 100,
     gainerPage: 1,
     gainerPageSize: 25,
-    gainerTotal: 0,
+    gainerTotal: 100,
+    /** 페이지별 클라이언트 캐시 { [page]: { stocks, loadedAt } } */
+    capPageCache: {},
+    gainerPageCache: {},
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -841,9 +844,66 @@
   }
 
   function rowsLoadedForTab(tab) {
-    if (tab === "cap") return state.capRows.length >= 10;
-    if (tab === "gainers") return state.gainerRows.length >= 10;
-    return false;
+    const cache = tab === "cap" ? state.capPageCache : state.gainerPageCache;
+    const page = tab === "cap" ? state.capPage : state.gainerPage;
+    const hit = cache[page];
+    return !!(hit && hit.stocks && hit.stocks.length >= 10);
+  }
+
+  function pageCacheForTab(tab) {
+    return tab === "cap" ? state.capPageCache : state.gainerPageCache;
+  }
+
+  function currentPageForTab(tab) {
+    return tab === "cap" ? state.capPage : state.gainerPage;
+  }
+
+  function setCurrentPageForTab(tab, page) {
+    if (tab === "cap") state.capPage = page;
+    else state.gainerPage = page;
+  }
+
+  function setPagerLoading(on) {
+    const el = $("rt-pager-loading");
+    if (el) el.hidden = !on;
+  }
+
+  async function ensureTabPageLoaded(tab, page, opts) {
+    const force = !!(opts && opts.force);
+    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    setCurrentPageForTab(tab, pg);
+    state.openChartCode = null;
+
+    const cache = pageCacheForTab(tab);
+    const hit = cache[pg];
+    if (!force && hit && hit.stocks && hit.stocks.length) {
+      applyStocksArrayToTab(tab, hit.stocks);
+      state.tabLoadedAt[tab] = hit.loadedAt || Date.now();
+      return { fromCache: true };
+    }
+
+    const showUi = !force;
+    if (showUi) {
+      showTableSkeleton();
+      setPagerLoading(true);
+    }
+    try {
+      if (tab === "cap") state.capPage = pg;
+      else state.gainerPage = pg;
+      const pack = await fetchStocksJsonForTab(tab);
+      const stocks = pack.stocks || [];
+      cache[pg] = { stocks, loadedAt: Date.now() };
+      if (tab === "cap") state.capTotal = Number(pack.total || 100) || 100;
+      else state.gainerTotal = Number(pack.total || 100) || 100;
+      applyStocksArrayToTab(tab, stocks);
+      state.tabLoadedAt[tab] = Date.now();
+      return { fromCache: false, cached: !!pack.cached };
+    } finally {
+      if (showUi) {
+        hideTableSkeleton();
+        setPagerLoading(false);
+      }
+    }
   }
 
   function applyStocksArrayToTab(tab, stocks) {
@@ -864,23 +924,6 @@
     return fetchJson("gainers", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
   }
 
-  function pagerMetaForTab(tab) {
-    if (tab === "gainers") {
-      return {
-        pageKey: "gainerPage",
-        pageSize: state.gainerPageSize || 25,
-        total: Math.max(0, Number(state.gainerTotal) || 0) || 100,
-        cur: Math.max(1, Number(state.gainerPage) || 1),
-      };
-    }
-    return {
-      pageKey: "capPage",
-      pageSize: state.capPageSize || 25,
-      total: Math.max(0, Number(state.capTotal) || 0) || 100,
-      cur: Math.max(1, Number(state.capPage) || 1),
-    };
-  }
-
   function renderTablePager() {
     const el = $("rt-table-pager");
     if (!el) return;
@@ -888,61 +931,56 @@
     el.hidden = !show;
     if (!show) return;
 
-    const meta = pagerMetaForTab(state.tab);
-    const pages = Math.max(1, Math.ceil(meta.total / meta.pageSize));
-    const cur = Math.max(1, Math.min(pages, meta.cur));
-
+    const cur = Math.max(1, Math.min(4, currentPageForTab(state.tab) || 1));
     const btns = [];
-    for (let i = 1; i <= pages; i++) {
+    for (let i = 1; i <= 4; i++) {
       btns.push(
-        `<button type="button" data-rt-table-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
+        `<button type="button" class="page-btn" data-rt-table-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
       );
     }
-    el.innerHTML = btns.join("");
+    el.innerHTML =
+      `<span id="rt-pager-loading" class="rt-pager-loading" hidden aria-live="polite"><span class="rt-spinner" aria-hidden="true"></span></span>` +
+      btns.join("");
 
     el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
-      b.addEventListener("click", async () => {
+      b.addEventListener("click", () => {
         const next = Number(b.getAttribute("data-rt-table-page") || "1") || 1;
-        const pm = pagerMetaForTab(state.tab);
-        if (next === pm.cur) return;
-        if (state.tab === "cap") state.capPage = next;
-        else state.gainerPage = next;
-        state.openChartCode = null;
-        showTableSkeleton();
-        try {
-          const pack = await fetchStocksJsonForTab(state.tab);
-          if (state.tab === "cap") {
-            state.capTotal = Number(pack.total || pack.totalCount || 0) || state.capTotal;
-          } else {
-            state.gainerTotal = Number(pack.total || pack.totalCount || 0) || state.gainerTotal;
-          }
-          applyStocksArrayToTab(state.tab, pack.stocks);
-          state.tabLoadedAt[state.tab] = Date.now();
-          hideTableSkeleton();
-          renderAll();
-          if (state.ws && state.ws.readyState === 1) {
-            unsubscribeAll();
-            subscribeStocks(getCurrentRows().map((r) => r.code));
-          }
-        } catch (e) {
-          hideTableSkeleton();
-          const errEl = $("rt-error");
-          if (errEl) {
-            errEl.hidden = false;
-            errEl.textContent = rtErrorTimeoutMessage(e);
-          }
-        }
+        void loadTablePage(next);
       });
     });
   }
 
+  async function loadTablePage(page) {
+    const tab = state.tab;
+    if (tab !== "cap" && tab !== "gainers") return;
+    const cur = currentPageForTab(tab);
+    const cache = pageCacheForTab(tab);
+    if (page === cur && cache[page] && cache[page].stocks && cache[page].stocks.length) return;
+
+    const errEl = $("rt-error");
+    try {
+      await ensureTabPageLoaded(tab, page);
+      if (errEl) errEl.hidden = true;
+      renderAll();
+      if (state.ws && state.ws.readyState === 1) {
+        unsubscribeAll();
+        subscribeStocks(getCurrentRows().map((r) => r.code));
+      }
+    } catch (e) {
+      const errEl2 = $("rt-error");
+      if (errEl2) {
+        errEl2.hidden = false;
+        errEl2.textContent = rtErrorTimeoutMessage(e);
+      }
+    }
+  }
+
+  window.loadTablePage = loadTablePage;
+
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
   async function refreshTabStocksOnly(tab) {
-    const stockPack = await fetchStocksJsonForTab(tab);
-    if (tab === "cap") state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
-    else if (tab === "gainers") state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
-    applyStocksArrayToTab(tab, stockPack.stocks);
-    state.tabLoadedAt[tab] = Date.now();
+    const page = currentPageForTab(tab);
+    await ensureTabPageLoaded(tab, page, { force: true });
   }
 
   async function loadBootstrapForTab(tab) {
@@ -978,10 +1016,12 @@
     if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
     state.indexes = ["0001", "1001"].map((k) => byId.get(k));
     if (tab === "gainers") {
-      state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
+      state.gainerTotal = 100;
     } else if (tab === "cap") {
-      state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
+      state.capTotal = 100;
     }
+    const page = currentPageForTab(tab);
+    pageCacheForTab(tab)[page] = { stocks: stockPack.stocks || [], loadedAt: Date.now() };
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
   }
@@ -1851,7 +1891,9 @@
 
   async function refreshPartial() {
     try {
-      const stockPack = await fetchStocksJsonForTab(state.tab);
+      const tab = state.tab;
+      const page = currentPageForTab(tab);
+      await ensureTabPageLoaded(tab, page, { force: true });
 
       const [idxPack, sessPack] = await Promise.all([
         fetchJson("index", FETCH_TIMEOUT_MS),
@@ -1878,13 +1920,6 @@
       state.clockSession = sessPack.clock || null;
       state.marketTime = sessPack.marketTime || null;
 
-      if (state.tab === "gainers") {
-        state.gainerTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.gainerTotal;
-        applyStocksArrayToTab("gainers", stockPack.stocks);
-      } else {
-        state.capTotal = Number(stockPack.total || stockPack.totalCount || 0) || state.capTotal;
-        applyStocksArrayToTab("cap", stockPack.stocks);
-      }
       state.tabLoadedAt[state.tab] = Date.now();
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
@@ -1942,6 +1977,18 @@
 
         const tk = state.tab;
         const errEl = $("rt-error");
+        const page1Hit = pageCacheForTab(tk)[1];
+
+        if (page1Hit && page1Hit.stocks && page1Hit.stocks.length) {
+          setCurrentPageForTab(tk, 1);
+          applyStocksArrayToTab(tk, page1Hit.stocks);
+          state.tabLoadedAt[tk] = page1Hit.loadedAt || Date.now();
+          if (errEl) errEl.hidden = true;
+          renderAll();
+          finish();
+          return;
+        }
+
         const hasRows = rowsLoadedForTab(tk);
         const cacheFresh =
           state.tabLoadedAt[tk] && Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS;
@@ -1970,15 +2017,18 @@
         if (errEl) errEl.hidden = true;
         syncTableChromeForTab();
         showTableSkeleton();
-        loadBootstrapForTab(tk)
+        setPagerLoading(true);
+        Promise.all([loadBootstrapForTab(tk)])
           .then(() => {
             hideTableSkeleton();
+            setPagerLoading(false);
             if (errEl) errEl.hidden = true;
             renderAll();
           })
           .catch((e) => {
             console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
             hideTableSkeleton();
+            setPagerLoading(false);
             if (errEl) {
               errEl.hidden = false;
               errEl.textContent = rtErrorTimeoutMessage(e);
@@ -2035,6 +2085,7 @@
     hideLoadingOverlay();
     syncTableChromeForTab();
     showTableSkeleton();
+    setPagerLoading(true);
     try {
       await loadBootstrapForTab(state.tab);
       if (err) err.hidden = true;
@@ -2046,6 +2097,7 @@
       }
     } finally {
       hideTableSkeleton();
+      setPagerLoading(false);
       renderAll();
       startPolling();
       await tryConnectWs();

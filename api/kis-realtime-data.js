@@ -29,6 +29,28 @@ const MARKET_CAP_RANK_MAX_PAGES = Math.max(
 /** action=candle — 일·주·월봉만 (종목+주기별 캔들 메모리 캐시) */
 const candleMemoryCache = new Map();
 
+/** market-cap / gainers 페이지별 응답 캐시 (KIS 연속조회 비용 절감) */
+const RANK_PAGE_CACHE_MS = Math.max(30_000, Number(process.env.KIS_RANK_PAGE_CACHE_MS) || 120_000);
+const rankPageCache = new Map();
+
+function rankPageCacheGet(key) {
+  const hit = rankPageCache.get(key);
+  if (!hit || Date.now() > hit.expiresAt) return null;
+  return hit.payload;
+}
+
+function rankPageCacheSet(key, payload) {
+  rankPageCache.set(key, { payload, expiresAt: Date.now() + RANK_PAGE_CACHE_MS });
+}
+
+function rankRangeForPage(page, pageSize) {
+  const pg = Math.max(1, Math.min(4, Number(page) || 1));
+  const ps = Math.max(1, Math.min(25, Number(pageSize) || 25));
+  const startRank = (pg - 1) * ps + 1;
+  const endRank = Math.min(pg * ps, 100);
+  return { page: pg, pageSize: ps, startRank, endRank, total: 100 };
+}
+
 /** EGW00201(초당 거래건수 초과) — HTTP 500 + JSON 본문으로 올 수 있음 */
 function isKisRateLimitError(json) {
   if (!json || typeof json !== "object") return false;
@@ -440,6 +462,97 @@ function boardKindFromClsCode(raw) {
  * @param {string} fallbackBoard
  * @param {{ logSample?: boolean }} [opts] logSample=false 시 첫 행 console.log 생략
  */
+function mapMarketCapKisRow(row, fallbackBoard) {
+  const code = sanitizeStr(row.mksc_shrn_iscd);
+  if (!code) return null;
+  const price = pickStckPrpr(row);
+  const volume = pickAcmlVol(row);
+  let tradingValue = pickAcmlTrPbmn(row);
+  if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+  const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
+  const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
+  return {
+    rank: toNum(row.data_rank),
+    code,
+    name: sanitizeStr(row.hts_kor_isnm),
+    price,
+    changePct: toNum(row.prdy_ctrt),
+    volume,
+    tradingValue,
+    mcapEok: mcapWon,
+    stck_avls: mcapWon,
+    tvBoard: pickKoreanBoardKind(row, fallbackBoard),
+  };
+}
+
+/** KIS 시가총액 순위 — endRank까지 연속조회(페이지당 ~30건) 후 해당 구간만 반환 */
+async function fetchMarketCapKospiUpToRank(endRank, opts = {}) {
+  const logSample = opts.logSample !== false;
+  const target = Math.max(1, Math.min(100, Number(endRank) || 25));
+  const params = {
+    fid_input_price_2: "",
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20174",
+    fid_div_cls_code: "0",
+    fid_input_iscd: "0001",
+    fid_trgt_cls_code: "0",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_input_price_1: "",
+    fid_vol_cnt: "",
+  };
+
+  const rows = [];
+  const seen = new Set();
+  let trCont = "";
+  let kisPages = 0;
+  for (let page = 0; page < MARKET_CAP_RANK_MAX_PAGES; page++) {
+    kisPages++;
+    const { json, trCont: nextTr } = await kisGet(
+      "/uapi/domestic-stock/v1/ranking/market-cap",
+      "FHPST01740000",
+      params,
+      trCont
+    );
+    const part = kisOutputRows(json);
+    if (!part.length) break;
+    for (const row of part) {
+      const mapped = mapMarketCapKisRow(row, "KOSPI");
+      if (!mapped || seen.has(mapped.code)) continue;
+      seen.add(mapped.code);
+      rows.push(mapped);
+    }
+    let maxRank = 0;
+    for (const r of rows) {
+      if (r.rank != null && r.rank > maxRank) maxRank = r.rank;
+    }
+    if (maxRank >= target) break;
+    const cont = String(nextTr || "").trim().toUpperCase();
+    if (cont !== "M") break;
+    trCont = "N";
+  }
+
+  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+  const filtered = rows.filter((r) => r.rank != null && r.rank >= 1 && r.rank <= target);
+
+  if (logSample && filtered.length > 0) {
+    console.log("[kis-realtime-data][market-cap] upToRank", {
+      endRank: target,
+      kisPages,
+      rowCount: filtered.length,
+      maxRank: filtered[filtered.length - 1]?.rank,
+    });
+  }
+
+  return filtered;
+}
+
+/** 시가총액 TOP100 — 페이지별 25건 (해당 순위 구간만 KIS 호출) */
+async function fetchMarketCapPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const all = await fetchMarketCapKospiUpToRank(endRank, { logSample: false });
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+}
+
 async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
   const logSample = opts.logSample !== false;
   const params = {
@@ -475,21 +588,10 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
   if (logSample) {
     if (chunk.length > 0) {
       const row0 = chunk[0];
-      const avlsKeys = Object.keys(row0).filter((k) => /avls|iscd|rank|prpr|ctrt/i.test(k));
-      const avls0 = sanitizeStr(row0.stck_avls ?? row0.STCK_AVLS);
-      const won0 = avls0 ? mcapRankingStckAvlsToWonString(avls0) : "";
       console.log("[kis-realtime-data][market-cap] KIS 응답 샘플", {
         tr_id: "FHPST01740000",
-        url: "/uapi/domestic-stock/v1/ranking/market-cap",
-        fid_cond_scr_div_code: "20174 (시가총액 순위 전용)",
         fid_input_iscd: fidInputIscd,
         pagedRowCount: chunk.length,
-        maxPagesCap: MARKET_CAP_RANK_MAX_PAGES,
-        sample_avls_related_keys: avlsKeys,
-        stck_avls: row0.stck_avls ?? row0.STCK_AVLS,
-        hts_avls: row0.hts_avls ?? row0.HTS_AVLS,
-        stck_prpr: row0.stck_prpr ?? row0.STCK_PRPR,
-        converted_won_string: won0 || "(없음)",
       });
     } else {
       console.log("[kis-realtime-data][market-cap] 빈 output", { fid_input_iscd: fidInputIscd });
@@ -498,27 +600,10 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
   const rows = [];
   const seen = new Set();
   for (const row of chunk) {
-    const code = sanitizeStr(row.mksc_shrn_iscd);
-    if (!code || seen.has(code)) continue;
-    seen.add(code);
-    const price = pickStckPrpr(row);
-    const volume = pickAcmlVol(row);
-    let tradingValue = pickAcmlTrPbmn(row);
-    if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-    const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
-    const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
-    rows.push({
-      rank: toNum(row.data_rank),
-      code,
-      name: sanitizeStr(row.hts_kor_isnm),
-      price,
-      changePct: toNum(row.prdy_ctrt),
-      volume,
-      tradingValue,
-      mcapEok: mcapWon,
-      stck_avls: mcapWon,
-      tvBoard: pickKoreanBoardKind(row, fallbackBoard),
-    });
+    const mapped = mapMarketCapKisRow(row, fallbackBoard);
+    if (!mapped || seen.has(mapped.code)) continue;
+    seen.add(mapped.code);
+    rows.push(mapped);
   }
   return rows.filter((r) => r.code).slice(0, maxRows);
 }
@@ -528,9 +613,9 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
-/** 코스피 시가총액 상위 100 (페이지네이션용) */
+/** 코스피 시가총액 상위 100 (스냅샷 등 레거시) */
 async function fetchMarketCapKospi100() {
-  return fetchMarketCapRows("0001", 100, "KOSPI", { logSample: false });
+  return fetchMarketCapKospiUpToRank(100, { logSample: false });
 }
 
 /**
@@ -557,11 +642,13 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     fid_rsfl_rate2: "",
   });
 
-  /** 연속조회(tr_cont M→N)로 등락률 순위 원시 행 누적 */
-  async function fetchFluctuationRawRowsPaged(fidPrcCls) {
+  /** 연속조회(tr_cont M→N)로 등락률 순위 원시 행 누적 — maxUniqueCodes 도달 시 조기 종료 */
+  async function fetchFluctuationRawRowsPaged(fidPrcCls, maxUniqueCodes) {
     const params = fluctuationSearchParams(fidPrcCls);
     const acc = [];
+    const seenCodes = new Set();
     let trCont = "";
+    const cap = maxUniqueCodes != null && Number.isFinite(Number(maxUniqueCodes)) ? Number(maxUniqueCodes) : null;
     for (let page = 0; page < FLUCTUATION_RANK_MAX_PAGES; page++) {
       const { json, trCont: nextTr } = await kisGet(
         "/uapi/domestic-stock/v1/ranking/fluctuation",
@@ -572,6 +659,11 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
       const part = kisOutputRows(json);
       if (!part.length) break;
       acc.push(...part);
+      for (const row of part) {
+        const c = sanitizeStr(row.stck_shrn_iscd);
+        if (c) seenCodes.add(c);
+      }
+      if (cap != null && seenCodes.size >= cap) break;
       const cont = String(nextTr || "").trim().toUpperCase();
       if (cont !== "M") break;
       trCont = "N";
@@ -600,15 +692,17 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
       })
       .filter((r) => r.code && r.name);
 
-  const rawPrimary = await fetchFluctuationRawRowsPaged("1");
+  const maxRows = opts.maxRows != null && Number.isFinite(Number(opts.maxRows)) ? Number(opts.maxRows) : null;
+  const rawPrimary = await fetchFluctuationRawRowsPaged("1", maxRows);
   const byCode = new Map();
   for (const r of mapRawRowsToRanked(rawPrimary)) {
     if (!byCode.has(r.code)) byCode.set(r.code, r);
   }
   let rows = [...byCode.values()];
+  if (maxRows != null) rows = rows.slice(0, maxRows);
 
   if (!closeOnly && rows.length && rows.some((r) => !r.tradingValue)) {
-    const rawAlt = await fetchFluctuationRawRowsPaged("0");
+    const rawAlt = await fetchFluctuationRawRowsPaged("0", maxRows);
     const tvByCode = new Map();
     for (const row of rawAlt) {
       const c = sanitizeStr(row.stck_shrn_iscd);
@@ -629,18 +723,37 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
   return rows;
 }
 
-async function fetchGainersMerged100() {
-  const [kospi, kosdaq] = await Promise.all([
-    fetchFluctuationRank("0001", "KOSPI"),
-    fetchFluctuationRank("1001", "KOSDAQ"),
-  ]);
-  const merged = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    if (!merged.has(r.code)) merged.set(r.code, r);
+async function fetchGainersMergedUpToRank(endRank) {
+  const target = Math.max(1, Math.min(100, Number(endRank) || 25));
+  let perMarket = Math.max(30, target);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const [kospi, kosdaq] = await Promise.all([
+      fetchFluctuationRank("0001", "KOSPI", { closeOnly: true, maxRows: perMarket }),
+      fetchFluctuationRank("1001", "KOSDAQ", { closeOnly: true, maxRows: perMarket }),
+    ]);
+    const merged = new Map();
+    for (const r of [...kospi, ...kosdaq]) {
+      if (!merged.has(r.code)) merged.set(r.code, r);
+    }
+    const all = [...merged.values()].filter((r) => r.changePct != null);
+    all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
+    if (all.length >= target || perMarket >= 150) {
+      return all.slice(0, target).map((r, i) => ({ ...r, rank: i + 1 }));
+    }
+    perMarket += 30;
   }
-  const all = [...merged.values()].filter((r) => r.changePct != null);
-  all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-  return all.slice(0, 100).map((r, i) => ({ ...r, rank: i + 1 }));
+  return [];
+}
+
+/** 상승률 TOP100 — 페이지별 25건 (해당 순위 구간만 KIS 호출) */
+async function fetchGainersPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const all = await fetchGainersMergedUpToRank(endRank);
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+}
+
+async function fetchGainersMerged100() {
+  return fetchGainersMergedUpToRank(100);
 }
 
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
@@ -1056,30 +1169,52 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "market-cap") {
-      const page = Math.max(1, Number(req.query && req.query.page) || 1);
-      const pageSizeRaw = Number(req.query && req.query.pageSize);
-      const pageSize = pageSizeRaw && Number.isFinite(pageSizeRaw) ? Math.max(1, Math.min(50, pageSizeRaw)) : 25;
-      const all = await fetchMarketCapKospi100();
-      const total = all.length;
-      const start = (page - 1) * pageSize;
-      const stocks = all.slice(start, start + pageSize);
-      json(res, 200, { total, page, pageSize, stocks });
+      const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+      const cacheKey = `market-cap:${range.page}:${range.pageSize}`;
+      const cached = rankPageCacheGet(cacheKey);
+      if (cached) {
+        json(res, 200, { ...cached, cached: true });
+        return;
+      }
+      const stocks = await fetchMarketCapPage(range.page, range.pageSize);
+      const payload = {
+        total: range.total,
+        page: range.page,
+        pageSize: range.pageSize,
+        rankStart: range.startRank,
+        rankEnd: range.endRank,
+        stocks,
+        cached: false,
+      };
+      rankPageCacheSet(cacheKey, payload);
+      json(res, 200, payload);
       return;
     }
 
     if (action === "gainers") {
       try {
-        const page = Math.max(1, Number(req.query && req.query.page) || 1);
-        const pageSizeRaw = Number(req.query && req.query.pageSize);
-        const pageSize = pageSizeRaw && Number.isFinite(pageSizeRaw) ? Math.max(1, Math.min(50, pageSizeRaw)) : 25;
-        const all = await fetchGainersMerged100();
-        const total = all.length;
-        const start = (page - 1) * pageSize;
-        const stocks = all.slice(start, start + pageSize);
-        json(res, 200, { total, page, pageSize, stocks });
+        const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+        const cacheKey = `gainers:${range.page}:${range.pageSize}`;
+        const cached = rankPageCacheGet(cacheKey);
+        if (cached) {
+          json(res, 200, { ...cached, cached: true });
+          return;
+        }
+        const stocks = await fetchGainersPage(range.page, range.pageSize);
+        const payload = {
+          total: range.total,
+          page: range.page,
+          pageSize: range.pageSize,
+          rankStart: range.startRank,
+          rankEnd: range.endRank,
+          stocks,
+          cached: false,
+        };
+        rankPageCacheSet(cacheKey, payload);
+        json(res, 200, payload);
       } catch (e) {
         console.error("[kis-realtime-data] action=gainers", e && e.message, e);
-        json(res, 200, { total: 0, page: 1, pageSize: 25, stocks: [] });
+        json(res, 200, { total: 0, page: 1, pageSize: 25, rankStart: 1, rankEnd: 25, stocks: [], cached: false });
       }
       return;
     }

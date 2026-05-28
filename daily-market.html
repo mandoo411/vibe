@@ -211,9 +211,11 @@
       function setDailyCalendarOpen(open) {
         const panel = document.getElementById("calendar-panel");
         const btn = document.getElementById("calendar-toggle");
+        const shell = document.querySelector(".daily-shell");
         if (!panel || !btn) return;
         const mobile = window.innerWidth <= 768;
         panel.classList.toggle("visible", open);
+        if (shell) shell.classList.toggle("has-calendar", open && !mobile);
         document.body.classList.toggle("tm-mobile-calendar-open", open && mobile);
         btn.setAttribute("aria-expanded", open ? "true" : "false");
         btn.textContent = open ? "닫기" : "📅 달력";
@@ -248,6 +250,8 @@
           const panel = document.getElementById("calendar-panel");
           if (!panel || !panel.classList.contains("visible")) return;
           const mobile = window.innerWidth <= 768;
+          const shell = document.querySelector(".daily-shell");
+          if (shell) shell.classList.toggle("has-calendar", !mobile);
           document.body.classList.toggle("tm-mobile-calendar-open", mobile);
         });
       })();

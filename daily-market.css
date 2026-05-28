@@ -81,11 +81,15 @@
 /* --- Main layout: content + calendar (desktop right, mobile dropdown) --- */
 .daily-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, auto);
   gap: 24px;
   align-items: start;
   margin-bottom: 24px;
+}
+
+.daily-shell.has-calendar {
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
 
 .daily-nav-calendar {
@@ -98,18 +102,26 @@
 }
 
 #report-content {
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 2;
   min-width: 0;
 }
 
 #calendar-panel {
-  grid-column: 2;
+  grid-column: auto;
   grid-row: 2;
   width: 280px;
   flex-shrink: 0;
   display: none;
   align-self: start;
+}
+
+.daily-shell.has-calendar #report-content {
+  grid-column: 1;
+}
+
+.daily-shell.has-calendar #calendar-panel {
+  grid-column: 2;
 }
 
 #calendar-panel.visible {

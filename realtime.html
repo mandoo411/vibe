@@ -38,6 +38,19 @@
         margin: 0;
         padding: 0;
       }
+      .page--realtime {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
+      .rt-panel,
+      .rt-stock-panel,
+      .rt-scroll,
+      .rt-table,
+      .rt-stock-main,
+      .rt-split {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
       .rt-strip {
         display: flex;
         flex-wrap: wrap;
@@ -380,6 +393,23 @@
       .rt-stock-actions a {
         text-decoration: none;
       }
+      .rt-chart-toggle {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 0.5px solid rgba(200, 210, 255, 0.5);
+        background: white;
+        color: #555;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      [data-theme="dark"] .rt-chart-toggle,
+      .dark-mode .rt-chart-toggle {
+        background: #1c2030;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
+        color: #aaa;
+      }
       .rt-cta {
         display: inline-flex;
         align-items: center;
@@ -459,6 +489,24 @@
         }
         .rt-trip-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        /* 모바일 테이블 컬럼 축소: cap(거래대금/시총), gainers(거래량/거래대금) 숨김 */
+        .rt-table .rt-td-tv,
+        .rt-table .rt-td-mcap {
+          display: none;
+        }
+        .rt-table td.rt-td-tv,
+        .rt-table td.rt-td-mcap,
+        .rt-table th.rt-td-tv,
+        .rt-table th.rt-td-mcap {
+          display: none;
+        }
+        .rt-table .rt-td-vol {
+          display: none;
+        }
+        .rt-table td.rt-td-vol,
+        .rt-table th.rt-td-vol {
+          display: none;
         }
       }
       .rt-tab[aria-selected="false"] {
@@ -1047,24 +1095,9 @@
       </header>
 
       <div class="rt-wrap">
-        <header class="masthead masthead--title-only">
-          <div class="masthead__copy">
-            <p class="masthead__kicker">Realtime board</p>
-            <h1 class="masthead__title">실시간시세</h1>
-          </div>
-        </header>
-        <div class="page-hero-sub">
-          <div class="masthead__meta">
-            <span>한국투자증권 Open API · KRX</span>
-            <span><a href="./daily-market.html">마감시황 →</a></span>
-          </div>
-        </div>
-
-        <div id="rt-indexes" class="rt-strip" aria-live="polite"></div>
-
         <div class="rt-panel" role="tabpanel">
           <div class="rt-panel__head">
-            <div class="rt-panel__head-title" id="rt-table-title">탭 클릭 시 해당 데이터만 불러옵니다 · 종목명 클릭 시 차트</div>
+            <div class="rt-panel__head-title" id="rt-table-title"></div>
           </div>
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">

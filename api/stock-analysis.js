@@ -298,6 +298,94 @@ async function kisInquirePrice(stockCode6) {
   };
 }
 
+async function kisGetJson(path, trId, params) {
+  const { token, appkey, appsecret } = requireKisCreds();
+  const url = new URL(path, kisBaseUrl());
+  for (const [k, v] of Object.entries(params || {})) {
+    url.searchParams.set(k, v == null ? "" : String(v));
+  }
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey,
+      appsecret,
+      tr_id: trId,
+    },
+  });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`KIS invalid JSON (${path}): ${text.slice(0, 200)}`);
+  }
+  if (!res.ok || (json && json.rt_cd && json.rt_cd !== "0")) {
+    throw new Error(`KIS error (${path})`);
+  }
+  return json;
+}
+
+function pickAnyNumberByRegex(row, reList) {
+  if (!row || typeof row !== "object") return null;
+  for (const [k, v] of Object.entries(row)) {
+    for (const re of reList) {
+      if (!re.test(k)) continue;
+      const n = toNum(v);
+      if (n != null) return n;
+    }
+  }
+  return null;
+}
+
+async function kisInquireInvestor(stockCode6) {
+  const json = await kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-investor", "FHKST01010900", {
+    FID_COND_MRKT_DIV_CODE: "J",
+    FID_INPUT_ISCD: stockCode6,
+  });
+  const o = json.output ?? json.output1 ?? json.output2;
+  const row = Array.isArray(o) ? o[0] : o;
+  if (!row || typeof row !== "object") return null;
+
+  const institution =
+    toNum(row.orgn_ntby_qty ?? row.orgn_ntby_vol ?? row.orgn_ntby) ??
+    pickAnyNumberByRegex(row, [/orgn.*ntby/i, /orgn.*net/i, /inst.*net/i]);
+  const foreigner =
+    toNum(row.frgn_ntby_qty ?? row.frgn_ntby_vol ?? row.frgn_ntby) ??
+    pickAnyNumberByRegex(row, [/frgn.*ntby/i, /frgn.*net/i, /foreign.*net/i]);
+  const individual =
+    toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
+    pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
+
+  return { institution, foreigner, individual, raw: row };
+}
+
+async function kisIncomeStatement(stockCode6) {
+  try {
+    const json = await kisGetJson("/uapi/domestic-stock/v1/finance/income-statement", "FHKST66430100", {
+      fid_cond_mrkt_div_code: "J",
+      fid_input_iscd: stockCode6,
+    });
+    let out = json.output ?? json.output1 ?? json.output2;
+    if (out && !Array.isArray(out)) out = [out];
+    const row = Array.isArray(out) && out.length ? out[0] : null;
+    if (!row || typeof row !== "object") return null;
+    const revenue =
+      toNum(row.sale_amt ?? row.sales ?? row.revenue) ?? pickAnyNumberByRegex(row, [/sale|sales|revenue/i]);
+    const op =
+      toNum(row.oprt_prfi ?? row.operating_income ?? row.op_profit) ??
+      pickAnyNumberByRegex(row, [/op.*prfi|oper.*income|op.*profit/i]);
+    const net =
+      toNum(row.thtr_ntin ?? row.net_income ?? row.net_profit) ??
+      pickAnyNumberByRegex(row, [/ntin|net.*income|net.*profit/i]);
+    const baseDate = pickFirstStr(row, ["stac_yymm", "STAC_YYMM", "base_date", "BASE_DATE", "date"]);
+    return { revenue, operatingProfit: op, netIncome: net, baseDate, raw: row };
+  } catch {
+    return null;
+  }
+}
+
 function stripCodeFences(text) {
   let t = String(text || "").trim();
   // ```json ... ``` or ``` ... ```
@@ -405,6 +493,19 @@ module.exports = async function handler(req, res) {
     };
   }
 
+  let supply = null;
+  let profit = null;
+  try {
+    supply = await kisInquireInvestor(resolved.stockCode);
+  } catch (e) {
+    console.warn("[stock-analysis] investor failed", e && e.message);
+  }
+  try {
+    profit = await kisIncomeStatement(resolved.stockCode);
+  } catch (e) {
+    console.warn("[stock-analysis] income failed", e && e.message);
+  }
+
   json(res, 200, {
     stockName: resolved.stockName,
     stockCode: resolved.stockCode,
@@ -413,6 +514,8 @@ module.exports = async function handler(req, res) {
     marketCapRaw: quote.marketCapRaw || "",
     per: quote.per == null ? null : quote.per,
     financials: quote.financials || null,
+    supply,
+    profit,
     currentPrice: quote.currentPrice,
     change: quote.change,
     changeRate: quote.changeRate,

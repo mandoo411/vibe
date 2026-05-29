@@ -65,6 +65,36 @@ function parseMarketCapLike(row) {
   return { raw, value: toNum(raw) };
 }
 
+/** KIS 외국인 보유·한도 비율(%) — 0~1 소수·0~100 퍼센트 모두 허용 */
+function parseForeignPctField(v) {
+  const n = toNum(v);
+  if (n == null || !Number.isFinite(n)) return null;
+  const x = Math.abs(n) > 0 && Math.abs(n) <= 1 ? n * 100 : n;
+  if (!Number.isFinite(x) || x < 0 || x > 100) return null;
+  return Math.round(x * 100) / 100;
+}
+
+function parseForeignFields(row) {
+  const hold = parseForeignPctField(
+    pickFirstStr(row, [
+      "frgn_hldn_qty_rt",
+      "FRGN_HLDN_QTY_RT",
+      "hts_frgn_ehrt",
+      "HTS_FRGN_EHRT",
+      "frgn_hldn_rt",
+      "FRGN_HLDN_RT",
+      "foreign_rate",
+    ])
+  );
+  let limit = parseForeignPctField(
+    pickFirstStr(row, ["frgn_oder_lmt_qty", "FRGN_ODER_LMT_QTY", "hts_frgn_oder_lmt_rt", "HTS_FRGN_ODER_LMT_RT"])
+  );
+  if (limit == null && hold != null) {
+    limit = Math.round((100 - hold) * 100) / 100;
+  }
+  return { foreignHoldRate: hold, foreignLimitRate: limit };
+}
+
 function parseFinancials(row) {
   const per = toNum(pickFirstStr(row, ["per", "PER", "stck_per", "STCK_PER"]));
   const eps = toNum(pickFirstStr(row, ["eps", "EPS", "stck_eps", "STCK_EPS"]));
@@ -73,7 +103,7 @@ function parseFinancials(row) {
   const roe = toNum(pickFirstStr(row, ["roe", "ROE"]));
   const debtRatio = toNum(pickFirstStr(row, ["debt_rt", "DEBT_RT", "debt_ratio", "DEBT_RATIO", "bt_rt"]));
   const dividendYield = toNum(pickFirstStr(row, ["div_yld", "DIV_YLD", "dividend_yield", "dvd_yld"]));
-  const foreignHoldRate = toNum(pickFirstStr(row, ["frgn_hldn_rt", "FRGN_HLDN_RT", "foreign_rate"]));
+  const { foreignHoldRate, foreignLimitRate } = parseForeignFields(row);
   const listedShares = toNum(pickFirstStr(row, ["lstn_stcn", "LSTN_STCN", "listed_shares"]));
   const parValue = toNum(pickFirstStr(row, ["par", "PAR", "par_value", "stck_par_pric"]));
 
@@ -86,6 +116,7 @@ function parseFinancials(row) {
     debtRatio,
     dividendYield,
     foreignHoldRate,
+    foreignLimitRate,
     listedShares,
     parValue,
   };
@@ -270,7 +301,10 @@ async function kisInquirePrice(stockCode6) {
   const change = toNum(row.prdy_vrss);
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
-  const tradingValue = toNum(row.acml_tr_pbmn || row.acml_tr_pbmn_krw || row.acml_tr_pbmn_won);
+  const tradingValue =
+    currentPrice != null && volume != null && currentPrice > 0 && volume > 0
+      ? Math.round(currentPrice * volume)
+      : null;
   const prevClose = toNum(row.stck_sdpr || row.prdy_clpr || row.prdy_clpr_prpr || row.stck_prpr);
   const high = toNum(row.stck_hgpr);
   const low = toNum(row.stck_lwpr);
@@ -850,6 +884,8 @@ module.exports = async function handler(req, res) {
   json(res, 200, {
     ...quoteFields,
     tradingValue: quote.tradingValue == null ? null : quote.tradingValue,
+    foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
+    foreignLimitRate: quote.financials?.foreignLimitRate ?? null,
     marketCap: quote.marketCap == null ? null : quote.marketCap,
     marketCapRaw: quote.marketCapRaw || "",
     per: quote.per == null ? null : quote.per,

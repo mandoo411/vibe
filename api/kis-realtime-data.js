@@ -386,6 +386,35 @@ function calcTradingValueWon(priceStr, volStr) {
   return String(Math.round(x));
 }
 
+function pickLargerVolStr(a, b) {
+  const na = Number(String(a ?? "").replace(/,/g, ""));
+  const nb = Number(String(b ?? "").replace(/,/g, ""));
+  if (!Number.isFinite(na) || na <= 0) return sanitizeStr(b) || sanitizeStr(a);
+  if (!Number.isFinite(nb) || nb <= 0) return sanitizeStr(a) || sanitizeStr(b);
+  return nb >= na ? String(Math.round(nb)) : String(Math.round(na));
+}
+
+/** NAVER 거래대금(원) 참고 — vol×price가 현저히 작으면 거래량 보정 후 재계산 */
+function syncVolumeForTradingValue(priceStr, volStr, refTradingValueWon) {
+  const p = Number(String(priceStr || "").replace(/,/g, ""));
+  let v = Number(String(volStr || "").replace(/,/g, ""));
+  const ref = refTradingValueWon != null ? Number(refTradingValueWon) : NaN;
+  if (Number.isFinite(p) && p > 0 && Number.isFinite(ref) && ref > 0) {
+    const implied = Math.round(ref / p);
+    if (!Number.isFinite(v) || v <= 0 || p * v < ref * 0.72) {
+      v = implied;
+    }
+  }
+  if (!Number.isFinite(v) || v <= 0) {
+    return {
+      volume: sanitizeStr(volStr),
+      tradingValue: calcTradingValueWon(priceStr, volStr) || "",
+    };
+  }
+  const volOut = String(v);
+  return { volume: volOut, tradingValue: calcTradingValueWon(priceStr, volOut) || "" };
+}
+
 /** @deprecated calcTradingValueWon 사용 */
 function approxPbmnFromPriceVol(priceStr, volStr) {
   return calcTradingValueWon(priceStr, volStr);
@@ -549,7 +578,9 @@ function mapNaverMarketCapRow(s, rank) {
   const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
   const changePct = toNum(s.fluctuationsRatio);
   const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
-  const volume = sanitizeStr(s.accumulatedTradingVolume);
+  const volRaw = sanitizeStr(s.accumulatedTradingVolume);
+  const atv = toNum(s.accumulatedTradingValue);
+  const { volume, tradingValue } = syncVolumeForTradingValue(price, volRaw, atv);
   let mcapWon = "";
   if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
     const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
@@ -558,7 +589,6 @@ function mapNaverMarketCapRow(s, rank) {
     const mv = toNum(s.marketValue);
     if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
   }
-  const tradingValue = calcTradingValueWon(price, volume) || "";
   return {
     rank,
     code,
@@ -623,12 +653,8 @@ async function overlayKisMarketCapLive(rows) {
       const k = byCode.get(r.code);
       if (!k) return r;
       const price = k.price || r.price;
-      const volume = k.volume || r.volume;
-      const tv =
-        calcTradingValueWon(price, volume) ||
-        calcTradingValueWon(k.price, k.volume) ||
-        calcTradingValueWon(r.price, r.volume) ||
-        "";
+      const volume = pickLargerVolStr(r.volume, k.volume);
+      const tv = calcTradingValueWon(price, volume) || "";
       return {
         ...r,
         price,

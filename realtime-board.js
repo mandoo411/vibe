@@ -141,7 +141,21 @@
     }
     const eok = Math.round(n / 1e8);
     if (eok <= 0) return "—";
-    return `${eok.toLocaleString("ko-KR")}억`;
+    if (n >= 1e11) return `${eok.toLocaleString("ko-KR")}억`;
+    return `${eok}억`;
+  }
+
+  function formatForeignHoldLimit(data) {
+    const fin = data.financials || {};
+    const hold = data.foreignHoldRate ?? fin.foreignHoldRate;
+    const limit = data.foreignLimitRate ?? fin.foreignLimitRate;
+    const holdOk = hold != null && Number.isFinite(Number(hold));
+    const limitOk = limit != null && Number.isFinite(Number(limit));
+    if (!holdOk && !limitOk) return "—";
+    const parts = [];
+    if (holdOk) parts.push(`보유 ${Number(hold).toFixed(2)}%`);
+    if (limitOk) parts.push(`한도 ${Number(limit).toFixed(2)}%`);
+    return parts.join(" / ");
   }
 
   function formatKoMoneyEokSigned(raw) {
@@ -1145,7 +1159,9 @@
     const cur = { ...list[i] };
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
-    if (patch.volume != null && String(patch.volume).trim() !== "") cur.volume = patch.volume;
+    if (patch.volume != null && String(patch.volume).trim() !== "") {
+      cur.volume = pickLargerVolumeStr(cur.volume, patch.volume);
+    }
     const tvCalc = calcTradeValFromPriceVol(cur.price, cur.volume);
     if (tvCalc != null) cur.tradingValue = String(tvCalc);
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
@@ -1616,10 +1632,7 @@
         : escapeHtml(Number(fin.per).toFixed(2));
     const finEps = fin.eps == null ? "—" : escapeHtml(fmtNum(fin.eps));
     const finPbr = fin.pbr == null ? "—" : escapeHtml(String(fin.pbr));
-    const frgnHold =
-      fin.foreignHoldRate != null && Number.isFinite(Number(fin.foreignHoldRate))
-        ? escapeHtml(`${Number(fin.foreignHoldRate).toFixed(2)}%`)
-        : "—";
+    const frgnHold = escapeHtml(formatForeignHoldLimit(data));
 
     const sup = data.supply || {};
     const supInstVal = sup.institution == null ? null : Number(String(sup.institution).replace(/,/g, ""));

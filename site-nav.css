@@ -3,8 +3,8 @@
 .tm-market-ticker-wrap {
   box-sizing: border-box;
   width: 100%;
-  margin: 10px 0 14px;
-  padding: 0;
+  margin: 0 0 10px;
+  padding: 4px 24px;
 }
 
 .tm-market-ticker {
@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 34px;
+  min-height: 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-panel);
@@ -28,8 +28,8 @@
   gap: 14px;
   width: 100%;
   min-width: 0;
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 28px;
+  padding: 0 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1;
@@ -81,8 +81,8 @@
   justify-content: space-between;
   gap: clamp(12px, 2vw, 22px);
   width: 100%;
-  min-height: 96px;
-  padding: 12px 16px;
+  min-height: 0;
+  padding: 8px 24px;
   margin-bottom: 0;
   border: 1px solid color-mix(in srgb, var(--border-strong) 78%, transparent);
   border-radius: 24px;
@@ -241,15 +241,21 @@
 }
 
 .nav-logo-box {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  gap: 1px !important;
   background: linear-gradient(145deg, #3339BF, #5560e8) !important;
   box-shadow: 0 4px 14px rgba(51, 57, 191, 0.4) !important;
 }
 
 .nav-logo-text {
+  font-size: 12px !important;
   color: #ffffff !important;
 }
 
 .nav-brand-name {
+  font-size: 13px !important;
   color: #1a1a2e;
 }
 
@@ -400,18 +406,29 @@
 @media (max-width: 768px) {
   .tm-market-ticker-wrap {
     width: 100%;
-    margin: 8px 0 12px;
+    margin: 0 0 8px;
+    padding: 4px 16px;
   }
 
   .tm-market-ticker,
   .tm-market-ticker__track {
-    min-height: 32px;
+    min-height: 26px;
   }
 
   .tm-market-ticker__track {
     gap: 10px;
-    padding: 0 10px;
+    padding: 0 6px;
     font-size: 10px;
+  }
+
+  .nav-logo-box {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+  }
+
+  .nav-logo-text {
+    font-size: 11px !important;
   }
 
   .tm-site-header {
@@ -423,8 +440,8 @@
     grid-template-areas: "logo menu theme";
     align-items: center;
     width: 100%;
-    min-height: 96px;
-    padding: 12px;
+    min-height: 0;
+    padding: 6px 16px;
     margin-bottom: 0;
     gap: 10px;
     overflow: visible;

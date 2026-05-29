@@ -85,7 +85,6 @@
     /** 페이지별 클라이언트 캐시 { [page]: { stocks, loadedAt } } */
     capPageCache: {},
     gainerPageCache: {},
-    pagerLoading: false,
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -861,10 +860,41 @@
     else state.gainerPage = page;
   }
 
-  function setPagerLoading(on) {
-    state.pagerLoading = !!on;
-    const el = $("rt-pager-loading");
-    if (el) el.hidden = !state.pagerLoading;
+  function updatePaginationUI(page) {
+    const tab = state.tab;
+    if (tab !== "cap" && tab !== "gainers") return;
+    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    setCurrentPageForTab(tab, pg);
+    const el = $("rt-table-pager");
+    if (!el) return;
+    el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
+      const n = Number(b.getAttribute("data-rt-table-page") || "1") || 1;
+      const active = n === pg;
+      b.setAttribute("aria-current", active ? "page" : "false");
+      b.classList.toggle("active", active);
+    });
+  }
+
+  function showTableLoading() {
+    const body = $("rt-tbody");
+    if (!body) return;
+    body.dataset.rtLoading = "1";
+    const cs = tableColSpan();
+    body.innerHTML = [
+      `<tr class="rt-table-loading">`,
+      `  <td colspan="${cs}" class="rt-table-loading-cell">`,
+      `    <div class="rt-table-loading-inner">`,
+      `      <span class="rt-spinner" aria-hidden="true"></span>`,
+      `      <p>데이터 불러오는 중...</p>`,
+      `    </div>`,
+      `  </td>`,
+      `</tr>`,
+    ].join("");
+  }
+
+  function hideTableLoading() {
+    const body = $("rt-tbody");
+    if (body) delete body.dataset.rtLoading;
   }
 
   async function ensureTabPageLoaded(tab, page, opts) {
@@ -882,10 +912,10 @@
       return { fromCache: true };
     }
 
-    const showUi = !force;
+    const skipTableUi = !!(opts && opts.skipTableUi);
+    const showUi = !force && !skipTableUi;
     if (showUi) {
-      showTableSkeleton();
-      setPagerLoading(true);
+      showTableLoading();
     }
     try {
       if (tab === "cap") state.capPage = pg;
@@ -900,8 +930,7 @@
       return { fromCache: false, cached: !!pack.cached };
     } finally {
       if (showUi) {
-        hideTableSkeleton();
-        setPagerLoading(false);
+        hideTableLoading();
       }
     }
   }
@@ -931,45 +960,47 @@
     el.hidden = !show;
     if (!show) return;
 
-    const cur = Math.max(1, Math.min(4, currentPageForTab(state.tab) || 1));
-    el.querySelectorAll("[data-rt-table-page]").forEach((b) => b.remove());
-    const btns = [];
-    for (let i = 1; i <= 4; i++) {
-      btns.push(
-        `<button type="button" class="page-btn" data-rt-table-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
-      );
-    }
-    const spinner = el.querySelector("#rt-pager-loading");
-    if (spinner) {
-      spinner.remove();
-    }
-    el.insertAdjacentHTML("beforeend", btns.join(""));
-    if (!el.querySelector("#rt-pager-loading")) {
-      el.insertAdjacentHTML(
-        "afterbegin",
-        `<span id="rt-pager-loading" class="rt-pager-loading" hidden aria-live="polite"><span class="rt-spinner" aria-hidden="true"></span></span>`
-      );
-    }
-    setPagerLoading(state.pagerLoading);
-
-    el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
-      b.addEventListener("click", () => {
-        const next = Number(b.getAttribute("data-rt-table-page") || "1") || 1;
+    if (!el.dataset.pagerWired) {
+      el.dataset.pagerWired = "1";
+      el.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("[data-rt-table-page]");
+        if (!btn || !el.contains(btn)) return;
+        const next = Number(btn.getAttribute("data-rt-table-page") || "1") || 1;
         void loadTablePage(next);
       });
-    });
+    }
+
+    if (!el.querySelector("[data-rt-table-page]")) {
+      const btns = [];
+      for (let i = 1; i <= 4; i++) {
+        btns.push(
+          `<button type="button" class="page-btn" data-rt-table-page="${i}" aria-current="false">${i}</button>`
+        );
+      }
+      el.insertAdjacentHTML("beforeend", btns.join(""));
+    }
+    updatePaginationUI(currentPageForTab(state.tab));
   }
 
   async function loadTablePage(page) {
     const tab = state.tab;
     if (tab !== "cap" && tab !== "gainers") return;
-    const cur = currentPageForTab(tab);
+    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const prevPage = currentPageForTab(tab);
     const cache = pageCacheForTab(tab);
-    if (page === cur && cache[page] && cache[page].stocks && cache[page].stocks.length) return;
 
+    updatePaginationUI(pg);
+    if (pg !== prevPage) state.openChartCode = null;
+
+    if (pg === prevPage && cache[pg] && cache[pg].stocks && cache[pg].stocks.length) {
+      renderAll();
+      return;
+    }
+
+    showTableLoading();
     const errEl = $("rt-error");
     try {
-      await ensureTabPageLoaded(tab, page);
+      await ensureTabPageLoaded(tab, pg, { skipTableUi: true });
       if (errEl) errEl.hidden = true;
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
@@ -977,10 +1008,9 @@
         subscribeStocks(getCurrentRows().map((r) => r.code));
       }
     } catch (e) {
-      const errEl2 = $("rt-error");
-      if (errEl2) {
-        errEl2.hidden = false;
-        errEl2.textContent = rtErrorTimeoutMessage(e);
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = rtErrorTimeoutMessage(e);
       }
     }
   }
@@ -990,7 +1020,7 @@
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
   async function refreshTabStocksOnly(tab) {
     const page = currentPageForTab(tab);
-    await ensureTabPageLoaded(tab, page, { force: true });
+    await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true });
   }
 
   async function loadBootstrapForTab(tab) {
@@ -1034,25 +1064,6 @@
     pageCacheForTab(tab)[page] = { stocks: stockPack.stocks || [], loadedAt: Date.now() };
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
-  }
-
-  function showTableSkeleton() {
-    const body = $("rt-tbody");
-    if (!body) return;
-    body.dataset.rtSkeleton = "1";
-    const cs = tableColSpan();
-    const parts = [];
-    for (let i = 0; i < 10; i++) {
-      parts.push(
-        `<tr class="rt-skel-row" aria-hidden="true"><td colspan="${cs}"><span class="rt-skel-bar"></span></td></tr>`
-      );
-    }
-    body.innerHTML = parts.join("");
-  }
-
-  function hideTableSkeleton() {
-    const body = $("rt-tbody");
-    if (body) delete body.dataset.rtSkeleton;
   }
 
   function rtErrorTimeoutMessage(err) {
@@ -1400,7 +1411,7 @@
     renderIndexes();
     renderMeta();
     renderTablePager();
-    setPagerLoading(false);
+    hideTableLoading();
     renderTable();
   }
 
@@ -1967,7 +1978,7 @@
           console.warn("[realtime-board] refreshPartial stocks merge", e && e.message);
         }
       } else {
-        await ensureTabPageLoaded(tab, page, { force: true });
+        await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true });
       }
 
       const [idxPack, sessPack] = await Promise.all([
@@ -2097,19 +2108,15 @@
 
         if (errEl) errEl.hidden = true;
         syncTableChromeForTab();
-        showTableSkeleton();
-        setPagerLoading(true);
+        showTableLoading();
         Promise.all([loadBootstrapForTab(tk)])
           .then(() => {
-            hideTableSkeleton();
-            setPagerLoading(false);
             if (errEl) errEl.hidden = true;
             renderAll();
           })
           .catch((e) => {
             console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
-            hideTableSkeleton();
-            setPagerLoading(false);
+            hideTableLoading();
             if (errEl) {
               errEl.hidden = false;
               errEl.textContent = rtErrorTimeoutMessage(e);
@@ -2165,8 +2172,7 @@
     if (err) err.hidden = true;
     hideLoadingOverlay();
     syncTableChromeForTab();
-    showTableSkeleton();
-    setPagerLoading(true);
+    showTableLoading();
     try {
       await loadBootstrapForTab(state.tab);
       if (err) err.hidden = true;
@@ -2177,8 +2183,6 @@
         err.textContent = rtErrorTimeoutMessage(e);
       }
     } finally {
-      hideTableSkeleton();
-      setPagerLoading(false);
       renderAll();
       startPolling();
       await tryConnectWs();

@@ -20,7 +20,7 @@ const FLUCTUATION_RANK_MAX_PAGES = Math.max(
   Math.min(30, Number(process.env.KIS_FLUCTUATION_MAX_PAGES) || 12)
 );
 
-/** FHPST01740000 시가총액 순위 — 페이지 제한으로 연속조회 (시장당 상한) */
+/** FHPST01740000 시가총액 순위 — KIS 공식: 최대 30건, tr_cont 연속조회 불가 */
 const MARKET_CAP_RANK_MAX_PAGES = Math.max(
   1,
   Math.min(30, Number(process.env.KIS_MARKET_CAP_MAX_PAGES) || 12)
@@ -491,102 +491,8 @@ function mapMarketCapKisRow(row, fallbackBoard) {
   };
 }
 
-/** KIS 시가총액 순위 — tr_cont로 누적, rank는 조회 순서(1부터)로 부여 (data_rank는 연속조회마다 1~30 리셋) */
-async function fetchMarketCapKospiSequential(endRank, opts = {}) {
-  const logSample = opts.logSample !== false;
-  const target = Math.max(1, Math.min(100, Number(endRank) || 25));
-  const params = {
-    fid_input_price_2: "",
-    fid_cond_mrkt_div_code: "J",
-    fid_cond_scr_div_code: "20174",
-    fid_div_cls_code: "0",
-    fid_input_iscd: "0001",
-    fid_trgt_cls_code: "0",
-    fid_trgt_exls_cls_code: "0000000000",
-    fid_input_price_1: "",
-    fid_vol_cnt: "",
-  };
-
-  const rows = [];
-  const seen = new Set();
-  let trCont = "";
-  let kisPages = 0;
-
-  for (let kisPage = 0; kisPage < MARKET_CAP_RANK_MAX_PAGES && rows.length < target; kisPage++) {
-    kisPages++;
-    const { json, trCont: nextTr } = await kisGet(
-      "/uapi/domestic-stock/v1/ranking/market-cap",
-      "FHPST01740000",
-      params,
-      trCont
-    );
-    const part = kisOutputRows(json);
-    if (!part.length) break;
-    for (const row of part) {
-      const mapped = mapMarketCapKisRow(row, "KOSPI");
-      if (!mapped || seen.has(mapped.code)) continue;
-      seen.add(mapped.code);
-      rows.push({ ...mapped, rank: rows.length + 1 });
-    }
-    if (rows.length >= target) break;
-    const cont = String(nextTr || "").trim().toUpperCase();
-    if (cont !== "M") break;
-    trCont = "N";
-  }
-
-  const sliced = rows.slice(0, target);
-
-  if (logSample && sliced.length > 0) {
-    console.log("[kis-realtime-data][market-cap] sequential", {
-      endRank: target,
-      kisPages,
-      rowCount: sliced.length,
-    });
-  }
-
-  return sliced;
-}
-
-/** 시가총액 TOP100 — 페이지별 25건 (필요한 tr_cont 배치만 호출) */
-async function fetchMarketCapPage(page, pageSize = 25) {
-  const { startRank, endRank, page: pg } = rankRangeForPage(page, pageSize);
-
-  if (pg === 1) {
-    const batch1 = await fetchMarketCapKospiSequential(30, { logSample: false });
-    rankPageCacheSet("market-cap:spill:26-30", batch1.slice(25, 30));
-    return batch1.slice(0, 25);
-  }
-
-  if (pg === 2) {
-    const spill = rankPageCacheGet("market-cap:spill:26-30");
-    const rows50 = await fetchMarketCapKospiSequential(50, { logSample: false });
-    if (spill && spill.length === 5) {
-      rankPageCacheSet("market-cap:spill:26-30", rows50.slice(25, 30));
-      return [...spill, ...rows50.slice(30, 50)];
-    }
-    return rows50.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  if (pg === 3) {
-    const rows80 = await fetchMarketCapKospiSequential(80, { logSample: false });
-    rankPageCacheSet("market-cap:spill:76-80", rows80.slice(75, 80));
-    return rows80.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  if (pg === 4) {
-    const spill = rankPageCacheGet("market-cap:spill:76-80");
-    const rows100 = await fetchMarketCapKospiSequential(100, { logSample: false });
-    if (spill && spill.length === 5) {
-      return [...spill, ...rows100.slice(80, 100)];
-    }
-    return rows100.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  const all = await fetchMarketCapKospiSequential(endRank, { logSample: false });
-  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-}
-
-async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
+/** KIS 시가총액 순위 단일 호출 (최대 ~30건, tr_cont 미지원) */
+async function fetchMarketCapKisOnce(fidInputIscd, fallbackBoard, opts = {}) {
   const logSample = opts.logSample !== false;
   const params = {
     fid_input_price_2: "",
@@ -599,46 +505,145 @@ async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {
     fid_input_price_1: "",
     fid_vol_cnt: "",
   };
-
-  const rawAll = [];
-  let trCont = "";
-  for (let page = 0; page < MARKET_CAP_RANK_MAX_PAGES; page++) {
-    const { json, trCont: nextTr } = await kisGet(
-      "/uapi/domestic-stock/v1/ranking/market-cap",
-      "FHPST01740000",
-      params,
-      trCont
-    );
-    const part = kisOutputRows(json);
-    if (!part.length) break;
-    rawAll.push(...part);
-    const cont = String(nextTr || "").trim().toUpperCase();
-    if (cont !== "M") break;
-    trCont = "N";
-  }
-  const chunk = rawAll;
-
-  if (logSample) {
-    if (chunk.length > 0) {
-      const row0 = chunk[0];
-      console.log("[kis-realtime-data][market-cap] KIS 응답 샘플", {
-        tr_id: "FHPST01740000",
-        fid_input_iscd: fidInputIscd,
-        pagedRowCount: chunk.length,
-      });
-    } else {
-      console.log("[kis-realtime-data][market-cap] 빈 output", { fid_input_iscd: fidInputIscd });
-    }
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/ranking/market-cap",
+    "FHPST01740000",
+    params,
+    ""
+  );
+  const part = kisOutputRows(json);
+  if (logSample && part.length > 0) {
+    console.log("[kis-realtime-data][market-cap] KIS single call", {
+      fid_input_iscd: fidInputIscd,
+      rowCount: part.length,
+    });
   }
   const rows = [];
   const seen = new Set();
-  for (const row of chunk) {
+  for (const row of part) {
     const mapped = mapMarketCapKisRow(row, fallbackBoard);
     if (!mapped || seen.has(mapped.code)) continue;
     seen.add(mapped.code);
     rows.push(mapped);
   }
-  return rows.filter((r) => r.code).slice(0, maxRows);
+  rows.sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
+  return rows;
+}
+
+/**
+ * NAVER 금융 시가총액 순위 (코스피 sosok=0) — 페이지당 ~50건, 2페이지로 TOP100
+ * KIS FHPST01740000는 30건·연속조회 불가이므로 31~100위는 NAVER 사용
+ */
+async function fetchNaverMarketCapPageHtml(page, sosok = 0) {
+  const pg = Math.max(1, Number(page) || 1);
+  const url = `https://finance.naver.com/sise/sise_market_sum.nhn?sosok=${sosok}&page=${pg}`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      accept: "text/html,application/xhtml+xml",
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`NAVER market-cap HTTP ${res.status}: ${text.slice(0, 120)}`);
+  return text;
+}
+
+function parseNaverMarketCapHtml(html, fallbackBoard = "KOSPI") {
+  const rowRe =
+    /<tr[^>]*>\s*<td class="no">(\d+)<\/td>\s*<td><a href="\/item\/main\.naver\?code=(\d{6})"[^>]*>([^<]+)<\/a><\/td>([\s\S]*?)<\/tr>/g;
+  const rows = [];
+  for (const m of html.matchAll(rowRe)) {
+    const nums = [...m[4].matchAll(/<td[^>]*class="number"[^>]*>([\s\S]*?)<\/td>/g)].map((x) =>
+      sanitizeStr(x[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " "))
+    );
+    const price = nums[0] || "";
+    const changePctRaw = nums[2] || "";
+    const mcapEokRaw = nums[4] || "";
+    const volume = nums[7] || "0";
+    const changePct = toNum(String(changePctRaw).replace("%", ""));
+    const mcapEokNum = toNum(String(mcapEokRaw).replace(/,/g, ""));
+    const mcapWon = mcapEokNum != null ? String(Math.round(mcapEokNum * 1e8)) : "";
+    const priceNum = toNum(String(price).replace(/,/g, ""));
+    const volNum = toNum(String(volume).replace(/,/g, ""));
+    const tradingValue =
+      priceNum != null && volNum != null && priceNum > 0 && volNum > 0
+        ? String(Math.round(priceNum * volNum))
+        : "";
+    rows.push({
+      rank: toNum(m[1]),
+      code: m[2],
+      name: sanitizeStr(m[3]),
+      price,
+      changePct: changePct != null && Number.isFinite(changePct) ? changePct : null,
+      volume,
+      tradingValue,
+      mcapEok: mcapWon,
+      stck_avls: mcapWon,
+      tvBoard: fallbackBoard,
+    });
+  }
+  return rows;
+}
+
+async function fetchNaverMarketCapTop100(sosok = 0) {
+  const cacheKey = `naver-mcap:${sosok}:100`;
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const [html1, html2] = await Promise.all([
+    fetchNaverMarketCapPageHtml(1, sosok),
+    fetchNaverMarketCapPageHtml(2, sosok),
+  ]);
+  const merged = [...parseNaverMarketCapHtml(html1), ...parseNaverMarketCapHtml(html2)];
+  const byRank = new Map();
+  for (const r of merged) {
+    if (r.rank == null || !r.code) continue;
+    if (!byRank.has(r.rank)) byRank.set(r.rank, r);
+  }
+  const sorted = [...byRank.values()].sort((a, b) => (a.rank || 9999) - (b.rank || 9999)).slice(0, 100);
+  const result = sorted.map((r, i) => ({ ...r, rank: i + 1 }));
+  rankPageCacheSet(cacheKey, result);
+  return result;
+}
+
+/** KIS TOP30 시세로 NAVER 순위 목록 상위 종목 실시간 필드 보강 */
+async function overlayKisMarketCapLive(rows) {
+  if (!rows || !rows.length) return rows;
+  try {
+    const kis30 = await fetchMarketCapKisOnce("0001", "KOSPI", { logSample: false });
+    const byCode = new Map(kis30.map((r) => [r.code, r]));
+    return rows.map((r) => {
+      const k = byCode.get(r.code);
+      if (!k) return r;
+      return {
+        ...r,
+        price: k.price || r.price,
+        changePct: k.changePct != null ? k.changePct : r.changePct,
+        volume: k.volume || r.volume,
+        tradingValue: k.tradingValue || r.tradingValue,
+        stck_avls: k.stck_avls || r.stck_avls,
+        mcapEok: k.mcapEok || r.mcapEok,
+      };
+    });
+  } catch (e) {
+    console.warn("[kis-realtime-data][market-cap] KIS overlay failed", e && e.message);
+    return rows;
+  }
+}
+
+/** 시가총액 TOP100 — NAVER 1~100위 + KIS TOP30 시세 보강, 페이지당 25건 */
+async function fetchMarketCapPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  let all = await fetchNaverMarketCapTop100(0);
+  all = await overlayKisMarketCapLive(all);
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+}
+
+async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
+  const rows = await fetchMarketCapKisOnce(fidInputIscd, fallbackBoard, opts);
+  const cap = Math.max(1, Math.min(30, Number(maxRows) || 30));
+  return rows.filter((r) => r.code).slice(0, cap);
 }
 
 /** 코스피 시가총액 상위 30 */
@@ -646,9 +651,9 @@ async function fetchMarketCapKospi30() {
   return fetchMarketCapRows("0001", 30, "KOSPI");
 }
 
-/** 코스피 시가총액 상위 100 (스냅샷 등 레거시) */
+/** 코스피 시가총액 상위 100 (NAVER 순위 + KIS TOP30 보강) */
 async function fetchMarketCapKospi100() {
-  return fetchMarketCapKospiSequential(100, { logSample: false });
+  return fetchNaverMarketCapTop100(0);
 }
 
 /**

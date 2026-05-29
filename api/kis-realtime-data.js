@@ -531,78 +531,59 @@ async function fetchMarketCapKisOnce(fidInputIscd, fallbackBoard, opts = {}) {
 }
 
 /**
- * NAVER 금융 시가총액 순위 (코스피 sosok=0) — 페이지당 ~50건, 2페이지로 TOP100
- * KIS FHPST01740000는 30건·연속조회 불가이므로 31~100위는 NAVER 사용
+ * NAVER m.stock JSON — 코스피 시가총액 TOP100 (UTF-8, 100건)
+ * PC HTML(sise_market_sum)은 EUC-KR이라 Vercel에서 종목명 깨짐 → JSON 사용
  */
-async function fetchNaverMarketCapPageHtml(page, sosok = 0) {
-  const pg = Math.max(1, Number(page) || 1);
-  const url = `https://finance.naver.com/sise/sise_market_sum.nhn?sosok=${sosok}&page=${pg}`;
+async function fetchNaverMarketCapTop100() {
+  const cacheKey = "naver-mcap-json:100";
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const url = "https://m.stock.naver.com/api/stocks/marketValue/KOSPI?pageSize=100&page=1";
   const res = await fetch(url, {
     headers: {
+      accept: "application/json",
       "user-agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-      accept: "text/html,application/xhtml+xml",
     },
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`NAVER market-cap HTTP ${res.status}: ${text.slice(0, 120)}`);
-  return text;
-}
-
-function parseNaverMarketCapHtml(html, fallbackBoard = "KOSPI") {
-  const rowRe =
-    /<tr[^>]*>\s*<td class="no">(\d+)<\/td>\s*<td><a href="\/item\/main\.naver\?code=(\d{6})"[^>]*>([^<]+)<\/a><\/td>([\s\S]*?)<\/tr>/g;
-  const rows = [];
-  for (const m of html.matchAll(rowRe)) {
-    const nums = [...m[4].matchAll(/<td[^>]*class="number"[^>]*>([\s\S]*?)<\/td>/g)].map((x) =>
-      sanitizeStr(x[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " "))
-    );
-    const price = nums[0] || "";
-    const changePctRaw = nums[2] || "";
-    const mcapEokRaw = nums[4] || "";
-    const volume = nums[7] || "0";
-    const changePct = toNum(String(changePctRaw).replace("%", ""));
-    const mcapEokNum = toNum(String(mcapEokRaw).replace(/,/g, ""));
-    const mcapWon = mcapEokNum != null ? String(Math.round(mcapEokNum * 1e8)) : "";
-    const priceNum = toNum(String(price).replace(/,/g, ""));
-    const volNum = toNum(String(volume).replace(/,/g, ""));
-    const tradingValue =
-      priceNum != null && volNum != null && priceNum > 0 && volNum > 0
-        ? String(Math.round(priceNum * volNum))
-        : "";
-    rows.push({
-      rank: toNum(m[1]),
-      code: m[2],
-      name: sanitizeStr(m[3]),
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`NAVER market-cap JSON HTTP ${res.status}: ${JSON.stringify(json).slice(0, 120)}`);
+  }
+  const list = Array.isArray(json.stocks) ? json.stocks : [];
+  const result = list.slice(0, 100).map((s, i) => {
+    const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
+    const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
+    const changePct = toNum(s.fluctuationsRatio);
+    const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
+    const volume = sanitizeStr(s.accumulatedTradingVolume);
+    let mcapWon = "";
+    if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
+      const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
+      if (Number.isFinite(n) && n > 0) mcapWon = String(Math.round(n));
+    } else {
+      const mv = toNum(s.marketValue);
+      if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
+    }
+    let tradingValue = "";
+    if (s.accumulatedTradingValueRaw != null && String(s.accumulatedTradingValueRaw).trim() !== "") {
+      const tv = Number(String(s.accumulatedTradingValueRaw).replace(/,/g, ""));
+      if (Number.isFinite(tv) && tv > 0) tradingValue = String(Math.round(tv));
+    }
+    return {
+      rank: i + 1,
+      code,
+      name: sanitizeStr(s.stockName),
       price,
       changePct: changePct != null && Number.isFinite(changePct) ? changePct : null,
       volume,
       tradingValue,
       mcapEok: mcapWon,
       stck_avls: mcapWon,
-      tvBoard: fallbackBoard,
-    });
-  }
-  return rows;
-}
-
-async function fetchNaverMarketCapTop100(sosok = 0) {
-  const cacheKey = `naver-mcap:${sosok}:100`;
-  const cached = rankPageCacheGet(cacheKey);
-  if (cached) return cached;
-
-  const [html1, html2] = await Promise.all([
-    fetchNaverMarketCapPageHtml(1, sosok),
-    fetchNaverMarketCapPageHtml(2, sosok),
-  ]);
-  const merged = [...parseNaverMarketCapHtml(html1), ...parseNaverMarketCapHtml(html2)];
-  const byRank = new Map();
-  for (const r of merged) {
-    if (r.rank == null || !r.code) continue;
-    if (!byRank.has(r.rank)) byRank.set(r.rank, r);
-  }
-  const sorted = [...byRank.values()].sort((a, b) => (a.rank || 9999) - (b.rank || 9999)).slice(0, 100);
-  const result = sorted.map((r, i) => ({ ...r, rank: i + 1 }));
+      tvBoard: "KOSPI",
+    };
+  });
   rankPageCacheSet(cacheKey, result);
   return result;
 }
@@ -635,7 +616,7 @@ async function overlayKisMarketCapLive(rows) {
 /** 시가총액 TOP100 — NAVER 1~100위 + KIS TOP30 시세 보강, 페이지당 25건 */
 async function fetchMarketCapPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
-  let all = await fetchNaverMarketCapTop100(0);
+  let all = await fetchNaverMarketCapTop100();
   all = await overlayKisMarketCapLive(all);
   return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }
@@ -653,7 +634,7 @@ async function fetchMarketCapKospi30() {
 
 /** 코스피 시가총액 상위 100 (NAVER 순위 + KIS TOP30 보강) */
 async function fetchMarketCapKospi100() {
-  return fetchNaverMarketCapTop100(0);
+  return fetchNaverMarketCapTop100();
 }
 
 /**

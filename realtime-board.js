@@ -85,6 +85,7 @@
     /** 페이지별 클라이언트 캐시 { [page]: { stocks, loadedAt } } */
     capPageCache: {},
     gainerPageCache: {},
+    pagerLoading: false,
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -864,8 +865,9 @@
   }
 
   function setPagerLoading(on) {
+    state.pagerLoading = !!on;
     const el = $("rt-pager-loading");
-    if (el) el.hidden = !on;
+    if (el) el.hidden = !state.pagerLoading;
   }
 
   async function ensureTabPageLoaded(tab, page, opts) {
@@ -932,15 +934,25 @@
     if (!show) return;
 
     const cur = Math.max(1, Math.min(4, currentPageForTab(state.tab) || 1));
+    el.querySelectorAll("[data-rt-table-page]").forEach((b) => b.remove());
     const btns = [];
     for (let i = 1; i <= 4; i++) {
       btns.push(
         `<button type="button" class="page-btn" data-rt-table-page="${i}" aria-current="${i === cur ? "page" : "false"}">${i}</button>`
       );
     }
-    el.innerHTML =
-      `<span id="rt-pager-loading" class="rt-pager-loading" hidden aria-live="polite"><span class="rt-spinner" aria-hidden="true"></span></span>` +
-      btns.join("");
+    const spinner = el.querySelector("#rt-pager-loading");
+    if (spinner) {
+      spinner.remove();
+    }
+    el.insertAdjacentHTML("beforeend", btns.join(""));
+    if (!el.querySelector("#rt-pager-loading")) {
+      el.insertAdjacentHTML(
+        "afterbegin",
+        `<span id="rt-pager-loading" class="rt-pager-loading" hidden aria-live="polite"><span class="rt-spinner" aria-hidden="true"></span></span>`
+      );
+    }
+    setPagerLoading(state.pagerLoading);
 
     el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
       b.addEventListener("click", () => {
@@ -1361,6 +1373,7 @@
     renderIndexes();
     renderMeta();
     renderTablePager();
+    setPagerLoading(false);
     renderTable();
   }
 

@@ -89,7 +89,7 @@ async function domesticIndex(code, label) {
 async function erUsdKrw() {
   const res = await fetch("https://open.er-api.com/v6/latest/USD");
   const body = await res.json();
-  return { label: "원/달러", value: toNum(body?.rates?.KRW), changePct: null };
+  return { id: "usdkrw", label: "원/달러", value: toNum(body?.rates?.KRW), changePct: null };
 }
 
 async function finnhubQuote(symbol, label) {
@@ -103,7 +103,7 @@ async function finnhubQuote(symbol, label) {
   const price = toNum(body?.c);
   const previous = toNum(body?.pc);
   const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
-  return { label, value: price, changePct };
+  return { id: symbol, label, value: price, changePct };
 }
 
 async function yahooQuote(symbol, label) {
@@ -113,7 +113,7 @@ async function yahooQuote(symbol, label) {
   const price = toNum(meta.regularMarketPrice);
   const previous = toNum(meta.chartPreviousClose || meta.previousClose);
   const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
-  return { label, value: price, changePct };
+  return { id: symbol, label, value: price, changePct };
 }
 
 async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
@@ -127,7 +127,28 @@ async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
 async function btc() {
   const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");
   const body = await res.json();
-  return { label: "BTC", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) };
+  return { id: "btc", label: "BTC", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) };
+}
+
+async function naverStockBasic(code6, label) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0");
+  const res = await fetch(`https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/basic`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`NAVER stock HTTP ${res.status}`);
+  const body = await res.json();
+  const price = toNum(body?.closePrice ?? body?.overMarketPriceInfo?.overPrice);
+  return {
+    id: code,
+    label,
+    value: price,
+    changePct: toNum(body?.fluctuationsRatio),
+  };
+}
+
+function settledValue(result) {
+  if (result.status === "fulfilled") return result.value;
+  return { value: null, changePct: null, error: result.reason?.message || String(result.reason) };
 }
 
 module.exports = async function handler(req, res) {
@@ -139,12 +160,35 @@ module.exports = async function handler(req, res) {
     commodityQuote("OANDA:WTI_USD", "CL=F", "WTI유가"),
     commodityQuote("OANDA:XAU_USD", "GC=F", "금시세"),
     btc(),
+    yahooQuote("^GSPC", "S&P500"),
+    yahooQuote("^IXIC", "NASDAQ"),
+    naverStockBasic("005930", "삼성전자"),
   ];
   const settled = await Promise.allSettled(tasks);
-  const items = settled.map((result, index) => {
+  const tickerLabels = ["코스피", "코스닥", "원/달러", "WTI유가", "금시세", "BTC"];
+  const items = settled.slice(0, 6).map((result, index) => {
     if (result.status === "fulfilled") return result.value;
-    const labels = ["코스피", "코스닥", "원/달러", "WTI유가", "금시세", "BTC"];
-    return { label: labels[index], value: null, changePct: null, error: result.reason?.message || String(result.reason) };
+    return {
+      label: tickerLabels[index],
+      value: null,
+      changePct: null,
+      error: result.reason?.message || String(result.reason),
+    };
   });
-  json(res, 200, { updatedAt: new Date().toISOString(), items });
+  const kospi = settledValue(settled[0]);
+  const btcItem = settledValue(settled[5]);
+  const sp500 = settledValue(settled[6]);
+  const nasdaq = settledValue(settled[7]);
+  const samsung = settledValue(settled[8]);
+  json(res, 200, {
+    updatedAt: new Date().toISOString(),
+    items,
+    hub: {
+      kospi: { label: "코스피", value: kospi.value, changePct: kospi.changePct },
+      sp500: { label: "S&P500", value: sp500.value, changePct: sp500.changePct },
+      nasdaq: { label: "NASDAQ", value: nasdaq.value, changePct: nasdaq.changePct },
+      samsung: { label: "삼성전자", value: samsung.value, changePct: samsung.changePct },
+      btc: { label: "BTC", value: btcItem.value, changePct: btcItem.changePct },
+    },
+  });
 };

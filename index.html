@@ -31,6 +31,7 @@
     <script src="./assets/data-url.js"></script>
     <script src="./site-nav.js" defer></script>
     <link rel="stylesheet" href="./hub.css" />
+    <script src="./home-hub.js" defer></script>
   </head>
   <body class="page-home-premium">
     <div class="page">
@@ -63,7 +64,6 @@
           <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
           <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>
           <a class="tm-site-nav__link" href="/stock-analysis.html">AI 종목분석</a>
-
         </nav>
         <button
           type="button"
@@ -89,181 +89,138 @@
       </div>
 
       <main class="home-main-content page--hub">
-          <div class="hub-grid" role="list">
-          <a
-            class="menu-card"
-            href="./daily-market.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-chart-candle" style="font-size:26px; color:#3339BF;"></i>
+        <div class="hub-grid" role="list">
+          <a class="menu-card" data-hub-card="daily" href="./daily-market.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-chart-candle"></i>
             </div>
             <h2 class="menu-card__title">마감시황</h2>
             <p class="menu-card__desc">국내 증시 마감 흐름과 AI 요약</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./briefing.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-news" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="briefing" href="./briefing.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-news"></i>
             </div>
             <h2 class="menu-card__title">브리핑</h2>
             <p class="menu-card__desc">미국 마감 · 환율 · 코인 시황 브리핑</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./realtime.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-activity" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="realtime" href="./realtime.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-activity"></i>
             </div>
             <h2 class="menu-card__title">실시간시세</h2>
-            <p class="menu-card__desc">시총 TOP30 · 상승률 TOP50 · 종목 차트</p>
+            <p class="menu-card__desc">시총 TOP100 · 상승률 · 종목 차트</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./weekly-market.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-calendar-event" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="schedule" href="./weekly-market.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-calendar-event"></i>
             </div>
             <h2 class="menu-card__title">일정</h2>
             <p class="menu-card__desc">경제지표 · 신규상장 · 국내외 실적</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./us-market.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-building-skyscraper" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="us" href="./us-market.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-building-skyscraper"></i>
             </div>
             <h2 class="menu-card__title">미국시장</h2>
             <p class="menu-card__desc">나스닥 · S&amp;P500 · 선물 · 미국 TOP50</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./crypto.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-currency-bitcoin" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="crypto" href="./crypto.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-currency-bitcoin"></i>
             </div>
             <h2 class="menu-card__title">암호화폐</h2>
             <p class="menu-card__desc">시총 TOP100 · 원/달러 전환 · 차트</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./world-market.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-trophy" style="font-size:26px; color:#3339BF;"></i>
+          <a class="menu-card" data-hub-card="world" href="./world-market.html" role="listitem">
+            <div class="icon-box" aria-hidden="true">
+              <i class="ti ti-trophy"></i>
             </div>
             <h2 class="menu-card__title">글로벌랭킹</h2>
             <p class="menu-card__desc">세계 기업 시총 · 수익 · 매출 순위</p>
+            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">Apple 시총 1위</span>
             <div class="menu-card__footer">
               <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
 
-          <a
-            class="menu-card"
-            href="./stock-analysis.html"
-            role="listitem"
-            style="background:white; border-radius:20px; padding:20px 16px; box-shadow:0 4px 16px rgba(51,57,191,0.1), inset 0 1px 1px rgba(255,255,255,1); border:0.5px solid rgba(200,210,255,0.5); transition:transform 0.2s, box-shadow 0.2s;"
-          >
-            <div
-              class="icon-box"
-              aria-hidden="true"
-              style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:16px; width:52px; height:52px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(51,57,191,0.18), inset 0 1px 2px rgba(255,255,255,0.9); margin-bottom:14px;"
-            >
-              <i class="ti ti-sparkles" style="font-size:26px; color:#4A3AFF;"></i>
+          <a class="menu-card menu-card--ai" data-hub-card="ai" href="./stock-analysis.html" role="listitem">
+            <div class="icon-box icon-box--ai" aria-hidden="true">
+              <i class="ti ti-sparkles"></i>
             </div>
-            <h2 class="menu-card__title" style="display:flex; align-items:center; gap:8px;">
+            <h2 class="menu-card__title menu-card__title--ai">
               <span>AI 종목분석</span>
-              <span
-                style="display:inline-flex; align-items:center; justify-content:center; height:18px; padding:0 7px; border-radius:999px; background:rgba(74,58,255,0.10); color:#4A3AFF; font-size:10px; font-weight:900; letter-spacing:0.06em;"
-              >NEW</span>
+              <span class="menu-card__new">NEW</span>
             </h2>
-            <p class="menu-card__desc">종목명 입력 → AI 분석 결과 제공 (연동 예정)</p>
+            <p class="menu-card__desc">종목명 입력 → AI 분석 결과 제공</p>
+            <span class="menu-card__mini-badge is-soon" data-hub-badge aria-live="polite">곧 출시</span>
             <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true" style="background:#4A3AFF;"></span>개발중</span>
+              <span class="menu-card__status menu-card__status--dev"><span class="menu-card__dot menu-card__dot--ai" aria-hidden="true"></span>개발중</span>
               <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
             </div>
           </a>
-          </div>
+        </div>
       </main>
     </div>
+
+    <nav class="tm-bottom-nav" aria-label="모바일 메인 메뉴">
+      <a class="tm-bottom-nav__item is-active" href="./index.html" aria-current="page">
+        <i class="ti ti-home" aria-hidden="true"></i>
+        <span>홈</span>
+      </a>
+      <a class="tm-bottom-nav__item" href="./realtime.html">
+        <i class="ti ti-activity" aria-hidden="true"></i>
+        <span>실시간시세</span>
+      </a>
+      <a class="tm-bottom-nav__item" href="./crypto.html">
+        <i class="ti ti-currency-bitcoin" aria-hidden="true"></i>
+        <span>암호화폐</span>
+      </a>
+      <a class="tm-bottom-nav__item" href="./weekly-market.html">
+        <i class="ti ti-calendar" aria-hidden="true"></i>
+        <span>일정</span>
+      </a>
+      <a class="tm-bottom-nav__item" href="./stock-analysis.html">
+        <i class="ti ti-robot" aria-hidden="true"></i>
+        <span>AI분석</span>
+      </a>
+    </nav>
   </body>
 </html>

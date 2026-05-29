@@ -545,10 +545,10 @@ async function kisInvestorTradeByStockDaily(stockCode6) {
     const frgnPbmn = toNum(row.frgn_ntby_tr_pbmn ?? row.frgn_ntby_pbmn ?? row.frgn_ntby_tr_amt ?? row.frgn_ntby_amt);
     const prsnPbmn = toNum(row.prsn_ntby_tr_pbmn ?? row.prsn_ntby_pbmn ?? row.prsn_ntby_tr_amt ?? row.prsn_ntby_amt);
 
-    // tr_pbmn: 원 단위(시장별 TR과 동일) → 억원
-    const instEokFromPbmn = instPbmn == null ? null : Math.round(instPbmn / 1e8);
-    const frgnEokFromPbmn = frgnPbmn == null ? null : Math.round(frgnPbmn / 1e8);
-    const prsnEokFromPbmn = prsnPbmn == null ? null : Math.round(prsnPbmn / 1e8);
+    // tr_pbmn: 백만원 단위 → 억원 (pbmn / 100)
+    const instEokFromPbmn = instPbmn == null ? null : Math.round(instPbmn / 100);
+    const frgnEokFromPbmn = frgnPbmn == null ? null : Math.round(frgnPbmn / 100);
+    const prsnEokFromPbmn = prsnPbmn == null ? null : Math.round(prsnPbmn / 100);
 
     const hasPbmn = instEokFromPbmn != null || frgnEokFromPbmn != null || prsnEokFromPbmn != null;
     if (!hasPbmn && institution == null && foreigner == null && individual == null) continue;

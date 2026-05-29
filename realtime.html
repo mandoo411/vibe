@@ -493,17 +493,19 @@
       .dark-mode .rt-acc-val--lo {
         color: #ef5350;
       }
-      .rt-acc-val--sup-inst-pos {
+      .rt-acc-val--sup-pos {
         color: #ef5350;
       }
-      .rt-acc-val--sup-inst-neg {
+      .rt-acc-val--sup-neg {
         color: #1565c0;
       }
-      .rt-acc-val--sup-inv-pos {
-        color: #1565c0;
-      }
-      .rt-acc-val--sup-inv-neg {
+      [data-theme="dark"] .rt-acc-val--sup-pos,
+      .dark-mode .rt-acc-val--sup-pos {
         color: #ef5350;
+      }
+      [data-theme="dark"] .rt-acc-val--sup-neg,
+      .dark-mode .rt-acc-val--sup-neg {
+        color: #42a5f5;
       }
       .rt-acc-section-bar {
         display: flex;

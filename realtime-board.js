@@ -1444,10 +1444,10 @@
     return `<div class="rt-stock-loading"><span class="rt-spinner" aria-hidden="true"></span><span>종목 정보를 불러오는 중...</span></div>`;
   }
 
-  function supplyAmountCls(val, invert) {
-    if (val == null || !Number.isFinite(val)) return "";
-    if (invert) return val < 0 ? "rt-acc-val--sup-inv-neg" : "rt-acc-val--sup-inv-pos";
-    return val < 0 ? "rt-acc-val--sup-inst-neg" : "rt-acc-val--sup-inst-pos";
+  /** 수급: 양수 빨강, 음수 파랑 (기관·개인·외국인 동일) */
+  function supplyAmountCls(val) {
+    if (val == null || !Number.isFinite(val) || val === 0) return "";
+    return val < 0 ? "rt-acc-val--sup-neg" : "rt-acc-val--sup-pos";
   }
 
   function accGridCell(label, valueHtml, valueCls) {
@@ -1641,9 +1641,9 @@
     const supInst = sup.institution == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.institution));
     const supIndv = sup.individual == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.individual));
     const supFrgn = sup.foreigner == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.foreigner));
-    const supInstCls = supplyAmountCls(supInstVal, false);
-    const supIndvCls = supplyAmountCls(supIndvVal, true);
-    const supFrgnCls = supplyAmountCls(supFrgnVal, true);
+    const supInstCls = supplyAmountCls(supInstVal);
+    const supIndvCls = supplyAmountCls(supIndvVal);
+    const supFrgnCls = supplyAmountCls(supFrgnVal);
 
     const pf = data.profit || {};
     const pfRev = pf.revenue == null ? "—" : escapeHtml(formatKoMoneyEok(pf.revenue));

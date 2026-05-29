@@ -160,24 +160,40 @@
         margin-left: auto;
         flex: 0 0 auto;
       }
-      .pagination {
+      .table-box {
+        overflow: hidden;
+        background: var(--bg-panel);
+      }
+      .table-box .rt-scroll {
+        margin: 0;
+      }
+      .rt-panel > .pagination {
         display: flex;
         justify-content: center;
         gap: 8px;
-        margin-top: 16px;
-        padding: 12px 0;
+        margin: 12px 0 14px;
+        padding: 0 8px;
       }
       .pagination button,
       .pagination .page-btn {
+        box-sizing: border-box;
         appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        margin: 0;
+        padding: 0;
         background: white;
         border: 0.5px solid rgba(200, 210, 255, 0.5);
         border-radius: 8px;
-        padding: 6px 14px;
         font-size: 13px;
         font-family: inherit;
-        color: #555;
+        font-weight: 500;
+        color: var(--text-primary, #131722);
         cursor: pointer;
+        touch-action: manipulation;
       }
       .pagination button[aria-current="page"],
       .pagination .page-btn.active {
@@ -208,14 +224,18 @@
       .rt-table-loading-inner p {
         margin: 0;
       }
-      [data-theme="dark"] .pagination button,
-      .dark-mode .pagination button {
+      [data-theme="dark"] .pagination button:not([aria-current="page"]),
+      .dark-mode .pagination button:not([aria-current="page"]),
+      [data-theme="dark"] .pagination .page-btn:not(.active),
+      .dark-mode .pagination .page-btn:not(.active) {
         background: #1c2030;
-        border-color: rgba(255, 255, 255, 0.12);
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
         color: #aaa;
       }
       [data-theme="dark"] .pagination button[aria-current="page"],
-      .dark-mode .pagination button[aria-current="page"] {
+      .dark-mode .pagination button[aria-current="page"],
+      [data-theme="dark"] .pagination .page-btn.active,
+      .dark-mode .pagination .page-btn.active {
         background: #3339bf;
         color: white;
         border: none;
@@ -857,7 +877,7 @@
         box-shadow:
           var(--sheet-shadow),
           inset 0 1px 0 var(--accent-dim);
-        overflow: hidden;
+        overflow: visible;
       }
       .rt-scroll {
         overflow-x: auto;
@@ -1484,22 +1504,25 @@
 
           <div id="stock-result-panel" class="rt-stock-panel" hidden aria-live="polite"></div>
 
-          <div class="rt-scroll">
-            <table class="rt-table" aria-label="실시간 시세">
-              <thead>
-                <tr id="rt-thead-row">
-                  <th class="rt-td-rank">순위</th>
-                  <th class="rt-td-name">종목명</th>
-                  <th class="num rt-td-price">가격</th>
-                  <th class="num rt-td-chg">등락률</th>
-                  <th class="num rt-td-tv">거래대금</th>
-                  <th class="num rt-td-mcap">시가총액</th>
-                </tr>
-              </thead>
-              <tbody id="rt-tbody"></tbody>
-            </table>
-            <div id="rt-table-pager" class="pagination" hidden aria-label="페이지"></div>
+          <div class="table-box">
+            <div class="rt-scroll">
+              <table class="rt-table" aria-label="실시간 시세">
+                <thead>
+                  <tr id="rt-thead-row">
+                    <th class="rt-td-rank">순위</th>
+                    <th class="rt-td-name">종목명</th>
+                    <th class="num rt-td-price">가격</th>
+                    <th class="num rt-td-chg">등락률</th>
+                    <th class="num rt-td-tv">거래대금</th>
+                    <th class="num rt-td-mcap">시가총액</th>
+                  </tr>
+                </thead>
+                <tbody id="rt-tbody"></tbody>
+              </table>
+            </div>
           </div>
+
+          <div id="rt-table-pager" class="pagination" hidden aria-label="페이지"></div>
         </div>
 
         <p id="rt-error" class="rt-error" hidden></p>

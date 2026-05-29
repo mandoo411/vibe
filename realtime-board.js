@@ -1275,7 +1275,7 @@
     if (
       existing &&
       existing.dataset.loadedFor === forCode &&
-      existing.querySelector(".rt-stock-head")
+      existing.querySelector(".rt-acc")
     ) {
       return `<tr class="rt-detail-row" data-detail-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">${existing.outerHTML}</td>
@@ -1344,14 +1344,14 @@
     if (detailTr) detailTr.setAttribute("data-detail-for", code);
     syncNameChartButtonsAria(body);
     const host = detailTr && detailTr.querySelector(".rt-detail-acc");
-    const needsLoad = !host || host.dataset.loadedFor !== code || !host.querySelector(".rt-stock-head");
+    const needsLoad = !host || host.dataset.loadedFor !== code || !host.querySelector(".rt-acc");
     if (needsLoad) void mountTableDetailAccordion(body);
     else wireDetailAccordionClose(host);
   }
 
   function wireDetailAccordionClose(host) {
     if (!host) return;
-    const closeBtn = host.querySelector(".rt-stock-close");
+    const closeBtn = host.querySelector(".rt-acc-close");
     if (!closeBtn || closeBtn.dataset.wired === "1") return;
     closeBtn.dataset.wired = "1";
     closeBtn.addEventListener("click", () => {
@@ -1430,8 +1430,13 @@
 
   function supplyAmountCls(val, invert) {
     if (val == null || !Number.isFinite(val)) return "";
-    if (invert) return val < 0 ? "rt-mini__v--inv-neg" : "rt-mini__v--inv-pos";
-    return val < 0 ? "rt-mini__v--neg" : "rt-mini__v--pos";
+    if (invert) return val < 0 ? "rt-acc-val--sup-inv-neg" : "rt-acc-val--sup-inv-pos";
+    return val < 0 ? "rt-acc-val--sup-inst-neg" : "rt-acc-val--sup-inst-pos";
+  }
+
+  function accGridCell(label, valueHtml, valueCls) {
+    const cls = valueCls ? `rt-acc-cell__v ${valueCls}` : "rt-acc-cell__v";
+    return `<div class="rt-acc-cell"><div class="rt-acc-cell__k">${escapeHtml(label)}</div><div class="${cls}">${valueHtml}</div></div>`;
   }
 
   function stockPanelChartShellHtml(chartId) {
@@ -1511,7 +1516,7 @@
 
   function wireStockPanel(panelEl, data, opts) {
     if (opts && typeof opts.onClose === "function") {
-      const closeBtn = panelEl.querySelector(".rt-stock-close");
+      const closeBtn = panelEl.querySelector(".rt-acc-close");
       if (closeBtn) closeBtn.addEventListener("click", opts.onClose);
     }
     wireStockPanelChart(panelEl, chartSymbolSixDigits(data.stockCode));
@@ -1524,7 +1529,7 @@
     if (!row) return;
     const host = row.querySelector(".rt-detail-acc");
     if (!host) return;
-    if (host.dataset.loadedFor === code && host.querySelector(".rt-stock-head")) {
+    if (host.dataset.loadedFor === code && host.querySelector(".rt-acc")) {
       wireDetailAccordionClose(host);
       return;
     }
@@ -1561,7 +1566,7 @@
           renderTable();
         },
       });
-      const closeBtn = host.querySelector(".rt-stock-close");
+      const closeBtn = host.querySelector(".rt-acc-close");
       if (closeBtn) closeBtn.dataset.wired = "1";
     } catch (e) {
       if (e && e.name === "AbortError") return;
@@ -1573,11 +1578,15 @@
   }
 
   function stockPanelHtml(data, opts) {
-    const accordion = !!(opts && opts.accordion);
     const name = escapeHtml(data.stockName || "—");
     const code = escapeHtml(data.stockCode || "");
     const market = escapeHtml(data.market || "");
-    const badge = market ? `<span class="rt-badge">${market}</span>` : "";
+    const badges = [
+      code ? `<span class="rt-acc-badge">${code}</span>` : "",
+      market ? `<span class="rt-acc-badge">${market}</span>` : "",
+    ]
+      .filter(Boolean)
+      .join("");
 
     const ch = Number(data.changeRate);
     const cls = deltaClass(Number.isFinite(ch) ? ch : null);
@@ -1591,83 +1600,101 @@
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
+    const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
+    const tvDisp = escapeHtml(tvCalc != null ? formatTradeVal(String(tvCalc)) : "—");
 
     const aiHref = `/stock-analysis.html?code=${encodeURIComponent(String(data.stockCode || ""))}&name=${encodeURIComponent(
       String(data.stockName || "")
     )}`;
 
     const fin = data.financials || {};
-    const finPer = fin.per == null ? (data.per == null || !Number.isFinite(Number(data.per)) ? "—" : Number(data.per).toFixed(2)) : Number(fin.per).toFixed(2);
-    const finEps = fin.eps == null ? "—" : fmtNum(fin.eps);
-    const finPbr = fin.pbr == null ? "—" : String(fin.pbr);
+    const finPer =
+      fin.per == null
+        ? data.per == null || !Number.isFinite(Number(data.per))
+          ? "—"
+          : escapeHtml(Number(data.per).toFixed(2))
+        : escapeHtml(Number(fin.per).toFixed(2));
+    const finEps = fin.eps == null ? "—" : escapeHtml(fmtNum(fin.eps));
+    const finPbr = fin.pbr == null ? "—" : escapeHtml(String(fin.pbr));
+    const frgnHold =
+      fin.foreignHoldRate != null && Number.isFinite(Number(fin.foreignHoldRate))
+        ? escapeHtml(`${Number(fin.foreignHoldRate).toFixed(2)}%`)
+        : "—";
 
     const sup = data.supply || {};
     const supInstVal = sup.institution == null ? null : Number(String(sup.institution).replace(/,/g, ""));
     const supIndvVal = sup.individual == null ? null : Number(String(sup.individual).replace(/,/g, ""));
     const supFrgnVal = sup.foreigner == null ? null : Number(String(sup.foreigner).replace(/,/g, ""));
-    const supInst = sup.institution == null ? "—" : formatKoMoneyEokSigned(sup.institution);
-    const supIndv = sup.individual == null ? "—" : formatKoMoneyEokSigned(sup.individual);
-    const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEokSigned(sup.foreigner);
+    const supInst = sup.institution == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.institution));
+    const supIndv = sup.individual == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.individual));
+    const supFrgn = sup.foreigner == null ? "—" : escapeHtml(formatKoMoneyEokSigned(sup.foreigner));
     const supInstCls = supplyAmountCls(supInstVal, false);
-    const supIndvCls = supplyAmountCls(supIndvVal, false);
-    const supFrgnCls = supplyAmountCls(supFrgnVal, false);
+    const supIndvCls = supplyAmountCls(supIndvVal, true);
+    const supFrgnCls = supplyAmountCls(supFrgnVal, true);
 
     const pf = data.profit || {};
-    const pfRev = pf.revenue == null ? "—" : formatKoMoneyEok(pf.revenue);
-    const pfOp = pf.operatingProfit == null ? "—" : formatKoMoneyEok(pf.operatingProfit);
-    const pfNet = pf.netIncome == null ? "—" : formatKoMoneyEok(pf.netIncome);
-    const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
+    const pfRev = pf.revenue == null ? "—" : escapeHtml(formatKoMoneyEok(pf.revenue));
+    const pfOp = pf.operatingProfit == null ? "—" : escapeHtml(formatKoMoneyEok(pf.operatingProfit));
+    const pfNet = pf.netIncome == null ? "—" : escapeHtml(formatKoMoneyEok(pf.netIncome));
+    const pfDate = pf.baseDate ? escapeHtml(String(pf.baseDate)) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
-    const closeBtn = `<button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`;
+    const closeBtn = `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
+
+    const basicGrid = [
+      accGridCell("시가", open),
+      accGridCell("고가", high, "rt-acc-val--hi"),
+      accGridCell("저가", low, "rt-acc-val--lo"),
+      accGridCell("거래량", vol),
+      accGridCell("거래대금", tvDisp),
+      accGridCell("시총", mcap),
+      accGridCell("PER", finPer),
+      accGridCell("PBR", finPbr),
+      accGridCell("52주 최고", hi52, "rt-acc-val--hi"),
+      accGridCell("52주 최저", lo52, "rt-acc-val--lo"),
+      accGridCell("EPS", finEps),
+      accGridCell("외국인보유율", frgnHold),
+    ].join("");
+
+    const supplyGrid = [
+      accGridCell("기관", supInst, supInstCls),
+      accGridCell("개인", supIndv, supIndvCls),
+      accGridCell("외국인", supFrgn, supFrgnCls),
+    ].join("");
+
+    const profitGrid = [
+      accGridCell("매출", pfRev),
+      accGridCell("영업이익", pfOp),
+      accGridCell("당기순이익", pfNet),
+    ].join("");
 
     return [
-      `<div class="rt-stock-head${accordion ? " rt-stock-head--acc" : " rt-stock-head--wide"}">`,
-      `  <div class="rt-stock-title">`,
-      `    <span class="rt-stock-name">${name}</span>`,
-      `    <span class="rt-stock-code">${code}</span>`,
-      `    ${badge}`,
+      `<div class="rt-acc">`,
+      `  <header class="rt-acc-header">`,
+      `    <div class="rt-acc-header__left">`,
+      `      <span class="rt-acc-name">${name}</span>`,
+      badges ? `<span class="rt-acc-badges">${badges}</span>` : "",
+      `    </div>`,
+      `    <div class="rt-acc-header__right">`,
+      `      <div>`,
+      `        <div class="rt-acc-price">${price}</div>`,
+      `        <div class="rt-acc-chg delta ${cls}">${pct}</div>`,
+      `      </div>`,
+      closeBtn,
+      `    </div>`,
+      `  </header>`,
+      `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
+      `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${supplyGrid}</div>`,
+      `  <div class="rt-acc-section-bar">`,
+      `    <span class="rt-acc-section-bar__title">실적</span>`,
+      `    <span class="rt-acc-section-bar__date">${pfDate}</span>`,
       `  </div>`,
-      `  <div class="rt-stock-quote">`,
-      `    <span class="rt-stock-price">${price}</span>`,
-      `    <span class="delta ${cls}">${pct}</span>`,
-      `    ${closeBtn}`,
-      `  </div>`,
-      `</div>`,
-
-      `<div class="rt-block rt-block--basic">`,
-      `  <div class="rt-block__title">기본 정보</div>`,
-      `  <div class="rt-basic-grid">`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">시가</div><div class="rt-basic-v">${open}</div><div class="rt-basic-k">고가</div><div class="rt-basic-v rt-basic-v--hi">${high}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">저가</div><div class="rt-basic-v rt-basic-v--lo">${low}</div><div class="rt-basic-k">거래량</div><div class="rt-basic-v">${vol}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">시총</div><div class="rt-basic-v">${mcap}</div><div class="rt-basic-k">PER</div><div class="rt-basic-v">${escapeHtml(finPer)}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">PBR</div><div class="rt-basic-v">${escapeHtml(finPbr)}</div><div class="rt-basic-k">EPS</div><div class="rt-basic-v">${escapeHtml(finEps)}</div></div>`,
-      `    <div class="rt-basic-row"><div class="rt-basic-k">52주 최고</div><div class="rt-basic-v rt-basic-v--hi">${hi52}</div><div class="rt-basic-k">52주 최저</div><div class="rt-basic-v rt-basic-v--lo">${lo52}</div></div>`,
-      `  </div>`,
-      `</div>`,
-
-      `<div class="rt-block">`,
-      `  <div class="rt-block__title">수급</div>`,
-      `  <div class="rt-card3">`,
-      `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v ${escapeHtml(supInstCls)}">${escapeHtml(supInst)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v ${escapeHtml(supIndvCls)}">${escapeHtml(supIndv)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v ${escapeHtml(supFrgnCls)}">${escapeHtml(supFrgn)}</div></div>`,
-      `  </div>`,
-      `</div>`,
-
-      `<div class="rt-block">`,
-      `  <div class="rt-block__title">실적 <span class="rt-block__sub">${escapeHtml(pfDate)}</span></div>`,
-      `  <div class="rt-card3">`,
-      `    <div class="rt-mini"><div class="rt-mini__k">매출</div><div class="rt-mini__v">${escapeHtml(pfRev)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">영업이익</div><div class="rt-mini__v">${escapeHtml(pfOp)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">당기순이익</div><div class="rt-mini__v">${escapeHtml(pfNet)}</div></div>`,
-      `  </div>`,
-      `</div>`,
-
-      `<div class="rt-stock-actions">`,
-      `  <a class="rt-cta" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
-      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
-      `  <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
+      `  <div class="rt-acc-grid rt-acc-grid--3">${profitGrid}</div>`,
+      `  <footer class="rt-acc-footer">`,
+      `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
+      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
+      `  </footer>`,
       `</div>`,
     ].join("");
   }

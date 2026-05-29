@@ -196,6 +196,11 @@
     return Math.round(x);
   }
 
+  function formatRowTradeVal(r) {
+    const calc = calcTradeValFromPriceVol(r && r.price, r && r.volume);
+    return formatTradeVal(calc != null ? String(calc) : r && r.tradingValue);
+  }
+
   /** 시가총액 원본(stck_avls 또는 API의 mcapEok) — 원 단위: 1조 이상 X.XX조, 미만 XXXX억 */
   function readStckAvlsRaw(r) {
     if (!r) return null;
@@ -872,9 +877,10 @@
 
   async function ensureTabPageLoaded(tab, page, opts) {
     const force = !!(opts && opts.force);
+    const prevPage = currentPageForTab(tab);
     const pg = Math.max(1, Math.min(4, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
-    state.openChartCode = null;
+    if (pg !== prevPage) state.openChartCode = null;
 
     const cache = pageCacheForTab(tab);
     const hit = cache[pg];
@@ -1141,7 +1147,9 @@
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
     if (patch.volume != null && String(patch.volume).trim() !== "") cur.volume = patch.volume;
-    if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
+    const tvCalc = calcTradeValFromPriceVol(cur.price, cur.volume);
+    if (tvCalc != null) cur.tradingValue = String(tvCalc);
+    else if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
     if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
     if (patch.hourCls) cur.hourCls = patch.hourCls;
@@ -1232,12 +1240,11 @@
   function stockRowHtml(r) {
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
-    const tvCalc = calcTradeValFromPriceVol(r.price, r.volume);
 
     if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
-      const tv = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
+      const tv = formatRowTradeVal(r);
       const vol = fmtNum(r.volume);
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
@@ -1251,7 +1258,7 @@
 
     const ch = r.changePct;
     const cls = deltaClass(ch);
-    const tv = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
+    const tv = formatRowTradeVal(r);
     const mcap = formatStckAvls(readStckAvlsRaw(r));
     return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
@@ -1277,7 +1284,6 @@
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
-    const tvCalc = calcTradeValFromPriceVol(r.price, r.volume);
 
     if (state.tab === "gainers") {
       const ch = r.changePct;
@@ -1285,7 +1291,7 @@
       tr.cells[2].textContent = fmtNum(r.price);
       tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
       tr.cells[4].textContent = fmtNum(r.volume);
-      tr.cells[5].textContent = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
+      tr.cells[5].textContent = formatRowTradeVal(r);
       return;
     }
 
@@ -1293,7 +1299,7 @@
     const cls = deltaClass(ch);
     tr.cells[2].textContent = fmtNum(r.price);
     tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-    tr.cells[4].textContent = formatTradeVal(tvCalc != null ? String(tvCalc) : r.tradingValue);
+    tr.cells[4].textContent = formatRowTradeVal(r);
     tr.cells[5].textContent = formatStckAvls(readStckAvlsRaw(r));
   }
 
@@ -1505,7 +1511,12 @@
       if (state.openChartCode !== code) return;
       host.innerHTML = stockPanelHtml(data, { accordion: true });
       host.dataset.loadedFor = code;
-      wireStockPanel(host, data, {});
+      wireStockPanel(host, data, {
+        onClose: () => {
+          state.openChartCode = null;
+          renderTable();
+        },
+      });
     } catch (e) {
       if (state.openChartCode !== code) return;
       host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
@@ -1540,7 +1551,6 @@
     const finPer = fin.per == null ? (data.per == null || !Number.isFinite(Number(data.per)) ? "—" : Number(data.per).toFixed(2)) : Number(fin.per).toFixed(2);
     const finEps = fin.eps == null ? "—" : fmtNum(fin.eps);
     const finPbr = fin.pbr == null ? "—" : String(fin.pbr);
-    const finFhr = fin.foreignHoldRate == null ? "—" : `${Number(fin.foreignHoldRate).toFixed(2).replace(/\\.00$/, "")}%`;
 
     const sup = data.supply || {};
     const supInstVal = sup.institution == null ? null : Number(String(sup.institution).replace(/,/g, ""));
@@ -1550,8 +1560,8 @@
     const supIndv = sup.individual == null ? "—" : formatKoMoneyEokSigned(sup.individual);
     const supFrgn = sup.foreigner == null ? "—" : formatKoMoneyEokSigned(sup.foreigner);
     const supInstCls = supplyAmountCls(supInstVal, false);
-    const supIndvCls = supplyAmountCls(supIndvVal, true);
-    const supFrgnCls = supplyAmountCls(supFrgnVal, true);
+    const supIndvCls = supplyAmountCls(supIndvVal, false);
+    const supFrgnCls = supplyAmountCls(supFrgnVal, false);
 
     const pf = data.profit || {};
     const pfRev = pf.revenue == null ? "—" : formatKoMoneyEok(pf.revenue);
@@ -1560,9 +1570,7 @@
     const pfDate = pf.baseDate ? String(pf.baseDate) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
-    const closeBtn = accordion
-      ? ""
-      : `<button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`;
+    const closeBtn = `<button type="button" class="rt-stock-close" aria-label="닫기">닫기</button>`;
 
     return [
       `<div class="rt-stock-head${accordion ? " rt-stock-head--acc" : " rt-stock-head--wide"}">`,
@@ -1594,7 +1602,7 @@
       `  <div class="rt-card3">`,
       `    <div class="rt-mini"><div class="rt-mini__k">기관</div><div class="rt-mini__v ${escapeHtml(supInstCls)}">${escapeHtml(supInst)}</div></div>`,
       `    <div class="rt-mini"><div class="rt-mini__k">개인</div><div class="rt-mini__v ${escapeHtml(supIndvCls)}">${escapeHtml(supIndv)}</div></div>`,
-      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v ${escapeHtml(supFrgnCls)}">${escapeHtml(supFrgn)}</div><div class="rt-mini__sub">보유 ${escapeHtml(finFhr)}</div></div>`,
+      `    <div class="rt-mini"><div class="rt-mini__k">외국인</div><div class="rt-mini__v ${escapeHtml(supFrgnCls)}">${escapeHtml(supFrgn)}</div></div>`,
       `  </div>`,
       `</div>`,
 
@@ -1610,9 +1618,8 @@
       `<div class="rt-stock-actions">`,
       `  <a class="rt-cta" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `  <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
       `</div>`,
-
-      `<div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
     ].join("");
   }
 

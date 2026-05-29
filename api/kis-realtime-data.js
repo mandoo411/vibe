@@ -531,15 +531,52 @@ async function fetchMarketCapKisOnce(fidInputIscd, fallbackBoard, opts = {}) {
 }
 
 /**
- * NAVER m.stock JSON — 코스피 시가총액 TOP100 (UTF-8, 100건)
- * PC HTML(sise_market_sum)은 EUC-KR이라 Vercel에서 종목명 깨짐 → JSON 사용
+ * NAVER m.stock JSON — 코스피 시가총액 TOP100 (UTF-8, ETF/ETN 제외)
  */
-async function fetchNaverMarketCapTop100() {
-  const cacheKey = "naver-mcap-json:100";
-  const cached = rankPageCacheGet(cacheKey);
-  if (cached) return cached;
+function mapNaverMarketCapRow(s, rank) {
+  const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
+  const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
+  const changePct = toNum(s.fluctuationsRatio);
+  const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
+  const volume = sanitizeStr(s.accumulatedTradingVolume);
+  let mcapWon = "";
+  if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
+    const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) mcapWon = String(Math.round(n));
+  } else {
+    const mv = toNum(s.marketValue);
+    if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
+  }
+  let tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+  if (!tradingValue && s.accumulatedTradingValueRaw != null && String(s.accumulatedTradingValueRaw).trim() !== "") {
+    const tv = Number(String(s.accumulatedTradingValueRaw).replace(/,/g, ""));
+    if (Number.isFinite(tv) && tv > 0) tradingValue = String(Math.round(tv));
+  }
+  return {
+    rank,
+    code,
+    name: sanitizeStr(s.stockName),
+    price,
+    changePct: changePct != null && Number.isFinite(changePct) ? changePct : null,
+    volume,
+    tradingValue,
+    mcapEok: mcapWon,
+    stck_avls: mcapWon,
+    tvBoard: "KOSPI",
+  };
+}
 
-  const url = "https://m.stock.naver.com/api/stocks/marketValue/KOSPI?pageSize=100&page=1";
+function isCommonStockRow(s) {
+  const end = sanitizeStr(s && s.stockEndType).toLowerCase();
+  if (end && end !== "stock") return false;
+  const name = sanitizeStr(s && s.stockName);
+  if (/\bETF\b|\bETN\b/i.test(name)) return false;
+  return true;
+}
+
+async function fetchNaverMarketCapPageJson(page) {
+  const pg = Math.max(1, Number(page) || 1);
+  const url = `https://m.stock.naver.com/api/stocks/marketValue/KOSPI?pageSize=100&page=${pg}`;
   const res = await fetch(url, {
     headers: {
       accept: "application/json",
@@ -551,39 +588,20 @@ async function fetchNaverMarketCapTop100() {
   if (!res.ok) {
     throw new Error(`NAVER market-cap JSON HTTP ${res.status}: ${JSON.stringify(json).slice(0, 120)}`);
   }
-  const list = Array.isArray(json.stocks) ? json.stocks : [];
-  const result = list.slice(0, 100).map((s, i) => {
-    const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
-    const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
-    const changePct = toNum(s.fluctuationsRatio);
-    const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
-    const volume = sanitizeStr(s.accumulatedTradingVolume);
-    let mcapWon = "";
-    if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
-      const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
-      if (Number.isFinite(n) && n > 0) mcapWon = String(Math.round(n));
-    } else {
-      const mv = toNum(s.marketValue);
-      if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
-    }
-    let tradingValue = "";
-    if (s.accumulatedTradingValueRaw != null && String(s.accumulatedTradingValueRaw).trim() !== "") {
-      const tv = Number(String(s.accumulatedTradingValueRaw).replace(/,/g, ""));
-      if (Number.isFinite(tv) && tv > 0) tradingValue = String(Math.round(tv));
-    }
-    return {
-      rank: i + 1,
-      code,
-      name: sanitizeStr(s.stockName),
-      price,
-      changePct: changePct != null && Number.isFinite(changePct) ? changePct : null,
-      volume,
-      tradingValue,
-      mcapEok: mcapWon,
-      stck_avls: mcapWon,
-      tvBoard: "KOSPI",
-    };
-  });
+  return Array.isArray(json.stocks) ? json.stocks : [];
+}
+
+async function fetchNaverMarketCapTop100() {
+  const cacheKey = "naver-mcap-json:100:stocks-only";
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const [page1, page2] = await Promise.all([fetchNaverMarketCapPageJson(1), fetchNaverMarketCapPageJson(2)]);
+  const merged = [...page1, ...page2].filter(isCommonStockRow);
+  const result = merged.slice(0, 100).map((s, i) => mapNaverMarketCapRow(s, i + 1));
+  if (result.length < 100) {
+    console.warn("[kis-realtime-data][market-cap] stocks-only list short", result.length);
+  }
   rankPageCacheSet(cacheKey, result);
   return result;
 }
@@ -597,12 +615,20 @@ async function overlayKisMarketCapLive(rows) {
     return rows.map((r) => {
       const k = byCode.get(r.code);
       if (!k) return r;
+      const price = k.price || r.price;
+      const volume = k.volume || r.volume;
+      const tv =
+        approxPbmnFromPriceVol(price, volume) ||
+        approxPbmnFromPriceVol(k.price, k.volume) ||
+        approxPbmnFromPriceVol(r.price, r.volume) ||
+        k.tradingValue ||
+        r.tradingValue;
       return {
         ...r,
-        price: k.price || r.price,
+        price,
         changePct: k.changePct != null ? k.changePct : r.changePct,
-        volume: k.volume || r.volume,
-        tradingValue: k.tradingValue || r.tradingValue,
+        volume,
+        tradingValue: tv,
         stck_avls: k.stck_avls || r.stck_avls,
         mcapEok: k.mcapEok || r.mcapEok,
       };
@@ -635,6 +661,64 @@ async function fetchMarketCapKospi30() {
 /** 코스피 시가총액 상위 100 (NAVER 순위 + KIS TOP30 보강) */
 async function fetchMarketCapKospi100() {
   return fetchNaverMarketCapTop100();
+}
+
+async function fetchNaverUpPageJson(market, page) {
+  const mkt = sanitizeStr(market).toUpperCase() || "KOSPI";
+  const pg = Math.max(1, Number(page) || 1);
+  const url = `https://m.stock.naver.com/api/stocks/up/${encodeURIComponent(mkt)}?pageSize=100&page=${pg}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`NAVER gainers JSON HTTP ${res.status}: ${JSON.stringify(json).slice(0, 120)}`);
+  }
+  return Array.isArray(json.stocks) ? json.stocks : [];
+}
+
+/** NAVER 상승률 — 코스피·코스닥 합산 TOP100 (UTF-8, ETF/ETN 제외) */
+async function fetchNaverGainersTop100() {
+  const cacheKey = "naver-gainers-json:100:stocks-only";
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const [k1, k2, q1, q2] = await Promise.all([
+    fetchNaverUpPageJson("KOSPI", 1),
+    fetchNaverUpPageJson("KOSPI", 2),
+    fetchNaverUpPageJson("KOSDAQ", 1),
+    fetchNaverUpPageJson("KOSDAQ", 2),
+  ]);
+  const merged = [...k1, ...k2, ...q1, ...q2].filter(isCommonStockRow);
+  merged.sort(
+    (a, b) =>
+      (toNum(b.fluctuationsRatio) ?? -Infinity) - (toNum(a.fluctuationsRatio) ?? -Infinity)
+  );
+  const result = merged.slice(0, 100).map((s, i) => {
+    const row = mapNaverMarketCapRow(s, i + 1);
+    const board = sanitizeStr(s.sosok) === "1" ? "KOSDAQ" : "KOSPI";
+    return { ...row, tvBoard: board };
+  });
+  if (result.length < 100) {
+    console.warn("[kis-realtime-data][gainers] stocks-only list short", result.length);
+  }
+  rankPageCacheSet(cacheKey, result);
+  return result;
+}
+
+/** 상승률 TOP100 — NAVER 코스피·코스닥 합산, 페이지당 25건 */
+async function fetchGainersPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const all = await fetchNaverGainersTop100();
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+}
+
+async function fetchGainersMerged100() {
+  return fetchNaverGainersTop100();
 }
 
 /**
@@ -741,70 +825,6 @@ async function fetchFluctuationRank(marketCode, marketLabel, opts = {}) {
     batches,
   });
   return rows;
-}
-
-async function fetchGainersMergedUpToRank(endRank) {
-  const target = Math.max(1, Math.min(100, Number(endRank) || 25));
-  let batches = kisBatchCountForEndRank(target);
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const [kospi, kosdaq] = await Promise.all([
-      fetchFluctuationMarketBatches("0001", "KOSPI", batches, { closeOnly: true }),
-      fetchFluctuationMarketBatches("1001", "KOSDAQ", batches, { closeOnly: true }),
-    ]);
-    const merged = new Map();
-    for (const r of [...kospi, ...kosdaq]) {
-      if (!merged.has(r.code)) merged.set(r.code, r);
-    }
-    const all = [...merged.values()].filter((r) => r.changePct != null);
-    all.sort((a, b) => (b.changePct || 0) - (a.changePct || 0));
-    const ranked = all.slice(0, target).map((r, i) => ({ ...r, rank: i + 1 }));
-    if (ranked.length >= target || batches >= 4) return ranked;
-    batches += 1;
-  }
-  return [];
-}
-
-/** 상승률 TOP100 — 페이지별 25건 (시가총액과 동일 배치·스필 캐시) */
-async function fetchGainersPage(page, pageSize = 25) {
-  const { startRank, endRank, page: pg } = rankRangeForPage(page, pageSize);
-
-  if (pg === 1) {
-    const top30 = await fetchGainersMergedUpToRank(30);
-    rankPageCacheSet("gainers:spill:26-30", top30.slice(25, 30));
-    return top30.slice(0, 25);
-  }
-
-  if (pg === 2) {
-    const spill = rankPageCacheGet("gainers:spill:26-30");
-    const top50 = await fetchGainersMergedUpToRank(50);
-    rankPageCacheSet("gainers:spill:26-30", top50.slice(25, 30));
-    if (spill && spill.length === 5) {
-      return [...spill, ...top50.slice(30, 50)];
-    }
-    return top50.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  if (pg === 3) {
-    const top80 = await fetchGainersMergedUpToRank(80);
-    rankPageCacheSet("gainers:spill:76-80", top80.slice(75, 80));
-    return top80.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  if (pg === 4) {
-    const spill = rankPageCacheGet("gainers:spill:76-80");
-    const top100 = await fetchGainersMergedUpToRank(100);
-    if (spill && spill.length === 5) {
-      return [...spill, ...top100.slice(80, 100)];
-    }
-    return top100.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  }
-
-  const all = await fetchGainersMergedUpToRank(endRank);
-  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-}
-
-async function fetchGainersMerged100() {
-  return fetchGainersMergedUpToRank(100);
 }
 
 /** 업종/지수 현재가 후보 — bstp_nmix_prpr 만 쓰면 다른 업종 수치(비정상)가 잡히는 경우가 있어 nmix 우선 */
@@ -1322,7 +1342,7 @@ module.exports = async function handler(req, res) {
       ]);
       let gainers = [];
       try {
-        gainers = await fetchGainersMerged50();
+        gainers = (await fetchNaverGainersTop100()).slice(0, 50);
       } catch (e) {
         console.error("[kis-realtime-data][snapshot] gainers", e && e.message, e);
       }

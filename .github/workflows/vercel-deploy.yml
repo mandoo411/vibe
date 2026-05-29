@@ -1,13 +1,7 @@
 name: Deploy Vercel
 
+# main 푸시마다 Vercel 배포(일 100회 한도) — 수동만 실행. 배포 시 Actions 탭에서 Run workflow.
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "data/**"
-      - "agent-transcripts/**"
-      - ".github/**"
   workflow_dispatch:
 
 concurrency:

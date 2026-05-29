@@ -147,6 +147,12 @@
         flex: 1 1 auto;
         min-width: 0;
       }
+      .page--realtime .masthead__title {
+        font-size: 28px;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
       .rt-tab-search {
         display: flex;
         gap: 8px;
@@ -240,11 +246,14 @@
         color: #555;
       }
       .rt-tab-search input {
-        height: 34px;
+        box-sizing: border-box;
+        height: 36px;
         flex: none;
         width: 200px;
-        padding: 8px 16px;
+        margin: 0;
+        padding: 0 16px;
         font-size: 13px;
+        line-height: 1;
         border: 1.5px solid #3339bf;
         border-radius: 20px;
         background: white;
@@ -259,8 +268,14 @@
         box-shadow: 0 0 0 3px rgba(51, 57, 191, 0.14);
       }
       .rt-tab-search button {
-        height: 34px;
-        padding: 8px 20px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 36px;
+        margin: 0;
+        padding: 0 16px;
+        line-height: 1;
         background: #3339bf;
         color: white;
         border: none;
@@ -269,6 +284,7 @@
         font-family: inherit;
         font-weight: 600;
         cursor: pointer;
+        flex-shrink: 0;
       }
       .rt-tab-search button:hover {
         filter: brightness(1.03);
@@ -767,8 +783,10 @@
           width: auto !important;
           min-width: 0;
         }
-        .rt-tab-search button {
-          flex-shrink: 0;
+        .page--realtime .masthead__title {
+          font-size: 1.5rem;
+          line-height: 1.2;
+          letter-spacing: -0.025em;
         }
         .rt-stock-main {
           grid-template-columns: 1fr;

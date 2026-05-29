@@ -451,7 +451,7 @@ function pickAnyNumberByRegex(row, reList) {
   return null;
 }
 
-function yyyymmddKST() {
+function yyyymmddKST(daysBack = 0) {
   // Vercel 런타임이 UTC일 수 있으므로 Asia/Seoul 기준으로 날짜를 만든다.
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -459,9 +459,45 @@ function yyyymmddKST() {
     month: "2-digit",
     day: "2-digit",
   });
-  // en-CA => YYYY-MM-DD
-  const s = fmt.format(new Date());
+  const d = new Date();
+  if (daysBack > 0) d.setDate(d.getDate() - daysBack);
+  const s = fmt.format(d);
   return s.replace(/-/g, "");
+}
+
+function parseSignedQty(v) {
+  const s = sanitizeStr(v).replace(/,/g, "").replace(/^\+/, "");
+  if (!s) return null;
+  return toNum(s);
+}
+
+/** NAVER trend — 순매수 수량 × 종가로 거래대금(억원) 추정 (KIS 수급 TR 실패 시 fallback) */
+async function fetchNaverStockSupply(code6) {
+  const rows = await naverGetJson(`/api/stock/${encodeURIComponent(code6)}/trend?pageSize=1&page=1`);
+  const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+  if (!row || typeof row !== "object") return null;
+  const price = toNum(String(row.closePrice || "").replace(/,/g, ""));
+  if (price == null || price <= 0) return null;
+
+  function qtyToEok(qty) {
+    if (qty == null || !Number.isFinite(qty)) return null;
+    return Math.round((qty * price) / 1e8);
+  }
+
+  const institution = qtyToEok(parseSignedQty(row.organPureBuyQuant));
+  const individual = qtyToEok(parseSignedQty(row.individualPureBuyQuant));
+  const foreigner = qtyToEok(parseSignedQty(row.foreignerPureBuyQuant));
+  const baseDate = sanitizeStr(row.bizdate);
+  if (institution == null && individual == null && foreigner == null) return null;
+
+  return {
+    institution,
+    individual,
+    foreigner,
+    baseDate,
+    unit: "eok",
+    source: "naver-trend",
+  };
 }
 
 /**
@@ -471,54 +507,63 @@ function yyyymmddKST() {
  * - 핵심 필드: prsn_ntby_qty / frgn_ntby_qty / orgn_ntby_qty
  */
 async function kisInvestorTradeByStockDaily(stockCode6) {
-  const json = await kisGetJson("/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily", "FHPTJ04160001", {
-    FID_COND_MRKT_DIV_CODE: "J",
-    FID_INPUT_ISCD: stockCode6,
-    FID_INPUT_DATE_1: yyyymmddKST(),
-    FID_ORG_ADJ_PRC: "",
-    FID_ETC_CLS_CODE: "1",
-  });
-  // 문서: output1(object), output2(array)
-  const rows = Array.isArray(json.output2) ? json.output2 : Array.isArray(json.output) ? json.output : null;
-  const row =
-    Array.isArray(rows) && rows.length
-      ? rows
-          .slice()
-          .map((r) => ({ r, d: sanitizeStr(r?.stck_bsop_date || r?.STCK_BSOP_DATE || r?.bsop_date || r?.date) }))
-          .sort((a, b) => Number(b.d || 0) - Number(a.d || 0))[0]?.r
-      : null;
-  if (!row || typeof row !== "object") return null;
+  for (let daysBack = 0; daysBack < 7; daysBack++) {
+    let json;
+    try {
+      json = await kisGetJson("/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily", "FHPTJ04160001", {
+        FID_COND_MRKT_DIV_CODE: "J",
+        FID_INPUT_ISCD: stockCode6,
+        FID_INPUT_DATE_1: yyyymmddKST(daysBack),
+        FID_ORG_ADJ_PRC: "",
+        FID_ETC_CLS_CODE: "1",
+      });
+    } catch {
+      continue;
+    }
+    // 문서: output1(object), output2(array)
+    const rows = Array.isArray(json.output2) ? json.output2 : Array.isArray(json.output) ? json.output : null;
+    const row =
+      Array.isArray(rows) && rows.length
+        ? rows
+            .slice()
+            .map((r) => ({ r, d: sanitizeStr(r?.stck_bsop_date || r?.STCK_BSOP_DATE || r?.bsop_date || r?.date) }))
+            .sort((a, b) => Number(b.d || 0) - Number(a.d || 0))[0]?.r
+        : null;
+    if (!row || typeof row !== "object") continue;
 
-  const institution =
-    toNum(row.orgn_ntby_qty ?? row.orgn_ntby_vol ?? row.orgn_ntby) ??
-    pickAnyNumberByRegex(row, [/orgn.*ntby/i, /orgn.*net/i, /inst.*net/i]);
-  const foreigner =
-    toNum(row.frgn_ntby_qty ?? row.frgn_ntby_vol ?? row.frgn_ntby) ??
-    pickAnyNumberByRegex(row, [/frgn.*ntby/i, /frgn.*net/i, /foreign.*net/i]);
-  const individual =
-    toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
-    pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
-  const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
-  // 금액(원) 후보: *_ntby_tr_pbmn (백만원 단위로 쓰이는 케이스가 많음)
-  const instPbmn = toNum(row.orgn_ntby_tr_pbmn ?? row.orgn_ntby_pbmn ?? row.orgn_ntby_tr_amt ?? row.orgn_ntby_amt);
-  const frgnPbmn = toNum(row.frgn_ntby_tr_pbmn ?? row.frgn_ntby_pbmn ?? row.frgn_ntby_tr_amt ?? row.frgn_ntby_amt);
-  const prsnPbmn = toNum(row.prsn_ntby_tr_pbmn ?? row.prsn_ntby_pbmn ?? row.prsn_ntby_tr_amt ?? row.prsn_ntby_amt);
+    const institution =
+      toNum(row.orgn_ntby_qty ?? row.orgn_ntby_vol ?? row.orgn_ntby) ??
+      pickAnyNumberByRegex(row, [/orgn.*ntby/i, /orgn.*net/i, /inst.*net/i]);
+    const foreigner =
+      toNum(row.frgn_ntby_qty ?? row.frgn_ntby_vol ?? row.frgn_ntby) ??
+      pickAnyNumberByRegex(row, [/frgn.*ntby/i, /frgn.*net/i, /foreign.*net/i]);
+    const individual =
+      toNum(row.prsn_ntby_qty ?? row.prsn_ntby_vol ?? row.prsn_ntby) ??
+      pickAnyNumberByRegex(row, [/prsn.*ntby/i, /prsn.*net/i, /indv.*net/i]);
+    const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
+    const instPbmn = toNum(row.orgn_ntby_tr_pbmn ?? row.orgn_ntby_pbmn ?? row.orgn_ntby_tr_amt ?? row.orgn_ntby_amt);
+    const frgnPbmn = toNum(row.frgn_ntby_tr_pbmn ?? row.frgn_ntby_pbmn ?? row.frgn_ntby_tr_amt ?? row.frgn_ntby_amt);
+    const prsnPbmn = toNum(row.prsn_ntby_tr_pbmn ?? row.prsn_ntby_pbmn ?? row.prsn_ntby_tr_amt ?? row.prsn_ntby_amt);
 
-  // pbmn(백만원) -> 억원: pbmn * 1e6 / 1e8 = pbmn / 100
-  const instEokFromPbmn = instPbmn == null ? null : Math.round(instPbmn / 100);
-  const frgnEokFromPbmn = frgnPbmn == null ? null : Math.round(frgnPbmn / 100);
-  const prsnEokFromPbmn = prsnPbmn == null ? null : Math.round(prsnPbmn / 100);
+    // tr_pbmn: 원 단위(시장별 TR과 동일) → 억원
+    const instEokFromPbmn = instPbmn == null ? null : Math.round(instPbmn / 1e8);
+    const frgnEokFromPbmn = frgnPbmn == null ? null : Math.round(frgnPbmn / 1e8);
+    const prsnEokFromPbmn = prsnPbmn == null ? null : Math.round(prsnPbmn / 1e8);
 
-  return {
-    // 기존 키는 유지하되, UI 요구사항에 맞춰 "금액(억원)"을 우선 전달한다.
-    institution: instEokFromPbmn != null ? instEokFromPbmn : institution,
-    foreigner: frgnEokFromPbmn != null ? frgnEokFromPbmn : foreigner,
-    individual: prsnEokFromPbmn != null ? prsnEokFromPbmn : individual,
-    baseDate,
-    unit: instEokFromPbmn != null || frgnEokFromPbmn != null || prsnEokFromPbmn != null ? "eok" : "qty",
-    source: "FHPTJ04160001",
-    raw: row,
-  };
+    const hasPbmn = instEokFromPbmn != null || frgnEokFromPbmn != null || prsnEokFromPbmn != null;
+    if (!hasPbmn && institution == null && foreigner == null && individual == null) continue;
+
+    return {
+      institution: instEokFromPbmn != null ? instEokFromPbmn : institution,
+      foreigner: frgnEokFromPbmn != null ? frgnEokFromPbmn : foreigner,
+      individual: prsnEokFromPbmn != null ? prsnEokFromPbmn : individual,
+      baseDate,
+      unit: hasPbmn ? "eok" : "qty",
+      source: "FHPTJ04160001",
+      raw: row,
+    };
+  }
+  return null;
 }
 
 async function kisInquireInvestor(stockCode6) {
@@ -557,6 +602,22 @@ async function kisInquireInvestor(stockCode6) {
   // 최신일자를 함께 내려서 UI에서 기준을 표시할 수 있게 함
   const baseDate = pickFirstStr(row, ["stck_bsop_date", "STCK_BSOP_DATE", "bsop_date", "date"]);
   return { institution, foreigner, individual, baseDate, raw: row };
+}
+
+/** 수급 값이 수량(qty)이면 현재가로 거래대금(억원) 환산 */
+function normalizeSupplyToEok(supply, currentPrice) {
+  if (!supply || typeof supply !== "object") return supply;
+  if (supply.unit === "eok") return supply;
+  const price = toNum(currentPrice);
+  if (price == null || price <= 0) return supply;
+  const toEok = (v) => (v == null || !Number.isFinite(Number(v)) ? null : Math.round((Number(v) * price) / 1e8));
+  return {
+    ...supply,
+    institution: toEok(supply.institution),
+    individual: toEok(supply.individual),
+    foreigner: toEok(supply.foreigner),
+    unit: "eok",
+  };
 }
 
 async function kisIncomeStatement(stockCode6) {
@@ -715,11 +776,16 @@ module.exports = async function handler(req, res) {
   let supply = null;
   let profit = null;
   try {
-    // 문서 기반 TR을 우선 사용하고, 실패 시 기존 TR로 fallback
     supply = await kisInvestorTradeByStockDaily(resolved.stockCode);
     if (!supply) supply = await kisInquireInvestor(resolved.stockCode);
+    if (!supply) supply = await fetchNaverStockSupply(resolved.stockCode);
   } catch (e) {
     console.warn("[stock-analysis] investor failed", e && e.message);
+    try {
+      supply = await fetchNaverStockSupply(resolved.stockCode);
+    } catch (e2) {
+      console.warn("[stock-analysis] naver supply failed", e2 && e2.message);
+    }
   }
   try {
     profit = await kisIncomeStatement(resolved.stockCode);
@@ -735,60 +801,60 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  const quoteFields = await (async () => {
+    try {
+      const [nb, np] = await Promise.all([
+        fetchNaverStockBasic(resolved.stockCode),
+        fetchNaverStockPrice(resolved.stockCode),
+      ]);
+      const stockName = sanitizeStr(nb && nb.stockName) || resolved.stockName;
+      const market = sanitizeStr(nb && (nb.stockExchangeName || nb.stockExchangeType?.nameEng)) || quote.market || "";
+      const currentPrice = toNum(np && np.closePrice) ?? quote.currentPrice;
+      const change = toNum(np && np.compareToPreviousClosePrice) ?? quote.change;
+      const changeRate = toNum(np && np.fluctuationsRatio) ?? quote.changeRate;
+      const open = toNum(np && np.openPrice) ?? quote.open;
+      const high = toNum(np && np.highPrice) ?? quote.high;
+      const low = toNum(np && np.lowPrice) ?? quote.low;
+      const volume = toNum(np && np.accumulatedTradingVolume) ?? quote.volume;
+      const prevClose = currentPrice != null && change != null ? currentPrice - change : quote.prevClose ?? null;
+      return {
+        stockName,
+        stockCode: resolved.stockCode,
+        market,
+        prevClose,
+        currentPrice,
+        change,
+        changeRate,
+        open,
+        high,
+        low,
+        volume,
+      };
+    } catch {
+      return {
+        stockName: resolved.stockName,
+        stockCode: resolved.stockCode,
+        market: quote.market || "",
+        prevClose: quote.prevClose,
+        currentPrice: quote.currentPrice,
+        change: quote.change,
+        changeRate: quote.changeRate,
+        open: quote.open,
+        high: quote.high,
+        low: quote.low,
+        volume: quote.volume,
+      };
+    }
+  })();
+
   json(res, 200, {
-  // 네이버(모바일) 값이 있는 경우 UI 표시값은 네이버 우선 (스크린샷 기준)
-    ...(await (async () => {
-      try {
-        const [nb, np] = await Promise.all([
-          fetchNaverStockBasic(resolved.stockCode),
-          fetchNaverStockPrice(resolved.stockCode),
-        ]);
-        const stockName = sanitizeStr(nb && nb.stockName) || resolved.stockName;
-        const market = sanitizeStr(nb && (nb.stockExchangeName || nb.stockExchangeType?.nameEng)) || quote.market || "";
-        const currentPrice = toNum(np && np.closePrice) ?? quote.currentPrice;
-        const change = toNum(np && np.compareToPreviousClosePrice) ?? quote.change;
-        const changeRate = toNum(np && np.fluctuationsRatio) ?? quote.changeRate;
-        const open = toNum(np && np.openPrice) ?? quote.open;
-        const high = toNum(np && np.highPrice) ?? quote.high;
-        const low = toNum(np && np.lowPrice) ?? quote.low;
-        const volume = toNum(np && np.accumulatedTradingVolume) ?? quote.volume;
-        const prevClose =
-          currentPrice != null && change != null ? currentPrice - change : quote.prevClose ?? null;
-        return {
-          stockName,
-          stockCode: resolved.stockCode,
-          market,
-          prevClose,
-          currentPrice,
-          change,
-          changeRate,
-          open,
-          high,
-          low,
-          volume,
-        };
-      } catch {
-        return {
-          stockName: resolved.stockName,
-          stockCode: resolved.stockCode,
-          market: quote.market || "",
-          prevClose: quote.prevClose,
-          currentPrice: quote.currentPrice,
-          change: quote.change,
-          changeRate: quote.changeRate,
-          open: quote.open,
-          high: quote.high,
-          low: quote.low,
-          volume: quote.volume,
-        };
-      }
-    })()),
+    ...quoteFields,
     tradingValue: quote.tradingValue == null ? null : quote.tradingValue,
     marketCap: quote.marketCap == null ? null : quote.marketCap,
     marketCapRaw: quote.marketCapRaw || "",
     per: quote.per == null ? null : quote.per,
     financials: quote.financials || null,
-    supply,
+    supply: normalizeSupplyToEok(supply, quoteFields.currentPrice),
     profit,
     high52w: quote.high52w,
     low52w: quote.low52w,

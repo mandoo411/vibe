@@ -417,10 +417,10 @@
       }
       .rt-stock-actions {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
+        flex-wrap: nowrap;
         gap: 10px;
-        align-items: center;
-        justify-content: flex-end;
+        align-items: stretch;
         margin-top: 12px;
       }
 
@@ -982,6 +982,9 @@
         display: flex;
         flex-direction: column;
         background: var(--surface-inset);
+      }
+      .rt-chart-wrap[hidden] {
+        display: none !important;
       }
       .rt-chart-body {
         position: relative;

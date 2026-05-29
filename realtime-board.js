@@ -1419,11 +1419,20 @@
     ].join("");
   }
 
+  function findPanelElById(root, id) {
+    if (!root || !id) return null;
+    try {
+      if (typeof CSS !== "undefined" && CSS.escape) return root.querySelector(`#${CSS.escape(id)}`);
+    } catch {}
+    return root.querySelector(`[id="${String(id).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"]`);
+  }
+
   function wireStockPanelChart(panelEl, code6) {
     const toggleBtn = panelEl.querySelector(".rt-chart-toggle");
     const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : "";
-    const chartHost = targetId ? panelEl.querySelector(`#${CSS.escape(targetId)}`) : null;
-    if (!toggleBtn || !chartHost) return;
+    const chartHost = findPanelElById(panelEl, targetId);
+    const codeNorm = chartSymbolSixDigits(code6);
+    if (!toggleBtn || !chartHost || !codeNorm) return;
 
     let chartOpen = false;
 
@@ -1440,7 +1449,9 @@
     }
 
     setToggle(false);
-    toggleBtn.addEventListener("click", () => {
+    toggleBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       setToggle(!chartOpen);
       if (!chartOpen) return;
       if (!chartHost.dataset.mounted) {
@@ -1449,19 +1460,20 @@
         const panes = chartHost.querySelector(".rt-chart-panes");
         if (panes) panes.style.display = "";
         chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((b) => {
-          b.addEventListener("click", () => {
+          b.addEventListener("click", (ev2) => {
+            ev2.stopPropagation();
             const p = b.getAttribute("data-rt-candle-period") || "D";
             chartHost.querySelectorAll(".rt-chart-interval-btn").forEach((x) =>
               x.setAttribute("aria-pressed", x === b ? "true" : "false")
             );
-            void mountStockPanelChart(chartHost, code6, String(p).toUpperCase());
+            void mountStockPanelChart(chartHost, codeNorm, String(p).toUpperCase());
           });
         });
       } else {
         const panes = chartHost.querySelector(".rt-chart-panes");
         if (panes) panes.style.display = "";
       }
-      void mountStockPanelChart(chartHost, code6, "D");
+      void mountStockPanelChart(chartHost, codeNorm, "D");
     });
   }
 
@@ -1470,7 +1482,7 @@
       const closeBtn = panelEl.querySelector(".rt-stock-close");
       if (closeBtn) closeBtn.addEventListener("click", opts.onClose);
     }
-    wireStockPanelChart(panelEl, String(data.stockCode || ""));
+    wireStockPanelChart(panelEl, chartSymbolSixDigits(data.stockCode));
   }
 
   async function mountTableDetailAccordion(body) {
@@ -1566,10 +1578,6 @@
       `  </div>`,
       `</div>`,
 
-      `<div class="rt-stock-actions">`,
-      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
-      `</div>`,
-
       `<div class="rt-block rt-block--basic">`,
       `  <div class="rt-block__title">기본 정보</div>`,
       `  <div class="rt-basic-grid">`,
@@ -1601,6 +1609,7 @@
 
       `<div class="rt-stock-actions">`,
       `  <a class="rt-cta" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
+      `  <button type="button" class="rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
       `</div>`,
 
       `<div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,

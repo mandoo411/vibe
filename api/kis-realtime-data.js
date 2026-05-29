@@ -373,14 +373,26 @@ function pickAcmlTrPbmn(row) {
   return "";
 }
 
-/** API가 거래대금을 비울 때 표시용 근사치(현재가×누적거래량, 원) */
-function approxPbmnFromPriceVol(priceStr, volStr) {
+/**
+ * 거래대금(원) = stck_prpr(현재가) × acml_vol(누적거래량)
+ * KIS acml_tr_pbmn 등 API 거래대금 필드는 사용하지 않음.
+ */
+function calcTradingValueWon(priceStr, volStr) {
   const p = Number(String(priceStr || "").replace(/,/g, ""));
   const v = Number(String(volStr || "").replace(/,/g, ""));
   if (!Number.isFinite(p) || !Number.isFinite(v) || p <= 0 || v <= 0) return "";
   const x = p * v;
   if (!Number.isFinite(x) || x <= 0 || x > Number.MAX_SAFE_INTEGER) return "";
   return String(Math.round(x));
+}
+
+/** @deprecated calcTradingValueWon 사용 */
+function approxPbmnFromPriceVol(priceStr, volStr) {
+  return calcTradingValueWon(priceStr, volStr);
+}
+
+function calcTradingValueWonFromRow(row) {
+  return calcTradingValueWon(pickStckPrpr(row), pickAcmlVol(row));
 }
 
 /** 누적 거래량(주) 문자열 정규화 */
@@ -473,7 +485,7 @@ function mapMarketCapKisRow(row, fallbackBoard) {
   if (!code) return null;
   const price = pickStckPrpr(row);
   const volume = pickAcmlVol(row);
-  const tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+  const tradingValue = calcTradingValueWon(price, volume) || "";
   const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
   const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
   return {
@@ -546,7 +558,7 @@ function mapNaverMarketCapRow(s, rank) {
     const mv = toNum(s.marketValue);
     if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
   }
-  const tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+  const tradingValue = calcTradingValueWon(price, volume) || "";
   return {
     rank,
     code,
@@ -613,9 +625,9 @@ async function overlayKisMarketCapLive(rows) {
       const price = k.price || r.price;
       const volume = k.volume || r.volume;
       const tv =
-        approxPbmnFromPriceVol(price, volume) ||
-        approxPbmnFromPriceVol(k.price, k.volume) ||
-        approxPbmnFromPriceVol(r.price, r.volume) ||
+        calcTradingValueWon(price, volume) ||
+        calcTradingValueWon(k.price, k.volume) ||
+        calcTradingValueWon(r.price, r.volume) ||
         "";
       return {
         ...r,
@@ -765,7 +777,7 @@ async function fetchFluctuationMarketBatches(marketCode, marketLabel, batchCount
         const code = sanitizeStr(row.stck_shrn_iscd);
         const price = pickStckPrpr(row);
         const volume = pickAcmlVol(row);
-        const tradingValue = pickAcmlTrPbmn(row);
+        const tradingValue = calcTradingValueWon(price, volume) || "";
         return {
           code,
           name: sanitizeStr(row.hts_kor_isnm),
@@ -786,19 +798,10 @@ async function fetchFluctuationMarketBatches(marketCode, marketLabel, batchCount
   }
   let rows = [...byCode.values()];
 
-  if (!closeOnly && rows.length && rows.some((r) => !r.tradingValue)) {
-    const rawAlt = await fetchRawBatches("0");
-    const tvByCode = new Map();
-    for (const row of rawAlt) {
-      const c = sanitizeStr(row.stck_shrn_iscd);
-      const tv = pickAcmlTrPbmn(row);
-      if (c && tv) tvByCode.set(c, tv);
-    }
-    rows = rows.map((r) => (r.tradingValue ? r : { ...r, tradingValue: tvByCode.get(r.code) || "" }));
-  }
-  rows = rows.map((r) =>
-    r.tradingValue ? r : { ...r, tradingValue: approxPbmnFromPriceVol(r.price, r.volume) || "" }
-  );
+  rows = rows.map((r) => ({
+    ...r,
+    tradingValue: calcTradingValueWon(r.price, r.volume) || "",
+  }));
   return rows;
 }
 

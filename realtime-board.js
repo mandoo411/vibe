@@ -131,7 +131,7 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
-  /** 누적 거래대금: API `tr_pbmn`은 백만원 단위 → 서버에서 원으로 환산한 문자열이 오면 조·억으로 압축 표기 */
+  /** 거래대금(원) 표기: 1조 이상 X.XX조 · 1000억 이상 X,XXX억 · 그 이하 X억 */
   function formatTradeVal(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
@@ -139,13 +139,9 @@
       const jo = n / 1e12;
       return `${jo.toFixed(2).replace(/\.?0+$/, "")}조`;
     }
-    if (n >= 1e8) {
-      return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
-    }
-    if (n >= 1e4) {
-      return `${Math.round(n / 1e4).toLocaleString("ko-KR")}만`;
-    }
-    return n.toLocaleString("ko-KR");
+    const eok = Math.round(n / 1e8);
+    if (eok <= 0) return "—";
+    return `${eok.toLocaleString("ko-KR")}억`;
   }
 
   function formatKoMoneyEokSigned(raw) {
@@ -182,7 +178,7 @@
     return Number.isFinite(n) ? n : null;
   }
 
-  /** 사용자가 기대하는 거래대금: 현재가 × 누적거래량(원) */
+  /** 거래대금(원) = stck_prpr(현재가) × acml_vol(거래량) */
   function calcTradeValFromPriceVol(priceRaw, volRaw) {
     const p = numFromMoneyish(priceRaw);
     const v = numFromMoneyish(volRaw);
@@ -196,7 +192,7 @@
   function formatRowTradeVal(r) {
     const calc = calcTradeValFromPriceVol(r && r.price, r && r.volume);
     if (calc != null) return formatTradeVal(String(calc));
-    return formatTradeVal(r && r.tradingValue);
+    return "—";
   }
 
   function pickLargerVolumeStr(a, b) {
@@ -237,7 +233,7 @@
         volume,
         rank: n.rank != null ? n.rank : r.rank,
         changePct: n.changePct != null ? n.changePct : r.changePct,
-        tradingValue: tvCalc != null ? String(tvCalc) : n.tradingValue || r.tradingValue,
+        tradingValue: tvCalc != null ? String(tvCalc) : "",
         stck_avls: n.stck_avls || n.mcapEok || r.stck_avls || r.mcapEok,
         mcapEok: n.mcapEok || n.stck_avls || r.mcapEok || r.stck_avls,
       };
@@ -1111,7 +1107,7 @@
     const price = pickWsStckPrpr(o, cells);
     const changePct = Number(String(o.PRDY_CTRT || "").replace(/,/g, ""));
     const vol = String(o.ACML_VOL || "").trim();
-    const tv = String(o.ACML_TR_PBMN || "").trim();
+    const tvCalc = calcTradeValFromPriceVol(price, vol);
     const hourCls = String(o.HOUR_CLS_CODE || "").trim();
     const mrkt = String(o.MRKT_TRTM_CLS_CODE || "").trim();
     return {
@@ -1119,7 +1115,7 @@
       price,
       changePct: Number.isFinite(changePct) ? changePct : null,
       volume: vol,
-      tradingValue: tv,
+      tradingValue: tvCalc != null ? String(tvCalc) : "",
       hourCls,
       mrkt,
     };
@@ -1152,7 +1148,6 @@
     if (patch.volume != null && String(patch.volume).trim() !== "") cur.volume = patch.volume;
     const tvCalc = calcTradeValFromPriceVol(cur.price, cur.volume);
     if (tvCalc != null) cur.tradingValue = String(tvCalc);
-    else if (patch.tradingValue != null && patch.tradingValue !== "") cur.tradingValue = patch.tradingValue;
     if (patch.stck_avls != null && String(patch.stck_avls).trim() !== "") cur.stck_avls = patch.stck_avls;
     if (patch.mcapEok != null && String(patch.mcapEok).trim() !== "") cur.mcapEok = patch.mcapEok;
     if (patch.hourCls) cur.hourCls = patch.hourCls;

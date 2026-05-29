@@ -473,8 +473,7 @@ function mapMarketCapKisRow(row, fallbackBoard) {
   if (!code) return null;
   const price = pickStckPrpr(row);
   const volume = pickAcmlVol(row);
-  let tradingValue = pickAcmlTrPbmn(row);
-  if (!tradingValue) tradingValue = approxPbmnFromPriceVol(price, volume) || "";
+  const tradingValue = approxPbmnFromPriceVol(price, volume) || "";
   const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
   const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
   return {
@@ -547,11 +546,7 @@ function mapNaverMarketCapRow(s, rank) {
     const mv = toNum(s.marketValue);
     if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
   }
-  let tradingValue = approxPbmnFromPriceVol(price, volume) || "";
-  if (!tradingValue && s.accumulatedTradingValueRaw != null && String(s.accumulatedTradingValueRaw).trim() !== "") {
-    const tv = Number(String(s.accumulatedTradingValueRaw).replace(/,/g, ""));
-    if (Number.isFinite(tv) && tv > 0) tradingValue = String(Math.round(tv));
-  }
+  const tradingValue = approxPbmnFromPriceVol(price, volume) || "";
   return {
     rank,
     code,
@@ -621,8 +616,7 @@ async function overlayKisMarketCapLive(rows) {
         approxPbmnFromPriceVol(price, volume) ||
         approxPbmnFromPriceVol(k.price, k.volume) ||
         approxPbmnFromPriceVol(r.price, r.volume) ||
-        k.tradingValue ||
-        r.tradingValue;
+        "";
       return {
         ...r,
         price,

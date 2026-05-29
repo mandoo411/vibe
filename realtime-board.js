@@ -107,6 +107,8 @@
     lwBundle: null,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
+    /** 종목 상세 fetch 중단용 */
+    detailFetchAbort: null,
   };
 
   function $(id) {
@@ -198,7 +200,55 @@
 
   function formatRowTradeVal(r) {
     const calc = calcTradeValFromPriceVol(r && r.price, r && r.volume);
-    return formatTradeVal(calc != null ? String(calc) : r && r.tradingValue);
+    if (calc != null) return formatTradeVal(String(calc));
+    return formatTradeVal(r && r.tradingValue);
+  }
+
+  function pickLargerVolumeStr(a, b) {
+    const va = numFromMoneyish(a);
+    const vb = numFromMoneyish(b);
+    if (va == null) return b != null && String(b).trim() !== "" ? b : a;
+    if (vb == null) return a;
+    return vb >= va ? b : a;
+  }
+
+  /** 폴링 시 행 순서 유지하며 시세만 병합 (열린 종목 패널 깜빡임 방지) */
+  function mergeStocksInPlaceForTab(tab, incoming) {
+    const list = tab === "cap" ? state.capRows : state.gainerRows;
+    const inc = (incoming || []).filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0);
+    if (!list.length) {
+      applyStocksArrayToTab(tab, inc);
+      return { reordered: true };
+    }
+    const pageCodes = new Set(inc.map((r) => r.code));
+    const curCodes = new Set(list.map((r) => r.code));
+    const samePage =
+      pageCodes.size === curCodes.size && [...pageCodes].every((c) => curCodes.has(c));
+    if (!samePage) {
+      applyStocksArrayToTab(tab, inc);
+      return { reordered: true };
+    }
+    const byCode = new Map(inc.map((r) => [r.code, r]));
+    const merged = list.map((r) => {
+      const n = byCode.get(r.code);
+      if (!n) return r;
+      const price = n.price || r.price;
+      const volume = pickLargerVolumeStr(r.volume, n.volume);
+      const tvCalc = calcTradeValFromPriceVol(price, volume);
+      return {
+        ...r,
+        ...n,
+        price,
+        volume,
+        rank: n.rank != null ? n.rank : r.rank,
+        changePct: n.changePct != null ? n.changePct : r.changePct,
+        tradingValue: tvCalc != null ? String(tvCalc) : n.tradingValue || r.tradingValue,
+        stck_avls: n.stck_avls || n.mcapEok || r.stck_avls || r.mcapEok,
+        mcapEok: n.mcapEok || n.stck_avls || r.mcapEok || r.stck_avls,
+      };
+    });
+    applyStocksArrayToTab(tab, merged);
+    return { reordered: false };
   }
 
   /** 시가총액 원본(stck_avls 또는 API의 mcapEok) — 원 단위: 1조 이상 X.XX조, 미만 XXXX억 */
@@ -1385,6 +1435,17 @@
 
   function detailRowHtml(forCode) {
     const cs = tableColSpan();
+    const body = $("rt-tbody");
+    const existing = body?.querySelector(`tr.rt-detail-row[data-detail-for="${forCode}"] .rt-detail-acc`);
+    if (
+      existing &&
+      existing.dataset.loadedFor === forCode &&
+      existing.querySelector(".rt-stock-head")
+    ) {
+      return `<tr class="rt-detail-row" data-detail-for="${escapeHtml(forCode)}">
+          <td colspan="${cs}">${existing.outerHTML}</td>
+        </tr>`;
+    }
     return `<tr class="rt-detail-row" data-detail-for="${escapeHtml(forCode)}">
           <td colspan="${cs}">
             <div class="rt-detail-acc" data-detail-code="${escapeHtml(forCode)}">${buildStockResultSkeleton()}</div>
@@ -1418,32 +1479,50 @@
 
   function syncDetailDomAfterRows(body, rows) {
     if (!state.openChartCode) return;
-    const anchor = body.querySelector(`tr.rt-stock-row[data-code="${state.openChartCode}"]`);
+    const code = state.openChartCode;
+    const anchor = body.querySelector(`tr.rt-stock-row[data-code="${code}"]`);
     if (!anchor) {
-      state.openChartCode = null;
-      renderThead();
-      body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      const onPage = (rows || []).some((r) => r.code === code);
+      if (!onPage) {
+        state.openChartCode = null;
+        renderThead();
+        body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      }
       return;
     }
     let detailTr = body.querySelector("tr.rt-detail-row");
     if (!detailTr) {
-      anchor.insertAdjacentHTML("afterend", detailRowHtml(state.openChartCode));
+      anchor.insertAdjacentHTML("afterend", detailRowHtml(code));
       detailTr = body.querySelector("tr.rt-detail-row");
     } else {
-      if (detailTr.getAttribute("data-detail-for") !== state.openChartCode) {
-        detailTr.setAttribute("data-detail-for", state.openChartCode);
+      if (detailTr.getAttribute("data-detail-for") !== code) {
+        detailTr.setAttribute("data-detail-for", code);
         const host = detailTr.querySelector(".rt-detail-acc");
         if (host) {
-          host.setAttribute("data-detail-code", state.openChartCode);
+          host.setAttribute("data-detail-code", code);
           delete host.dataset.loadedFor;
           host.innerHTML = buildStockResultSkeleton();
         }
       }
       anchor.after(detailTr);
     }
-    if (detailTr) detailTr.setAttribute("data-detail-for", state.openChartCode);
+    if (detailTr) detailTr.setAttribute("data-detail-for", code);
     syncNameChartButtonsAria(body);
-    void mountTableDetailAccordion(body);
+    const host = detailTr && detailTr.querySelector(".rt-detail-acc");
+    const needsLoad = !host || host.dataset.loadedFor !== code || !host.querySelector(".rt-stock-head");
+    if (needsLoad) void mountTableDetailAccordion(body);
+    else wireDetailAccordionClose(host);
+  }
+
+  function wireDetailAccordionClose(host) {
+    if (!host) return;
+    const closeBtn = host.querySelector(".rt-stock-close");
+    if (!closeBtn || closeBtn.dataset.wired === "1") return;
+    closeBtn.dataset.wired = "1";
+    closeBtn.addEventListener("click", () => {
+      state.openChartCode = null;
+      renderTable();
+    });
   }
 
   function syncTableChromeForTab() {
@@ -1608,12 +1687,30 @@
     const row = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
     if (!row) return;
     const host = row.querySelector(".rt-detail-acc");
-    if (!host || host.dataset.loadedFor === code) return;
+    if (!host) return;
+    if (host.dataset.loadedFor === code && host.querySelector(".rt-stock-head")) {
+      wireDetailAccordionClose(host);
+      return;
+    }
+
+    if (state.detailFetchAbort) {
+      try {
+        state.detailFetchAbort.abort();
+      } catch (e) {
+        /* noop */
+      }
+    }
+    const ctrl = new AbortController();
+    state.detailFetchAbort = ctrl;
 
     host.innerHTML = buildStockResultSkeleton();
     try {
-      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(code)}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
       const data = await res.json().catch(() => ({}));
+      if (ctrl.signal.aborted) return;
       if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
       if (data && data.error) {
         host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(data.error)}</p>`;
@@ -1628,9 +1725,14 @@
           renderTable();
         },
       });
+      const closeBtn = host.querySelector(".rt-stock-close");
+      if (closeBtn) closeBtn.dataset.wired = "1";
     } catch (e) {
+      if (e && e.name === "AbortError") return;
       if (state.openChartCode !== code) return;
       host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(rtErrorTimeoutMessage(e))}</p>`;
+    } finally {
+      if (state.detailFetchAbort === ctrl) state.detailFetchAbort = null;
     }
   }
 
@@ -1996,7 +2098,20 @@
     try {
       const tab = state.tab;
       const page = currentPageForTab(tab);
-      await ensureTabPageLoaded(tab, page, { force: true });
+      const detailOpen = !!state.openChartCode;
+
+      if (detailOpen && (tab === "cap" || tab === "gainers")) {
+        try {
+          const pack = await fetchStocksJsonForTab(tab);
+          mergeStocksInPlaceForTab(tab, pack.stocks || []);
+          const cache = pageCacheForTab(tab);
+          if (cache[page]) cache[page].loadedAt = Date.now();
+        } catch (e) {
+          console.warn("[realtime-board] refreshPartial stocks merge", e && e.message);
+        }
+      } else {
+        await ensureTabPageLoaded(tab, page, { force: true });
+      }
 
       const [idxPack, sessPack] = await Promise.all([
         fetchJson("index", FETCH_TIMEOUT_MS),
@@ -2024,7 +2139,13 @@
       state.marketTime = sessPack.marketTime || null;
 
       state.tabLoadedAt[state.tab] = Date.now();
-      renderAll();
+      if (detailOpen) {
+        renderIndexes();
+        renderMeta();
+        renderTable();
+      } else {
+        renderAll();
+      }
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
         subscribeStocks(getCurrentRows().map((r) => r.code));

@@ -329,19 +329,29 @@
 
       /* 종목 상세 아코디언 — 단일 박스 그리드 */
       .rt-acc {
-        border: 1px solid var(--border);
+        border: 0.5px solid rgba(200, 210, 255, 0.5);
         border-radius: var(--radius);
         overflow: hidden;
-        background: var(--bg-panel);
+        background: #ffffff;
+      }
+      [data-theme="dark"] .rt-acc,
+      .dark-mode .rt-acc {
+        background: #1c2030;
+        border: 0.5px solid rgba(255, 255, 255, 0.1);
       }
       .rt-acc-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 12px 14px;
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+        background: #f8f9ff;
+        border-bottom: 1px solid rgba(200, 210, 255, 0.35);
+      }
+      [data-theme="dark"] .rt-acc-header,
+      .dark-mode .rt-acc-header {
+        background: #242b3d;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-header__left {
         display: flex;
@@ -351,7 +361,7 @@
         min-width: 0;
       }
       .rt-acc-name {
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 500;
         color: var(--text-primary);
         letter-spacing: -0.02em;
@@ -386,14 +396,14 @@
         text-align: right;
       }
       .rt-acc-price {
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 700;
         color: var(--text-primary);
         font-variant-numeric: tabular-nums;
         line-height: 1.15;
       }
       .rt-acc-chg {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
       }
@@ -425,10 +435,17 @@
         border-top: 1px solid var(--border);
       }
       .rt-acc-cell {
-        padding: 10px 14px;
-        border-right: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
+        padding: 12px 16px;
+        border-right: 1px solid rgba(200, 210, 255, 0.35);
+        border-bottom: 1px solid rgba(200, 210, 255, 0.35);
         min-width: 0;
+        background: #ffffff;
+      }
+      [data-theme="dark"] .rt-acc-cell,
+      .dark-mode .rt-acc-cell {
+        background: #1c2030;
+        border-right-color: rgba(255, 255, 255, 0.08);
+        border-bottom-color: rgba(255, 255, 255, 0.08);
       }
       .rt-acc-grid--4 .rt-acc-cell:nth-child(4n) {
         border-right: none;
@@ -446,18 +463,21 @@
         text-align: center;
       }
       .rt-acc-cell__k {
-        font-size: 10px;
+        font-size: 11px;
         color: var(--text-secondary);
         line-height: 1.3;
-        margin-bottom: 4px;
+        margin-bottom: 5px;
       }
       .rt-acc-cell__v {
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 500;
         color: var(--text-primary);
         font-variant-numeric: tabular-nums;
         line-height: 1.35;
         word-break: break-all;
+      }
+      .rt-acc-grid--3 .rt-acc-cell__v {
+        font-size: 15px;
       }
       .rt-acc-val--hi {
         color: #ef5350;
@@ -490,10 +510,15 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding: 8px 14px;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        background: var(--bg-secondary);
+        padding: 10px 16px;
+        border-top: 1px solid rgba(200, 210, 255, 0.35);
+        border-bottom: 1px solid rgba(200, 210, 255, 0.35);
+        background: #f8f9ff;
+      }
+      [data-theme="dark"] .rt-acc-section-bar,
+      .dark-mode .rt-acc-section-bar {
+        background: #242b3d;
+        border-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-section-bar__title {
         font-size: 11px;
@@ -511,9 +536,14 @@
         flex-wrap: wrap;
         align-items: stretch;
         gap: 8px;
-        padding: 10px 12px;
-        border-top: 1px solid var(--border);
-        background: var(--bg-panel);
+        padding: 12px 16px;
+        border-top: 1px solid rgba(200, 210, 255, 0.35);
+        background: #ffffff;
+      }
+      [data-theme="dark"] .rt-acc-footer,
+      .dark-mode .rt-acc-footer {
+        background: #1c2030;
+        border-top-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-btn {
         box-sizing: border-box;

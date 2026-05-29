@@ -272,7 +272,7 @@
       lwChartsScriptPromise = new Promise((resolve, reject) => {
         const s = document.createElement("script");
         s.async = true;
-        s.src = "https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js";
+        s.src = "https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js";
         s.crossOrigin = "anonymous";
         s.onload = () => {
           if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
@@ -450,8 +450,11 @@
       tip.style.top = `${Math.max(pad, y)}px`;
     }
 
-    chartCandle.subscribeCrosshairMove((param) => handle(param, candleHost));
-    chartVol.subscribeCrosshairMove((param) => handle(param, volHost));
+    const tipHost = panesEl.querySelector(".rt-lw-chart-host") || candleHost;
+    chartCandle.subscribeCrosshairMove((param) => handle(param, tipHost));
+    if (chartVol !== chartCandle) {
+      chartVol.subscribeCrosshairMove((param) => handle(param, volHost));
+    }
   }
 
   function disposeLwChart() {
@@ -511,18 +514,187 @@
     return volData;
   }
 
+  /** 캔들·거래량 차트 마운트 대상 (단일 멀티패인 우선) */
+  function getLwChartPaneMounts(root) {
+    if (!root) return null;
+    const combined = root.querySelector(".rt-lw-chart-host");
+    if (combined) return { mode: "single", host: combined };
+    const candleHost = root.querySelector(".rt-lw-candle-host");
+    const volHost = root.querySelector(".rt-lw-volume-host");
+    if (candleHost && volHost) return { mode: "dual", candleHost, volHost };
+    return null;
+  }
+
+  const LW_TIME_SCALE_BASE = {
+    barSpacing: 6,
+    minBarSpacing: 3,
+    rightOffset: 4,
+    fixLeftEdge: false,
+    fixRightEdge: false,
+    borderVisible: true,
+    borderColor: "rgba(148, 130, 98, 0.35)",
+    timeVisible: true,
+    secondsVisible: false,
+    allowBoldLabels: true,
+  };
+
+  const LW_RIGHT_SCALE_BASE = {
+    borderColor: "rgba(148, 130, 98, 0.35)",
+    autoScale: true,
+    minimumWidth: 76,
+  };
+
+  function lwChartLayoutOptions(width, height, timeScaleVisible, localization) {
+    return {
+      width: Math.max(width, 200),
+      height: Math.max(height, 60),
+      layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
+      localization,
+      crosshair: {
+        vertLine: { labelVisible: true },
+        horzLine: { labelVisible: true },
+      },
+      grid: {
+        vertLines: { color: "rgba(212, 175, 55, 0.08)" },
+        horzLines: { color: "rgba(212, 175, 55, 0.08)" },
+      },
+      leftPriceScale: { visible: false },
+      rightPriceScale: { ...LW_RIGHT_SCALE_BASE },
+      timeScale: { ...LW_TIME_SCALE_BASE, visible: timeScaleVisible },
+    };
+  }
+
+  /** 이중 차트: 우측 눈금 폭·barSpacing 맞춤 (격자/봉 위치 일치) */
+  function syncLwDualChartAxes(chartCandle, chartVol) {
+    if (!chartCandle || !chartVol || chartCandle === chartVol) return;
+    try {
+      chartCandle.timeScale().applyOptions({ ...LW_TIME_SCALE_BASE, visible: false });
+      chartVol.timeScale().applyOptions({ ...LW_TIME_SCALE_BASE, visible: true });
+      chartCandle.priceScale("right").applyOptions(LW_RIGHT_SCALE_BASE);
+      chartVol.priceScale("right").applyOptions(LW_RIGHT_SCALE_BASE);
+      const wA = chartCandle.priceScale("right").width();
+      const wB = chartVol.priceScale("right").width();
+      const mw = Math.max(wA, wB, 76);
+      chartCandle.priceScale("right").applyOptions({ minimumWidth: mw });
+      chartVol.priceScale("right").applyOptions({ minimumWidth: mw });
+      chartCandle.timeScale().fitContent();
+      chartVol.timeScale().fitContent();
+      const r = chartCandle.timeScale().getVisibleLogicalRange();
+      if (r) chartVol.timeScale().setVisibleLogicalRange(r);
+    } catch (e) {
+      /* noop */
+    }
+  }
+
+  function addCandleSeries(LC, chart) {
+    const opts = {
+      upColor: CANDLE_UP,
+      downColor: CANDLE_DOWN,
+      borderUpColor: CANDLE_UP,
+      borderDownColor: CANDLE_DOWN,
+      wickUpColor: CANDLE_UP,
+      wickDownColor: CANDLE_DOWN,
+    };
+    if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
+      return chart.addSeries(LC.CandlestickSeries, opts);
+    }
+    if (typeof chart.addCandlestickSeries === "function") return chart.addCandlestickSeries(opts);
+    return null;
+  }
+
+  function addVolSeries(LC, chart) {
+    const opts = {
+      priceFormat: { type: "volume" },
+      priceLineVisible: false,
+      lastValueVisible: false,
+    };
+    return addHistogramSeriesCompat(chart, LC, opts);
+  }
+
+  /**
+   * 단일 차트 멀티패인(권장) 또는 이중 차트로 캔들+거래량 생성
+   * @returns {{ mode, chart, chartCandle, chartVol, candle, vol }}
+   */
+  function createLwCandleVolumeCharts(LC, mounts, opts) {
+    const { width, heightTotal, heightCandle, heightVol, localization } = opts;
+    if (mounts.mode === "single") {
+      mounts.host.innerHTML = "";
+      const chart = LC.createChart(mounts.host, lwChartLayoutOptions(width, heightTotal, true, localization));
+      let candle = null;
+      let vol = null;
+      if (LC.CandlestickSeries && LC.HistogramSeries && typeof chart.addSeries === "function") {
+        try {
+          candle = chart.addSeries(
+            LC.CandlestickSeries,
+            {
+              upColor: CANDLE_UP,
+              downColor: CANDLE_DOWN,
+              borderUpColor: CANDLE_UP,
+              borderDownColor: CANDLE_DOWN,
+              wickUpColor: CANDLE_UP,
+              wickDownColor: CANDLE_DOWN,
+            },
+            0
+          );
+          vol = chart.addSeries(
+            LC.HistogramSeries,
+            { priceFormat: { type: "volume" }, priceLineVisible: false, lastValueVisible: false },
+            1
+          );
+        } catch (e) {
+          candle = addCandleSeries(LC, chart);
+          vol = addVolSeries(LC, chart);
+        }
+      } else {
+        candle = addCandleSeries(LC, chart);
+        vol = addVolSeries(LC, chart);
+      }
+      if (!candle || !vol) throw new Error("차트 시리즈를 초기화하지 못했습니다.");
+      try {
+        if (typeof chart.panes === "function") {
+          const pl = chart.panes();
+          if (pl && pl[1] && typeof pl[1].setHeight === "function") {
+            pl[1].setHeight(Math.max(56, Math.round(heightTotal * 0.32)));
+          }
+        }
+      } catch (e) {
+        /* noop */
+      }
+      return { mode: "single", chart, chartCandle: chart, chartVol: chart, candle, vol };
+    }
+
+    mounts.candleHost.innerHTML = "";
+    mounts.volHost.innerHTML = "";
+    const chartCandle = LC.createChart(
+      mounts.candleHost,
+      lwChartLayoutOptions(width, heightCandle, false, localization)
+    );
+    const chartVol = LC.createChart(mounts.volHost, lwChartLayoutOptions(width, heightVol, true, localization));
+    const candle = addCandleSeries(LC, chartCandle);
+    const vol = addVolSeries(LC, chartVol);
+    if (!candle || !vol) throw new Error("차트 시리즈를 초기화하지 못했습니다.");
+    linkLogicalRangeSync(chartCandle, chartVol);
+    syncLwDualChartAxes(chartCandle, chartVol);
+    return { mode: "dual", chart: null, chartCandle, chartVol, candle, vol };
+  }
+
+  function applyLwChartSeriesData(bundle, candles, limit) {
+    if (!bundle || !bundle.candle || !bundle.vol || !candles || !candles.length) return [];
+    const sliced = sliceCandlesFromEnd(candles, limit || state.chartBarsLimit || 200);
+    bundle.candle.setData(sliced);
+    bundle.vol.setData(buildVolumeHistogramData(sliced));
+    if (bundle.mode === "single") {
+      bundle.chart.timeScale().fitContent();
+    } else {
+      syncLwDualChartAxes(bundle.chartCandle, bundle.chartVol);
+    }
+    return sliced;
+  }
+
   function applyLwChartVisibleRange() {
     const b = state.lwBundle;
     if (!b || !b.chartCandle || !b.chartVol || !b.candle || !b.vol || !b.fullCandles || !b.fullCandles.length) return;
-    const limit = state.chartBarsLimit || 200;
-    const sliced = sliceCandlesFromEnd(b.fullCandles, limit);
-    const volData = buildVolumeHistogramData(sliced);
-    b.candle.setData(sliced);
-    b.vol.setData(volData);
-    b.chartCandle.timeScale().fitContent();
-    b.chartVol.timeScale().fitContent();
-    const r = b.chartCandle.timeScale().getVisibleLogicalRange();
-    if (r) b.chartVol.timeScale().setVisibleLogicalRange(r);
+    applyLwChartSeriesData(b, b.fullCandles, state.chartBarsLimit || 200);
   }
 
   function syncChartPeriodToolbarPressed(body) {
@@ -591,17 +763,16 @@
     if (!state.openChartCode) return;
     const chartTr = body.querySelector("tr.rt-chart-row");
     const panes = body.querySelector("tr.rt-chart-row .rt-chart-panes");
-    const candleHost = body.querySelector("tr.rt-chart-row .rt-lw-candle-host");
-    const volHost = body.querySelector("tr.rt-chart-row .rt-lw-volume-host");
-    if (!panes || !candleHost || !volHost) return;
+    const mounts = getLwChartPaneMounts(panes);
+    if (!panes || !mounts) return;
 
     setChartRowLoading(chartTr, true);
     try {
       await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
       const LC = window.LightweightCharts;
       if (!LC || typeof LC.createChart !== "function") {
-        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
-        volHost.innerHTML = "";
+        const errHost = mounts.mode === "single" ? mounts.host : mounts.candleHost;
+        errHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("차트 라이브러리를 불러오지 못했습니다.")}</p>`;
         return;
       }
 
@@ -612,11 +783,15 @@
         state.lwVolChart
       ) {
         const w = panes.clientWidth;
-        const hC = Math.max(candleHost.clientHeight, 80);
-        const hV = Math.max(volHost.clientHeight, 60);
-        if (w > 0) {
+        const hT = Math.max(panes.clientHeight, 200);
+        if (w > 0 && state.lwBundle && state.lwBundle.mode === "single") {
+          state.lwChart.applyOptions({ width: w, height: hT });
+        } else if (w > 0) {
+          const hC = Math.max(mounts.candleHost.clientHeight, 80);
+          const hV = Math.max(mounts.volHost.clientHeight, 60);
           state.lwChart.applyOptions({ width: w, height: hC });
           state.lwVolChart.applyOptions({ width: w, height: hV });
+          syncLwDualChartAxes(state.lwChart, state.lwVolChart);
         }
         syncChartPeriodToolbarPressed(body);
         updateChartQuoteStripFromCandles(body);
@@ -626,117 +801,55 @@
       disposeLwChart();
       delete panes.dataset.mountedFor;
       delete panes.dataset.mountedPeriod;
-      candleHost.innerHTML = "";
-      volHost.innerHTML = "";
       panes.removeAttribute("data-error");
 
       const periodUpper = String(state.candlePeriod || "D").toUpperCase();
       const localization = buildChartLocalization(periodUpper);
-
-      const chartCommon = (width, height, timeScaleVisible) => ({
-        width: Math.max(width, 200),
-        height: Math.max(height, 60),
-        layout: {
-          background: { type: "solid", color: "#12100c" },
-          textColor: "#c4b8a8",
-        },
-        localization,
-        crosshair: {
-          vertLine: {
-            labelVisible: true,
-          },
-          horzLine: {
-            labelVisible: true,
-          },
-        },
-        grid: {
-          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
-          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
-        },
-        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-        timeScale: {
-          visible: timeScaleVisible,
-          borderVisible: true,
-          borderColor: "rgba(148, 130, 98, 0.35)",
-          timeVisible: false,
-          secondsVisible: false,
-          allowBoldLabels: true,
-        },
-      });
-
       const w0 = Math.max(panes.clientWidth, 200);
-      const hC0 = Math.max(candleHost.clientHeight, 80);
-      const hV0 = Math.max(volHost.clientHeight, 60);
+      const hT0 = Math.max(panes.clientHeight, 200);
+      const hC0 =
+        mounts.mode === "single"
+          ? hT0
+          : Math.max(mounts.candleHost.clientHeight || panes.clientHeight * 0.65, 80);
+      const hV0 =
+        mounts.mode === "single" ? 0 : Math.max(mounts.volHost.clientHeight || panes.clientHeight * 0.35, 60);
 
-      const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
-      /* 날짜 축: 거래량 패널 하단만 표시. 범위는 linkLogicalRangeSync로 캔들과 동기화 */
-      const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
-
-      const candleOpts = {
-        upColor: CANDLE_UP,
-        downColor: CANDLE_DOWN,
-        borderUpColor: CANDLE_UP,
-        borderDownColor: CANDLE_DOWN,
-        wickUpColor: CANDLE_UP,
-        wickDownColor: CANDLE_DOWN,
-      };
-
-      let candle;
-      if (LC.CandlestickSeries && typeof chartCandle.addSeries === "function") {
-        candle = chartCandle.addSeries(LC.CandlestickSeries, candleOpts);
-      } else if (typeof chartCandle.addCandlestickSeries === "function") {
-        candle = chartCandle.addCandlestickSeries(candleOpts);
-      } else {
-        try {
-          chartCandle.remove();
-        } catch (e) {
-          /* noop */
-        }
-        try {
-          chartVol.remove();
-        } catch (e2) {
-          /* noop */
-        }
-        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("캔들 시리즈를 만들 수 없습니다.")}</p>`;
-        return;
-      }
-
-      const vol = addHistogramSeriesCompat(chartVol, LC, {
-        priceFormat: { type: "volume" },
-        priceLineVisible: false,
-        lastValueVisible: false,
+      const created = createLwCandleVolumeCharts(LC, mounts, {
+        width: w0,
+        heightTotal: hT0,
+        heightCandle: hC0,
+        heightVol: hV0,
+        localization,
       });
 
-      if (!vol) {
-        try {
-          chartCandle.remove();
-        } catch (e) {
-          /* noop */
-        }
-        try {
-          chartVol.remove();
-        } catch (e2) {
-          /* noop */
-        }
-        candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml("거래량 시리즈를 초기화하지 못했습니다.")}</p>`;
-        return;
-      }
-
-      linkLogicalRangeSync(chartCandle, chartVol);
-
-      state.lwChart = chartCandle;
-      state.lwVolChart = chartVol;
+      state.lwChart = created.chartCandle;
+      state.lwVolChart = created.chartVol;
       panes.dataset.mountedFor = state.openChartCode;
       panes.dataset.mountedPeriod = state.candlePeriod;
 
       const ro = new ResizeObserver(() => {
         if (!state.lwChart || !state.lwVolChart || !panes.isConnected) return;
         const w = panes.clientWidth;
-        const hC = Math.max(candleHost.clientHeight, 80);
-        const hV = Math.max(volHost.clientHeight, 60);
-        if (w > 0) {
+        const hT = Math.max(panes.clientHeight, 200);
+        if (w <= 0) return;
+        if (state.lwBundle && state.lwBundle.mode === "single") {
+          state.lwChart.applyOptions({ width: w, height: hT });
+          try {
+            if (typeof state.lwChart.panes === "function") {
+              const pl = state.lwChart.panes();
+              if (pl && pl[1] && typeof pl[1].setHeight === "function") {
+                pl[1].setHeight(Math.max(56, Math.round(hT * 0.32)));
+              }
+            }
+          } catch (e) {
+            /* noop */
+          }
+        } else {
+          const hC = Math.max(mounts.candleHost.clientHeight, 80);
+          const hV = Math.max(mounts.volHost.clientHeight, 60);
           state.lwChart.applyOptions({ width: w, height: hC });
           state.lwVolChart.applyOptions({ width: w, height: hV });
+          syncLwDualChartAxes(state.lwChart, state.lwVolChart);
         }
       });
       ro.observe(panes);
@@ -763,13 +876,12 @@
       }
 
       state.lwBundle = {
-        chartCandle,
-        chartVol,
-        candle,
-        vol,
+        ...created,
         fullCandles: candles,
       };
-      wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, state.candlePeriod);
+      const tipCandle = mounts.mode === "single" ? mounts.host : mounts.candleHost;
+      const tipVol = mounts.mode === "single" ? mounts.host : mounts.volHost;
+      wireRtCrosshairTooltip(panes, tipCandle, tipVol, created.chartCandle, created.chartVol, state.candlePeriod);
       applyLwChartVisibleRange();
       syncChartPeriodToolbarPressed(body);
       updateChartQuoteStripFromCandles(body);
@@ -783,8 +895,9 @@
           : e && e.message
             ? e.message
             : String(e);
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msg)}</p>`;
-      volHost.innerHTML = "";
+      const errHost = mounts.mode === "single" ? mounts.host : mounts.candleHost;
+      errHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msg)}</p>`;
+      if (mounts.mode === "dual") mounts.volHost.innerHTML = "";
     } finally {
       setChartRowLoading(chartTr, false);
     }
@@ -1417,9 +1530,7 @@
       `<div class="rt-chart-body">`,
       `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
       `  <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
-      `    <div class="rt-chart-pane rt-chart-pane--candle"><div class="rt-lw-candle-host" role="region" aria-label="캔들 차트"></div></div>`,
-      `    <div class="rt-chart-pane-sep" aria-hidden="true"></div>`,
-      `    <div class="rt-chart-pane rt-chart-pane--vol"><div class="rt-lw-volume-host" role="region" aria-label="거래량 차트"></div></div>`,
+      `    <div class="rt-lw-chart-host" role="region" aria-label="캔들 및 거래량 차트"></div>`,
       `  </div>`,
       `</div>`,
     ].join("");
@@ -1625,10 +1736,9 @@
 
   async function mountStockPanelChart(panelEl, code6, periodUpper) {
     const panes = panelEl.querySelector(".rt-chart-panes");
-    const candleHost = panelEl.querySelector(".rt-lw-candle-host");
-    const volHost = panelEl.querySelector(".rt-lw-volume-host");
+    const mounts = getLwChartPaneMounts(panelEl);
     const msg = panelEl.querySelector(".rt-chart-loading-msg");
-    if (!panes || !candleHost || !volHost) return;
+    if (!panes || !mounts) return;
     if (msg) msg.hidden = false;
     panes.classList.add("rt-chart-panes--pending");
 
@@ -1637,58 +1747,25 @@
       const LC = window.LightweightCharts;
       if (!LC || typeof LC.createChart !== "function") throw new Error("차트 라이브러리를 불러오지 못했습니다.");
 
-      // 기존 테이블 차트와 충돌 방지: 패널에서는 별도 인스턴스 사용 (간단히 host 비우고 재생성)
-      candleHost.innerHTML = "";
-      volHost.innerHTML = "";
-
       const w0 = Math.max(panes.clientWidth, 200);
-      const hC0 = Math.max(candleHost.clientHeight, 80);
-      const hV0 = Math.max(volHost.clientHeight, 60);
+      const hT0 = Math.max(panes.clientHeight, 200);
+      const hC0 =
+        mounts.mode === "single"
+          ? hT0
+          : Math.max(mounts.candleHost.clientHeight || panes.clientHeight * 0.65, 80);
+      const hV0 =
+        mounts.mode === "single" ? 0 : Math.max(mounts.volHost.clientHeight || panes.clientHeight * 0.35, 60);
       const localization = buildChartLocalization(periodUpper);
-      const chartCommon = (width, height, timeScaleVisible) => ({
-        width: Math.max(width, 200),
-        height: Math.max(height, 60),
-        layout: { background: { type: "solid", color: "#12100c" }, textColor: "#c4b8a8" },
+      const created = createLwCandleVolumeCharts(LC, mounts, {
+        width: w0,
+        heightTotal: hT0,
+        heightCandle: hC0,
+        heightVol: hV0,
         localization,
-        grid: {
-          vertLines: { color: "rgba(212, 175, 55, 0.08)" },
-          horzLines: { color: "rgba(212, 175, 55, 0.08)" },
-        },
-        rightPriceScale: { borderColor: "rgba(148, 130, 98, 0.35)" },
-        timeScale: {
-          visible: timeScaleVisible,
-          borderVisible: true,
-          borderColor: "rgba(148, 130, 98, 0.35)",
-          timeVisible: false,
-          secondsVisible: false,
-          allowBoldLabels: true,
-        },
       });
-
-      const chartCandle = LC.createChart(candleHost, chartCommon(w0, hC0, false));
-      const chartVol = LC.createChart(volHost, chartCommon(w0, hV0, true));
-
-      const candleOpts = {
-        upColor: CANDLE_UP,
-        downColor: CANDLE_DOWN,
-        borderUpColor: CANDLE_UP,
-        borderDownColor: CANDLE_DOWN,
-        wickUpColor: CANDLE_UP,
-        wickDownColor: CANDLE_DOWN,
-      };
-      const candle =
-        LC.CandlestickSeries && typeof chartCandle.addSeries === "function"
-          ? chartCandle.addSeries(LC.CandlestickSeries, candleOpts)
-          : chartCandle.addCandlestickSeries(candleOpts);
-
-      const vol = addHistogramSeriesCompat(chartVol, LC, {
-        priceFormat: { type: "volume" },
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      if (!vol) throw new Error("거래량 시리즈를 초기화하지 못했습니다.");
-      linkLogicalRangeSync(chartCandle, chartVol);
-      wireRtCrosshairTooltip(panes, candleHost, volHost, chartCandle, chartVol, periodUpper);
+      const tipCandle = mounts.mode === "single" ? mounts.host : mounts.candleHost;
+      const tipVol = mounts.mode === "single" ? mounts.host : mounts.volHost;
+      wireRtCrosshairTooltip(panes, tipCandle, tipVol, created.chartCandle, created.chartVol, periodUpper);
 
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
@@ -1701,11 +1778,7 @@
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
         const candles = Array.isArray(data.candles) ? data.candles : [];
         if (!candles.length) throw new Error("차트 데이터가 없습니다.");
-        const sliced = sliceCandlesFromEnd(candles, state.chartBarsLimit || 200);
-        candle.setData(sliced);
-        vol.setData(buildVolumeHistogramData(sliced));
-        chartCandle.timeScale().fitContent();
-        chartVol.timeScale().fitContent();
+        applyLwChartSeriesData(created, candles, state.chartBarsLimit || 200);
       } finally {
         clearTimeout(tid);
       }
@@ -1716,8 +1789,9 @@
           : e && e.message
             ? e.message
             : String(e);
-      candleHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msgText)}</p>`;
-      volHost.innerHTML = "";
+      const errHost = mounts.mode === "single" ? mounts.host : mounts.candleHost;
+      errHost.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(msgText)}</p>`;
+      if (mounts.mode === "dual") mounts.volHost.innerHTML = "";
     } finally {
       if (msg) msg.hidden = true;
       panes.classList.remove("rt-chart-panes--pending");

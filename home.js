@@ -153,9 +153,9 @@
     el.innerHTML = rows
       .map((row) => {
         const pct = toNum(row.changePct);
-        const cls = chgClass(pct, true);
+        const cls = chgClass(pct);
         const val = fmtHeroValue(row, kind);
-        const pctStr = pct != null ? ` ${fmtPct(pct)}` : "";
+        const pctStr = pct != null && row.value != null ? ` ${fmtPct(pct)}` : "";
         return `<div class="home-hero__row"><span class="home-hero__row-name">${escapeHtml(row.label)}</span><span class="home-hero__row-val ${cls}">${escapeHtml(val + pctStr)}</span></div>`;
       })
       .join("");

@@ -123,22 +123,29 @@ async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
   return yahooQuote(yahooSymbol, label);
 }
 
-async function btc() {
-  const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");
+async function geckoQuote(geckoId, label) {
+  const res = await fetch(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(geckoId)}&vs_currencies=usd&include_24hr_change=true`
+  );
+  if (!res.ok) throw new Error(`Gecko HTTP ${res.status}`);
   const body = await res.json();
-  return { id: "btc", label: "비트코인", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) };
+  const row = body?.[geckoId] || {};
+  return { label, value: toNum(row.usd), changePct: toNum(row.usd_24h_change) };
 }
 
-async function coingeckoMulti() {
-  const url =
-    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=usd&include_24hr_change=true";
-  const res = await fetch(url);
-  const body = await res.json();
-  return {
-    btc: { label: "Bitcoin", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) },
-    eth: { label: "Ethereum", value: toNum(body?.ethereum?.usd), changePct: toNum(body?.ethereum?.usd_24h_change) },
-    xrp: { label: "XRP", value: toNum(body?.ripple?.usd), changePct: toNum(body?.ripple?.usd_24h_change) },
-  };
+async function cryptoUsdQuote(geckoId, yahooSymbol, label) {
+  try {
+    const q = await geckoQuote(geckoId, label);
+    if (q.value != null) return q;
+  } catch (_) {}
+  try {
+    return await yahooQuote(yahooSymbol, label);
+  } catch (_) {}
+  return { label, value: null, changePct: null };
+}
+
+async function btc() {
+  return cryptoUsdQuote("bitcoin", "BTC-USD", "비트코인");
 }
 
 async function naverStockBasic(code6, label) {
@@ -186,7 +193,8 @@ module.exports = async function handler(req, res) {
     yahooQuote("NVDA", "NVDA"),
     yahooQuote("AAPL", "AAPL"),
     yahooQuote("GOOG", "GOOG"),
-    coingeckoMulti(),
+    cryptoUsdQuote("ethereum", "ETH-USD", "Ethereum"),
+    cryptoUsdQuote("ripple", "XRP-USD", "XRP"),
   ];
 
   const settled = await Promise.allSettled(tasks);
@@ -208,7 +216,8 @@ module.exports = async function handler(req, res) {
   const nvda = settledValue(settled[12]);
   const aapl = settledValue(settled[13]);
   const goog = settledValue(settled[14]);
-  const coins = settledValue(settled[15]) || {};
+  const eth = settledValue(settled[15]);
+  const xrp = settledValue(settled[16]);
 
   json(res, 200, {
     updatedAt: new Date().toISOString(),
@@ -226,8 +235,8 @@ module.exports = async function handler(req, res) {
       aapl: { label: "AAPL", value: aapl.value, changePct: aapl.changePct },
       goog: { label: "GOOG", value: goog.value, changePct: goog.changePct },
       btc: { label: "BTC", value: btcItem.value, changePct: btcItem.changePct },
-      eth: coins.eth || { label: "ETH", value: null, changePct: null },
-      xrp: coins.xrp || { label: "XRP", value: null, changePct: null },
+      eth: { label: "ETH", value: eth.value, changePct: eth.changePct },
+      xrp: { label: "XRP", value: xrp.value, changePct: xrp.changePct },
     },
   });
 };

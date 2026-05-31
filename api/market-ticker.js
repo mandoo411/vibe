@@ -52,7 +52,6 @@ function indexValue(row) {
 
 function indexPlausible(code, value) {
   if (!Number.isFinite(value)) return false;
-  // 코스피는 환경/지수 기준에 따라 8,000을 초과할 수 있음
   if (code === "0001") return value > 500 && value < 20000;
   if (code === "1001") return value > 300 && value < 4000;
   return true;
@@ -127,7 +126,19 @@ async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
 async function btc() {
   const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true");
   const body = await res.json();
-  return { id: "btc", label: "BTC", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) };
+  return { id: "btc", label: "비트코인", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) };
+}
+
+async function coingeckoMulti() {
+  const url =
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,ripple&vs_currencies=usd&include_24hr_change=true";
+  const res = await fetch(url);
+  const body = await res.json();
+  return {
+    btc: { label: "Bitcoin", value: toNum(body?.bitcoin?.usd), changePct: toNum(body?.bitcoin?.usd_24h_change) },
+    eth: { label: "Ethereum", value: toNum(body?.ethereum?.usd), changePct: toNum(body?.ethereum?.usd_24h_change) },
+    xrp: { label: "XRP", value: toNum(body?.ripple?.usd), changePct: toNum(body?.ripple?.usd_24h_change) },
+  };
 }
 
 async function naverStockBasic(code6, label) {
@@ -140,7 +151,7 @@ async function naverStockBasic(code6, label) {
   const price = toNum(body?.closePrice ?? body?.overMarketPriceInfo?.overPrice);
   return {
     id: code,
-    label,
+    label: label || body?.stockName || code,
     value: price,
     changePct: toNum(body?.fluctuationsRatio),
   };
@@ -151,11 +162,18 @@ function settledValue(result) {
   return { value: null, changePct: null, error: result.reason?.message || String(result.reason) };
 }
 
+function quoteItem(result, fallbackLabel) {
+  if (result.status === "fulfilled") return result.value;
+  return { label: fallbackLabel, value: null, changePct: null, error: result.reason?.message || String(result.reason) };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return json(res, 405, { error: "Method not allowed" });
+
   const tasks = [
     domesticIndex("0001", "코스피"),
     domesticIndex("1001", "코스닥"),
+    yahooQuote("NQ=F", "나스닥선물"),
     erUsdKrw(),
     commodityQuote("OANDA:WTI_USD", "CL=F", "WTI유가"),
     commodityQuote("OANDA:XAU_USD", "GC=F", "금시세"),
@@ -163,32 +181,53 @@ module.exports = async function handler(req, res) {
     yahooQuote("^GSPC", "S&P500"),
     yahooQuote("^IXIC", "NASDAQ"),
     naverStockBasic("005930", "삼성전자"),
+    naverStockBasic("000660", "SK하이닉스"),
+    naverStockBasic("005380", "현대차"),
+    yahooQuote("NVDA", "NVDA"),
+    yahooQuote("AAPL", "AAPL"),
+    yahooQuote("GOOG", "GOOG"),
+    coingeckoMulti(),
   ];
+
   const settled = await Promise.allSettled(tasks);
-  const tickerLabels = ["코스피", "코스닥", "원/달러", "WTI유가", "금시세", "BTC"];
-  const items = settled.slice(0, 6).map((result, index) => {
-    if (result.status === "fulfilled") return result.value;
-    return {
-      label: tickerLabels[index],
-      value: null,
-      changePct: null,
-      error: result.reason?.message || String(result.reason),
-    };
+  const tickerLabels = ["코스피", "코스닥", "나스닥선물", "원/달러", "WTI유가", "금시세", "비트코인"];
+  const items = settled.slice(0, 7).map((result, index) => {
+    const row = quoteItem(result, tickerLabels[index]);
+    return { ...row, label: tickerLabels[index] };
   });
+
   const kospi = settledValue(settled[0]);
-  const btcItem = settledValue(settled[5]);
-  const sp500 = settledValue(settled[6]);
-  const nasdaq = settledValue(settled[7]);
-  const samsung = settledValue(settled[8]);
+  const kosdaq = settledValue(settled[1]);
+  const nqFut = settledValue(settled[2]);
+  const btcItem = settledValue(settled[6]);
+  const sp500 = settledValue(settled[7]);
+  const nasdaq = settledValue(settled[8]);
+  const samsung = settledValue(settled[9]);
+  const skhynix = settledValue(settled[10]);
+  const hyundai = settledValue(settled[11]);
+  const nvda = settledValue(settled[12]);
+  const aapl = settledValue(settled[13]);
+  const goog = settledValue(settled[14]);
+  const coins = settledValue(settled[15]) || {};
+
   json(res, 200, {
     updatedAt: new Date().toISOString(),
     items,
     hub: {
       kospi: { label: "코스피", value: kospi.value, changePct: kospi.changePct },
+      kosdaq: { label: "코스닥", value: kosdaq.value, changePct: kosdaq.changePct },
+      nasdaqFutures: { label: "나스닥선물", value: nqFut.value, changePct: nqFut.changePct },
       sp500: { label: "S&P500", value: sp500.value, changePct: sp500.changePct },
       nasdaq: { label: "NASDAQ", value: nasdaq.value, changePct: nasdaq.changePct },
       samsung: { label: "삼성전자", value: samsung.value, changePct: samsung.changePct },
+      skhynix: { label: "SK하이닉스", value: skhynix.value, changePct: skhynix.changePct },
+      hyundai: { label: "현대차", value: hyundai.value, changePct: hyundai.changePct },
+      nvda: { label: "NVDA", value: nvda.value, changePct: nvda.changePct },
+      aapl: { label: "AAPL", value: aapl.value, changePct: aapl.changePct },
+      goog: { label: "GOOG", value: goog.value, changePct: goog.changePct },
       btc: { label: "BTC", value: btcItem.value, changePct: btcItem.changePct },
+      eth: coins.eth || { label: "ETH", value: null, changePct: null },
+      xrp: coins.xrp || { label: "XRP", value: null, changePct: null },
     },
   });
 };

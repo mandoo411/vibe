@@ -2,225 +2,196 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
     <title>TotalMoney AI · 홈</title>
-    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=2">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=2">
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2">
-    <link rel="shortcut icon" href="/favicon.ico?v=2">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=2" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=2" />
+    <link rel="shortcut icon" href="/favicon.ico?v=2" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
     <link rel="stylesheet" href="./theme.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
-    />
-
-    <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./site-nav.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <script src="./assets/data-url.js"></script>
-    <script src="./site-nav.js" defer></script>
-    <link rel="stylesheet" href="./hub.css" />
-    <script src="./home-hub.js" defer></script>
+    <link rel="stylesheet" href="./home.css" />
+    <script src="./home.js" defer></script>
   </head>
-  <body class="page-home-premium">
-    <div class="page">
-      <header class="tm-site-header">
-        <div class="header-top">
-          <a class="logo logo-link header-top__link home-brand-link" href="./index.html" aria-label="TotalMoney AI 홈">
-            <div class="nav-logo-wrap" style="display:flex; align-items:center; gap:12px;">
-              <div class="nav-logo-box" style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:20px; width:62px; height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 6px 16px rgba(51,57,191,0.2), inset 0 1px 2px rgba(255,255,255,0.9); gap:2px;">
-                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">TM</span>
-                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">AI</span>
-              </div>
-              <div style="line-height:1.35;">
-                <div class="nav-brand-name" style="font-size:15px; font-weight:800; letter-spacing:-0.3px;">TotalMoney</div>
-                <div style="display:flex; align-items:center; gap:5px; margin-top:2px;">
-                  <span class="nav-brand-sub" style="font-size:11px;">powered by</span>
-                  <span class="nav-ai-badge">AI</span>
-                </div>
-              </div>
+  <body class="page-home-v2">
+    <div class="home-wrap">
+      <!-- 1. NAV -->
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
             </div>
-          </a>
-        </div>
-
-        <nav class="tm-site-nav" aria-label="주요 메뉴">
-          <a class="tm-site-nav__link" href="./index.html" aria-current="page">홈</a>
-          <a class="tm-site-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="tm-site-nav__link" href="./briefing.html">브리핑</a>
-          <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
-          <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
-          <a class="tm-site-nav__link" href="./us-market.html">미국시장</a>
-          <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="tm-site-nav__link" href="/stock-analysis.html">AI 종목분석</a>
-        </nav>
-        <button
-          type="button"
-          class="tm-theme-toggle"
-          id="theme-toggle"
-          aria-label="테마 전환"
-          title="테마 전환"
-        >
-          <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" aria-current="page" title="홈">
+            <i class="ti ti-home" aria-hidden="true"></i>
+          </a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./briefing.html">브리핑</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./us-market.html">미국시장</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <button type="button" class="home-nav__theme" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
       </header>
 
-      <header class="masthead masthead--title-only">
-        <div class="masthead__copy">
-          <p class="masthead__kicker page-label">MARKET HUB</p>
-          <h1 class="masthead__title page-title">한눈에 보는 시장 도구</h1>
-        </div>
-      </header>
-      <div class="page-hero-sub">
-        <div class="masthead__meta">
-          <span class="market-sub">실시간으로 움직이는 시장을 한눈에</span>
-        </div>
+      <!-- 2. TICKER -->
+      <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
+        <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
 
-      <main class="home-main-content page--hub">
-        <div class="hub-grid" role="list">
-          <a class="menu-card" data-hub-card="daily" href="./daily-market.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-chart-candle"></i>
-            </div>
-            <h2 class="menu-card__title">마감시황</h2>
-            <p class="menu-card__desc">국내 증시 마감 흐름과 AI 요약</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="briefing" href="./briefing.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-news"></i>
-            </div>
-            <h2 class="menu-card__title">브리핑</h2>
-            <p class="menu-card__desc">미국 마감 · 환율 · 코인 시황 브리핑</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="realtime" href="./realtime.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-activity"></i>
-            </div>
-            <h2 class="menu-card__title">실시간시세</h2>
-            <p class="menu-card__desc">시총 TOP100 · 상승률 · 종목 차트</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="schedule" href="./weekly-market.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-calendar-event"></i>
-            </div>
-            <h2 class="menu-card__title">일정</h2>
-            <p class="menu-card__desc">경제지표 · 신규상장 · 국내외 실적</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="us" href="./us-market.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-building-skyscraper"></i>
-            </div>
-            <h2 class="menu-card__title">미국시장</h2>
-            <p class="menu-card__desc">나스닥 · S&amp;P500 · 선물 · 미국 TOP50</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="crypto" href="./crypto.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-currency-bitcoin"></i>
-            </div>
-            <h2 class="menu-card__title">암호화폐</h2>
-            <p class="menu-card__desc">시총 TOP100 · 원/달러 전환 · 차트</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">—</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card" data-hub-card="world" href="./world-market.html" role="listitem">
-            <div class="icon-box" aria-hidden="true">
-              <i class="ti ti-trophy"></i>
-            </div>
-            <h2 class="menu-card__title">글로벌랭킹</h2>
-            <p class="menu-card__desc">세계 기업 시총 · 수익 · 매출 순위</p>
-            <span class="menu-card__mini-badge" data-hub-badge aria-live="polite">Apple 시총 1위</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status"><span class="menu-card__dot" aria-hidden="true"></span>운영중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
-
-          <a class="menu-card menu-card--ai" data-hub-card="ai" href="./stock-analysis.html" role="listitem">
-            <div class="icon-box icon-box--ai" aria-hidden="true">
-              <i class="ti ti-sparkles"></i>
-            </div>
-            <h2 class="menu-card__title menu-card__title--ai">
-              <span>AI 종목분석</span>
-              <span class="menu-card__new">NEW</span>
-            </h2>
-            <p class="menu-card__desc">종목명 입력 → AI 분석 결과 제공</p>
-            <span class="menu-card__mini-badge is-soon" data-hub-badge aria-live="polite">곧 출시</span>
-            <div class="menu-card__footer">
-              <span class="menu-card__status menu-card__status--dev"><span class="menu-card__dot menu-card__dot--ai" aria-hidden="true"></span>개발중</span>
-              <i class="ti ti-arrow-right menu-card__arrow" aria-hidden="true"></i>
-            </div>
-          </a>
+      <!-- 3. HERO -->
+      <section class="home-hero">
+        <div class="home-hero__left">
+          <p class="home-hero__tag">AI Powered Market Platform</p>
+          <h1 class="home-hero__title">실시간 시장을<br /><em>AI로 분석</em>하세요</h1>
+          <p class="home-hero__desc">국내외 주식·암호화폐·경제지표를 한 곳에서</p>
+          <div class="home-hero__btns">
+            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html">🤖 AI 종목분석 시작</a>
+            <a class="home-hero__btn home-hero__btn--secondary" href="./realtime.html">📈 실시간시세 보기</a>
+          </div>
         </div>
-      </main>
-    </div>
+        <div class="home-hero__panels">
+          <div class="home-hero__panel">
+            <div class="home-hero__panel-title">📊 지수</div>
+            <div id="hero-panel-index"></div>
+          </div>
+          <div class="home-hero__panel">
+            <div class="home-hero__panel-title">🇰🇷 국내주식</div>
+            <div id="hero-panel-kr"></div>
+          </div>
+          <div class="home-hero__panel">
+            <div class="home-hero__panel-title">₿ 암호화폐</div>
+            <div id="hero-panel-crypto"></div>
+          </div>
+          <div class="home-hero__panel">
+            <div class="home-hero__panel-title">🇺🇸 미국주식</div>
+            <div id="hero-panel-us"></div>
+          </div>
+        </div>
+      </section>
 
-    <nav class="tm-bottom-nav" aria-label="모바일 메인 메뉴">
-      <a class="tm-bottom-nav__item is-active" href="./index.html" aria-current="page">
-        <i class="ti ti-home" aria-hidden="true"></i>
-        <span>홈</span>
-      </a>
-      <a class="tm-bottom-nav__item" href="./realtime.html">
-        <i class="ti ti-activity" aria-hidden="true"></i>
-        <span>실시간시세</span>
-      </a>
-      <a class="tm-bottom-nav__item" href="./crypto.html">
-        <i class="ti ti-currency-bitcoin" aria-hidden="true"></i>
-        <span>암호화폐</span>
-      </a>
-      <a class="tm-bottom-nav__item" href="./weekly-market.html">
-        <i class="ti ti-calendar" aria-hidden="true"></i>
-        <span>일정</span>
-      </a>
-      <a class="tm-bottom-nav__item" href="./stock-analysis.html">
-        <i class="ti ti-robot" aria-hidden="true"></i>
-        <span>AI분석</span>
-      </a>
-    </nav>
+      <!-- 4. SHORTCUTS -->
+      <nav class="home-shortcuts" aria-label="빠른 이동">
+        <a class="home-shortcuts__pill" href="./daily-market.html"><i class="ti ti-chart-bar"></i> 마감시황</a>
+        <a class="home-shortcuts__pill" href="./briefing.html"><i class="ti ti-file-description"></i> 브리핑</a>
+        <a class="home-shortcuts__pill" href="./realtime.html"><i class="ti ti-activity"></i> 실시간시세</a>
+        <a class="home-shortcuts__pill" href="./weekly-market.html"><i class="ti ti-calendar"></i> 일정</a>
+        <a class="home-shortcuts__pill" href="./us-market.html"><i class="ti ti-building-skyscraper"></i> 미국시장</a>
+        <a class="home-shortcuts__pill" href="./crypto.html"><i class="ti ti-currency-bitcoin"></i> 암호화폐</a>
+        <a class="home-shortcuts__pill" href="./world-market.html"><i class="ti ti-world"></i> 글로벌랭킹</a>
+        <a class="home-shortcuts__pill" href="./stock-analysis.html"><i class="ti ti-robot"></i> AI종목분석</a>
+      </nav>
+
+      <!-- 5. MAIN -->
+      <main class="home-main">
+        <section class="home-section">
+          <div class="home-section__head">
+            <h2 class="home-section__title">🇰🇷 국내 시가총액 TOP 10</h2>
+            <a class="home-section__more" href="./realtime.html">더보기 →</a>
+          </div>
+          <div class="home-section__body">
+            <div class="home-th"><div></div><div>종목명</div><div style="text-align:right">현재가</div><div style="text-align:right">등락률</div></div>
+            <div id="home-kr-top10"><p class="home-empty">로딩 중…</p></div>
+          </div>
+        </section>
+
+        <div class="home-col-mid">
+          <section class="home-section">
+            <div class="home-section__head">
+              <h2 class="home-section__title">🇺🇸 미국시장</h2>
+              <a class="home-section__more" href="./us-market.html">더보기 →</a>
+            </div>
+            <div class="home-section__body">
+              <div class="home-th"><div></div><div>종목/지수</div><div style="text-align:right">현재가</div><div style="text-align:right">등락률</div></div>
+              <div id="home-us-body"><p class="home-empty">로딩 중…</p></div>
+            </div>
+          </section>
+          <section class="home-section">
+            <div class="home-section__head">
+              <h2 class="home-section__title">₿ 암호화폐 TOP</h2>
+              <a class="home-section__more" href="./crypto.html">더보기 →</a>
+            </div>
+            <div class="home-section__body">
+              <div class="home-th home-th--coin"><div></div><div>코인</div><div style="text-align:right">현재가</div><div style="text-align:right">등락률</div></div>
+              <div id="home-crypto-body"><p class="home-empty">로딩 중…</p></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="home-side">
+          <div class="home-ai-card">
+            <h3 class="home-ai-card__title">🤖 AI 종목분석</h3>
+            <p class="home-ai-card__sub">종목명을 입력하면 AI가 즉시 분석해드려요</p>
+            <form id="home-ai-form">
+              <input class="home-ai-card__input" id="home-ai-input" type="text" placeholder="종목명 입력 (예: 삼성전자, AAPL)" autocomplete="off" />
+              <button class="home-ai-card__btn" type="submit">AI 분석 시작 →</button>
+            </form>
+          </div>
+          <div class="home-mini-card">
+            <h3 class="home-mini-card__title">📅 오늘 경제지표</h3>
+            <div id="home-schedule-body"><p class="home-empty">로딩 중…</p></div>
+          </div>
+          <div class="home-mini-card">
+            <h3 class="home-mini-card__title">📰 AI 장 브리핑</h3>
+            <p class="home-brief-text" id="home-brief-text">브리핑을 불러오는 중…</p>
+            <p class="home-brief-time" id="home-brief-time"></p>
+            <div style="margin-top:8px"><a class="home-section__more" href="./briefing.html">전체 브리핑 보기 →</a></div>
+          </div>
+        </aside>
+      </main>
+
+      <!-- 6. FOOTER -->
+      <footer class="home-footer">
+        <div class="home-footer__top">
+          <div>
+            <div class="home-footer__brand-name">TotalMoney AI</div>
+            <div class="home-footer__slogan">실시간 시장을 AI로 분석하세요</div>
+          </div>
+          <div class="home-footer__divider" aria-hidden="true"></div>
+          <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
+          <div class="home-footer__sns">
+            <a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="#" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+            <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
+          </div>
+        </div>
+        <div class="home-footer__bottom">
+          <span>© 2026 TotalMoney AI</span>
+          <div class="home-footer__links">
+            <a href="#">이용약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="mailto:contact@totalmoney.ai">문의하기</a>
+          </div>
+          <span>Data by KIS · FMP · CMC</span>
+        </div>
+      </footer>
+    </div>
   </body>
 </html>

@@ -127,23 +127,48 @@ body.page-home-v2 {
 .home-nav__home-btn {
   width: 36px;
   height: 36px;
+  min-width: 36px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 10px;
   justify-content: center;
-  background: #3339bf;
-  color: #fff;
+  background: #ffffff;
+  border: 1px solid rgba(51, 57, 191, 0.18);
+  color: #3339bf;
+  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
+}
+
+.home-nav__home-btn:hover {
+  background: #eef1ff;
+  border-color: rgba(51, 57, 191, 0.35);
+  color: #3339bf;
+  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
+}
+
+.home-nav__link.home-nav__home-btn[aria-current="page"] {
+  background: #ffffff;
+  color: #3339bf;
+  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+}
+
+.home-nav__link.home-nav__home-btn[aria-current="page"]:hover {
+  background: #eef1ff;
+  color: #3339bf;
 }
 
 .home-nav__home-btn i {
-  font-size: 18px;
+  font-size: 17px;
+  color: #3339bf;
 }
 
 .home-nav__theme {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
   padding: 0;
   border: 1px solid rgba(51, 57, 191, 0.18);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffffff;
   color: #3339bf;
   cursor: pointer;
@@ -165,7 +190,33 @@ body.page-home-v2 {
 .home-nav__theme i,
 .home-nav__theme #theme-icon {
   color: #3339bf;
-  font-size: 19px;
+  font-size: 17px;
+}
+
+[data-theme="dark"] .home-nav__home-btn,
+body[data-theme="dark"] .home-nav__home-btn {
+  background: #242b3d;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ffd84d;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .home-nav__home-btn:hover,
+body[data-theme="dark"] .home-nav__home-btn:hover {
+  background: #2d3550;
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffd84d;
+}
+
+[data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"],
+body[data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"] {
+  background: #242b3d;
+  color: #ffd84d;
+}
+
+[data-theme="dark"] .home-nav__home-btn i,
+body[data-theme="dark"] .home-nav__home-btn i {
+  color: #ffd84d;
 }
 
 [data-theme="dark"] .home-nav__theme,

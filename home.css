@@ -41,26 +41,30 @@ body.page-home-v2 {
 
 .home-nav__logo-box {
   background: linear-gradient(145deg, #e4e8ff, #c8d0ff);
-  border-radius: 14px;
-  width: 44px;
-  height: 44px;
+  border-radius: 20px;
+  width: 62px;
+  height: 62px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.9);
-  gap: 1px;
+  box-shadow: 0 6px 16px rgba(51, 57, 191, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .home-nav__logo-box span {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: 900;
   color: #3339bf;
   line-height: 1;
+  display: block;
+  text-align: center;
+  width: 100%;
 }
 
 .home-nav__brand-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.3px;
   color: #1a1a2e;
@@ -71,18 +75,19 @@ body.page-home-v2 {
   align-items: center;
   gap: 5px;
   margin-top: 2px;
-  font-size: 10px;
+  font-size: 11px;
   color: #888;
 }
 
 .home-nav__ai-badge {
   display: inline-flex;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(51, 57, 191, 0.12);
-  color: #3339bf;
-  font-size: 9px;
-  font-weight: 800;
+  padding: 1px 8px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #3339bf, #5560e8);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 6px 14px rgba(51, 57, 191, 0.18);
 }
 
 .home-nav__menu {
@@ -685,6 +690,16 @@ body.page-home-v2 {
   .home-nav {
     padding: 0 16px;
     position: relative;
+  }
+
+  .home-nav__logo-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .home-nav__logo-box span {
+    font-size: 12px;
   }
 
   .home-nav__toggle {

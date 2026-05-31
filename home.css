@@ -23,9 +23,10 @@ body.page-home-v2 {
 .home-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 52px;
-  padding: 0 32px 0 24px;
+  gap: 10px;
+  min-height: 88px;
+  height: auto;
+  padding: 14px 32px 14px 24px;
   background: #f5f7ff;
   border-bottom: 1px solid #e8ecff;
 }
@@ -81,19 +82,21 @@ body.page-home-v2 {
 
 .home-nav__ai-badge {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 1px 8px;
   border-radius: 5px;
-  background: linear-gradient(135deg, #3339bf, #5560e8);
-  color: #ffffff;
+  background: linear-gradient(145deg, #e4e8ff, #c8d0ff);
+  color: #3339bf;
   font-size: 11px;
-  font-weight: 700;
-  box-shadow: 0 6px 14px rgba(51, 57, 191, 0.18);
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(51, 57, 191, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9);
 }
 
 .home-nav__menu {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-left: auto;
 }
 
@@ -101,9 +104,9 @@ body.page-home-v2 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
   color: #444;
   text-decoration: none;
@@ -122,8 +125,8 @@ body.page-home-v2 {
 }
 
 .home-nav__home-btn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border-radius: 50%;
   justify-content: center;
@@ -131,20 +134,31 @@ body.page-home-v2 {
   color: #fff;
 }
 
+.home-nav__home-btn i {
+  font-size: 18px;
+}
+
 .home-nav__theme {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(51, 57, 191, 0.1);
-  color: #3339bf;
+  background: linear-gradient(135deg, #3339bf, #4a52d4);
+  color: #ffd84d;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
+  box-shadow: 0 10px 22px rgba(51, 57, 191, 0.28);
+}
+
+.home-nav__theme i,
+.home-nav__theme #theme-icon {
+  color: #ffd84d;
+  font-size: 20px;
 }
 
 .home-nav__toggle {
@@ -711,7 +725,7 @@ body.page-home-v2 {
   .home-nav__menu {
     display: none;
     position: absolute;
-    top: 52px;
+    top: 100%;
     left: 0;
     right: 0;
     flex-direction: column;

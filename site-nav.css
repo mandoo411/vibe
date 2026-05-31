@@ -113,29 +113,29 @@
 .tm-theme-toggle,
 #theme-toggle {
   position: static;
-  flex: 0 0 48px;
+  flex: 0 0 auto;
   flex-shrink: 0;
   margin-left: 0;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  max-width: 48px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  max-width: 44px;
   margin: 0;
   padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #3339bf, #4a52d4);
-  color: #ffd84d;
+  border: 1px solid rgba(51, 57, 191, 0.18);
+  border-radius: 12px;
+  background: #f5f7ff;
+  color: #3339bf;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   z-index: 30;
   visibility: visible;
   opacity: 1;
-  box-shadow: 0 10px 22px rgba(51, 57, 191, 0.28);
+  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
 }
 
 .tm-theme-toggle {
@@ -145,9 +145,9 @@
 
 .tm-theme-toggle i,
 #theme-toggle i {
-  font-size: 20px;
+  font-size: 19px;
   line-height: 1;
-  color: #ffd84d;
+  color: #3339bf;
 }
 
 /* Tabler CDN 실패 시(data-fallback) 이모지 표시 */
@@ -167,9 +167,11 @@
 
 .tm-theme-toggle:hover,
 .tm-theme-toggle:focus-visible {
-  background: linear-gradient(135deg, #4048cb, #5560e8);
+  background: #eef1ff;
+  border-color: rgba(51, 57, 191, 0.35);
   outline: none;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
 }
 
 .tm-theme-toggle:active {
@@ -180,10 +182,10 @@
 .dark-mode #theme-toggle,
 [data-theme="dark"] .tm-theme-toggle,
 [data-theme="dark"] #theme-toggle {
-  background: linear-gradient(145deg, #1e2460, #3339bf);
-  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  background: #242b3d;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffd84d;
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 .dark-mode .tm-theme-toggle i,
@@ -197,7 +199,8 @@
 .dark-mode .tm-theme-toggle:focus-visible,
 [data-theme="dark"] .tm-theme-toggle:hover,
 [data-theme="dark"] .tm-theme-toggle:focus-visible {
-  background: linear-gradient(145deg, #252c78, #313a95);
+  background: #2d3550;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .header-top {
@@ -253,13 +256,13 @@
   height: 62px !important;
   border-radius: 20px !important;
   gap: 2px !important;
-  background: linear-gradient(145deg, #e4e8ff, #c8d0ff) !important;
-  box-shadow: 0 6px 16px rgba(51, 57, 191, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+  background: linear-gradient(145deg, #3339bf, #5560e8) !important;
+  box-shadow: 0 6px 16px rgba(51, 57, 191, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.18) !important;
 }
 
 .nav-logo-text {
   font-size: 16px !important;
-  color: #3339bf !important;
+  color: #ffffff !important;
 }
 
 .nav-brand-name {
@@ -282,9 +285,9 @@
   font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
-  color: #3339bf !important;
-  background: linear-gradient(145deg, #e4e8ff, #c8d0ff) !important;
-  box-shadow: 0 2px 6px rgba(51, 57, 191, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #3339bf, #5560e8) !important;
+  box-shadow: 0 4px 10px rgba(51, 57, 191, 0.22);
 }
 
 .dark-mode .nav-logo-box,
@@ -295,7 +298,7 @@
 
 .dark-mode .nav-logo-text,
 [data-theme="dark"] .nav-logo-text {
-  color: #b0b8ff !important;
+  color: #ffffff !important;
 }
 
 .dark-mode .nav-brand-name,
@@ -310,9 +313,9 @@
 
 .dark-mode .nav-ai-badge,
 [data-theme="dark"] .nav-ai-badge {
-  background: linear-gradient(145deg, #1e2460, #252c78) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.08);
-  color: #b0b8ff !important;
+  background: linear-gradient(145deg, #1e2460, #3339bf) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  color: #ffffff !important;
 }
 
 .tm-site-nav {

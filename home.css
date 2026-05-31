@@ -41,7 +41,7 @@ body.page-home-v2 {
 }
 
 .home-nav__logo-box {
-  background: linear-gradient(145deg, #e4e8ff, #c8d0ff);
+  background: linear-gradient(145deg, #3339bf, #5560e8);
   border-radius: 20px;
   width: 62px;
   height: 62px;
@@ -49,7 +49,7 @@ body.page-home-v2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(51, 57, 191, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 16px rgba(51, 57, 191, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.18);
   gap: 2px;
   flex-shrink: 0;
 }
@@ -57,7 +57,7 @@ body.page-home-v2 {
 .home-nav__logo-box span {
   font-size: 16px;
   font-weight: 900;
-  color: #3339bf;
+  color: #ffffff;
   line-height: 1;
   display: block;
   text-align: center;
@@ -86,11 +86,11 @@ body.page-home-v2 {
   justify-content: center;
   padding: 1px 8px;
   border-radius: 5px;
-  background: linear-gradient(145deg, #e4e8ff, #c8d0ff);
-  color: #3339bf;
+  background: linear-gradient(135deg, #3339bf, #5560e8);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
-  box-shadow: 0 2px 6px rgba(51, 57, 191, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(51, 57, 191, 0.22);
 }
 
 .home-nav__menu {
@@ -139,26 +139,65 @@ body.page-home-v2 {
 }
 
 .home-nav__theme {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3339bf, #4a52d4);
-  color: #ffd84d;
+  border: 1px solid rgba(51, 57, 191, 0.18);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #3339bf;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
-  box-shadow: 0 10px 22px rgba(51, 57, 191, 0.28);
+  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.home-nav__theme:hover {
+  background: #eef1ff;
+  border-color: rgba(51, 57, 191, 0.35);
+  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
 }
 
 .home-nav__theme i,
 .home-nav__theme #theme-icon {
+  color: #3339bf;
+  font-size: 19px;
+}
+
+[data-theme="dark"] .home-nav__theme,
+body[data-theme="dark"] .home-nav__theme {
+  background: #242b3d;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .home-nav__theme:hover,
+body[data-theme="dark"] .home-nav__theme:hover {
+  background: #2d3550;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .home-nav__theme i,
+[data-theme="dark"] .home-nav__theme #theme-icon,
+body[data-theme="dark"] .home-nav__theme i,
+body[data-theme="dark"] .home-nav__theme #theme-icon {
   color: #ffd84d;
-  font-size: 20px;
+}
+
+[data-theme="dark"] .home-nav__logo-box,
+body[data-theme="dark"] .home-nav__logo-box {
+  background: linear-gradient(145deg, #1e2460, #252c78);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .home-nav__ai-badge,
+body[data-theme="dark"] .home-nav__ai-badge {
+  background: linear-gradient(145deg, #1e2460, #3339bf);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .home-nav__toggle {

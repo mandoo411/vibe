@@ -169,9 +169,9 @@ body.page-home-v2 {
   min-width: 36px;
   padding: 0;
   border: 1px solid rgba(51, 57, 191, 0.18);
-  border-radius: 10px;
+  border-radius: 50%;
   background: #ffffff;
-  color: #3339bf;
+  color: #ffd84d;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -190,7 +190,7 @@ body.page-home-v2 {
 
 .home-nav__theme i,
 .home-nav__theme #theme-icon {
-  color: #3339bf;
+  color: #ffd84d;
   font-size: 17px;
 }
 

@@ -126,9 +126,9 @@
   margin: 0;
   padding: 0;
   border: 1px solid rgba(51, 57, 191, 0.18);
-  border-radius: 12px;
+  border-radius: 50%;
   background: #f5f7ff;
-  color: #3339bf;
+  color: #ffd84d;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -147,7 +147,7 @@
 #theme-toggle i {
   font-size: 19px;
   line-height: 1;
-  color: #3339bf;
+  color: #ffd84d;
 }
 
 /* Tabler CDN 실패 시(data-fallback) 이모지 표시 */

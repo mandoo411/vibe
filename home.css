@@ -399,8 +399,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 .home-hero__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);
-  column-gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 72px 52px;
+  column-gap: 6px;
   align-items: center;
   padding: 4px 0;
   font-size: 11px;
@@ -411,20 +411,28 @@ body[data-theme="dark"] .home-nav__ai-badge {
   min-width: 0;
 }
 
-.home-hero__row-val {
-  color: #fff;
+.home-hero__row-price,
+.home-hero__row-pct {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;
-  justify-self: end;
+  justify-self: stretch;
 }
 
-.home-hero__row-val.is-up {
+.home-hero__row-price {
+  color: #fff;
+}
+
+.home-hero__row-pct {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.home-hero__row-pct.is-up {
   color: #ff8080;
 }
 
-.home-hero__row-val.is-down {
+.home-hero__row-pct.is-down {
   color: #5fd4a8;
 }
 

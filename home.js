@@ -155,8 +155,11 @@
         const pct = toNum(row.changePct);
         const cls = chgClass(pct);
         const val = fmtHeroValue(row, kind);
-        const pctStr = pct != null && row.value != null ? ` ${fmtPct(pct)}` : "";
-        return `<div class="home-hero__row"><span class="home-hero__row-name">${escapeHtml(row.label)}</span><span class="home-hero__row-val ${cls}">${escapeHtml(val + pctStr)}</span></div>`;
+        const pctHtml =
+          pct != null && row.value != null
+            ? `<span class="home-hero__row-pct ${cls}">${escapeHtml(fmtPct(pct))}</span>`
+            : `<span class="home-hero__row-pct">—</span>`;
+        return `<div class="home-hero__row"><span class="home-hero__row-name">${escapeHtml(row.label)}</span><span class="home-hero__row-price">${escapeHtml(val)}</span>${pctHtml}</div>`;
       })
       .join("");
   }

@@ -1,7 +1,7 @@
 (function () {
-  const COIN_SYMBOLS = ["BTC", "ETH", "XRP", "USDT"];
-  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52, USDT: 825 };
-  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플", USDT: "테더" };
+  const COIN_SYMBOLS = ["BTC", "ETH", "XRP"];
+  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52 };
+  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플" };
   const US_PICK = [
     { symbol: "AMZN", nameKo: "아마존" },
     { symbol: "TSLA", nameKo: "테슬라" },
@@ -49,9 +49,8 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
-  function rankCell(rank) {
-    const rankCls = rank >= 1 && rank <= 3 ? " is-top3" : "";
-    return `<div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div>`;
+  function logoWrap(inner) {
+    return `<span class="home-tr__logo-wrap">${inner}</span>`;
   }
 
   function stockLogoUrl(symbol) {
@@ -66,9 +65,9 @@
 
   function stockLogoHtml(symbol) {
     const src = stockLogoUrl(symbol);
-    if (!src) return `<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">•</span>`;
+    if (!src) return logoWrap(`<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">•</span>`);
     const fb = stockLogoFallback(symbol);
-    return `<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" width="32" height="32" loading="lazy" data-fallback="${escapeHtml(fb)}" onerror="homeLogoFail(this)">`;
+    return logoWrap(`<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" loading="lazy" data-fallback="${escapeHtml(fb)}" onerror="homeLogoFail(this)">`);
   }
 
   function coinLogoUrl(coin) {
@@ -81,9 +80,9 @@
     const sym = String(coin?.symbol || "").toUpperCase();
     const src = coinLogoUrl(coin);
     if (!src) {
-      return `<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">${escapeHtml(sym.charAt(0) || "?")}</span>`;
+      return logoWrap(`<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">${escapeHtml(sym.charAt(0) || "?")}</span>`);
     }
-    return `<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" width="32" height="32" loading="lazy" onerror="homeLogoFail(this)">`;
+    return logoWrap(`<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" loading="lazy" onerror="homeLogoFail(this)">`);
   }
 
   function identityCell(name, code, logoHtml) {
@@ -210,12 +209,11 @@
     const el = $("home-us-body");
     if (!el) return;
     const symMap = new Map((stocks || []).map((s) => [String(s.ticker || s.symbol || "").toUpperCase(), s]));
-    const rows = US_PICK.map((pick, index) => {
+    const rows = US_PICK.map((pick) => {
       const sym = pick.symbol;
       const live = symMap.get(sym);
       const name = live?.name && live.name !== sym ? live.name : pick.nameKo;
       return {
-        rank: index + 1,
         symbol: sym,
         name: pick.nameKo || name,
         price: live?.price ?? null,
@@ -232,13 +230,12 @@
       .map((r) => {
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
-        const rankCls = r.rank >= 1 && r.rank <= 3 ? " is-top3" : "";
         let price = "—";
         const pv = toNum(r.price);
         if (pv != null) {
           price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        return `<a class="home-tr home-tr--logo" href="./us-market.html"><div class="home-tr__rank${rankCls}">${escapeHtml(r.rank)}</div>${identityCell(r.name, r.symbol, stockLogoHtml(r.symbol))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(r.name, r.symbol, stockLogoHtml(r.symbol))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
       })
       .join("");
   }
@@ -247,10 +244,10 @@
     const el = $("home-crypto-body");
     if (!el) return;
     const bySym = new Map((coins || []).map((c) => [String(c.symbol || "").toUpperCase(), c]));
-    const rows = COIN_SYMBOLS.map((sym, index) => {
+    const rows = COIN_SYMBOLS.map((sym) => {
       const live = bySym.get(sym);
       if (!live) return null;
-      return { ...live, rank: index + 1, symbol: sym };
+      return { ...live, symbol: sym };
     }).filter(Boolean);
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
@@ -261,14 +258,13 @@
         const sym = String(c.symbol || "").toUpperCase();
         const pct = toNum(c.change24h ?? c.changePct);
         const chgCls = chgClass(pct);
-        const rankCls = c.rank >= 1 && c.rank <= 3 ? " is-top3" : "";
         const pv = toNum(c.priceUsd ?? c.price);
         let price = "—";
         if (pv != null) {
           price = pv >= 1 ? `$${pv.toLocaleString("en-US", { maximumFractionDigits: pv >= 100 ? 0 : 2 })}` : `$${pv.toFixed(4)}`;
         }
         const name = COIN_NAMES_KO[sym] || c.name || sym;
-        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${rankCell(c.rank)}${identityCell(name, sym, coinLogoHtml(c))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
+        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
       })
       .join("");
   }

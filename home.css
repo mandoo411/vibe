@@ -549,12 +549,20 @@ body[data-theme="dark"] .home-nav__ai-badge {
   padding: 7px 14px;
 }
 
+.home-th--logo {
+  grid-template-columns: minmax(0, 1fr) 80px 58px;
+}
+
+.home-th--coin.home-th--logo {
+  grid-template-columns: minmax(0, 1fr) 88px 58px;
+}
+
 .home-tr--logo {
-  grid-template-columns: 22px minmax(0, 1fr) 80px 58px;
+  grid-template-columns: minmax(0, 1fr) 80px 58px;
 }
 
 .home-tr--coin.home-tr--logo {
-  grid-template-columns: 22px minmax(0, 1fr) 88px 58px;
+  grid-template-columns: minmax(0, 1fr) 88px 58px;
 }
 
 .home-tr__identity {
@@ -568,23 +576,40 @@ body[data-theme="dark"] .home-nav__ai-badge {
   min-width: 0;
 }
 
-.home-tr__logo {
+.home-tr__logo-wrap {
   flex: 0 0 32px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  object-fit: contain;
   background: #f0f2f8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.home-tr__logo {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  object-fit: contain;
+  background: transparent;
 }
 
 .home-tr__logo--fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   font-size: 11px;
   font-weight: 700;
   color: #888;
-  background: #eef0f8;
+  background: transparent;
 }
 
 .home-tr__rank {

@@ -1,6 +1,14 @@
 (function () {
-  const COIN_COLORS = { BTC: "#f7931a", ETH: "#627eea", XRP: "#346aa9", USDT: "#26a17b" };
   const COIN_SYMBOLS = ["BTC", "ETH", "XRP", "USDT"];
+  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52, USDT: 825 };
+  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플", USDT: "테더" };
+  const US_PICK = [
+    { symbol: "AMZN", nameKo: "아마존" },
+    { symbol: "TSLA", nameKo: "테슬라" },
+    { symbol: "TSM", nameKo: "TSMC" },
+    { symbol: "META", nameKo: "메타" },
+    { symbol: "MU", nameKo: "마이크론" },
+  ];
 
   function $(id) {
     return document.getElementById(id);
@@ -40,6 +48,63 @@
     const sign = n > 0 ? "+" : "";
     return `${sign}${n.toFixed(2)}%`;
   }
+
+  function rankCell(rank) {
+    const rankCls = rank >= 1 && rank <= 3 ? " is-top3" : "";
+    return `<div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div>`;
+  }
+
+  function stockLogoUrl(symbol) {
+    const sym = String(symbol || "").toUpperCase();
+    return sym ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(sym)}.png` : "";
+  }
+
+  function stockLogoFallback(symbol) {
+    const sym = String(symbol || "").toUpperCase();
+    return sym ? `https://companiesmarketcap.com/img/company-logos/64/${encodeURIComponent(sym)}.png` : "";
+  }
+
+  function stockLogoHtml(symbol) {
+    const src = stockLogoUrl(symbol);
+    if (!src) return `<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">•</span>`;
+    const fb = stockLogoFallback(symbol);
+    return `<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" width="32" height="32" loading="lazy" data-fallback="${escapeHtml(fb)}" onerror="homeLogoFail(this)">`;
+  }
+
+  function coinLogoUrl(coin) {
+    const sym = String(coin?.symbol || "").toUpperCase();
+    const id = coin?.id || COIN_CMC_IDS[sym];
+    return id ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${id}.png` : "";
+  }
+
+  function coinLogoHtml(coin) {
+    const sym = String(coin?.symbol || "").toUpperCase();
+    const src = coinLogoUrl(coin);
+    if (!src) {
+      return `<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">${escapeHtml(sym.charAt(0) || "?")}</span>`;
+    }
+    return `<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" width="32" height="32" loading="lazy" onerror="homeLogoFail(this)">`;
+  }
+
+  function identityCell(name, code, logoHtml) {
+    return `<div class="home-tr__identity">${logoHtml}<div><div class="home-tr__name">${escapeHtml(name)}</div><div class="home-tr__code">${escapeHtml(code)}</div></div></div>`;
+  }
+
+  window.homeLogoFail = function homeLogoFail(img) {
+    if (!img || img.dataset.failed) return;
+    const fb = img.getAttribute("data-fallback");
+    if (fb && !img.dataset.retried) {
+      img.dataset.retried = "1";
+      img.src = fb;
+      return;
+    }
+    img.dataset.failed = "1";
+    const span = document.createElement("span");
+    span.className = "home-tr__logo home-tr__logo--fallback";
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = "?";
+    img.replaceWith(span);
+  };
 
   function fmtTickerValue(item) {
     if (!item || item.value == null) return "—";
@@ -141,44 +206,39 @@
       .join("");
   }
 
-  function renderUsTable(indices, stocks) {
+  function renderUsTable(stocks) {
     const el = $("home-us-body");
     if (!el) return;
     const symMap = new Map((stocks || []).map((s) => [String(s.ticker || s.symbol || "").toUpperCase(), s]));
-    const pick = ["NVDA", "AAPL", "GOOG"].map((sym) => {
+    const rows = US_PICK.map((pick, index) => {
+      const sym = pick.symbol;
       const live = symMap.get(sym);
-      if (live) return { ...live, symbol: live.ticker || live.symbol || sym };
-      return { symbol: sym, name: sym, price: null, changePct: null };
+      const name = live?.name && live.name !== sym ? live.name : pick.nameKo;
+      return {
+        rank: index + 1,
+        symbol: sym,
+        name: pick.nameKo || name,
+        price: live?.price ?? null,
+        changePct: live?.changePct ?? null,
+      };
     });
 
-    const idxPick = (indices || []).filter((r) => r.id === "sp500" || r.id === "nasdaq");
-
-    const all = [
-      ...pick.map((r) => ({ ...r, name: r.name || r.symbol, isIndex: false })),
-      ...idxPick.map((r) => ({
-        symbol: r.symbol || r.id,
-        name: r.name,
-        price: r.price,
-        changePct: r.changePct,
-        isIndex: true,
-      })),
-    ];
-
-    if (!all.length) {
+    if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
       return;
     }
 
-    el.innerHTML = all
+    el.innerHTML = rows
       .map((r) => {
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
+        const rankCls = r.rank >= 1 && r.rank <= 3 ? " is-top3" : "";
         let price = "—";
         const pv = toNum(r.price);
         if (pv != null) {
-          price = r.isIndex ? pv.toLocaleString("en-US", { maximumFractionDigits: 2 }) : `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+          price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        return `<div class="home-tr"><div class="home-tr__rank">●</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div>${r.symbol && !r.isIndex ? `<div class="home-tr__code">${escapeHtml(r.symbol)}</div>` : ""}</div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></div>`;
+        return `<a class="home-tr home-tr--logo" href="./us-market.html"><div class="home-tr__rank${rankCls}">${escapeHtml(r.rank)}</div>${identityCell(r.name, r.symbol, stockLogoHtml(r.symbol))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
       })
       .join("");
   }
@@ -187,7 +247,11 @@
     const el = $("home-crypto-body");
     if (!el) return;
     const bySym = new Map((coins || []).map((c) => [String(c.symbol || "").toUpperCase(), c]));
-    const rows = COIN_SYMBOLS.map((sym) => bySym.get(sym)).filter(Boolean);
+    const rows = COIN_SYMBOLS.map((sym, index) => {
+      const live = bySym.get(sym);
+      if (!live) return null;
+      return { ...live, rank: index + 1, symbol: sym };
+    }).filter(Boolean);
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
       return;
@@ -197,13 +261,14 @@
         const sym = String(c.symbol || "").toUpperCase();
         const pct = toNum(c.change24h ?? c.changePct);
         const chgCls = chgClass(pct);
+        const rankCls = c.rank >= 1 && c.rank <= 3 ? " is-top3" : "";
         const pv = toNum(c.priceUsd ?? c.price);
         let price = "—";
         if (pv != null) {
           price = pv >= 1 ? `$${pv.toLocaleString("en-US", { maximumFractionDigits: pv >= 100 ? 0 : 2 })}` : `$${pv.toFixed(4)}`;
         }
-        const bg = COIN_COLORS[sym] || "#888";
-        return `<a class="home-tr home-tr--coin" href="./crypto.html"><div><div class="home-coin-icon" style="background:${bg}">${escapeHtml(sym.charAt(0))}</div></div><div><div class="home-tr__name">${escapeHtml(c.name || sym)}</div><div class="home-tr__code">${escapeHtml(sym)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
+        const name = COIN_NAMES_KO[sym] || c.name || sym;
+        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${rankCell(c.rank)}${identityCell(name, sym, coinLogoHtml(c))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
       })
       .join("");
   }
@@ -287,18 +352,8 @@
   }
 
   async function loadUsAndCrypto() {
-    let indices = [];
     let usStocks = [];
     let coins = [];
-    let hub = null;
-    try {
-      const ticker = await fetchJson("/api/market-ticker?t=" + Date.now());
-      hub = ticker.hub;
-    } catch (_) {}
-    try {
-      const us = await fetchJson("/api/us-market-data?action=indices&t=" + Date.now());
-      indices = us.indices || [];
-    } catch (_) {}
     try {
       const cap = await fetchJson("/api/us-market-data?action=market-cap&t=" + Date.now());
       usStocks = cap.stocks || [];
@@ -306,34 +361,12 @@
     try {
       const briefing = await fetchDataJson("data/morning-briefing.json");
       if (!usStocks.length && briefing.topStocks) usStocks = briefing.topStocks;
-      if (!indices.length && briefing.usMarket?.indices) {
-        indices = briefing.usMarket.indices.map((r) => ({
-          id: r.id,
-          name: r.name,
-          symbol: r.symbol,
-          price: r.close,
-          changePct: r.changePct,
-        }));
-      }
     } catch (_) {}
-    if (hub) {
-      const hubStocks = [
-        { ticker: "NVDA", name: "NVDA", price: hub.nvda?.value, changePct: hub.nvda?.changePct },
-        { ticker: "AAPL", name: "AAPL", price: hub.aapl?.value, changePct: hub.aapl?.changePct },
-        { ticker: "GOOG", name: "GOOG", price: hub.goog?.value, changePct: hub.goog?.changePct },
-      ];
-      const byTicker = new Map(usStocks.map((s) => [String(s.ticker || s.symbol || "").toUpperCase(), s]));
-      hubStocks.forEach((s) => {
-        const cur = byTicker.get(s.ticker);
-        if (!cur || cur.price == null) byTicker.set(s.ticker, { ...s, ...cur });
-      });
-      usStocks = [...byTicker.values()];
-    }
     try {
       const crypto = await fetchJson("/api/crypto-data?action=listings&t=" + Date.now());
       coins = crypto.coins || [];
     } catch (_) {}
-    renderUsTable(indices, usStocks);
+    renderUsTable(usStocks);
     renderCryptoTable(coins);
   }
 

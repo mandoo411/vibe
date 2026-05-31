@@ -549,6 +549,44 @@ body[data-theme="dark"] .home-nav__ai-badge {
   padding: 7px 14px;
 }
 
+.home-tr--logo {
+  grid-template-columns: 22px minmax(0, 1fr) 80px 58px;
+}
+
+.home-tr--coin.home-tr--logo {
+  grid-template-columns: 22px minmax(0, 1fr) 88px 58px;
+}
+
+.home-tr__identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.home-tr__identity > div {
+  min-width: 0;
+}
+
+.home-tr__logo {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #f0f2f8;
+}
+
+.home-tr__logo--fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  background: #eef0f8;
+}
+
 .home-tr__rank {
   font-size: 10px;
   font-weight: 600;

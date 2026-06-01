@@ -25,8 +25,8 @@ body.page-home-v2 {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 52px;
-  padding: 0 32px 0 24px;
+  min-height: 60px;
+  padding: 10px 32px 10px 24px;
   background: #f5f7ff;
   border-bottom: 1px solid #e8ecff;
   position: sticky;
@@ -988,6 +988,104 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 [data-theme="dark"] .home-footer {
   background: #0d1020;
+}
+
+[data-theme="dark"] .home-wrap,
+[data-theme="dark"] body {
+  background: #0f1120;
+}
+
+[data-theme="dark"] .home-main {
+  background: #0f1120;
+}
+
+[data-theme="dark"] .home-section {
+  background: #1a1f35;
+  border: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-section__title {
+  color: #c8ccff;
+}
+
+[data-theme="dark"] .home-section__more {
+  color: #7788cc;
+}
+
+[data-theme="dark"] .home-th div {
+  color: #556080;
+}
+
+[data-theme="dark"] .home-col-mid .home-section {
+  background: #1a1f35;
+  border: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-tr {
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-tr:hover {
+  background: #222840;
+}
+
+[data-theme="dark"] .home-tr .sname,
+[data-theme="dark"] .home-tr .price,
+[data-theme="dark"] .home-tr__name,
+[data-theme="dark"] .home-tr__price {
+  color: #c8ccff;
+}
+
+[data-theme="dark"] .home-tr .scode,
+[data-theme="dark"] .home-tr__code {
+  color: #556080;
+}
+
+[data-theme="dark"] .home-mini-card {
+  background: #1a1f35;
+  border: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-mini-card__title {
+  color: #c8ccff;
+}
+
+[data-theme="dark"] .home-mini-card .mc-row,
+[data-theme="dark"] .home-mini-row {
+  border-bottom: 1px solid #2a2f4a;
+  color: #8899bb;
+}
+
+[data-theme="dark"] .home-brief-text {
+  color: #8899bb;
+}
+
+[data-theme="dark"] .home-brief-time {
+  color: #445066;
+}
+
+[data-theme="dark"] .home-ai-card {
+  background: #1e2448;
+  border: 1px solid #3339bf;
+}
+
+[data-theme="dark"] .home-ai-card__title {
+  color: #c8ccff;
+}
+
+[data-theme="dark"] .home-ai-card__sub {
+  color: #7788aa;
+}
+
+[data-theme="dark"] .home-ai-card__input {
+  background: #141828;
+  border: 1px solid #2a3560;
+  color: #c8ccff;
+}
+
+[data-theme="dark"] .home-ai-card__btn {
+  background: #3339bf;
+  color: white;
 }
 
 /* index: 하락률 파랑 (site-shell.css ticker 규칙보다 우선) */

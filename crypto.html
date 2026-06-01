@@ -238,10 +238,48 @@
         margin-top: 2px;
       }
       .crypto-delta--up {
-        color: var(--up-color);
+        color: #e24b4a;
       }
       .crypto-delta--down {
-        color: var(--down-color);
+        color: #3b82f6;
+      }
+      .crypto-coin-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+      .crypto-coin-cell__text {
+        min-width: 0;
+      }
+      .crypto-mcap-tabs {
+        display: flex;
+        gap: 3px;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .mcap-tab {
+        border: 0;
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 600;
+        cursor: pointer;
+        background: transparent;
+        color: var(--text-dim);
+        white-space: nowrap;
+      }
+      .mcap-tab.is-active {
+        background: #3339bf;
+        color: #fff;
+      }
+      .crypto-col-spark {
+        width: 90px;
+      }
+      .crypto-col-spark svg {
+        margin-left: auto;
       }
       .crypto-delta--flat {
         color: var(--text-muted);
@@ -328,10 +366,8 @@
           padding: 7px 5px;
         }
         .crypto-col-rank,
-        .crypto-col-symbol,
-        .crypto-col-1h,
-        .crypto-col-7d,
-        .crypto-col-volume {
+        .crypto-col-volume,
+        .mcap-tab[data-mode="fdv"] {
           display: none;
         }
         .crypto-col-name {
@@ -356,10 +392,20 @@
         .crypto-col-mcap {
           width: 22%;
         }
+        .crypto-col-spark {
+          width: 62px;
+        }
         .crypto-col-price,
         .crypto-col-mcap {
           font-size: 10.5px;
           letter-spacing: -0.05em;
+        }
+        .crypto-coin-cell {
+          gap: 4px;
+        }
+        .crypto-coin-cell img {
+          width: 20px !important;
+          height: 20px !important;
         }
         .crypto-name-btn {
           display: flex;
@@ -476,15 +522,18 @@
               <table class="crypto-table" aria-label="암호화폐 시총 TOP 100">
                 <thead>
                   <tr>
-                    <th class="num crypto-col-rank">순위</th>
+                    <th class="num crypto-col-rank">#</th>
                     <th class="crypto-col-name">코인명</th>
-                    <th class="crypto-col-symbol">심볼</th>
                     <th class="num crypto-col-price">가격</th>
-                    <th class="num crypto-col-1h">1h</th>
                     <th class="num crypto-col-24h">24H</th>
-                    <th class="num crypto-col-7d">7d</th>
-                    <th class="num crypto-col-mcap">시총</th>
+                    <th class="num crypto-col-mcap">
+                      <div class="crypto-mcap-tabs">
+                        <button type="button" class="mcap-tab is-active" data-mode="market">시총</button>
+                        <button type="button" class="mcap-tab" data-mode="fdv">완전희석시총</button>
+                      </div>
+                    </th>
                     <th class="num crypto-col-volume">거래대금</th>
+                    <th class="num crypto-col-spark">7일 추이</th>
                   </tr>
                 </thead>
                 <tbody id="crypto-tbody"></tbody>
@@ -549,6 +598,7 @@
           fearGreed: null,
           coins: [],
           currency: "USD",
+          mcapMode: "market",
           openSymbol: null,
           pollTimer: null,
         };
@@ -600,6 +650,102 @@
           const converted = row[`${key}${suffix}`];
           if (converted != null && Number.isFinite(converted)) return converted;
           return state.currency === "KRW" ? row[key] ?? null : null;
+        }
+
+        function sparklineSvg(points, color, compact) {
+          if (!points || points.length < 2) return "-";
+          const min = Math.min(...points);
+          const max = Math.max(...points);
+          const range = max - min || 1;
+          const w = compact ? 58 : 88;
+          const h = compact ? 28 : 32;
+          const pad = 2;
+          const xs = points.map((_, i) => pad + (i / (points.length - 1)) * (w - pad * 2));
+          const ys = points.map((v) => h - pad - ((v - min) / range) * (h - pad * 2));
+          const pts = xs.map((x, i) => `${x},${ys[i]}`).join(" ");
+          const area = `${xs[0]},${h} ${pts} ${xs[xs.length - 1]},${h}`;
+          return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block;" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="${area}" fill="${color}" fill-opacity="0.1"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
+        }
+
+        function sparklinePoints(c) {
+          const raw = c.sparkline_7d || c.priceHistory7d;
+          if (Array.isArray(raw) && raw.length >= 2) {
+            return raw.map((v) => Number(v)).filter((n) => Number.isFinite(n));
+          }
+          return null;
+        }
+
+        function sparklineColor(c, points) {
+          const pts = points || sparklinePoints(c);
+          if (pts && pts.length >= 2) {
+            return pts[pts.length - 1] >= pts[0] ? "#e24b4a" : "#3b82f6";
+          }
+          const ch7 = c.change7d;
+          if (ch7 != null && Number.isFinite(ch7)) return ch7 >= 0 ? "#e24b4a" : "#3b82f6";
+          return "#3b82f6";
+        }
+
+        function syntheticSparklineFromChanges(c) {
+          const price = moneyValue(c, "price");
+          if (price == null || !Number.isFinite(price)) return null;
+          const p7 = c.change7d != null ? price / (1 + c.change7d / 100) : null;
+          const p24 = c.change24h != null ? price / (1 + c.change24h / 100) : null;
+          const p1h = c.change1h != null ? price / (1 + c.change1h / 100) : null;
+          const anchors = [
+            { i: 0, v: p7 },
+            { i: 3, v: p24 ?? p7 },
+            { i: 5, v: p1h ?? p24 ?? p7 },
+            { i: 6, v: price },
+          ].filter((a) => a.v != null && Number.isFinite(a.v));
+          if (anchors.length < 2) return null;
+          const out = new Array(7).fill(null);
+          for (let a = 0; a < anchors.length; a++) {
+            const cur = anchors[a];
+            const next = anchors[a + 1];
+            out[cur.i] = cur.v;
+            if (!next) continue;
+            const span = next.i - cur.i;
+            for (let k = 1; k < span; k++) {
+              const t = k / span;
+              out[cur.i + k] = cur.v + (next.v - cur.v) * t;
+            }
+          }
+          if (out[6] == null) out[6] = price;
+          return out.every((v) => v != null) ? out : null;
+        }
+
+        function resolveSparkline(c) {
+          const pts = sparklinePoints(c);
+          if (pts && pts.length >= 2) return pts;
+          return syntheticSparklineFromChanges(c);
+        }
+
+        function coinLogoHtml(c) {
+          const id = c.id;
+          if (id == null || !Number.isFinite(Number(id))) return "";
+          return `<img src="https://s2.coinmarketcap.com/static/img/coins/32x32/${Number(id)}.png" width="24" height="24" style="border-radius:50%;flex-shrink:0;" onerror="this.style.display='none'" alt="${escapeHtml(c.symbol)}">`;
+        }
+
+        function effectiveMcapMode() {
+          if (window.matchMedia("(max-width: 768px)").matches) return "market";
+          return state.mcapMode;
+        }
+
+        function mcapDisplayValue(c) {
+          if (effectiveMcapMode() === "fdv") {
+            if (c.maxSupply == null && moneyValue(c, "fullyDilutedMarketCap") == null) return null;
+            return moneyValue(c, "fullyDilutedMarketCap");
+          }
+          return moneyValue(c, "marketCap");
+        }
+
+        function fmtMcapCell(c) {
+          const v = mcapDisplayValue(c);
+          if (v == null || !Number.isFinite(v)) return "-";
+          return fmtMoney(v);
         }
 
         function fmtMoney(n) {
@@ -725,22 +871,32 @@
         function coinRowHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
           const price = moneyValue(c, "price");
-          const marketCap = moneyValue(c, "marketCap");
           const volume24h = moneyValue(c, "volume24h");
+          const mobile = window.matchMedia("(max-width: 768px)").matches;
+          const pts = resolveSparkline(c);
+          const sparkColor = sparklineColor(c, pts);
+          const sparkHtml = sparklineSvg(pts, sparkColor, mobile);
+          const symbolLine = mobile
+            ? ""
+            : `<span class="crypto-symbol">${escapeHtml(c.symbol)}</span>`;
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
             <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
             <td class="crypto-col-name">
-              <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
-                ${coinNameButtonHtml(c, open)}
-              </button>
+              <div class="crypto-coin-cell">
+                ${coinLogoHtml(c)}
+                <div class="crypto-coin-cell__text">
+                  <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
+                    ${coinNameButtonHtml(c, open)}
+                  </button>
+                  ${symbolLine}
+                </div>
+              </div>
             </td>
-            <td class="crypto-col-symbol">${escapeHtml(c.symbol)}</td>
             <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
-            <td class="num crypto-col-1h"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
-            <td class="num crypto-col-7d"><span class="${deltaClass(c.change7d)}">${escapeHtml(fmtPct(c.change7d))}</span></td>
-            <td class="num crypto-col-mcap">${escapeHtml(fmtMoney(marketCap))}</td>
+            <td class="num crypto-col-mcap">${escapeHtml(fmtMcapCell(c))}</td>
             <td class="num crypto-col-volume">${escapeHtml(fmtMoney(volume24h))}</td>
+            <td class="num crypto-col-spark">${sparkHtml}</td>
           </tr>`;
         }
 
@@ -782,7 +938,7 @@
 
         function chartRowHtml(c) {
           return `<tr class="crypto-chart-row">
-            <td colspan="9">
+            <td colspan="7">
               <div class="crypto-chart-box">
                 <p class="crypto-chart-title">${escapeHtml(c.name)} · TradingView</p>
                 <iframe
@@ -807,6 +963,28 @@
             if (state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
           }
           body.innerHTML = parts.join("");
+          syncMcapTabs();
+        }
+
+        function syncMcapTabs() {
+          document.querySelectorAll(".mcap-tab").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.getAttribute("data-mode") === state.mcapMode);
+          });
+        }
+
+        function wireMcapTabs() {
+          const wrap = document.querySelector(".crypto-mcap-tabs");
+          if (!wrap || wrap.dataset.cryptoWire === "1") return;
+          wrap.dataset.cryptoWire = "1";
+          wrap.addEventListener("click", (ev) => {
+            const btn = ev.target.closest(".mcap-tab");
+            if (!btn) return;
+            const mode = btn.getAttribute("data-mode");
+            if (mode !== "market" && mode !== "fdv") return;
+            state.mcapMode = mode;
+            syncMcapTabs();
+            renderTable();
+          });
         }
 
         function wireTable() {
@@ -874,6 +1052,8 @@
         async function init() {
           wireTable();
           wireCurrencyToggle();
+          wireMcapTabs();
+          syncMcapTabs();
           await refreshAll();
           await refreshCryptoNews();
           startPolling();

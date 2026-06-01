@@ -110,9 +110,59 @@ async function fetchGlobal() {
   });
 }
 
+function pickSparkline(coin, quote) {
+  const candidates = [
+    coin && coin.sparkline_7d,
+    coin && coin.sparkline,
+    quote && quote.sparkline_7d,
+    quote && quote.sparkline,
+  ];
+  for (const raw of candidates) {
+    if (Array.isArray(raw) && raw.length >= 2) {
+      return raw.map((v) => toNum(v)).filter((v) => v != null && Number.isFinite(v));
+    }
+    if (raw && typeof raw === "object" && Array.isArray(raw.price)) {
+      return raw.price.map((v) => toNum(v)).filter((v) => v != null && Number.isFinite(v));
+    }
+  }
+  return null;
+}
+
+function syntheticSparkline(price, change1h, change24h, change7d) {
+  if (price == null || !Number.isFinite(price)) return null;
+  const now = price;
+  const p7 = change7d != null ? price / (1 + change7d / 100) : null;
+  const p24 = change24h != null ? price / (1 + change24h / 100) : null;
+  const p1h = change1h != null ? price / (1 + change1h / 100) : null;
+  const anchors = [
+    { i: 0, v: p7 },
+    { i: 3, v: p24 ?? p7 },
+    { i: 5, v: p1h ?? p24 ?? p7 },
+    { i: 6, v: now },
+  ].filter((a) => a.v != null && Number.isFinite(a.v));
+  if (anchors.length < 2) return null;
+  const out = new Array(7).fill(null);
+  for (let a = 0; a < anchors.length; a++) {
+    const cur = anchors[a];
+    const next = anchors[a + 1];
+    out[cur.i] = cur.v;
+    if (!next) continue;
+    const span = next.i - cur.i;
+    for (let k = 1; k < span; k++) {
+      const t = k / span;
+      out[cur.i + k] = cur.v + (next.v - cur.v) * t;
+    }
+  }
+  if (out[6] == null) out[6] = now;
+  return out.every((v) => v != null) ? out : null;
+}
+
 async function fetchListings() {
   return cached("listings", async () => {
-    const params = { limit: 100 };
+    const params = {
+      limit: 100,
+      aux: "max_supply,circulating_supply,total_supply,sparkline_7d",
+    };
     const [krwData, usdData] = await Promise.all([
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "KRW" }),
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "USD" }),
@@ -127,8 +177,20 @@ async function fetchListings() {
         const usdCoin = usdById.get(String(coin.id)) || {};
         const usd = usdCoin.quote && usdCoin.quote.USD ? usdCoin.quote.USD : {};
         const priceKrw = round2(toNum(krw.price));
+        const priceUsd = toNum(usd.price);
         const marketCapKrw = Math.round(toNum(krw.market_cap) || 0) || null;
+        const marketCapUsd = Math.round(toNum(usd.market_cap) || 0) || null;
         const volume24hKrw = Math.round(toNum(krw.volume_24h) || 0) || null;
+        const maxSupply = toNum(coin.max_supply);
+        let fdvKrw = Math.round(toNum(krw.fully_diluted_market_cap) || 0) || null;
+        let fdvUsd =
+          Math.round(toNum(usd.fully_diluted_market_cap) || toNum(coin.fully_diluted_market_cap) || 0) || null;
+        if (!fdvUsd && maxSupply != null && priceUsd != null) fdvUsd = Math.round(maxSupply * priceUsd);
+        if (!fdvKrw && maxSupply != null && priceKrw != null) fdvKrw = Math.round(maxSupply * priceKrw);
+        const sparkline =
+          pickSparkline(coin, usd) ||
+          pickSparkline(coin, krw) ||
+          syntheticSparkline(priceUsd ?? priceKrw, toNum(usd.percent_change_1h ?? krw.percent_change_1h), toNum(usd.percent_change_24h ?? krw.percent_change_24h), toNum(usd.percent_change_7d ?? krw.percent_change_7d));
         return {
           rank: toNum(coin.cmc_rank) || i + 1,
           id: toNum(coin.id),
@@ -136,16 +198,25 @@ async function fetchListings() {
           symbol: sanitizeStr(coin.symbol),
           price: priceKrw,
           priceKrw,
-          priceUsd: toNum(usd.price),
+          priceUsd,
           change1h: round2(toNum(krw.percent_change_1h ?? usd.percent_change_1h)),
           change24h: round2(toNum(krw.percent_change_24h ?? usd.percent_change_24h)),
           change7d: round2(toNum(krw.percent_change_7d ?? usd.percent_change_7d)),
           marketCap: marketCapKrw,
           marketCapKrw,
-          marketCapUsd: Math.round(toNum(usd.market_cap) || 0) || null,
+          marketCapUsd,
+          fullyDilutedMarketCap: fdvKrw,
+          fullyDilutedMarketCapKrw: fdvKrw,
+          fullyDilutedMarketCapUsd: fdvUsd,
+          fdv: fdvKrw,
+          fdvKrw,
+          fdvUsd,
+          maxSupply,
           volume24h: volume24hKrw,
           volume24hKrw,
           volume24hUsd: Math.round(toNum(usd.volume_24h) || 0) || null,
+          sparkline_7d: sparkline,
+          priceHistory7d: sparkline,
         };
       }),
       updatedAt: new Date().toISOString(),

@@ -817,13 +817,45 @@
           return fmtMoney(v);
         }
 
-        function sortCoins() {
+        function sortCompare(a, b) {
           const key = state.sortKey;
-          const dir = state.sortDir;
-          state.coins.sort((a, b) => {
-            const av = moneyValue(a, key) ?? 0;
-            const bv = moneyValue(b, key) ?? 0;
-            return dir === "desc" ? bv - av : av - bv;
+          let av;
+          let bv;
+          if (key === "rank") {
+            av = Number(a.rank);
+            bv = Number(b.rank);
+            av = Number.isFinite(av) ? av : 9999;
+            bv = Number.isFinite(bv) ? bv : 9999;
+          } else if (key === "marketCap" || key === "fullyDilutedMarketCap" || key === "volume24h") {
+            av = moneyValue(a, key);
+            bv = moneyValue(b, key);
+            av = av != null && Number.isFinite(av) ? av : -1;
+            bv = bv != null && Number.isFinite(bv) ? bv : -1;
+          } else {
+            av = a[key] != null ? Number(a[key]) : -1;
+            bv = b[key] != null ? Number(b[key]) : -1;
+          }
+          if (av === -1 && bv === -1) return 0;
+          if (av === -1) return 1;
+          if (bv === -1) return -1;
+          return state.sortDir === "desc" ? bv - av : av - bv;
+        }
+
+        function sortCoins(list) {
+          const target = list || state.coins;
+          target.sort(sortCompare);
+        }
+
+        function sortCoinsByRank() {
+          state.coins.sort((a, b) => (Number(a.rank) || 9999) - (Number(b.rank) || 9999));
+        }
+
+        function getPageCoins() {
+          const startRank = (state.currentPage - 1) * PAGE_SIZE + 1;
+          const endRank = state.currentPage * PAGE_SIZE;
+          return state.coins.filter((c) => {
+            const r = Number(c.rank);
+            return Number.isFinite(r) && r >= startRank && r <= endRank;
           });
         }
 
@@ -969,7 +1001,7 @@
           const sparkColor = sparklineColor(c, pts);
           const sparkHtml = sparklineSvg(pts, sparkColor, mobile);
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
-            <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
+            <td class="num crypto-col-rank">${escapeHtml(Number(c.rank) || "-")}</td>
             <td class="crypto-col-name">${coinNameCellHtml(c, open)}</td>
             <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
@@ -1037,8 +1069,8 @@
         function renderTable() {
           const body = $("crypto-tbody");
           if (!body) return;
-          const start = (state.currentPage - 1) * PAGE_SIZE;
-          const pageCoins = state.coins.slice(start, start + PAGE_SIZE);
+          const pageCoins = getPageCoins();
+          sortCoins(pageCoins);
           const parts = [];
           for (const c of pageCoins) {
             parts.push(coinRowHtml(c));
@@ -1093,7 +1125,6 @@
                 state.sortKey = key;
                 state.sortDir = "desc";
               }
-              sortCoins();
               state.currentPage = 1;
               updateSortIcons();
               renderTable();
@@ -1122,7 +1153,6 @@
               if (next !== "KRW" && next !== "USD") return;
               state.currency = next;
               syncCurrencyButtons();
-              sortCoins();
               renderTable();
               renderPagination();
             });
@@ -1139,10 +1169,10 @@
               fetchJson("fear-greed"),
             ]);
             state.global = globalPack || {};
-              state.coins = listingsPack.coins || [];
+            state.coins = listingsPack.coins || [];
+            sortCoinsByRank();
             state.fearGreed = fearGreedPack || {};
             state.currentPage = 1;
-            sortCoins();
             setUpdatedLabel(listingsPack.updatedAt || globalPack.updatedAt || new Date().toISOString());
             renderGlobal();
             updateSortIcons();

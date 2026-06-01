@@ -242,7 +242,7 @@ body.page-home-v2 {
 }
 
 .home-ticker__pct.is-down {
-  color: #1d9e75;
+  color: #3b82f6;
   font-weight: 600;
 }
 
@@ -497,7 +497,7 @@ body.page-home-v2 {
   color: white;
 }
 
-/* 등락률: theme.css --up-color / --down-color (#e24b4a / #1d9e75) 사용 */
+/* 등락률: theme.css --up-color / --down-color (#e24b4a / #3b82f6) 사용 */
 
 @media (max-width: 768px) {
   body.page-tm-v2 {

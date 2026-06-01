@@ -515,6 +515,18 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-height: 100%;
+}
+
+/* 미국+암호화폐 열: 왼쪽 국내 TOP10 박스 하단과 맞춤 */
+.home-col-mid .home-section:last-child {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-col-mid .home-section:last-child .home-section__body {
+  flex: 1 1 auto;
 }
 
 .home-side {
@@ -527,7 +539,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: grid;
   grid-template-columns: 22px 1fr 80px 58px;
   gap: 6px;
-  padding: 5px 0 4px;
+  margin: 0 -14px;
+  padding: 5px 14px 4px;
   font-size: 10px;
   color: #ccc;
   border-bottom: 1px solid #f5f5f5;
@@ -1010,6 +1023,14 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 [data-theme="dark"] .home-section__more {
   color: #7788cc;
+}
+
+[data-theme="dark"] .home-section__head {
+  border-bottom-color: #2a2f4a;
+}
+
+[data-theme="dark"] .home-th {
+  border-bottom-color: #2a2f4a;
 }
 
 [data-theme="dark"] .home-th div {

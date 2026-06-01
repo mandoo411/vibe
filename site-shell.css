@@ -628,6 +628,14 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   color: #7788cc;
 }
 
+[data-theme="dark"] .home-section__head {
+  border-bottom-color: #2a2f4a;
+}
+
+[data-theme="dark"] .home-th {
+  border-bottom-color: #2a2f4a;
+}
+
 [data-theme="dark"] .home-th div {
   color: #556080;
 }

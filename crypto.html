@@ -194,7 +194,7 @@
       }
       .crypto-table {
         width: 100%;
-        min-width: 900px;
+        min-width: 980px;
         border-collapse: collapse;
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 13px;
@@ -257,11 +257,51 @@
         text-decoration: underline;
         outline: none;
       }
-      .crypto-symbol {
-        display: block;
+      .crypto-name-btn--inline {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        flex: 1;
+      }
+      .crypto-symbol-inline {
         font-size: 11px;
-        color: var(--text-dim);
-        margin-top: 2px;
+        color: #aaa;
+        font-weight: 500;
+        flex-shrink: 0;
+      }
+      .crypto-th-sort {
+        cursor: pointer;
+        user-select: none;
+      }
+      .crypto-th-sort .sort-icon {
+        margin-left: 2px;
+        font-size: 9px;
+      }
+      .crypto-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px 0;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
+      .crypto-page-btn {
+        padding: 6px 16px;
+        height: 34px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        margin: 0 4px;
+        background: white;
+        color: #444;
+        border: 1px solid #dde3ff;
+      }
+      .crypto-page-btn.is-active {
+        font-weight: 600;
+        background: #3339bf;
+        color: white;
+        border-color: #3339bf;
       }
       .crypto-delta--up {
         color: #e24b4a;
@@ -393,8 +433,11 @@
         }
         .crypto-col-rank,
         .crypto-col-volume,
-        .mcap-tab[data-mode="fdv"] {
+        .crypto-col-fdv {
           display: none;
+        }
+        .crypto-page-btn {
+          padding: 6px 10px;
         }
         .crypto-col-name {
           width: 36%;
@@ -519,7 +562,7 @@
         </header>
         <div class="page-hero-sub">
           <div class="masthead__meta">
-            <span>CoinMarketCap · TOP 100</span>
+            <span>CoinMarketCap · TOP 400</span>
             <span>5분마다 자동 갱신</span>
           </div>
         </div>
@@ -536,7 +579,7 @@
 
         <section class="crypto-section" aria-labelledby="crypto-sec-top100">
           <div class="crypto-section-head">
-            <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 100</h2>
+            <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 400</h2>
             <div class="crypto-currency-toggle" role="group" aria-label="표시 통화">
               <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="false">원</button>
               <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="true">달러</button>
@@ -545,26 +588,29 @@
           <div class="crypto-panel">
             <div class="crypto-panel__head">코인명 클릭 시 TradingView 차트 위젯 표시</div>
             <div class="crypto-scroll">
-              <table class="crypto-table" aria-label="암호화폐 시총 TOP 100">
+              <table class="crypto-table" aria-label="암호화폐 시총 TOP 400">
                 <thead>
                   <tr>
                     <th class="num crypto-col-rank">#</th>
                     <th class="crypto-col-name">코인명</th>
                     <th class="num crypto-col-price">가격</th>
                     <th class="num crypto-col-24h">24H</th>
-                    <th class="num crypto-col-mcap">
-                      <div class="crypto-mcap-tabs">
-                        <button type="button" class="mcap-tab is-active" data-mode="market">시총</button>
-                        <button type="button" class="mcap-tab" data-mode="fdv">완전희석시총</button>
-                      </div>
+                    <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
+                      시총 <span class="sort-icon">▼</span>
                     </th>
-                    <th class="num crypto-col-volume">거래대금</th>
+                    <th class="num crypto-col-fdv crypto-th-sort" data-sort="fullyDilutedMarketCap">
+                      완전희석시총 <span class="sort-icon"></span>
+                    </th>
+                    <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">
+                      거래대금 <span class="sort-icon"></span>
+                    </th>
                     <th class="num crypto-col-spark">7일 추이</th>
                   </tr>
                 </thead>
                 <tbody id="crypto-tbody"></tbody>
               </table>
             </div>
+            <div id="crypto-pagination" class="crypto-pagination" aria-label="순위 구간"></div>
           </div>
         </section>
 
@@ -619,14 +665,17 @@
         const API = "/api/crypto-data";
         const FETCH_TIMEOUT_MS = 20000;
         const POLL_MS = 5 * 60 * 1000;
+        const PAGE_SIZE = 100;
         const state = {
           global: null,
           fearGreed: null,
           coins: [],
           currency: "USD",
-          mcapMode: "market",
           openSymbol: null,
           pollTimer: null,
+          currentPage: 1,
+          sortKey: "marketCap",
+          sortDir: "desc",
         };
 
         function $(id) {
@@ -755,23 +804,35 @@
           return `<img src="https://s2.coinmarketcap.com/static/img/coins/32x32/${Number(id)}.png" width="24" height="24" style="border-radius:50%;flex-shrink:0;" onerror="this.style.display='none'" alt="${escapeHtml(c.symbol)}">`;
         }
 
-        function effectiveMcapMode() {
-          if (window.matchMedia("(max-width: 768px)").matches) return "market";
-          return state.mcapMode;
-        }
-
-        function mcapDisplayValue(c) {
-          if (effectiveMcapMode() === "fdv") {
-            if (c.maxSupply == null && moneyValue(c, "fullyDilutedMarketCap") == null) return null;
-            return moneyValue(c, "fullyDilutedMarketCap");
-          }
-          return moneyValue(c, "marketCap");
-        }
-
         function fmtMcapCell(c) {
-          const v = mcapDisplayValue(c);
+          const v = moneyValue(c, "marketCap");
           if (v == null || !Number.isFinite(v)) return "-";
           return fmtMoney(v);
+        }
+
+        function fmtFdvCell(c) {
+          if (c.maxSupply == null && moneyValue(c, "fullyDilutedMarketCap") == null) return "-";
+          const v = moneyValue(c, "fullyDilutedMarketCap");
+          if (v == null || !Number.isFinite(v)) return "-";
+          return fmtMoney(v);
+        }
+
+        function sortCoins() {
+          const key = state.sortKey;
+          const dir = state.sortDir;
+          state.coins.sort((a, b) => {
+            const av = moneyValue(a, key) ?? 0;
+            const bv = moneyValue(b, key) ?? 0;
+            return dir === "desc" ? bv - av : av - bv;
+          });
+        }
+
+        function updateSortIcons() {
+          document.querySelectorAll("th[data-sort]").forEach((th) => {
+            const icon = th.querySelector(".sort-icon");
+            if (!icon) return;
+            icon.textContent = th.dataset.sort === state.sortKey ? (state.sortDir === "desc" ? "▼" : "▲") : "";
+          });
         }
 
         function fmtMoney(n) {
@@ -883,17 +944,22 @@
           const r = Number(c.rank);
           return Number.isFinite(r) && r > 0 ? `${r}. ` : "";
         }
-        function coinNameButtonHtml(c, open) {
+
+        function coinNameCellHtml(c, open) {
           const mobile = window.matchMedia("(max-width: 768px)").matches;
-          if (mobile) {
-            const prefix = coinRankPrefix(c);
-            const rankPart = prefix
-              ? `<span class="crypto-name-btn__rank">${escapeHtml(prefix.trim())}</span>`
-              : "";
-            return `${rankPart}<span class="crypto-name-btn__label">${escapeHtml(c.name)}</span><span class="crypto-name-inline-symbol">${escapeHtml(c.symbol)}</span>`;
-          }
-          return escapeHtml(c.name);
+          const prefix = mobile ? coinRankPrefix(c) : "";
+          const rankHtml = prefix
+            ? `<span class="crypto-name-btn__rank">${escapeHtml(prefix.trim())}</span>`
+            : "";
+          return `<div class="crypto-coin-cell">
+                ${coinLogoHtml(c)}
+                <button type="button" class="crypto-name-btn crypto-name-btn--inline" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
+                  ${rankHtml}<span class="crypto-name-btn__label">${escapeHtml(c.name)}</span>
+                  <span class="crypto-symbol-inline">${escapeHtml(c.symbol)}</span>
+                </button>
+              </div>`;
         }
+
         function coinRowHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
           const price = moneyValue(c, "price");
@@ -902,25 +968,13 @@
           const pts = resolveSparkline(c);
           const sparkColor = sparklineColor(c, pts);
           const sparkHtml = sparklineSvg(pts, sparkColor, mobile);
-          const symbolLine = mobile
-            ? ""
-            : `<span class="crypto-symbol">${escapeHtml(c.symbol)}</span>`;
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
             <td class="num crypto-col-rank">${escapeHtml(c.rank)}</td>
-            <td class="crypto-col-name">
-              <div class="crypto-coin-cell">
-                ${coinLogoHtml(c)}
-                <div class="crypto-coin-cell__text">
-                  <button type="button" class="crypto-name-btn" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
-                    ${coinNameButtonHtml(c, open)}
-                  </button>
-                  ${symbolLine}
-                </div>
-              </div>
-            </td>
+            <td class="crypto-col-name">${coinNameCellHtml(c, open)}</td>
             <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
             <td class="num crypto-col-mcap">${escapeHtml(fmtMcapCell(c))}</td>
+            <td class="num crypto-col-fdv">${escapeHtml(fmtFdvCell(c))}</td>
             <td class="num crypto-col-volume">${escapeHtml(fmtMoney(volume24h))}</td>
             <td class="num crypto-col-spark">${sparkHtml}</td>
           </tr>`;
@@ -964,7 +1018,7 @@
 
         function chartRowHtml(c) {
           return `<tr class="crypto-chart-row">
-            <td colspan="7">
+            <td colspan="8">
               <div class="crypto-chart-box">
                 <p class="crypto-chart-title">${escapeHtml(c.name)} · TradingView</p>
                 <iframe
@@ -983,33 +1037,68 @@
         function renderTable() {
           const body = $("crypto-tbody");
           if (!body) return;
+          const start = (state.currentPage - 1) * PAGE_SIZE;
+          const pageCoins = state.coins.slice(start, start + PAGE_SIZE);
           const parts = [];
-          for (const c of state.coins) {
+          for (const c of pageCoins) {
             parts.push(coinRowHtml(c));
             if (state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
           }
-          body.innerHTML = parts.join("");
-          syncMcapTabs();
+          body.innerHTML = parts.join("") || '<tr><td colspan="8"><p class="home-empty">데이터 없음</p></td></tr>';
         }
 
-        function syncMcapTabs() {
-          document.querySelectorAll(".mcap-tab").forEach((btn) => {
-            btn.classList.toggle("is-active", btn.getAttribute("data-mode") === state.mcapMode);
+        function renderPagination() {
+          const el = $("crypto-pagination");
+          if (!el) return;
+          const cur = state.currentPage;
+          const labels = ["1~100위", "101~200위", "201~300위", "301~400위"];
+          el.innerHTML = [1, 2, 3, 4]
+            .map((p) => {
+              const active = p === cur;
+              return `<button type="button" class="crypto-page-btn${active ? " is-active" : ""}" data-page="${p}">${labels[p - 1]}</button>`;
+            })
+            .join("");
+        }
+
+        window.goPage = function goPage(p) {
+          const page = Number(p);
+          if (!Number.isFinite(page) || page < 1 || page > 4) return;
+          state.currentPage = page;
+          renderTable();
+          renderPagination();
+          document.querySelector(".crypto-panel")?.scrollIntoView({ behavior: "smooth" });
+        };
+
+        function wirePagination() {
+          const el = $("crypto-pagination");
+          if (!el || el.dataset.cryptoWire === "1") return;
+          el.dataset.cryptoWire = "1";
+          el.addEventListener("click", (ev) => {
+            const btn = ev.target.closest("[data-page]");
+            if (!btn) return;
+            window.goPage(Number(btn.getAttribute("data-page")));
           });
         }
 
-        function wireMcapTabs() {
-          const wrap = document.querySelector(".crypto-mcap-tabs");
-          if (!wrap || wrap.dataset.cryptoWire === "1") return;
-          wrap.dataset.cryptoWire = "1";
-          wrap.addEventListener("click", (ev) => {
-            const btn = ev.target.closest(".mcap-tab");
-            if (!btn) return;
-            const mode = btn.getAttribute("data-mode");
-            if (mode !== "market" && mode !== "fdv") return;
-            state.mcapMode = mode;
-            syncMcapTabs();
-            renderTable();
+        function wireSortHeaders() {
+          document.querySelectorAll("th[data-sort]").forEach((th) => {
+            if (th.dataset.cryptoWireSort === "1") return;
+            th.dataset.cryptoWireSort = "1";
+            th.addEventListener("click", () => {
+              const key = th.dataset.sort;
+              if (!key) return;
+              if (state.sortKey === key) {
+                state.sortDir = state.sortDir === "desc" ? "asc" : "desc";
+              } else {
+                state.sortKey = key;
+                state.sortDir = "desc";
+              }
+              sortCoins();
+              state.currentPage = 1;
+              updateSortIcons();
+              renderTable();
+              renderPagination();
+            });
           });
         }
 
@@ -1033,7 +1122,9 @@
               if (next !== "KRW" && next !== "USD") return;
               state.currency = next;
               syncCurrencyButtons();
+              sortCoins();
               renderTable();
+              renderPagination();
             });
           });
         }
@@ -1048,11 +1139,15 @@
               fetchJson("fear-greed"),
             ]);
             state.global = globalPack || {};
-            state.coins = listingsPack.coins || [];
+              state.coins = listingsPack.coins || [];
             state.fearGreed = fearGreedPack || {};
+            state.currentPage = 1;
+            sortCoins();
             setUpdatedLabel(listingsPack.updatedAt || globalPack.updatedAt || new Date().toISOString());
             renderGlobal();
+            updateSortIcons();
             renderTable();
+            renderPagination();
             syncCurrencyButtons();
           } catch (e) {
             console.error("[crypto]", e);
@@ -1078,8 +1173,8 @@
         async function init() {
           wireTable();
           wireCurrencyToggle();
-          wireMcapTabs();
-          syncMcapTabs();
+          wireSortHeaders();
+          wirePagination();
           await refreshAll();
           await refreshCryptoNews();
           startPolling();

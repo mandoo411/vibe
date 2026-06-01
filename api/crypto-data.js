@@ -160,7 +160,8 @@ function syntheticSparkline(price, change1h, change24h, change7d) {
 async function fetchListings() {
   return cached("listings", async () => {
     const params = {
-      limit: 100,
+      limit: 400,
+      start: 1,
       aux: "cmc_rank,max_supply,circulating_supply,total_supply",
     };
     const [krwData, usdData] = await Promise.all([

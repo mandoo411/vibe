@@ -263,8 +263,18 @@ body.page-home-v2 {
   border: 1px solid #eef0f8;
 }
 
+/* 라이트 C안 — 히어로·패널 (index 등) */
+.home-hero {
+  background: linear-gradient(135deg, #1e2590 0%, #3339bf 60%, #4a52d4 100%);
+}
+
+.home-hero__panel {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .home-footer {
-  background: #0f1120 !important;
+  background: #1a1f3d !important;
   color: white;
 }
 
@@ -352,6 +362,41 @@ body.page-home-v2 {
 
 .tm-bottom-nav {
   display: none;
+}
+
+/* 다크모드 A안 */
+[data-theme="dark"] .home-nav {
+  background: #1a1f35;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-ticker {
+  background: #141828;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-hero {
+  background: linear-gradient(135deg, #0d1230 0%, #1a2060 50%, #2a3080 100%);
+}
+
+[data-theme="dark"] .home-hero__panel {
+  background: #0f1528;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .home-shortcuts {
+  background: #141828;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-shortcuts__pill {
+  background: #1e2440;
+  color: #7788cc;
+  border: 1px solid #2a3560;
+}
+
+[data-theme="dark"] .home-footer {
+  background: #0d1020 !important;
 }
 
 /* 등락률: theme.css --up-color / --down-color (#e24b4a / #1d9e75) 사용 */

@@ -320,7 +320,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   padding: 28px;
-  background: var(--home-brand-gradient);
+  background: linear-gradient(135deg, #1e2590 0%, #3339bf 60%, #4a52d4 100%);
 }
 
 .home-hero__tag {
@@ -386,8 +386,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-hero__panel {
-  background: #0d1535;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 10px 12px;
 }
@@ -793,7 +793,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-footer {
-  background: #0f1120;
+  background: #1a1f3d;
   color: rgba(255, 255, 255, 0.88);
   padding: 0;
 }
@@ -953,6 +953,41 @@ body[data-theme="dark"] .home-nav__ai-badge {
   .home-footer__sns {
     margin-left: 0;
   }
+}
+
+/* 다크모드 A안 */
+[data-theme="dark"] .home-nav {
+  background: #1a1f35;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-ticker {
+  background: #141828;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-hero {
+  background: linear-gradient(135deg, #0d1230 0%, #1a2060 50%, #2a3080 100%);
+}
+
+[data-theme="dark"] .home-hero__panel {
+  background: #0f1528;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .home-shortcuts {
+  background: #141828;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .home-shortcuts__pill {
+  background: #1e2440;
+  color: #7788cc;
+  border: 1px solid #2a3560;
+}
+
+[data-theme="dark"] .home-footer {
+  background: #0d1020;
 }
 
 /* index: 하락률 파랑 (site-shell.css ticker 규칙보다 우선) */

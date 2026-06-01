@@ -311,7 +311,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-ticker__pct.is-down {
-  color: #1d9e75;
+  color: #3b82f6;
   font-weight: 600;
 }
 
@@ -386,8 +386,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-hero__panel {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #0d1535;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 10px 12px;
 }
@@ -435,7 +435,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-hero__row-pct.is-down {
-  color: #5fd4a8;
+  color: #60a5fa;
 }
 
 .home-shortcuts {
@@ -663,7 +663,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-tr__chg.is-down {
-  color: #1d9e75;
+  color: #3b82f6;
 }
 
 .home-coin-icon {
@@ -958,4 +958,18 @@ body[data-theme="dark"] .home-nav__ai-badge {
 /* index loads site-shell.css after home.css — keep home footer at 3fc00ba gradient */
 body.page-home-v2 .home-footer {
   background: var(--home-brand-gradient);
+}
+
+/* index: 하락률 파랑 (site-shell.css ticker 규칙보다 우선) */
+body.page-home-v2 {
+  --down-color: #3b82f6;
+}
+
+body.page-home-v2 .home-ticker__pct.is-down,
+body.page-home-v2 .home-tr__chg.is-down {
+  color: #3b82f6;
+}
+
+body.page-home-v2 .home-hero__row-pct.is-down {
+  color: #60a5fa;
 }

@@ -32,8 +32,8 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <style>
       /* Bloomberg-style dense board — .page 폭은 weekly-market.css(1100px)와 동일 */
-      body.page-tm-v2,
-      .page--realtime {
+      .page--realtime,
+      .rt-wrap {
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         line-height: 1.6;
       }
@@ -187,8 +187,8 @@
         height: 36px;
         margin: 0;
         padding: 0;
-        background: white;
-        border: 0.5px solid rgba(200, 210, 255, 0.5);
+        background: var(--bg-primary, #fff);
+        border: 0.5px solid var(--border-strong, rgba(200, 210, 255, 0.5));
         border-radius: 8px;
         font-size: 13px;
         font-family: inherit;
@@ -278,8 +278,8 @@
         line-height: 1;
         border: 1.5px solid #3339bf;
         border-radius: 20px;
-        background: white;
-        color: #131722;
+        background: var(--bg-primary, #fff);
+        color: var(--text-primary, #131722);
         font-family: inherit;
         outline: none;
       }
@@ -965,9 +965,9 @@
         }
       }
       .rt-tab[aria-selected="false"] {
-        background: white;
-        border: 0.5px solid rgba(200, 210, 255, 0.5);
-        color: #555;
+        background: var(--bg-primary, #fff);
+        border: 0.5px solid var(--border-strong, rgba(200, 210, 255, 0.5));
+        color: var(--text-secondary, #555);
       }
       .rt-tab[aria-selected="true"] {
         background: #3339bf;

@@ -40,6 +40,13 @@ body.page-home-v2 {
   z-index: 100;
 }
 
+/* 헤더 로고: index와 동일 타이포 (weekly-market antialiased·폰트 웨이트 영향 차단) */
+.home-nav {
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
 .home-nav__logo {
   display: flex;
   align-items: center;
@@ -47,6 +54,7 @@ body.page-home-v2 {
   text-decoration: none;
   color: inherit;
   flex-shrink: 0;
+  font-family: inherit;
 }
 
 .home-nav__logo-box {
@@ -64,6 +72,7 @@ body.page-home-v2 {
 }
 
 .home-nav__logo-box span {
+  font-family: inherit;
   font-size: 16px;
   font-weight: 900;
   color: #ffffff;
@@ -71,13 +80,18 @@ body.page-home-v2 {
   display: block;
   text-align: center;
   width: 100%;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 
 .home-nav__brand-name {
+  font-family: inherit;
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.3px;
   color: #1a1a2e;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 
 .home-nav__brand-sub {
@@ -87,6 +101,12 @@ body.page-home-v2 {
   margin-top: 2px;
   font-size: 11px;
   color: #888;
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.home-nav__brand-sub > span:first-child {
+  font-weight: 400;
 }
 
 .home-nav__ai-badge {
@@ -97,9 +117,12 @@ body.page-home-v2 {
   border-radius: 5px;
   background: linear-gradient(135deg, #252c78, #3339bf);
   color: #ffffff;
+  font-family: inherit;
   font-size: 11px;
   font-weight: 800;
   box-shadow: 0 4px 10px rgba(30, 37, 144, 0.28);
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
 }
 
 .home-nav__menu {

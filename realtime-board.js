@@ -513,7 +513,22 @@
   const CANDLE_DOWN = "#3b82f6";
   const VOL_UP = "rgba(226, 75, 74, 0.5)";
   const VOL_DOWN = "rgba(59, 130, 246, 0.5)";
-  const LW_CHART_BG = "#131722";
+
+  function isLwChartDarkTheme() {
+    return (
+      document.documentElement.getAttribute("data-theme") === "dark" ||
+      (document.body && document.body.classList.contains("dark"))
+    );
+  }
+
+  function getLwChartTheme() {
+    const dark = isLwChartDarkTheme();
+    return {
+      bg: dark ? "#131722" : "#ffffff",
+      textColor: dark ? "#aaaaaa" : "#555555",
+      gridColor: dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
+    };
+  }
   const LW_CHART_TOTAL_H = 300;
   const LW_CANDLE_H = 210;
   const LW_VOL_H = 90;
@@ -568,12 +583,13 @@
   };
 
   function lwChartLayoutOptions(width, height, timeScaleVisible, localization) {
+    const t = getLwChartTheme();
     return {
       width: Math.max(width, 200),
       height: Math.max(height, 60),
       layout: {
-        background: { type: "solid", color: LW_CHART_BG },
-        textColor: "#aaa",
+        background: { type: "solid", color: t.bg },
+        textColor: t.textColor,
       },
       localization,
       crosshair: {
@@ -581,8 +597,8 @@
         horzLine: { labelVisible: true },
       },
       grid: {
-        vertLines: { color: "rgba(255,255,255,0.05)" },
-        horzLines: { color: "rgba(255,255,255,0.05)" },
+        vertLines: { color: t.gridColor },
+        horzLines: { color: t.gridColor },
       },
       leftPriceScale: { visible: false },
       rightPriceScale: { ...LW_RIGHT_SCALE_BASE },
@@ -719,6 +735,40 @@
     bundle.crosshairLookup = buildCrosshairLookup(sliced);
     syncLwDualChartAxes(bundle.chartCandle, bundle.chartVol);
     return sliced;
+  }
+
+  function applyLwChartThemeToBundle(bundle) {
+    if (!bundle || !bundle.chartCandle || !bundle.chartVol) return;
+    const t = getLwChartTheme();
+    const opts = {
+      layout: {
+        background: { type: "solid", color: t.bg },
+        textColor: t.textColor,
+      },
+      grid: {
+        vertLines: { color: t.gridColor },
+        horzLines: { color: t.gridColor },
+      },
+    };
+    bundle.chartCandle.applyOptions(opts);
+    bundle.chartVol.applyOptions(opts);
+  }
+
+  function refreshAllLwChartsTheme() {
+    document.querySelectorAll(".rt-chart-wrap").forEach((host) => {
+      const bundle = panelLwCharts.get(host);
+      if (bundle) applyLwChartThemeToBundle(bundle);
+    });
+  }
+  window.tmRefreshLwChartsTheme = refreshAllLwChartsTheme;
+
+  function wireLwChartThemeRefresh() {
+    const btn = document.getElementById("theme-toggle");
+    if (!btn || btn.dataset.rtLwThemeBound === "1") return;
+    btn.dataset.rtLwThemeBound = "1";
+    btn.addEventListener("click", () => {
+      setTimeout(refreshAllLwChartsTheme, 0);
+    });
   }
 
   function disposePanelLwChart(panelRoot) {
@@ -2195,6 +2245,7 @@
 
   async function init() {
     setupTabs();
+    wireLwChartThemeRefresh();
     wireTableChartAccordion();
     const searchInput = $("stock-search-input");
     if (searchInput && !searchInput.dataset.wired) {

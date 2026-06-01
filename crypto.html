@@ -366,13 +366,20 @@
         font-size: 12px;
         letter-spacing: 0.06em;
       }
+      :root,
+      [data-theme="light"] {
+        --crypto-tv-chart-bg: #ffffff;
+      }
+      [data-theme="dark"] {
+        --crypto-tv-chart-bg: #131722;
+      }
       .crypto-tv-widget {
         width: 100%;
         max-width: 100%;
         height: 420px;
         border: 0;
         display: block;
-        background: var(--surface-inset);
+        background: var(--crypto-tv-chart-bg);
       }
       .crypto-error {
         margin-top: 12px;
@@ -1030,6 +1037,7 @@
             document.documentElement.getAttribute("data-theme") === "dark" ||
             document.body.classList.contains("dark");
           const theme = isDark ? "dark" : "light";
+          const chartBg = isDark ? "#131722" : "#ffffff";
           const params = new URLSearchParams({
             symbol: tradingViewSymbol(symbol),
             interval: "D",
@@ -1037,9 +1045,9 @@
             theme,
             style: "1",
             locale: "kr",
-            toolbar_bg: isDark ? "#0f1120" : "#ffffff",
-            bgcolor: isDark ? "#0f1120" : "#ffffff",
-            gridcolor: isDark ? "#1a1f35" : "#f0f0f0",
+            toolbar_bg: chartBg,
+            bgcolor: chartBg,
+            gridcolor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
             hide_side_toolbar: "0",
             allow_symbol_change: "1",
             save_image: "0",
@@ -1053,6 +1061,9 @@
             wick_up_color: "#e24b4a",
             wick_down_color: "#3b82f6",
           });
+          if (typeof window.tmTradingViewCandleOverrides === "function") {
+            params.set("overrides", JSON.stringify(window.tmTradingViewCandleOverrides(isDark)));
+          }
           return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
         }
 

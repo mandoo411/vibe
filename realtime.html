@@ -492,7 +492,7 @@
         color: #e24b4a;
       }
       .rt-acc-val--lo {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       [data-theme="dark"] .rt-acc-val--hi,
       .dark-mode .rt-acc-val--hi {
@@ -500,13 +500,13 @@
       }
       [data-theme="dark"] .rt-acc-val--lo,
       .dark-mode .rt-acc-val--lo {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       .rt-acc-val--sup-pos {
         color: #e24b4a;
       }
       .rt-acc-val--sup-neg {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       [data-theme="dark"] .rt-acc-val--sup-pos,
       .dark-mode .rt-acc-val--sup-pos {
@@ -514,7 +514,7 @@
       }
       [data-theme="dark"] .rt-acc-val--sup-neg,
       .dark-mode .rt-acc-val--sup-neg {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       .rt-acc-section-bar {
         display: flex;
@@ -743,7 +743,7 @@
         color: #e24b4a;
       }
       .rt-basic-v--lo {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       [data-theme="dark"] .rt-basic-v--hi,
       .dark-mode .rt-basic-v--hi {
@@ -751,7 +751,7 @@
       }
       [data-theme="dark"] .rt-basic-v--lo,
       .dark-mode .rt-basic-v--lo {
-        color: #1d9e75;
+        color: var(--down-color);
       }
 
       .rt-card3 {
@@ -792,10 +792,10 @@
         color: #e24b4a;
       }
       .rt-mini__v--neg {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       .rt-mini__v--inv-pos {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       .rt-mini__v--inv-neg {
         color: #e24b4a;
@@ -806,11 +806,11 @@
       }
       [data-theme="dark"] .rt-mini__v--neg,
       .dark-mode .rt-mini__v--neg {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       [data-theme="dark"] .rt-mini__v--inv-pos,
       .dark-mode .rt-mini__v--inv-pos {
-        color: #1d9e75;
+        color: var(--down-color);
       }
       [data-theme="dark"] .rt-mini__v--inv-neg,
       .dark-mode .rt-mini__v--inv-neg {
@@ -1202,6 +1202,17 @@
         background: var(--surface-inset);
         vertical-align: top;
       }
+      :root,
+      [data-theme="light"] {
+        --rt-lw-chart-bg: #ffffff;
+        --rt-lw-chart-grid: rgba(0, 0, 0, 0.06);
+        --rt-lw-chart-text: #555555;
+      }
+      [data-theme="dark"] {
+        --rt-lw-chart-bg: #131722;
+        --rt-lw-chart-grid: rgba(255, 255, 255, 0.05);
+        --rt-lw-chart-text: #aaaaaa;
+      }
       .rt-chart-wrap {
         width: 100%;
         min-height: 0;
@@ -1209,7 +1220,7 @@
         border: none;
         display: flex;
         flex-direction: column;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-chart-wrap[hidden] {
@@ -1221,7 +1232,7 @@
         min-height: 300px;
         margin: 0;
         padding: 0;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-chart-loading-msg {
@@ -1299,7 +1310,7 @@
         padding: 0;
         gap: 0;
         border: none;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-chart-pane--candle {
@@ -1310,7 +1321,7 @@
         margin: 0;
         padding: 0;
         border: none;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-chart-pane-sep {
@@ -1324,7 +1335,7 @@
         margin: 0;
         padding: 0;
         border: none;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-lw-candle-host,
@@ -1336,7 +1347,7 @@
         margin: 0;
         padding: 0;
         border: none;
-        background: #131722;
+        background: var(--rt-lw-chart-bg);
         overflow: hidden;
       }
       .rt-lw-chart-err {
@@ -1717,6 +1728,7 @@
             document.documentElement.getAttribute("data-theme") === "dark" ||
             document.body.classList.contains("dark");
           const theme = isDark ? "dark" : "light";
+          const chartBg = isDark ? "#131722" : "#ffffff";
           const params = new URLSearchParams({
             symbol: tradingViewSymbol(symbol),
             interval: "D",
@@ -1724,9 +1736,9 @@
             theme,
             style: "1",
             locale: "kr",
-            toolbar_bg: isDark ? "#0f1120" : "#ffffff",
-            bgcolor: isDark ? "#0f1120" : "#ffffff",
-            gridcolor: isDark ? "#1a1f35" : "#f0f0f0",
+            toolbar_bg: chartBg,
+            bgcolor: chartBg,
+            gridcolor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
             hide_side_toolbar: "0",
             allow_symbol_change: "1",
             save_image: "0",
@@ -1740,6 +1752,9 @@
             wick_up_color: "#e24b4a",
             wick_down_color: "#3b82f6",
           });
+          if (typeof window.tmTradingViewCandleOverrides === "function") {
+            params.set("overrides", JSON.stringify(window.tmTradingViewCandleOverrides(isDark)));
+          }
           return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
         }
 

@@ -92,11 +92,32 @@
     const light = document.documentElement.getAttribute("data-theme") === "light";
     return {
       theme: light ? "light" : "dark",
-      toolbar_bg: light ? "#e8ecf5" : "#1e2235",
+      toolbar_bg: light ? "#ffffff" : "#131722",
+    };
+  }
+
+  /** TradingView widgetembed candle/bar colors + pane background */
+  function tradingViewCandleOverrides(isDark) {
+    const bg = isDark ? "#131722" : "#ffffff";
+    const grid = isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)";
+    return {
+      "mainSeriesProperties.candleStyle.upColor": "#e24b4a",
+      "mainSeriesProperties.candleStyle.downColor": "#3b82f6",
+      "mainSeriesProperties.candleStyle.borderUpColor": "#e24b4a",
+      "mainSeriesProperties.candleStyle.borderDownColor": "#3b82f6",
+      "mainSeriesProperties.candleStyle.wickUpColor": "#e24b4a",
+      "mainSeriesProperties.candleStyle.wickDownColor": "#3b82f6",
+      "mainSeriesProperties.barStyle.upColor": "#e24b4a",
+      "mainSeriesProperties.barStyle.downColor": "#3b82f6",
+      "paneProperties.background": bg,
+      "paneProperties.backgroundType": "solid",
+      "paneProperties.vertGridProperties.color": grid,
+      "paneProperties.horzGridProperties.color": grid,
     };
   }
 
   window.tmApplyTheme = applyTheme;
   window.toggleTheme = toggleTheme;
   window.tmTradingViewEmbedTheme = tradingViewEmbedTheme;
+  window.tmTradingViewCandleOverrides = tradingViewCandleOverrides;
 })();

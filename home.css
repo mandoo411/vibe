@@ -1000,7 +1000,9 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 [data-theme="dark"] .home-footer {
-  background: #0d1020;
+  background: #0a0d18;
+  border-top: 1px solid #2a2f4a;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .home-wrap,

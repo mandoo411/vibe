@@ -543,7 +543,9 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 }
 
 [data-theme="dark"] .home-footer {
-  background: #0f1120 !important;
+  background: #0a0d18 !important;
+  border-top: 1px solid #2a2f4a;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] body.page-tm-v2,

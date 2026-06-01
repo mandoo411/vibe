@@ -453,8 +453,15 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 }
 
 .page-tm-v2 .pagination {
-  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
-  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 /* 브리핑: 헤더와 동일 전폭 카드 · 2열 하단 정렬 */

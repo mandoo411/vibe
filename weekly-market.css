@@ -1284,6 +1284,150 @@ a:hover {
   font-size: 13px;
 }
 
+/* 일정 페이지: 가로 스크롤 없이 한눈에 (오늘 표 + 월간 달력) */
+.page-tm-v2 .schedule-layout {
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(248px, 280px);
+}
+
+.page-tm-v2 .schedule-main {
+  gap: 12px;
+}
+
+.page-tm-v2 .schedule-card .section-head {
+  padding: 10px 12px;
+}
+
+.page-tm-v2 .today-grid {
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.page-tm-v2 .today-grid > article:first-child {
+  grid-column: 1 / -1;
+}
+
+.page-tm-v2 .schedule-table-wrap {
+  overflow-x: visible;
+}
+
+.page-tm-v2 .schedule-table {
+  min-width: 0;
+  width: 100%;
+  font-size: 10px;
+}
+
+.page-tm-v2 .schedule-table th,
+.page-tm-v2 .schedule-table td {
+  padding: 5px 6px;
+}
+
+.page-tm-v2 .schedule-table th:nth-child(2),
+.page-tm-v2 .schedule-table td:nth-child(2) {
+  min-width: 0;
+}
+
+.page-tm-v2 .month-calendar--compact {
+  padding: 8px 10px 10px;
+}
+
+.page-tm-v2 .month-calendar--compact .calendar-weekday,
+.page-tm-v2 .month-calendar--compact .calendar-cell {
+  min-height: 26px;
+  padding: 2px;
+  font-size: 9px;
+}
+
+.page-tm-v2 .month-calendar--compact .calendar-cell span {
+  font-size: 10px;
+}
+
+.page-tm-v2 .calendar-legend--compact {
+  gap: 6px 8px;
+  padding: 6px 10px 0;
+  font-size: 9px;
+}
+
+.page-tm-v2 .selected-day--compact {
+  padding: 8px 10px 10px;
+}
+
+.page-tm-v2 .selected-day--compact h3 {
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table-wrap {
+  overflow: visible;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table {
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table thead {
+  display: none;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table tbody {
+  display: grid;
+  gap: 6px;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table tr {
+  display: block;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table td {
+  display: block;
+  padding: 1px 0;
+  border: none;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table td::before {
+  content: attr(data-label) ": ";
+  color: var(--text-dim);
+  font-size: 9px;
+}
+
+.page-tm-v2 .selected-day--compact .schedule-table td:nth-child(2)::before {
+  content: "";
+}
+
+.page-tm-v2 .selected-day--compact .kr-schedule-block {
+  margin-top: 8px;
+}
+
+.page-tm-v2 .selected-day--compact .earnings-pill {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+
+.page-tm-v2 .subsection-title {
+  margin-bottom: 6px;
+  font-size: 10px;
+}
+
+.page-tm-v2 .week-tabs {
+  padding: 6px;
+  gap: 3px;
+}
+
+.page-tm-v2 .week-tab {
+  padding: 6px 0;
+  font-size: 11px;
+}
+
+.page-tm-v2 .week-panel,
+.page-tm-v2 .selected-day:not(.selected-day--compact) {
+  padding: 10px 12px;
+}
+
 @media (max-width: 960px) {
   .schedule-layout {
     grid-template-columns: 1fr;

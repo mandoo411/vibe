@@ -591,8 +591,18 @@
         width: 100%;
         margin: 0;
       }
-      .rt-wrap > .pagination {
+      .pagination,
+      .rt-wrap > .pagination,
+      #rt-table-pager.pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
         margin-top: 12px;
+        padding: 0;
+        box-sizing: border-box;
       }
 
       .rt-stock-main {

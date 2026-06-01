@@ -1350,21 +1350,21 @@
         max-width: min(280px, 92vw);
         padding: 9px 11px;
         pointer-events: none;
-        background: rgba(14, 12, 10, 0.96);
-        border: 1px solid rgba(148, 130, 98, 0.45);
+        background: var(--bg-secondary, #ffffff);
+        border: 1px solid var(--border-strong, rgba(0, 0, 0, 0.12));
         border-radius: var(--radius);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+        box-shadow: var(--sheet-shadow, 0 6px 20px rgba(30, 40, 90, 0.12));
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         line-height: 1.45;
-        color: var(--text);
+        color: var(--text-primary, #131722);
       }
       .rt-lw-ohlc-tooltip__dt {
         margin: 0 0 7px;
         padding-bottom: 6px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
         font-weight: 600;
-        color: var(--accent-bright);
+        color: var(--accent, #2962ff);
         letter-spacing: 0.02em;
       }
       .rt-lw-ohlc-tooltip__row {
@@ -1374,12 +1374,29 @@
         margin: 2px 0;
       }
       .rt-lw-ohlc-tooltip__row span:first-child {
-        color: var(--text-muted);
+        color: var(--text-secondary, #5d606b);
         flex-shrink: 0;
       }
       .rt-lw-ohlc-tooltip__row span:last-child {
+        color: var(--text-primary, #131722);
         text-align: right;
         font-variant-numeric: tabular-nums;
+      }
+      [data-theme="dark"] .rt-lw-ohlc-tooltip {
+        background: rgba(28, 32, 48, 0.98);
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+        color: var(--text-primary, #d1d4dc);
+      }
+      [data-theme="dark"] .rt-lw-ohlc-tooltip__dt {
+        color: var(--accent-bright, #8892ff);
+        border-bottom-color: var(--border, rgba(255, 255, 255, 0.08));
+      }
+      [data-theme="dark"] .rt-lw-ohlc-tooltip__row span:first-child {
+        color: var(--text-secondary, #787b86);
+      }
+      [data-theme="dark"] .rt-lw-ohlc-tooltip__row span:last-child {
+        color: var(--text-primary, #d1d4dc);
       }
       @media (max-width: 520px) {
         .rt-wrap {

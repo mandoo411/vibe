@@ -387,16 +387,47 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   line-height: 1.15;
 }
 
-.page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+/* 영문 라벨(kicker): masthead · section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */
+.page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+.page-tm-v2 .section-kicker,
+.page-tm-v2 .us-section__title,
+.page-tm-v2 .crypto-section__title {
   box-sizing: border-box;
-  margin: 0 0 6px;
   font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
   font-size: 11px;
-  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--accent, #2962ff);
+}
+
+.page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+
+.page-tm-v2 .section-kicker {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.page-tm-v2 .us-section__title,
+.page-tm-v2 .crypto-section__title {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: var(--accent-bright, var(--accent, #2962ff));
+}
+
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+[data-theme="dark"] .page-tm-v2 .section-kicker,
+[data-theme="dark"] .page-tm-v2 .us-section__title,
+[data-theme="dark"] .page-tm-v2 .crypto-section__title {
+  color: var(--accent, #5560e8);
+}
+
+[data-theme="dark"] .page-tm-v2 .us-section__title,
+[data-theme="dark"] .page-tm-v2 .crypto-section__title {
+  color: var(--accent-bright, #7788cc);
 }
 
 /* 헤더(.home-nav) 하단선과 동일한 좌우 끝 — 타이틀·메타 등 텍스트만 안쪽 여백 */
@@ -727,13 +758,7 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 }
 
 [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
-  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 1.2;
-  color: var(--accent, #5560e8);
 }
 
 [data-theme="dark"] .hub-hero__title {
@@ -881,10 +906,20 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
     letter-spacing: -0.02em;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  .page-tm-v2 .section-kicker,
+  .page-tm-v2 .us-section__title,
+  .page-tm-v2 .crypto-section__title {
     font-size: 11px;
     letter-spacing: 0.14em;
+  }
+
+  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
     margin-bottom: 6px;
+  }
+
+  .page-tm-v2 .section-kicker {
+    margin-bottom: 4px;
   }
 
   .home-nav__logo-box {

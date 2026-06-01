@@ -390,6 +390,63 @@
         font-size: 13px;
         border-radius: var(--radius);
       }
+      .crypto-tab-row {
+        display: flex;
+        gap: 4px;
+        padding: 10px 14px;
+        border-bottom: 0.5px solid var(--border);
+      }
+      .crypto-tab {
+        font-size: 13px;
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: 0.5px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        transition: all 0.15s;
+      }
+      .crypto-tab.active {
+        background: #3339bf;
+        color: white;
+        border-color: #3339bf;
+        font-weight: 600;
+      }
+      .crypto-news-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        background: #e24b4a;
+        color: white;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 9px;
+        padding: 0 4px;
+        margin-left: 5px;
+        vertical-align: middle;
+      }
+      .crypto-news-badge:empty {
+        display: none;
+      }
+      [data-theme="dark"] .crypto-tab {
+        border-color: #2a2f4a;
+        color: #7788cc;
+      }
+      [data-theme="dark"] .crypto-tab.active {
+        background: #3339bf;
+        color: white;
+        border-color: #3339bf;
+      }
+      #crypto-news-panel {
+        display: none;
+        padding: 8px 14px;
+      }
+      #crypto-news-panel.is-open {
+        display: block;
+      }
       .crypto-news-list {
         display: grid;
         gap: 9px;
@@ -593,37 +650,44 @@
             </div>
           </div>
           <div class="crypto-panel">
-            <div class="crypto-panel__head">코인명 클릭 시 TradingView 차트 위젯 표시</div>
-            <div class="crypto-scroll">
-              <table class="crypto-table" aria-label="암호화폐 시총 TOP 400">
-                <thead>
-                  <tr>
-                    <th class="num crypto-col-rank">#</th>
-                    <th class="crypto-col-name">코인명</th>
-                    <th class="num crypto-col-price">가격</th>
-                    <th class="num crypto-col-24h">24H</th>
-                    <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
-                      시총 <span class="sort-icon">▼</span>
-                    </th>
-                    <th class="num crypto-col-fdv crypto-th-sort" data-sort="fullyDilutedMarketCap">
-                      완전희석시총 <span class="sort-icon"></span>
-                    </th>
-                    <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">
-                      거래대금 <span class="sort-icon"></span>
-                    </th>
-                    <th class="num crypto-col-spark">7일 추이</th>
-                  </tr>
-                </thead>
-                <tbody id="crypto-tbody"></tbody>
-              </table>
+            <div class="crypto-tab-row" role="tablist" aria-label="암호화폐 패널">
+              <button type="button" class="crypto-tab active" data-tab="ranking" role="tab" aria-selected="true">
+                ₿ 시총 순위
+              </button>
+              <button type="button" class="crypto-tab" data-tab="news" role="tab" aria-selected="false">
+                📰 크립토 뉴스
+                <span id="crypto-news-count" class="crypto-news-badge" aria-hidden="true"></span>
+              </button>
             </div>
-            <div id="crypto-pagination" class="crypto-pagination" aria-label="순위 구간"></div>
+            <div id="crypto-ranking-panel">
+              <div class="crypto-panel__head">코인명 클릭 시 TradingView 차트 위젯 표시</div>
+              <div class="crypto-scroll">
+                <table class="crypto-table" aria-label="암호화폐 시총 TOP 400">
+                  <thead>
+                    <tr>
+                      <th class="num crypto-col-rank">#</th>
+                      <th class="crypto-col-name">코인명</th>
+                      <th class="num crypto-col-price">가격</th>
+                      <th class="num crypto-col-24h">24H</th>
+                      <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
+                        시총 <span class="sort-icon">▼</span>
+                      </th>
+                      <th class="num crypto-col-fdv crypto-th-sort" data-sort="fullyDilutedMarketCap">
+                        완전희석시총 <span class="sort-icon"></span>
+                      </th>
+                      <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">
+                        거래대금 <span class="sort-icon"></span>
+                      </th>
+                      <th class="num crypto-col-spark">7일 추이</th>
+                    </tr>
+                  </thead>
+                  <tbody id="crypto-tbody"></tbody>
+                </table>
+              </div>
+              <div id="crypto-pagination" class="crypto-pagination" aria-label="순위 구간"></div>
+            </div>
+            <div id="crypto-news-panel" class="crypto-news-list" aria-live="polite" hidden></div>
           </div>
-        </section>
-
-        <section class="crypto-section" aria-labelledby="crypto-sec-news">
-          <h2 class="crypto-section__title" id="crypto-sec-news">③ 크립토 뉴스</h2>
-          <div id="crypto-news-list" class="crypto-news-list" aria-live="polite"></div>
         </section>
 
         <p id="crypto-error" class="crypto-error" hidden></p>
@@ -904,20 +968,67 @@
         }
 
         async function refreshCryptoNews() {
-          const el = $("crypto-news-list");
-          if (!el) return;
+          const panel = $("crypto-news-panel");
+          const badge = $("crypto-news-count");
+          if (!panel) return;
           try {
-            const data = await tmFetchJson("data/crypto-news.json");
-            const rows = Array.isArray(data.news) ? data.news.slice(0, 20) : [];
-            el.innerHTML = rows.length
-              ? rows.map((n) => `<details class="crypto-news-card">
-                <summary><span class="crypto-news-card__meta">${escapeHtml(n.channel || n.source || "텔레그램")} · ${escapeHtml(fmtNewsTime(n.publishedAt || n.datetime))}</span>${escapeHtml(n.title || n.headline || "제목 없음")}</summary>
-                <p class="crypto-news-card__body">${escapeHtml(n.summary || n.title || "")}</p>
-              </details>`).join("")
-              : '<p class="empty-text">크립토 뉴스 준비 중</p>';
+            const res = await fetch("/api/crypto-news", { cache: "no-store" });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            const rows = Array.isArray(data.news) ? data.news : [];
+
+            if (badge) badge.textContent = rows.length ? String(rows.length) : "";
+
+            panel.innerHTML = rows.length
+              ? rows
+                  .map((n) => {
+                    const summaryHtml = n.summary
+                      ? `<p class="crypto-news-card__body">${escapeHtml(String(n.summary).slice(0, 200))}…</p>`
+                      : "";
+                    return `<a href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer" style="display:block; text-decoration:none; color:inherit;">
+      <details class="crypto-news-card">
+        <summary>
+          <span class="crypto-news-card__meta">${escapeHtml(n.source || "Crypto News")} · ${escapeHtml(fmtNewsTime(n.publishedAt))}</span>
+          <span style="font-size:13px; font-weight:500; color:var(--text); line-height:1.5;">${escapeHtml(n.title || "")}</span>
+        </summary>
+        ${summaryHtml}
+      </details>
+    </a>`;
+                  })
+                  .join("")
+              : '<p class="home-empty">최근 뉴스가 없습니다.</p>';
           } catch {
-            el.innerHTML = '<p class="empty-text">크립토 뉴스를 불러오지 못했습니다.</p>';
+            if (badge) badge.textContent = "";
+            panel.innerHTML = '<p class="home-empty">뉴스를 불러오지 못했습니다.</p>';
           }
+        }
+
+        function wireCryptoTabs() {
+          const rankingPanel = $("crypto-ranking-panel");
+          const newsPanel = $("crypto-news-panel");
+          document.querySelectorAll(".crypto-tab").forEach((tab) => {
+            if (tab.dataset.cryptoTabWire === "1") return;
+            tab.dataset.cryptoTabWire = "1";
+            tab.addEventListener("click", () => {
+              document.querySelectorAll(".crypto-tab").forEach((t) => {
+                t.classList.remove("active");
+                t.setAttribute("aria-selected", "false");
+              });
+              tab.classList.add("active");
+              tab.setAttribute("aria-selected", "true");
+              const target = tab.dataset.tab;
+              if (rankingPanel) rankingPanel.style.display = target === "ranking" ? "block" : "none";
+              if (newsPanel) {
+                if (target === "news") {
+                  newsPanel.hidden = false;
+                  newsPanel.classList.add("is-open");
+                } else {
+                  newsPanel.hidden = true;
+                  newsPanel.classList.remove("is-open");
+                }
+              }
+            });
+          });
         }
 
         async function fetchJson(action) {
@@ -1239,6 +1350,7 @@
         }
 
         async function init() {
+          wireCryptoTabs();
           wireTable();
           wireCurrencyToggle();
           wireSortHeaders();

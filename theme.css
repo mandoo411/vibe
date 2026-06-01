@@ -1,5 +1,20 @@
 /* TotalMoney AI — TradingView-style light / dark themes */
 
+html {
+  scrollbar-gutter: stable;
+}
+
+body.page-home-v2,
+body.page-tm-v2 {
+  overflow-x: clip;
+}
+
+.tm-wrap,
+.home-wrap {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 [data-theme="dark"] {
   --bg-primary: #131722;
   --bg-secondary: #1c2030;

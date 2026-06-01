@@ -367,6 +367,29 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   background: transparent;
 }
 
+/* 라이트: 티커 바로 아래 masthead (빈 흰 띠 제거) — 다크는 기존 padding-top 유지 */
+[data-theme="light"] .page-tm-v2 .tm-main > .page,
+[data-theme="light"] .page-tm-v2 .tm-main .page {
+  padding-top: 0;
+}
+
+/* 서브페이지 타이틀: 마감시황과 동일 28px (crypto/realtime 인라인 축소 방지) */
+.page-tm-v2 .masthead.masthead--title-only .masthead__title {
+  font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
 /* 헤더(.home-nav) 하단선과 동일한 좌우 끝 — 타이틀·메타 등 텍스트만 안쪽 여백 */
 .page-tm-v2 .masthead.masthead--title-only .masthead__copy,
 .page-tm-v2 .page-hero-sub,
@@ -819,6 +842,11 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
     padding-top: max(16px, env(safe-area-inset-top));
     padding-left: 0;
     padding-right: 0;
+  }
+
+  [data-theme="light"] .page-tm-v2 .tm-main > .page,
+  [data-theme="light"] .page-tm-v2 .tm-main .page {
+    padding-top: 0;
   }
 
   .home-nav__logo-box {

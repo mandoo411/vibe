@@ -39,7 +39,7 @@ body.page-home-v2 {
   align-items: center;
   gap: 10px;
   min-height: 60px;
-  padding: 10px 32px 10px 24px;
+  padding: 10px var(--shell-pad-inline-end, 32px) 10px var(--shell-pad-inline, 24px);
   background: var(--bg-secondary, #f5f7ff);
   border-bottom: 1px solid var(--border, #e8ecff);
   position: sticky;
@@ -361,9 +361,37 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   margin: 0;
   padding-top: 20px;
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+  /* 좌우 0 — 패널·masthead는 tm-wrap 전폭, 텍스트만 shell-inset */
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+}
+
+/* 헤더(.home-nav) 하단선과 동일한 좌우 끝 — 타이틀·메타 등 텍스트만 안쪽 여백 */
+.page-tm-v2 .masthead.masthead--title-only .masthead__copy,
+.page-tm-v2 .page-hero-sub,
+.page-tm-v2 .day-nav,
+.page-tm-v2 .us-meta-bar,
+.page-tm-v2 .crypto-meta-bar,
+.page-tm-v2 .rt-strip,
+.page-tm-v2 .rt-meta-bar {
   padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
   padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
-  background: transparent;
+}
+
+.page-tm-v2 .rt-tabs {
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+}
+
+.page-tm-v2 .us-section__title {
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+}
+
+.page-tm-v2 .pagination {
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
 }
 
 /* weekly-market 탭 바: 페이지 패딩과 동일 기준으로 풀블리드 */
@@ -731,8 +759,8 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   .page-tm-v2 .tm-main > .page,
   .page-tm-v2 .tm-main .page {
     padding-top: max(16px, env(safe-area-inset-top));
-    padding-left: max(var(--shell-pad-inline, 16px), env(safe-area-inset-left));
-    padding-right: max(var(--shell-pad-inline-end, 16px), env(safe-area-inset-right));
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .home-nav__logo-box {
@@ -836,11 +864,6 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 
   [data-theme="dark"] .tm-bottom-nav__item.is-active {
     color: #8892ff;
-  }
-
-  .tm-main .page {
-    padding-left: 12px;
-    padding-right: 12px;
   }
 
   .page-tm-v2 .tm-main table,

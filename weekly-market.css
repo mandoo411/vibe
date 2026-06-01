@@ -47,11 +47,11 @@ a:hover {
 }
 
 .page {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 20px 18px 48px;
-  padding-left: max(18px, env(safe-area-inset-left));
-  padding-right: max(18px, env(safe-area-inset-right));
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 0 48px;
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
 }
 
@@ -157,11 +157,11 @@ a:hover {
   overflow-y: hidden;
   border-bottom: 1px solid var(--border);
   margin-bottom: 20px;
-  margin-left: calc(-1 * max(0px, 18px - env(safe-area-inset-left)));
-  margin-right: calc(-1 * max(0px, 18px - env(safe-area-inset-right)));
-  padding-left: max(18px, env(safe-area-inset-left));
-  padding-right: max(18px, env(safe-area-inset-right));
-  scroll-padding-inline: max(18px, env(safe-area-inset-left));
+  margin-left: calc(-1 * max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right)));
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  scroll-padding-inline: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
@@ -505,8 +505,8 @@ a:hover {
 @media (max-width: 768px) {
   .page {
     padding-top: max(16px, env(safe-area-inset-top));
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
+    padding-left: 0;
+    padding-right: 0;
     padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   }
 

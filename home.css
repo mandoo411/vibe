@@ -476,7 +476,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: grid;
   grid-template-columns: 1fr 1fr 272px;
   gap: 14px;
-  padding: 16px 24px 32px;
+  padding: 16px var(--shell-pad-inline-end, 32px) 32px var(--shell-pad-inline, 24px);
   background: #f4f6ff;
 }
 
@@ -960,7 +960,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
   .home-main {
     grid-template-columns: 1fr;
-    padding: 12px 16px 24px;
+    padding: 12px var(--shell-pad-inline-end, 16px) 24px var(--shell-pad-inline, 16px);
   }
 
   .home-footer__sns {

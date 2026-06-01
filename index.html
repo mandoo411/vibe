@@ -21,9 +21,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <script src="./assets/data-url.js"></script>
     <link rel="stylesheet" href="./home.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
     <script src="./home.js" defer></script>
+    <script src="./site-shell.js" defer></script>
   </head>
-  <body class="page-home-v2">
+  <body class="page-home-v2 page-tm-v2" data-tm-tab="home">
     <div class="home-wrap">
       <!-- 1. NAV -->
       <header class="home-nav" aria-label="주요 메뉴">
@@ -192,6 +194,14 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
+      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
+        <a class="tm-bottom-nav__item is-active" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
+        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
+        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></a>
+        <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
+        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
+      </nav>
     </div>
   </body>
 </html>

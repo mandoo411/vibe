@@ -11,9 +11,9 @@
   --text-secondary: #787b86;
   --accent: #5560e8;
   --accent-secondary: #3339BF;
-  --up-color: #26a69a;
+  --up-color: #e24b4a;
   --up: var(--up-color);
-  --down-color: #ef5350;
+  --down-color: #1d9e75;
   --down: var(--down-color);
   --border: rgba(255, 255, 255, 0.08);
   --sheet-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.45);
@@ -31,10 +31,10 @@
   --text-secondary: #5d606b;
   --accent: #2962ff;
   --accent-secondary: #26a69a;
-  /* 국내 주식 관례: 상승 빨강 · 하락 파랑 */
-  --up-color: #e53935;
+  /* 국내 주식 관례: 상승 빨강 · 하락 초록 */
+  --up-color: #e24b4a;
   --up: var(--up-color);
-  --down-color: #2979ff;
+  --down-color: #1d9e75;
   --down: var(--down-color);
   --status-open: #22c55e;
   --border: rgba(0, 0, 0, 0.08);

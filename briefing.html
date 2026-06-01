@@ -20,16 +20,16 @@
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
     <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./site-nav.css" />
     <script src="./assets/data-url.js"></script>
-    <script src="./site-nav.js" defer></script>
     <style>
       .briefing-grid {
         display: grid;
@@ -247,49 +247,47 @@
       }
     </style>
   </head>
-  <body>
-    <div class="page">
-      <header class="tm-site-header">
-        <div class="header-top">
-          <a class="logo logo-link header-top__link" href="./index.html" aria-label="TotalMoney AI 홈">
-            <div class="nav-logo-wrap" style="display:flex; align-items:center; gap:12px;">
-              <div class="nav-logo-box" style="background:linear-gradient(145deg,#e4e8ff,#c8d0ff); border-radius:20px; width:62px; height:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow: 0 6px 16px rgba(51,57,191,0.2), inset 0 1px 2px rgba(255,255,255,0.9); gap:2px;">
-                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">TM</span>
-                <span class="nav-logo-text" style="font-size:16px; font-weight:900; color:#3339BF; line-height:1; display:block; text-align:center; width:100%;">AI</span>
-              </div>
-              <div style="line-height:1.35;">
-                <div class="nav-brand-name" style="font-size:15px; font-weight:800; letter-spacing:-0.3px;">TotalMoney</div>
-                <div style="display:flex; align-items:center; gap:5px; margin-top:2px;">
-                  <span class="nav-brand-sub" style="font-size:11px;">powered by</span>
-                  <span class="nav-ai-badge">AI</span>
-                </div>
-              </div>
+  <body class="page-tm-v2">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
             </div>
-          </a>
-        </div>
-
-        <nav class="tm-site-nav" aria-label="주요 메뉴">
-          <a class="tm-site-nav__link" href="./index.html">홈</a>
-          <a class="tm-site-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="tm-site-nav__link" href="./briefing.html" aria-current="page">브리핑</a>
-          <a class="tm-site-nav__link" href="./realtime.html">실시간시세</a>
-          <a class="tm-site-nav__link" href="./weekly-market.html">일정</a>
-          <a class="tm-site-nav__link" href="./us-market.html">미국시장</a>
-          <a class="tm-site-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="tm-site-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="tm-site-nav__link" href="/stock-analysis.html">AI 종목분석</a>
-
-        </nav>
-        <button
-          type="button"
-          class="tm-theme-toggle"
-          id="theme-toggle"
-          aria-label="테마 전환"
-          title="테마 전환"
-        >
-          <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./briefing.html" aria-current="page">브리핑</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./us-market.html">미국시장</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <button type="button" class="home-nav__theme" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
       </header>
+
+      <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
+        <span class="home-empty">시장 지표 로딩 중…</span>
+      </div>
+
+      <main class="tm-main">
+<div class="page">
       <header class="masthead masthead--title-only">
         <div class="masthead__copy">
           <p class="masthead__kicker">Market Briefing</p>
@@ -346,6 +344,42 @@
         </section>
       </main>
     </div>
+      </main>
+
+      <footer class="home-footer">
+        <div class="home-footer__top">
+          <div>
+            <div class="home-footer__brand-name">TotalMoney AI</div>
+            <div class="home-footer__slogan">실시간 시장을 AI로 분석하세요</div>
+          </div>
+          <div class="home-footer__divider" aria-hidden="true"></div>
+          <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
+          <div class="home-footer__sns">
+            <a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="#" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+            <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
+          </div>
+        </div>
+        <div class="home-footer__bottom">
+          <span>© 2026 TotalMoney AI</span>
+          <div class="home-footer__links">
+            <a href="#">이용약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="mailto:contact@totalmoney.ai">문의하기</a>
+          </div>
+          <span>Data by KIS · FMP · CMC</span>
+        </div>
+      </footer>
+
+      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
+        <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
+        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
+        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></a>
+        <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
+        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
+      </nav>
+    </div>
+
     <script>
       const DATA_URL = tmDataUrl("data/morning-briefing.json");
       const $ = (id) => document.getElementById(id);

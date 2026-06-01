@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
@@ -32,6 +32,11 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <style>
       /* Bloomberg-style dense board — .page 폭은 weekly-market.css(1100px)와 동일 */
+      body.page-tm-v2,
+      .page--realtime {
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        line-height: 1.6;
+      }
       /* 상단은 .page 패딩; 보드 영역만 */
       .rt-wrap {
         max-width: none;
@@ -73,15 +78,15 @@
         grid-template-columns: auto 1fr auto;
         gap: 6px 12px;
         align-items: baseline;
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 12px;
         letter-spacing: 0.02em;
       }
       .rt-index-chip__name {
         color: var(--text-muted);
         text-transform: uppercase;
-        font-size: 10px;
-        letter-spacing: 0.12em;
+        font-size: 12px;
+        letter-spacing: 0.06em;
       }
       .rt-index-chip__val {
         font-size: 18px;
@@ -99,7 +104,7 @@
         background: var(--surface-bar);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         color: var(--text-muted);
       }
@@ -148,10 +153,14 @@
         min-width: 0;
       }
       .page--realtime .masthead__title {
-        font-size: 28px;
-        font-weight: 650;
+        font-size: 22px;
+        font-weight: 700;
         letter-spacing: -0.02em;
-        line-height: 1.15;
+        line-height: 1.6;
+      }
+      .page--realtime .masthead__kicker {
+        font-size: 12px;
+        letter-spacing: 0.06em;
       }
       .rt-tab-search {
         display: flex;
@@ -523,10 +532,10 @@
         border-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-section-bar__title {
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         color: var(--text-secondary);
-        letter-spacing: 0.04em;
+        letter-spacing: 0.06em;
       }
       .rt-acc-section-bar__date {
         font-size: 11px;
@@ -916,9 +925,10 @@
           min-width: 0;
         }
         .page--realtime .masthead__title {
-          font-size: 1.5rem;
-          line-height: 1.2;
-          letter-spacing: -0.025em;
+          font-size: 22px;
+          font-weight: 700;
+          line-height: 1.6;
+          letter-spacing: -0.02em;
         }
         .rt-stock-main {
           grid-template-columns: 1fr;
@@ -1000,7 +1010,7 @@
       .rt-chart-quote-strip {
         padding: 8px 12px;
         border-bottom: 1px solid var(--border);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         color: var(--text-muted);
       }
@@ -1029,8 +1039,8 @@
         width: 100%;
         min-width: 280px;
         border-collapse: collapse;
-        font-family: var(--font-mono);
-        font-size: 12px;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        font-size: 13px;
         table-layout: fixed;
       }
       .rt-table th,
@@ -1039,6 +1049,10 @@
         border-bottom: 1px solid var(--border);
         text-align: left;
         vertical-align: middle;
+      }
+      .rt-table td {
+        font-size: 13px;
+        line-height: 1.6;
       }
       .rt-td-rank {
         width: 2.5rem;
@@ -1063,8 +1077,17 @@
         color: var(--text-dim);
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 10px;
-        letter-spacing: 0.1em;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+      .rt-table .rt-td-rank {
+        font-size: 12px;
+      }
+      .rt-table .rt-td-price,
+      .rt-table .rt-td-chg,
+      .rt-table .rt-td-vol,
+      .rt-table .rt-td-mcap {
+        font-size: 13px;
       }
       .rt-table tbody tr:nth-child(even) td {
         background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
@@ -1077,15 +1100,17 @@
         font-variant-numeric: tabular-nums;
       }
       .rt-name {
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text);
-        line-height: 1.35;
+        line-height: 1.6;
       }
       .rt-name-link {
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text);
         text-decoration: none;
-        line-height: 1.35;
+        line-height: 1.6;
         max-width: 100%;
         overflow-wrap: anywhere;
         word-break: keep-all;
@@ -1098,14 +1123,15 @@
         outline: none;
       }
       .rt-name-text {
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text);
-        line-height: 1.35;
+        line-height: 1.6;
         overflow-wrap: anywhere;
         word-break: keep-all;
       }
       .rt-code {
-        font-size: 10px;
+        font-size: 11px;
         color: var(--text-dim);
       }
       .rt-mkt {
@@ -1150,7 +1176,8 @@
       }
       .rt-name-chart-btn {
         font: inherit;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text);
         background: none;
         border: 0;
@@ -1226,7 +1253,7 @@
         padding: 8px 8px 10px;
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
       }
       .rt-chart-interval-btn {
@@ -1239,7 +1266,7 @@
         border: 1px solid var(--border);
         background: var(--bg-tertiary);
         color: var(--text-muted);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         font-weight: 600;
         letter-spacing: 0.02em;
@@ -1332,7 +1359,7 @@
         border: 1px solid rgba(148, 130, 98, 0.45);
         border-radius: var(--radius);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         line-height: 1.45;
         color: var(--text);
@@ -1367,7 +1394,7 @@
           padding-right: 0;
         }
         .rt-table {
-          font-size: 11px;
+          font-size: 13px;
         }
         .rt-table th,
         .rt-table td {
@@ -1475,7 +1502,7 @@
       }
       .rt-loading__logo {
         margin: 0;
-        font-family: var(--font-sans, "Noto Sans KR", -apple-system, sans-serif);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: clamp(20px, 5.8vw, 26px);
         font-weight: 900;
         letter-spacing: -0.2px;
@@ -1493,7 +1520,7 @@
       }
       .rt-loading__tagline {
         margin: 0;
-        font-family: var(--font-sans, "Noto Sans KR", -apple-system, sans-serif);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 12px;
         font-weight: 600;
         letter-spacing: -0.1px;
@@ -1515,7 +1542,7 @@
       }
       .rt-loading__text {
         margin: 0;
-        font-family: var(--font-sans, "Noto Sans KR", sans-serif);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 14px;
         font-weight: 700;
         letter-spacing: -0.1px;

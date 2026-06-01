@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
@@ -32,6 +32,18 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <script src="./assets/data-url.js"></script>
     <style>
+      body.page-tm-v2 {
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        line-height: 1.6;
+      }
+      .crypto-wrap .masthead__title {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .crypto-wrap .masthead__kicker {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
       .crypto-wrap {
         max-width: none;
         margin: 0;
@@ -47,7 +59,7 @@
         background: var(--surface-bar);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 11px;
         color: var(--text-muted);
       }
@@ -60,10 +72,10 @@
       }
       .crypto-section__title {
         margin: 0 0 10px;
-        font-family: var(--font-mono);
-        font-size: 11px;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        font-size: 12px;
         font-weight: 600;
-        letter-spacing: 0.14em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
         color: var(--accent-bright);
       }
@@ -93,7 +105,7 @@
         border-radius: 2px;
         background: transparent;
         color: var(--text-muted);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 10px;
         font-weight: 600;
         cursor: pointer;
@@ -114,11 +126,11 @@
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
       }
       .crypto-metric-card__label {
-        font-size: 10px;
-        letter-spacing: 0.12em;
+        font-size: 12px;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
         color: var(--text-muted);
       }
@@ -171,10 +183,10 @@
       .crypto-panel__head {
         padding: 8px 12px;
         border-bottom: 1px solid var(--border);
-        font-family: var(--font-mono);
-        font-size: 11px;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        font-size: 12px;
         color: var(--text-muted);
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
       }
       .crypto-scroll {
         overflow-x: auto;
@@ -184,8 +196,8 @@
         width: 100%;
         min-width: 900px;
         border-collapse: collapse;
-        font-family: var(--font-mono);
-        font-size: 12px;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        font-size: 13px;
       }
       .crypto-table th,
       .crypto-table td {
@@ -193,16 +205,29 @@
         border-bottom: 1px solid var(--border);
         vertical-align: middle;
       }
+      .crypto-table td {
+        font-size: 13px;
+        line-height: 1.6;
+      }
       .crypto-table th {
         position: sticky;
         top: 0;
         z-index: 1;
         background: var(--bg-tertiary);
         color: var(--text-dim);
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 600;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
+      }
+      .crypto-table .crypto-col-rank {
+        font-size: 12px;
+      }
+      .crypto-table .crypto-col-price,
+      .crypto-table .crypto-col-24h,
+      .crypto-table .crypto-col-mcap,
+      .crypto-table .crypto-col-volume {
+        font-size: 13px;
       }
       .crypto-table tbody tr:nth-child(even) td {
         background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
@@ -217,7 +242,8 @@
       }
       .crypto-name-btn {
         font: inherit;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 500;
         color: var(--text);
         background: none;
         border: 0;
@@ -233,7 +259,7 @@
       }
       .crypto-symbol {
         display: block;
-        font-size: 10px;
+        font-size: 11px;
         color: var(--text-dim);
         margin-top: 2px;
       }
@@ -263,7 +289,7 @@
         border: 0;
         border-radius: 3px;
         padding: 2px 6px;
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 9px;
         font-weight: 600;
         cursor: pointer;
@@ -296,9 +322,9 @@
       .crypto-chart-title {
         margin: 0 0 12px;
         color: var(--text-muted);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        letter-spacing: 0.08em;
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
+        font-size: 12px;
+        letter-spacing: 0.06em;
       }
       .crypto-tv-widget {
         width: 100%;
@@ -335,7 +361,7 @@
       .crypto-news-card__meta {
         display: block;
         margin-bottom: 4px;
-        font-family: var(--font-mono);
+        font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 10px;
         color: var(--text-dim);
       }
@@ -359,7 +385,7 @@
         .crypto-table {
           min-width: 0;
           table-layout: fixed;
-          font-size: 11.5px;
+          font-size: 13px;
         }
         .crypto-table th,
         .crypto-table td {
@@ -376,8 +402,8 @@
           max-width: 0;
         }
         .crypto-name-inline-symbol {
-          font-family: var(--font-mono);
-          font-size: 10px;
+          font-family: "Noto Sans KR", -apple-system, sans-serif;
+          font-size: 11px;
           font-weight: 500;
           color: var(--text-dim);
           flex: 0 0 auto;
@@ -397,8 +423,7 @@
         }
         .crypto-col-price,
         .crypto-col-mcap {
-          font-size: 10.5px;
-          letter-spacing: -0.05em;
+          font-size: 13px;
         }
         .crypto-coin-cell {
           gap: 4px;
@@ -415,7 +440,8 @@
           min-width: 0;
           max-width: 100%;
           overflow: hidden;
-          font-size: 11.5px;
+          font-size: 13px;
+          font-weight: 500;
         }
         .crypto-name-btn__rank {
           flex: 0 0 auto;
@@ -429,7 +455,7 @@
           white-space: nowrap;
         }
         .crypto-symbol {
-          font-size: 10.5px;
+          font-size: 11px;
         }
         .crypto-chart-box {
           padding: 8px;

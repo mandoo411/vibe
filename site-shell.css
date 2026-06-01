@@ -359,7 +359,7 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding-top: 20px;
+  padding-top: 0;
   padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
   /* 좌우 0 — 패널·masthead는 tm-wrap 전폭, 텍스트만 shell-inset */
   padding-left: 0;
@@ -367,13 +367,18 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   background: transparent;
 }
 
-/* 라이트: 티커 바로 아래 masthead (빈 흰 띠 제거) — 다크는 기존 padding-top 유지 */
-[data-theme="light"] .page-tm-v2 .tm-main > .page,
-[data-theme="light"] .page-tm-v2 .tm-main .page {
-  padding-top: 0;
+/* 티커 ↔ 타이틀: 라이트/다크 동일 여백(0), 배경·상단선으로만 구분 */
+[data-theme="light"] .page-tm-v2 .masthead.masthead--title-only {
+  background: var(--bg-secondary, #f0f3fa);
+  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
 }
 
-/* 서브페이지 타이틀: 마감시황과 동일 28px (crypto/realtime 인라인 축소 방지) */
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only {
+  background: #1a1f35;
+  border-top: 1px solid #2a2f4a;
+}
+
+/* 서브페이지 타이틀·영문 키커: 전 페이지 동일 (마감시황 기준) */
 .page-tm-v2 .masthead.masthead--title-only .masthead__title {
   font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
   font-size: 28px;
@@ -383,11 +388,15 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 }
 
 .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-  font-family: var(--font-mono, ui-monospace, monospace);
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
   font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.2;
+  color: var(--accent, #2962ff);
 }
 
 /* 헤더(.home-nav) 하단선과 동일한 좌우 끝 — 타이틀·메타 등 텍스트만 안쪽 여백 */
@@ -703,13 +712,30 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   color: #a8b4ff;
 }
 
-[data-theme="dark"] .masthead.masthead--title-only,
 [data-theme="dark"] .hub-hero {
   background: var(--bg-secondary);
   border-color: var(--border);
 }
 
-[data-theme="dark"] .masthead__title,
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__title {
+  color: var(--text-primary);
+  font-family: "Noto Sans KR", -apple-system, sans-serif;
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--accent, #5560e8);
+}
+
 [data-theme="dark"] .hub-hero__title {
   color: var(--text-primary);
   font-family: "Noto Sans KR", -apple-system, sans-serif;
@@ -839,14 +865,26 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 
   .page-tm-v2 .tm-main > .page,
   .page-tm-v2 .tm-main .page {
-    padding-top: max(16px, env(safe-area-inset-top));
+    padding-top: 0;
     padding-left: 0;
     padding-right: 0;
   }
 
-  [data-theme="light"] .page-tm-v2 .tm-main > .page,
-  [data-theme="light"] .page-tm-v2 .tm-main .page {
-    padding-top: 0;
+  .page-tm-v2 .masthead.masthead--title-only {
+    height: 100px;
+    min-height: 100px;
+  }
+
+  .page-tm-v2 .masthead.masthead--title-only .masthead__title {
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
   }
 
   .home-nav__logo-box {

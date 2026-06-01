@@ -509,10 +509,10 @@
     return candles.slice(-n);
   }
 
-  const CANDLE_UP = "#26a69a";
-  const CANDLE_DOWN = "#ef5350";
-  const VOL_UP = "rgba(38, 166, 154, 0.5)";
-  const VOL_DOWN = "rgba(239, 83, 80, 0.5)";
+  const CANDLE_UP = "#e24b4a";
+  const CANDLE_DOWN = "#3b82f6";
+  const VOL_UP = "rgba(226, 75, 74, 0.5)";
+  const VOL_DOWN = "rgba(59, 130, 246, 0.5)";
   const LW_CHART_BG = "#131722";
   const LW_CHART_TOTAL_H = 300;
   const LW_CANDLE_H = 210;

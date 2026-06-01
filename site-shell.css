@@ -264,79 +264,89 @@ body.page-home-v2 {
 }
 
 .home-footer {
-  background: #0f1120;
-  color: rgba(255, 255, 255, 0.88);
-  padding: 20px 24px 24px;
+  background: #0f1120 !important;
+  color: white;
 }
 
 .home-footer__top {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
   gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .home-footer__brand-name {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
-  color: #ffffff;
+  color: white;
 }
 
 .home-footer__slogan {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 2px;
 }
 
 .home-footer__divider {
   width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.25);
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .home-footer__tg {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(51, 57, 191, 0.25);
+  border: 1px solid rgba(51, 57, 191, 0.4);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #7dd3fc !important;
   text-decoration: none;
 }
 
 .home-footer__sns {
   display: flex;
-  gap: 10px;
-  margin-left: auto;
+  gap: 8px;
 }
 
 .home-footer__sns a {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.5) !important;
   text-decoration: none;
+  font-size: 16px;
 }
 
 .home-footer__bottom {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding-top: 14px;
+  padding: 16px 32px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-footer__bottom span {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .home-footer__links {
   display: flex;
-  gap: 12px;
+  gap: 16px;
 }
 
 .home-footer__links a {
-  color: rgba(255, 255, 255, 0.65);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.25) !important;
   text-decoration: none;
 }
 

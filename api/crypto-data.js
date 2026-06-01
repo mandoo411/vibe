@@ -161,7 +161,7 @@ async function fetchListings() {
   return cached("listings", async () => {
     const params = {
       limit: 100,
-      aux: "max_supply,circulating_supply,total_supply,sparkline_7d",
+      aux: "cmc_rank,max_supply,circulating_supply,total_supply",
     };
     const [krwData, usdData] = await Promise.all([
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "KRW" }),

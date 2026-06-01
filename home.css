@@ -793,9 +793,9 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-footer {
-  background: var(--home-brand-gradient);
+  background: #0f1120;
   color: rgba(255, 255, 255, 0.88);
-  padding: 20px 24px 24px;
+  padding: 0;
 }
 
 .home-footer__top {
@@ -953,11 +953,6 @@ body[data-theme="dark"] .home-nav__ai-badge {
   .home-footer__sns {
     margin-left: 0;
   }
-}
-
-/* index loads site-shell.css after home.css — keep home footer at 3fc00ba gradient */
-body.page-home-v2 .home-footer {
-  background: var(--home-brand-gradient);
 }
 
 /* index: 하락률 파랑 (site-shell.css ticker 규칙보다 우선) */

@@ -1701,6 +1701,73 @@
       </nav>
     </div>
 
+    <script>
+      (function () {
+        "use strict";
+
+        function tradingViewSymbol(symbol) {
+          const s = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+          if (!s) return "CRYPTOCAP:TOTAL";
+          if (s === "USDT" || s === "USDC" || s === "DAI") return `CRYPTOCAP:${s}`;
+          return `BINANCE:${s}USDT`;
+        }
+
+        function tradingViewUrl(symbol) {
+          const isDark =
+            document.documentElement.getAttribute("data-theme") === "dark" ||
+            document.body.classList.contains("dark");
+          const theme = isDark ? "dark" : "light";
+          const params = new URLSearchParams({
+            symbol: tradingViewSymbol(symbol),
+            interval: "D",
+            timezone: "Asia/Seoul",
+            theme,
+            style: "1",
+            locale: "kr",
+            toolbar_bg: isDark ? "#0f1120" : "#ffffff",
+            bgcolor: isDark ? "#0f1120" : "#ffffff",
+            gridcolor: isDark ? "#1a1f35" : "#f0f0f0",
+            hide_side_toolbar: "0",
+            allow_symbol_change: "1",
+            save_image: "0",
+            calendar: "0",
+            withdateranges: "1",
+            hideideas: "1",
+            up_color: "#e24b4a",
+            down_color: "#3b82f6",
+            border_up_color: "#e24b4a",
+            border_down_color: "#3b82f6",
+            wick_up_color: "#e24b4a",
+            wick_down_color: "#3b82f6",
+          });
+          return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
+        }
+
+        function refreshTradingViewCharts() {
+          document.querySelectorAll(".crypto-tv-widget, .realtime-tv-widget").forEach((iframe) => {
+            const sym = iframe.dataset.symbol;
+            if (sym) iframe.src = tradingViewUrl(sym);
+          });
+        }
+
+        window.tmTradingViewUrl = tradingViewUrl;
+
+        function wireThemeChartRefresh() {
+          const btn = document.getElementById("theme-toggle");
+          if (!btn || btn.dataset.rtTvThemeBound === "1") return;
+          btn.dataset.rtTvThemeBound = "1";
+          btn.addEventListener("click", () => {
+            setTimeout(refreshTradingViewCharts, 0);
+          });
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", wireThemeChartRefresh, { once: true });
+        } else {
+          wireThemeChartRefresh();
+        }
+      })();
+    </script>
     <script src="./realtime-board.js"></script>
   </body>
 </html>

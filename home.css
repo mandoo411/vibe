@@ -793,7 +793,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-footer {
-  background: #0f1120;
+  background: var(--home-brand-gradient);
   color: rgba(255, 255, 255, 0.88);
   padding: 20px 24px 24px;
 }
@@ -953,4 +953,9 @@ body[data-theme="dark"] .home-nav__ai-badge {
   .home-footer__sns {
     margin-left: 0;
   }
+}
+
+/* index loads site-shell.css after home.css — keep home footer at 3fc00ba gradient */
+body.page-home-v2 .home-footer {
+  background: var(--home-brand-gradient);
 }

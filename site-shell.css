@@ -7,6 +7,9 @@ body.page-home-v2 {
   color: var(--text-primary, #111);
   margin: 0;
   --home-brand-gradient: linear-gradient(135deg, #1e2590 0%, #3339bf 55%, #4a52d4 100%);
+  /* 헤더(.home-nav)와 본문 좌우 라인 통일 */
+  --shell-pad-inline: 24px;
+  --shell-pad-inline-end: 32px;
 }
 
 .page-tm-v2 *,
@@ -302,7 +305,7 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 7px 24px;
+  padding: 7px var(--shell-pad-inline-end, 32px) 7px var(--shell-pad-inline, 24px);
   background: var(--bg-primary, #ffffff);
   border-bottom: 1px solid var(--border, #eef0f8);
   overflow-x: auto;
@@ -350,10 +353,26 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   min-height: 0;
 }
 
-.tm-main > .page {
+.tm-main > .page,
+.page-tm-v2 .tm-main .page {
+  box-sizing: border-box;
+  width: 100%;
   max-width: none;
   margin: 0;
+  padding-top: 20px;
+  padding-bottom: max(48px, calc(24px + env(safe-area-inset-bottom)));
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
   background: transparent;
+}
+
+/* weekly-market 탭 바: 페이지 패딩과 동일 기준으로 풀블리드 */
+.page-tm-v2 .tabs {
+  margin-left: calc(-1 * max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right)));
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  scroll-padding-inline: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
 }
 
 .page-tm-v2 .tm-card,
@@ -690,11 +709,20 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 @media (max-width: 768px) {
   body.page-tm-v2 {
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    --shell-pad-inline: 16px;
+    --shell-pad-inline-end: 16px;
   }
 
   .home-nav {
     padding: 8px 16px;
     min-height: auto;
+  }
+
+  .page-tm-v2 .tm-main > .page,
+  .page-tm-v2 .tm-main .page {
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-left: max(var(--shell-pad-inline, 16px), env(safe-area-inset-left));
+    padding-right: max(var(--shell-pad-inline-end, 16px), env(safe-area-inset-right));
   }
 
   .home-nav__logo-box {

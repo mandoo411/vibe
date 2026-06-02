@@ -595,6 +595,7 @@ function mapNaverMarketCapRow(s, rank) {
   const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
   const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
   const changePct = toNum(s.fluctuationsRatio);
+  const changeAmt = toNum(s.compareToPreviousClosePrice);
   const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
   const volume = naverVolumeFromStock(s);
   const tradingValue = calcTradingValueWon(price, volume) || "";
@@ -612,6 +613,7 @@ function mapNaverMarketCapRow(s, rank) {
     name: sanitizeStr(s.stockName),
     price,
     changePct: changePct != null && Number.isFinite(changePct) ? changePct : null,
+    changeAmt: changeAmt != null && Number.isFinite(changeAmt) ? changeAmt : null,
     volume,
     tradingValue,
     mcapEok: mcapWon,
@@ -686,7 +688,8 @@ async function fetchNaverStockPriceSnapshot(code6) {
     if (Number.isFinite(n) && n > 0) volume = String(Math.round(n));
   }
   const changePct = toNum(row.fluctuationsRatio);
-  return { price, volume, changePct };
+  const changeAmt = toNum(row.compareToPreviousClosePrice);
+  return { price, volume, changePct, changeAmt };
 }
 
 const NAVER_PRICE_OVERLAY_CONCURRENCY = 20;
@@ -706,6 +709,7 @@ async function rowWithNxtIntegratedVolume(code6, baseRow, naverListStock) {
       price: live.price || skeleton.price,
       volume: live.volume || skeleton.volume,
       changePct: live.changePct != null ? live.changePct : skeleton.changePct,
+      changeAmt: live.changeAmt != null ? live.changeAmt : skeleton.changeAmt,
       volumeNxtIntegrated: true,
     });
   } catch (e) {

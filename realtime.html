@@ -232,15 +232,19 @@
         color: white;
         border: none;
       }
+      .rt-tabs-row-tabs {
+        width: 100%;
+      }
       .rt-tab {
         appearance: none;
-        flex: 0 0 auto;
+        flex: 1 1 0;
+        min-width: 0;
         background: white;
         border: 0.5px solid rgba(200, 210, 255, 0.5);
         border-radius: 20px;
         margin: 0;
-        width: 140px;
-        padding: 8px 0;
+        width: auto;
+        padding: 8px 6px;
         text-align: center;
         cursor: pointer;
         display: flex;
@@ -939,24 +943,89 @@
         .rt-trip-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        /* 모바일 테이블 컬럼 축소: cap(거래대금/시총), gainers(거래량/거래대금) 숨김 */
+        /* 모바일: 거래대금(NXT) 컬럼 숨김 — cap/tv는 시총, gainers는 대비+등락률 */
         .rt-table .rt-td-tv,
+        .rt-table th.rt-td-tv {
+          display: none !important;
+        }
+        .rt-tab[aria-selected="true"] {
+          flex: 1 1 0;
+          width: auto;
+          min-width: 0;
+          max-width: none;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 8px 4px;
+          line-height: 1.2;
+          box-shadow: 0 4px 12px rgba(51, 57, 191, 0.18);
+        }
+        .rt-tab[aria-selected="false"] {
+          flex: 1 1 0;
+          width: auto;
+          min-width: 0;
+          font-size: 11px;
+          font-weight: 500;
+          padding: 8px 4px;
+        }
+        .rt-tab .rt-tab-label--full {
+          display: none;
+        }
+        .rt-tab .rt-tab-label--short {
+          display: inline;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-rank,
+        .rt-table[data-rt-tab="tv"] .rt-td-rank {
+          width: 10%;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-name,
+        .rt-table[data-rt-tab="tv"] .rt-td-name {
+          width: 28%;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-price,
+        .rt-table[data-rt-tab="tv"] .rt-td-price {
+          width: 24%;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-chg,
+        .rt-table[data-rt-tab="tv"] .rt-td-chg {
+          width: 18%;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-mcap,
+        .rt-table[data-rt-tab="tv"] .rt-td-mcap {
+          width: 20%;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-rank {
+          width: 10%;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-name {
+          width: 26%;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-price {
+          width: 22%;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-diff {
+          width: 20%;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-chg {
+          width: 18%;
+        }
+        .rt-table .rt-td-name .rt-name-chart-btn {
+          font-size: 12px;
+          line-height: 1.35;
+          text-align: left;
+          white-space: normal;
+          word-break: keep-all;
+        }
+        .rt-table .rt-td-price,
+        .rt-table .rt-td-chg,
+        .rt-table .rt-td-diff,
         .rt-table .rt-td-mcap {
-          display: none;
+          font-size: 12px;
+          padding-left: 4px;
+          padding-right: 4px;
         }
-        .rt-table td.rt-td-tv,
-        .rt-table td.rt-td-mcap,
-        .rt-table th.rt-td-tv,
-        .rt-table th.rt-td-mcap {
-          display: none;
-        }
-        .rt-table .rt-td-vol {
-          display: none;
-        }
-        .rt-table td.rt-td-vol,
-        .rt-table th.rt-td-vol {
-          display: none;
-        }
+      }
+      .rt-tab .rt-tab-label--short {
+        display: none;
       }
       .rt-tab[aria-selected="false"] {
         background: var(--bg-primary, #fff);
@@ -968,9 +1037,11 @@
         color: white;
         border: none;
         border-radius: 20px;
-        width: 140px;
-        padding: 8px 0;
-        font-size: 13px;
+        width: auto;
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 8px 6px;
+        font-size: 12px;
         font-weight: 600;
         box-shadow: 0 10px 22px rgba(51, 57, 191, 0.2);
       }
@@ -1075,13 +1146,17 @@
         letter-spacing: 0.06em;
       }
       .rt-th-tv-tag {
-        display: block;
-        margin-top: 2px;
+        display: inline;
+        margin-left: 4px;
         font-size: 9px;
         font-weight: 700;
         letter-spacing: 0;
         text-transform: none;
         color: var(--text-secondary, #888);
+        vertical-align: middle;
+      }
+      .rt-td-diff {
+        white-space: nowrap;
       }
       .rt-table .rt-td-rank {
         font-size: 12px;
@@ -1652,14 +1727,14 @@
         <div class="rt-panel" role="tabpanel">
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <div class="rt-tabs-row-tabs">
-              <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap">
-                시가총액 TOP 100
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap" aria-label="시가총액 TOP 100">
+                <span class="rt-tab-label--full">시가총액 TOP 100</span><span class="rt-tab-label--short">시가총액</span>
               </button>
-              <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers">
-                상승률 TOP 100
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers" aria-label="상승률 TOP 100">
+                <span class="rt-tab-label--full">상승률 TOP 100</span><span class="rt-tab-label--short">상승률</span>
               </button>
-              <button type="button" class="rt-tab" role="tab" data-rt-tab="tv" aria-selected="false" id="tab-tv">
-                거래대금 TOP 100
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="tv" aria-selected="false" id="tab-tv" aria-label="거래대금 TOP 100">
+                <span class="rt-tab-label--full">거래대금 TOP 100</span><span class="rt-tab-label--short">거래대금</span>
               </button>
             </div>
             <div class="rt-tab-search">
@@ -1676,7 +1751,7 @@
 
           <div class="table-box">
             <div class="rt-scroll">
-              <table class="rt-table" aria-label="실시간 시세">
+              <table class="rt-table" data-rt-tab="cap" aria-label="실시간 시세">
                 <thead>
                   <tr id="rt-thead-row">
                     <th class="rt-td-rank">순위</th>
@@ -1806,6 +1881,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js"></script>
+    <script src="./realtime-board.js?v=20260602"></script>
   </body>
 </html>

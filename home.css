@@ -447,9 +447,9 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-rt-tab {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 8px 6px;
   border: 1px solid #e8eaf0;
   border-radius: 8px;
   background: #f8f9fc;
@@ -468,7 +468,12 @@ body[data-theme="dark"] .home-nav__ai-badge {
   border-color: #3339bf;
   color: #fff;
   font-weight: 700;
+  font-size: 11px;
   box-shadow: 0 2px 8px rgba(51, 57, 191, 0.22);
+}
+
+.home-rt-tab__short {
+  display: none;
 }
 
 .home-section--realtime .home-section__head {
@@ -1620,10 +1625,25 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-rt-tab {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    min-width: 0;
     white-space: nowrap;
-    padding: 7px 12px;
+    padding: 8px 6px;
     font-size: 11px;
+    font-weight: 600;
+  }
+
+  .page-home-v2 .home-rt-tab.is-active {
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .page-home-v2 .home-rt-tab__full {
+    display: none;
+  }
+
+  .page-home-v2 .home-rt-tab__short {
+    display: inline;
   }
 
   /* 실시간시세 미리보기 + CTA */

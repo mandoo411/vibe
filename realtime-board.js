@@ -136,6 +136,14 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  /** 전일 대비 가격 변동(원) — 상승 +빨강, 하락 -파랑 */
+  function fmtChangeAmt(n) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    if (n === 0) return "0";
+    const sign = n > 0 ? "+" : "";
+    return `${sign}${Math.round(n).toLocaleString("ko-KR")}`;
+  }
+
   /** 거래대금(원) 표기: 1조 이상 X.XX조 · 1000억 이상 X,XXX억 · 그 이하 X억 */
   function formatTradeVal(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
@@ -253,6 +261,7 @@
         volume,
         rank: n.rank != null ? n.rank : r.rank,
         changePct: n.changePct != null ? n.changePct : r.changePct,
+        changeAmt: n.changeAmt != null ? n.changeAmt : r.changeAmt,
         tradingValue: tvCalc != null ? String(tvCalc) : "",
         stck_avls: n.stck_avls || n.mcapEok || r.stck_avls || r.mcapEok,
         mcapEok: n.mcapEok || n.stck_avls || r.mcapEok || r.stck_avls,
@@ -1196,6 +1205,7 @@
     }
     const price = pickWsStckPrpr(o, cells);
     const changePct = Number(String(o.PRDY_CTRT || "").replace(/,/g, ""));
+    const changeAmt = Number(String(o.PRDY_VRSS || "").replace(/,/g, ""));
     const vol = String(o.ACML_VOL || "").trim();
     const tvCalc = calcTradeValFromPriceVol(price, vol);
     const hourCls = String(o.HOUR_CLS_CODE || "").trim();
@@ -1204,6 +1214,7 @@
       code,
       price,
       changePct: Number.isFinite(changePct) ? changePct : null,
+      changeAmt: Number.isFinite(changeAmt) ? changeAmt : null,
       volume: vol,
       tradingValue: tvCalc != null ? String(tvCalc) : "",
       hourCls,
@@ -1235,6 +1246,7 @@
     const cur = { ...list[i] };
     if (patch.price != null && patch.price !== "") cur.price = patch.price;
     if (patch.changePct != null) cur.changePct = patch.changePct;
+    if (patch.changeAmt != null && Number.isFinite(patch.changeAmt)) cur.changeAmt = patch.changeAmt;
     if (patch.volume != null && String(patch.volume).trim() !== "") {
       cur.volume = pickLargerVolumeStr(cur.volume, patch.volume);
     }
@@ -1259,7 +1271,12 @@
   }
 
   function tableColSpan() {
-    return 6;
+    return state.tab === "gainers" ? 5 : 6;
+  }
+
+  function syncTableLayoutAttr() {
+    const table = document.querySelector(".rt-table");
+    if (table) table.setAttribute("data-rt-tab", state.tab || "cap");
   }
 
   function tvColumnThHtml() {
@@ -1269,10 +1286,10 @@
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
+    syncTableLayoutAttr();
     if (state.tab === "gainers") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th>' +
-        tvColumnThHtml();
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-diff">대비</th><th class="num rt-td-chg">등락률</th>';
       return;
     }
     tr.innerHTML =
@@ -1342,15 +1359,13 @@
     if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
-      const tv = formatRowTradeVal(r);
-      const vol = fmtNum(r.volume);
+      const diffCls = deltaClass(r.changeAmt);
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
           <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
           <td class="rt-td-name">${nameCell}</td>
           <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
+          <td class="num rt-td-diff"><span class="delta ${diffCls}">${escapeHtml(fmtChangeAmt(r.changeAmt))}</span></td>
           <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num rt-td-vol">${escapeHtml(vol)}</td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
         </tr>`;
     }
 
@@ -1397,10 +1412,10 @@
     if (state.tab === "gainers") {
       const ch = r.changePct;
       const cls = deltaClass(ch);
+      const diffCls = deltaClass(r.changeAmt);
       tr.cells[2].textContent = fmtNum(r.price);
-      tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-      tr.cells[4].textContent = fmtNum(r.volume);
-      tr.cells[5].textContent = formatRowTradeVal(r);
+      tr.cells[3].innerHTML = `<span class="delta ${diffCls}">${escapeHtml(fmtChangeAmt(r.changeAmt))}</span>`;
+      tr.cells[4].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
       return;
     }
 
@@ -2187,6 +2202,8 @@
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
         });
+        syncTableLayoutAttr();
+        renderThead();
 
         const finish = () => {
           startPolling();
@@ -2303,6 +2320,7 @@
     document.querySelectorAll("[data-rt-tab]").forEach((b) => {
       b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === tab ? "true" : "false");
     });
+    syncTableLayoutAttr();
   }
 
   async function init() {

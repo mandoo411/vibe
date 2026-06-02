@@ -1262,16 +1262,23 @@
     return 6;
   }
 
+  function tvColumnThHtml() {
+    return '<th class="num rt-td-tv">거래대금 <span class="rt-th-tv-tag">NXT통합</span></th>';
+  }
+
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
     if (state.tab === "gainers") {
       tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th><th class="num rt-td-tv">거래대금</th>';
+        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">현재가</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-vol">거래량</th>' +
+        tvColumnThHtml();
       return;
     }
     tr.innerHTML =
-      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th><th class="num rt-td-mcap">시가총액</th>';
+      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th>' +
+      tvColumnThHtml() +
+      '<th class="num rt-td-mcap">시가총액</th>';
   }
 
   function getTableTitle() {
@@ -1736,7 +1743,7 @@
       accGridCell("고가", high, "rt-acc-val--hi"),
       accGridCell("저가", low, "rt-acc-val--lo"),
       accGridCell("거래량", vol),
-      accGridCell("거래대금", tvDisp),
+      accGridCell("거래대금(NXT통합)", tvDisp),
       accGridCell("시총", mcap),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),

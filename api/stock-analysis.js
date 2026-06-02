@@ -881,9 +881,19 @@ module.exports = async function handler(req, res) {
     }
   })();
 
+  const tradingValueNxt =
+    quoteFields.currentPrice != null &&
+    quoteFields.volume != null &&
+    Number(quoteFields.currentPrice) > 0 &&
+    Number(quoteFields.volume) > 0
+      ? Math.round(Number(quoteFields.currentPrice) * Number(quoteFields.volume))
+      : quote.tradingValue == null
+        ? null
+        : quote.tradingValue;
+
   json(res, 200, {
     ...quoteFields,
-    tradingValue: quote.tradingValue == null ? null : quote.tradingValue,
+    tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,
     marketCap: quote.marketCap == null ? null : quote.marketCap,

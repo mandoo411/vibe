@@ -661,7 +661,7 @@ async function fetchNaverMarketCapTop100() {
   return result;
 }
 
-/** NAVER 종목 시세 — stock-analysis 상세 패널과 동일 소스 (누적거래량·현재가) */
+/** NAVER 종목 시세 — 정규장+NXT 통합 누적거래량 (stock-analysis·종목검색과 동일) */
 async function fetchNaverStockPriceSnapshot(code6) {
   const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
   if (!/^\d{6}$/.test(code)) return null;
@@ -689,7 +689,53 @@ async function fetchNaverStockPriceSnapshot(code6) {
   return { price, volume, changePct };
 }
 
-/** 페이지 종목 시세 보강 — 거래대금 표시 = 현재가×거래량 (NAVER 실시간 거래량) */
+const NAVER_PRICE_OVERLAY_CONCURRENCY = 20;
+
+/** 통합 거래량(NAVER /stock/{code}/price)으로 거래대금 산출 후 행 구성 */
+async function rowWithNxtIntegratedVolume(code6, baseRow, naverListStock) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  const skeleton =
+    baseRow || finalizeRowQuoteFields(mapNaverMarketCapRow(naverListStock || {}, 0));
+  try {
+    const live = await fetchNaverStockPriceSnapshot(code);
+    if (!live) return finalizeRowQuoteFields({ ...skeleton, code });
+    return finalizeRowQuoteFields({
+      ...skeleton,
+      code,
+      name: skeleton.name || (naverListStock && sanitizeStr(naverListStock.stockName)) || skeleton.name,
+      price: live.price || skeleton.price,
+      volume: live.volume || skeleton.volume,
+      changePct: live.changePct != null ? live.changePct : skeleton.changePct,
+      volumeNxtIntegrated: true,
+    });
+  } catch (e) {
+    console.warn("[kis-realtime-data] nxt-integrated volume", code, e && e.message);
+    return finalizeRowQuoteFields({ ...skeleton, code });
+  }
+}
+
+async function buildNxtIntegratedTvTop100(candidateByCode) {
+  const codes = [...candidateByCode.keys()];
+  const scored = [];
+  for (let i = 0; i < codes.length; i += NAVER_PRICE_OVERLAY_CONCURRENCY) {
+    const chunk = codes.slice(i, i + NAVER_PRICE_OVERLAY_CONCURRENCY);
+    const part = await Promise.all(
+      chunk.map(async (code) => {
+        const item = candidateByCode.get(code);
+        const row = await rowWithNxtIntegratedVolume(code, item && item.row, item && item.s);
+        const tv = Number(row.tradingValue) || 0;
+        return { code, tv, row };
+      })
+    );
+    scored.push(...part);
+  }
+  return scored
+    .sort((a, b) => b.tv - a.tv)
+    .slice(0, 100)
+    .map((item, i) => finalizeRowQuoteFields({ ...item.row, rank: i + 1, volumeNxtIntegrated: true }));
+}
+
+/** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 */
 async function overlayNaverPriceLive(rows) {
   if (!rows || !rows.length) return [];
   return Promise.all(
@@ -697,12 +743,7 @@ async function overlayNaverPriceLive(rows) {
       const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
       if (!/^\d{6}$/.test(code)) return finalizeRowQuoteFields(r);
       try {
-        const live = await fetchNaverStockPriceSnapshot(code);
-        if (!live) return finalizeRowQuoteFields(r);
-        const price = live.price || r.price;
-        const volume = pickLargerVolStr(r.volume, live.volume);
-        const changePct = live.changePct != null ? live.changePct : r.changePct;
-        return finalizeRowQuoteFields({ ...r, price, volume, changePct });
+        return await rowWithNxtIntegratedVolume(code, r, null);
       } catch (e) {
         console.warn("[kis-realtime-data] naver price overlay", code, e && e.message);
         return finalizeRowQuoteFields(r);
@@ -847,9 +888,9 @@ function naverStockTradingValueRaw(s) {
   return Number.isFinite(tv) && tv > 0 ? tv : 0;
 }
 
-/** 거래대금 TOP100 — 코스피·코스닥 유동주 풀 합산 후 거래대금 정렬 */
+/** 거래대금 TOP100 — 후보 풀(정규장 리스트) → NXT통합 거래량으로 재정렬 */
 async function fetchNaverTradingValueTop100() {
-  const cacheKey = "naver-tv-json:100:stocks-only";
+  const cacheKey = "naver-tv-integrated-json:100:stocks-only";
   const cached = rankPageCacheGet(cacheKey);
   if (cached) return cached;
 
@@ -870,31 +911,12 @@ async function fetchNaverTradingValueTop100() {
     if (!code) continue;
     const tv = naverStockTradingValueRaw(s);
     const hit = byCode.get(code);
-    if (!hit || tv > hit.tv) byCode.set(code, { s, tv });
-  }
-  try {
-    const gainers = await fetchNaverGainersTop100();
-    for (const r of gainers) {
-      const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-      if (!code) continue;
-      const tv = Number(r.tradingValue) || 0;
-      if (!tv) continue;
-      const hit = byCode.get(code);
-      if (!hit || tv > hit.tv) {
-        byCode.set(code, { s: null, tv, row: r });
-      }
-    }
-  } catch (e) {
-    console.warn("[kis-realtime-data][trading-value] gainers pool merge", e && e.message);
+    if (!hit || tv > hit.tv) byCode.set(code, { s, tv, row: null });
   }
 
-  const sorted = [...byCode.values()].sort((a, b) => b.tv - a.tv).slice(0, 100);
-  const result = sorted.map((item, i) => {
-    if (item.row) return { ...item.row, rank: i + 1 };
-    return mapNaverMarketCapRow(item.s, i + 1);
-  });
+  const result = await buildNxtIntegratedTvTop100(byCode);
   if (result.length < 50) {
-    console.warn("[kis-realtime-data][trading-value] list short", result.length);
+    console.warn("[kis-realtime-data][trading-value] integrated list short", result.length);
   }
   rankPageCacheSet(cacheKey, result);
   return result;

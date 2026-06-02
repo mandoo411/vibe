@@ -1846,6 +1846,10 @@
   }
 
   function stockPanelHtml(data, opts) {
+    const isMobile =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches;
     const name = escapeHtml(data.stockName || "—");
     const code = escapeHtml(data.stockCode || "");
     const market = escapeHtml(data.market || "");
@@ -1869,15 +1873,16 @@
     const vol = escapeHtml(formatVolumeMan(data.volume));
     const prevClose = data.prevClose == null ? "—" : escapeHtml(fmtNum(data.prevClose));
     const upperLimit =
-      data.upperLimit == null || !Number.isFinite(Number(data.upperLimit))
-        ? "—"
-        : escapeHtml(fmtNum(data.upperLimit));
+      data.upperLimit == null || !Number.isFinite(Number(data.upperLimit)) ? "—" : escapeHtml(fmtNum(data.upperLimit));
     const lowerLimit =
-      data.lowerLimit == null || !Number.isFinite(Number(data.lowerLimit))
-        ? "—"
-        : escapeHtml(fmtNum(data.lowerLimit));
+      data.lowerLimit == null || !Number.isFinite(Number(data.lowerLimit)) ? "—" : escapeHtml(fmtNum(data.lowerLimit));
+    const prevVol = data.prevVolume == null ? "—" : escapeHtml(formatVolumeMan(data.prevVolume));
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
+    const labelHi52 = isMobile ? "52주 최고" : "52주고";
+    const labelLo52 = isMobile ? "52주 최저" : "52주저";
+    const vsAbsRaw = data.changeValue ?? data.vsValue ?? data.vs ?? data.change ?? null;
+    const vsAbs = vsAbsRaw == null ? "—" : escapeHtml(fmtNum(vsAbsRaw));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
     const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
     const tvDisp = escapeHtml(tvCalc != null ? formatTradeVal(String(tvCalc)) : "—");
@@ -1931,15 +1936,15 @@
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
-      accGridCell("상한가", upperLimit, "rt-acc-val--uplimit"),
+      isMobile ? accGridCell("상한가", upperLimit, "rt-acc-val--uplimit") : accGridCell("전일거래량", prevVol),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
-      accGridCell("52주 최고", hi52, "rt-acc-val--hi"),
-      accGridCell("52주 최저", lo52, "rt-acc-val--lo"),
+      accGridCell(labelHi52, hi52, "rt-acc-val--hi"),
+      accGridCell(labelLo52, lo52, "rt-acc-val--lo"),
       accGridCell("EPS", finEps),
       accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
-      accGridCell("하한가", lowerLimit, "rt-acc-val--lolimit"),
+      isMobile ? accGridCell("하한가", lowerLimit, "rt-acc-val--lolimit") : accGridCell("전일대비", vsAbs),
     ].join("");
 
     const supplyGrid = [

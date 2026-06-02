@@ -2,13 +2,6 @@
   const COIN_SYMBOLS = ["BTC", "ETH", "XRP"];
   const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52 };
   const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플" };
-  const US_PICK = [
-    { symbol: "AMZN", nameKo: "아마존" },
-    { symbol: "TSLA", nameKo: "테슬라" },
-    { symbol: "TSM", nameKo: "TSMC" },
-    { symbol: "META", nameKo: "메타" },
-    { symbol: "MU", nameKo: "마이크론" },
-  ];
 
   function $(id) {
     return document.getElementById(id);
@@ -249,6 +242,9 @@
 
   let homeRtTab = "cap";
 
+  const HOME_US_ACTION = { cap: "market-cap", gainers: "gainers", tv: "volume" };
+  let homeUsTab = "cap";
+
   function realtimePageHref(tab) {
     const t = HOME_RT_ACTION[tab] ? tab : "cap";
     return `./realtime.html?tab=${encodeURIComponent(t)}`;
@@ -313,18 +309,14 @@
   function renderUsTable(stocks) {
     const el = $("home-us-body");
     if (!el) return;
-    const symMap = new Map((stocks || []).map((s) => [String(s.ticker || s.symbol || "").toUpperCase(), s]));
-    const rows = US_PICK.map((pick) => {
-      const sym = pick.symbol;
-      const live = symMap.get(sym);
-      const name = live?.name && live.name !== sym ? live.name : pick.nameKo;
-      return {
-        symbol: sym,
-        name: pick.nameKo || name,
-        price: live?.price ?? null,
-        changePct: live?.changePct ?? null,
-      };
+    const tab = HOME_US_ACTION[homeUsTab] ? homeUsTab : "cap";
+    const list = Array.isArray(stocks) ? stocks.slice() : [];
+    const sorted = list.sort((a, b) => {
+      if (tab === "gainers") return (toNum(b?.changePct) ?? 0) - (toNum(a?.changePct) ?? 0);
+      if (tab === "tv") return (toNum(b?.tradingValue) ?? 0) - (toNum(a?.tradingValue) ?? 0);
+      return (toNum(b?.marketCap) ?? 0) - (toNum(a?.marketCap) ?? 0);
     });
+    const rows = sorted.slice(0, 5);
 
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
@@ -333,14 +325,16 @@
 
     el.innerHTML = rows
       .map((r) => {
-        const pct = toNum(r.changePct);
+        const sym = String(r.symbol || r.ticker || "").toUpperCase();
+        const name = r.nameKo || r.name || sym || "—";
+        const pct = toNum(r.changePct ?? r.changeRate);
         const chgCls = chgClass(pct);
         let price = "—";
         const pv = toNum(r.price);
         if (pv != null) {
           price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(r.name, r.symbol, stockLogoHtml(r.symbol))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
       })
       .join("");
   }
@@ -444,22 +438,46 @@
   }
 
   async function loadUsAndCrypto() {
-    let usStocks = [];
     let coins = [];
     try {
-      const cap = await fetchJson("/api/us-market-data?action=market-cap&t=" + Date.now());
-      usStocks = cap.stocks || [];
+      const crypto = await fetchJson("/api/crypto-data?action=listings&t=" + Date.now());
+      coins = crypto.coins || [];
+    } catch (_) {}
+    renderCryptoTable(coins);
+  }
+
+  async function loadHomeUsTab(tab) {
+    const t = HOME_US_ACTION[tab] ? tab : "cap";
+    homeUsTab = t;
+    document.querySelectorAll("[data-home-us-tab]").forEach((btn) => {
+      const on = btn.getAttribute("data-home-us-tab") === homeUsTab;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    const el = $("home-us-body");
+    if (el) el.innerHTML = '<p class="home-empty">로딩 중…</p>';
+
+    let usStocks = [];
+    try {
+      const action = HOME_US_ACTION[homeUsTab] || HOME_US_ACTION.cap;
+      const res = await fetchJson(`/api/us-market-data?action=${encodeURIComponent(action)}&t=` + Date.now());
+      usStocks = res.stocks || [];
     } catch (_) {}
     try {
       const briefing = await fetchDataJson("data/morning-briefing.json");
       if (!usStocks.length && briefing.topStocks) usStocks = briefing.topStocks;
     } catch (_) {}
-    try {
-      const crypto = await fetchJson("/api/crypto-data?action=listings&t=" + Date.now());
-      coins = crypto.coins || [];
-    } catch (_) {}
     renderUsTable(usStocks);
-    renderCryptoTable(coins);
+  }
+
+  function bindHomeUsTabs() {
+    document.querySelectorAll("[data-home-us-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-home-us-tab");
+        if (!tab || tab === homeUsTab) return;
+        loadHomeUsTab(tab);
+      });
+    });
   }
 
   async function loadSideCards() {
@@ -520,11 +538,13 @@
     bindNavToggle();
     bindMobileHomeUi();
     bindHomeRtTabs();
+    bindHomeUsTabs();
     syncHomeRtChrome();
-    await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadUsAndCrypto(), loadSideCards()]);
+    await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadHomeUsTab("cap"), loadUsAndCrypto(), loadSideCards()]);
     setInterval(loadTickerAndHero, 5 * 60 * 1000);
     setInterval(() => loadHomeRtTab(homeRtTab), 5 * 60 * 1000);
     setInterval(loadUsAndCrypto, 5 * 60 * 1000);
+    setInterval(() => loadHomeUsTab(homeUsTab), 5 * 60 * 1000);
   }
 
   if (document.readyState === "loading") {

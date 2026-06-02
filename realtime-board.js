@@ -1784,10 +1784,16 @@
       accGridCell("외국인", supFrgn, supFrgnCls),
     ].join("");
 
-    const profitRow = [
-      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">매출</span><span class="rt-acc-profit-item__v">${pfRev}</span></span>`,
-      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">영업</span><span class="rt-acc-profit-item__v">${pfOp}</span></span>`,
-      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">순익</span><span class="rt-acc-profit-item__v">${pfNet}</span></span>`,
+    const pfDateFmt = (() => {
+      const raw = String(pf.baseDate || "").replace(/\D/g, "");
+      if (raw.length >= 6) return escapeHtml(`${raw.slice(0, 4)}.${raw.slice(4, 6)}`);
+      return pfDate;
+    })();
+
+    const profitGrid = [
+      accGridCell("매출", pfRev),
+      accGridCell("영업이익", pfOp),
+      accGridCell("당기순이익", pfNet),
     ].join("");
 
     return [
@@ -1807,10 +1813,11 @@
       `  </header>`,
       `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
       `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${supplyGrid}</div>`,
-      `  <div class="rt-acc-section-bar rt-acc-section-bar--profit">`,
-      `    <span class="rt-acc-section-bar__title">실적 <span class="rt-acc-section-bar__date">${pfDate}</span></span>`,
-      `    <div class="rt-acc-profit-row">${profitRow}</div>`,
+      `  <div class="rt-acc-section-bar">`,
+      `    <span class="rt-acc-section-bar__title">실적</span>`,
+      `    <span class="rt-acc-section-bar__date">${pfDateFmt}</span>`,
       `  </div>`,
+      `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--profit">${profitGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,

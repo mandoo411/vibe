@@ -603,6 +603,10 @@ body[data-theme="dark"] .home-nav__ai-badge {
   border-bottom: 1px solid #f5f5f5;
 }
 
+.home-th--rt {
+  grid-template-columns: 22px 1fr 72px 52px 58px;
+}
+
 .home-th--coin {
   grid-template-columns: 26px 1fr 88px 58px;
 }
@@ -617,6 +621,19 @@ body[data-theme="dark"] .home-nav__ai-badge {
   font-size: 12px;
   text-decoration: none;
   color: inherit;
+}
+
+.home-section--realtime .home-tr {
+  grid-template-columns: 22px 1fr 72px 52px 58px;
+}
+
+.home-tr__metric {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #0f1120;
 }
 
 .home-tr--coin {
@@ -1804,7 +1821,7 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-th div:nth-child(2)::before {
-    content: "醫낅ぉ紐?;
+    content: "종목명";
   }
 
   .page-home-v2 .home-th div:nth-child(2) {
@@ -1866,14 +1883,37 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-tr__chg {
-    width: 60px;
+    width: 52px;
+    flex-shrink: 0;
     text-align: right;
     font-size: 12px;
     font-weight: 700;
+    padding-right: 6px;
   }
 
   .page-home-v2 .home-tr__chg.is-down {
     color: #1d9e75;
+  }
+
+  .page-home-v2 .home-tr__metric {
+    width: 58px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #0f1120;
+    white-space: nowrap;
+  }
+
+  .page-home-v2 .home-th--rt {
+    gap: 0;
+  }
+
+  .page-home-v2 .home-th--rt div:nth-child(5) {
+    width: 58px;
+    flex-shrink: 0;
+    text-align: right;
   }
 
   /* AI CTA 移대뱶 */

@@ -485,54 +485,16 @@
       .rt-acc-grid--3 .rt-acc-cell__v {
         font-size: 12px;
       }
-      .rt-acc-section-bar--profit {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        flex-wrap: nowrap;
-        padding: 5px 8px;
+      .rt-acc-grid--profit .rt-acc-cell {
+        text-align: center;
+        background: #ffffff;
       }
-      .rt-acc-section-bar--profit .rt-acc-section-bar__title {
-        flex: 0 0 auto;
-        white-space: nowrap;
+      [data-theme="dark"] .rt-acc-grid--profit .rt-acc-cell,
+      .dark-mode .rt-acc-grid--profit .rt-acc-cell {
+        background: #1c2030;
       }
-      .rt-acc-section-bar--profit .rt-acc-section-bar__date {
-        font-weight: 400;
-        margin-left: 4px;
-      }
-      .rt-acc-profit-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 6px;
-        flex: 1 1 auto;
-        min-width: 0;
-      }
-      .rt-acc-profit-item {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 3px;
-        min-width: 0;
-        flex: 1 1 0;
-        justify-content: flex-end;
-        white-space: nowrap;
-      }
-      .rt-acc-profit-item:first-child {
-        justify-content: flex-start;
-      }
-      .rt-acc-profit-item__k {
-        font-size: 10px;
-        color: var(--text-secondary);
-        flex-shrink: 0;
-      }
-      .rt-acc-profit-item__v {
+      .rt-acc-grid--profit .rt-acc-cell__v {
         font-size: 12px;
-        font-weight: 500;
-        font-variant-numeric: tabular-nums;
-        color: var(--text-primary);
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
       .rt-acc-val--hi {
         color: #e24b4a;
@@ -1037,24 +999,51 @@
         .rt-tab .rt-tab-label--short {
           display: inline;
         }
-        .rt-table col.rt-col-rank {
-          width: 9%;
+        .rt-table[data-rt-tab="cap"] col.rt-col-rank {
+          width: 7%;
         }
-        .rt-table col.rt-col-name {
-          width: 21%;
-        }
-        .rt-table col.rt-col-price {
-          width: 28%;
-        }
-        .rt-table col.rt-col-chg {
+        .rt-table[data-rt-tab="cap"] col.rt-col-name {
           width: 17%;
         }
+        .rt-table[data-rt-tab="cap"] col.rt-col-price {
+          width: 31%;
+        }
+        .rt-table[data-rt-tab="cap"] col.rt-col-chg {
+          width: 12%;
+        }
+        .rt-table[data-rt-tab="cap"] col.rt-col-tv {
+          width: 0 !important;
+          min-width: 0 !important;
+          max-width: 0 !important;
+        }
         .rt-table[data-rt-tab="cap"] col.rt-col-mcap {
-          width: 25%;
+          width: 33%;
+        }
+        .rt-table[data-rt-tab="gainers"] col.rt-col-rank,
+        .rt-table[data-rt-tab="tv"] col.rt-col-rank {
+          width: 7%;
+        }
+        .rt-table[data-rt-tab="gainers"] col.rt-col-name,
+        .rt-table[data-rt-tab="tv"] col.rt-col-name {
+          width: 17%;
+        }
+        .rt-table[data-rt-tab="gainers"] col.rt-col-price,
+        .rt-table[data-rt-tab="tv"] col.rt-col-price {
+          width: 29%;
+        }
+        .rt-table[data-rt-tab="gainers"] col.rt-col-chg,
+        .rt-table[data-rt-tab="tv"] col.rt-col-chg {
+          width: 14%;
+        }
+        .rt-table[data-rt-tab="gainers"] col.rt-col-mcap,
+        .rt-table[data-rt-tab="tv"] col.rt-col-mcap {
+          width: 0 !important;
+          min-width: 0 !important;
+          max-width: 0 !important;
         }
         .rt-table[data-rt-tab="gainers"] col.rt-col-tv,
         .rt-table[data-rt-tab="tv"] col.rt-col-tv {
-          width: 25%;
+          width: 33%;
         }
         .rt-table th.rt-td-price,
         .rt-table th.rt-td-chg,
@@ -1075,8 +1064,17 @@
         .rt-table .rt-td-mcap {
           font-size: 12px;
         }
+        .rt-table .rt-td-price {
+          padding-right: 8px;
+        }
         .rt-table .rt-td-chg {
-          padding-left: 10px;
+          padding-left: 2px;
+          padding-right: 6px;
+        }
+        .rt-table .rt-td-mcap,
+        .rt-table .rt-td-tv {
+          padding-left: 6px;
+          padding-right: 2px;
         }
         .rt-acc-cell {
           padding: 4px 6px;
@@ -1084,8 +1082,8 @@
         .rt-acc-header {
           padding: 6px 8px;
         }
-        .rt-acc-section-bar--profit {
-          padding: 4px 6px;
+        .rt-acc-section-bar {
+          padding: 6px 10px;
         }
       }
       @media (min-width: 769px) {
@@ -1186,12 +1184,14 @@
       }
       .rt-table[data-rt-tab="cap"] col.rt-col-tv {
         width: 0 !important;
-        visibility: collapse;
+        min-width: 0 !important;
+        max-width: 0 !important;
       }
       .rt-table[data-rt-tab="gainers"] col.rt-col-mcap,
       .rt-table[data-rt-tab="tv"] col.rt-col-mcap {
         width: 0 !important;
-        visibility: collapse;
+        min-width: 0 !important;
+        max-width: 0 !important;
       }
       .rt-table {
         width: 100%;
@@ -1969,6 +1969,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602e"></script>
+    <script src="./realtime-board.js?v=20260602f"></script>
   </body>
 </html>

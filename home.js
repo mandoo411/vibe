@@ -49,6 +49,59 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  const HOME_RT_METRIC_LABEL = {
+    cap: "시가총액",
+    gainers: "거래대금",
+    tv: "거래대금",
+  };
+
+  function formatWonJoEok(n) {
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
+    const eok = n / 1e8;
+    if (eok >= 10000) return `${(eok / 10000).toFixed(1)}조`;
+    if (eok >= 100) return `${eok.toFixed(1)}억`;
+    const eokR = Math.round(eok);
+    return eokR > 0 ? `${eokR}억` : "—";
+  }
+
+  function formatTradeVal(raw) {
+    const n = toNum(raw);
+    if (n == null || n <= 0) return "—";
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
+    const eok = Math.round(n / 1e8);
+    if (eok <= 0) return "—";
+    if (n >= 1e11) return `${eok.toLocaleString("ko-KR")}억`;
+    return `${eok}억`;
+  }
+
+  function readStckAvlsRaw(r) {
+    if (!r) return null;
+    const a = r.stck_avls;
+    if (a != null && String(a).trim() !== "") return a;
+    const b = r.mcapEok;
+    if (b != null && String(b).trim() !== "") return b;
+    return null;
+  }
+
+  function calcTradeValFromRow(r) {
+    const p = toNum(r && r.price);
+    const v = toNum(r && r.volume);
+    if (p != null && v != null && p > 0 && v > 0) return Math.round(p * v);
+    const tv = toNum(r && r.tradingValue);
+    return tv != null && tv > 0 ? tv : null;
+  }
+
+  function formatHomeRtMetric(r, tab) {
+    if (tab === "cap") {
+      const raw = readStckAvlsRaw(r);
+      const n = toNum(raw);
+      return n != null ? formatWonJoEok(n) : "—";
+    }
+    const tv = calcTradeValFromRow(r);
+    return tv != null ? formatTradeVal(tv) : "—";
+  }
+
   function logoWrap(inner) {
     return `<span class="home-tr__logo-wrap">${inner}</span>`;
   }
@@ -217,7 +270,8 @@
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
-        return `<a class="home-tr" href="${escapeHtml(moreHref)}"><div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        const metric = formatHomeRtMetric(r, homeRtTab);
+        return `<a class="home-tr" href="${escapeHtml(moreHref)}"><div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }
@@ -225,6 +279,8 @@
   function syncHomeRtChrome() {
     const more = $("home-rt-more");
     if (more) more.href = realtimePageHref(homeRtTab);
+    const metricH = $("home-rt-metric-h");
+    if (metricH) metricH.textContent = HOME_RT_METRIC_LABEL[homeRtTab] || HOME_RT_METRIC_LABEL.cap;
     document.querySelectorAll("[data-home-rt-tab]").forEach((btn) => {
       const on = btn.getAttribute("data-home-rt-tab") === homeRtTab;
       btn.classList.toggle("is-active", on);

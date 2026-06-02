@@ -1688,8 +1688,18 @@
     renderThead();
     const rows = getCurrentRows();
     if (isMobileLayout()) {
-      body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      if (!state.openChartCode) {
+        body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      } else {
+        const parts = [];
+        for (const r of rows) {
+          parts.push(stockRowHtml(r));
+          if (state.openChartCode === r.code) parts.push(detailRowHtml(r.code));
+        }
+        body.innerHTML = parts.join("");
+      }
       syncNameChartButtonsAria(body);
+      syncDetailDomAfterRows(body, rows);
       return;
     }
     if (!state.openChartCode) {

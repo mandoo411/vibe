@@ -260,6 +260,7 @@
   function rebuildBottomNav() {
     document.querySelectorAll(".tm-bottom-nav").forEach((nav) => {
       nav.classList.add("tm-bottom-nav--v2");
+      nav.style.transform = "none";
       nav.replaceChildren();
       BOTTOM_NAV_PRIMARY.forEach((id) => nav.appendChild(createBottomNavItem(id)));
       nav.appendChild(createBottomNavItem("menu"));

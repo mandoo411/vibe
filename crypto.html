@@ -61,20 +61,35 @@
         color: var(--text-dim);
       }
       .crypto-section {
-        margin-bottom: 22px;
+        margin-bottom: 12px;
+      }
+      .crypto-section--global {
+        margin-top: 4px;
+      }
+      .crypto-section--rank {
+        margin-bottom: 16px;
       }
       .crypto-section__title {
-        margin: 0 0 10px;
+        display: none;
       }
       .crypto-section-head {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: flex-end;
         gap: 12px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
       }
-      .crypto-section-head .crypto-section__title {
-        margin-bottom: 0;
+      .crypto-section-head--tools {
+        margin-bottom: 6px;
+      }
+      .page-hero-sub {
+        padding-top: 4px;
+        padding-bottom: 6px;
+      }
+      .crypto-meta-bar {
+        margin-bottom: 6px;
+        padding-top: 4px;
+        padding-bottom: 4px;
       }
       .crypto-currency-toggle {
         display: inline-flex;
@@ -639,14 +654,12 @@
           <span class="crypto-meta-bar__poll">갱신 주기 5분</span>
         </div>
 
-        <section class="crypto-section" aria-labelledby="crypto-sec-global">
-          <h2 class="crypto-section__title" id="crypto-sec-global">① 글로벌 시장 현황</h2>
+        <section class="crypto-section crypto-section--global" aria-label="글로벌 시장 현황">
           <div id="crypto-global" class="crypto-global-grid"></div>
         </section>
 
-        <section class="crypto-section" aria-labelledby="crypto-sec-top100">
-          <div class="crypto-section-head">
-            <h2 class="crypto-section__title" id="crypto-sec-top100">② 시총 TOP 400</h2>
+        <section class="crypto-section crypto-section--rank" aria-label="시총 TOP 400">
+          <div class="crypto-section-head crypto-section-head--tools">
             <div class="crypto-currency-toggle" role="group" aria-label="표시 통화">
               <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="false">원</button>
               <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="true">달러</button>

@@ -1119,7 +1119,7 @@
         /* 모바일 헤더: 투명 배경 + 통일된 보더/타이포 */
         .rt-table thead tr {
           column-gap: 0;
-          background: transparent;
+          background: transparent !important;
           border-bottom: 1px solid #e5e7eb;
         }
         [data-theme="dark"] .rt-table thead tr,
@@ -1154,8 +1154,8 @@
           font-size: 11px;
           font-weight: 400;
           color: #9ca3af;
-          padding: 6px 0;
-          background: transparent;
+          padding: 6px 2px;
+          background: transparent !important;
         }
         [data-theme="dark"] .rt-table thead th,
         .dark-mode .rt-table thead th {
@@ -1164,9 +1164,19 @@
         .rt-table .rt-td-rank {
           width: 28px;
           text-align: center;
+          padding-right: 6px;
           color: #9ca3af;
           font-size: 12px;
           white-space: nowrap;
+        }
+        .rt-table th.rt-td-rank {
+          width: 28px;
+          text-align: center;
+          padding-right: 6px;
+        }
+        .rt-table th.rt-td-mcap,
+        .rt-table th.rt-td-tv {
+          padding-right: 4px;
         }
         [data-theme="dark"] .rt-table .rt-td-rank,
         .dark-mode .rt-table .rt-td-rank {

@@ -899,75 +899,6 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: #ffffff;
 }
 
-@media (max-width: 768px) {
-  body.page-home-v2 {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .home-nav {
-    padding: 8px 16px;
-    position: sticky;
-  }
-
-  .home-nav__logo-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-  }
-
-  .home-nav__logo-box span {
-    font-size: 12px;
-  }
-
-  .home-nav__toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .home-nav__menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    flex-direction: column;
-    margin: 0;
-    padding: 8px;
-    background: #f5f7ff;
-    border-bottom: 1px solid #e8ecff;
-    z-index: 200;
-  }
-
-  .home-nav.is-open .home-nav__menu {
-    display: flex;
-  }
-
-  .home-ticker__item {
-    flex: 0 0 auto;
-    min-width: 130px;
-    justify-content: flex-start;
-  }
-
-  .home-hero {
-    grid-template-columns: 1fr;
-    padding: 20px 16px;
-  }
-
-  .home-hero__panels {
-    display: none;
-  }
-
-  .home-main {
-    grid-template-columns: 1fr;
-    padding: 12px var(--shell-pad-inline-end, 16px) 24px var(--shell-pad-inline, 16px);
-  }
-
-  .home-footer__sns {
-    margin-left: 0;
-  }
-}
-
 /* 다크모드 A안 */
 [data-theme="dark"] .home-nav {
   background: #1a1f35;
@@ -1123,4 +1054,540 @@ body.page-home-v2 .home-tr__chg.is-down {
 
 body.page-home-v2 .home-hero__row-pct.is-down {
   color: #60a5fa;
+}
+
+/* ── 모바일 홈 (max-width: 768px) ── */
+@media (max-width: 768px) {
+  body.page-home-v2 {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .page-home-v2 .home-m-only[hidden] {
+    display: block;
+  }
+
+  .page-home-v2 .home-nav__m-meta.home-m-only[hidden] {
+    display: flex;
+  }
+
+  .page-home-v2 .home-hero__stats.home-m-only[hidden] {
+    display: grid;
+  }
+
+  .page-home-v2 .home-m-claude.home-m-only[hidden] {
+    display: flex;
+  }
+
+  /* 1. 헤더 */
+  .page-home-v2 .home-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 10px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+  }
+
+  .page-home-v2 .home-nav__logo {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .page-home-v2 .home-nav__brand-sub {
+    display: none;
+  }
+
+  .page-home-v2 .home-nav__logo-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .page-home-v2 .home-nav__logo-box span {
+    font-size: 12px;
+  }
+
+  .page-home-v2 .home-nav__m-meta {
+    margin-left: auto;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-nav__live-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background: #e24b4a;
+    box-shadow: 0 0 0 2px rgba(226, 75, 74, 0.25);
+  }
+
+  .page-home-v2 .home-nav__m-clock {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #3339bf;
+    font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+  }
+
+  .page-home-v2 .home-nav__toggle,
+  .page-home-v2 .home-nav__menu {
+    display: none !important;
+  }
+
+  /* 2. 티커 */
+  .page-home-v2 .home-ticker {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 8px 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .page-home-v2 .home-ticker::-webkit-scrollbar {
+    display: none;
+  }
+
+  .page-home-v2 .home-ticker__item {
+    flex: 0 0 auto;
+    min-width: 118px;
+    justify-content: flex-start;
+  }
+
+  /* 3. 히어로 */
+  .page-home-v2 .home-hero {
+    display: block;
+    grid-template-columns: unset;
+    padding: 22px 14px 20px;
+    background: linear-gradient(165deg, #1e2460 0%, #3339bf 52%, #4f46e5 100%);
+  }
+
+  .page-home-v2 .home-hero__panels {
+    display: none;
+  }
+
+  .page-home-v2 .home-hero__tag {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    margin-bottom: 8px;
+  }
+
+  .page-home-v2 .home-hero__title {
+    font-size: 24px;
+    line-height: 1.32;
+    margin-bottom: 8px;
+  }
+
+  .page-home-v2 .home-hero__desc {
+    margin-bottom: 14px;
+  }
+
+  .page-home-v2 .home-hero__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 0;
+  }
+
+  .page-home-v2 .home-hero__stat {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .page-home-v2 .home-hero__stat dt {
+    margin: 0 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .page-home-v2 .home-hero__stat dd {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .page-home-v2 .home-hero__stat dd small {
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 2px;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .page-home-v2 .home-hero__btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .page-home-v2 .home-hero__btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .page-home-v2 .home-hero__btn--primary {
+    background: #f59e0b;
+    color: #000;
+    border: none;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+  }
+
+  .page-home-v2 .home-hero__btn--secondary {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  /* 4a. 실시간 AI 분석 */
+  .page-home-v2 .home-m-ai-live {
+    padding: 14px 14px 0;
+    background: #f5f7ff;
+  }
+
+  .page-home-v2 .home-m-ai-live__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .page-home-v2 .home-m-ai-live__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #111;
+  }
+
+  .page-home-v2 .home-m-ai-live__badges {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-m-signal {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .page-home-v2 .home-m-signal--buy {
+    color: #fff;
+    background: #e24b4a;
+  }
+
+  .page-home-v2 .home-m-signal--hold {
+    color: #3339bf;
+    background: #e8ecff;
+    border: 1px solid #c8d0ff;
+  }
+
+  .page-home-v2 .home-m-confidence {
+    margin-bottom: 12px;
+  }
+
+  .page-home-v2 .home-m-confidence__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 11px;
+    color: #666;
+  }
+
+  .page-home-v2 .home-m-confidence__label strong {
+    font-size: 13px;
+    color: #3339bf;
+  }
+
+  .page-home-v2 .home-m-confidence__track {
+    height: 6px;
+    border-radius: 999px;
+    background: #e8ecff;
+    overflow: hidden;
+  }
+
+  .page-home-v2 .home-m-confidence__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3339bf, #4f46e5);
+  }
+
+  .page-home-v2 .home-m-insight-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 14px;
+  }
+
+  .page-home-v2 .home-m-insight-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid #eef0f8;
+    box-shadow: 0 2px 8px rgba(30, 36, 96, 0.06);
+  }
+
+  .page-home-v2 .home-m-insight-card h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #111;
+  }
+
+  .page-home-v2 .home-m-insight-card p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #555;
+  }
+
+  /* 4b. Claude 카드 */
+  .page-home-v2 .home-m-claude {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 0 14px 14px;
+    padding: 14px;
+    border-radius: 14px;
+    background: #fafbff;
+    border: 1px solid #e8ecff;
+  }
+
+  .page-home-v2 .home-m-claude__icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(145deg, #2563eb, #3339bf);
+  }
+
+  .page-home-v2 .home-m-claude__kicker {
+    margin: 0 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3339bf;
+  }
+
+  .page-home-v2 .home-m-claude__title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #111;
+  }
+
+  .page-home-v2 .home-m-claude__text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #555;
+  }
+
+  /* 4c. 숏컷 */
+  .page-home-v2 .home-shortcuts {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px 14px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: #fff;
+    border-bottom: 1px solid #eef0f8;
+  }
+
+  .page-home-v2 .home-shortcuts::-webkit-scrollbar {
+    display: none;
+  }
+
+  .page-home-v2 .home-shortcuts__pill {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    background: #fff;
+    color: #555;
+    border: 1px solid #e0e4f0;
+    box-shadow: none;
+  }
+
+  .page-home-v2 .home-shortcuts__pill.is-active {
+    background: #3339bf;
+    color: #fff;
+    border-color: #3339bf;
+  }
+
+  .page-home-v2 .home-shortcuts__pill.is-active i {
+    color: #fff;
+  }
+
+  /* 4d–e. 본문 */
+  .page-home-v2 .home-main {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    grid-template-columns: unset;
+    padding: 14px;
+  }
+
+  .page-home-v2 .home-col-mid,
+  .page-home-v2 .home-mini-card {
+    display: none;
+  }
+
+  .page-home-v2 .home-side {
+    display: block;
+    width: 100%;
+  }
+
+  .page-home-v2 .home-section {
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(30, 36, 96, 0.08);
+  }
+
+  .page-home-v2 .home-ai-card {
+    background: linear-gradient(145deg, #0f1120 0%, #1e2460 100%);
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(15, 17, 32, 0.35);
+  }
+
+  .page-home-v2 .home-ai-card__btn {
+    background: #f59e0b;
+    color: #000;
+  }
+
+  .page-home-v2 .home-footer {
+    display: none;
+  }
+
+  /* 5. 바텀 네비 */
+  .page-home-v2 .home-m-bottom-nav {
+    display: flex;
+  }
+
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item {
+    position: relative;
+    padding-top: 6px;
+  }
+
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 18%;
+    right: 18%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: #3339bf;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-nav__m-clock {
+    color: #8892ff;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-ai-live {
+    background: #141828;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-ai-live__title {
+    color: #e8ecff;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-signal--hold {
+    color: #c8ccff;
+    background: #1e2440;
+    border-color: #2a3560;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-confidence__label {
+    color: #8892aa;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-confidence__track {
+    background: #1e2440;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-insight-card {
+    background: #1a1f35;
+    border-color: #2a2f4a;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-insight-card h3 {
+    color: #e8ecff;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-insight-card p {
+    color: #99a8cc;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-claude {
+    background: #1a1f35;
+    border-color: #2a2f4a;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-claude__title {
+    color: #e8ecff;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-claude__text {
+    color: #99a8cc;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-shortcuts {
+    background: #141828;
+    border-bottom-color: #2a2f4a;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-shortcuts__pill {
+    background: #1e2440;
+    color: #99a8cc;
+    border-color: #2a3560;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-shortcuts__pill.is-active {
+    background: #3339bf;
+    color: #fff;
+    border-color: #3339bf;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-hero {
+    background: linear-gradient(165deg, #0f1120 0%, #1e2460 48%, #3339bf 100%);
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active::before {
+    background: #8892ff;
+  }
 }

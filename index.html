@@ -42,6 +42,10 @@
             </div>
           </div>
         </a>
+        <div class="home-nav__m-meta home-m-only" hidden>
+          <span class="home-nav__live-badge" aria-label="실시간">LIVE</span>
+          <time class="home-nav__m-clock" id="home-m-clock" datetime="">--:--:--</time>
+        </div>
         <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
           <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
@@ -74,9 +78,27 @@
           <p class="home-hero__tag">AI Powered Market Platform</p>
           <h1 class="home-hero__title">실시간 시장을<br /><em>AI로 분석</em>하세요</h1>
           <p class="home-hero__desc">국내외 주식·암호화폐·경제지표를 한 곳에서</p>
+          <dl class="home-hero__stats home-m-only" hidden>
+            <div class="home-hero__stat">
+              <dt>분석 종목수</dt>
+              <dd>2,847<small>개</small></dd>
+            </div>
+            <div class="home-hero__stat">
+              <dt>오늘 분석</dt>
+              <dd>1,203<small>건</small></dd>
+            </div>
+            <div class="home-hero__stat">
+              <dt>평균 정확도</dt>
+              <dd>73.2<small>%</small></dd>
+            </div>
+            <div class="home-hero__stat">
+              <dt>실시간 업데이트</dt>
+              <dd>30<small>초</small></dd>
+            </div>
+          </dl>
           <div class="home-hero__btns">
-            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html">🤖 AI 종목분석 시작</a>
-            <a class="home-hero__btn home-hero__btn--secondary" href="./realtime.html">📈 실시간시세 보기</a>
+            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html">🤖 AI 종목분석</a>
+            <a class="home-hero__btn home-hero__btn--secondary" href="./realtime.html">📊 실시간시세</a>
           </div>
         </div>
         <div class="home-hero__panels">
@@ -99,9 +121,54 @@
         </div>
       </section>
 
+      <section class="home-m-ai-live home-m-only" hidden aria-labelledby="home-m-ai-live-title">
+        <div class="home-m-ai-live__head">
+          <h2 class="home-m-ai-live__title" id="home-m-ai-live-title">실시간 AI 분석</h2>
+          <div class="home-m-ai-live__badges">
+            <span class="home-m-signal home-m-signal--buy">매수 신호</span>
+            <span class="home-m-signal home-m-signal--hold">관망</span>
+          </div>
+        </div>
+        <div class="home-m-confidence">
+          <div class="home-m-confidence__label">
+            <span>AI 신뢰도</span>
+            <strong>73.2%</strong>
+          </div>
+          <div class="home-m-confidence__track" role="presentation">
+            <span class="home-m-confidence__fill" style="width: 73.2%"></span>
+          </div>
+        </div>
+        <div class="home-m-insight-cards">
+          <article class="home-m-insight-card">
+            <h3>국내 대형주</h3>
+            <p>반도체·2차전지 중심 외국인 순매수 지속, 단기 눌림 구간 매수 관심.</p>
+          </article>
+          <article class="home-m-insight-card">
+            <h3>미국 테크</h3>
+            <p>빅테크 실적 기대감으로 강세, 변동성 확대 시 분할 접근 권장.</p>
+          </article>
+          <article class="home-m-insight-card">
+            <h3>암호화폐</h3>
+            <p>BTC 박스권 상단 테스트, 거래량 동반 돌파 여부가 단기 관건.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="home-m-claude home-m-only" hidden aria-labelledby="home-m-claude-title">
+        <div class="home-m-claude__icon" aria-hidden="true">C</div>
+        <div class="home-m-claude__body">
+          <p class="home-m-claude__kicker">Claude AI 기반 분석</p>
+          <h2 class="home-m-claude__title" id="home-m-claude-title">오늘의 시장 핵심 요약</h2>
+          <p class="home-m-claude__text">
+            글로벌 금리·환율 변동성 속에서 국내는 수출주 중심 강세, 미국은 AI·반도체 모멘텀이 유지됩니다. 단기 과열 구간에서는
+            비중 조절과 관망 전략을 병행하세요.
+          </p>
+        </div>
+      </section>
+
       <!-- 4. SHORTCUTS -->
       <nav class="home-shortcuts" aria-label="빠른 이동">
-        <a class="home-shortcuts__pill" href="./daily-market.html"><i class="ti ti-chart-bar"></i> 마감시황</a>
+        <a class="home-shortcuts__pill is-active" href="./daily-market.html" aria-current="page"><i class="ti ti-chart-bar"></i> 마감시황</a>
         <a class="home-shortcuts__pill" href="./briefing.html"><i class="ti ti-file-description"></i> 브리핑</a>
         <a class="home-shortcuts__pill" href="./realtime.html"><i class="ti ti-activity"></i> 실시간시세</a>
         <a class="home-shortcuts__pill" href="./weekly-market.html"><i class="ti ti-calendar"></i> 일정</a>
@@ -195,10 +262,10 @@
         </div>
       </footer>
 
-      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
+      <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item is-active" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
-        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
-        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></a>
+        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>시세</span></a>
+        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>코인</span></a>
         <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
         <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>

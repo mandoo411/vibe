@@ -604,7 +604,15 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-th--rt {
-  grid-template-columns: 22px 1fr 72px 52px 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 56px 62px;
+  gap: 8px;
+}
+
+.home-th--rt .home-rt-col--price,
+.home-th--rt .home-rt-col--chg,
+.home-th--rt .home-rt-col--metric {
+  text-align: right;
 }
 
 .home-th--coin {
@@ -623,8 +631,33 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: inherit;
 }
 
-.home-section--realtime .home-tr {
-  grid-template-columns: 22px 1fr 72px 52px 58px;
+.home-section--realtime .home-tr--rt {
+  grid-template-columns: minmax(0, 1fr) 72px 56px 62px;
+  gap: 8px;
+}
+
+.home-tr--rt {
+  display: grid;
+  align-items: center;
+}
+
+.home-rt-col--name {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.home-rt-col--price,
+.home-rt-col--chg,
+.home-rt-col--metric {
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.home-tr--rt .home-tr__name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-tr__metric {
@@ -1806,9 +1839,10 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     padding: 0 14px 14px;
   }
 
-  .page-home-v2 .home-th {
-    display: flex;
-    justify-content: space-between;
+  .page-home-v2 .home-th--rt {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 72px 56px 62px;
+    gap: 8px;
     margin: 0 0 8px;
     padding: 0 4px;
     border: none;
@@ -1816,58 +1850,38 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     color: #bbb;
   }
 
-  .page-home-v2 .home-th div:first-child {
-    display: none;
-  }
-
-  .page-home-v2 .home-th div:nth-child(2)::before {
-    content: "종목명";
-  }
-
-  .page-home-v2 .home-th div:nth-child(2) {
-    font-size: 0;
-  }
-
-  .page-home-v2 .home-tr {
-    display: flex;
+  .page-home-v2 .home-tr--rt {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 72px 56px 62px;
+    gap: 8px;
     align-items: center;
-    justify-content: space-between;
-    grid-template-columns: unset;
-    gap: 0;
     padding: 9px 4px;
     border-bottom: 1px solid #f8f9fc;
     margin: 0;
   }
 
-  .page-home-v2 .home-tr:hover {
+  .page-home-v2 .home-tr--rt:hover {
     margin: 0;
     padding: 9px 4px;
     background: transparent;
   }
 
-  .page-home-v2 .home-tr:last-child {
+  .page-home-v2 .home-tr--rt:last-child {
     border-bottom: none;
   }
 
-  .page-home-v2 .home-tr__rank {
-    width: 14px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #bbb;
-    text-align: left;
-    flex-shrink: 0;
-  }
-
-  .page-home-v2 .home-tr > div:nth-child(2) {
-    flex: 1;
+  .page-home-v2 .home-rt-col--name {
     min-width: 0;
-    padding-left: 10px;
+    overflow: hidden;
   }
 
   .page-home-v2 .home-tr__name {
     font-size: 13px;
     font-weight: 700;
     color: #0f1120;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .page-home-v2 .home-tr__code {
@@ -1875,20 +1889,22 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     color: #ccc;
   }
 
+  .page-home-v2 .home-rt-col--price,
+  .page-home-v2 .home-rt-col--chg,
+  .page-home-v2 .home-rt-col--metric {
+    text-align: right;
+    white-space: nowrap;
+  }
+
   .page-home-v2 .home-tr__price {
     font-size: 13px;
     font-weight: 700;
     color: #0f1120;
-    padding-right: 12px;
   }
 
   .page-home-v2 .home-tr__chg {
-    width: 52px;
-    flex-shrink: 0;
-    text-align: right;
     font-size: 12px;
     font-weight: 700;
-    padding-right: 6px;
   }
 
   .page-home-v2 .home-tr__chg.is-down {
@@ -1896,24 +1912,10 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-tr__metric {
-    width: 58px;
-    flex-shrink: 0;
-    text-align: right;
     font-size: 11px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #0f1120;
-    white-space: nowrap;
-  }
-
-  .page-home-v2 .home-th--rt {
-    gap: 0;
-  }
-
-  .page-home-v2 .home-th--rt div:nth-child(5) {
-    width: 58px;
-    flex-shrink: 0;
-    text-align: right;
   }
 
   /* AI CTA 移대뱶 */

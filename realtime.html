@@ -1002,12 +1002,8 @@
         .rt-scroll {
           overflow-x: hidden;
         }
-        /* 모바일: flex 행 + 고정 너비 숫자 열 (뷰포트 안에 맞춤) */
+        /* 모바일: 4열 그리드 (순위 숨김 · 종목명 flex) */
         .rt-table {
-          --rt-col-rank: 26px;
-          --rt-col-price: 68px;
-          --rt-col-chg: 58px;
-          --rt-col-metric: 62px;
           width: 100%;
           max-width: 100%;
           min-width: 0;
@@ -1027,11 +1023,17 @@
         }
         .rt-table thead tr,
         .rt-table tbody tr.rt-stock-row {
-          display: flex;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 72px 58px 64px;
+          column-gap: 8px;
           align-items: center;
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
+        }
+        .rt-table .rt-td-rank,
+        .rt-table th.rt-td-rank {
+          display: none !important;
         }
         .rt-table tr.rt-detail-row,
         .rt-table tr.rt-table-loading {
@@ -1049,41 +1051,10 @@
           padding: 6px 2px;
           box-sizing: border-box;
         }
-        .rt-table .rt-td-rank {
-          flex: 0 0 var(--rt-col-rank);
-          width: var(--rt-col-rank);
-          min-width: var(--rt-col-rank);
-          text-align: center;
-        }
         .rt-table .rt-td-name {
-          flex: 1 1 0;
           min-width: 0;
           overflow: hidden;
-        }
-        .rt-table .rt-td-price {
-          flex: 0 0 var(--rt-col-price);
-          width: var(--rt-col-price);
-          min-width: var(--rt-col-price);
-          text-align: right;
-        }
-        .rt-table .rt-td-chg {
-          flex: 0 0 var(--rt-col-chg);
-          width: var(--rt-col-chg);
-          min-width: var(--rt-col-chg);
-          text-align: right;
-        }
-        .rt-table .rt-td-tv,
-        .rt-table .rt-td-mcap {
-          flex: 0 0 var(--rt-col-metric);
-          width: var(--rt-col-metric);
-          min-width: var(--rt-col-metric);
-          text-align: right;
-        }
-        .rt-table th.rt-td-price,
-        .rt-table th.rt-td-chg,
-        .rt-table th.rt-td-tv,
-        .rt-table th.rt-td-mcap {
-          text-align: right;
+          text-align: left;
         }
         .rt-table .rt-td-price,
         .rt-table .rt-td-chg,
@@ -1091,6 +1062,13 @@
         .rt-table .rt-td-mcap {
           font-size: 12px;
           white-space: nowrap;
+          text-align: right;
+        }
+        .rt-table th.rt-td-price,
+        .rt-table th.rt-td-chg,
+        .rt-table th.rt-td-tv,
+        .rt-table th.rt-td-mcap {
+          text-align: right;
         }
         .rt-table .rt-td-chg .delta {
           display: inline-block;
@@ -1994,6 +1972,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602i"></script>
+    <script src="./realtime-board.js?v=20260602j"></script>
   </body>
 </html>

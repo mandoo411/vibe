@@ -265,13 +265,11 @@
     const moreHref = realtimePageHref(homeRtTab);
     el.innerHTML = rows
       .map((r) => {
-        const rank = r.rank != null ? r.rank : "";
-        const rankCls = rank >= 1 && rank <= 3 ? " is-top3" : "";
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
-        return `<a class="home-tr" href="${escapeHtml(moreHref)}"><div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }

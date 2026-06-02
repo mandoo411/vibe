@@ -33,6 +33,16 @@ async function main() {
       stocks.every((s) => s.code && s.name && s.tradingValue),
       `page ${page}: missing code/name/tradingValue`
     );
+    for (const s of stocks) {
+      const p = Number(String(s.price || "").replace(/,/g, ""));
+      const v = Number(String(s.volume || "").replace(/,/g, ""));
+      const tv = Number(String(s.tradingValue || "").replace(/,/g, ""));
+      if (p > 0 && v > 0 && tv > 0) {
+        const calc = Math.round(p * v);
+        const diff = Math.abs(calc - tv) / tv;
+        assert(diff < 0.02, `${s.name}: tradingValue ${tv} != price*vol ${calc}`);
+      }
+    }
     console.log(
       `  page ${page} OK ranks ${ranks[0]}–${ranks[ranks.length - 1]} top=${stocks[0].name} tv=${stocks[0].tradingValue}`
     );

@@ -573,14 +573,31 @@ async function fetchMarketCapKisOnce(fidInputIscd, fallbackBoard, opts = {}) {
 /**
  * NAVER m.stock JSON — 코스피 시가총액 TOP100 (UTF-8, ETF/ETN 제외)
  */
+/** NAVER 누적거래량 — Raw(주) 우선, 표시·거래대금은 항상 현재가×거래량 */
+function naverVolumeFromStock(s) {
+  const raw = s && s.accumulatedTradingVolumeRaw;
+  if (raw != null && String(raw).trim() !== "") {
+    const n = Number(String(raw).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return String(Math.round(n));
+  }
+  return sanitizeStr(s && s.accumulatedTradingVolume);
+}
+
+function finalizeRowQuoteFields(row) {
+  if (!row) return row;
+  const out = { ...row };
+  const tv = calcTradingValueWon(out.price, out.volume);
+  if (tv) out.tradingValue = tv;
+  return out;
+}
+
 function mapNaverMarketCapRow(s, rank) {
   const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
   const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
   const changePct = toNum(s.fluctuationsRatio);
   const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
-  const volRaw = sanitizeStr(s.accumulatedTradingVolume);
-  const atv = toNum(s.accumulatedTradingValue);
-  const { volume, tradingValue } = syncVolumeForTradingValue(price, volRaw, atv);
+  const volume = naverVolumeFromStock(s);
+  const tradingValue = calcTradingValueWon(price, volume) || "";
   let mcapWon = "";
   if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
     const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
@@ -644,6 +661,56 @@ async function fetchNaverMarketCapTop100() {
   return result;
 }
 
+/** NAVER 종목 시세 — stock-analysis 상세 패널과 동일 소스 (누적거래량·현재가) */
+async function fetchNaverStockPriceSnapshot(code6) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  if (!/^\d{6}$/.test(code)) return null;
+  const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/price?pageSize=1&page=1`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
+  });
+  const json = await res.json().catch(() => []);
+  if (!res.ok) {
+    throw new Error(`NAVER stock price HTTP ${res.status}`);
+  }
+  const row = Array.isArray(json) ? json[0] : null;
+  if (!row || typeof row !== "object") return null;
+  const price = sanitizeStr(row.closePrice || (row.overMarketPriceInfo && row.overMarketPriceInfo.overPrice));
+  let volume = naverVolumeFromStock(row);
+  if (!volume && row.accumulatedTradingVolume != null) {
+    const n = Number(String(row.accumulatedTradingVolume).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) volume = String(Math.round(n));
+  }
+  const changePct = toNum(row.fluctuationsRatio);
+  return { price, volume, changePct };
+}
+
+/** 페이지 종목 시세 보강 — 거래대금 표시 = 현재가×거래량 (NAVER 실시간 거래량) */
+async function overlayNaverPriceLive(rows) {
+  if (!rows || !rows.length) return [];
+  return Promise.all(
+    rows.map(async (r) => {
+      const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+      if (!/^\d{6}$/.test(code)) return finalizeRowQuoteFields(r);
+      try {
+        const live = await fetchNaverStockPriceSnapshot(code);
+        if (!live) return finalizeRowQuoteFields(r);
+        const price = live.price || r.price;
+        const volume = pickLargerVolStr(r.volume, live.volume);
+        const changePct = live.changePct != null ? live.changePct : r.changePct;
+        return finalizeRowQuoteFields({ ...r, price, volume, changePct });
+      } catch (e) {
+        console.warn("[kis-realtime-data] naver price overlay", code, e && e.message);
+        return finalizeRowQuoteFields(r);
+      }
+    })
+  );
+}
+
 /** KIS TOP30 시세로 NAVER 순위 목록 상위 종목 실시간 필드 보강 */
 async function overlayKisMarketCapLive(rows) {
   if (!rows || !rows.length) return rows;
@@ -655,20 +722,18 @@ async function overlayKisMarketCapLive(rows) {
       if (!k) return r;
       const price = k.price || r.price;
       const volume = pickLargerVolStr(r.volume, k.volume);
-      const tv = calcTradingValueWon(price, volume) || "";
-      return {
+      return finalizeRowQuoteFields({
         ...r,
         price,
         changePct: k.changePct != null ? k.changePct : r.changePct,
         volume,
-        tradingValue: tv,
         stck_avls: k.stck_avls || r.stck_avls,
         mcapEok: k.mcapEok || r.mcapEok,
-      };
+      });
     });
   } catch (e) {
     console.warn("[kis-realtime-data][market-cap] KIS overlay failed", e && e.message);
-    return rows;
+    return (rows || []).map((r) => finalizeRowQuoteFields(r));
   }
 }
 
@@ -677,7 +742,8 @@ async function fetchMarketCapPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   let all = await fetchNaverMarketCapTop100();
   all = await overlayKisMarketCapLive(all);
-  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  return overlayNaverPriceLive(slice);
 }
 
 async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
@@ -765,7 +831,8 @@ async function fetchNaverGainersTop100() {
 async function fetchGainersPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   const all = await fetchNaverGainersTop100();
-  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
 }
 
 async function fetchGainersMerged100() {
@@ -836,9 +903,9 @@ async function fetchNaverTradingValueTop100() {
 /** 거래대금 TOP100 — 페이지당 25건 (KIS 시세 보강) */
 async function fetchTradingValuePage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
-  let all = await fetchNaverTradingValueTop100();
-  all = await overlayKisMarketCapLive(all);
-  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  const all = await fetchNaverTradingValueTop100();
+  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
 }
 
 /**

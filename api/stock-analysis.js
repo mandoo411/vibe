@@ -311,6 +311,8 @@ async function kisInquirePrice(stockCode6) {
   const open = toNum(row.stck_oprc);
   const high52w = toNum(row.w52_hgpr);
   const low52w = toNum(row.w52_lwpr);
+  const upperLimit = toNum(row.stck_mxpr);
+  const lowerLimit = toNum(row.stck_llam);
   const market = marketLabelFromRow(row);
   const mcap = parseMarketCapLike(row);
   const financials = parseFinancials(row);
@@ -328,6 +330,8 @@ async function kisInquirePrice(stockCode6) {
     open: open == null ? 0 : Math.round(open),
     high52w: high52w == null ? 0 : Math.round(high52w),
     low52w: low52w == null ? 0 : Math.round(low52w),
+    upperLimit: upperLimit == null ? null : Math.round(upperLimit),
+    lowerLimit: lowerLimit == null ? null : Math.round(lowerLimit),
     market,
     marketCap: mcap.value,
     marketCapRaw: mcap.raw,

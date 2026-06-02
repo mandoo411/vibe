@@ -512,6 +512,10 @@
         border-bottom: 1px solid rgba(200, 210, 255, 0.35);
         min-width: 0;
         background: #ffffff;
+        min-height: 54px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       [data-theme="dark"] .rt-acc-cell,
       .dark-mode .rt-acc-cell {
@@ -578,6 +582,14 @@
       }
       .rt-acc-val--lo {
         color: var(--down-color);
+      }
+      .rt-acc-val--uplimit {
+        color: #e24b4a;
+        font-weight: 600;
+      }
+      .rt-acc-val--lolimit {
+        color: #3b82f6;
+        font-weight: 600;
       }
       [data-theme="dark"] .rt-acc-val--hi,
       .dark-mode .rt-acc-val--hi {

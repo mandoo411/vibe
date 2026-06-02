@@ -1868,7 +1868,14 @@
     const low = escapeHtml(fmtNum(data.low));
     const vol = escapeHtml(formatVolumeMan(data.volume));
     const prevClose = data.prevClose == null ? "—" : escapeHtml(fmtNum(data.prevClose));
-    const prevVol = data.prevVolume == null ? "—" : escapeHtml(formatVolumeMan(data.prevVolume));
+    const upperLimit =
+      data.upperLimit == null || !Number.isFinite(Number(data.upperLimit))
+        ? "—"
+        : escapeHtml(fmtNum(data.upperLimit));
+    const lowerLimit =
+      data.lowerLimit == null || !Number.isFinite(Number(data.lowerLimit))
+        ? "—"
+        : escapeHtml(fmtNum(data.lowerLimit));
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
@@ -1924,14 +1931,15 @@
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
-      accGridCell("전일거래량", prevVol),
+      accGridCell("상한가", upperLimit, "rt-acc-val--uplimit"),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
-      accGridCell("52주고", hi52, "rt-acc-val--hi"),
-      accGridCell("52주저", lo52, "rt-acc-val--lo"),
+      accGridCell("52주 최고", hi52, "rt-acc-val--hi"),
+      accGridCell("52주 최저", lo52, "rt-acc-val--lo"),
       accGridCell("EPS", finEps),
       accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
+      accGridCell("하한가", lowerLimit, "rt-acc-val--lolimit"),
     ].join("");
 
     const supplyGrid = [

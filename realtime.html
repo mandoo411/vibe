@@ -1002,7 +1002,7 @@
         .rt-scroll {
           overflow-x: hidden;
         }
-        /* 모바일: 4열 그리드 (순위 숨김 · 종목명 flex) */
+        /* 모바일: 5열 그리드 (순위 복구 + 고정 폭) */
         .rt-table {
           width: 100%;
           max-width: 100%;
@@ -1024,7 +1024,7 @@
         .rt-table thead tr,
         .rt-table tbody tr.rt-stock-row {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 85px 72px 65px;
+          grid-template-columns: 24px minmax(0, 1fr) 80px 65px 60px;
           column-gap: 8px;
           align-items: center;
           width: 100%;
@@ -1037,9 +1037,13 @@
           background: var(--bg-tertiary);
           border-bottom: 1px solid var(--border);
         }
-        .rt-table .rt-td-rank,
-        .rt-table th.rt-td-rank {
-          display: none !important;
+        .rt-table th,
+        .rt-table td {
+          font-size: 13px;
+        }
+        .rt-table td {
+          font-size: 13px;
+          line-height: 1.35;
         }
         .rt-table tr.rt-detail-row,
         .rt-table tr.rt-table-loading {
@@ -1061,18 +1065,42 @@
           background: transparent;
           border-bottom: none;
         }
+        .rt-table .rt-td-rank {
+          width: 24px;
+          text-align: center;
+          color: #9ca3af;
+          font-size: 12px;
+          white-space: nowrap;
+        }
         .rt-table .rt-td-name {
           min-width: 0;
           overflow: hidden;
           text-align: left;
         }
+        /* 모바일: 대비/거래량은 숨기고, 마지막 컬럼만(시총/거래대금) 표시 */
+        .rt-table .rt-td-vs,
+        .rt-table th.rt-td-vs,
+        .rt-table .rt-td-vol,
+        .rt-table th.rt-td-vol {
+          display: none !important;
+        }
         .rt-table .rt-td-price,
         .rt-table .rt-td-chg,
         .rt-table .rt-td-tv,
         .rt-table .rt-td-mcap {
-          font-size: 12px;
+          font-size: 13px;
           white-space: nowrap;
           text-align: right;
+        }
+        .rt-table .rt-td-tv,
+        .rt-table .rt-td-mcap {
+          color: #374151;
+        }
+        [data-theme="dark"] .rt-table .rt-td-tv,
+        [data-theme="dark"] .rt-table .rt-td-mcap,
+        .dark-mode .rt-table .rt-td-tv,
+        .dark-mode .rt-table .rt-td-mcap {
+          color: #e5e7eb;
         }
         .rt-table th.rt-td-price,
         .rt-table th.rt-td-chg,
@@ -1198,16 +1226,22 @@
         width: auto;
       }
       .rt-table col.rt-col-price {
-        width: 120px;
-      }
-      .rt-table col.rt-col-chg {
         width: 100px;
       }
+      .rt-table col.rt-col-vs {
+        width: 90px;
+      }
+      .rt-table col.rt-col-chg {
+        width: 80px;
+      }
       .rt-table col.rt-col-tv {
-        width: 120px;
+        width: 90px;
       }
       .rt-table col.rt-col-mcap {
-        width: 120px;
+        width: 90px;
+      }
+      .rt-table col.rt-col-vol {
+        width: 90px;
       }
       .rt-table th,
       .rt-table td {
@@ -1229,6 +1263,7 @@
         overflow-wrap: anywhere;
       }
       .rt-td-price,
+      .rt-td-vs,
       .rt-td-chg,
       .rt-td-vol,
       .rt-td-tv,
@@ -1236,18 +1271,30 @@
         white-space: nowrap;
       }
       .rt-table th.rt-td-price,
+      .rt-table th.rt-td-vs,
       .rt-table th.rt-td-chg,
+      .rt-table th.rt-td-vol,
       .rt-table th.rt-td-tv,
       .rt-table th.rt-td-mcap {
         text-align: right;
       }
       .rt-table th.rt-td-chg,
       .rt-table td.rt-td-chg {
-        text-align: center;
+        text-align: right;
       }
       .rt-table th.rt-td-rank,
       .rt-table td.rt-td-rank {
         text-align: center;
+      }
+      .rt-table td.rt-td-tv,
+      .rt-table td.rt-td-mcap {
+        color: #374151;
+      }
+      [data-theme="dark"] .rt-table td.rt-td-tv,
+      [data-theme="dark"] .rt-table td.rt-td-mcap,
+      .dark-mode .rt-table td.rt-td-tv,
+      .dark-mode .rt-table td.rt-td-mcap {
+        color: #e5e7eb;
       }
       .rt-table th {
         position: sticky;
@@ -1264,10 +1311,19 @@
         font-size: 14px;
       }
       .rt-table .rt-td-price,
+      .rt-table .rt-td-vs,
       .rt-table .rt-td-chg,
       .rt-table .rt-td-vol,
       .rt-table .rt-td-mcap {
         font-size: 15px;
+      }
+      .rt-vs-pos {
+        color: #e24b4a;
+        font-weight: 600;
+      }
+      .rt-vs-neg {
+        color: #3b82f6;
+        font-weight: 600;
       }
       .rt-table tbody tr:nth-child(even) td {
         background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
@@ -1858,18 +1914,22 @@
                   <col class="rt-col-rank" />
                   <col class="rt-col-name" />
                   <col class="rt-col-price" />
+                  <col class="rt-col-vs" />
                   <col class="rt-col-chg" />
                   <col class="rt-col-tv" />
                   <col class="rt-col-mcap" />
+                  <col class="rt-col-vol" />
                 </colgroup>
                 <thead>
                   <tr id="rt-thead-row">
                     <th class="rt-td-rank">순위</th>
                     <th class="rt-td-name">종목명</th>
                     <th class="num rt-td-price">가격</th>
+                    <th class="num rt-td-vs">대비</th>
                     <th class="num rt-td-chg">등락률</th>
                     <th class="num rt-td-tv">거래대금</th>
                     <th class="num rt-td-mcap">시가총액</th>
+                    <th class="num rt-td-vol">거래량</th>
                   </tr>
                 </thead>
                 <tbody id="rt-tbody"></tbody>
@@ -1991,6 +2051,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602k"></script>
+    <script src="./realtime-board.js?v=20260602l"></script>
   </body>
 </html>

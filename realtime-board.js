@@ -144,6 +144,22 @@
     return `${sign}${Math.round(n).toLocaleString("ko-KR")}`;
   }
 
+  function formatVsCell(r) {
+    const n = r && Number.isFinite(Number(r.changeAmt)) ? Number(r.changeAmt) : null;
+    if (n == null) return { html: "—", cls: "" };
+    const text = fmtChangeAmt(n);
+    return { html: escapeHtml(text), cls: n > 0 ? "rt-vs-pos" : n < 0 ? "rt-vs-neg" : "" };
+  }
+
+  /** 거래량: 만 단위(웹) 65,388,490 → 6538.8만 */
+  function formatVolumeManWeb(raw) {
+    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n < 0) return "—";
+    if (n < 10000) return n.toLocaleString("ko-KR");
+    const man = Math.round(n / 1000) / 10; // 1 decimal
+    return `${man.toFixed(1)}만`;
+  }
+
   /** 거래대금(원) 표기: 1조 이상 X.XX조 · 1000억 이상 X,XXX억 · 그 이하 X억 */
   function formatTradeVal(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
@@ -1316,7 +1332,7 @@
   }
 
   function tableColSpan() {
-    return 6;
+    return 8;
   }
 
   function syncTableLayoutAttr() {
@@ -1324,14 +1340,32 @@
     if (table) table.setAttribute("data-rt-tab", state.tab || "cap");
   }
 
-  const TABLE_HEAD_HTML =
-    '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th><th class="num rt-td-mcap">시가총액</th>';
+  function tableHeadHtmlForTab(tab) {
+    const base = [
+      '<th class="rt-td-rank">순위</th>',
+      '<th class="rt-td-name">종목명</th>',
+      '<th class="num rt-td-price">가격</th>',
+      '<th class="num rt-td-vs">대비</th>',
+      '<th class="num rt-td-chg">등락률</th>',
+      '<th class="num rt-td-vol">거래량</th>',
+    ];
+    // cap/gainers: ... 거래대금 → 시총
+    if (tab === "tv") {
+      // tv tab: ... 시총 → 거래대금
+      base.push('<th class="num rt-td-mcap">시가총액</th>');
+      base.push('<th class="num rt-td-tv">거래대금</th>');
+    } else {
+      base.push('<th class="num rt-td-tv">거래대금</th>');
+      base.push('<th class="num rt-td-mcap">시가총액</th>');
+    }
+    return base.join("");
+  }
 
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
     syncTableLayoutAttr();
-    tr.innerHTML = TABLE_HEAD_HTML;
+    tr.innerHTML = tableHeadHtmlForTab(state.tab || "cap");
   }
 
   function getTableTitle() {
@@ -1395,14 +1429,27 @@
     const cls = deltaClass(ch);
     const tv = formatRowTradeVal(r);
     const mcap = formatStckAvls(readStckAvlsRaw(r));
-    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-          <td class="num rt-td-tv">${escapeHtml(tv)}</td>
-          <td class="num rt-td-mcap">${escapeHtml(mcap)}</td>
-        </tr>`;
+    const vs = formatVsCell(r);
+    const vol = escapeHtml(formatVolumeManWeb(r && r.volume));
+    const common = [
+      `<td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>`,
+      `<td class="rt-td-name">${nameCell}</td>`,
+      `<td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>`,
+      `<td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>`,
+      `<td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>`,
+      `<td class="num rt-td-vol">${vol}</td>`,
+    ];
+    const tail =
+      (state.tab || "cap") === "tv"
+        ? [
+            `<td class="num rt-td-mcap">${escapeHtml(mcap)}</td>`,
+            `<td class="num rt-td-tv">${escapeHtml(tv)}</td>`,
+          ]
+        : [
+            `<td class="num rt-td-tv">${escapeHtml(tv)}</td>`,
+            `<td class="num rt-td-mcap">${escapeHtml(mcap)}</td>`,
+          ];
+    return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">${common.join("")}${tail.join("")}</tr>`;
   }
 
   function detailRowHtml(forCode) {

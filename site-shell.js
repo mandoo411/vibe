@@ -18,7 +18,77 @@
     crypto: "코인",
     schedule: "일정",
     analysis: "AI분석",
+    menu: "전체",
   };
+
+  const BOTTOM_NAV_MENU_ICON =
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<rect x="3" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
+    '<rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
+    '<rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
+    '<rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>';
+
+  const BOTTOM_NAV_PRIMARY = ["home", "realtime", "analysis", "crypto"];
+
+  const TM_ALL_PAGES = [
+    { id: "home", href: "./index.html", label: "홈", icon: "ti-home" },
+    { id: "realtime", href: "./realtime.html", label: "실시간시세", icon: "ti-activity" },
+    { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
+    { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
+    { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
+    { id: "daily", href: "./daily-market.html", label: "마감시황", icon: "ti-chart-bar" },
+    { id: "us", href: "./us-market.html", label: "미국시장", icon: "ti-building-skyscraper" },
+    { id: "crypto", href: "./crypto.html", label: "암호화폐", icon: "ti-currency-bitcoin" },
+    { id: "world", href: "./world-market.html", label: "글로벌랭킹", icon: "ti-world" },
+  ];
+
+  /** 전체 메뉴 시트 3×3 (행 우선) */
+  const NAV_SHEET_GRID = [
+    ["home", "realtime", "analysis"],
+    ["schedule", "briefing", "daily"],
+    ["us", "crypto", "world"],
+  ];
+
+  const NAV_SHEET_LABELS = {
+    home: "홈",
+    realtime: "시세",
+    analysis: "AI분석",
+    schedule: "일정",
+    briefing: "브리핑",
+    daily: "마감시황",
+    us: "미국시장",
+    crypto: "암호화폐",
+    world: "글로벌랭킹",
+  };
+
+  const PATH_TO_PAGE_ID = {
+    "/": "home",
+    "/index.html": "home",
+    "/daily-market.html": "daily",
+    "/briefing.html": "briefing",
+    "/realtime.html": "realtime",
+    "/weekly-market.html": "schedule",
+    "/us-market.html": "us",
+    "/crypto.html": "crypto",
+    "/world-market.html": "world",
+    "/stock-analysis.html": "analysis",
+  };
+
+  function getCurrentPageId() {
+    const path = window.location.pathname.replace(/\\/g, "/");
+    const base = path.slice(path.lastIndexOf("/"));
+    if (PATH_TO_PAGE_ID[base]) return PATH_TO_PAGE_ID[base];
+    const file = path.split("/").pop() || "";
+    const hit = TM_ALL_PAGES.find((p) => p.href.endsWith(file));
+    return hit ? hit.id : null;
+  }
+
+  function syncBodyTab() {
+    const pageId = getCurrentPageId();
+    if (!pageId) return;
+    document.body.dataset.tmPage = pageId;
+    document.body.dataset.tmTab = BOTTOM_NAV_PRIMARY.includes(pageId) ? pageId : "menu";
+  }
 
   function formatTickerValue(item) {
     if (!item || item.value == null || item.value === "") return "—";
@@ -82,12 +152,120 @@
     });
   }
 
-  function bindBottomNav() {
-    const tab = document.body.dataset.tmTab;
-    if (!tab) return;
+  function bindBottomNavActive() {
+    const pageId = getCurrentPageId();
+    const sheet = document.getElementById("tm-nav-sheet");
+    const sheetOpen = sheet && sheet.classList.contains("is-open");
+    let barTab = BOTTOM_NAV_PRIMARY.includes(pageId) ? pageId : "menu";
+    if (sheetOpen) barTab = "menu";
     document.querySelectorAll(".tm-bottom-nav__item").forEach((el) => {
-      if (el.dataset.tmTab === tab) el.classList.add("is-active");
+      el.classList.toggle("is-active", el.dataset.tmTab === barTab);
     });
+    document.querySelectorAll(".tm-nav-sheet__cell").forEach((el) => {
+      const on = pageId && el.dataset.tmPage === pageId;
+      el.classList.toggle("is-active", on);
+      if (on) el.setAttribute("aria-current", "page");
+      else el.removeAttribute("aria-current");
+    });
+  }
+
+  function createBottomNavItem(tabId) {
+    const page = TM_ALL_PAGES.find((p) => p.id === tabId);
+    const isMenu = tabId === "menu";
+    const el = document.createElement(isMenu ? "button" : "a");
+    el.className = "tm-bottom-nav__item" + (isMenu ? " tm-bottom-nav__item--menu" : "");
+    el.dataset.tmTab = tabId;
+    if (isMenu) {
+      el.type = "button";
+      el.setAttribute("aria-label", "전체 메뉴");
+      el.setAttribute("aria-controls", "tm-nav-sheet");
+      el.setAttribute("aria-expanded", "false");
+    } else if (page) {
+      el.href = page.href;
+    }
+    const iconWrap = document.createElement("span");
+    iconWrap.className = "tm-bottom-nav__icon";
+    iconWrap.setAttribute("aria-hidden", "true");
+    iconWrap.innerHTML = isMenu ? BOTTOM_NAV_MENU_ICON : BOTTOM_NAV_ICONS[tabId] || "";
+    const label = document.createElement("span");
+    label.textContent = BOTTOM_NAV_LABELS[tabId] || page?.label || tabId;
+    el.append(iconWrap, label);
+    return el;
+  }
+
+  function pageById(id) {
+    return TM_ALL_PAGES.find((p) => p.id === id);
+  }
+
+  function ensureNavSheet() {
+    if (document.getElementById("tm-nav-sheet")) return;
+    const cells = NAV_SHEET_GRID.flat()
+      .map((id) => {
+        const p = pageById(id);
+        if (!p) return "";
+        const label = NAV_SHEET_LABELS[id] || p.label;
+        return (
+          `<a class="tm-nav-sheet__cell" href="${p.href}" data-tm-page="${p.id}">` +
+          `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span></a>`
+        );
+      })
+      .join("");
+    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--9">${cells}</div>`;
+    const sheet = document.createElement("div");
+    sheet.id = "tm-nav-sheet";
+    sheet.className = "tm-nav-sheet";
+    sheet.hidden = true;
+    sheet.innerHTML =
+      '<div class="tm-nav-sheet__backdrop" data-close-sheet tabindex="-1"></div>' +
+      '<div class="tm-nav-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="tm-nav-sheet-title">' +
+      '<header class="tm-nav-sheet__head"><h2 id="tm-nav-sheet-title">전체 메뉴</h2>' +
+      '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="닫기"><i class="ti ti-x"></i></button></header>' +
+      `<div class="tm-nav-sheet__body">${body}</div></div>`;
+    document.body.appendChild(sheet);
+  }
+
+  let navSheetBound = false;
+
+  function setNavSheetOpen(open) {
+    const sheet = document.getElementById("tm-nav-sheet");
+    if (!sheet) return;
+    sheet.hidden = !open;
+    sheet.classList.toggle("is-open", open);
+    document.body.classList.toggle("tm-nav-sheet-open", open);
+    const menuBtn = document.querySelector(".tm-bottom-nav__item--menu");
+    if (menuBtn) menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) sheet.querySelector(".tm-nav-sheet__close")?.focus();
+    bindBottomNavActive();
+  }
+
+  function bindNavSheet() {
+    if (navSheetBound) return;
+    navSheetBound = true;
+    ensureNavSheet();
+    document.addEventListener("click", (e) => {
+      if (e.target.closest(".tm-bottom-nav__item--menu")) {
+        e.preventDefault();
+        const sheet = document.getElementById("tm-nav-sheet");
+        setNavSheetOpen(!(sheet && sheet.classList.contains("is-open")));
+        return;
+      }
+      if (e.target.closest("[data-close-sheet]")) setNavSheetOpen(false);
+      if (e.target.closest(".tm-nav-sheet__cell")) setNavSheetOpen(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setNavSheetOpen(false);
+    });
+  }
+
+  function rebuildBottomNav() {
+    document.querySelectorAll(".tm-bottom-nav").forEach((nav) => {
+      nav.classList.add("tm-bottom-nav--v2");
+      nav.replaceChildren();
+      BOTTOM_NAV_PRIMARY.forEach((id) => nav.appendChild(createBottomNavItem(id)));
+      nav.appendChild(createBottomNavItem("menu"));
+    });
+    bindNavSheet();
+    bindBottomNavActive();
   }
 
   function bindShellClock() {
@@ -152,44 +330,18 @@
     }
   }
 
-  function upgradeBottomNav() {
-    document.querySelectorAll(".tm-bottom-nav").forEach((nav) => {
-      nav.classList.add("tm-bottom-nav--v2");
-      nav.querySelectorAll(".tm-bottom-nav__item").forEach((item) => {
-        const tab = item.dataset.tmTab;
-        const label = BOTTOM_NAV_LABELS[tab];
-        if (label) {
-          const span = item.querySelector("span:last-child");
-          if (span) span.textContent = label;
-        }
-        const svg = BOTTOM_NAV_ICONS[tab];
-        if (!svg) return;
-        let iconWrap = item.querySelector(".tm-bottom-nav__icon");
-        const ti = item.querySelector("i");
-        if (!iconWrap) {
-          iconWrap = document.createElement("span");
-          iconWrap.className = "tm-bottom-nav__icon";
-          iconWrap.setAttribute("aria-hidden", "true");
-          if (ti) ti.replaceWith(iconWrap);
-          else item.insertBefore(iconWrap, item.firstChild);
-        }
-        iconWrap.innerHTML = svg;
-      });
-    });
-  }
-
   function enhanceShell() {
     if (!document.body.classList.contains("page-tm-v2")) return;
+    syncBodyTab();
     wrapShellTop();
     injectMobileMeta();
     bindShellClock();
-    upgradeBottomNav();
+    rebuildBottomNav();
   }
 
   function boot() {
     enhanceShell();
     bindNavToggle();
-    bindBottomNav();
     if (!document.body.classList.contains("page-home-v2")) {
       renderTicker();
       setInterval(renderTicker, 5 * 60 * 1000);

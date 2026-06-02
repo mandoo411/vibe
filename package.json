@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "npx --yes vercel@53.2.0 dev",
+    "preview": "npx --yes serve@14 . -p 3456",
     "deploy": "npx --yes vercel@53.2.0 --prod",
     "sync:schedule": "node --env-file=.env scripts/telegram-weekly-schedule.mjs",
     "sync:weekly": "node --env-file=.env scripts/weekly-schedule.mjs",

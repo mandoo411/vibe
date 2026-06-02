@@ -82,9 +82,14 @@
     gainerPage: 1,
     gainerPageSize: 25,
     gainerTotal: 100,
+    tvRows: [],
+    tvPage: 1,
+    tvPageSize: 25,
+    tvTotal: 100,
     /** 페이지별 클라이언트 캐시 { [page]: { stocks, loadedAt } } */
     capPageCache: {},
     gainerPageCache: {},
+    tvPageCache: {},
     indexes: [],
     clockSession: null,
     marketTime: null,
@@ -219,7 +224,8 @@
 
   /** 폴링 시 행 순서 유지하며 시세만 병합 (열린 종목 패널 깜빡임 방지) */
   function mergeStocksInPlaceForTab(tab, incoming) {
-    const list = tab === "cap" ? state.capRows : state.gainerRows;
+    const list =
+      tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
     const inc = (incoming || []).filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0);
     if (!list.length) {
       applyStocksArrayToTab(tab, inc);
@@ -901,28 +907,39 @@
   }
 
   function rowsLoadedForTab(tab) {
-    const cache = tab === "cap" ? state.capPageCache : state.gainerPageCache;
-    const page = tab === "cap" ? state.capPage : state.gainerPage;
+    const cache =
+      tab === "gainers" ? state.gainerPageCache : tab === "tv" ? state.tvPageCache : state.capPageCache;
+    const page =
+      tab === "gainers" ? state.gainerPage : tab === "tv" ? state.tvPage : state.capPage;
     const hit = cache[page];
     return !!(hit && hit.stocks && hit.stocks.length >= 10);
   }
 
   function pageCacheForTab(tab) {
-    return tab === "cap" ? state.capPageCache : state.gainerPageCache;
+    if (tab === "gainers") return state.gainerPageCache;
+    if (tab === "tv") return state.tvPageCache;
+    return state.capPageCache;
   }
 
   function currentPageForTab(tab) {
-    return tab === "cap" ? state.capPage : state.gainerPage;
+    if (tab === "gainers") return state.gainerPage;
+    if (tab === "tv") return state.tvPage;
+    return state.capPage;
   }
 
   function setCurrentPageForTab(tab, page) {
-    if (tab === "cap") state.capPage = page;
-    else state.gainerPage = page;
+    if (tab === "gainers") state.gainerPage = page;
+    else if (tab === "tv") state.tvPage = page;
+    else state.capPage = page;
+  }
+
+  function isRankListTab(tab) {
+    return tab === "cap" || tab === "gainers" || tab === "tv";
   }
 
   function updatePaginationUI(page) {
     const tab = state.tab;
-    if (tab !== "cap" && tab !== "gainers") return;
+    if (!isRankListTab(tab)) return;
     const pg = Math.max(1, Math.min(4, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
     const el = $("rt-table-pager");
@@ -979,12 +996,14 @@
     }
     try {
       if (tab === "cap") state.capPage = pg;
-      else state.gainerPage = pg;
+      else if (tab === "gainers") state.gainerPage = pg;
+      else state.tvPage = pg;
       const pack = await fetchStocksJsonForTab(tab);
       const stocks = pack.stocks || [];
       cache[pg] = { stocks, loadedAt: Date.now() };
       if (tab === "cap") state.capTotal = Number(pack.total || 100) || 100;
-      else state.gainerTotal = Number(pack.total || 100) || 100;
+      else if (tab === "gainers") state.gainerTotal = Number(pack.total || 100) || 100;
+      else state.tvTotal = Number(pack.total || 100) || 100;
       applyStocksArrayToTab(tab, stocks);
       state.tabLoadedAt[tab] = Date.now();
       return { fromCache: false, cached: !!pack.cached };
@@ -1001,6 +1020,7 @@
       .map((r) => ({ ...r, tab: r.tab || tab }));
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
+    else if (tab === "tv") state.tvRows = rows;
   }
 
   async function fetchStocksJsonForTab(tab) {
@@ -1009,6 +1029,10 @@
       const p = Math.max(1, Number(state.capPage) || 1);
       return fetchJson("market-cap", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
     }
+    if (tab === "tv") {
+      const p = Math.max(1, Number(state.tvPage) || 1);
+      return fetchJson("trading-value", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    }
     const p = Math.max(1, Number(state.gainerPage) || 1);
     return fetchJson("gainers", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
   }
@@ -1016,7 +1040,7 @@
   function renderTablePager() {
     const el = $("rt-table-pager");
     if (!el) return;
-    const show = state.tab === "cap" || state.tab === "gainers";
+    const show = isRankListTab(state.tab);
     el.hidden = !show;
     if (!show) return;
 
@@ -1044,7 +1068,7 @@
 
   async function loadTablePage(page) {
     const tab = state.tab;
-    if (tab !== "cap" && tab !== "gainers") return;
+    if (!isRankListTab(tab)) return;
     const pg = Math.max(1, Math.min(4, Number(page) || 1));
     const prevPage = currentPageForTab(tab);
     const cache = pageCacheForTab(tab);
@@ -1117,6 +1141,8 @@
     state.indexes = ["0001", "1001"].map((k) => byId.get(k));
     if (tab === "gainers") {
       state.gainerTotal = 100;
+    } else if (tab === "tv") {
+      state.tvTotal = 100;
     } else if (tab === "cap") {
       state.capTotal = 100;
     }
@@ -1224,6 +1250,7 @@
   function getCurrentRows() {
     if (state.tab === "cap") return state.capRows;
     if (state.tab === "gainers") return state.gainerRows;
+    if (state.tab === "tv") return state.tvRows;
     return state.capRows;
   }
 
@@ -1963,7 +1990,7 @@
       const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      if (state.tab === "cap" || state.tab === "gainers") renderTable();
+      if (isRankListTab(state.tab)) renderTable();
       return;
     }
   }
@@ -2053,7 +2080,7 @@
       const page = currentPageForTab(tab);
       const detailOpen = !!state.openChartCode;
 
-      if (detailOpen && (tab === "cap" || tab === "gainers")) {
+      if (detailOpen && isRankListTab(tab)) {
         try {
           const pack = await fetchStocksJsonForTab(tab);
           mergeStocksInPlaceForTab(tab, pack.stocks || []);
@@ -2126,9 +2153,18 @@
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
         if (t === "gainers") state.tab = "gainers";
+        else if (t === "tv") state.tab = "tv";
         else state.tab = "cap";
         state.openChartCode = null;
         state.candlePeriod = "D";
+
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set("tab", state.tab);
+          window.history.replaceState(null, "", url.pathname + url.search);
+        } catch (_) {
+          /* noop */
+        }
 
         // 탭 전환 시, 종목 검색 패널은 닫아서 테이블이 바로 보이게 함
         const stockPanel = $("stock-result-panel");
@@ -2138,7 +2174,8 @@
         }
 
         if (state.tab === "cap") state.capPage = 1;
-        else state.gainerPage = 1;
+        else if (state.tab === "gainers") state.gainerPage = 1;
+        else state.tvPage = 1;
 
         document.querySelectorAll("[data-rt-tab]").forEach((b) => {
           b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
@@ -2243,7 +2280,26 @@
     }, period);
   }
 
+  function tabFromUrl() {
+    try {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (t === "gainers" || t === "tv" || t === "cap") return t;
+    } catch (_) {
+      /* noop */
+    }
+    return "cap";
+  }
+
+  function applyTabFromUrl() {
+    const tab = tabFromUrl();
+    state.tab = tab;
+    document.querySelectorAll("[data-rt-tab]").forEach((b) => {
+      b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === tab ? "true" : "false");
+    });
+  }
+
   async function init() {
+    applyTabFromUrl();
     setupTabs();
     wireLwChartThemeRefresh();
     wireTableChartAccordion();

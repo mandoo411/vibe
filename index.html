@@ -186,37 +186,34 @@
           </ul>
         </section>
 
-        <section class="home-m-claude tm-claude-card" aria-labelledby="home-m-claude-title">
-          <div class="home-m-claude__body">
-            <p class="tm-claude-card__title" id="home-m-claude-title">Claude AI 기반 분석</p>
-            <p class="tm-claude-card__powered">Powered by <span class="tm-claude-card__anthropic">Claude (Anthropic)</span></p>
-            <p class="home-m-claude__text">뉴스·수급·기술적 지표를 종합 분석합니다</p>
-          </div>
+        <section class="home-m-claude tm-claude-card tm-claude-card--compact" aria-label="Anthropic Claude 표기">
+          <p class="tm-claude-card__line">
+            일부 분석은 <span class="tm-claude-card__mark">Anthropic Claude</span>로 생성됩니다
+          </p>
         </section>
       </div>
 
-      <!-- 4. SHORTCUTS -->
-      <nav class="home-shortcuts" aria-label="빠른 이동">
-        <a class="home-shortcuts__pill is-active" href="./daily-market.html" aria-current="page"><i class="ti ti-chart-bar"></i> 마감시황</a>
-        <a class="home-shortcuts__pill" href="./briefing.html"><i class="ti ti-file-description"></i> 브리핑</a>
-        <a class="home-shortcuts__pill" href="./realtime.html"><i class="ti ti-activity"></i> 실시간시세</a>
-        <a class="home-shortcuts__pill" href="./weekly-market.html"><i class="ti ti-calendar"></i> 일정</a>
-        <a class="home-shortcuts__pill" href="./us-market.html"><i class="ti ti-building-skyscraper"></i> 미국시장</a>
-        <a class="home-shortcuts__pill" href="./crypto.html"><i class="ti ti-currency-bitcoin"></i> 암호화폐</a>
-        <a class="home-shortcuts__pill" href="./world-market.html"><i class="ti ti-world"></i> 글로벌랭킹</a>
-        <a class="home-shortcuts__pill" href="./stock-analysis.html"><i class="ti ti-robot"></i> AI종목분석</a>
-      </nav>
-
-      <!-- 5. MAIN -->
+      <!-- 4. MAIN -->
       <main class="home-main">
-        <section class="home-section">
+        <section class="home-section home-section--realtime" aria-label="실시간시세 미리보기">
           <div class="home-section__head">
-            <h2 class="home-section__title">🇰🇷 국내 시가총액 TOP 10</h2>
-            <a class="home-section__more" href="./realtime.html">더보기 →</a>
+            <h2 class="home-section__title">🇰🇷 실시간시세</h2>
+            <a class="home-section__more" id="home-rt-more" href="./realtime.html?tab=cap">더보기 →</a>
+          </div>
+          <div class="home-rt-tabs" role="tablist" aria-label="국내 순위">
+            <button type="button" class="home-rt-tab is-active" role="tab" data-home-rt-tab="cap" aria-selected="true" id="home-rt-tab-cap">
+              시가총액 TOP 100
+            </button>
+            <button type="button" class="home-rt-tab" role="tab" data-home-rt-tab="gainers" aria-selected="false" id="home-rt-tab-gainers">
+              상승률 TOP 100
+            </button>
+            <button type="button" class="home-rt-tab" role="tab" data-home-rt-tab="tv" aria-selected="false" id="home-rt-tab-tv">
+              거래대금 TOP 100
+            </button>
           </div>
           <div class="home-section__body">
             <div class="home-th"><div></div><div>종목명</div><div style="text-align:right">현재가</div><div style="text-align:right">등락률</div></div>
-            <div id="home-kr-top10"><p class="home-empty">로딩 중…</p></div>
+            <div id="home-rt-body"><p class="home-empty">로딩 중…</p></div>
           </div>
         </section>
 
@@ -302,28 +299,7 @@
         </div>
       </footer>
 
-      <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동">
-        <a class="tm-bottom-nav__item is-active" href="./index.html" data-tm-tab="home">
-          <span class="tm-bottom-nav__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span>
-          <span>홈</span>
-        </a>
-        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime">
-          <span class="tm-bottom-nav__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><polyline points="4,17 9,11 13,14 20,7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17,7 20,7 20,10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-          <span>시세</span>
-        </a>
-        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto">
-          <span class="tm-bottom-nav__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5H13.5C14.6 8.5 15.5 9.4 15.5 10.5C15.5 11.6 14.6 12.5 13.5 12.5H9V8.5Z" stroke="currentColor" stroke-width="1.5"/><path d="M9 12.5H14C15.1 12.5 16 13.4 16 14.5C16 15.6 15.1 16.5 14 16.5H9V12.5Z" stroke="currentColor" stroke-width="1.5"/></svg></span>
-          <span>코인</span>
-        </a>
-        <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule">
-          <span class="tm-bottom-nav__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
-          <span>일정</span>
-        </a>
-        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis">
-          <span class="tm-bottom-nav__icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
-          <span>AI분석</span>
-        </a>
-      </nav>
+      <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
   </body>
 </html>

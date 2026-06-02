@@ -188,14 +188,28 @@
     ], "usd");
   }
 
-  function renderDomesticTable(stocks) {
-    const el = $("home-kr-top10");
+  const HOME_RT_ACTION = {
+    cap: "market-cap",
+    gainers: "gainers",
+    tv: "trading-value",
+  };
+
+  let homeRtTab = "cap";
+
+  function realtimePageHref(tab) {
+    const t = HOME_RT_ACTION[tab] ? tab : "cap";
+    return `./realtime.html?tab=${encodeURIComponent(t)}`;
+  }
+
+  function renderHomeRtTable(stocks) {
+    const el = $("home-rt-body");
     if (!el) return;
     const rows = (stocks || []).slice(0, 10);
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
       return;
     }
+    const moreHref = realtimePageHref(homeRtTab);
     el.innerHTML = rows
       .map((r) => {
         const rank = r.rank != null ? r.rank : "";
@@ -203,9 +217,43 @@
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
-        return `<a class="home-tr" href="./realtime.html"><div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        return `<a class="home-tr" href="${escapeHtml(moreHref)}"><div class="home-tr__rank${rankCls}">${escapeHtml(rank)}</div><div><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
       })
       .join("");
+  }
+
+  function syncHomeRtChrome() {
+    const more = $("home-rt-more");
+    if (more) more.href = realtimePageHref(homeRtTab);
+    document.querySelectorAll("[data-home-rt-tab]").forEach((btn) => {
+      const on = btn.getAttribute("data-home-rt-tab") === homeRtTab;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
+  }
+
+  async function loadHomeRtTab(tab) {
+    const action = HOME_RT_ACTION[tab] || HOME_RT_ACTION.cap;
+    homeRtTab = HOME_RT_ACTION[tab] ? tab : "cap";
+    syncHomeRtChrome();
+    try {
+      const data = await fetchJson(
+        `/api/kis-realtime-data?action=${encodeURIComponent(action)}&page=1&pageSize=10&t=` + Date.now()
+      );
+      renderHomeRtTable(data.stocks);
+    } catch (_) {
+      renderHomeRtTable([]);
+    }
+  }
+
+  function bindHomeRtTabs() {
+    document.querySelectorAll("[data-home-rt-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-home-rt-tab");
+        if (!tab || tab === homeRtTab) return;
+        loadHomeRtTab(tab);
+      });
+    });
   }
 
   function renderUsTable(stocks) {
@@ -341,15 +389,6 @@
     }
   }
 
-  async function loadDomesticTop10() {
-    try {
-      const data = await fetchJson("/api/kis-realtime-data?action=market-cap&page=1&pageSize=10&t=" + Date.now());
-      renderDomesticTable(data.stocks);
-    } catch (_) {
-      renderDomesticTable([]);
-    }
-  }
-
   async function loadUsAndCrypto() {
     let usStocks = [];
     let coins = [];
@@ -426,9 +465,11 @@
     bindAiForm();
     bindNavToggle();
     bindMobileHomeUi();
-    await Promise.all([loadTickerAndHero(), loadDomesticTop10(), loadUsAndCrypto(), loadSideCards()]);
+    bindHomeRtTabs();
+    syncHomeRtChrome();
+    await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadUsAndCrypto(), loadSideCards()]);
     setInterval(loadTickerAndHero, 5 * 60 * 1000);
-    setInterval(loadDomesticTop10, 5 * 60 * 1000);
+    setInterval(() => loadHomeRtTab(homeRtTab), 5 * 60 * 1000);
     setInterval(loadUsAndCrypto, 5 * 60 * 1000);
   }
 

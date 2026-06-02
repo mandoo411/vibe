@@ -1,0 +1,44 @@
+name: Update stock list
+
+on:
+  schedule:
+    # KST 08:00 = UTC 23:00
+    - cron: "0 23 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download KOSPI/KOSDAQ lists
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=stockMkt" -o kospi.xls
+          curl -fsSL "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=kosdaqMkt" -o kosdaq.xls
+
+      - name: Build assets/stock-list.json
+        run: |
+          python scripts/update_stock_list.py kospi.xls kosdaq.xls assets/stock-list.json
+
+      - name: Commit and push if changed
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- assets/stock-list.json; then
+            echo "No changes."
+            exit 0
+          fi
+          git add assets/stock-list.json
+          git commit -m "Update assets/stock-list.json"
+          git push
+

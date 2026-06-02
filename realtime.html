@@ -159,6 +159,75 @@
         margin-left: auto;
         flex: 0 0 auto;
       }
+      .rt-tab-search-wrap {
+        position: relative;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .rt-ac {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(36px + 6px);
+        z-index: 20;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-strong);
+        border-radius: 10px;
+        box-shadow: var(--sheet-shadow);
+        overflow: hidden;
+      }
+      .rt-ac[hidden] {
+        display: none;
+      }
+      .rt-ac-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      .rt-ac-item:hover,
+      .rt-ac-item.is-active {
+        background: var(--accent-dim);
+      }
+      .rt-ac-item__main {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+      .rt-ac-item__name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rt-ac-item__code {
+        margin-left: 6px;
+        font-size: 11px;
+        color: var(--text-dim);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .rt-ac-item__badge {
+        flex: 0 0 auto;
+        font-size: 10px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        background: var(--bg-tertiary);
+        white-space: nowrap;
+      }
+      .rt-ac-more {
+        padding: 8px 10px;
+        font-size: 11px;
+        color: var(--text-dim);
+        border-top: 1px solid var(--border);
+        background: var(--surface-bar);
+      }
       .table-box {
         overflow: hidden;
         background: var(--bg-panel);
@@ -1896,12 +1965,15 @@
               </button>
             </div>
             <div class="rt-tab-search">
+            <div class="rt-tab-search-wrap">
               <input
                 type="text"
                 id="stock-search-input"
                 placeholder="종목명 또는 코드 검색"
               />
+              <div id="rt-ac" class="rt-ac" hidden></div>
               <button onclick="searchStock()" id="stock-search-btn" type="button">조회</button>
+            </div>
             </div>
           </div>
 

@@ -111,8 +111,116 @@
     detailFetchAbort: null,
   };
 
+  /** 전체 종목 리스트(자동완성용) */
+  let stockList = [];
+  const acState = { open: false, items: [], active: -1 };
+
   function $(id) {
     return document.getElementById(id);
+  }
+
+  function normalizeQuery(s) {
+    return String(s == null ? "" : s).trim();
+  }
+
+  function code6Maybe(s) {
+    const digits = String(s || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.length === 6) return digits;
+    if (digits.length < 6) return digits.padStart(6, "0");
+    return digits.slice(-6);
+  }
+
+  async function loadStockListOnce() {
+    if (stockList && stockList.length) return stockList;
+    try {
+      const res = await fetch("/assets/stock-list.json?t=" + Date.now(), { cache: "no-store" });
+      const data = await res.json().catch(() => []);
+      if (Array.isArray(data)) {
+        stockList = data
+          .filter((x) => x && x.code && x.name)
+          .map((x) => ({
+            code: code6Maybe(x.code),
+            name: String(x.name || "").trim(),
+            market: String(x.market || "").toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI",
+          }))
+          .filter((x) => /^\d{6}$/.test(x.code) && x.name);
+      }
+    } catch {}
+    return stockList;
+  }
+
+  function acHost() {
+    return $("rt-ac");
+  }
+
+  function closeAutocomplete() {
+    const host = acHost();
+    acState.open = false;
+    acState.items = [];
+    acState.active = -1;
+    if (host) host.hidden = true;
+  }
+
+  function renderAutocomplete(items, total) {
+    const host = acHost();
+    if (!host) return;
+    if (!items || !items.length) {
+      closeAutocomplete();
+      return;
+    }
+    acState.open = true;
+    acState.items = items;
+    if (acState.active >= items.length) acState.active = items.length - 1;
+    if (acState.active < 0) acState.active = 0;
+    host.hidden = false;
+    host.innerHTML =
+      items
+        .map((it, idx) => {
+          const activeCls = idx === acState.active ? " is-active" : "";
+          return `<div class="rt-ac-item${activeCls}" data-ac-idx="${idx}" role="button" tabindex="-1">
+            <div class="rt-ac-item__main">
+              <span class="rt-ac-item__name">${escapeHtml(it.name)}</span>
+              <span class="rt-ac-item__code">${escapeHtml(it.code)}</span>
+            </div>
+            <span class="rt-ac-item__badge">${escapeHtml(it.market)}</span>
+          </div>`;
+        })
+        .join("") +
+      (total > items.length ? `<div class="rt-ac-more">외 ${escapeHtml(String(total - items.length))}개 더 있습니다</div>` : "");
+  }
+
+  function moveAutocomplete(delta) {
+    if (!acState.open || !acState.items.length) return;
+    const next = Math.max(0, Math.min(acState.items.length - 1, (acState.active || 0) + delta));
+    acState.active = next;
+    renderAutocomplete(acState.items, acState.items.length);
+  }
+
+  function pickActiveAutocomplete() {
+    if (!acState.open || !acState.items.length) return null;
+    const idx = acState.active;
+    return idx >= 0 && idx < acState.items.length ? acState.items[idx] : null;
+  }
+
+  function resolveCodeFromQuery(qRaw) {
+    const q = normalizeQuery(qRaw);
+    const code6 = code6Maybe(q);
+    if (/^\d{6}$/.test(code6)) return code6;
+    const list = stockList || [];
+    const exact = list.find((x) => x && x.name === q);
+    if (exact) return exact.code;
+    const lc = q.toLowerCase();
+    const hit = list.find((x) => x && String(x.name || "").toLowerCase().includes(lc));
+    return hit ? hit.code : "";
+  }
+
+  async function fetchKisQuote(code6) {
+    const res = await fetch(`/api/kis-stock-quote?code=${encodeURIComponent(code6)}`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+    if (data && data.error) throw new Error(data.error);
+    return data || {};
   }
 
   function hideLoadingOverlay() {
@@ -1748,9 +1856,11 @@
     const name = escapeHtml(data.stockName || "—");
     const code = escapeHtml(data.stockCode || "");
     const market = escapeHtml(data.market || "");
+    const warnRaw = String(data.warn || "").trim();
     const badges = [
       code ? `<span class="rt-acc-badge">${code}</span>` : "",
       market ? `<span class="rt-acc-badge">${market}</span>` : "",
+      warnRaw ? `<span class="rt-acc-badge" style="background: rgba(226,75,74,0.12); border: 1px solid rgba(226,75,74,0.35); color: #e24b4a;">${escapeHtml(warnRaw)}</span>` : "",
     ]
       .filter(Boolean)
       .join("");
@@ -1764,6 +1874,8 @@
     const high = escapeHtml(fmtNum(data.high));
     const low = escapeHtml(fmtNum(data.low));
     const vol = escapeHtml(formatVolumeMan(data.volume));
+    const prevClose = data.prevClose == null ? "—" : escapeHtml(fmtNum(data.prevClose));
+    const prevVol = data.prevVolume == null ? "—" : escapeHtml(formatVolumeMan(data.prevVolume));
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
@@ -1782,6 +1894,7 @@
           : escapeHtml(Number(data.per).toFixed(1))
         : escapeHtml(Number(fin.per).toFixed(1));
     const finEps = fin.eps == null ? "—" : escapeHtml(fmtNum(fin.eps));
+    const finBps = fin.bps == null ? "—" : escapeHtml(fmtNum(fin.bps));
     const finPbr =
       fin.pbr == null
         ? "—"
@@ -1814,14 +1927,17 @@
       accGridCell("시가", open),
       accGridCell("고가", high, "rt-acc-val--hi"),
       accGridCell("저가", low, "rt-acc-val--lo"),
+      accGridCell("전일종가", prevClose),
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
+      accGridCell("전일거래량", prevVol),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
       accGridCell("52주고", hi52, "rt-acc-val--hi"),
       accGridCell("52주저", lo52, "rt-acc-val--lo"),
       accGridCell("EPS", finEps),
+      accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
     ].join("");
 
@@ -1979,16 +2095,17 @@
     panel.hidden = false;
     panel.innerHTML = buildStockResultSkeleton();
     if (btn) btn.disabled = true;
+    closeAutocomplete();
 
     try {
-      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
-      if (data && data.error) {
-        panel.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(data.error)}</p>`;
+      await loadStockListOnce();
+      const code6 = resolveCodeFromQuery(q) || "";
+      if (!/^\d{6}$/.test(code6)) {
+        panel.innerHTML = `<p class="rt-lw-chart-err">종목을 찾을 수 없습니다.</p>`;
         return;
       }
 
+      const data = await fetchKisQuote(code6);
       panel.innerHTML = stockPanelHtml(data);
 
       const hidePanel = () => {
@@ -2396,11 +2513,83 @@
     setupTabs();
     wireLwChartThemeRefresh();
     wireTableChartAccordion();
+    void loadStockListOnce();
     const searchInput = $("stock-search-input");
     if (searchInput && !searchInput.dataset.wired) {
       searchInput.dataset.wired = "1";
+      searchInput.addEventListener("input", async () => {
+        const q = normalizeQuery(searchInput.value);
+        if (q.length < 2) {
+          closeAutocomplete();
+          return;
+        }
+        await loadStockListOnce();
+        const lc = q.toLowerCase();
+        const matches = (stockList || []).filter((x) => String(x.name || "").toLowerCase().includes(lc));
+        renderAutocomplete(matches.slice(0, 8), matches.length);
+      });
       searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") searchStock();
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          moveAutocomplete(1);
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          moveAutocomplete(-1);
+          return;
+        }
+        if (e.key === "Enter") {
+          const picked = pickActiveAutocomplete();
+          if (picked) {
+            e.preventDefault();
+            searchInput.value = picked.code;
+            closeAutocomplete();
+            searchStock();
+            return;
+          }
+          searchStock();
+        }
+        if (e.key === "Escape") {
+          closeAutocomplete();
+        }
+      });
+    }
+    const ac = acHost();
+    if (ac && !ac.dataset.wired) {
+      ac.dataset.wired = "1";
+      ac.addEventListener("mousemove", (e) => {
+        const it = e.target && e.target.closest ? e.target.closest("[data-ac-idx]") : null;
+        if (!it) return;
+        const idx = Number(it.getAttribute("data-ac-idx") || "-1");
+        if (Number.isFinite(idx) && idx >= 0) {
+          acState.active = idx;
+          renderAutocomplete(acState.items, acState.items.length);
+        }
+      });
+      ac.addEventListener("mousedown", (e) => {
+        const it = e.target && e.target.closest ? e.target.closest("[data-ac-idx]") : null;
+        if (!it) return;
+        e.preventDefault();
+        const idx = Number(it.getAttribute("data-ac-idx") || "-1");
+        const picked = idx >= 0 && idx < acState.items.length ? acState.items[idx] : null;
+        if (picked) {
+          const input = $("stock-search-input");
+          if (input) input.value = picked.code;
+          closeAutocomplete();
+          searchStock();
+        }
+      });
+    }
+    if (!document.body.dataset.rtAcOutside) {
+      document.body.dataset.rtAcOutside = "1";
+      document.addEventListener("mousedown", (e) => {
+        const host = acHost();
+        const input = $("stock-search-input");
+        if (!host || host.hidden) return;
+        const t = e.target;
+        if (host.contains(t) || (input && input.contains(t))) return;
+        closeAutocomplete();
       });
     }
     const err = $("rt-error");

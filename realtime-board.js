@@ -286,9 +286,7 @@
     if (!Number.isFinite(n) || n <= 0) return "—";
     if (n >= 1e12) {
       const jo = n / 1e12;
-      const s = jo.toFixed(2);
-      const trimmed = s.replace(/\.00$/, "");
-      return `${trimmed}조`;
+      return `${jo.toFixed(1)}조`;
     }
     const eok = Math.round(n / 1e8);
     if (eok <= 0) return "—";

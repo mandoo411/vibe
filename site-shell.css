@@ -624,6 +624,29 @@ body.tm-nav-sheet-open {
   line-height: 1.15;
 }
 
+/* 실시간시세 — 타이틀 영역 컴팩트 */
+.page-tm-v2 .page--realtime .masthead.masthead--title-only {
+  min-height: 0;
+  height: auto;
+  padding: 14px 0 12px;
+}
+
+.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__copy {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
+  font-size: 24px;
+  line-height: 1.12;
+}
+
+.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
 /* 영문 라벨(kicker): masthead · section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */
 .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
 .page-tm-v2 .section-kicker,
@@ -1292,14 +1315,23 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .page-tm-v2 .masthead.masthead--title-only {
-    height: 100px;
-    min-height: 100px;
+    height: auto;
+    min-height: 0;
+    padding: 12px 0 10px;
+  }
+
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only {
+    padding: 10px 0 8px;
   }
 
   .page-tm-v2 .masthead.masthead--title-only .masthead__title {
-    font-size: 28px;
-    line-height: 1.15;
+    font-size: 22px;
+    line-height: 1.12;
     letter-spacing: -0.02em;
+  }
+
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
+    font-size: 20px;
   }
 
   .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
@@ -1311,7 +1343,12 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+  }
+
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
+    margin-bottom: 2px;
+    font-size: 9px;
   }
 
   .page-tm-v2 .section-kicker {

@@ -47,7 +47,7 @@ body.page-home-v2 {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.3px;
-  color: #1a1a2e;
+  color: var(--text-primary, #1a1a2e);
 }
 
 .home-nav__brand-sub {
@@ -1014,6 +1014,12 @@ body[data-theme="dark"] .page-home-v2 .home-top {
   box-shadow: 0 1px 0 #2a2f4a;
 }
 
+[data-theme="dark"] .page-home-v2 .home-ticker-bar,
+body[data-theme="dark"] .page-home-v2 .home-ticker-bar {
+  background: var(--bg-secondary, #1c2030);
+  border-color: var(--border, rgba(255, 255, 255, 0.08));
+}
+
 [data-theme="dark"] .home-main {
   background: #0f1120;
 }
@@ -1220,7 +1226,7 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     font-size: 16px;
     font-weight: 800;
     line-height: 1.15;
-    color: #0f1120;
+    color: var(--text-primary, #0f1120);
   }
 
   .page-home-v2 .home-nav__brand-sub {
@@ -1230,6 +1236,11 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     margin: 0;
     font-size: 10px;
     line-height: 1.2;
+    color: var(--text-secondary, #888);
+  }
+
+  .page-home-v2 .home-nav__brand-sub > span:first-child {
+    color: var(--text-secondary, #888);
   }
 
   .page-home-v2 .home-nav__ai-badge {
@@ -1288,15 +1299,16 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f8f9fc;
+    background: var(--bg-secondary, #f8f9fc);
     border-radius: 8px;
     padding: 8px 12px;
     margin-bottom: 10px;
+    border: 1px solid var(--border, transparent);
   }
 
   .page-home-v2 .home-ticker-bar__label {
     font-size: 10px;
-    color: #aaa;
+    color: var(--text-secondary, #aaa);
     flex-shrink: 0;
   }
 
@@ -1318,21 +1330,21 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-ticker__name {
-    color: #888;
+    color: var(--text-secondary, #888);
   }
 
   .page-home-v2 .home-ticker__val {
     font-size: 11px;
-    color: #0f1120;
+    color: var(--text-primary, #0f1120);
   }
 
   .page-home-v2 .home-ticker__pct.is-up {
-    color: #e24b4a;
+    color: var(--up-color, #e24b4a);
     font-size: 10px;
   }
 
   .page-home-v2 .home-ticker__pct.is-down {
-    color: #1d9e75;
+    color: var(--down-color, #3b82f6);
     font-size: 10px;
   }
 

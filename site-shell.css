@@ -915,6 +915,21 @@ body.tm-nav-sheet-open {
   border-bottom: 1px solid #2a2f4a;
 }
 
+[data-theme="dark"] .home-ticker__name,
+body[data-theme="dark"] .home-ticker__name {
+  color: var(--text-secondary, #9aa3b5);
+}
+
+[data-theme="dark"] .home-ticker__val,
+body[data-theme="dark"] .home-ticker__val {
+  color: var(--text-primary, #e8eaef);
+}
+
+[data-theme="dark"] .home-ticker-bar__label,
+body[data-theme="dark"] .home-ticker-bar__label {
+  color: var(--text-secondary, #9aa3b5);
+}
+
 [data-theme="dark"] .home-hero {
   background: linear-gradient(135deg, #0d1230 0%, #1a2060 50%, #2a3080 100%);
 }
@@ -1188,11 +1203,8 @@ body.tm-nav-sheet-open {
   .page-tm-v2 .home-nav__brand-name {
     font-size: 16px;
     font-weight: 800;
-    color: #0f1120;
-  }
-
-  .page-tm-v2 .home-nav__brand-name {
     line-height: 1.15;
+    color: var(--text-primary, #0f1120);
   }
 
   .page-tm-v2 .home-nav__brand-sub {
@@ -1202,6 +1214,11 @@ body.tm-nav-sheet-open {
     margin: 0;
     font-size: 10px;
     line-height: 1.2;
+    color: var(--text-secondary, #888);
+  }
+
+  .page-tm-v2 .home-nav__brand-sub > span:first-child {
+    color: var(--text-secondary, #888);
   }
 
   .page-tm-v2 .home-nav__ai-badge {
@@ -1238,16 +1255,17 @@ body.tm-nav-sheet-open {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #f8f9fc;
+    background: var(--bg-secondary, #f8f9fc);
     border-radius: 8px;
     padding: 8px 12px;
     margin-bottom: 10px;
+    border: 1px solid var(--border, transparent);
   }
 
   .page-tm-v2 .home-ticker-bar__label {
     display: inline;
     font-size: 10px;
-    color: #aaa;
+    color: var(--text-secondary, #aaa);
     flex-shrink: 0;
   }
 
@@ -1452,8 +1470,10 @@ body.tm-nav-sheet-open {
     box-shadow: 0 1px 0 #2a2f4a;
   }
 
-  [data-theme="dark"] .page-tm-v2 .home-ticker-bar {
-    background: #141828;
+  [data-theme="dark"] .page-tm-v2 .home-ticker-bar,
+  [data-theme="dark"] .page-home-v2 .home-ticker-bar {
+    background: var(--bg-secondary, #1c2030);
+    border-color: var(--border, rgba(255, 255, 255, 0.08));
   }
 
   [data-theme="dark"] .tm-bottom-nav__item {

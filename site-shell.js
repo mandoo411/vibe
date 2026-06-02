@@ -15,7 +15,7 @@
   const BOTTOM_NAV_LABELS = {
     home: "홈",
     realtime: "시세",
-    crypto: "코인",
+    crypto: "암호화폐",
     schedule: "일정",
     analysis: "AI분석",
     menu: "전체",

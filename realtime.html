@@ -943,9 +943,15 @@
         .rt-trip-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-        /* 모바일: 거래대금(NXT) 컬럼 숨김 — cap/tv는 시총, gainers는 대비+등락률 */
-        .rt-table .rt-td-tv,
-        .rt-table th.rt-td-tv {
+        /* 모바일: cap=시총만, gainers/tv=거래대금만 (웹은 6열 동일) */
+        .rt-table[data-rt-tab="cap"] .rt-td-tv,
+        .rt-table[data-rt-tab="cap"] th.rt-td-tv {
+          display: none !important;
+        }
+        .rt-table[data-rt-tab="gainers"] .rt-td-mcap,
+        .rt-table[data-rt-tab="gainers"] th.rt-td-mcap,
+        .rt-table[data-rt-tab="tv"] .rt-td-mcap,
+        .rt-table[data-rt-tab="tv"] th.rt-td-mcap {
           display: none !important;
         }
         .rt-tab[aria-selected="true"] {
@@ -974,39 +980,31 @@
           display: inline;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-rank,
+        .rt-table[data-rt-tab="gainers"] .rt-td-rank,
         .rt-table[data-rt-tab="tv"] .rt-td-rank {
           width: 10%;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-name,
+        .rt-table[data-rt-tab="gainers"] .rt-td-name,
         .rt-table[data-rt-tab="tv"] .rt-td-name {
           width: 28%;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-price,
+        .rt-table[data-rt-tab="gainers"] .rt-td-price,
         .rt-table[data-rt-tab="tv"] .rt-td-price {
-          width: 24%;
-        }
-        .rt-table[data-rt-tab="cap"] .rt-td-chg,
-        .rt-table[data-rt-tab="tv"] .rt-td-chg {
-          width: 18%;
-        }
-        .rt-table[data-rt-tab="cap"] .rt-td-mcap,
-        .rt-table[data-rt-tab="tv"] .rt-td-mcap {
-          width: 20%;
-        }
-        .rt-table[data-rt-tab="gainers"] .rt-td-rank {
-          width: 10%;
-        }
-        .rt-table[data-rt-tab="gainers"] .rt-td-name {
-          width: 26%;
-        }
-        .rt-table[data-rt-tab="gainers"] .rt-td-price {
           width: 22%;
         }
-        .rt-table[data-rt-tab="gainers"] .rt-td-diff {
+        .rt-table[data-rt-tab="cap"] .rt-td-chg,
+        .rt-table[data-rt-tab="gainers"] .rt-td-chg,
+        .rt-table[data-rt-tab="tv"] .rt-td-chg {
+          width: 16%;
+        }
+        .rt-table[data-rt-tab="cap"] .rt-td-mcap {
           width: 20%;
         }
-        .rt-table[data-rt-tab="gainers"] .rt-td-chg {
-          width: 18%;
+        .rt-table[data-rt-tab="gainers"] .rt-td-tv,
+        .rt-table[data-rt-tab="tv"] .rt-td-tv {
+          width: 22%;
         }
         .rt-table .rt-td-name .rt-name-chart-btn {
           font-size: 12px;
@@ -1017,7 +1015,7 @@
         }
         .rt-table .rt-td-price,
         .rt-table .rt-td-chg,
-        .rt-table .rt-td-diff,
+        .rt-table .rt-td-tv,
         .rt-table .rt-td-mcap {
           font-size: 12px;
           padding-left: 4px;
@@ -1144,19 +1142,6 @@
         text-transform: uppercase;
         font-size: 11px;
         letter-spacing: 0.06em;
-      }
-      .rt-th-tv-tag {
-        display: inline;
-        margin-left: 4px;
-        font-size: 9px;
-        font-weight: 700;
-        letter-spacing: 0;
-        text-transform: none;
-        color: var(--text-secondary, #888);
-        vertical-align: middle;
-      }
-      .rt-td-diff {
-        white-space: nowrap;
       }
       .rt-table .rt-td-rank {
         font-size: 12px;
@@ -1758,7 +1743,7 @@
                     <th class="rt-td-name">종목명</th>
                     <th class="num rt-td-price">가격</th>
                     <th class="num rt-td-chg">등락률</th>
-                    <th class="num rt-td-tv">거래대금 <span class="rt-th-tv-tag">NXT통합</span></th>
+                    <th class="num rt-td-tv">거래대금</th>
                     <th class="num rt-td-mcap">시가총액</th>
                   </tr>
                 </thead>
@@ -1881,6 +1866,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602"></script>
+    <script src="./realtime-board.js?v=20260602b"></script>
   </body>
 </html>

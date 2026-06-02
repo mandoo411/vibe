@@ -1116,6 +1116,43 @@
     await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true });
   }
 
+  /** 다른 탭 1페이지 미리 받아 두기 — 탭 전환 시 잔상·대기 완화 */
+  async function prefetchRankTabPage1(tab) {
+    if (!isRankListTab(tab)) return;
+    const cache = pageCacheForTab(tab);
+    if (cache[1] && cache[1].stocks && cache[1].stocks.length) return;
+    const prevTab = state.tab;
+    const prevCapPage = state.capPage;
+    const prevGainerPage = state.gainerPage;
+    const prevTvPage = state.tvPage;
+    try {
+      if (tab === "cap") state.capPage = 1;
+      else if (tab === "gainers") state.gainerPage = 1;
+      else state.tvPage = 1;
+      const pack = await fetchStocksJsonForTab(tab);
+      const stocks = pack.stocks || [];
+      if (stocks.length) {
+        cache[1] = { stocks, loadedAt: Date.now() };
+        applyStocksArrayToTab(tab, stocks);
+      }
+    } catch (e) {
+      console.warn("[realtime-board] prefetchRankTabPage1", tab, e && e.message);
+    } finally {
+      state.tab = prevTab;
+      state.capPage = prevCapPage;
+      state.gainerPage = prevGainerPage;
+      state.tvPage = prevTvPage;
+    }
+  }
+
+  function prefetchOtherRankTabs() {
+    const cur = state.tab;
+    for (const tab of ["cap", "gainers", "tv"]) {
+      if (tab === cur) continue;
+      void prefetchRankTabPage1(tab);
+    }
+  }
+
   async function loadBootstrapForTab(tab) {
     const [sess, idx, stockPack] = await Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
@@ -1271,7 +1308,7 @@
   }
 
   function tableColSpan() {
-    return state.tab === "gainers" ? 5 : 6;
+    return 6;
   }
 
   function syncTableLayoutAttr() {
@@ -1279,23 +1316,14 @@
     if (table) table.setAttribute("data-rt-tab", state.tab || "cap");
   }
 
-  function tvColumnThHtml() {
-    return '<th class="num rt-td-tv">거래대금 <span class="rt-th-tv-tag">NXT통합</span></th>';
-  }
+  const TABLE_HEAD_HTML =
+    '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th><th class="num rt-td-tv">거래대금</th><th class="num rt-td-mcap">시가총액</th>';
 
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
     syncTableLayoutAttr();
-    if (state.tab === "gainers") {
-      tr.innerHTML =
-        '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-diff">대비</th><th class="num rt-td-chg">등락률</th>';
-      return;
-    }
-    tr.innerHTML =
-      '<th class="rt-td-rank">순위</th><th class="rt-td-name">종목명</th><th class="num rt-td-price">가격</th><th class="num rt-td-chg">등락률</th>' +
-      tvColumnThHtml() +
-      '<th class="num rt-td-mcap">시가총액</th>';
+    tr.innerHTML = TABLE_HEAD_HTML;
   }
 
   function getTableTitle() {
@@ -1355,20 +1383,6 @@
   function stockRowHtml(r) {
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
-
-    if (state.tab === "gainers") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      const diffCls = deltaClass(r.changeAmt);
-      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}">
-          <td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>
-          <td class="rt-td-name">${nameCell}</td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.price))}</td>
-          <td class="num rt-td-diff"><span class="delta ${diffCls}">${escapeHtml(fmtChangeAmt(r.changeAmt))}</span></td>
-          <td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></td>
-        </tr>`;
-    }
-
     const ch = r.changePct;
     const cls = deltaClass(ch);
     const tv = formatRowTradeVal(r);
@@ -1408,16 +1422,6 @@
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
     tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
-
-    if (state.tab === "gainers") {
-      const ch = r.changePct;
-      const cls = deltaClass(ch);
-      const diffCls = deltaClass(r.changeAmt);
-      tr.cells[2].textContent = fmtNum(r.price);
-      tr.cells[3].innerHTML = `<span class="delta ${diffCls}">${escapeHtml(fmtChangeAmt(r.changeAmt))}</span>`;
-      tr.cells[4].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-      return;
-    }
 
     const ch = r.changePct;
     const cls = deltaClass(ch);
@@ -1486,7 +1490,7 @@
     const title = $("rt-table-title");
     if (!body) return;
     if (title) title.textContent = getTableTitle();
-    if (body.dataset.rtSkeleton === "1") return;
+    if (body.dataset.rtSkeleton === "1" || body.dataset.rtLoading === "1") return;
     renderThead();
     const rows = getCurrentRows();
     if (!state.openChartCode) {
@@ -1758,7 +1762,7 @@
       accGridCell("고가", high, "rt-acc-val--hi"),
       accGridCell("저가", low, "rt-acc-val--lo"),
       accGridCell("거래량", vol),
-      accGridCell("거래대금(NXT통합)", tvDisp),
+      accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
@@ -2140,6 +2144,8 @@
       state.clockSession = sessPack.clock || null;
       state.marketTime = sessPack.marketTime || null;
 
+      if (state.tab !== tab) return;
+
       state.tabLoadedAt[state.tab] = Date.now();
       if (detailOpen) {
         renderIndexes();
@@ -2170,108 +2176,109 @@
     }
   }
 
-  function setupTabs() {
-    document.querySelectorAll("[data-rt-tab]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const t = btn.getAttribute("data-rt-tab");
-        if (t === "gainers") state.tab = "gainers";
-        else if (t === "tv") state.tab = "tv";
-        else state.tab = "cap";
-        state.openChartCode = null;
-        state.candlePeriod = "D";
+  async function switchToTab(tk) {
+    if (tk === "gainers") state.tab = "gainers";
+    else if (tk === "tv") state.tab = "tv";
+    else state.tab = "cap";
+    state.openChartCode = null;
+    state.candlePeriod = "D";
 
-        try {
-          const url = new URL(window.location.href);
-          url.searchParams.set("tab", state.tab);
-          window.history.replaceState(null, "", url.pathname + url.search);
-        } catch (_) {
-          /* noop */
-        }
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", state.tab);
+      window.history.replaceState(null, "", url.pathname + url.search);
+    } catch (_) {
+      /* noop */
+    }
 
-        // 탭 전환 시, 종목 검색 패널은 닫아서 테이블이 바로 보이게 함
-        const stockPanel = $("stock-result-panel");
-        if (stockPanel) {
-          stockPanel.hidden = true;
-          stockPanel.innerHTML = "";
-        }
+    const stockPanel = $("stock-result-panel");
+    if (stockPanel) {
+      stockPanel.hidden = true;
+      stockPanel.innerHTML = "";
+    }
 
-        if (state.tab === "cap") state.capPage = 1;
-        else if (state.tab === "gainers") state.gainerPage = 1;
-        else state.tvPage = 1;
+    if (state.tab === "cap") state.capPage = 1;
+    else if (state.tab === "gainers") state.gainerPage = 1;
+    else state.tvPage = 1;
 
-        document.querySelectorAll("[data-rt-tab]").forEach((b) => {
-          b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === state.tab ? "true" : "false");
-        });
-        syncTableLayoutAttr();
-        renderThead();
+    document.querySelectorAll("[data-rt-tab]").forEach((b) => {
+      b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === tk ? "true" : "false");
+    });
 
-        const finish = () => {
-          startPolling();
-          if (state.ws && state.ws.readyState === 1) {
-            unsubscribeAll();
-            subscribeStocks(getCurrentRows().map((r) => r.code));
-          }
-        };
+    syncTableLayoutAttr();
+    renderThead();
+    showTableLoading();
 
-        const tk = state.tab;
-        const errEl = $("rt-error");
-        const page1Hit = pageCacheForTab(tk)[1];
+    const finish = () => {
+      startPolling();
+      if (state.ws && state.ws.readyState === 1) {
+        unsubscribeAll();
+        subscribeStocks(getCurrentRows().map((r) => r.code));
+      }
+    };
 
-        if (page1Hit && page1Hit.stocks && page1Hit.stocks.length) {
-          setCurrentPageForTab(tk, 1);
-          applyStocksArrayToTab(tk, page1Hit.stocks);
-          state.tabLoadedAt[tk] = page1Hit.loadedAt || Date.now();
-          if (errEl) errEl.hidden = true;
-          renderAll();
-          finish();
-          return;
-        }
+    const errEl = $("rt-error");
+    const page1Hit = pageCacheForTab(tk)[1];
 
-        const hasRows = rowsLoadedForTab(tk);
-        const cacheFresh =
-          state.tabLoadedAt[tk] && Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS;
-
-        if (hasRows) {
-          if (errEl) errEl.hidden = true;
-          renderAll();
-          finish();
-          if (!cacheFresh) {
-            refreshTabStocksOnly(tk)
-              .then(() => {
-                if (errEl) errEl.hidden = true;
-                renderAll();
-              })
-              .catch((e) => {
-                console.error("[realtime-board] refreshTabStocksOnly (tab cache)", tk, e && e.message, e);
-                if (errEl) {
-                  errEl.hidden = false;
-                  errEl.textContent = rtErrorTimeoutMessage(e);
-                }
-              });
-          }
-          return;
-        }
-
-        if (errEl) errEl.hidden = true;
-        syncTableChromeForTab();
-        showTableLoading();
-        Promise.all([loadBootstrapForTab(tk)])
+    if (page1Hit && page1Hit.stocks && page1Hit.stocks.length) {
+      setCurrentPageForTab(tk, 1);
+      applyStocksArrayToTab(tk, page1Hit.stocks);
+      state.tabLoadedAt[tk] = page1Hit.loadedAt || Date.now();
+      if (errEl) errEl.hidden = true;
+      hideTableLoading();
+      renderAll();
+      finish();
+      const cacheFresh = state.tabLoadedAt[tk] && Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS;
+      if (!cacheFresh) {
+        refreshTabStocksOnly(tk)
           .then(() => {
+            if (state.tab !== tk) return;
             if (errEl) errEl.hidden = true;
             renderAll();
           })
           .catch((e) => {
-            console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
-            hideTableLoading();
+            console.error("[realtime-board] refreshTabStocksOnly (tab cache)", tk, e && e.message, e);
+            if (state.tab !== tk) return;
             if (errEl) {
               errEl.hidden = false;
               errEl.textContent = rtErrorTimeoutMessage(e);
             }
-            renderAll();
-          })
-          .finally(() => {
-            finish();
           });
+      }
+      prefetchOtherRankTabs();
+      return;
+    }
+
+    if (errEl) errEl.hidden = true;
+    try {
+      await loadBootstrapForTab(tk);
+      if (state.tab !== tk) return;
+      if (errEl) errEl.hidden = true;
+      hideTableLoading();
+      renderAll();
+      prefetchOtherRankTabs();
+    } catch (e) {
+      console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
+      if (state.tab !== tk) return;
+      hideTableLoading();
+      if (errEl) {
+        errEl.hidden = false;
+        errEl.textContent = rtErrorTimeoutMessage(e);
+      }
+      renderAll();
+    } finally {
+      if (state.tab === tk) finish();
+    }
+  }
+
+  function setupTabs() {
+    document.querySelectorAll("[data-rt-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const t = btn.getAttribute("data-rt-tab");
+        if (!t) return;
+        const tk = t === "gainers" ? "gainers" : t === "tv" ? "tv" : "cap";
+        if (tk === state.tab) return;
+        void switchToTab(tk);
       });
     });
   }
@@ -2287,10 +2294,12 @@
       if (!code) return;
       if (state.openChartCode === code) {
         state.openChartCode = null;
-      } else {
-        state.openChartCode = code;
+        renderTable();
+        return;
       }
+      state.openChartCode = code;
       renderTable();
+      if (state.openChartCode === code) void mountTableDetailAccordion(body);
     });
   }
 
@@ -2352,6 +2361,7 @@
     } finally {
       renderAll();
       startPolling();
+      prefetchOtherRankTabs();
       await tryConnectWs();
     }
   }

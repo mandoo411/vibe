@@ -1872,10 +1872,6 @@
     const low = escapeHtml(fmtNum(data.low));
     const vol = escapeHtml(formatVolumeMan(data.volume));
     const prevClose = data.prevClose == null ? "—" : escapeHtml(fmtNum(data.prevClose));
-    const upperLimit =
-      data.upperLimit == null || !Number.isFinite(Number(data.upperLimit)) ? "—" : escapeHtml(fmtNum(data.upperLimit));
-    const lowerLimit =
-      data.lowerLimit == null || !Number.isFinite(Number(data.lowerLimit)) ? "—" : escapeHtml(fmtNum(data.lowerLimit));
     const prevVol = data.prevVolume == null ? "—" : escapeHtml(formatVolumeMan(data.prevVolume));
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
@@ -1883,6 +1879,16 @@
     const labelLo52 = isMobile ? "52주 최저" : "52주저";
     const vsAbsRaw = data.changeValue ?? data.vsValue ?? data.vs ?? data.change ?? null;
     const vsAbs = vsAbsRaw == null ? "—" : escapeHtml(fmtNum(vsAbsRaw));
+    const volTurnoverRateRaw = data.volTurnoverRate ?? data.vol_tnrt ?? null;
+    const creditRateRaw = data.creditRate ?? data.crdt_rate ?? null;
+    const volTurnoverRate =
+      volTurnoverRateRaw == null || !Number.isFinite(Number(volTurnoverRateRaw)) || Number(volTurnoverRateRaw) === 0
+        ? "—"
+        : `${escapeHtml(Number(volTurnoverRateRaw).toFixed(2))}%`;
+    const creditRate =
+      creditRateRaw == null || !Number.isFinite(Number(creditRateRaw)) || Number(creditRateRaw) === 0
+        ? "—"
+        : `${escapeHtml(Number(creditRateRaw).toFixed(2))}%`;
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
     const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
     const tvDisp = escapeHtml(tvCalc != null ? formatTradeVal(String(tvCalc)) : "—");
@@ -1936,7 +1942,7 @@
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
-      isMobile ? accGridCell("상한가", upperLimit, "rt-acc-val--uplimit") : accGridCell("전일거래량", prevVol),
+      isMobile ? accGridCell("거래량회전율", volTurnoverRate) : accGridCell("전일거래량", prevVol),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
       accGridCell(labelHi52, hi52, "rt-acc-val--hi"),
@@ -1944,7 +1950,7 @@
       accGridCell("EPS", finEps),
       accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
-      isMobile ? accGridCell("하한가", lowerLimit, "rt-acc-val--lolimit") : accGridCell("전일대비", vsAbs),
+      isMobile ? accGridCell("신용비율", creditRate) : accGridCell("전일대비", vsAbs),
     ].join("");
 
     const supplyGrid = [

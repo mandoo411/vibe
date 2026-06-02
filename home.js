@@ -1,7 +1,7 @@
 (function () {
-  const COIN_SYMBOLS = ["BTC", "ETH", "XRP"];
-  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52 };
-  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플" };
+  const COIN_SYMBOLS = ["BTC", "ETH", "XRP", "SOL"];
+  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52, SOL: 5426 };
+  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플", SOL: "솔라나" };
 
   function $(id) {
     return document.getElementById(id);
@@ -131,8 +131,13 @@
     return logoWrap(`<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" loading="lazy" onerror="homeLogoFail(this)">`);
   }
 
-  function identityCell(name, code, logoHtml) {
-    return `<div class="home-tr__identity">${logoHtml}<div><div class="home-tr__name">${escapeHtml(name)}</div><div class="home-tr__code">${escapeHtml(code)}</div></div></div>`;
+  function identityCell(name, code, logoHtml, rank) {
+    const r = Number(rank);
+    const rankHtml =
+      Number.isFinite(r) && r > 0
+        ? `<span class="home-rank" aria-hidden="true">${escapeHtml(String(r))}</span>`
+        : "";
+    return `<div class="home-tr__identity">${rankHtml}${logoHtml}<div><div class="home-tr__name">${escapeHtml(name)}</div><div class="home-tr__code">${escapeHtml(code)}</div></div></div>`;
   }
 
   window.homeLogoFail = function homeLogoFail(img) {
@@ -260,12 +265,13 @@
     }
     const moreHref = realtimePageHref(homeRtTab);
     el.innerHTML = rows
-      .map((r) => {
+      .map((r, idx) => {
+        const rankHtml = `<span class="home-rank" aria-hidden="true">${escapeHtml(String(idx + 1))}</span>`;
         const pct = toNum(r.changePct);
         const chgCls = chgClass(pct);
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
-        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name-wrap">${rankHtml}<div class="home-tr__name">${escapeHtml(r.name)}</div></div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }
@@ -324,7 +330,7 @@
     }
 
     el.innerHTML = rows
-      .map((r) => {
+      .map((r, idx) => {
         const sym = String(r.symbol || r.ticker || "").toUpperCase();
         const name = r.nameKo || r.name || sym || "—";
         const pct = toNum(r.changePct ?? r.changeRate);
@@ -334,7 +340,7 @@
         if (pv != null) {
           price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
       })
       .join("");
   }
@@ -353,7 +359,7 @@
       return;
     }
     el.innerHTML = rows
-      .map((c) => {
+      .map((c, idx) => {
         const sym = String(c.symbol || "").toUpperCase();
         const pct = toNum(c.change24h ?? c.changePct);
         const chgCls = chgClass(pct);
@@ -363,7 +369,7 @@
           price = pv >= 1 ? `$${pv.toLocaleString("en-US", { maximumFractionDigits: pv >= 100 ? 0 : 2 })}` : `$${pv.toFixed(4)}`;
         }
         const name = COIN_NAMES_KO[sym] || c.name || sym;
-        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c))}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
+        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
       })
       .join("");
   }

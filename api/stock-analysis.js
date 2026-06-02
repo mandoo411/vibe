@@ -301,6 +301,7 @@ async function kisInquirePrice(stockCode6) {
   const change = toNum(row.prdy_vrss);
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
+  const volTurnoverRate = toNum(row.vol_tnrt);
   const tradingValue =
     currentPrice != null && volume != null && currentPrice > 0 && volume > 0
       ? Math.round(currentPrice * volume)
@@ -323,6 +324,7 @@ async function kisInquirePrice(stockCode6) {
     change: change == null ? 0 : Math.round(change),
     changeRate: changeRate == null ? 0 : Math.round(changeRate * 100) / 100,
     volume: volume == null ? 0 : Math.round(volume),
+    volTurnoverRate: volTurnoverRate == null ? null : Math.round(volTurnoverRate * 100) / 100,
     tradingValue: tradingValue == null ? null : Math.round(tradingValue),
     prevClose: prevClose == null ? null : Math.round(prevClose),
     high: high == null ? 0 : Math.round(high),
@@ -337,6 +339,49 @@ async function kisInquirePrice(stockCode6) {
     marketCapRaw: mcap.raw,
     per: financials.per,
     financials,
+  };
+}
+
+async function kisInquirePrice2(stockCode6) {
+  const { token, appkey, appsecret } = requireKisCreds();
+  const url = new URL(
+    "/uapi/domestic-stock/v1/quotations/inquire-price-2",
+    kisBaseUrl()
+  );
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
+  url.searchParams.set("FID_INPUT_ISCD", stockCode6);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey,
+      appsecret,
+      tr_id: "FHPST01010000",
+    },
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    const err = new Error(`KIS invalid JSON: ${text.slice(0, 200)}`);
+    err.statusCode = 502;
+    throw err;
+  }
+  if (!res.ok || (data && data.rt_cd && data.rt_cd !== "0")) {
+    const msg = (data && (data.msg1 || data.msg_cd)) || `HTTP ${res.status}`;
+    const err = new Error(`KIS error: ${msg}`);
+    err.statusCode = 502;
+    throw err;
+  }
+
+  const row = data && data.output ? data.output : {};
+  const creditRate = toNum(row.crdt_rate);
+  return {
+    raw2: row,
+    creditRate: creditRate == null ? null : Math.round(creditRate * 100) / 100,
   };
 }
 
@@ -776,7 +821,11 @@ module.exports = async function handler(req, res) {
 
   let quote;
   try {
-    quote = await kisInquirePrice(resolved.stockCode);
+    const [q1, q2] = await Promise.all([
+      kisInquirePrice(resolved.stockCode),
+      kisInquirePrice2(resolved.stockCode),
+    ]);
+    quote = { ...q1, creditRate: q2.creditRate };
   } catch (e) {
     console.error("[stock-analysis] KIS error", resolved.stockCode, e && e.message, e);
     json(res, 502, { error: "시세 조회 실패" });

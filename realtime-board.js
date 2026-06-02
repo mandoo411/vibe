@@ -158,17 +158,48 @@
     return `${eok}억`;
   }
 
-  function formatForeignHoldLimit(data) {
+  /** 거래량: 만 단위 (65,147,291 → 6,514만) */
+  function formatVolumeMan(raw) {
+    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n < 0) return "—";
+    if (n === 0) return "0";
+    const man = Math.round(n / 10000);
+    return `${man.toLocaleString("ko-KR")}만`;
+  }
+
+  /** 원 단위 → X.X조 / XXX.X억(100억 이상 소수1자리) */
+  function formatWonJoEok(n) {
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
+    const eok = n / 1e8;
+    if (eok >= 10000) return `${(eok / 10000).toFixed(1)}조`;
+    if (eok >= 100) return `${eok.toFixed(1)}억`;
+    const eokR = Math.round(eok);
+    if (eokR <= 0) return "—";
+    return `${eokR}억`;
+  }
+
+  /** 억 단위(API 수급·실적) → X.X조 / XXX.X억 */
+  function formatEokJoEok(n0) {
+    const n = Math.abs(Number(String(n0).replace(/,/g, "")));
+    if (!Number.isFinite(n) || n === 0) return "0억";
+    if (n >= 10000) return `${(n / 10000).toFixed(1)}조`;
+    if (n >= 100) return `${n.toFixed(1)}억`;
+    return `${Math.round(n)}억`;
+  }
+
+  function formatForeignHoldCompact(data) {
     const fin = data.financials || {};
     const hold = data.foreignHoldRate ?? fin.foreignHoldRate;
     const limit = data.foreignLimitRate ?? fin.foreignLimitRate;
     const holdOk = hold != null && Number.isFinite(Number(hold));
     const limitOk = limit != null && Number.isFinite(Number(limit));
     if (!holdOk && !limitOk) return "—";
-    const parts = [];
-    if (holdOk) parts.push(`보유 ${Number(hold).toFixed(2)}%`);
-    if (limitOk) parts.push(`한도 ${Number(limit).toFixed(2)}%`);
-    return parts.join(" / ");
+    if (holdOk && limitOk) {
+      return `${Number(hold).toFixed(1)}/${Number(limit).toFixed(1)}`;
+    }
+    if (holdOk) return Number(hold).toFixed(1);
+    return Number(limit).toFixed(1);
   }
 
   function formatKoMoneyEokSigned(raw) {
@@ -176,28 +207,14 @@
     const n0 = Number(String(raw).replace(/,/g, ""));
     if (!Number.isFinite(n0) || n0 === 0) return "0억";
     const sign = n0 < 0 ? "-" : "+";
-    const n = Math.abs(Math.round(n0));
-    const jo = Math.floor(n / 10000); // 1조 = 10,000억
-    const eok = n % 10000;
-    if (jo > 0) {
-      if (eok === 0) return `${sign}${jo.toLocaleString("ko-KR")}조`;
-      return `${sign}${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`;
-    }
-    return `${sign}${n.toLocaleString("ko-KR")}억`;
+    return `${sign}${formatEokJoEok(n0)}`;
   }
 
   function formatKoMoneyEok(raw) {
     if (raw == null || raw === "") return "—";
     const n0 = Number(String(raw).replace(/,/g, ""));
     if (!Number.isFinite(n0) || n0 === 0) return "0억";
-    const n = Math.abs(Math.round(n0));
-    const jo = Math.floor(n / 10000);
-    const eok = n % 10000;
-    if (jo > 0) {
-      if (eok === 0) return `${jo.toLocaleString("ko-KR")}조`;
-      return `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억`;
-    }
-    return `${n.toLocaleString("ko-KR")}억`;
+    return formatEokJoEok(n0);
   }
 
   function numFromMoneyish(v) {
@@ -283,14 +300,7 @@
 
   function formatStckAvls(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
-    if (!Number.isFinite(n) || n <= 0) return "—";
-    if (n >= 1e12) {
-      const jo = n / 1e12;
-      return `${jo.toFixed(1)}조`;
-    }
-    const eok = Math.round(n / 1e8);
-    if (eok <= 0) return "—";
-    return `${eok.toLocaleString("ko-KR")}억`;
+    return formatWonJoEok(n);
   }
 
   function deltaClass(pct) {
@@ -1530,14 +1540,7 @@
   function formatMarketCapPretty(rawOrNum) {
     const n = Number(String(rawOrNum == null ? "" : rawOrNum).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
-    // 단위 불확실(원/백만원/억원)일 수 있어, 너무 큰 값은 그대로 표기
-    if (n >= 1e12 && n <= 5e15) {
-      const jo = n / 1e12;
-      return `${jo.toFixed(1)}조`;
-    }
-    if (n >= 1e8 && n < 1e12) {
-      return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;
-    }
+    if (n >= 1e8 && n <= 5e15) return formatWonJoEok(n);
     return n.toLocaleString("ko-KR");
   }
 
@@ -1713,7 +1716,7 @@
     const open = escapeHtml(fmtNum(data.open));
     const high = escapeHtml(fmtNum(data.high));
     const low = escapeHtml(fmtNum(data.low));
-    const vol = escapeHtml(fmtNum(data.volume));
+    const vol = escapeHtml(formatVolumeMan(data.volume));
     const hi52 = escapeHtml(fmtNum(data.high52w));
     const lo52 = escapeHtml(fmtNum(data.low52w));
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
@@ -1729,11 +1732,16 @@
       fin.per == null
         ? data.per == null || !Number.isFinite(Number(data.per))
           ? "—"
-          : escapeHtml(Number(data.per).toFixed(2))
-        : escapeHtml(Number(fin.per).toFixed(2));
+          : escapeHtml(Number(data.per).toFixed(1))
+        : escapeHtml(Number(fin.per).toFixed(1));
     const finEps = fin.eps == null ? "—" : escapeHtml(fmtNum(fin.eps));
-    const finPbr = fin.pbr == null ? "—" : escapeHtml(String(fin.pbr));
-    const frgnHold = escapeHtml(formatForeignHoldLimit(data));
+    const finPbr =
+      fin.pbr == null
+        ? "—"
+        : Number.isFinite(Number(fin.pbr))
+          ? escapeHtml(Number(fin.pbr).toFixed(1))
+          : escapeHtml(String(fin.pbr));
+    const frgnHold = escapeHtml(formatForeignHoldCompact(data));
 
     const sup = data.supply || {};
     const supInstVal = sup.institution == null ? null : Number(String(sup.institution).replace(/,/g, ""));
@@ -1764,10 +1772,10 @@
       accGridCell("시총", mcap),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
-      accGridCell("52주 최고", hi52, "rt-acc-val--hi"),
-      accGridCell("52주 최저", lo52, "rt-acc-val--lo"),
+      accGridCell("52주고", hi52, "rt-acc-val--hi"),
+      accGridCell("52주저", lo52, "rt-acc-val--lo"),
       accGridCell("EPS", finEps),
-      accGridCell("외국인보유율", frgnHold),
+      accGridCell("외국인보유", frgnHold),
     ].join("");
 
     const supplyGrid = [
@@ -1776,10 +1784,10 @@
       accGridCell("외국인", supFrgn, supFrgnCls),
     ].join("");
 
-    const profitGrid = [
-      accGridCell("매출", pfRev),
-      accGridCell("영업이익", pfOp),
-      accGridCell("당기순이익", pfNet),
+    const profitRow = [
+      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">매출</span><span class="rt-acc-profit-item__v">${pfRev}</span></span>`,
+      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">영업</span><span class="rt-acc-profit-item__v">${pfOp}</span></span>`,
+      `<span class="rt-acc-profit-item"><span class="rt-acc-profit-item__k">순익</span><span class="rt-acc-profit-item__v">${pfNet}</span></span>`,
     ].join("");
 
     return [
@@ -1799,11 +1807,10 @@
       `  </header>`,
       `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
       `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${supplyGrid}</div>`,
-      `  <div class="rt-acc-section-bar">`,
-      `    <span class="rt-acc-section-bar__title">실적</span>`,
-      `    <span class="rt-acc-section-bar__date">${pfDate}</span>`,
+      `  <div class="rt-acc-section-bar rt-acc-section-bar--profit">`,
+      `    <span class="rt-acc-section-bar__title">실적 <span class="rt-acc-section-bar__date">${pfDate}</span></span>`,
+      `    <div class="rt-acc-profit-row">${profitRow}</div>`,
       `  </div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--3">${profitGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,

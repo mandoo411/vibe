@@ -21,20 +21,22 @@
   }
 
   function updateThemeIcon(theme) {
-    const icon = document.getElementById("theme-icon");
-    const btn = document.getElementById("theme-toggle");
-    // 라이트 모드: 원 안 달(다크로 전환) · 다크 모드: 태양(라이트로 전환)
+    const iconClass = theme === "light" ? "ti ti-moon" : "ti ti-sun";
     const glyph = theme === "light" ? "🌙" : "☀️";
-    if (icon) {
-      icon.className = theme === "light" ? "ti ti-moon" : "ti ti-sun";
+    const label = theme === "light" ? "다크 모드로 전환" : "라이트 모드로 전환";
+    const title = theme === "light" ? "다크 모드" : "라이트 모드";
+    document.querySelectorAll("#theme-icon, [data-theme-icon-mobile]").forEach((icon) => {
+      icon.className = iconClass;
       icon.textContent = "";
-    }
-    if (btn) {
+    });
+    document.querySelectorAll(".tm-theme-toggle, #theme-toggle").forEach((btn) => {
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("title", title);
       btn.setAttribute("data-fallback", glyph);
-    }
-    if (!icon && btn) {
-      btn.textContent = glyph;
-    }
+      if (!btn.querySelector("i") && !btn.querySelector("#theme-icon")) {
+        btn.textContent = glyph;
+      }
+    });
   }
 
   function applyTheme(theme) {
@@ -48,14 +50,6 @@
     } catch (_) {}
     setMetaThemeColor(next);
     updateThemeIcon(next);
-    const btn = document.getElementById("theme-toggle");
-    if (btn) {
-      btn.setAttribute(
-        "aria-label",
-        next === "light" ? "다크 모드로 전환" : "라이트 모드로 전환"
-      );
-      btn.setAttribute("title", next === "light" ? "다크 모드" : "라이트 모드");
-    }
   }
 
   function toggleTheme() {
@@ -64,10 +58,11 @@
   }
 
   function bindThemeToggle() {
-    const btn = document.getElementById("theme-toggle");
-    if (!btn || btn.dataset.tmBound === "1") return;
-    btn.dataset.tmBound = "1";
-    btn.addEventListener("click", toggleTheme);
+    document.querySelectorAll(".tm-theme-toggle, #theme-toggle").forEach((btn) => {
+      if (!btn || btn.dataset.tmBound === "1") return;
+      btn.dataset.tmBound = "1";
+      btn.addEventListener("click", toggleTheme);
+    });
   }
 
   // DOMContentLoaded 전에 적용해 페이지 전환 시 다크 모드 깜빡임 방지
@@ -117,6 +112,7 @@
   }
 
   window.tmApplyTheme = applyTheme;
+  window.tmBindThemeToggle = bindThemeToggle;
   window.toggleTheme = toggleTheme;
   window.tmTradingViewEmbedTheme = tradingViewEmbedTheme;
   window.tmTradingViewCandleOverrides = tradingViewCandleOverrides;

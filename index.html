@@ -48,7 +48,9 @@
               <span class="home-nav__live-dot" aria-hidden="true"></span>
               <span class="home-nav__live-text">LIVE</span>
             </div>
-            <time class="home-nav__m-clock" id="home-m-clock" datetime="">--:--:--</time>
+            <button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">
+              <i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i>
+            </button>
           </div>
           <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
             <i class="ti ti-menu-2" aria-hidden="true"></i>
@@ -65,7 +67,7 @@
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
           <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
           <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
-          <button type="button" class="home-nav__theme" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
           </nav>
@@ -111,25 +113,29 @@
             </div>
           </dl>
           <div class="home-hero__btns">
-            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html">🤖 AI 종목분석</a>
-            <a class="home-hero__btn home-hero__btn--secondary" href="./realtime.html">📊 실시간시세</a>
+            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html"
+              ><i class="ti ti-sparkles" aria-hidden="true"></i><span>AI 종목분석</span></a
+            >
+            <a class="home-hero__btn home-hero__btn--secondary" href="./realtime.html"
+              ><i class="ti ti-chart-candle" aria-hidden="true"></i><span>실시간시세</span></a
+            >
           </div>
         </div>
         <div class="home-hero__panels">
           <div class="home-hero__panel">
-            <div class="home-hero__panel-title">📊 지수</div>
+            <div class="home-hero__panel-title"><i class="ti ti-chart-area-line" aria-hidden="true"></i><span>지수</span></div>
             <div id="hero-panel-index"></div>
           </div>
           <div class="home-hero__panel">
-            <div class="home-hero__panel-title">🇰🇷 국내주식</div>
+            <div class="home-hero__panel-title"><i class="ti ti-building" aria-hidden="true"></i><span>국내주식</span></div>
             <div id="hero-panel-kr"></div>
           </div>
           <div class="home-hero__panel">
-            <div class="home-hero__panel-title">₿ 암호화폐</div>
+            <div class="home-hero__panel-title"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></div>
             <div id="hero-panel-crypto"></div>
           </div>
           <div class="home-hero__panel">
-            <div class="home-hero__panel-title">🇺🇸 미국주식</div>
+            <div class="home-hero__panel-title"><i class="ti ti-building-skyscraper" aria-hidden="true"></i><span>미국주식</span></div>
             <div id="hero-panel-us"></div>
           </div>
         </div>

@@ -268,39 +268,23 @@
     bindBottomNavActive();
   }
 
-  function bindShellClock() {
-    const el = document.getElementById("home-m-clock");
-    if (!el) return;
-    const tick = () => {
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat("ko-KR", {
-        timeZone: "Asia/Seoul",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      }).formatToParts(now);
-      const get = (type) => parts.find((p) => p.type === type)?.value || "";
-      el.textContent = `${get("hour")}:${get("minute")}:${get("second")}`;
-      el.setAttribute("datetime", now.toISOString());
-    };
-    tick();
-    setInterval(tick, 1000);
-  }
-
   function injectMobileMeta() {
     const nav = document.querySelector(".home-nav");
-    if (!nav || nav.querySelector(".home-nav__m-meta")) return;
-    const toggle = nav.querySelector(".home-nav__toggle");
-    const meta = document.createElement("div");
-    meta.className = "home-nav__m-meta";
+    if (!nav) return;
+    let meta = nav.querySelector(".home-nav__m-meta");
+    if (!meta) {
+      meta = document.createElement("div");
+      meta.className = "home-nav__m-meta";
+      const toggle = nav.querySelector(".home-nav__toggle");
+      if (toggle) nav.insertBefore(meta, toggle);
+      else nav.appendChild(meta);
+    }
     meta.innerHTML =
       '<div class="home-nav__live" aria-label="실시간">' +
       '<span class="home-nav__live-dot" aria-hidden="true"></span>' +
       '<span class="home-nav__live-text">LIVE</span></div>' +
-      '<time class="home-nav__m-clock" id="home-m-clock" datetime="">--:--:--</time>';
-    if (toggle) nav.insertBefore(meta, toggle);
-    else nav.appendChild(meta);
+      '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">' +
+      '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>';
   }
 
   function wrapShellTop() {
@@ -335,8 +319,14 @@
     syncBodyTab();
     wrapShellTop();
     injectMobileMeta();
-    bindShellClock();
     rebuildBottomNav();
+    if (typeof window.tmBindThemeToggle === "function") {
+      window.tmBindThemeToggle();
+    }
+    if (typeof window.tmApplyTheme === "function") {
+      const cur = document.documentElement.getAttribute("data-theme") || "light";
+      window.tmApplyTheme(cur);
+    }
   }
 
   function boot() {

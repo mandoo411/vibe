@@ -136,7 +136,7 @@ body.page-home-v2 {
   justify-content: center;
   padding: 1px 5px;
   border-radius: 3px;
-  background: #3339bf;
+  background: linear-gradient(135deg, #3339bf, #1e2460);
   color: #ffffff;
   font-family: inherit;
   font-size: 9px;
@@ -255,8 +255,8 @@ body[data-theme="dark"] .home-nav__logo-box {
 
 [data-theme="dark"] .home-nav__ai-badge,
 body[data-theme="dark"] .home-nav__ai-badge {
-  background: linear-gradient(145deg, #1e2460, #3339bf);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #3339bf, #1e2460);
+  box-shadow: none;
 }
 
 [data-theme="dark"] .home-nav__home-btn,
@@ -1208,7 +1208,7 @@ body.tm-nav-sheet-open {
     font-size: 9px;
     padding: 1px 5px;
     border-radius: 3px;
-    background: #3339bf;
+    background: linear-gradient(135deg, #3339bf, #1e2460);
     box-shadow: none;
   }
 
@@ -1218,6 +1218,16 @@ body.tm-nav-sheet-open {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+  }
+
+  .page-tm-v2 .home-nav__theme--header {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+
+  .page-tm-v2 .home-nav__theme--header i {
+    font-size: 16px;
   }
 
   .page-tm-v2 .home-nav__live-dot {

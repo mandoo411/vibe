@@ -4,6 +4,8 @@ on:
   schedule:
     # KST 08:00 = UTC 23:00
     - cron: "0 23 * * *"
+  push:
+    branches: [main]
   workflow_dispatch: {}
 
 permissions:

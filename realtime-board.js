@@ -210,13 +210,11 @@
     const list = stockList || [];
     const exact = list.find((x) => x && x.name === q);
     if (exact) return exact.code;
-    const lc = q.toLowerCase();
-    const hit = list.find((x) => x && String(x.name || "").toLowerCase().includes(lc));
-    return hit ? hit.code : "";
+    return "";
   }
 
-  async function fetchKisQuote(code6) {
-    const res = await fetch(`/api/kis-stock-quote?code=${encodeURIComponent(code6)}`, { cache: "no-store" });
+  async function fetchExistingStockAnalysis(q) {
+    const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(q)}`, { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
     if (data && data.error) throw new Error(data.error);
@@ -2105,7 +2103,8 @@
         return;
       }
 
-      const data = await fetchKisQuote(code6);
+      // 기존 구현(시세 조회/결과 표시 로직)을 그대로 사용
+      const data = await fetchExistingStockAnalysis(code6);
       panel.innerHTML = stockPanelHtml(data);
 
       const hidePanel = () => {

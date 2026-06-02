@@ -380,10 +380,26 @@ async function kisInquirePrice2(stockCode6) {
 
   const row = data && data.output ? data.output : {};
   const creditRate = toNum(row.crdt_rate);
-  console.log("[stock-analysis] price2", stockCode6, "crdt_rate=", row.crdt_rate);
+  const creditLoanBalance = toNum(
+    pickFirstStr(row, [
+      "crdt_loan_rmnd",
+      "crdt_loan_bal",
+      "crdt_loan_blce",
+      "crdt_loan_amt",
+      "crdt_loan",
+      "crdt_blce",
+      "crdt_rmnd",
+    ])
+  );
+  console.log("[stock-analysis] price2", stockCode6, "crdt_rate=", row.crdt_rate, "credit_loan=", creditLoanBalance);
+  try {
+    const keys = Object.keys(row || {}).filter((k) => /crdt|loan|rmnd/i.test(k)).slice(0, 30);
+    if (keys.length) console.log("[stock-analysis] price2 keys", stockCode6, keys);
+  } catch (_) {}
   return {
     raw2: row,
     creditRate: creditRate == null ? null : Math.round(creditRate * 100) / 100,
+    creditLoanBalance: creditLoanBalance == null ? null : Math.round(creditLoanBalance),
   };
 }
 
@@ -827,7 +843,7 @@ module.exports = async function handler(req, res) {
       kisInquirePrice(resolved.stockCode),
       kisInquirePrice2(resolved.stockCode),
     ]);
-    quote = { ...q1, creditRate: q2.creditRate };
+    quote = { ...q1, creditRate: q2.creditRate, creditLoanBalance: q2.creditLoanBalance };
   } catch (e) {
     console.error("[stock-analysis] KIS error", resolved.stockCode, e && e.message, e);
     json(res, 502, { error: "시세 조회 실패" });
@@ -950,6 +966,7 @@ module.exports = async function handler(req, res) {
     ...quoteFields,
     volTurnoverRate: quote.volTurnoverRate == null ? null : quote.volTurnoverRate,
     creditRate: quote.creditRate == null ? null : quote.creditRate,
+    creditLoanBalance: quote.creditLoanBalance == null ? null : quote.creditLoanBalance,
     tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,

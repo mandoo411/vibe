@@ -422,31 +422,9 @@
     else if (typeof mq.addListener === "function") mq.addListener(applyPlaceholder);
   }
 
-  function bindMobileClock() {
-    const el = document.getElementById("home-m-clock");
-    if (!el) return;
-    const tick = () => {
-      const now = new Date();
-      const parts = new Intl.DateTimeFormat("ko-KR", {
-        timeZone: "Asia/Seoul",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      }).formatToParts(now);
-      const get = (type) => parts.find((p) => p.type === type)?.value || "";
-      const text = `${get("hour")}:${get("minute")}:${get("second")}`;
-      el.textContent = text;
-      el.setAttribute("datetime", now.toISOString());
-    };
-    tick();
-    setInterval(tick, 1000);
-  }
-
   async function boot() {
     bindAiForm();
     bindNavToggle();
-    bindMobileClock();
     bindMobileHomeUi();
     await Promise.all([loadTickerAndHero(), loadDomesticTop10(), loadUsAndCrypto(), loadSideCards()]);
     setInterval(loadTickerAndHero, 5 * 60 * 1000);

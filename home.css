@@ -67,6 +67,11 @@ body.page-home-v2 {
   width: 100%;
 }
 
+/* 로고 박스 "AI" — TM은 흰색, AI는 브랜드 노란 (모바일·데스크탑 공통) */
+.home-nav__logo-box span:last-child {
+  color: #ffd84d;
+}
+
 .home-nav__brand-name {
   font-size: 15px;
   font-weight: 800;

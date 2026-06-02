@@ -1533,7 +1533,7 @@
     // 단위 불확실(원/백만원/억원)일 수 있어, 너무 큰 값은 그대로 표기
     if (n >= 1e12 && n <= 5e15) {
       const jo = n / 1e12;
-      return `${jo.toFixed(2).replace(/\.?0+$/, "")}조`;
+      return `${jo.toFixed(1)}조`;
     }
     if (n >= 1e8 && n < 1e12) {
       return `${Math.round(n / 1e8).toLocaleString("ko-KR")}억`;

@@ -1024,12 +1024,18 @@
         .rt-table thead tr,
         .rt-table tbody tr.rt-stock-row {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 72px 58px 64px;
+          grid-template-columns: minmax(0, 1fr) 85px 72px 65px;
           column-gap: 8px;
           align-items: center;
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
+        }
+        /* 모바일 헤더 크랙(분리선/배경 틈) 방지: 헤더는 gap 없이 한 줄로 */
+        .rt-table thead tr {
+          column-gap: 0;
+          background: var(--bg-tertiary);
+          border-bottom: 1px solid var(--border);
         }
         .rt-table .rt-td-rank,
         .rt-table th.rt-td-rank {
@@ -1050,6 +1056,10 @@
           display: block;
           padding: 6px 2px;
           box-sizing: border-box;
+        }
+        .rt-table thead th {
+          background: transparent;
+          border-bottom: none;
         }
         .rt-table .rt-td-name {
           min-width: 0;
@@ -1181,22 +1191,23 @@
         table-layout: fixed;
       }
       .rt-table col.rt-col-rank {
-        width: 7%;
+        width: 50px;
       }
+      /* name column takes remaining space */
       .rt-table col.rt-col-name {
-        width: 28%;
+        width: auto;
       }
       .rt-table col.rt-col-price {
-        width: 16%;
+        width: 120px;
       }
       .rt-table col.rt-col-chg {
-        width: 12%;
+        width: 100px;
       }
       .rt-table col.rt-col-tv {
-        width: 18%;
+        width: 120px;
       }
       .rt-table col.rt-col-mcap {
-        width: 19%;
+        width: 120px;
       }
       .rt-table th,
       .rt-table td {
@@ -1206,7 +1217,7 @@
         vertical-align: middle;
       }
       .rt-table td {
-        font-size: 13px;
+        font-size: 15px;
         line-height: 1.6;
       }
       .rt-td-rank {
@@ -1230,6 +1241,14 @@
       .rt-table th.rt-td-mcap {
         text-align: right;
       }
+      .rt-table th.rt-td-chg,
+      .rt-table td.rt-td-chg {
+        text-align: center;
+      }
+      .rt-table th.rt-td-rank,
+      .rt-table td.rt-td-rank {
+        text-align: center;
+      }
       .rt-table th {
         position: sticky;
         top: 0;
@@ -1238,17 +1257,17 @@
         color: var(--text-dim);
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 11px;
+        font-size: 14px;
         letter-spacing: 0.06em;
       }
       .rt-table .rt-td-rank {
-        font-size: 12px;
+        font-size: 14px;
       }
       .rt-table .rt-td-price,
       .rt-table .rt-td-chg,
       .rt-table .rt-td-vol,
       .rt-table .rt-td-mcap {
-        font-size: 13px;
+        font-size: 15px;
       }
       .rt-table tbody tr:nth-child(even) td {
         background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
@@ -1261,7 +1280,7 @@
         font-variant-numeric: tabular-nums;
       }
       .rt-name {
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 500;
         color: var(--text);
         line-height: 1.6;
@@ -1972,6 +1991,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602j"></script>
+    <script src="./realtime-board.js?v=20260602k"></script>
   </body>
 </html>

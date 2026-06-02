@@ -599,7 +599,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   margin: 0 -14px;
   padding: 5px 14px 4px;
   font-size: 10px;
-  color: #ccc;
+  color: #9ca3af;
   border-bottom: 1px solid #f5f5f5;
 }
 
@@ -1180,6 +1180,17 @@ body.page-home-v2 .home-tr__chg.is-down {
 
 body.page-home-v2 .home-hero__row-pct.is-down {
   color: #60a5fa;
+}
+
+/* Home KR realtime header colors */
+[data-theme="dark"] .home-th--rt,
+body[data-theme="dark"] .home-th--rt {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .page-home-v2 .home-th--rt,
+body[data-theme="dark"] .page-home-v2 .home-th--rt {
+  color: #cbd5e1;
 }
 
 
@@ -1847,7 +1858,7 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     padding: 0 4px;
     border: none;
     font-size: 10px;
-    color: #bbb;
+    color: #9ca3af;
   }
 
   .page-home-v2 .home-tr--rt {

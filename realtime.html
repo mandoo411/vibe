@@ -535,24 +535,32 @@
         text-align: center;
       }
       .rt-acc-cell__k {
-        font-size: 10px;
-        color: var(--text-secondary);
+        font-size: 12px;
+        color: #6b7280;
         line-height: 1.2;
         margin-bottom: 2px;
         white-space: nowrap;
       }
+      [data-theme="dark"] .rt-acc-cell__k,
+      .dark-mode .rt-acc-cell__k {
+        color: #9ca3af;
+      }
       .rt-acc-cell__v {
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 500;
-        color: var(--text-primary);
+        color: #111827;
         font-variant-numeric: tabular-nums;
         line-height: 1.25;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      [data-theme="dark"] .rt-acc-cell__v,
+      .dark-mode .rt-acc-cell__v {
+        color: #f3f4f6;
+      }
       .rt-acc-grid--3 .rt-acc-cell__v {
-        font-size: 12px;
+        font-size: 14px;
       }
       .rt-acc-grid--profit .rt-acc-cell {
         text-align: center;
@@ -563,7 +571,7 @@
         background: #1c2030;
       }
       .rt-acc-grid--profit .rt-acc-cell__v {
-        font-size: 12px;
+        font-size: 14px;
       }
       .rt-acc-val--hi {
         color: #e24b4a;
@@ -611,13 +619,21 @@
       .rt-acc-section-bar__title {
         font-size: 12px;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: #6b7280;
         letter-spacing: 0.06em;
       }
+      [data-theme="dark"] .rt-acc-section-bar__title,
+      .dark-mode .rt-acc-section-bar__title {
+        color: #9ca3af;
+      }
       .rt-acc-section-bar__date {
-        font-size: 11px;
-        color: var(--text-secondary);
+        font-size: 12px;
+        color: #9ca3af;
         font-variant-numeric: tabular-nums;
+      }
+      [data-theme="dark"] .rt-acc-section-bar__date,
+      .dark-mode .rt-acc-section-bar__date {
+        color: #6b7280;
       }
       .rt-acc-grid--3.rt-acc-grid--section .rt-acc-cell {
         padding: 4px 6px;
@@ -1093,7 +1109,7 @@
         .rt-table thead tr,
         .rt-table tbody tr.rt-stock-row {
           display: grid;
-          grid-template-columns: 28px minmax(0, 1fr) 88px 68px 68px;
+          grid-template-columns: 28px minmax(0, 1fr) 85px 68px 68px;
           column-gap: 8px;
           align-items: center;
           width: 100%;
@@ -1178,7 +1194,7 @@
           font-variant-numeric: tabular-nums;
         }
         .rt-table .rt-td-price {
-          width: 88px;
+          width: 85px;
         }
         .rt-table .rt-td-chg {
           width: 68px;

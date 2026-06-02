@@ -375,7 +375,7 @@ function pickAcmlTrPbmn(row) {
 
 /**
  * 거래대금(원) = stck_prpr(현재가) × acml_vol(누적거래량)
- * KIS acml_tr_pbmn 등 API 거래대금 필드는 사용하지 않음.
+ * 가능하면 KIS acml_tr_pbmn(누적 거래대금) 필드를 우선 사용.
  */
 function calcTradingValueWon(priceStr, volStr) {
   const p = Number(String(priceStr || "").replace(/,/g, ""));
@@ -514,7 +514,7 @@ function mapMarketCapKisRow(row, fallbackBoard) {
   if (!code) return null;
   const price = pickStckPrpr(row);
   const volume = pickAcmlVol(row);
-  const tradingValue = calcTradingValueWon(price, volume) || "";
+  const tradingValue = pickAcmlTrPbmn(row) || calcTradingValueWon(price, volume) || "";
   const avlsRaw = sanitizeStr(row.stck_avls ?? row.STCK_AVLS);
   const mcapWon = avlsRaw ? mcapRankingStckAvlsToWonString(avlsRaw) : "";
   return {
@@ -586,8 +586,7 @@ function naverVolumeFromStock(s) {
 function finalizeRowQuoteFields(row) {
   if (!row) return row;
   const out = { ...row };
-  const tv = calcTradingValueWon(out.price, out.volume);
-  if (tv) out.tradingValue = tv;
+  out.tradingValue = out.tradingValue || pickAcmlTrPbmn(out) || calcTradingValueWon(out.price, out.volume) || "";
   return out;
 }
 
@@ -984,7 +983,7 @@ async function fetchFluctuationMarketBatches(marketCode, marketLabel, batchCount
         const code = sanitizeStr(row.stck_shrn_iscd);
         const price = pickStckPrpr(row);
         const volume = pickAcmlVol(row);
-        const tradingValue = calcTradingValueWon(price, volume) || "";
+        const tradingValue = pickAcmlTrPbmn(row) || calcTradingValueWon(price, volume) || "";
         return {
           code,
           name: sanitizeStr(row.hts_kor_isnm),

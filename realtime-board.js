@@ -257,8 +257,8 @@
     return { html: escapeHtml(text), cls: n > 0 ? "rt-vs-pos" : n < 0 ? "rt-vs-neg" : "" };
   }
 
-  /** 거래량: 만 단위(웹) 65,388,490 → 6538.8만 */
-  function formatVolumeManWeb(raw) {
+  /** 거래량: 만 단위 78,861,000 → 7886.1만 (웹/모바일 공통) */
+  function formatVolumeMan(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
     if (!Number.isFinite(n) || n < 0) return "—";
     if (n < 10000) return n.toLocaleString("ko-KR");
@@ -280,14 +280,7 @@
     return `${eok}억`;
   }
 
-  /** 거래량: 만 단위 (65,147,291 → 6,514만) */
-  function formatVolumeMan(raw) {
-    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
-    if (!Number.isFinite(n) || n < 0) return "—";
-    if (n === 0) return "0";
-    const man = Math.round(n / 10000);
-    return `${man.toLocaleString("ko-KR")}만`;
-  }
+  // (legacy formatVolumeMan removed)
 
   /** 원 단위 → X.X조 / XXX.X억(100억 이상 소수1자리) */
   function formatWonJoEok(n) {
@@ -356,6 +349,8 @@
   }
 
   function formatRowTradeVal(r) {
+    const tvRaw = r && r.tradingValue != null ? Number(String(r.tradingValue).replace(/,/g, "")) : null;
+    if (tvRaw != null && Number.isFinite(tvRaw) && tvRaw > 0) return formatTradeVal(String(tvRaw));
     const calc = calcTradeValFromPriceVol(r && r.price, r && r.volume);
     if (calc != null) return formatTradeVal(String(calc));
     return "—";
@@ -1536,7 +1531,7 @@
     const tv = formatRowTradeVal(r);
     const mcap = formatStckAvls(readStckAvlsRaw(r));
     const vs = formatVsCell(r);
-    const vol = escapeHtml(formatVolumeManWeb(r && r.volume));
+    const vol = escapeHtml(formatVolumeMan(r && r.volume));
     const common = [
       `<td class="num rt-td-rank">${r.rank != null ? escapeHtml(String(r.rank)) : "—"}</td>`,
       `<td class="rt-td-name">${nameCell}</td>`,
@@ -2094,6 +2089,11 @@
     panel.innerHTML = buildStockResultSkeleton();
     if (btn) btn.disabled = true;
     closeAutocomplete();
+    // 테이블 아코디언(리스트 중간)과 검색 결과 패널은 분리
+    if (state.openChartCode) {
+      state.openChartCode = null;
+      renderTable();
+    }
 
     try {
       await loadStockListOnce();

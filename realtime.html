@@ -1094,13 +1094,15 @@
         }
         .rt-scroll {
           overflow-x: hidden;
+          scrollbar-gutter: stable;
         }
         .rt-header-row {
-          display: flex;
+          display: grid;
+          grid-template-columns: 28px minmax(0, 1fr) 85px 68px 68px;
+          column-gap: 8px;
           align-items: center;
           width: 100%;
           box-sizing: border-box;
-          column-gap: 8px;
           padding: 6px 2px;
           background: transparent !important;
           border-bottom: 1px solid #e5e7eb;
@@ -1116,36 +1118,28 @@
           border-bottom-color: #374151;
           color: #6b7280 !important;
         }
-        .rt-col-rank {
-          width: 28px;
+        .rt-header-row .rt-col-rank,
+        .rt-mobile-row .rt-col-rank {
           text-align: center;
-          flex-shrink: 0;
           white-space: nowrap;
         }
-        .rt-col-name {
-          flex: 1;
+        .rt-header-row .rt-col-name,
+        .rt-mobile-row .rt-col-name {
           min-width: 0;
           text-align: left;
           overflow: hidden;
         }
-        .rt-col-price {
-          width: 85px;
+        .rt-header-row .rt-col-price,
+        .rt-header-row .rt-col-change,
+        .rt-mobile-row .rt-col-price,
+        .rt-mobile-row .rt-col-change {
           text-align: right;
-          flex-shrink: 0;
           white-space: nowrap;
           font-variant-numeric: tabular-nums;
         }
-        .rt-col-change {
-          width: 68px;
+        .rt-header-row .rt-col-last,
+        .rt-mobile-row .rt-col-last {
           text-align: right;
-          flex-shrink: 0;
-          white-space: nowrap;
-          font-variant-numeric: tabular-nums;
-        }
-        .rt-col-last {
-          width: 68px;
-          text-align: right;
-          flex-shrink: 0;
           padding-right: 4px;
           white-space: nowrap;
           font-variant-numeric: tabular-nums;
@@ -1166,6 +1160,19 @@
           display: block;
           width: 100%;
         }
+        .rt-table tbody tr.rt-stock-row {
+          display: block;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .rt-table tbody tr.rt-stock-row > td {
+          display: block;
+          width: 100%;
+          max-width: 100%;
+          padding: 0 !important;
+          border-bottom: none;
+          box-sizing: border-box;
+        }
         .rt-table th,
         .rt-table td {
           font-size: 13px;
@@ -1184,10 +1191,10 @@
           display: block;
           width: 100%;
         }
-        .rt-table th,
-        .rt-table td {
+        .rt-table tr.rt-detail-row > td {
           display: block;
-          padding: 6px 2px;
+          width: 100%;
+          padding: 0 !important;
           box-sizing: border-box;
         }
         .rt-table .rt-name-chart-btn {
@@ -1198,12 +1205,18 @@
           text-overflow: ellipsis;
         }
         .rt-mobile-row {
-          display: flex;
+          display: grid;
+          grid-template-columns: 28px minmax(0, 1fr) 85px 68px 68px;
+          column-gap: 8px;
           align-items: center;
           width: 100%;
           box-sizing: border-box;
-          column-gap: 8px;
           padding: 6px 2px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        [data-theme="dark"] .rt-mobile-row,
+        .dark-mode .rt-mobile-row {
+          border-bottom-color: #374151;
         }
         .rt-mobile-row .rt-col-last {
           color: #111827;
@@ -1237,6 +1250,17 @@
         }
         .rt-table {
           min-width: 640px;
+        }
+        .rt-table tbody {
+          display: table-row-group;
+        }
+        .rt-table tr.rt-stock-row,
+        .rt-table tr.rt-detail-row {
+          display: table-row;
+        }
+        .rt-table tr.rt-detail-row > td {
+          display: table-cell;
+          width: 100%;
         }
       }
       .rt-tab[aria-selected="false"] {
@@ -1282,6 +1306,7 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         margin: 0 -2px;
+        scrollbar-gutter: stable;
       }
       /* rt-panel__head 제거됨 (masthead 사용) */
       .rt-chart-quote-strip {

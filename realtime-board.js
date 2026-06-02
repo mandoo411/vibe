@@ -1472,11 +1472,30 @@
     return base.join("");
   }
 
+  function mobileLastColumnLabel(tab) {
+    const t = tab || state.tab || "cap";
+    if (t === "tv") return "거래대금";
+    return "시가총액";
+  }
+
+  function mobileLastColumnValue(r, tab) {
+    const t = tab || state.tab || "cap";
+    if (t === "tv") return escapeHtml(formatRowTradeVal(r));
+    return escapeHtml(formatStckAvls(readStckAvlsRaw(r)));
+  }
+
+  function syncMobileHeaderRow() {
+    const last = document.querySelector(".rt-header-row .rt-col-last");
+    if (!last) return;
+    last.textContent = mobileLastColumnLabel(state.tab);
+  }
+
   function renderThead() {
     const tr = document.getElementById("rt-thead-row");
     if (!tr) return;
     syncTableLayoutAttr();
     tr.innerHTML = tableHeadHtmlForTab(state.tab || "cap");
+    syncMobileHeaderRow();
   }
 
   function isMobileLayout() {
@@ -1547,7 +1566,7 @@
       const ch = r.changePct;
       const cls = deltaClass(ch);
       const price = escapeHtml(fmtNum(r.price));
-      const mcap = escapeHtml(formatStckAvls(readStckAvlsRaw(r)));
+      const lastVal = mobileLastColumnValue(r);
       const rank = r.rank != null ? escapeHtml(String(r.rank)) : "—";
       const nameBtn = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
       const row = [
@@ -1556,7 +1575,7 @@
         `  <span class="rt-col-name">${nameBtn}</span>`,
         `  <span class="rt-col-price">${price}</span>`,
         `  <span class="rt-col-change"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></span>`,
-        `  <span class="rt-col-last">${mcap}</span>`,
+        `  <span class="rt-col-last">${lastVal}</span>`,
         `</div>`,
       ].join("");
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}"><td colspan="${tableColSpan()}">${row}</td></tr>`;
@@ -1652,7 +1671,7 @@
           host.innerHTML = buildStockResultSkeleton();
         }
       }
-      anchor.after(detailTr);
+      if (detailTr.previousElementSibling !== anchor) anchor.after(detailTr);
     }
     if (detailTr) detailTr.setAttribute("data-detail-for", code);
     syncNameChartButtonsAria(body);

@@ -985,29 +985,39 @@
         .rt-table[data-rt-tab="cap"] .rt-td-rank,
         .rt-table[data-rt-tab="gainers"] .rt-td-rank,
         .rt-table[data-rt-tab="tv"] .rt-td-rank {
-          width: 10%;
+          width: 8%;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-name,
         .rt-table[data-rt-tab="gainers"] .rt-td-name,
         .rt-table[data-rt-tab="tv"] .rt-td-name {
-          width: 28%;
+          width: 20%;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-price,
         .rt-table[data-rt-tab="gainers"] .rt-td-price,
         .rt-table[data-rt-tab="tv"] .rt-td-price {
-          width: 22%;
+          width: 26%;
+          padding-right: 10px;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-chg,
         .rt-table[data-rt-tab="gainers"] .rt-td-chg,
         .rt-table[data-rt-tab="tv"] .rt-td-chg {
-          width: 16%;
+          width: 18%;
+          padding-left: 8px;
+          padding-right: 6px;
         }
         .rt-table[data-rt-tab="cap"] .rt-td-mcap {
-          width: 20%;
+          width: 28%;
         }
         .rt-table[data-rt-tab="gainers"] .rt-td-tv,
         .rt-table[data-rt-tab="tv"] .rt-td-tv {
-          width: 22%;
+          width: 28%;
+          padding-left: 4px;
+        }
+        .rt-table th.rt-td-price,
+        .rt-table th.rt-td-chg,
+        .rt-table th.rt-td-tv,
+        .rt-table th.rt-td-mcap {
+          text-align: right;
         }
         .rt-table .rt-td-name .rt-name-chart-btn {
           font-size: 12px;
@@ -1871,6 +1881,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602c"></script>
+    <script src="./realtime-board.js?v=20260602d"></script>
   </body>
 </html>

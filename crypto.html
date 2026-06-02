@@ -82,11 +82,8 @@
       .crypto-section-head--tools {
         margin-bottom: 6px;
       }
-      .page-hero-sub {
-        padding-top: 4px;
-        padding-bottom: 6px;
-      }
       .crypto-meta-bar {
+        margin-top: 4px;
         margin-bottom: 6px;
         padding-top: 4px;
         padding-bottom: 4px;
@@ -535,13 +532,16 @@
           white-space: nowrap;
         }
         .crypto-col-price {
-          width: 28%;
+          width: 26%;
+          padding-right: 10px;
         }
         .crypto-col-24h {
-          width: 14%;
+          width: 18%;
+          padding-left: 8px;
+          padding-right: 6px;
         }
         .crypto-col-mcap {
-          width: 22%;
+          width: 20%;
         }
         .crypto-col-spark {
           width: 62px;
@@ -642,12 +642,6 @@
             <h1 class="masthead__title">암호화폐</h1>
           </div>
         </header>
-        <div class="page-hero-sub">
-          <div class="masthead__meta">
-            <span>CoinMarketCap · TOP 400</span>
-            <span>5분마다 자동 갱신</span>
-          </div>
-        </div>
 
         <div class="crypto-meta-bar" aria-live="polite">
           <span id="crypto-updated">데이터 로딩 중…</span>
@@ -792,7 +786,7 @@
 
         function fmtKrw(n) {
           if (n == null || !Number.isFinite(n)) return "-";
-          if (n >= 1e12) return `${(n / 1e12).toFixed(2)}조`;
+          if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
           if (n >= 1e8) return `${(n / 1e8).toFixed(1)}억`;
           if (n >= 1e4) return `${Math.round(n / 1e4).toLocaleString("ko-KR")}만`;
           return n.toLocaleString("ko-KR", { maximumFractionDigits: n >= 1000 ? 0 : 2 });

@@ -1,4 +1,4 @@
-/* TotalMoney AI — 홈 리디자인 */
+﻿/* TotalMoney AI ????由щ뵒?먯씤 */
 body.page-home-v2 {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   background: #f4f6ff;
@@ -67,9 +67,9 @@ body.page-home-v2 {
   width: 100%;
 }
 
-/* 로고 박스 "AI" — TM은 흰색, AI는 브랜드 노란 (모바일·데스크탑 공통) */
+/* 濡쒓퀬 諛뺤뒪 "AI" ??TM? ?곗깋, AI???곕쾭 (紐⑤컮?셋룸뜲?ㅽ겕??怨듯넻) */
 .home-nav__logo-box span:last-child {
-  color: #ffd84d;
+  color: #f59e0b;
 }
 
 .home-nav__brand-name {
@@ -257,6 +257,27 @@ body[data-theme="dark"] .home-nav__logo-box {
 body[data-theme="dark"] .home-nav__ai-badge {
   background: linear-gradient(145deg, #1e2460, #3339bf);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.home-top {
+  display: block;
+}
+
+.home-ticker-bar {
+  display: block;
+}
+
+.home-ticker-bar__label {
+  display: none;
+}
+
+.home-hero__title-m,
+.home-ai-card__kicker,
+.home-ai-card__orb,
+.home-ai-card__title-m,
+.home-ai-card__sub-m,
+.home-ai-card__btn-m {
+  display: none;
 }
 
 .home-nav__toggle {
@@ -523,7 +544,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   min-height: 100%;
 }
 
-/* 미국+암호화폐 열: 왼쪽 국내 TOP10 박스 하단과 맞춤 */
+/* 誘멸뎅+?뷀샇?뷀룓 ?? ?쇱そ 援?궡 TOP10 諛뺤뒪 ?섎떒怨?留욎땄 */
 .home-col-mid .home-section:last-child {
   flex: 1 1 auto;
   display: flex;
@@ -904,7 +925,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: #ffffff;
 }
 
-/* 다크모드 A안 */
+/* ?ㅽ겕紐⑤뱶 A??*/
 [data-theme="dark"] .home-nav {
   background: #1a1f35;
   border-bottom: 1px solid #2a2f4a;
@@ -1047,7 +1068,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: white;
 }
 
-/* index: 하락률 파랑 (site-shell.css ticker 규칙보다 우선) */
+/* index: ?섎씫瑜??뚮옉 (site-shell.css ticker 洹쒖튃蹂대떎 ?곗꽑) */
 body.page-home-v2 {
   --down-color: #3b82f6;
 }
@@ -1061,86 +1082,146 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   color: #60a5fa;
 }
 
-/* ── 모바일 홈 (max-width: 768px) ── */
+
+/* ?? 紐⑤컮??????React 紐⑹뾽 (max-width: 768px) ?? */
+@keyframes home-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.1);
+  }
+}
+
 @media (max-width: 768px) {
   body.page-home-v2 {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    background: #f0f2f8;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .page-home-v2 .home-wrap {
+    max-width: 400px;
+    margin: 0 auto;
+    background: #f0f2f8;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
   }
 
   .page-home-v2 .home-m-only[hidden] {
     display: block;
   }
 
-  .page-home-v2 .home-nav__m-meta.home-m-only[hidden] {
-    display: flex;
-  }
-
-  .page-home-v2 .home-hero__stats.home-m-only[hidden] {
-    display: grid;
-  }
-
+  .page-home-v2 .home-nav__m-meta.home-m-only[hidden],
   .page-home-v2 .home-m-claude.home-m-only[hidden] {
     display: flex;
   }
 
-  /* 1. 헤더 */
-  .page-home-v2 .home-nav {
+  .page-home-v2 .home-hero__stats.home-m-only[hidden] {
     display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 10px;
-    padding: 10px 14px;
+  }
+
+  .page-home-v2 .home-m-body.home-m-only[hidden] {
+    display: block;
+  }
+
+  /* ?곷떒 ?ㅻ뜑 + ?곗빱 */
+  .page-home-v2 .home-top {
+    order: 1;
+    background: #fff;
+    padding: 12px 16px 0;
+    box-shadow: 0 1px 0 #e8eaf0;
     position: sticky;
     top: 0;
     z-index: 200;
   }
 
+  .page-home-v2 .home-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    min-height: 0;
+    padding: 0 0 10px;
+    background: transparent;
+    border: none;
+    position: static;
+  }
+
   .page-home-v2 .home-nav__logo {
     flex: 0 1 auto;
     min-width: 0;
-  }
-
-  .page-home-v2 .home-nav__brand-sub {
-    display: none;
+    gap: 10px;
   }
 
   .page-home-v2 .home-nav__logo-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3339bf, #1e2460);
+    box-shadow: none;
   }
 
   .page-home-v2 .home-nav__logo-box span {
-    font-size: 12px;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .page-home-v2 .home-nav__brand-name {
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f1120;
+  }
+
+  .page-home-v2 .home-nav__brand-sub {
+    display: flex;
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .page-home-v2 .home-nav__ai-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #3339bf;
+    box-shadow: none;
   }
 
   .page-home-v2 .home-nav__m-meta {
     margin-left: auto;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
   }
 
-  .page-home-v2 .home-nav__live-badge {
-    display: inline-flex;
+  .page-home-v2 .home-nav__live {
+    display: flex;
     align-items: center;
-    padding: 2px 8px;
-    border-radius: 999px;
+    gap: 4px;
+  }
+
+  .page-home-v2 .home-nav__live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: home-live-pulse 1.5s infinite;
+  }
+
+  .page-home-v2 .home-nav__live-text {
     font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    color: #fff;
-    background: #e24b4a;
-    box-shadow: 0 0 0 2px rgba(226, 75, 74, 0.25);
+    font-weight: 700;
+    color: #22c55e;
   }
 
   .page-home-v2 .home-nav__m-clock {
-    font-size: 12px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: #3339bf;
-    font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+    font-size: 11px;
+    font-weight: 400;
+    color: #888;
+    font-family: inherit;
   }
 
   .page-home-v2 .home-nav__toggle,
@@ -1148,33 +1229,95 @@ body.page-home-v2 .home-hero__row-pct.is-down {
     display: none !important;
   }
 
-  /* 2. 티커 */
-  .page-home-v2 .home-ticker {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    gap: 12px;
-    padding: 8px 14px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+  .page-home-v2 .home-ticker-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8f9fc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
   }
 
-  .page-home-v2 .home-ticker::-webkit-scrollbar {
-    display: none;
+  .page-home-v2 .home-ticker-bar__label {
+    font-size: 10px;
+    color: #aaa;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-ticker {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    justify-content: flex-start;
+    gap: 16px;
   }
 
   .page-home-v2 .home-ticker__item {
     flex: 0 0 auto;
-    min-width: 118px;
-    justify-content: flex-start;
+    min-width: 0;
+    gap: 6px;
+    font-size: 10px;
   }
 
-  /* 3. 히어로 */
+  .page-home-v2 .home-ticker__name {
+    color: #888;
+  }
+
+  .page-home-v2 .home-ticker__val {
+    font-size: 11px;
+    color: #0f1120;
+  }
+
+  .page-home-v2 .home-ticker__pct.is-up {
+    color: #e24b4a;
+    font-size: 10px;
+  }
+
+  .page-home-v2 .home-ticker__pct.is-down {
+    color: #1d9e75;
+    font-size: 10px;
+  }
+
+  /* ?덉뼱濡?諛곕꼫 */
   .page-home-v2 .home-hero {
+    order: 2;
     display: block;
-    grid-template-columns: unset;
-    padding: 22px 14px 20px;
-    background: linear-gradient(165deg, #1e2460 0%, #3339bf 52%, #4f46e5 100%);
+    padding: 20px 16px;
+    background: linear-gradient(135deg, #1e2460 0%, #3339bf 50%, #4f46e5 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-home-v2 .home-hero::before,
+  .page-home-v2 .home-hero::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .page-home-v2 .home-hero::before {
+    top: -20px;
+    right: -20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .page-home-v2 .home-hero::after {
+    bottom: -30px;
+    left: -10px;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .page-home-v2 .home-hero__left {
+    position: relative;
+    z-index: 1;
   }
 
   .page-home-v2 .home-hero__panels {
@@ -1182,255 +1325,310 @@ body.page-home-v2 .home-hero__row-pct.is-down {
   }
 
   .page-home-v2 .home-hero__tag {
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    margin-bottom: 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 4px;
   }
 
-  .page-home-v2 .home-hero__title {
-    font-size: 24px;
-    line-height: 1.32;
-    margin-bottom: 8px;
-  }
-
+  .page-home-v2 .home-hero__title--desktop,
   .page-home-v2 .home-hero__desc {
-    margin-bottom: 14px;
+    display: none;
+  }
+
+  .page-home-v2 .home-hero__title-m {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1.3;
+  }
+
+  .page-home-v2 .home-hero__title-m-line {
+    display: block;
+    color: #fff;
+  }
+
+  .page-home-v2 .home-hero__title-m-accent {
+    color: #f59e0b;
+  }
+
+  .page-home-v2 .home-hero__title-m-rest {
+    color: #fff;
   }
 
   .page-home-v2 .home-hero__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-wrap: nowrap;
     gap: 8px;
     margin: 0 0 16px;
     padding: 0;
   }
 
   .page-home-v2 .home-hero__stat {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
     margin: 0;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 8px 4px;
+    text-align: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
   }
 
   .page-home-v2 .home-hero__stat dt {
-    margin: 0 0 4px;
-    font-size: 10px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.72);
+    order: 2;
+    margin: 2px 0 0;
+    font-size: 8px;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.5);
   }
 
   .page-home-v2 .home-hero__stat dd {
     margin: 0;
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 800;
     color: #fff;
-    font-variant-numeric: tabular-nums;
   }
 
   .page-home-v2 .home-hero__stat dd small {
-    font-size: 11px;
-    font-weight: 600;
-    margin-left: 2px;
-    color: rgba(255, 255, 255, 0.75);
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.6);
   }
 
   .page-home-v2 .home-hero__btns {
-    display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
 
   .page-home-v2 .home-hero__btn {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
+    flex: 1;
+    padding: 11px 0;
     border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 800;
+    justify-content: center;
   }
 
   .page-home-v2 .home-hero__btn--primary {
     background: #f59e0b;
-    color: #000;
-    border: none;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    color: #0f1120;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
   }
 
   .page-home-v2 .home-hero__btn--secondary {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.15);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
   }
 
-  /* 4a. 실시간 AI 분석 */
-  .page-home-v2 .home-m-ai-live {
-    padding: 14px 14px 0;
-    background: #f5f7ff;
+  /* 蹂몃Ц ?⑤뵫 ?곸뿭 */
+  .page-home-v2 .home-m-body {
+    order: 3;
+    padding: 16px 16px 0;
   }
 
   .page-home-v2 .home-m-ai-live__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
     margin-bottom: 10px;
   }
 
   .page-home-v2 .home-m-ai-live__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 800;
-    color: #111;
+    color: #0f1120;
   }
 
-  .page-home-v2 .home-m-ai-live__badges {
-    display: flex;
-    gap: 6px;
+  .page-home-v2 .home-m-section-bar {
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: #3339bf;
     flex-shrink: 0;
   }
 
-  .page-home-v2 .home-m-signal {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 8px;
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-
-  .page-home-v2 .home-m-signal--buy {
-    color: #fff;
-    background: #e24b4a;
-  }
-
-  .page-home-v2 .home-m-signal--hold {
-    color: #3339bf;
-    background: #e8ecff;
-    border: 1px solid #c8d0ff;
-  }
-
-  .page-home-v2 .home-m-confidence {
-    margin-bottom: 12px;
-  }
-
-  .page-home-v2 .home-m-confidence__label {
+  .page-home-v2 .home-m-ai-live__status {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    font-size: 11px;
-    color: #666;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #22c55e;
   }
 
-  .page-home-v2 .home-m-confidence__label strong {
-    font-size: 13px;
-    color: #3339bf;
+  .page-home-v2 .home-m-ai-live__status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #22c55e;
   }
 
-  .page-home-v2 .home-m-confidence__track {
-    height: 6px;
-    border-radius: 999px;
-    background: #e8ecff;
-    overflow: hidden;
-  }
-
-  .page-home-v2 .home-m-confidence__fill {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #3339bf, #4f46e5);
-  }
-
-  .page-home-v2 .home-m-insight-cards {
+  .page-home-v2 .home-m-insights {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding-bottom: 14px;
   }
 
-  .page-home-v2 .home-m-insight-card {
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: #fff;
-    border: 1px solid #eef0f8;
-    box-shadow: 0 2px 8px rgba(30, 36, 96, 0.06);
-  }
-
-  .page-home-v2 .home-m-insight-card h3 {
-    margin: 0 0 6px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #111;
-  }
-
-  .page-home-v2 .home-m-insight-card p {
-    margin: 0;
-    font-size: 12px;
-    line-height: 1.55;
-    color: #555;
-  }
-
-  /* 4b. Claude 카드 */
-  .page-home-v2 .home-m-claude {
+  .page-home-v2 .home-m-insight {
     display: flex;
+    align-items: center;
     gap: 12px;
-    align-items: flex-start;
-    margin: 0 14px 14px;
-    padding: 14px;
-    border-radius: 14px;
-    background: #fafbff;
-    border: 1px solid #e8ecff;
+    padding: 12px 14px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #f0f2f8;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 
-  .page-home-v2 .home-m-claude__icon {
-    flex-shrink: 0;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+  .page-home-v2 .home-m-insight__badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 11px;
     font-weight: 800;
-    color: #fff;
-    background: linear-gradient(145deg, #2563eb, #3339bf);
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-m-insight__badge--buy {
+    background: #fff1f0;
+    color: #e24b4a;
+    border: 1px solid #fecaca;
+  }
+
+  .page-home-v2 .home-m-insight__badge--hold {
+    background: #fffbeb;
+    color: #f59e0b;
+    border: 1px solid #fde68a;
+  }
+
+  .page-home-v2 .home-m-insight__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .page-home-v2 .home-m-insight__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+
+  .page-home-v2 .home-m-insight__symbol {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f1120;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-m-insight__bar-track {
+    flex: 1;
+    height: 4px;
+    background: #f0f2f8;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .page-home-v2 .home-m-insight__bar {
+    display: block;
+    height: 100%;
+    background: #e24b4a;
+    border-radius: 2px;
+  }
+
+  .page-home-v2 .home-m-insight__bar--mid {
+    background: #f59e0b;
+  }
+
+  .page-home-v2 .home-m-insight__pct {
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-m-insight__pct--high {
+    color: #e24b4a;
+  }
+
+  .page-home-v2 .home-m-insight__pct--mid {
+    color: #f59e0b;
+  }
+
+  .page-home-v2 .home-m-insight__desc {
+    margin: 0;
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-home-v2 .home-m-insight__time {
+    font-size: 10px;
+    color: #bbb;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-m-claude {
+    gap: 12px;
+    align-items: center;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #fafbff, #f0f2ff);
+    border: 1px solid #e0e4ff;
+  }
+
+  .page-home-v2 .home-m-claude__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 16px;
+    background: #3339bf;
   }
 
   .page-home-v2 .home-m-claude__kicker {
-    margin: 0 0 4px;
-    font-size: 10px;
+    margin: 0 0 2px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     color: #3339bf;
-  }
-
-  .page-home-v2 .home-m-claude__title {
-    margin: 0 0 6px;
-    font-size: 14px;
-    font-weight: 800;
-    color: #111;
+    letter-spacing: 0;
+    text-transform: none;
   }
 
   .page-home-v2 .home-m-claude__text {
     margin: 0;
-    font-size: 12px;
-    line-height: 1.6;
-    color: #555;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.4;
   }
 
-  /* 4c. 숏컷 */
+  /* ?륁뻔 */
   .page-home-v2 .home-shortcuts {
+    order: 4;
     display: flex;
     flex-wrap: nowrap;
     gap: 8px;
     overflow-x: auto;
-    padding: 10px 14px;
+    padding: 0 16px 16px;
+    margin: 0;
     scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    background: #fff;
-    border-bottom: 1px solid #eef0f8;
+    background: transparent;
+    border: none;
   }
 
   .page-home-v2 .home-shortcuts::-webkit-scrollbar {
@@ -1439,30 +1637,36 @@ body.page-home-v2 .home-hero__row-pct.is-down {
 
   .page-home-v2 .home-shortcuts__pill {
     flex: 0 0 auto;
-    white-space: nowrap;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 400;
     background: #fff;
     color: #555;
-    border: 1px solid #e0e4f0;
+    border: 1px solid #e8eaf0;
     box-shadow: none;
+  }
+
+  .page-home-v2 .home-shortcuts__pill i {
+    display: none;
   }
 
   .page-home-v2 .home-shortcuts__pill.is-active {
     background: #3339bf;
     color: #fff;
-    border-color: #3339bf;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 2px 8px rgba(51, 57, 191, 0.27);
   }
 
-  .page-home-v2 .home-shortcuts__pill.is-active i {
-    color: #fff;
-  }
-
-  /* 4d–e. 본문 */
+  /* TOP10 + CTA */
   .page-home-v2 .home-main {
+    order: 5;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    grid-template-columns: unset;
-    padding: 14px;
+    gap: 16px;
+    padding: 0 16px 16px;
+    background: transparent;
   }
 
   .page-home-v2 .home-col-mid,
@@ -1477,122 +1681,272 @@ body.page-home-v2 .home-hero__row-pct.is-down {
 
   .page-home-v2 .home-section {
     border-radius: 14px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(30, 36, 96, 0.08);
+    border: none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   }
 
+  .page-home-v2 .home-section__head {
+    padding: 14px 14px 12px;
+    border-bottom: none;
+  }
+
+  .page-home-v2 .home-section__title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f1120;
+  }
+
+  .page-home-v2 .home-section__title::before {
+    content: "";
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: #3339bf;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-section__more {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .page-home-v2 .home-section__body {
+    padding: 0 14px 14px;
+  }
+
+  .page-home-v2 .home-th {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0 8px;
+    padding: 0 4px;
+    border: none;
+    font-size: 10px;
+    color: #bbb;
+  }
+
+  .page-home-v2 .home-th div:first-child {
+    display: none;
+  }
+
+  .page-home-v2 .home-th div:nth-child(2)::before {
+    content: "醫낅ぉ紐?;
+  }
+
+  .page-home-v2 .home-th div:nth-child(2) {
+    font-size: 0;
+  }
+
+  .page-home-v2 .home-tr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    grid-template-columns: unset;
+    gap: 0;
+    padding: 9px 4px;
+    border-bottom: 1px solid #f8f9fc;
+    margin: 0;
+  }
+
+  .page-home-v2 .home-tr:hover {
+    margin: 0;
+    padding: 9px 4px;
+    background: transparent;
+  }
+
+  .page-home-v2 .home-tr:last-child {
+    border-bottom: none;
+  }
+
+  .page-home-v2 .home-tr__rank {
+    width: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #bbb;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-tr > div:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    padding-left: 10px;
+  }
+
+  .page-home-v2 .home-tr__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f1120;
+  }
+
+  .page-home-v2 .home-tr__code {
+    font-size: 10px;
+    color: #ccc;
+  }
+
+  .page-home-v2 .home-tr__price {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f1120;
+    padding-right: 12px;
+  }
+
+  .page-home-v2 .home-tr__chg {
+    width: 60px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .page-home-v2 .home-tr__chg.is-down {
+    color: #1d9e75;
+  }
+
+  /* AI CTA 移대뱶 */
   .page-home-v2 .home-ai-card {
-    background: linear-gradient(145deg, #0f1120 0%, #1e2460 100%);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f1120, #1e2460);
     border-radius: 14px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 24px rgba(15, 17, 32, 0.35);
+    padding: 18px 16px;
+    border: none;
+    box-shadow: none;
+  }
+
+  .page-home-v2 .home-ai-card__orb {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(51, 57, 191, 0.3);
+    display: block !important;
+  }
+
+  .page-home-v2 .home-ai-card__kicker {
+    display: block !important;
+    position: relative;
+    margin: 0 0 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .page-home-v2 .home-ai-card__title-d,
+  .page-home-v2 .home-ai-card__sub-d,
+  .page-home-v2 .home-ai-card__btn-d {
+    display: none;
+  }
+
+  .page-home-v2 .home-ai-card__title-m {
+    display: block !important;
+    position: relative;
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.35;
+  }
+
+  .page-home-v2 .home-ai-card__title-m em {
+    font-style: normal;
+    color: #f59e0b;
+  }
+
+  .page-home-v2 .home-ai-card__sub-m {
+    display: block !important;
+    position: relative;
+    margin: 0 0 14px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .page-home-v2 .home-ai-card__input {
+    position: relative;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    font-size: 13px;
+  }
+
+  .page-home-v2 .home-ai-card__input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .page-home-v2 .home-ai-card__btn-m {
+    display: block !important;
   }
 
   .page-home-v2 .home-ai-card__btn {
+    position: relative;
+    padding: 12px;
+    border-radius: 8px;
     background: #f59e0b;
-    color: #000;
+    color: #0f1120;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .page-home-v2 .home-footer {
     display: none;
   }
 
-  /* 5. 바텀 네비 */
+  /* 諛뷀? ?ㅻ퉬 */
   .page-home-v2 .home-m-bottom-nav {
     display: flex;
+    max-width: 400px;
+    left: 50%;
+    right: auto;
+    width: 100%;
+    transform: translateX(-50%);
+    background: #fff;
+    border-top: 1px solid #f0f2f8;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    padding-top: 0;
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item {
     position: relative;
-    padding-top: 6px;
+    padding: 10px 0 8px;
+    gap: 3px;
+    color: #aaa;
+    font-size: 10px;
+    font-weight: 400;
+  }
+
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active {
+    color: #3339bf;
+    font-weight: 700;
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active::before {
     content: "";
     position: absolute;
     top: 0;
-    left: 18%;
-    right: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 32px;
     height: 2px;
     border-radius: 0 0 2px 2px;
     background: #3339bf;
   }
 
-  [data-theme="dark"] .page-home-v2 .home-nav__m-clock {
-    color: #8892ff;
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #bbb;
   }
 
-  [data-theme="dark"] .page-home-v2 .home-m-ai-live {
-    background: #141828;
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active .tm-bottom-nav__icon {
+    color: #3339bf;
   }
 
-  [data-theme="dark"] .page-home-v2 .home-m-ai-live__title {
-    color: #e8ecff;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-signal--hold {
-    color: #c8ccff;
-    background: #1e2440;
-    border-color: #2a3560;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-confidence__label {
-    color: #8892aa;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-confidence__track {
-    background: #1e2440;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-insight-card {
-    background: #1a1f35;
-    border-color: #2a2f4a;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-insight-card h3 {
-    color: #e8ecff;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-insight-card p {
-    color: #99a8cc;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-claude {
-    background: #1a1f35;
-    border-color: #2a2f4a;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-claude__title {
-    color: #e8ecff;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-claude__text {
-    color: #99a8cc;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-shortcuts {
-    background: #141828;
-    border-bottom-color: #2a2f4a;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-shortcuts__pill {
-    background: #1e2440;
-    color: #99a8cc;
-    border-color: #2a3560;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-shortcuts__pill.is-active {
-    background: #3339bf;
-    color: #fff;
-    border-color: #3339bf;
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-hero {
-    background: linear-gradient(165deg, #0f1120 0%, #1e2460 48%, #3339bf 100%);
-  }
-
-  [data-theme="dark"] .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active::before {
-    background: #8892ff;
+  .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item i {
+    display: none;
   }
 }

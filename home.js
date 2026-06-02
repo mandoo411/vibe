@@ -407,6 +407,21 @@
     });
   }
 
+  function bindMobileHomeUi() {
+    const input = $("home-ai-input");
+    const mq = window.matchMedia("(max-width: 768px)");
+    const applyPlaceholder = () => {
+      if (!input) return;
+      const mPh = input.getAttribute("data-m-placeholder");
+      const dPh = "종목명 입력 (예: 삼성전자, AAPL)";
+      if (mq.matches && mPh) input.placeholder = mPh;
+      else input.placeholder = dPh;
+    };
+    applyPlaceholder();
+    if (typeof mq.addEventListener === "function") mq.addEventListener("change", applyPlaceholder);
+    else if (typeof mq.addListener === "function") mq.addListener(applyPlaceholder);
+  }
+
   function bindMobileClock() {
     const el = document.getElementById("home-m-clock");
     if (!el) return;
@@ -432,6 +447,7 @@
     bindAiForm();
     bindNavToggle();
     bindMobileClock();
+    bindMobileHomeUi();
     await Promise.all([loadTickerAndHero(), loadDomesticTop10(), loadUsAndCrypto(), loadSideCards()]);
     setInterval(loadTickerAndHero, 5 * 60 * 1000);
     setInterval(loadDomesticTop10, 5 * 60 * 1000);

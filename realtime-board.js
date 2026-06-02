@@ -218,6 +218,16 @@
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
     if (data && data.error) throw new Error(data.error);
+    try {
+      if (typeof window !== "undefined" && /(?:\?|&)rtDebug=1\b/.test(window.location.search || "")) {
+        console.log("[realtime-board] /api/stock-analysis", {
+          q,
+          volTurnoverRate: data && (data.volTurnoverRate ?? data.vol_tnrt),
+          creditRate: data && (data.creditRate ?? data.crdt_rate),
+          keys: data ? Object.keys(data).slice(0, 60) : [],
+        });
+      }
+    } catch (_) {}
     return data || {};
   }
 

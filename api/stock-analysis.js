@@ -302,6 +302,7 @@ async function kisInquirePrice(stockCode6) {
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
   const volTurnoverRate = toNum(row.vol_tnrt);
+  console.log("[stock-analysis] price1", stockCode6, "vol_tnrt=", row.vol_tnrt);
   const tradingValue =
     currentPrice != null && volume != null && currentPrice > 0 && volume > 0
       ? Math.round(currentPrice * volume)
@@ -379,6 +380,7 @@ async function kisInquirePrice2(stockCode6) {
 
   const row = data && data.output ? data.output : {};
   const creditRate = toNum(row.crdt_rate);
+  console.log("[stock-analysis] price2", stockCode6, "crdt_rate=", row.crdt_rate);
   return {
     raw2: row,
     creditRate: creditRate == null ? null : Math.round(creditRate * 100) / 100,
@@ -946,6 +948,8 @@ module.exports = async function handler(req, res) {
 
   json(res, 200, {
     ...quoteFields,
+    volTurnoverRate: quote.volTurnoverRate == null ? null : quote.volTurnoverRate,
+    creditRate: quote.creditRate == null ? null : quote.creditRate,
     tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,

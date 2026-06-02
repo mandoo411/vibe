@@ -120,23 +120,27 @@
         gap: 10px;
       }
       .crypto-metric-card {
-        padding: 12px 14px;
+        min-height: 90px;
+        padding: 10px 12px;
         background: var(--bg-panel);
         border: 1px solid var(--border-strong);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
         font-family: "Noto Sans KR", -apple-system, sans-serif;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       .crypto-metric-card__label {
-        font-size: 12px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--text-muted);
+        font-size: 11px;
+        letter-spacing: 0;
+        text-transform: none;
+        color: #9ca3af;
       }
       .crypto-metric-card__value {
         margin-top: 8px;
-        font-size: 20px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 700;
         color: var(--text);
         font-variant-numeric: tabular-nums;
       }
@@ -150,6 +154,13 @@
         grid-template-columns: 62px minmax(0, 1fr);
         align-items: center;
         gap: 12px;
+      }
+      .crypto-gauge__status {
+        margin-top: 6px;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        line-height: 1.2;
       }
       .crypto-gauge__dial {
         width: 62px;
@@ -221,6 +232,11 @@
       }
       .crypto-table .crypto-col-rank {
         font-size: 12px;
+        width: 28px;
+        color: #9ca3af;
+      }
+      .crypto-table .crypto-col-icon {
+        width: 24px;
       }
       .crypto-table .crypto-col-price,
       .crypto-table .crypto-col-24h,
@@ -265,7 +281,7 @@
       }
       .crypto-symbol-inline {
         font-size: 11px;
-        color: #aaa;
+        color: #9ca3af;
         font-weight: 500;
         flex-shrink: 0;
       }
@@ -499,7 +515,7 @@
           flex-direction: column;
         }
         .crypto-metric-card__value {
-          font-size: 17px;
+          font-size: 18px;
         }
         .crypto-table {
           min-width: 0;
@@ -510,16 +526,23 @@
         .crypto-table td {
           padding: 7px 5px;
         }
-        .crypto-col-rank,
         .crypto-col-volume,
-        .crypto-col-fdv {
+        .crypto-col-fdv,
+        .crypto-col-spark {
           display: none;
         }
         .crypto-page-btn {
           padding: 6px 10px;
         }
+        .crypto-col-rank {
+          width: 28px;
+        }
+        .crypto-col-icon {
+          width: 24px;
+          padding-right: 2px;
+        }
         .crypto-col-name {
-          width: 36%;
+          width: auto;
           overflow: hidden;
           max-width: 0;
         }
@@ -532,19 +555,15 @@
           white-space: nowrap;
         }
         .crypto-col-price {
-          width: 26%;
-          padding-right: 10px;
-        }
-        .crypto-col-24h {
-          width: 18%;
-          padding-left: 8px;
+          width: 85px;
           padding-right: 6px;
         }
-        .crypto-col-mcap {
-          width: 20%;
+        .crypto-col-24h {
+          width: 72px;
+          padding-right: 4px;
         }
-        .crypto-col-spark {
-          width: 62px;
+        .crypto-col-mcap {
+          width: 65px;
         }
         .crypto-col-price,
         .crypto-col-mcap {
@@ -676,19 +695,13 @@
                   <thead>
                     <tr>
                       <th class="num crypto-col-rank">#</th>
+                      <th class="crypto-col-icon"></th>
                       <th class="crypto-col-name">코인명</th>
                       <th class="num crypto-col-price">가격</th>
-                      <th class="num crypto-col-24h">24H</th>
+                      <th class="num crypto-col-24h">24H등락률</th>
                       <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
                         시총 <span class="sort-icon">▼</span>
                       </th>
-                      <th class="num crypto-col-fdv crypto-th-sort" data-sort="fullyDilutedMarketCap">
-                        완전희석시총 <span class="sort-icon"></span>
-                      </th>
-                      <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">
-                        거래대금 <span class="sort-icon"></span>
-                      </th>
-                      <th class="num crypto-col-spark">7일 추이</th>
                     </tr>
                   </thead>
                   <tbody id="crypto-tbody"></tbody>
@@ -1074,47 +1087,40 @@
           const g = state.global || {};
           const fg = state.fearGreed || {};
           const score = fg.score == null ? "-" : String(fg.score);
+          const ratingKoMap = {
+            "Extreme Fear": "극단적 공포",
+            Fear: "공포",
+            Neutral: "중립",
+            Greed: "탐욕",
+            "Extreme Greed": "극단적 탐욕",
+          };
+          const ratingKo = ratingKoMap[String(fg.rating || "").trim()] || "-";
           el.innerHTML = `
             <div class="crypto-metric-card">
-              <div class="crypto-metric-card__label">BTC Dominance</div>
+              <div class="crypto-metric-card__label">비트코인 도미넌스</div>
               <div class="crypto-metric-card__value">${escapeHtml(fmtPct(g.btcDominance))}</div>
-              <div class="crypto-metric-card__sub">비트코인 시총 점유율</div>
             </div>
             <div class="crypto-metric-card">
-              <div class="crypto-metric-card__label">Total Market Cap</div>
+              <div class="crypto-metric-card__label">전체 시가총액</div>
               <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.totalMarketCap))}</div>
-              <div class="crypto-metric-card__sub">전체 암호화폐 시가총액</div>
             </div>
             <div class="crypto-metric-card">
-              <div class="crypto-metric-card__label">24h Volume</div>
+              <div class="crypto-metric-card__label">24시간 거래대금</div>
               <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.volume24h))}</div>
-              <div class="crypto-metric-card__sub">최근 24시간 거래대금</div>
             </div>
             <div class="crypto-metric-card crypto-gauge">
               <div class="crypto-gauge__dial"><span class="crypto-gauge__score">${escapeHtml(score)}</span></div>
               <div>
-                <div class="crypto-metric-card__label">Fear & Greed</div>
-                <div class="crypto-metric-card__value">${escapeHtml(fg.rating || "-")}</div>
-                <div class="crypto-metric-card__sub">Alternative.me 공포탐욕지수</div>
+                <div class="crypto-metric-card__label">공포탐욕지수</div>
+                <div class="crypto-gauge__status">${escapeHtml(ratingKo)}</div>
               </div>
             </div>`;
         }
 
-        function coinRankPrefix(c) {
-          const r = Number(c.rank);
-          return Number.isFinite(r) && r > 0 ? `${r}. ` : "";
-        }
-
         function coinNameCellHtml(c, open) {
-          const mobile = window.matchMedia("(max-width: 768px)").matches;
-          const prefix = mobile ? coinRankPrefix(c) : "";
-          const rankHtml = prefix
-            ? `<span class="crypto-name-btn__rank">${escapeHtml(prefix.trim())}</span>`
-            : "";
           return `<div class="crypto-coin-cell">
-                ${coinLogoHtml(c)}
                 <button type="button" class="crypto-name-btn crypto-name-btn--inline" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)})">
-                  ${rankHtml}<span class="crypto-name-btn__label">${escapeHtml(c.name)}</span>
+                  <span class="crypto-name-btn__label">${escapeHtml(c.name)}</span>
                   <span class="crypto-symbol-inline">${escapeHtml(c.symbol)}</span>
                 </button>
               </div>`;
@@ -1123,20 +1129,13 @@
         function coinRowHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
           const price = moneyValue(c, "price");
-          const volume24h = moneyValue(c, "volume24h");
-          const mobile = window.matchMedia("(max-width: 768px)").matches;
-          const pts = resolveSparkline(c);
-          const sparkColor = sparklineColor(c, pts);
-          const sparkHtml = sparklineSvg(pts, sparkColor, mobile);
           return `<tr data-symbol="${escapeHtml(c.symbol)}">
             <td class="num crypto-col-rank">${escapeHtml(Number(c.rank) || "-")}</td>
+            <td class="crypto-col-icon">${coinLogoHtml(c)}</td>
             <td class="crypto-col-name">${coinNameCellHtml(c, open)}</td>
             <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
             <td class="num crypto-col-mcap">${escapeHtml(fmtMcapCell(c))}</td>
-            <td class="num crypto-col-fdv">${escapeHtml(fmtFdvCell(c))}</td>
-            <td class="num crypto-col-volume">${escapeHtml(fmtMoney(volume24h))}</td>
-            <td class="num crypto-col-spark">${sparkHtml}</td>
           </tr>`;
         }
 

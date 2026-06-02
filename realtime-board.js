@@ -1469,6 +1469,14 @@
     tr.innerHTML = tableHeadHtmlForTab(state.tab || "cap");
   }
 
+  function isMobileLayout() {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches
+    );
+  }
+
   function getTableTitle() {
     return "";
   }
@@ -1524,6 +1532,25 @@
   }
 
   function stockRowHtml(r) {
+    if (isMobileLayout()) {
+      const nm = escapeHtml(r.name);
+      const ch = r.changePct;
+      const cls = deltaClass(ch);
+      const price = escapeHtml(fmtNum(r.price));
+      const mcap = escapeHtml(formatStckAvls(readStckAvlsRaw(r)));
+      const rank = r.rank != null ? escapeHtml(String(r.rank)) : "—";
+      const nameBtn = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+      const row = [
+        `<div class="rt-mobile-row">`,
+        `  <span class="rt-col-rank">${rank}</span>`,
+        `  <span class="rt-col-name">${nameBtn}</span>`,
+        `  <span class="rt-col-price">${price}</span>`,
+        `  <span class="rt-col-change"><span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span></span>`,
+        `  <span class="rt-col-last">${mcap}</span>`,
+        `</div>`,
+      ].join("");
+      return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}"><td colspan="${tableColSpan()}">${row}</td></tr>`;
+    }
     const nm = escapeHtml(r.name);
     const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
     const ch = r.changePct;
@@ -1574,6 +1601,7 @@
   }
 
   function applyRowToTr(tr, r) {
+    if (isMobileLayout()) return;
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
@@ -1649,6 +1677,11 @@
     if (body.dataset.rtSkeleton === "1" || body.dataset.rtLoading === "1") return;
     renderThead();
     const rows = getCurrentRows();
+    if (isMobileLayout()) {
+      body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
+      syncNameChartButtonsAria(body);
+      return;
+    }
     if (!state.openChartCode) {
       body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       return;

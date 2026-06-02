@@ -1095,6 +1095,60 @@
         .rt-scroll {
           overflow-x: hidden;
         }
+        .rt-header-row {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 6px 2px;
+          background: transparent !important;
+          border-bottom: 1px solid #e5e7eb;
+          font-size: 11px;
+          font-weight: 400;
+          color: #9ca3af;
+          position: sticky;
+          top: 0;
+          z-index: 3;
+        }
+        [data-theme="dark"] .rt-header-row,
+        .dark-mode .rt-header-row {
+          border-bottom-color: #374151;
+          color: #6b7280 !important;
+        }
+        .rt-col-rank {
+          width: 28px;
+          text-align: center;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        .rt-col-name {
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+          overflow: hidden;
+        }
+        .rt-col-price {
+          width: 85px;
+          text-align: right;
+          flex-shrink: 0;
+          white-space: nowrap;
+          font-variant-numeric: tabular-nums;
+        }
+        .rt-col-change {
+          width: 68px;
+          text-align: right;
+          flex-shrink: 0;
+          white-space: nowrap;
+          font-variant-numeric: tabular-nums;
+        }
+        .rt-col-last {
+          width: 68px;
+          text-align: right;
+          flex-shrink: 0;
+          padding-right: 4px;
+          white-space: nowrap;
+          font-variant-numeric: tabular-nums;
+        }
         /* 모바일: 5열 그리드 (순위 복구 + 고정 폭) */
         .rt-table {
           width: 100%;
@@ -1104,35 +1158,12 @@
         .rt-table colgroup {
           display: none;
         }
-        .rt-table thead,
+        .rt-table thead {
+          display: none !important;
+        }
         .rt-table tbody {
           display: block;
           width: 100%;
-        }
-        .rt-table thead {
-          position: sticky;
-          top: 0;
-          z-index: 3;
-        }
-        .rt-table thead tr,
-        .rt-table tbody tr.rt-stock-row {
-          display: grid;
-          grid-template-columns: 28px minmax(0, 1fr) 85px 68px 68px;
-          column-gap: 8px;
-          align-items: center;
-          width: 100%;
-          max-width: 100%;
-          box-sizing: border-box;
-        }
-        /* 모바일 헤더: 투명 배경 + 통일된 보더/타이포 */
-        .rt-table thead tr {
-          column-gap: 0;
-          background: transparent !important;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        [data-theme="dark"] .rt-table thead tr,
-        .dark-mode .rt-table thead tr {
-          border-bottom-color: #374151;
         }
         .rt-table th,
         .rt-table td {
@@ -1158,94 +1189,31 @@
           padding: 6px 2px;
           box-sizing: border-box;
         }
-        .rt-table thead th {
-          font-size: 11px;
-          font-weight: 400;
-          color: #9ca3af;
-          padding: 6px 2px;
-          background: transparent !important;
-        }
-        [data-theme="dark"] .rt-table thead th,
-        .dark-mode .rt-table thead th {
-          color: #6b7280 !important;
-        }
-        .rt-table .rt-td-rank {
-          width: 28px;
-          text-align: center;
-          padding-right: 6px;
-          color: #9ca3af;
-          font-size: 12px;
-          white-space: nowrap;
-        }
-        .rt-table th.rt-td-rank {
-          width: 28px;
-          text-align: center;
-          padding-right: 6px;
-        }
-        .rt-table th.rt-td-mcap,
-        .rt-table th.rt-td-tv {
-          padding-right: 4px;
-        }
-        [data-theme="dark"] .rt-table .rt-td-rank,
-        .dark-mode .rt-table .rt-td-rank {
-          color: #6b7280;
-        }
-        .rt-table .rt-td-name {
-          min-width: 0;
-          overflow: hidden;
-          text-align: left;
-        }
-        /* 모바일: 대비/거래량은 숨기고, 마지막 컬럼만(시총/거래대금) 표시 */
-        .rt-table .rt-td-vs,
-        .rt-table th.rt-td-vs,
-        .rt-table .rt-td-vol,
-        .rt-table th.rt-td-vol {
-          display: none !important;
-        }
-        .rt-table .rt-td-price,
-        .rt-table .rt-td-chg,
-        .rt-table .rt-td-tv,
-        .rt-table .rt-td-mcap {
-          font-size: 13px;
-          white-space: nowrap;
-          text-align: right;
-          font-variant-numeric: tabular-nums;
-        }
-        .rt-table .rt-td-price {
-          width: 85px;
-        }
-        .rt-table .rt-td-chg {
-          width: 68px;
-        }
-        .rt-table .rt-td-tv,
-        .rt-table .rt-td-mcap {
-          width: 68px;
-          padding-right: 4px;
-          color: #111827;
-        }
-        [data-theme="dark"] .rt-table .rt-td-tv,
-        [data-theme="dark"] .rt-table .rt-td-mcap,
-        .dark-mode .rt-table .rt-td-tv,
-        .dark-mode .rt-table .rt-td-mcap {
-          color: #f3f4f6 !important;
-        }
-        .rt-table th.rt-td-price,
-        .rt-table th.rt-td-chg,
-        .rt-table th.rt-td-tv,
-        .rt-table th.rt-td-mcap {
-          text-align: right;
-        }
-        .rt-table .rt-td-chg .delta {
-          display: inline-block;
-          width: 100%;
-          text-align: right;
-        }
         .rt-table .rt-name-chart-btn {
           display: block;
           width: 100%;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+        }
+        .rt-mobile-row {
+          display: flex;
+          align-items: center;
+          width: 100%;
+          box-sizing: border-box;
+          padding: 6px 2px;
+        }
+        .rt-mobile-row .rt-col-last {
+          color: #111827;
+        }
+        [data-theme="dark"] .rt-mobile-row .rt-col-last,
+        .dark-mode .rt-mobile-row .rt-col-last {
+          color: #f3f4f6 !important;
+        }
+        .rt-mobile-row .rt-col-change .delta {
+          display: inline-block;
+          width: 100%;
+          text-align: right;
         }
         .rt-acc-cell {
           padding: 4px 6px;
@@ -2042,6 +2010,13 @@
 
           <div class="table-box">
             <div class="rt-scroll">
+              <div class="rt-header-row" aria-hidden="true">
+                <span class="rt-col-rank">순위</span>
+                <span class="rt-col-name">종목명</span>
+                <span class="rt-col-price">가격</span>
+                <span class="rt-col-change">등락률</span>
+                <span class="rt-col-last">시가총액</span>
+              </div>
               <table class="rt-table" data-rt-tab="cap" aria-label="실시간 시세">
                 <colgroup>
                   <col class="rt-col-rank" />

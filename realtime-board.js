@@ -1985,7 +1985,7 @@
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
       accGridCell("시총", mcap),
-      isMobile ? accGridCell("거래량회전율", volTurnoverRate) : accGridCell("전일거래량", prevVol),
+      accGridCell("거래량회전율", volTurnoverRate),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),
       accGridCell(labelHi52, hi52, "rt-acc-val--hi"),
@@ -1993,7 +1993,7 @@
       accGridCell("EPS", finEps),
       accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
-      isMobile ? accGridCell("신용비율", creditRate) : accGridCell("전일대비", vsAbs),
+      accGridCell("신용비율", creditRate),
     ].join("");
 
     const supplyGrid = [

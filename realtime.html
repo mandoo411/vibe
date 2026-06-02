@@ -1093,18 +1093,22 @@
         .rt-table thead tr,
         .rt-table tbody tr.rt-stock-row {
           display: grid;
-          grid-template-columns: 24px minmax(0, 1fr) 80px 65px 60px;
+          grid-template-columns: 28px minmax(0, 1fr) 88px 68px 68px;
           column-gap: 8px;
           align-items: center;
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
         }
-        /* 모바일 헤더 크랙(분리선/배경 틈) 방지: 헤더는 gap 없이 한 줄로 */
+        /* 모바일 헤더: 투명 배경 + 통일된 보더/타이포 */
         .rt-table thead tr {
           column-gap: 0;
-          background: var(--bg-tertiary);
-          border-bottom: 1px solid var(--border);
+          background: transparent;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        [data-theme="dark"] .rt-table thead tr,
+        .dark-mode .rt-table thead tr {
+          border-bottom-color: #374151;
         }
         .rt-table th,
         .rt-table td {
@@ -1131,15 +1135,26 @@
           box-sizing: border-box;
         }
         .rt-table thead th {
+          font-size: 11px;
+          font-weight: 400;
+          color: #9ca3af;
+          padding: 6px 0;
           background: transparent;
-          border-bottom: none;
+        }
+        [data-theme="dark"] .rt-table thead th,
+        .dark-mode .rt-table thead th {
+          color: #6b7280 !important;
         }
         .rt-table .rt-td-rank {
-          width: 24px;
+          width: 28px;
           text-align: center;
           color: #9ca3af;
           font-size: 12px;
           white-space: nowrap;
+        }
+        [data-theme="dark"] .rt-table .rt-td-rank,
+        .dark-mode .rt-table .rt-td-rank {
+          color: #6b7280;
         }
         .rt-table .rt-td-name {
           min-width: 0;
@@ -1160,16 +1175,25 @@
           font-size: 13px;
           white-space: nowrap;
           text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+        .rt-table .rt-td-price {
+          width: 88px;
+        }
+        .rt-table .rt-td-chg {
+          width: 68px;
         }
         .rt-table .rt-td-tv,
         .rt-table .rt-td-mcap {
-          color: #374151;
+          width: 68px;
+          padding-right: 4px;
+          color: #111827;
         }
         [data-theme="dark"] .rt-table .rt-td-tv,
         [data-theme="dark"] .rt-table .rt-td-mcap,
         .dark-mode .rt-table .rt-td-tv,
         .dark-mode .rt-table .rt-td-mcap {
-          color: #e5e7eb;
+          color: #f3f4f6 !important;
         }
         .rt-table th.rt-td-price,
         .rt-table th.rt-td-chg,

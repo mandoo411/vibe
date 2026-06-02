@@ -999,12 +999,18 @@
         .rt-tab .rt-tab-label--short {
           display: inline;
         }
-        /* 모바일: flex 행 + 고정 너비 숫자 열 */
+        .rt-scroll {
+          overflow-x: hidden;
+        }
+        /* 모바일: flex 행 + 고정 너비 숫자 열 (뷰포트 안에 맞춤) */
         .rt-table {
-          --rt-col-rank: 30px;
-          --rt-col-price: 75px;
-          --rt-col-chg: 65px;
-          --rt-col-metric: 70px;
+          --rt-col-rank: 26px;
+          --rt-col-price: 68px;
+          --rt-col-chg: 58px;
+          --rt-col-metric: 62px;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
         }
         .rt-table colgroup {
           display: none;
@@ -1024,6 +1030,7 @@
           display: flex;
           align-items: center;
           width: 100%;
+          max-width: 100%;
           box-sizing: border-box;
         }
         .rt-table tr.rt-detail-row,
@@ -1039,7 +1046,7 @@
         .rt-table th,
         .rt-table td {
           display: block;
-          padding: 6px 4px;
+          padding: 6px 2px;
           box-sizing: border-box;
         }
         .rt-table .rt-td-rank {
@@ -1090,9 +1097,6 @@
           width: 100%;
           text-align: right;
         }
-        .rt-table {
-          min-width: 0;
-        }
         .rt-table .rt-name-chart-btn {
           display: block;
           width: 100%;
@@ -1113,6 +1117,9 @@
       @media (min-width: 769px) {
         .rt-tab .rt-tab-label--short {
           display: none;
+        }
+        .rt-table {
+          min-width: 640px;
         }
       }
       .rt-tab[aria-selected="false"] {
@@ -1190,7 +1197,6 @@
       }
       .rt-table {
         width: 100%;
-        min-width: 640px;
         border-collapse: collapse;
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 13px;
@@ -1988,6 +1994,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602h"></script>
+    <script src="./realtime-board.js?v=20260602i"></script>
   </body>
 </html>

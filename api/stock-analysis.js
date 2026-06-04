@@ -302,6 +302,7 @@ async function kisInquirePrice(stockCode6) {
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
   const volTurnoverRate = toNum(row.vol_tnrt);
+  const wholLoanRmndRate = toNum(row.whol_loan_rmnd_rate);
   console.log("[stock-analysis] price1", stockCode6, "vol_tnrt=", row.vol_tnrt);
   const tradingValue =
     currentPrice != null && volume != null && currentPrice > 0 && volume > 0
@@ -326,6 +327,7 @@ async function kisInquirePrice(stockCode6) {
     changeRate: changeRate == null ? 0 : Math.round(changeRate * 100) / 100,
     volume: volume == null ? 0 : Math.round(volume),
     volTurnoverRate: volTurnoverRate == null ? null : Math.round(volTurnoverRate * 100) / 100,
+    wholLoanRmndRate: wholLoanRmndRate == null ? null : Math.round(wholLoanRmndRate * 100) / 100,
     tradingValue: tradingValue == null ? null : Math.round(tradingValue),
     prevClose: prevClose == null ? null : Math.round(prevClose),
     high: high == null ? 0 : Math.round(high),
@@ -967,6 +969,7 @@ module.exports = async function handler(req, res) {
     volTurnoverRate: quote.volTurnoverRate == null ? null : quote.volTurnoverRate,
     creditRate: quote.creditRate == null ? null : quote.creditRate,
     creditLoanBalance: quote.creditLoanBalance == null ? null : quote.creditLoanBalance,
+    wholLoanRmndRate: quote.wholLoanRmndRate == null ? null : quote.wholLoanRmndRate,
     tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,

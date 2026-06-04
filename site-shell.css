@@ -1486,7 +1486,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
   .page-tm-v2 .home-top {
     background: var(--bg-primary, #fff);
-    padding: 12px 16px 0;
+    padding: 12px 0 0;
     box-shadow: 0 1px 0 #e8eaf0;
     position: sticky;
     top: 0;
@@ -1503,7 +1503,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
     flex-wrap: nowrap;
     gap: 10px;
     min-height: 0;
-    padding: 0 0 10px;
+    padding: 0 16px 10px;
     background: transparent;
     border: none;
     position: static;
@@ -1580,13 +1580,15 @@ body[data-theme="dark"] .home-ticker-bar__label {
     animation: shell-live-pulse 1.5s infinite;
   }
 
-  /* 미니 지수바 — 모바일 단일 박스 */
+  /* 미니 지수바 — 모바일 단일 박스, 좌우 끝까지 */
   .page-tm-v2 .home-ticker-bar,
   .page-home-v2 .home-ticker-bar {
     gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
     min-height: 36px;
-    padding: 8px 12px;
-    margin-bottom: 0;
+    padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+    margin: 0;
     border: none;
     border-radius: 0;
     min-width: 0;

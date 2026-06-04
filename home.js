@@ -255,6 +255,8 @@
   };
 
   let homeRtTab = "cap";
+  const homeRtCache = {};
+  let homeRtRequestId = 0;
 
   const HOME_US_ACTION = { cap: "market-cap", gainers: "gainers", tv: "volume" };
   const HOME_US_METRIC_LABEL = {
@@ -319,7 +321,7 @@
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
         const ariaLabel = r.code ? `${r.name} ${r.code}` : String(r.name || "");
-        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name-wrap">${rankHtml}<div class="home-tr__name">${escapeHtml(r.name)}</div></div><div class="home-tr__code" aria-hidden="true">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }
@@ -336,18 +338,46 @@
     });
   }
 
-  async function loadHomeRtTab(tab) {
+  async function fetchHomeRtStocks(tab) {
     const action = HOME_RT_ACTION[tab] || HOME_RT_ACTION.cap;
-    homeRtTab = HOME_RT_ACTION[tab] ? tab : "cap";
-    syncHomeRtChrome();
-    try {
-      const data = await fetchJson(
-        `/api/kis-realtime-data?action=${encodeURIComponent(action)}&page=1&pageSize=10&t=` + Date.now()
-      );
-      renderHomeRtTable(data.stocks);
-    } catch (_) {
-      renderHomeRtTable([]);
+    const data = await fetchJson(
+      `/api/kis-realtime-data?action=${encodeURIComponent(action)}&page=1&pageSize=10&t=` + Date.now()
+    );
+    return Array.isArray(data.stocks) ? data.stocks : [];
+  }
+
+  async function loadHomeRtTab(tab, { background = false, force = false } = {}) {
+    const key = HOME_RT_ACTION[tab] ? tab : "cap";
+    let reqId = null;
+    if (!background) {
+      reqId = ++homeRtRequestId;
+      homeRtTab = key;
+      syncHomeRtChrome();
+      const hit = homeRtCache[key];
+      if (hit && !force) renderHomeRtTable(hit.stocks);
+      else {
+        const el = $("home-rt-body");
+        if (el && !hit) el.innerHTML = '<p class="home-empty">로딩 중…</p>';
+      }
     }
+    try {
+      const stocks = await fetchHomeRtStocks(key);
+      homeRtCache[key] = { stocks, at: Date.now() };
+      if (background) {
+        if (homeRtTab === key) renderHomeRtTable(stocks);
+      } else if (reqId === homeRtRequestId) {
+        renderHomeRtTable(stocks);
+      }
+    } catch (_) {
+      if (!background && homeRtTab === key && !homeRtCache[key]) renderHomeRtTable([]);
+    }
+  }
+
+  function prefetchHomeRtTabs(skipTab) {
+    Object.keys(HOME_RT_ACTION).forEach((tab) => {
+      if (tab === skipTab) return;
+      void loadHomeRtTab(tab, { background: true, force: true });
+    });
   }
 
   function bindHomeRtTabs() {
@@ -355,7 +385,15 @@
       btn.addEventListener("click", () => {
         const tab = btn.getAttribute("data-home-rt-tab");
         if (!tab || tab === homeRtTab) return;
-        loadHomeRtTab(tab);
+        const hit = homeRtCache[tab];
+        if (hit) {
+          homeRtTab = tab;
+          syncHomeRtChrome();
+          renderHomeRtTable(hit.stocks);
+          void loadHomeRtTab(tab, { background: true, force: true });
+        } else {
+          void loadHomeRtTab(tab);
+        }
       });
     });
   }
@@ -611,8 +649,13 @@
     bindHomeUsTabs();
     syncHomeRtChrome();
     await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadHomeUsTab("cap"), loadUsAndCrypto(), loadSideCards()]);
+    prefetchHomeRtTabs("cap");
     setInterval(loadTickerAndHero, 5 * 60 * 1000);
-    setInterval(() => loadHomeRtTab(homeRtTab), 5 * 60 * 1000);
+    setInterval(() => {
+      const cur = homeRtTab;
+      void loadHomeRtTab(cur, { force: true });
+      prefetchHomeRtTabs(cur);
+    }, 5 * 60 * 1000);
     setInterval(loadUsAndCrypto, 5 * 60 * 1000);
     setInterval(() => loadHomeUsTab(homeUsTab), 5 * 60 * 1000);
   }

@@ -101,12 +101,27 @@
     return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
   }
 
-  function formatTickerPct(value) {
-    if (value == null || value === "") return "";
+  function formatTickerPct(value, label) {
     const n = Number(value);
-    if (!Number.isFinite(n)) return "";
+    const isUsdKrw = String(label || "").includes("원/달러");
+    if (!Number.isFinite(n)) return isUsdKrw ? "—" : "";
+    if (isUsdKrw && Math.abs(n) < 0.0001) return "—";
     const sign = n > 0 ? "+" : "";
     return `${sign}${n.toFixed(2)}%`;
+  }
+
+  function tickerPctHtml(item) {
+    const label = item?.label || "";
+    const pct = Number(item?.changePct);
+    const isUsdKrw = label.includes("원/달러");
+    if (!Number.isFinite(pct)) {
+      return isUsdKrw ? '<span class="home-ticker__pct">—</span>' : "";
+    }
+    if (isUsdKrw && Math.abs(pct) < 0.0001) {
+      return '<span class="home-ticker__pct">—</span>';
+    }
+    const cls = pct > 0 ? "is-up" : pct < 0 ? "is-down" : "";
+    return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
   function renderTicker() {
@@ -125,10 +140,7 @@
         }
         el.innerHTML = items
           .map((item) => {
-            const pct = Number(item.changePct);
-            const cls = Number.isFinite(pct) && pct > 0 ? "is-up" : Number.isFinite(pct) && pct < 0 ? "is-down" : "";
-            const pctHtml =
-              Number.isFinite(pct) ? `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct)}</span>` : "";
+            const pctHtml = tickerPctHtml(item);
             return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
           })
           .join("");

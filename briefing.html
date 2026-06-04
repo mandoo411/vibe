@@ -139,6 +139,23 @@
 
       .briefing-card--macro {
         order: -3;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+      }
+
+      .briefing-card--macro #forex-list {
+        flex: 1 1 auto;
+      }
+
+      .briefing-card--macro::after {
+        content: "";
+        display: block;
+        flex: 1 1 auto;
+        min-height: 20px;
+        margin-top: auto;
+        border-top: 1px solid var(--border);
+        background: var(--bg-elevated);
       }
 
       .briefing-card--us {
@@ -419,6 +436,26 @@
           .replace(/\.$/, "");
       }
 
+      /** ISO 8601 → "2026년 6월 4일 06:00 KST" */
+      function fmtUpdatedAtKst(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return String(iso);
+        const tz = "Asia/Seoul";
+        const y = d.toLocaleString("en-US", { timeZone: tz, year: "numeric" });
+        const m = d.toLocaleString("en-US", { timeZone: tz, month: "numeric" });
+        const day = d.toLocaleString("en-US", { timeZone: tz, day: "numeric" });
+        const parts = new Intl.DateTimeFormat("en-GB", {
+          timeZone: tz,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).formatToParts(d);
+        const hour = parts.find((p) => p.type === "hour")?.value ?? "00";
+        const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
+        return `${y}년 ${m}월 ${day}일 ${hour}:${minute} KST`;
+      }
+
       const US_INDEX_ORDER = ["nasdaq", "sp500", "nasdaq-futures"];
 
       function renderRows(id, rows, getLabel, getValue) {
@@ -598,7 +635,9 @@
       async function loadBriefing() {
         try {
           const data = await tmFetchJson("data/morning-briefing.json");
-          $("briefing-updated").textContent = data.updatedAt ? `마지막 업데이트: ${data.updatedAt}` : "미국 마감, 환율, 주요 뉴스";
+          $("briefing-updated").textContent = data.updatedAt
+            ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
+            : "미국 마감, 환율, 주요 뉴스";
           const errs = Array.isArray(data.errors) ? data.errors : [];
           if (errs.length || data.aiAnalysis?._fallback) {
             $("masthead-notice").hidden = false;

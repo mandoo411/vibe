@@ -190,10 +190,19 @@
     }
     el.innerHTML = list
       .map((item) => {
+        const label = String(item.label || "");
+        const isUsdKrw = label.includes("원/달러");
         const pct = toNum(item.changePct);
-        const pctCls = chgClass(pct);
-        const pctHtml = pct != null ? `<span class="home-ticker__pct ${pctCls}">${escapeHtml(fmtPct(pct))}</span>` : "";
-        return `<div class="home-ticker__item"><span class="home-ticker__name">${escapeHtml(item.label)}</span><span class="home-ticker__val">${escapeHtml(fmtTickerValue(item))}</span>${pctHtml}</div>`;
+        let pctHtml = "";
+        if (isUsdKrw && (pct == null || Math.abs(pct) < 0.0001)) {
+          pctHtml = '<span class="home-ticker__pct">—</span>';
+        } else if (pct != null) {
+          const pctCls = chgClass(pct);
+          pctHtml = `<span class="home-ticker__pct ${pctCls}">${escapeHtml(fmtPct(pct))}</span>`;
+        } else if (isUsdKrw) {
+          pctHtml = '<span class="home-ticker__pct">—</span>';
+        }
+        return `<div class="home-ticker__item"><span class="home-ticker__name">${escapeHtml(label)}</span><span class="home-ticker__val">${escapeHtml(fmtTickerValue(item))}</span>${pctHtml}</div>`;
       })
       .join("");
   }

@@ -85,10 +85,30 @@ async function domesticIndex(code, label) {
   return { id: code, label, value: null, changePct: null };
 }
 
-async function erUsdKrw() {
-  const res = await fetch("https://open.er-api.com/v6/latest/USD");
-  const body = await res.json();
-  return { id: "usdkrw", label: "원/달러", value: toNum(body?.rates?.KRW), changePct: null };
+async function usdKrwQuote() {
+  try {
+    const q = await yahooQuote("KRW=X", "원/달러");
+    if (q.value != null) {
+      const changePct =
+        q.changePct != null && Number.isFinite(q.changePct) && Math.abs(q.changePct) >= 0.0001
+          ? q.changePct
+          : null;
+      console.log("[market-ticker] USD/KRW Yahoo", { value: q.value, changePct });
+      return { id: "usdkrw", label: "원/달러", value: q.value, changePct };
+    }
+  } catch (error) {
+    console.warn("[market-ticker] USD/KRW Yahoo failed", error?.message || error);
+  }
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    const body = await res.json();
+    const value = toNum(body?.rates?.KRW);
+    console.log("[market-ticker] USD/KRW ER-API (no changePct)", { value });
+    return { id: "usdkrw", label: "원/달러", value, changePct: null };
+  } catch (error) {
+    console.warn("[market-ticker] USD/KRW ER-API failed", error?.message || error);
+    return { id: "usdkrw", label: "원/달러", value: null, changePct: null };
+  }
 }
 
 async function finnhubQuote(symbol, label) {
@@ -181,7 +201,7 @@ module.exports = async function handler(req, res) {
     domesticIndex("0001", "코스피"),
     domesticIndex("1001", "코스닥"),
     yahooQuote("NQ=F", "나스닥선물"),
-    erUsdKrw(),
+    usdKrwQuote(),
     commodityQuote("OANDA:WTI_USD", "CL=F", "WTI유가"),
     commodityQuote("OANDA:XAU_USD", "GC=F", "금시세"),
     btc(),

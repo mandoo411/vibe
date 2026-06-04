@@ -585,6 +585,11 @@ body.tm-nav-sheet-open {
   font-weight: 600;
 }
 
+.home-ticker__pct:not(.is-up):not(.is-down) {
+  color: var(--text-secondary, #888);
+  font-weight: 500;
+}
+
 /* 미니 지수바 — 로딩/데이터 표시 높이 동일(모바일·데스크톱 공통) */
 .page-tm-v2 .home-ticker-bar,
 .page-home-v2 .home-ticker-bar {
@@ -595,8 +600,26 @@ body.tm-nav-sheet-open {
   min-height: var(--tm-ticker-bar-h);
   max-height: var(--tm-ticker-bar-h);
   margin-top: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
   overflow: hidden;
   align-items: center;
+}
+
+[data-theme="dark"] .page-tm-v2 .home-ticker-bar,
+[data-theme="dark"] .page-home-v2 .home-ticker-bar {
+  border-bottom-color: #1f2937;
+}
+
+/* 티커바 없이 단독 .home-ticker만 있는 레거시 레이아웃 */
+.page-tm-v2 .home-top > .home-ticker:not(.home-ticker-bar .home-ticker) {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+[data-theme="dark"] .page-tm-v2 .home-top > .home-ticker:not(.home-ticker-bar .home-ticker) {
+  border-bottom-color: #1f2937;
 }
 
 .page-tm-v2 .home-ticker-bar .home-ticker,
@@ -803,6 +826,21 @@ body.tm-nav-sheet-open {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+  align-self: stretch;
+}
+
+.page-tm-v2 .briefing-card--macro #forex-list {
+  flex: 1 1 auto;
+}
+
+.page-tm-v2 .briefing-card--macro::after {
+  content: "";
+  display: block;
+  flex: 1 1 auto;
+  min-height: 20px;
+  margin-top: auto;
+  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  background: var(--bg-elevated, var(--bg-tertiary));
 }
 
 .page-tm-v2 .briefing-card--wide:has(#ai-analysis) {
@@ -1521,8 +1559,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
     background: var(--bg-secondary, #f8f9fc);
     border-radius: 8px;
     padding: 0 12px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     border: 1px solid var(--border, transparent);
+    border-bottom: 1px solid #e5e7eb;
     min-width: 0;
     height: var(--tm-ticker-bar-h);
     min-height: var(--tm-ticker-bar-h);
@@ -1858,6 +1897,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   [data-theme="dark"] .page-home-v2 .home-ticker-bar {
     background: var(--bg-secondary, #1c2030);
     border-color: var(--border, rgba(255, 255, 255, 0.08));
+    border-bottom-color: #1f2937;
   }
 
   [data-theme="dark"] .tm-bottom-nav__item {

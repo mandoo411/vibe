@@ -425,11 +425,19 @@ async function fetchText(url, headers = {}) {
   return text;
 }
 
+function economicRowKey(row) {
+  const date = String(row.date || row.time || "").slice(0, 10);
+  return `${date}|${row.country || ""}|${row.event || ""}`;
+}
+
 function normalizeEconomic(data, { minDate } = {}) {
-  const mapped = economicRowsFromResponse(data).map(mapEconomicRow);
-  const enriched = enrichEconomicPrevious(mapped);
+  const rawRows = economicRowsFromResponse(data);
+  const highKeys = new Set(rawRows.filter(isHighImpact).map(economicRowKey));
+  const enriched = enrichEconomicPrevious(rawRows.map(mapEconomicRow));
   const min = minDate || "";
-  return enriched.filter((row) => (!min || row.date >= min) && isHighImpact(row));
+  return enriched
+    .filter((row) => (!min || row.date >= min) && highKeys.has(economicRowKey(row)))
+    .map((row) => ({ ...row, impact: "high", importance: 3 }));
 }
 
 function normalizeEarnings(data) {

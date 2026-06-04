@@ -36,6 +36,8 @@ jobs:
       - name: Commit and push if changed
         run: |
           set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- assets/stock-list.json; then
             echo "No changes."
             exit 0

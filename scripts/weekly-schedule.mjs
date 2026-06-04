@@ -430,6 +430,16 @@ function economicRowKey(row) {
   return `${date}|${row.country || ""}|${row.event || ""}`;
 }
 
+function mergeEconomicResponses(...sources) {
+  const byKey = new Map();
+  for (const source of sources) {
+    for (const row of economicRowsFromResponse(source)) {
+      byKey.set(economicRowKey(row), row);
+    }
+  }
+  return [...byKey.values()];
+}
+
 function normalizeEconomic(data, { minDate } = {}) {
   const rawRows = economicRowsFromResponse(data);
   const highKeys = new Set(rawRows.filter(isHighImpact).map(economicRowKey));
@@ -672,25 +682,35 @@ async function main() {
   const today = seoulYmd();
   const to = addDaysYmd(today, 14);
   const historyFrom = addDaysYmd(today, -90);
-  const economicUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
-  economicUrl.searchParams.set("from", historyFrom);
-  economicUrl.searchParams.set("to", to);
-  economicUrl.searchParams.set("token", token);
+  const yesterday = addDaysYmd(today, -1);
+
+  const economicForwardUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
+  economicForwardUrl.searchParams.set("from", today);
+  economicForwardUrl.searchParams.set("to", to);
+  economicForwardUrl.searchParams.set("token", token);
+
+  const economicHistoryUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
+  economicHistoryUrl.searchParams.set("from", historyFrom);
+  economicHistoryUrl.searchParams.set("to", yesterday);
+  economicHistoryUrl.searchParams.set("token", token);
 
   const earningsUrl = new URL(`${FINNHUB_BASE_URL}/calendar/earnings`);
   earningsUrl.searchParams.set("from", today);
   earningsUrl.searchParams.set("to", to);
   earningsUrl.searchParams.set("token", token);
 
-  const [economicRaw, earningsRaw, news, krIPO, krEarnings] = await Promise.all([
-    fetchJson(economicUrl),
+  const [economicForwardRaw, economicHistoryRaw, earningsRaw, news, krIPO, krEarnings] = await Promise.all([
+    fetchJson(economicForwardUrl),
+    historyFrom <= yesterday ? fetchJson(economicHistoryUrl) : Promise.resolve({ economicCalendar: [] }),
     fetchJson(earningsUrl),
     fetchKoreanNews(),
     fetchKRIPO(today, to),
     fetchKREarnings(today, to),
   ]);
 
-  const economicCalendar = normalizeEconomic(economicRaw, { minDate: today });
+  const economicMerged = mergeEconomicResponses(economicHistoryRaw, economicForwardRaw);
+  const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: today });
+  console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
   const earningsCalendar = normalizeEarnings(earningsRaw);
   const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news });
 

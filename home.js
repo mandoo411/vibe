@@ -259,7 +259,7 @@
   const HOME_US_ACTION = { cap: "market-cap", gainers: "gainers", tv: "volume" };
   const HOME_US_METRIC_LABEL = {
     cap: "시가총액",
-    gainers: "거래량",
+    gainers: "거래대금",
     tv: "거래대금",
   };
   let homeUsTab = "cap";
@@ -273,12 +273,14 @@
     return `$${Math.round(n)}`;
   }
 
-  function fmtNumberCompact(n) {
-    if (n == null || !Number.isFinite(n)) return "—";
-    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
-    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
-    if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
-    return String(Math.round(n));
+  function readUsTradingValue(r) {
+    let n = toNum(r && r.tradingValue);
+    if (n == null || n <= 0) {
+      const p = toNum(r && r.price);
+      const v = toNum(r && r.volume);
+      if (p != null && v != null && p > 0 && v > 0) n = p * v;
+    }
+    return n;
   }
 
   function formatHomeUsMetric(r, tab) {
@@ -286,17 +288,8 @@
       const n = toNum(r && r.marketCap);
       return n != null && n > 0 ? fmtUsdCompact(n) : "—";
     }
-    if (tab === "tv") {
-      let n = toNum(r && r.tradingValue);
-      if (n == null || n <= 0) {
-        const p = toNum(r && r.price);
-        const v = toNum(r && r.volume);
-        if (p != null && v != null && p > 0 && v > 0) n = p * v;
-      }
-      return n != null && n > 0 ? fmtUsdCompact(n) : "—";
-    }
-    const vol = toNum(r && r.volume);
-    return vol != null && vol > 0 ? fmtNumberCompact(vol) : "—";
+    const tv = readUsTradingValue(r);
+    return tv != null && tv > 0 ? fmtUsdCompact(tv) : "—";
   }
 
   function syncHomeUsChrome() {

@@ -23,6 +23,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import { analyzeDailyClosingReport } from "./daily-market-ai.mjs";
+import { parseJsonFromAssistant } from "./claude-utils.mjs";
 import {
   fetchSectorMoves,
   fetchSupplyBothMarkets,
@@ -170,6 +171,11 @@ function telegramChannelScore(channelName) {
   return 9;
 }
 
+function isTelegramBenignError(error) {
+  const msg = String(error?.message || error || "");
+  return /TIMEOUT|timeout|ECONNRESET|connection closed|disconnect/i.test(msg);
+}
+
 async function collectTelegramMacroMessages() {
   const session = process.env.TELEGRAM_SESSION;
   const apiId = Number.parseInt(process.env.TELEGRAM_API_ID || "", 10);
@@ -179,10 +185,12 @@ async function collectTelegramMacroMessages() {
     return [];
   }
 
-  const client = new TelegramClient(new StringSession(session), apiId, apiHash, { connectionRetries: 3 });
-  return withTimeout(
-    (async () => {
-      try {
+  const client = new TelegramClient(new StringSession(session), apiId, apiHash, {
+    connectionRetries: 2,
+  });
+  try {
+    const messages = await withTimeout(
+      (async () => {
         await client.connect();
         const dialogs = await client.getDialogs({});
         const channels = dialogs
@@ -204,30 +212,39 @@ async function collectTelegramMacroMessages() {
                   date: new Date(Number(msg.date) * 1000),
                 }));
             } catch (error) {
-              console.log(`  Telegram 채널 읽기 실패: ${channel.name || "unknown"} - ${error.message}`);
+              const errMsg = error?.message || error;
+              if (!isTelegramBenignError(error)) {
+                console.log(`  Telegram 채널 읽기 실패: ${channel.name || "unknown"} - ${errMsg}`);
+              }
               return [];
             }
           })
         );
-        const messages = results
+        const collected = results
           .filter((result) => result.status === "fulfilled")
           .flatMap((result) => result.value)
           .filter((msg) => TELEGRAM_STOCK_KEYWORDS.some((keyword) => msg.text.includes(keyword)))
           .sort((a, b) => a.score - b.score || b.date - a.date)
           .slice(0, 60);
-        console.log(`  Telegram macro messages: ${messages.length}건`);
-        return messages;
-      } finally {
-        await Promise.resolve(client.disconnect()).catch(() => {});
-      }
-    })(),
-    TELEGRAM_TOTAL_TIMEOUT,
-    "Telegram macro collection",
-    () => Promise.resolve(client.disconnect()).catch(() => {})
-  ).catch((error) => {
-    console.log(`  Telegram 메시지 수집 실패: ${error.message}`);
+        console.log(`  Telegram macro messages: ${collected.length}건`);
+        return collected;
+      })(),
+      TELEGRAM_TOTAL_TIMEOUT,
+      "Telegram macro collection",
+      () => Promise.resolve(client.disconnect()).catch(() => {})
+    );
+    return messages;
+  } catch (error) {
+    const errMsg = error?.message || error;
+    if (isTelegramBenignError(error)) {
+      console.log(`  Telegram TIMEOUT/연결 오류(스킵, 워크플로우 계속): ${errMsg}`);
+    } else {
+      console.log(`  Telegram 메시지 수집 실패(스킵): ${errMsg}`);
+    }
     return [];
-  });
+  } finally {
+    await Promise.resolve(client.disconnect()).catch(() => {});
+  }
 }
 
 function telegramMessagesForPrompt(messages) {
@@ -600,18 +617,6 @@ async function fetchNewsForStocks(stocks, perStock, concurrency, perRequestDelay
   return out;
 }
 
-// ─── Claude: 상승 이유 + 테마 ─────────────────────────────
-function parseJsonFromAssistant(text) {
-  // Claude 응답에서 코드블록 제거 후 파싱
-  const rawText = String(text || "");
-  const cleanText = rawText
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```\s*$/i, "")
-    .trim();
-  return JSON.parse(cleanText);
-}
-
 /** 주식현재가 시세 — fid_input_iscd(6자리) + 시장구분으로 등락률(prdy_ctrt) 조회 */
 const KIS_INQUIRE_PRICE_TR_ID = "FHKST01010100";
 
@@ -855,9 +860,15 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
   console.log("[debug] Claude response type:", response?.type);
   console.log("[debug] Claude content:", JSON.stringify(response?.content?.slice?.(0, 1)));
 
-  const rawText = response?.content?.find?.(b => b.type === 'text')?.text || response?.content?.[0]?.text || '';
-  const cleanText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-  const parsed = JSON.parse(cleanText);
+  const rawText = response?.content?.find?.((b) => b.type === "text")?.text || response?.content?.[0]?.text || "";
+  let parsed;
+  try {
+    parsed = parseJsonFromAssistant(rawText);
+  } catch (parseErr) {
+    console.warn("[classifyWithClaude] JSON parse failed:", parseErr?.message || parseErr);
+    console.warn("[classifyWithClaude] raw tail:", String(rawText).slice(-400));
+    throw parseErr;
+  }
   if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.stocks)) {
     throw new Error("Claude output missing stocks array");
   }

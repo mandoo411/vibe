@@ -138,3 +138,72 @@ export function buildFallbackBriefingAnalysis(data) {
     _fallback: true,
   };
 }
+
+/** Claude 응답 텍스트 → JSON (잘린 응답·코드펜스 복구) */
+export function parseJsonFromAssistant(text) {
+  let raw = sanitizeUnicode(String(text || "")).trim();
+  raw = raw
+    .replace(/^```json\s*/im, "")
+    .replace(/^```\s*/im, "")
+    .replace(/```\s*$/im, "")
+    .trim();
+
+  const tryParse = (candidate) => {
+    const s = String(candidate || "").trim();
+    if (!s) throw new Error("empty JSON");
+    return JSON.parse(s);
+  };
+
+  const attempts = [() => tryParse(raw)];
+  const braceMatch = raw.match(/\{[\s\S]*\}/);
+  if (braceMatch) attempts.push(() => tryParse(braceMatch[0]));
+
+  const repaired = repairTruncatedJsonObject(raw);
+  if (repaired) attempts.push(() => tryParse(repaired));
+
+  let lastErr;
+  for (const fn of attempts) {
+    try {
+      return fn();
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("Claude JSON parse failed");
+}
+
+function repairTruncatedJsonObject(text) {
+  const start = String(text || "").indexOf("{");
+  if (start < 0) return null;
+  let s = String(text).slice(start).trim();
+
+  const stack = [];
+  let inString = false;
+  let escape = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c === "\\") {
+        escape = true;
+        continue;
+      }
+      if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "{") stack.push("}");
+    else if (c === "[") stack.push("]");
+    else if ((c === "}" || c === "]") && stack.length) stack.pop();
+  }
+
+  if (inString) s += '"';
+  while (stack.length) s += stack.pop();
+  return s;
+}

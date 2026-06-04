@@ -264,7 +264,37 @@ body[data-theme="dark"] .home-nav__ai-badge {
   font-size: 18px;
 }
 
-.home-ticker {
+/* 지수바 단일 박스: .home-ticker-bar가 외곽, 내부 .home-ticker는 투명 */
+.page-home-v2 .home-ticker-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 24px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #e5e7eb;
+  box-sizing: border-box;
+}
+
+.page-home-v2 .home-ticker-bar .home-ticker,
+.home-ticker-bar .home-ticker {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-bottom: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.home-ticker:not(.home-ticker-bar .home-ticker) {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -278,6 +308,18 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 .home-ticker::-webkit-scrollbar {
   display: none;
+}
+
+.home-ticker-bar .home-ticker__item,
+.page-home-v2 .home-ticker-bar .home-ticker__item {
+  flex: 0 0 auto;
+  min-width: 110px;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 5px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .home-ticker__item {
@@ -666,7 +708,13 @@ body[data-theme="dark"] .home-nav__ai-badge {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-size: 11px;
-  color: #0f1120;
+  color: #111827;
+}
+
+[data-theme="dark"] .home-tr__metric,
+[data-theme="dark"] .page-home-v2 .home-tr__metric,
+body[data-theme="dark"] .page-home-v2 .home-tr__metric {
+  color: #f3f4f6;
 }
 
 .home-tr--coin {
@@ -1027,9 +1075,15 @@ body[data-theme="dark"] .home-nav__ai-badge {
   border-bottom: 1px solid #2a2f4a;
 }
 
-[data-theme="dark"] .home-ticker {
+[data-theme="dark"] .home-ticker:not(.home-ticker-bar .home-ticker) {
   background: #141828;
   border-bottom: 1px solid #2a2f4a;
+}
+
+[data-theme="dark"] .page-home-v2 .home-ticker-bar .home-ticker,
+body[data-theme="dark"] .page-home-v2 .home-ticker-bar .home-ticker {
+  background: transparent;
+  border: none;
 }
 
 [data-theme="dark"] .home-hero {
@@ -1375,11 +1429,12 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-secondary, #f8f9fc);
-    border-radius: 8px;
+    background: #f3f4f6;
+    border-radius: 0;
     padding: 8px 12px;
-    margin-bottom: 10px;
-    border: 1px solid var(--border, transparent);
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
   }
 
   .page-home-v2 .home-ticker-bar__label {
@@ -1398,19 +1453,19 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     gap: 16px;
   }
 
-  .page-home-v2 .home-ticker__item {
+  .page-home-v2 .home-ticker-bar .home-ticker__item {
     flex: 0 0 auto;
     min-width: 0;
     gap: 6px;
-    font-size: 10px;
+    font-size: 14px;
   }
 
   .page-home-v2 .home-ticker__name {
     color: var(--text-secondary, #888);
   }
 
-  .page-home-v2 .home-ticker__val {
-    font-size: 11px;
+  .page-home-v2 .home-ticker-bar .home-ticker__val {
+    font-size: 14px;
     color: var(--text-primary, #0f1120);
   }
 
@@ -1944,7 +1999,12 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     font-size: 11px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-    color: #0f1120;
+    color: #111827;
+  }
+
+  [data-theme="dark"] .page-home-v2 .home-tr__metric,
+  body[data-theme="dark"] .page-home-v2 .home-tr__metric {
+    color: #f3f4f6;
   }
 
   /* AI CTA 移대뱶 */

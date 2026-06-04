@@ -606,21 +606,20 @@ body.tm-nav-sheet-open {
   font-weight: 500;
 }
 
-/* 미니 지수바 — 라이트/다크 동일 높이·패딩 */
+/* 미니 지수바 — 단일 박스(바깥·안쪽 이중 테두리 제거) */
 .page-tm-v2 .home-ticker-bar,
 .page-home-v2 .home-ticker-bar {
-  --tm-ticker-bar-h: 36px;
-  --tm-ticker-row-h: 22px;
+  --tm-ticker-row-h: 20px;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  height: var(--tm-ticker-bar-h);
-  min-height: var(--tm-ticker-bar-h);
-  max-height: var(--tm-ticker-bar-h);
-  margin-top: 4px;
-  margin-bottom: 4px;
-  padding: 4px var(--shell-pad-inline-end, 32px) 4px var(--shell-pad-inline, 24px);
+  min-height: 36px;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding: 8px var(--shell-pad-inline-end, 32px) 8px var(--shell-pad-inline, 24px);
   overflow: hidden;
+  border: none;
+  border-radius: 0;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -651,11 +650,14 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 .page-home-v2 .home-ticker-bar .home-ticker {
   flex: 1;
   min-width: 0;
-  height: var(--tm-ticker-row-h);
+  height: auto;
   min-height: var(--tm-ticker-row-h);
-  max-height: var(--tm-ticker-row-h);
-  padding-top: 0;
-  padding-bottom: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
@@ -688,8 +690,8 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 .page-home-v2 .home-ticker-bar .home-ticker__name,
 .page-home-v2 .home-ticker-bar .home-ticker__val,
 .page-home-v2 .home-ticker-bar .home-ticker__pct {
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 14px;
+  line-height: 1.25;
 }
 
 .tm-main {
@@ -1578,13 +1580,15 @@ body[data-theme="dark"] .home-ticker-bar__label {
     animation: shell-live-pulse 1.5s infinite;
   }
 
-  /* 미니 지수바 — 모바일도 데스크톱과 동일 36px */
+  /* 미니 지수바 — 모바일 단일 박스 */
   .page-tm-v2 .home-ticker-bar,
   .page-home-v2 .home-ticker-bar {
     gap: 8px;
-    border-radius: 8px;
-    padding: 4px 12px;
-    border: 1px solid var(--border, transparent);
+    min-height: 36px;
+    padding: 8px 12px;
+    margin-bottom: 0;
+    border: none;
+    border-radius: 0;
     min-width: 0;
   }
 
@@ -1595,12 +1599,13 @@ body[data-theme="dark"] .home-ticker-bar__label {
     flex-shrink: 0;
   }
 
-  .page-tm-v2 .home-ticker {
+  .page-tm-v2 .home-ticker-bar .home-ticker,
+  .page-home-v2 .home-ticker-bar .home-ticker {
     flex: 1;
     min-width: 0;
-    height: var(--tm-ticker-row-h);
+    height: auto;
     min-height: var(--tm-ticker-row-h);
-    max-height: var(--tm-ticker-row-h);
+    max-height: none;
     padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 0;
     background: transparent;
     border: none;

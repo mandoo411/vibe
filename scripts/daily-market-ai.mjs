@@ -7,26 +7,12 @@ import {
   buildFallbackDailyClosingReport,
   ensureJsonSafe,
   isClaudeUnavailableError,
+  parseJsonFromAssistant,
   sanitizeUnicode,
 } from "./claude-utils.mjs";
 
 function sanitizeStr(v) {
   return v == null ? "" : sanitizeUnicode(String(v).trim());
-}
-
-function parseJsonFromAssistant(text) {
-  let claudeRawText = String(text || "").trim();
-
-  // 코드블록 제거
-  if (typeof claudeRawText === "string") {
-    claudeRawText = claudeRawText
-      .replace(/^```json\s*/im, "")
-      .replace(/^```\s*/im, "")
-      .replace(/```\s*$/im, "")
-      .trim();
-  }
-
-  return JSON.parse(claudeRawText);
 }
 
 function fmtPct(n) {
@@ -172,19 +158,13 @@ export async function analyzeDailyClosingReport({
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({
       model,
-      max_tokens: 4000,
+      max_tokens: 8192,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: user }],
     });
 
-    let rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
-    // 코드블록만 제거, JSON 내용은 건드리지 않음
-    rawText = rawText
-      .replace(/^```json\s*/im, "")
-      .replace(/^```\s*/im, "")
-      .replace(/```\s*$/im, "")
-      .trim();
-    parsed = JSON.parse(rawText);
+    const rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
+    parsed = parseJsonFromAssistant(rawText);
     if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
   } catch (error) {
     console.warn(

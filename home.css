@@ -654,7 +654,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-th--coin {
-  grid-template-columns: 26px 1fr 88px 58px;
+  grid-template-columns: 26px 1fr 88px 58px 62px;
 }
 
 .home-tr {
@@ -714,7 +714,7 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
 }
 
 .home-tr--coin {
-  grid-template-columns: 26px 1fr 88px 58px;
+  grid-template-columns: 26px 1fr 88px 58px 62px;
 }
 
 .home-tr:last-child {
@@ -743,7 +743,13 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
 }
 
 .home-th--coin.home-th--logo {
-  grid-template-columns: minmax(0, 1fr) 88px 58px;
+  grid-template-columns: minmax(0, 1fr) 72px 52px 62px;
+  gap: 6px;
+}
+
+.home-th--coin.home-th--logo > div:last-child,
+.home-tr--coin .home-tr__metric {
+  text-align: right;
 }
 
 .home-tr--logo {
@@ -751,7 +757,8 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
 }
 
 .home-tr--coin.home-tr--logo {
-  grid-template-columns: minmax(0, 1fr) 88px 58px;
+  grid-template-columns: minmax(0, 1fr) 72px 52px 62px;
+  gap: 6px;
 }
 
 .home-tr__identity {

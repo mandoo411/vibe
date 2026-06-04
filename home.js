@@ -393,6 +393,19 @@
       .join("");
   }
 
+  function formatCryptoMarketCap(c) {
+    const usd = toNum(c && (c.marketCapUsd ?? c.market_cap_usd));
+    if (usd != null && usd > 0) return fmtUsdCompact(usd);
+    const krw = toNum(c && (c.marketCapKrw ?? c.marketCap));
+    if (krw != null && krw > 0) {
+      if (krw >= 1e12) return `${(krw / 1e12).toFixed(1)}조`;
+      if (krw >= 1e8) return `${Math.round(krw / 1e8)}억`;
+      if (krw >= 1e4) return `${Math.round(krw / 1e4)}만`;
+      return krw.toLocaleString("ko-KR");
+    }
+    return "—";
+  }
+
   function renderCryptoTable(coins) {
     const el = $("home-crypto-body");
     if (!el) return;
@@ -417,7 +430,8 @@
           price = pv >= 1 ? `$${pv.toLocaleString("en-US", { maximumFractionDigits: pv >= 100 ? 0 : 2 })}` : `$${pv.toFixed(4)}`;
         }
         const name = COIN_NAMES_KO[sym] || c.name || sym;
-        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div></a>`;
+        const mcap = formatCryptoMarketCap(c);
+        return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div><div class="home-tr__metric">${escapeHtml(mcap)}</div></a>`;
       })
       .join("");
   }

@@ -224,6 +224,7 @@
           q,
           volTurnoverRate: data && (data.volTurnoverRate ?? data.vol_tnrt),
           creditRate: data && (data.creditRate ?? data.crdt_rate),
+          creditLoanRmndRate: data && (data.creditLoanRmndRate ?? data.loanRmndRate ?? data.wholLoanRmndRate),
           keys: data ? Object.keys(data).slice(0, 60) : [],
         });
       }
@@ -1779,6 +1780,32 @@
     return `<div class="rt-acc-cell"><div class="rt-acc-cell__k">${escapeHtml(label)}</div><div class="${cls}">${valueHtml}</div></div>`;
   }
 
+  /** 신용융자잔고율(%) — 1%↑ 주황, 3%↑ 빨강 */
+  function creditLoanRmndRateCls(pct) {
+    if (pct == null || !Number.isFinite(pct)) return "";
+    if (pct >= 3) return "rt-acc-val--credit-high";
+    if (pct >= 1) return "rt-acc-val--credit-warn";
+    return "";
+  }
+
+  function formatCreditLoanRmndRate(data) {
+    const raw =
+      data.creditLoanRmndRate ??
+      data.loanRmndRate ??
+      data.loan_rmnd_ratem ??
+      data.itewhol_loan_rmnd_ratem ??
+      data.crd_rsrv_rate ??
+      data.raw?.loan_rmnd_ratem ??
+      data.raw?.itewhol_loan_rmnd_ratem ??
+      data.raw?.crd_rsrv_rate ??
+      null;
+    let n = Number(raw);
+    if (!Number.isFinite(n) || n <= 0) return { text: "—", cls: "" };
+    if (Math.abs(n) > 0 && Math.abs(n) <= 1) n *= 100;
+    if (!Number.isFinite(n) || n <= 0) return { text: "—", cls: "" };
+    return { text: `${escapeHtml(n.toFixed(2))}%`, cls: creditLoanRmndRateCls(n) };
+  }
+
   function stockPanelChartShellHtml(chartId) {
     return [
       `<div class="rt-chart-toolbar" role="toolbar" aria-label="캔들 주기">`,
@@ -1952,8 +1979,7 @@
     const vsAbsRaw = data.changeValue ?? data.vsValue ?? data.vs ?? data.change ?? null;
     const vsAbs = vsAbsRaw == null ? "—" : escapeHtml(fmtNum(vsAbsRaw));
     const volTurnoverRateRaw = data.volTurnoverRate ?? data.vol_tnrt ?? null;
-    const wholLoanRmndRateRaw =
-      data.wholLoanRmndRate ?? data.whol_loan_rmnd_rate ?? data.raw?.whol_loan_rmnd_rate ?? null;
+    const creditLoanRmnd = formatCreditLoanRmndRate(data);
     const creditRateRaw = data.creditRate ?? data.crdt_rate ?? null;
     const volTurnoverRate =
       volTurnoverRateRaw == null || !Number.isFinite(Number(volTurnoverRateRaw)) || Number(volTurnoverRateRaw) === 0
@@ -1963,10 +1989,6 @@
       creditRateRaw == null || !Number.isFinite(Number(creditRateRaw)) || Number(creditRateRaw) === 0
         ? "—"
         : `${escapeHtml(Number(creditRateRaw).toFixed(2))}%`;
-    const creditLoanBal =
-      wholLoanRmndRateRaw == null || !Number.isFinite(Number(wholLoanRmndRateRaw)) || Number(wholLoanRmndRateRaw) === 0
-        ? "—"
-        : `${escapeHtml(Number(wholLoanRmndRateRaw).toFixed(2))}%`;
     const mcap = escapeHtml(formatMarketCapPretty(data.marketCapRaw || data.marketCap));
     const tvCalc = calcTradeValFromPriceVol(data.currentPrice, data.volume);
     const tvDisp = escapeHtml(tvCalc != null ? formatTradeVal(String(tvCalc)) : "—");
@@ -2029,7 +2051,7 @@
       accGridCell("BPS", finBps),
       accGridCell("외국인보유", frgnHold),
       accGridCell("신용비율", creditRate),
-      accGridCell("신용융자잔고", creditLoanBal),
+      accGridCell("신용융자잔고", creditLoanRmnd.text, creditLoanRmnd.cls),
     ].join("");
 
     const supplyGrid = [

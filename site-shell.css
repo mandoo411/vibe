@@ -626,7 +626,8 @@ body.tm-nav-sheet-open {
 
 html[data-theme="light"] .page-tm-v2 .home-ticker-bar,
 html[data-theme="light"] .page-home-v2 .home-ticker-bar {
-  background: var(--bg-secondary, #f8f9fc);
+  background: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 [data-theme="dark"] .page-tm-v2 .home-ticker-bar,

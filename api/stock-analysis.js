@@ -95,6 +95,148 @@ function parseForeignFields(row) {
   return { foreignHoldRate: hold, foreignLimitRate: limit };
 }
 
+const CREDIT_LOAN_RATE_PRIORITY = [
+  "loan_rmnd_ratem",
+  "itewhol_loan_rmnd_ratem",
+  "crd_rsrv_rate",
+  "whol_loan_rmnd_rate",
+];
+
+/** 0~1 소수 또는 0~100 퍼센트 → 표시용 % */
+function normalizePctRate(n) {
+  if (n == null || !Number.isFinite(n)) return null;
+  let x = Number(n);
+  if (Math.abs(x) > 0 && Math.abs(x) <= 1) x *= 100;
+  if (!Number.isFinite(x) || x <= 0 || x > 100) return null;
+  return Math.round(x * 100) / 100;
+}
+
+function isCreditLoanRatePlausible(n) {
+  return n != null && Number.isFinite(n) && n > 0 && n < 15;
+}
+
+function creditLoanKeyScore(key) {
+  if (key === "loan_rmnd_ratem") return 0;
+  if (key === "itewhol_loan_rmnd_ratem") return 1;
+  if (key === "crd_rsrv_rate") return 2;
+  if (key === "whol_loan_rmnd_rate") return 3;
+  if (/loan_rmnd_ratem$/i.test(key)) return 4;
+  if (/loan.*rmnd.*rate/i.test(key)) return 5;
+  return 9;
+}
+
+/** FHKST01010100 output — 신용융자잔고율(약 0.01~10%) 후보 스캔 */
+function extractCreditLoanRmndRate(row, stockCode6) {
+  const candidates = [];
+  for (const [key, raw] of Object.entries(row || {})) {
+    if (!/loan|crdt|rmnd|rsrv/i.test(key)) continue;
+    const norm = normalizePctRate(toNum(raw));
+    if (norm != null) candidates.push({ key, raw, norm });
+  }
+  console.log(
+    "[stock-analysis] FHKST01010100 credit-loan fields",
+    stockCode6,
+    JSON.stringify(candidates)
+  );
+
+  for (const k of CREDIT_LOAN_RATE_PRIORITY) {
+    const norm = normalizePctRate(toNum(row[k]));
+    if (isCreditLoanRatePlausible(norm)) {
+      console.log("[stock-analysis] credit-loan picked", k, norm);
+      return norm;
+    }
+  }
+
+  const plausible = candidates
+    .filter((c) => isCreditLoanRatePlausible(c.norm))
+    .sort((a, b) => creditLoanKeyScore(a.key) - creditLoanKeyScore(b.key) || a.norm - b.norm);
+  if (plausible.length) {
+    console.log("[stock-analysis] credit-loan picked (scan)", plausible[0].key, plausible[0].norm);
+    return plausible[0].norm;
+  }
+  return null;
+}
+
+function seoulYmd(d = new Date()) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d);
+}
+
+function addDaysYmd(ymd, n) {
+  const t = new Date(`${ymd}T12:00:00+09:00`).getTime() + n * 86400000;
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(t));
+}
+
+/** FHKST03010100 output1 — itewhol_loan_rmnd_ratem fallback */
+async function kisCreditLoanRateFromDailyChart(stockCode6) {
+  const { token, appkey, appsecret } = requireKisCreds();
+  const d2 = seoulYmd();
+  const d1 = addDaysYmd(d2, -7);
+  const url = new URL(
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+    kisBaseUrl()
+  );
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
+  url.searchParams.set("FID_INPUT_ISCD", stockCode6);
+  url.searchParams.set("FID_INPUT_DATE_1", d1.replace(/-/g, ""));
+  url.searchParams.set("FID_INPUT_DATE_2", d2.replace(/-/g, ""));
+  url.searchParams.set("FID_PERIOD_DIV_CODE", "D");
+  url.searchParams.set("FID_ORG_ADJ_PRC", "0");
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey,
+      appsecret,
+      tr_id: "FHKST03010100",
+    },
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!res.ok || (data && data.rt_cd && data.rt_cd !== "0")) return null;
+
+  const o1 = (data && data.output1) || {};
+  const chartCandidates = Object.entries(o1)
+    .filter(([k]) => /loan|crdt|rmnd|rsrv/i.test(k))
+    .map(([k, v]) => ({ key: k, raw: v, norm: normalizePctRate(toNum(v)) }))
+    .filter((c) => c.norm != null);
+  console.log(
+    "[stock-analysis] FHKST03010100 credit-loan fields",
+    stockCode6,
+    JSON.stringify(chartCandidates)
+  );
+
+  const norm = normalizePctRate(toNum(o1.itewhol_loan_rmnd_ratem));
+  if (isCreditLoanRatePlausible(norm)) {
+    console.log("[stock-analysis] credit-loan picked itewhol_loan_rmnd_ratem", norm);
+    return norm;
+  }
+  const plausible = chartCandidates
+    .filter((c) => isCreditLoanRatePlausible(c.norm))
+    .sort((a, b) => creditLoanKeyScore(a.key) - creditLoanKeyScore(b.key) || a.norm - b.norm);
+  if (plausible.length) {
+    console.log("[stock-analysis] credit-loan picked (chart scan)", plausible[0].key, plausible[0].norm);
+    return plausible[0].norm;
+  }
+  return null;
+}
+
 function parseFinancials(row) {
   const per = toNum(pickFirstStr(row, ["per", "PER", "stck_per", "STCK_PER"]));
   const eps = toNum(pickFirstStr(row, ["eps", "EPS", "stck_eps", "STCK_EPS"]));
@@ -302,8 +444,15 @@ async function kisInquirePrice(stockCode6) {
   const changeRate = toNum(row.prdy_ctrt);
   const volume = toNum(row.acml_vol);
   const volTurnoverRate = toNum(row.vol_tnrt);
-  const wholLoanRmndRate = toNum(row.whol_loan_rmnd_rate);
-  console.log("[stock-analysis] price1", stockCode6, "vol_tnrt=", row.vol_tnrt);
+  let creditLoanRmndRate = extractCreditLoanRmndRate(row, stockCode6);
+  if (creditLoanRmndRate == null) {
+    try {
+      creditLoanRmndRate = await kisCreditLoanRateFromDailyChart(stockCode6);
+    } catch (e) {
+      console.warn("[stock-analysis] chart credit-loan fallback failed", stockCode6, e && e.message);
+    }
+  }
+  console.log("[stock-analysis] price1", stockCode6, "vol_tnrt=", row.vol_tnrt, "creditLoanRmndRate=", creditLoanRmndRate);
   const tradingValue =
     currentPrice != null && volume != null && currentPrice > 0 && volume > 0
       ? Math.round(currentPrice * volume)
@@ -327,7 +476,8 @@ async function kisInquirePrice(stockCode6) {
     changeRate: changeRate == null ? 0 : Math.round(changeRate * 100) / 100,
     volume: volume == null ? 0 : Math.round(volume),
     volTurnoverRate: volTurnoverRate == null ? null : Math.round(volTurnoverRate * 100) / 100,
-    wholLoanRmndRate: wholLoanRmndRate == null ? null : Math.round(wholLoanRmndRate * 100) / 100,
+    creditLoanRmndRate: creditLoanRmndRate == null ? null : creditLoanRmndRate,
+    wholLoanRmndRate: creditLoanRmndRate == null ? null : creditLoanRmndRate,
     tradingValue: tradingValue == null ? null : Math.round(tradingValue),
     prevClose: prevClose == null ? null : Math.round(prevClose),
     high: high == null ? 0 : Math.round(high),
@@ -969,7 +1119,8 @@ module.exports = async function handler(req, res) {
     volTurnoverRate: quote.volTurnoverRate == null ? null : quote.volTurnoverRate,
     creditRate: quote.creditRate == null ? null : quote.creditRate,
     creditLoanBalance: quote.creditLoanBalance == null ? null : quote.creditLoanBalance,
-    wholLoanRmndRate: quote.wholLoanRmndRate == null ? null : quote.wholLoanRmndRate,
+    creditLoanRmndRate: quote.creditLoanRmndRate == null ? null : quote.creditLoanRmndRate,
+    wholLoanRmndRate: quote.creditLoanRmndRate == null ? null : quote.creditLoanRmndRate,
     tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,

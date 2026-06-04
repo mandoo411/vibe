@@ -679,6 +679,25 @@ body[data-theme="dark"] .home-nav__ai-badge {
   align-items: center;
 }
 
+.home-section--realtime .home-rt-col--name {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.home-section--realtime .home-tr__name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.home-section--realtime .home-tr__code {
+  display: none;
+}
+
 .home-rt-col--name {
   min-width: 0;
   overflow: hidden;
@@ -692,10 +711,23 @@ body[data-theme="dark"] .home-nav__ai-badge {
   flex-shrink: 0;
 }
 
+.home-section--realtime .home-rt-col--price,
+.home-section--realtime .home-rt-col--chg,
+.home-section--realtime .home-rt-col--metric,
+.home-section--realtime .home-tr__price,
+.home-section--realtime .home-tr__chg,
+.home-section--realtime .home-tr__metric {
+  align-self: center;
+}
+
 .home-tr--rt .home-tr__name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.home-section--realtime .home-tr__name {
+  line-height: 1.25;
 }
 
 .home-tr__metric {

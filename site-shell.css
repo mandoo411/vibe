@@ -153,6 +153,83 @@ body.page-home-v2 {
   margin-left: auto;
 }
 
+/* 데스크톱 GNB: 홈=나스닥선물 티커 열, 중간 메뉴 균등 간격, AI종목분석 우측 1ch 여유 */
+@media (min-width: 769px) {
+  body.page-home-v2,
+  body.page-tm-v2 {
+    --home-nav-logo-slot: 192px;
+    --home-ticker-col-w: 176px;
+    --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
+  }
+
+  .page-home-v2 .home-nav,
+  .page-tm-v2 .home-nav {
+    gap: 0;
+  }
+
+  .page-home-v2 .home-nav__logo,
+  .page-tm-v2 .home-nav__logo {
+    flex: 0 0 var(--home-nav-logo-slot);
+    width: var(--home-nav-logo-slot);
+    min-width: var(--home-nav-logo-slot);
+    max-width: var(--home-nav-logo-slot);
+  }
+
+  .page-home-v2 .home-nav__menu,
+  .page-tm-v2 .home-nav__menu {
+    flex: 1 1 auto;
+    margin-left: 0;
+    min-width: 0;
+    padding-left: max(8px, var(--home-nav-menu-inset));
+    padding-right: 1ch;
+    gap: 0;
+  }
+
+  .page-home-v2 .home-nav__menu > .home-nav__home-btn,
+  .page-tm-v2 .home-nav__menu > .home-nav__home-btn {
+    flex: 0 0 auto;
+    margin-right: 8px;
+  }
+
+  .page-home-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
+  .page-tm-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme) {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .page-home-v2 .home-nav__menu > .home-nav__link[href*="stock-analysis"],
+  .page-tm-v2 .home-nav__menu > .home-nav__link[href*="stock-analysis"] {
+    flex: 0 0 auto;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .page-home-v2 .home-nav__menu > .home-nav__theme,
+  .page-tm-v2 .home-nav__menu > .home-nav__theme {
+    flex: 0 0 auto;
+    margin-left: 10px;
+  }
+
+  .page-home-v2 .home-ticker-bar .home-ticker__item:nth-child(1),
+  .page-home-v2 .home-ticker-bar .home-ticker__item:nth-child(2),
+  .page-tm-v2 .home-ticker-bar .home-ticker__item:nth-child(1),
+  .page-tm-v2 .home-ticker-bar .home-ticker__item:nth-child(2) {
+    flex: 0 0 var(--home-ticker-col-w);
+    min-width: var(--home-ticker-col-w);
+    max-width: var(--home-ticker-col-w);
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .page-home-v2 .home-ticker-bar .home-ticker__item:nth-child(3),
+  .page-tm-v2 .home-ticker-bar .home-ticker__item:nth-child(3) {
+    justify-content: flex-start;
+  }
+}
+
 .home-nav__link {
   display: inline-flex;
   align-items: center;

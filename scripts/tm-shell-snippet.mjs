@@ -3,14 +3,14 @@
 export function shellHeader(activeHref) {
   const links = [
     { href: "./index.html", label: "홈", home: true },
-    { href: "./daily-market.html", label: "마감시황" },
+    { href: "./stock-analysis.html", label: "AI 종목분석" },
     { href: "./briefing.html", label: "브리핑" },
+    { href: "./daily-market.html", label: "마감시황" },
     { href: "./realtime.html", label: "실시간시세" },
-    { href: "./weekly-market.html", label: "일정" },
     { href: "./us-market.html", label: "미국시장" },
     { href: "./crypto.html", label: "암호화폐" },
     { href: "./world-market.html", label: "글로벌 랭킹" },
-    { href: "./stock-analysis.html", label: "AI 종목분석" },
+    { href: "./weekly-market.html", label: "일정" },
   ];
 
   const menu = links

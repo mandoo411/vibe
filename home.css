@@ -79,6 +79,13 @@ body.page-home-v2 {
   margin-left: auto;
 }
 
+@media (min-width: 769px) {
+  .page-home-v2 .home-nav__menu {
+    margin-left: 0;
+    gap: 0;
+  }
+}
+
 .home-nav__link {
   display: inline-flex;
   align-items: center;

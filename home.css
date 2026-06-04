@@ -626,28 +626,83 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 @media (min-width: 769px) {
   .page-home-v2 .home-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr 272px;
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+    row-gap: 14px;
     align-items: stretch;
   }
 
   .page-home-v2 .home-section--realtime {
+    grid-column: 1;
+    grid-row: 1 / span 2;
     display: flex;
     flex-direction: column;
-    min-height: 100%;
+    min-height: 0;
+    height: auto;
   }
 
   .page-home-v2 .home-col-mid {
-    min-height: 100%;
+    display: contents;
+  }
+
+  .page-home-v2 .home-section--us {
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+  }
+
+  .page-home-v2 .home-section--crypto {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .page-home-v2 .home-side {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: start;
   }
 
   .page-home-v2 .home-section--realtime .home-section__body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
 
   .page-home-v2 .home-section--realtime #home-rt-body {
     flex: 1;
     min-height: 0;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-tabs,
+  .page-home-v2 .home-section--us .home-rt-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: stretch;
+    min-height: 40px;
+    padding: 0 14px 12px;
+    box-sizing: border-box;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-tab,
+  .page-home-v2 .home-section--us .home-rt-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 8px 6px;
+    line-height: 1.25;
+    box-sizing: border-box;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-tab.is-active,
+  .page-home-v2 .home-section--us .home-rt-tab.is-active {
+    font-size: 11px;
+    font-weight: 700;
   }
 }
 

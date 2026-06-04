@@ -318,7 +318,8 @@
         const chgCls = chgClass(pct);
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
-        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name-wrap">${rankHtml}<div class="home-tr__name">${escapeHtml(r.name)}</div></div><div class="home-tr__code">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        const ariaLabel = r.code ? `${r.name} ${r.code}` : String(r.name || "");
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name"><div class="home-tr__name-wrap">${rankHtml}<div class="home-tr__name">${escapeHtml(r.name)}</div></div><div class="home-tr__code" aria-hidden="true">${escapeHtml(r.code)}</div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }

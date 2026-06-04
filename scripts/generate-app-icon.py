@@ -10,7 +10,8 @@ ASSETS = ROOT / "assets"
 
 COLOR_TOP = (85, 96, 232)
 COLOR_BOTTOM = (51, 57, 191)
-WHITE = (255, 255, 255, 255)
+# 헤더 로고 박스 "AI" 텍스트와 동일 (site-shell.css #f59e0b)
+LETTER_T = (245, 158, 11, 255)
 
 
 def lerp(a: int, b: int, t: float) -> int:
@@ -47,7 +48,7 @@ def draw_icon(size: int) -> Image.Image:
     th = bbox[3] - bbox[1]
     x = (size - tw) // 2 - bbox[0]
     y = (size - th) // 2 - bbox[1]
-    draw.text((x, y), text, font=font, fill=WHITE)
+    draw.text((x, y), text, font=font, fill=LETTER_T)
     return img
 
 

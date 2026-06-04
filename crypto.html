@@ -144,6 +144,9 @@
         color: var(--text);
         font-variant-numeric: tabular-nums;
       }
+      .crypto-metric-card__value--plain {
+        color: var(--text);
+      }
       .crypto-metric-card__sub {
         margin-top: 4px;
         font-size: 11px;
@@ -797,6 +800,11 @@
           return `${sign}${n.toFixed(2)}%`;
         }
 
+        function fmtDominance(n) {
+          if (n == null || !Number.isFinite(n)) return "-";
+          return `${Math.abs(n).toFixed(2)}%`;
+        }
+
         function fmtKrw(n) {
           if (n == null || !Number.isFinite(n)) return "-";
           if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
@@ -1098,7 +1106,7 @@
           el.innerHTML = `
             <div class="crypto-metric-card">
               <div class="crypto-metric-card__label">비트코인 도미넌스</div>
-              <div class="crypto-metric-card__value">${escapeHtml(fmtPct(g.btcDominance))}</div>
+              <div class="crypto-metric-card__value crypto-metric-card__value--plain">${escapeHtml(fmtDominance(g.btcDominance))}</div>
             </div>
             <div class="crypto-metric-card">
               <div class="crypto-metric-card__label">전체 시가총액</div>

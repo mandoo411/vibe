@@ -19,6 +19,7 @@ body.page-tm-v2 {
   --bg-primary: #131722;
   --bg-secondary: #1c2030;
   --bg-tertiary: #1e2235;
+  --loading-bg: #0d1020;
   --page-body-top: #131722;
   --page-body-glow: rgba(85, 96, 232, 0.1);
   --page-body-glow-soft: rgba(51, 57, 191, 0.06);
@@ -67,12 +68,21 @@ body {
   background-attachment: fixed;
 }
 
+/* 다크: 로딩·빈 상태 영역 — 흰(#fff) 플래시 방지 */
+[data-theme="dark"] .day-prep,
+[data-theme="dark"] .day-prep__inner,
+[data-theme="dark"] .daily-detail:has(.day-body.is-empty),
+[data-theme="dark"] .rt-loading {
+  background-color: var(--loading-bg, var(--bg-primary));
+}
+
 @media (max-width: 768px) {
   /* 모바일: 긴 페이지에서 그라데이션이 늘어나 녹/청록 틴트가 나지 않도록 홈과 동일 단색 배경 */
   [data-theme="dark"] {
     --page-body-top: #131722;
     --page-body-glow: transparent;
     --page-body-glow-soft: transparent;
+    --loading-bg: #131722;
   }
 
   [data-theme="dark"] html,

@@ -594,6 +594,7 @@ body.tm-nav-sheet-open {
   height: var(--tm-ticker-bar-h);
   min-height: var(--tm-ticker-bar-h);
   max-height: var(--tm-ticker-bar-h);
+  margin-top: 8px;
   overflow: hidden;
   align-items: center;
 }

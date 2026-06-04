@@ -1008,6 +1008,11 @@
         }
       }
 
+      /* 모바일 전용 flex 헤더 — 웹(769px+)에서는 테이블 thead만 표시 */
+      .rt-header-row {
+        display: none;
+      }
+
       @media (max-width: 768px) {
         .rt-tabs {
           flex-direction: column;
@@ -1097,7 +1102,7 @@
           scrollbar-gutter: stable;
         }
         .rt-header-row {
-          display: grid;
+          display: grid !important;
           grid-template-columns: 28px minmax(0, 1fr) 85px 68px 68px;
           column-gap: 8px;
           align-items: center;

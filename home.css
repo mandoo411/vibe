@@ -574,6 +574,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 .home-main {
   display: grid;
   grid-template-columns: 1fr 1fr 272px;
+  align-items: start;
   gap: 14px;
   padding: 16px var(--shell-pad-inline-end, 32px) 32px var(--shell-pad-inline, 24px);
   background: #f4f6ff;
@@ -614,18 +615,6 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 100%;
-}
-
-/* 誘멸뎅+?뷀샇?뷀룓 ?? ?쇱そ 援?궡 TOP10 諛뺤뒪 ?섎떒怨?留욎땄 */
-.home-col-mid .home-section:last-child {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.home-col-mid .home-section:last-child .home-section__body {
-  flex: 1 1 auto;
 }
 
 .home-side {

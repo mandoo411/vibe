@@ -1,7 +1,7 @@
 (function () {
-  const COIN_SYMBOLS = ["BTC", "ETH", "XRP", "SOL"];
-  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52, SOL: 5426 };
-  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플", SOL: "솔라나" };
+  const COIN_SYMBOLS = ["BTC", "ETH", "XRP"];
+  const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52 };
+  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플" };
 
   function $(id) {
     return document.getElementById(id);

@@ -42,6 +42,18 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  function fmtPctParts(pct) {
+    const s = fmtPct(pct);
+    if (!s) return { num: "—", sym: "" };
+    if (s.endsWith("%")) return { num: s.slice(0, -1), sym: "%" };
+    return { num: s, sym: "" };
+  }
+
+  function homeRtPctHtml(pct, chgCls) {
+    const { num, sym } = fmtPctParts(pct);
+    return `<div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}"><span class="home-rt-pct"><span class="home-rt-pct__num">${escapeHtml(num)}</span><span class="home-rt-pct__sym">${escapeHtml(sym)}</span></span></div>`;
+  }
+
   const HOME_RT_METRIC_LABEL = {
     cap: "시가총액",
     gainers: "거래대금",
@@ -321,7 +333,7 @@
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
         const ariaLabel = r.code ? `${r.name} ${r.code}` : String(r.name || "");
-        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div><div class="home-rt-col home-rt-col--chg home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(r.name)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div>${homeRtPctHtml(pct, chgCls)}<div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }

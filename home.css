@@ -708,11 +708,32 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: #9ca3af;
 }
 
-.home-section--realtime .home-rt-col__chg-label {
-  display: block;
+.home-section--realtime .home-rt-pct {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
   width: 100%;
-  text-align: right;
+  max-width: 100%;
+  box-sizing: border-box;
   font-variant-numeric: tabular-nums;
+}
+
+.home-section--realtime .home-rt-pct__num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.home-section--realtime .home-rt-pct__sym {
+  min-width: 1em;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.home-section--realtime .home-rt-pct--head .home-rt-pct__num,
+.home-section--realtime .home-rt-pct--head .home-rt-pct__sym {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
 }
 
 .home-rt-col--name {
@@ -2008,7 +2029,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   .page-home-v2 .home-section--realtime .home-th--rt,
   .page-home-v2 .home-section--realtime .home-tr--rt {
     --home-rt-col-price: 68px;
-    --home-rt-col-chg: 54px;
+    --home-rt-col-chg: 58px;
     --home-rt-col-metric: 76px;
     grid-template-columns: minmax(0, 1fr) var(--home-rt-col-price) var(--home-rt-col-chg) var(--home-rt-col-metric);
     column-gap: 4px;
@@ -2090,22 +2111,38 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   .page-home-v2 .home-section--realtime .home-tr--rt .home-tr__chg {
     display: block;
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
     padding: 0;
-    margin-left: 1ch;
-    text-align: right;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
+    margin: 0;
     align-self: center;
   }
 
-  .page-home-v2 .home-section--realtime .home-rt-col__chg-label {
-    display: block;
+  .page-home-v2 .home-section--realtime .home-rt-pct {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 1em;
+    column-gap: 0;
     width: 100%;
-    margin-left: 1ch;
-    box-sizing: border-box;
-    text-align: right;
+    align-items: baseline;
     font-variant-numeric: tabular-nums;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-pct__num {
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-pct__sym {
+    min-width: 1em;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .page-home-v2 .home-section--realtime .home-tr__chg .home-rt-pct__num {
+    font-size: 12px;
+    font-weight: 700;
   }
 
   .page-home-v2 .home-section--realtime .home-rt-col--metric,

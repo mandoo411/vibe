@@ -54,8 +54,29 @@
   outline-offset: 2px;
 }
 
-.day-nav__date input[type="date"] {
-  appearance: none;
+.day-nav__date {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.day-nav__date-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+  color-scheme: light dark;
+}
+
+.day-nav__date-label {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--border-strong, var(--border));
   background: var(--bg-secondary, var(--bg-panel));
   color: var(--text);
@@ -65,18 +86,14 @@
   padding: 6px 10px;
   min-height: 34px;
   border-radius: var(--radius);
-  color-scheme: light dark;
+  cursor: pointer;
+  user-select: none;
 }
 
-[data-theme="dark"] .day-nav__date input[type="date"] {
+[data-theme="dark"] .day-nav__date-label {
   background: var(--bg-elevated, #1e2235);
   color: var(--text-body, #d1d5db);
   border-color: var(--border);
-}
-
-[data-theme="dark"] .day-nav__date input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.85);
-  opacity: 0.9;
 }
 
 .day-nav__spacer {
@@ -180,7 +197,7 @@ body.tm-mobile-calendar-open::before {
 
   .day-nav__btn,
   .day-nav__today,
-  .day-nav__date input[type="date"],
+  .day-nav__date-label,
   #calendar-toggle {
     font-size: 12px;
     min-height: 34px;
@@ -188,11 +205,12 @@ body.tm-mobile-calendar-open::before {
     flex-shrink: 0;
   }
 
-  .day-nav__date input[type="date"] {
+  .day-nav__date-label {
     flex: 1 1 auto;
     min-width: 0;
-    max-width: 118px;
-    padding: 6px 6px;
+    max-width: none;
+    padding: 6px 8px;
+    font-size: 12px;
   }
 
   .day-nav__btn {
@@ -1409,7 +1427,7 @@ details[open] .admin__summary {
 
   .day-nav__btn,
   .day-nav__today,
-  .day-nav__date input[type="date"],
+  .day-nav__date-label,
   #calendar-toggle {
     font-size: 12px;
     min-height: 34px;
@@ -1417,11 +1435,12 @@ details[open] .admin__summary {
     flex-shrink: 0;
   }
 
-  .day-nav__date input[type="date"] {
+  .day-nav__date-label {
     flex: 1 1 auto;
     min-width: 0;
-    max-width: 118px;
-    padding: 6px 6px;
+    max-width: none;
+    padding: 6px 8px;
+    font-size: 12px;
   }
 
   .day-nav__btn {

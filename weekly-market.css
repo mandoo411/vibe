@@ -774,7 +774,7 @@ a:hover {
 }
 
 .dot--economic {
-  background: var(--accent-bright);
+  background: #3b82f6;
 }
 
 .dot--earnings {
@@ -782,7 +782,7 @@ a:hover {
 }
 
 .dot--kr-ipo {
-  background: var(--down-color);
+  background: #10b981;
 }
 
 .dot--kr-earnings {
@@ -831,18 +831,18 @@ a:hover {
 
 .calendar-cell {
   position: relative;
-  padding: 8px 8px 14px;
+  padding: 8px 8px 16px;
   cursor: pointer;
   text-align: left;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .month-calendar--compact .calendar-weekday,
 .month-calendar--compact .calendar-cell {
   min-height: 34px;
-  padding: 4px 5px 12px;
+  padding: 4px 6px 14px;
   font-size: 10px;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .month-calendar--compact .calendar-cell span {
@@ -850,8 +850,8 @@ a:hover {
 }
 
 .month-calendar--compact .calendar-cell i {
-  right: 5px;
-  bottom: 5px;
+  right: 6px;
+  bottom: 6px;
   gap: 2px;
 }
 
@@ -901,18 +901,18 @@ a:hover {
 
 .calendar-cell i {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 6px;
+  bottom: 6px;
   display: flex;
-  gap: 4px;
-  max-width: calc(100% - 10px);
+  gap: 3px;
+  max-width: calc(100% - 12px);
   justify-content: flex-end;
   flex-wrap: wrap;
   pointer-events: none;
 }
 
 .month-calendar {
-  overflow: visible;
+  overflow: hidden;
 }
 
 .selected-day,
@@ -1196,6 +1196,10 @@ a:hover {
   font-weight: 400;
 }
 
+.week-tab--past {
+  opacity: 0.5;
+}
+
 .week-tab[aria-selected="true"] {
   color: var(--accent-bright);
   border-color: var(--border-strong);
@@ -1217,9 +1221,13 @@ a:hover {
 }
 
 .analysis-grid article {
-  padding: 12px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
   background: var(--bg-secondary);
+}
+
+.analysis-grid h3 {
+  margin-bottom: 12px;
 }
 
 .analysis-grid ol,
@@ -1228,10 +1236,19 @@ a:hover {
   padding-left: 18px;
   color: var(--text-muted);
   font-size: 13px;
+  line-height: 1.65;
+}
+
+.analysis-grid li {
+  margin-bottom: 10px;
+}
+
+.analysis-grid li:last-child {
+  margin-bottom: 0;
 }
 
 .analysis-grid li + li {
-  margin-top: 7px;
+  margin-top: 0;
 }
 
 .news-list {

@@ -508,6 +508,11 @@
           return partial ? INDICATOR_KO[partial] : raw;
         }
 
+        function fmtEconValue(v) {
+          const s = v == null ? "" : String(v).trim();
+          return s || "—";
+        }
+
         function renderEconomic(rows) {
           const highRows = (rows || []).filter(isHighImpact);
           if (!highRows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
@@ -518,8 +523,8 @@
                 (r) => `<tr class="${impactClass(r.impact)}">
                   <td data-label="시간">${escapeHtml(r.time || "—")}</td>
                   <td data-label="지표명"><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
-                  <td data-label="이전값">${escapeHtml(r.previous ?? "—")}</td>
-                  <td data-label="예측값">${escapeHtml(r.estimate ?? "—")}</td>
+                  <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous))}</td>
+                  <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate))}</td>
                   <td data-label="중요도">${escapeHtml(r.impact || "low")}</td>
                 </tr>`
               )
@@ -662,7 +667,10 @@
           const activeIndex = todayIdx >= 0 ? todayIdx : 0;
           $("week-range").textContent = `${fmtDate(days[0])} ~ ${fmtDate(days[4])}`;
           $("week-tabs").innerHTML = days
-            .map((ymd, i) => `<button type="button" class="week-tab" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`)
+            .map((ymd, i) => {
+              const past = ymd < today;
+              return `<button type="button" class="week-tab${past ? " week-tab--past" : ""}" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`;
+            })
             .join("");
           $("week-panels").innerHTML = days
             .map((ymd, i) => `<section class="week-panel${i === activeIndex ? " is-active" : ""}" data-index="${i}">

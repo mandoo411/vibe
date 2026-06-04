@@ -309,6 +309,22 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   display: block;
 }
 
+/* NAV + 미니 지수바 함께 고정 (데스크톱·태블릿) */
+.page-tm-v2 .home-top,
+.page-home-v2 .home-top {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--bg-primary, #fff);
+}
+
+.page-tm-v2 .home-top .home-nav,
+.page-home-v2 .home-top .home-nav {
+  position: static;
+  top: auto;
+  z-index: auto;
+}
+
 .home-ticker-bar {
   display: block;
 }
@@ -601,9 +617,19 @@ body.tm-nav-sheet-open {
   max-height: var(--tm-ticker-bar-h);
   margin-top: 8px;
   margin-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
   overflow: hidden;
   align-items: center;
+}
+
+/* 라이트: 여백·높이 축소 + 본문과 구분선 */
+html[data-theme="light"] .page-tm-v2 .home-ticker-bar,
+html[data-theme="light"] .page-home-v2 .home-ticker-bar {
+  --tm-ticker-bar-h: 32px;
+  --tm-ticker-row-h: 20px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  padding: 4px var(--shell-pad-inline-end, 32px) 4px var(--shell-pad-inline, 24px);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 [data-theme="dark"] .page-tm-v2 .home-ticker-bar,
@@ -1464,6 +1490,19 @@ body[data-theme="dark"] .home-ticker-bar__label {
     position: sticky;
     top: 0;
     z-index: 200;
+  }
+
+  html[data-theme="light"] .page-tm-v2 .home-top {
+    padding-bottom: 0;
+  }
+
+  html[data-theme="light"] .page-tm-v2 .home-ticker-bar {
+    --tm-ticker-bar-h: 36px;
+    --tm-ticker-row-h: 22px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding: 4px 12px;
+    border-bottom: 1px solid #e5e7eb;
   }
 
   .page-tm-v2 .home-nav {

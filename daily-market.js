@@ -14,6 +14,18 @@
   const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
   const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+  const AI_COPY_REPLACEMENTS = [
+    [/Claude API[^\n]*/gi, "AI 분석을 준비 중입니다"],
+    [/수급 데이터 기준 요약\s*\(AI 분석 대기\)/gi, "수급 현황을 불러오는 중입니다"],
+    [/Claude 분석 일시 중단/gi, "분석 준비 중"],
+    [/\(AI 분석 대기\)/gi, ""],
+    [/KIS\+Naver\+Claude/gi, ""],
+    [/KIS\+Naver\+Telegram\+Claude/gi, ""],
+  ];
+
+  const TECHNICAL_MSG_RE =
+    /(?:Claude|Anthropic|OpenAI|API\s*(?:key|error|크레딧)|billing|HTTP\s*\d{3}|rt_cd|stack\s*trace|Error:|ECONNREFUSED|timeout|unavailable)/i;
+
   // ─── State ────────────────────────────────────────────────
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
@@ -32,6 +44,7 @@
     navPrev: $("nav-prev"),
     navNext: $("nav-next"),
     navDate: $("nav-date"),
+    navDateLabel: $("nav-date-label"),
     navToday: $("nav-today"),
     railMd: $("rail-md"),
     railDow: $("rail-dow"),
@@ -86,8 +99,32 @@
   }
 
   function ymdWeekday(ymd) {
+    if (!YMD_RE.test(ymd)) return 0;
     const d = new Date(ymd + "T12:00:00+09:00");
-    return d.getUTCDay();
+    const w = d.getDay();
+    return Number.isFinite(w) ? w : 0;
+  }
+
+  function weekdayKo(ymd) {
+    return WD_KO[ymdWeekday(ymd)] || "—";
+  }
+
+  function formatNavDate(ymd) {
+    if (!YMD_RE.test(ymd)) return "—";
+    return `${ymd} (${weekdayKo(ymd)})`;
+  }
+
+  function sanitizeUserCopy(v, fallback = "") {
+    let t = sanitizeStr(v);
+    if (!t) return fallback;
+    for (const [re, rep] of AI_COPY_REPLACEMENTS) {
+      t = t.replace(re, rep).trim();
+    }
+    if (TECHNICAL_MSG_RE.test(t)) return fallback || "AI 분석을 준비 중입니다";
+    if (/^error\b/i.test(t) || (t.includes(" at ") && t.includes(".js:"))) {
+      return fallback || "AI 분석을 준비 중입니다";
+    }
+    return t;
   }
 
   function shortDateDot(ymd) {
@@ -98,7 +135,7 @@
 
   function headlineKo(ymd) {
     const { y, m, d } = ymdParts(ymd);
-    const w = WD_KO[ymdWeekday(ymd)];
+    const w = weekdayKo(ymd);
     return `${y}년 ${m}월 ${d}일 (${w})`;
   }
 
@@ -216,7 +253,8 @@
 
     if (els.title) els.title.textContent = "마감시황";
     els.railMd.textContent = shortDateDot(ymd);
-    els.railDow.textContent = WD_KO[ymdWeekday(ymd)];
+    els.railDow.textContent = weekdayKo(ymd);
+    if (els.navDateLabel) els.navDateLabel.textContent = formatNavDate(ymd);
     els.range.innerHTML = `<strong>${escapeHtml(headlineKo(ymd))}</strong>`;
     els.updated.textContent = !empty && day && day.updatedAt ? `업데이트: ${day.updatedAt}` : "";
 
@@ -263,17 +301,18 @@
       els.news.innerHTML = "";
     } else {
       if (els.headline) {
-        els.headline.textContent = sanitizeStr(day.headlineIssue) || sanitizeStr(day.summary) || "";
+        els.headline.textContent =
+          sanitizeUserCopy(day.headlineIssue) || sanitizeUserCopy(day.summary, "AI 분석을 준비 중입니다");
       }
-      els.summary.textContent = (day && day.summary) || "";
+      els.summary.textContent = sanitizeUserCopy(day && day.summary, "");
       if (els.supply) els.supply.innerHTML = renderSupply(day && day.supply);
       if (els.supplyComment) {
-        els.supplyComment.textContent = sanitizeStr(day.supplyComment) || "";
+        els.supplyComment.textContent = sanitizeUserCopy(day.supplyComment, "수급 현황을 불러오는 중입니다");
       }
       if (els.issueStocks) els.issueStocks.innerHTML = renderIssueStocks(day && day.issueStocks);
       if (els.sectorFlow) els.sectorFlow.innerHTML = renderSectorFlow(day && day.sectorFlow);
       if (els.checkpoints) els.checkpoints.innerHTML = renderCheckpoints(day && day.tomorrowCheckpoints);
-      if (els.verdict) els.verdict.textContent = sanitizeStr(day.oneLineVerdict) || "";
+      if (els.verdict) els.verdict.textContent = sanitizeUserCopy(day.oneLineVerdict, "");
       els.indexes.innerHTML = renderIndexes(day && day.indexes);
       if (els.marketExtras) els.marketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
       els.notable.innerHTML = renderNotable(day && day.notableStocks);
@@ -282,7 +321,7 @@
       }
       if (els.topGainersMeta) {
         const ts = day && day.topGainersUpdatedAt;
-        els.topGainersMeta.textContent = ts ? `갱신: ${ts} · KIS+Naver+Claude` : "";
+        els.topGainersMeta.textContent = ts ? `갱신: ${ts}` : "";
       }
       els.themes.innerHTML = renderThemes(day && day.themes);
       els.news.innerHTML = renderNews(day);
@@ -299,7 +338,7 @@
     const rows = arr
       .map((s) => {
         const chg = parseChange(s && s.change);
-        const reason = sanitizeStr(s && s.reason);
+        const reason = sanitizeUserCopy(s && s.reason, "");
         const theme = sanitizeStr(s && s.theme);
         const market = sanitizeStr(s && s.market);
         const code = sanitizeStr(s && s.code);
@@ -367,8 +406,8 @@
             <strong>${escapeHtml(row.name)}</strong>
             <span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>
           </div>
-          ${row.entryReason ? `<p><strong>진입 이유:</strong> ${escapeHtml(row.entryReason)}</p>` : ""}
-          ${row.background ? `<p><strong>배경:</strong> ${escapeHtml(row.background)}</p>` : ""}
+          ${row.entryReason ? `<p><strong>진입 이유:</strong> ${escapeHtml(sanitizeUserCopy(row.entryReason))}</p>` : ""}
+          ${row.background ? `<p><strong>배경:</strong> ${escapeHtml(sanitizeUserCopy(row.background, "분석 준비 중"))}</p>` : ""}
         </li>`;
       })
       .join("")}</ul>`;
@@ -387,12 +426,13 @@
             })
             .join("")}</ul></div>`
         : "";
-    return `${block("강한 섹터", strong)}${block("약한 섹터", weak)}${flow.summary ? `<p class="sector-summary">${escapeHtml(flow.summary)}</p>` : ""}`;
+    const summary = sanitizeUserCopy(flow.summary, "");
+    return `${block("강한 섹터", strong)}${block("약한 섹터", weak)}${summary ? `<p class="sector-summary">${escapeHtml(summary)}</p>` : ""}`;
   }
 
   function renderCheckpoints(arr) {
     if (!Array.isArray(arr) || !arr.length) return '<li class="empty-line">체크포인트 없음</li>';
-    return arr.map((p) => `<li>${escapeHtml(p)}</li>`).join("");
+    return arr.map((p) => `<li>${escapeHtml(sanitizeUserCopy(p))}</li>`).join("");
   }
 
   function renderNews(day) {
@@ -495,7 +535,7 @@
         const chgRaw = parseChange(row && row.change);
         /* JSON에 잘못 들어간 0%는 등락률 미상으로 표시(스크립트는 null로 저장) */
         const chg = chgRaw === 0 ? null : chgRaw;
-        const note = (row && row.note ? String(row.note) : "").trim();
+        const note = sanitizeUserCopy(row && row.note, "");
         return `<tr>
           <td>
             <span class="notable-table__name">${escapeHtml(row && row.name)}</span>
@@ -525,7 +565,7 @@
           ? `<ul class="theme__leaders">${leaders
               .map((l) => {
                 const chg = parseChange(l && l.change);
-                const reason = sanitizeStr(l && l.reason);
+                const reason = sanitizeUserCopy(l && l.reason, "");
                 return `<li class="theme__leader${reason ? " theme__leader--with-reason" : ""}">
                   <span class="theme__leader-line">
                     <span class="theme__leader-name">${escapeHtml(l && l.name)}</span>
@@ -539,7 +579,7 @@
         return `<div class="theme">
           <div class="theme__line1">
             <span class="theme__name">${escapeHtml(t && t.name)}</span>
-            ${t && t.note ? `<span class="theme__sep">·</span><span class="theme__summary">${escapeHtml(t.note)}</span>` : ""}
+            ${t && t.note ? `<span class="theme__sep">·</span><span class="theme__summary">${escapeHtml(sanitizeUserCopy(t.note))}</span>` : ""}
           </div>
           ${leadersHtml}
         </div>`;

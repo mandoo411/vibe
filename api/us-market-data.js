@@ -28,14 +28,14 @@ const US_INDICES = [
 ];
 
 const US_SECTORS = [
-  { symbol: "XLK", exchange: "AMS", name: "기술", label: "XLK" },
-  { symbol: "XLF", exchange: "AMS", name: "금융", label: "XLF" },
-  { symbol: "XLE", exchange: "AMS", name: "에너지", label: "XLE" },
-  { symbol: "XLV", exchange: "AMS", name: "바이오/헬스", label: "XLV" },
-  { symbol: "XLI", exchange: "AMS", name: "산업재", label: "XLI" },
-  { symbol: "XLP", exchange: "AMS", name: "소비재", label: "XLP" },
-  { symbol: "XLB", exchange: "AMS", name: "소재", label: "XLB" },
-  { symbol: "XLU", exchange: "AMS", name: "유틸리티", label: "XLU" },
+  { symbol: "XLK", exchange: "AMS", name: "기술", label: "XLK", yahoo: "XLK" },
+  { symbol: "XLF", exchange: "AMS", name: "금융", label: "XLF", yahoo: "XLF" },
+  { symbol: "XLE", exchange: "AMS", name: "에너지", label: "XLE", yahoo: "XLE" },
+  { symbol: "XLV", exchange: "AMS", name: "바이오/헬스", label: "XLV", yahoo: "XLV" },
+  { symbol: "XLI", exchange: "AMS", name: "산업재", label: "XLI", yahoo: "XLI" },
+  { symbol: "XLP", exchange: "AMS", name: "소비재", label: "XLP", yahoo: "XLP" },
+  { symbol: "XLB", exchange: "AMS", name: "소재", label: "XLB", yahoo: "XLB" },
+  { symbol: "XLU", exchange: "AMS", name: "유틸리티", label: "XLU", yahoo: "XLU" },
 ];
 
 const EXCHANGES = ["NAS", "NYS"];
@@ -233,19 +233,98 @@ function mapRankRow(row, rank) {
   };
 }
 
-async function fetchOverseasQuote({ symbol, exchange }) {
+function parseOverseasChangePct(out) {
+  if (!out || typeof out !== "object") return null;
+  const fromField = round2(
+    toNum(
+      pickFirst(out, [
+        "rate",
+        "RATE",
+        "prdy_ctrt",
+        "PRDY_CTRT",
+        "ovrs_prdy_ctrt",
+        "OVRS_PRDY_CTRT",
+        "ovrs_stck_prdy_ctrt",
+        "OVRS_STCK_PRDY_CTRT",
+        "fltt_rt",
+        "FLTT_RT",
+        "chgrate",
+        "CHGRATE",
+      ])
+    )
+  );
+  if (fromField != null && fromField !== 0) return fromField;
+
+  const fromPattern = round2(
+    pickNumberByPattern(out, /prdy_ctrt|ctrt|chgrate|change.*pct|rate/i, /prpr|last|vol|amt|diff/i)
+  );
+  if (fromPattern != null && fromPattern !== 0) return fromPattern;
+
+  const price = round2(
+    toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+  );
+  const prev = round2(
+    toNum(
+      pickFirst(out, [
+        "prdy_clpr",
+        "PRDY_CLPR",
+        "ovrs_prdy_clpr",
+        "OVRS_PRDY_CLPR",
+        "base",
+        "BASE",
+        "ovrs_stck_prdy_clpr",
+        "OVRS_STCK_PRDY_CLPR",
+      ])
+    )
+  );
+  if (price != null && prev != null && prev !== 0) {
+    return round2(((price - prev) / prev) * 100);
+  }
+  return fromField === 0 ? null : fromField;
+}
+
+async function fetchOverseasQuote({ symbol, exchange, yahoo }) {
   const body = await kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, {
     AUTH: "",
     EXCD: exchange,
     SYMB: symbol,
   });
   const out = outputObject(body);
+  let price = round2(
+    toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+  );
+  let changePct = parseOverseasChangePct(out);
+  let changePoints = round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"])));
+
+  if (changePct == null && yahoo) {
+    try {
+      const yq = await fetchYahooIndexQuote(yahoo);
+      if (yq.changePct != null) {
+        changePct = yq.changePct;
+        if (price == null) price = yq.price;
+        if (changePoints == null) changePoints = yq.changePoints;
+        console.log("[us-market-data] Yahoo ETF fallback", symbol, { changePct, price });
+      }
+    } catch (e) {
+      console.warn("[us-market-data] Yahoo ETF", symbol, e && e.message);
+    }
+  }
+
+  if (changePct == null) {
+    console.log(
+      "[us-market-data] overseas quote missing changePct",
+      symbol,
+      exchange,
+      JSON.stringify(out).slice(0, 600)
+    );
+  }
+
   return {
     symbol,
     exchange,
-    price: round2(toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))),
-    changePct: round2(toNum(pickFirst(out, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]))),
-    changePoints: round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"]))),
+    price,
+    changePct,
+    changePoints,
   };
 }
 
@@ -390,6 +469,10 @@ async function fetchSectors() {
         symbol: sector.symbol,
         name: sector.name,
         label: sector.label,
+        changePct: quote.changePct,
+        price: quote.price,
+      });
+      console.log("[us-market-data] sector", sector.symbol, {
         changePct: quote.changePct,
         price: quote.price,
       });

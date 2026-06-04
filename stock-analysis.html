@@ -101,6 +101,17 @@
           </p>
 
           <div id="ai-stock-result" class="ai-search-card__result" aria-live="polite">분석 중...</div>
+
+          <div class="ai-search-popular" aria-label="인기 검색 종목">
+            <p class="ai-search-popular__title">인기 검색 종목</p>
+            <div class="ai-search-popular__chips">
+              <button type="button" class="ai-search-popular__chip" data-query="삼성전자">삼성전자</button>
+              <button type="button" class="ai-search-popular__chip" data-query="SK하이닉스">SK하이닉스</button>
+              <button type="button" class="ai-search-popular__chip" data-query="NVDA">NVDA</button>
+              <button type="button" class="ai-search-popular__chip" data-query="AAPL">AAPL</button>
+              <button type="button" class="ai-search-popular__chip" data-query="TSLA">TSLA</button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -167,6 +178,16 @@
             if (e.key === "Enter") run();
           });
         }
+
+        document.querySelectorAll(".ai-search-popular__chip").forEach((chip) => {
+          chip.addEventListener("click", () => {
+            const q = chip.getAttribute("data-query") || "";
+            if (input) {
+              input.value = q;
+              input.focus();
+            }
+          });
+        });
       })();
     </script>
   </body>

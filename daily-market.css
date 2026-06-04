@@ -56,14 +56,27 @@
 
 .day-nav__date input[type="date"] {
   appearance: none;
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
+  border: 1px solid var(--border-strong, var(--border));
+  background: var(--bg-secondary, var(--bg-panel));
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 13px;
+  font-weight: 600;
   padding: 6px 10px;
   min-height: 34px;
   border-radius: var(--radius);
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] .day-nav__date input[type="date"] {
+  background: var(--bg-elevated, #1e2235);
+  color: var(--text-body, #d1d5db);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .day-nav__date input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85);
+  opacity: 0.9;
 }
 
 .day-nav__spacer {

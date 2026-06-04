@@ -831,16 +831,18 @@ a:hover {
 
 .calendar-cell {
   position: relative;
-  padding: 8px;
+  padding: 8px 8px 14px;
   cursor: pointer;
   text-align: left;
+  overflow: visible;
 }
 
 .month-calendar--compact .calendar-weekday,
 .month-calendar--compact .calendar-cell {
   min-height: 34px;
-  padding: 4px 3px;
+  padding: 4px 5px 12px;
   font-size: 10px;
+  overflow: visible;
 }
 
 .month-calendar--compact .calendar-cell span {
@@ -848,8 +850,8 @@ a:hover {
 }
 
 .month-calendar--compact .calendar-cell i {
-  right: 3px;
-  bottom: 3px;
+  right: 5px;
+  bottom: 5px;
   gap: 2px;
 }
 
@@ -899,10 +901,18 @@ a:hover {
 
 .calendar-cell i {
   position: absolute;
-  right: 6px;
-  bottom: 6px;
+  right: 8px;
+  bottom: 8px;
   display: flex;
   gap: 4px;
+  max-width: calc(100% - 10px);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  pointer-events: none;
+}
+
+.month-calendar {
+  overflow: visible;
 }
 
 .selected-day,

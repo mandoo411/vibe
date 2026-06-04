@@ -61,7 +61,7 @@
   }
 
   function fmtPct(n) {
-    if (n == null || !Number.isFinite(n)) return "-";
+    if (n == null || !Number.isFinite(n)) return "—";
     const sign = n > 0 ? "+" : "";
     return `${sign}${n.toFixed(2)}%`;
   }

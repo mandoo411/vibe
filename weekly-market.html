@@ -280,6 +280,18 @@
           "Housing Starts": "주택착공건수",
           "Building Permits": "건축허가",
           "Trade Balance": "무역수지",
+          "Balance of Trade": "무역수지",
+          "Non Farm Payrolls": "비농업 고용",
+          "Non-Farm Payrolls": "비농업 고용",
+          "Non Farm Employment Change": "비농업 고용 변화",
+          "Ivey PMI s.a": "아이브이 PMI (계절조정)",
+          "Ivey PMI": "아이브이 PMI",
+          "NAB Business Confidence": "NAB 기업신뢰지수",
+          "Exports YoY": "수출 (연간)",
+          "Imports YoY": "수입 (연간)",
+          "Building Permits MoM": "건축허가 (월간)",
+          "CPI YoY": "소비자물가 (연간)",
+          "PPI YoY": "생산자물가 (연간)",
           "Current Account": "경상수지",
           "Current Account Balance": "경상수지",
           "Government Budget": "정부 예산",
@@ -491,6 +503,53 @@
           return Number.isFinite(importance) && importance >= 3;
         }
 
+        const INDICATOR_REGEX = [
+          [/non[\s-]?farm\s+payrolls/i, "비농업 고용"],
+          [/balance\s+of\s+trade/i, "무역수지"],
+          [/ivey\s+pmi/i, "아이브이 PMI"],
+          [/gdp\s+growth\s+rate\s+yoy/i, "GDP 성장률 (연간)"],
+          [/westpac\s+consumer\s+confidence/i, "웨스트팩 소비자신뢰"],
+          [/nab\s+business\s+confidence/i, "NAB 기업신뢰지수"],
+          [/unemployment\s+rate/i, "실업률"],
+          [/exports\s+yoy/i, "수출 (연간)"],
+          [/imports\s+yoy/i, "수입 (연간)"],
+        ];
+
+        function pickEconField(row, ...keys) {
+          for (const key of keys) {
+            if (!row || !(key in row)) continue;
+            const v = row[key];
+            if (v === null || v === undefined) continue;
+            if (typeof v === "string" && !v.trim()) continue;
+            return v;
+          }
+          return "";
+        }
+
+        function enrichEconomicPrevious(rows) {
+          const sorted = [...(rows || [])].sort((a, b) => {
+            const d = a.date.localeCompare(b.date);
+            return d !== 0 ? d : String(a.time).localeCompare(String(b.time));
+          });
+          const lastValue = new Map();
+          for (const row of sorted) {
+            const key = `${row.country}|${row.event}`;
+            row.previous = pickEconField(row, "previous", "prev", "prior") || row.previous || "";
+            if (row.previous === "" && lastValue.has(key)) row.previous = lastValue.get(key);
+            const actual = pickEconField(row, "actual");
+            if (actual !== "") {
+              row.actual = actual;
+              lastValue.set(key, actual);
+            } else if (row.previous !== "") lastValue.set(key, row.previous);
+          }
+          return sorted;
+        }
+
+        function normalizeScheduleData(data) {
+          if (!data || !Array.isArray(data.economicCalendar)) return data;
+          return { ...data, economicCalendar: enrichEconomicPrevious(data.economicCalendar.map((r) => ({ ...r }))) };
+        }
+
         function translateIndicator(name) {
           const raw = String(name || "").trim();
           if (!raw) return raw;
@@ -504,13 +563,36 @@
             .replace(/\s+/g, " ")
             .trim();
           if (INDICATOR_KO[normalized]) return INDICATOR_KO[normalized];
-          const partial = Object.keys(INDICATOR_KO).find((key) => normalized.includes(key) || key.includes(normalized));
+          const lower = normalized.toLowerCase();
+          const exactCi = Object.keys(INDICATOR_KO).find((k) => k.toLowerCase() === lower);
+          if (exactCi) return INDICATOR_KO[exactCi];
+          for (const [re, ko] of INDICATOR_REGEX) {
+            if (re.test(normalized)) return ko;
+          }
+          const partial = Object.keys(INDICATOR_KO)
+            .sort((a, b) => b.length - a.length)
+            .find((key) => {
+              const k = key.toLowerCase();
+              const n = lower;
+              return n.includes(k) || k.includes(n);
+            });
           return partial ? INDICATOR_KO[partial] : raw;
         }
 
-        function fmtEconValue(v) {
-          const s = v == null ? "" : String(v).trim();
-          return s || "—";
+        function fmtEconValue(v, unit) {
+          if (v === null || v === undefined) return "—";
+          if (typeof v === "string" && !v.trim()) return "—";
+          const n = Number(v);
+          let text;
+          if (Number.isFinite(n)) {
+            text = Math.abs(n) >= 1000 ? n.toLocaleString("en-US") : String(n);
+          } else {
+            text = String(v).trim();
+          }
+          const u = String(unit || "").trim();
+          if (!u || text.endsWith(u)) return text;
+          if (u === "%" || u === "％") return `${text}%`;
+          return `${text} ${u}`;
         }
 
         function renderEconomic(rows) {
@@ -523,8 +605,8 @@
                 (r) => `<tr class="${impactClass(r.impact)}">
                   <td data-label="시간">${escapeHtml(r.time || "—")}</td>
                   <td data-label="지표명"><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
-                  <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous))}</td>
-                  <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate))}</td>
+                  <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous, r.unit))}</td>
+                  <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate, r.unit))}</td>
                   <td data-label="중요도">${escapeHtml(r.impact || "low")}</td>
                 </tr>`
               )
@@ -749,7 +831,7 @@
 
         async function load() {
           try {
-            state.data = await tmFetchJson("data/weekly-schedule.json");
+            state.data = normalizeScheduleData(await tmFetchJson("data/weekly-schedule.json"));
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;

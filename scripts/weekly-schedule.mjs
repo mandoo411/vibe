@@ -5,6 +5,11 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
+import {
+  economicRowsFromResponse,
+  enrichEconomicPrevious,
+  mapEconomicRow,
+} from "./economic-calendar-util.mjs";
 
 const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
 const RSS_SOURCES = [
@@ -420,19 +425,11 @@ async function fetchText(url, headers = {}) {
   return text;
 }
 
-function normalizeEconomic(data) {
-  const rows = Array.isArray(data?.economicCalendar) ? data.economicCalendar : [];
-  return rows.filter(isHighImpact).map((row) => ({
-    date: String(row.date || row.time || "").slice(0, 10),
-    event: row.event || "",
-    country: row.country || "",
-    time: String(row.time || "").slice(11, 16) || "",
-    impact: "high",
-    importance: 3,
-    actual: row.actual ?? "",
-    previous: row.previous ?? "",
-    estimate: row.estimate ?? "",
-  }));
+function normalizeEconomic(data, { minDate } = {}) {
+  const mapped = economicRowsFromResponse(data).map(mapEconomicRow);
+  const enriched = enrichEconomicPrevious(mapped);
+  const min = minDate || "";
+  return enriched.filter((row) => (!min || row.date >= min) && isHighImpact(row));
 }
 
 function normalizeEarnings(data) {
@@ -666,8 +663,9 @@ async function main() {
   const token = requireEnv("FINNHUB_API_KEY");
   const today = seoulYmd();
   const to = addDaysYmd(today, 14);
+  const historyFrom = addDaysYmd(today, -90);
   const economicUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
-  economicUrl.searchParams.set("from", today);
+  economicUrl.searchParams.set("from", historyFrom);
   economicUrl.searchParams.set("to", to);
   economicUrl.searchParams.set("token", token);
 
@@ -684,7 +682,7 @@ async function main() {
     fetchKREarnings(today, to),
   ]);
 
-  const economicCalendar = normalizeEconomic(economicRaw);
+  const economicCalendar = normalizeEconomic(economicRaw, { minDate: today });
   const earningsCalendar = normalizeEarnings(earningsRaw);
   const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news });
 
@@ -694,6 +692,7 @@ async function main() {
       lastUpdatedKst: seoulStamp(),
       from: today,
       to,
+      historyFrom,
       source: "finnhub+38-detail+naver+claude",
     },
     economicCalendar,

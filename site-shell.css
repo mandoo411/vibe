@@ -1356,6 +1356,236 @@ body[data-theme="dark"] .home-ticker-bar__label {
   color: #a8b4ff;
 }
 
+/* AI 종목분석 — 실시간 AI 분석 미리보기 (홈 모바일과 동일 콘텐츠) */
+.ai-live-insights {
+  margin-top: 16px;
+}
+
+.ai-live-insights__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ai-live-insights__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary, #0f1120);
+}
+
+.ai-live-insights__bar {
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: #3339bf;
+  flex-shrink: 0;
+}
+
+.ai-live-insights__status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #22c55e;
+}
+
+.ai-live-insights__status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.ai-live-insights__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-live-insight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  border: 1px solid #f0f2f8;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  appearance: none;
+  color: inherit;
+}
+
+.ai-live-insight:hover {
+  border-color: rgba(51, 57, 191, 0.25);
+}
+
+.ai-live-insight__badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.ai-live-insight__badge--buy {
+  background: #fff1f0;
+  color: #e24b4a;
+  border: 1px solid #fecaca;
+}
+
+.ai-live-insight__badge--hold {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.ai-live-insight__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-live-insight__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.ai-live-insight__symbol {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary, #0f1120);
+  flex-shrink: 0;
+}
+
+.ai-live-insight__bar-track {
+  flex: 1;
+  height: 4px;
+  background: #f0f2f8;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ai-live-insight__bar {
+  display: block;
+  height: 100%;
+  background: #e24b4a;
+  border-radius: 2px;
+}
+
+.ai-live-insight__bar--mid {
+  background: #f59e0b;
+}
+
+.ai-live-insight__pct {
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ai-live-insight__pct--high {
+  color: #e24b4a;
+}
+
+.ai-live-insight__pct--mid {
+  color: #f59e0b;
+}
+
+.ai-live-insight__desc {
+  font-size: 11px;
+  color: var(--text-secondary, #666);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-live-insight__time {
+  font-size: 10px;
+  color: #bbb;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .ai-live-insights__title {
+  color: var(--text-title, #f3f4f6);
+}
+
+[data-theme="dark"] .ai-live-insight {
+  background: #1c2030;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="dark"] .ai-live-insight__symbol {
+  color: #e8eaef;
+}
+
+[data-theme="dark"] .ai-live-insight__desc {
+  color: #9aa3b5;
+}
+
+[data-theme="dark"] .ai-live-insight__time {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .ai-live-insight__bar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .ai-live-insight__badge--buy {
+  background: rgba(226, 75, 74, 0.12);
+  border-color: rgba(226, 75, 74, 0.35);
+  color: #f87171;
+}
+
+[data-theme="dark"] .ai-live-insight__badge--hold {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+@media (max-width: 768px) {
+  .ai-search-popular__chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .ai-search-popular__chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ai-search-popular__chip {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .ai-search-popular {
+    margin-top: 14px;
+  }
+}
+
 [data-theme="dark"] .home-section {
   background: #1a1f35;
   border: 1px solid #2a2f4a;

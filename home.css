@@ -724,6 +724,17 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
   grid-template-columns: minmax(0, 1fr) 80px 58px;
 }
 
+.home-th--us.home-th--logo,
+.home-tr--us.home-tr--logo {
+  grid-template-columns: minmax(0, 1fr) 72px 52px 62px;
+  gap: 6px;
+}
+
+.home-th--us.home-th--logo > div:last-child,
+.home-tr--us .home-tr__metric {
+  text-align: right;
+}
+
 .home-th--coin.home-th--logo {
   grid-template-columns: minmax(0, 1fr) 88px 58px;
 }

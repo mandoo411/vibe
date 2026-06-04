@@ -257,7 +257,52 @@
   let homeRtTab = "cap";
 
   const HOME_US_ACTION = { cap: "market-cap", gainers: "gainers", tv: "volume" };
+  const HOME_US_METRIC_LABEL = {
+    cap: "시가총액",
+    gainers: "거래량",
+    tv: "거래대금",
+  };
   let homeUsTab = "cap";
+
+  function fmtUsdCompact(n) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+    if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e3) return `$${Math.round(n / 1e3)}K`;
+    return `$${Math.round(n)}`;
+  }
+
+  function fmtNumberCompact(n) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+    if (n >= 1e3) return `${Math.round(n / 1e3)}K`;
+    return String(Math.round(n));
+  }
+
+  function formatHomeUsMetric(r, tab) {
+    if (tab === "cap") {
+      const n = toNum(r && r.marketCap);
+      return n != null && n > 0 ? fmtUsdCompact(n) : "—";
+    }
+    if (tab === "tv") {
+      let n = toNum(r && r.tradingValue);
+      if (n == null || n <= 0) {
+        const p = toNum(r && r.price);
+        const v = toNum(r && r.volume);
+        if (p != null && v != null && p > 0 && v > 0) n = p * v;
+      }
+      return n != null && n > 0 ? fmtUsdCompact(n) : "—";
+    }
+    const vol = toNum(r && r.volume);
+    return vol != null && vol > 0 ? fmtNumberCompact(vol) : "—";
+  }
+
+  function syncHomeUsChrome() {
+    const metricH = $("home-us-metric-h");
+    if (metricH) metricH.textContent = HOME_US_METRIC_LABEL[homeUsTab] || HOME_US_METRIC_LABEL.cap;
+  }
 
   function realtimePageHref(tab) {
     const t = HOME_RT_ACTION[tab] ? tab : "cap";
@@ -349,7 +394,8 @@
         if (pv != null) {
           price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
-        return `<a class="home-tr home-tr--logo" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div></a>`;
+        const metric = formatHomeUsMetric(r, tab);
+        return `<a class="home-tr home-tr--logo home-tr--us" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }
@@ -464,6 +510,7 @@
   async function loadHomeUsTab(tab) {
     const t = HOME_US_ACTION[tab] ? tab : "cap";
     homeUsTab = t;
+    syncHomeUsChrome();
     document.querySelectorAll("[data-home-us-tab]").forEach((btn) => {
       const on = btn.getAttribute("data-home-us-tab") === homeUsTab;
       btn.classList.toggle("is-active", on);

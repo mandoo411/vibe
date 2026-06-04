@@ -514,24 +514,31 @@ a:hover {
   .masthead.masthead--title-only,
   .hub-hero {
     height: auto;
-    min-height: 72px;
+    min-height: 0;
+    overflow: visible;
+    padding: 16px 0;
   }
 
   .page-hero-sub {
-    margin: 6px 0 12px;
+    margin: 0 0 16px;
   }
 
   .masthead__title,
   .hub-hero__title {
-    font-size: 1.5rem;
-    line-height: 1.2;
-    letter-spacing: -0.025em;
+    font-family: "Noto Sans KR", -apple-system, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
   }
 
   .masthead__kicker,
   .hub-hero__kicker {
-    margin-bottom: 4px;
-    font-size: 10px;
+    margin: 0 0 6px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #6366f1;
+    font-weight: 700;
   }
 
   .masthead__meta {

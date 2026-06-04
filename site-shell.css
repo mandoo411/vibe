@@ -1321,27 +1321,48 @@ body[data-theme="dark"] .home-ticker-bar__label {
     padding-right: 0;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only {
+  /* 서브페이지 제목 블록 — 전 페이지 동일 규격(실시간시세 포함) */
+  .page-tm-v2 .masthead.masthead--title-only,
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only {
     height: auto;
     min-height: 0;
-    padding: 12px 0 10px;
+    overflow: visible;
+    padding: 16px 0;
+    margin-bottom: 0;
   }
 
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only {
-    padding: 10px 0 8px;
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__copy {
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__title {
-    font-size: 22px;
-    line-height: 1.12;
+  .page-tm-v2 .masthead.masthead--title-only .masthead__title,
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
+    font-family: "Noto Sans KR", -apple-system, sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.15;
     letter-spacing: -0.02em;
   }
 
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
-    font-size: 20px;
+  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #6366f1;
+    margin: 0 0 6px;
+    font-weight: 700;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  [data-theme="dark"] .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
+    color: #6366f1;
+  }
+
+  .page-tm-v2 .page-hero-sub {
+    margin: 0 0 16px;
+  }
+
   .page-tm-v2 .section-kicker,
   .page-tm-v2 .us-section__title,
   .page-tm-v2 .crypto-section__title {
@@ -1349,17 +1370,36 @@ body[data-theme="dark"] .home-ticker-bar__label {
     letter-spacing: 0.14em;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-    margin-bottom: 4px;
-  }
-
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
-    margin-bottom: 2px;
-    font-size: 9px;
-  }
-
   .page-tm-v2 .section-kicker {
     margin-bottom: 4px;
+  }
+
+  /* 글로벌랭킹 · 암호화폐 표 헤더/행 높이 · 순위 컬럼 통일 */
+  .page-tm-v2 .crypto-table th,
+  .page-tm-v2 .world-table thead th {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .page-tm-v2 .crypto-table td,
+  .page-tm-v2 .world-table td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .page-tm-v2 .crypto-table .crypto-col-rank,
+  .page-tm-v2 .world-table th.world-col-rank,
+  .page-tm-v2 .world-table td.world-col-rank {
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    padding-left: 4px;
+    padding-right: 4px;
   }
 
   .home-ticker__item {

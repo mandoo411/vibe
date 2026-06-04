@@ -330,8 +330,11 @@
       .crypto-coin-cell {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         min-width: 0;
+      }
+      .crypto-col-icon {
+        padding-right: 10px;
       }
       .crypto-coin-cell__text {
         min-width: 0;
@@ -527,7 +530,7 @@
         }
         .crypto-table th,
         .crypto-table td {
-          padding: 7px 5px;
+          padding: 10px 4px;
         }
         .crypto-col-volume,
         .crypto-col-fdv,
@@ -538,16 +541,22 @@
           padding: 6px 10px;
         }
         .crypto-col-rank {
-          width: 28px;
+          width: 30px;
+          min-width: 30px;
+          max-width: 30px;
         }
         .crypto-col-icon {
-          width: 24px;
-          padding-right: 2px;
+          width: 34px;
+          padding-right: 10px;
+        }
+        .crypto-col-icon img {
+          width: 20px !important;
+          height: 20px !important;
+          margin-right: 0;
         }
         .crypto-col-name {
           width: auto;
           overflow: hidden;
-          max-width: 0;
         }
         .crypto-name-inline-symbol {
           font-family: "Noto Sans KR", -apple-system, sans-serif;
@@ -558,26 +567,27 @@
           white-space: nowrap;
         }
         .crypto-col-price {
-          width: 85px;
-          padding-right: 6px;
+          width: 90px;
+          padding-right: 4px;
+          text-align: right;
+          font-variant-numeric: tabular-nums;
         }
         .crypto-col-24h {
-          width: 72px;
+          width: 65px;
           padding-right: 4px;
+          text-align: right;
         }
         .crypto-col-mcap {
-          width: 65px;
+          width: 75px;
+          text-align: right;
+          font-variant-numeric: tabular-nums;
         }
         .crypto-col-price,
         .crypto-col-mcap {
           font-size: 13px;
         }
         .crypto-coin-cell {
-          gap: 4px;
-        }
-        .crypto-coin-cell img {
-          width: 20px !important;
-          height: 20px !important;
+          gap: 10px;
         }
         .crypto-name-btn {
           display: flex;
@@ -701,7 +711,7 @@
                       <th class="crypto-col-icon"></th>
                       <th class="crypto-col-name">코인명</th>
                       <th class="num crypto-col-price">가격</th>
-                      <th class="num crypto-col-24h">24H등락률</th>
+                      <th class="num crypto-col-24h">24H</th>
                       <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
                         시총 <span class="sort-icon">▼</span>
                       </th>

@@ -124,8 +124,6 @@
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
-  const TICKER_SCROLL_SEC = 35;
-
   function buildTickerItemHtml(item) {
     const pctHtml = tickerPctHtml(item);
     return `<span class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</span>`;
@@ -138,25 +136,21 @@
   window.tmMountTicker = function tmMountTicker(el, items) {
     if (!el) return;
     const list = Array.isArray(items) ? items : [];
+    el.classList.add("ticker-wrap");
+    el.classList.remove("home-ticker--marquee");
     if (!list.length) {
-      el.classList.remove("home-ticker--marquee");
       el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
       return;
     }
     const laneHtml = buildTickerLaneHtml(list);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
-      el.classList.remove("home-ticker--marquee");
-      el.innerHTML = `<span class="home-ticker__lane home-ticker__lane--static">${laneHtml}</span>`;
+      el.innerHTML = `<span class="ticker-content ticker-content--static">${laneHtml}</span>`;
       return;
     }
-    el.classList.add("home-ticker--marquee");
-    el.style.setProperty("--tm-ticker-duration", `${TICKER_SCROLL_SEC}s`);
-    el.innerHTML =
-      '<div class="home-ticker__track">' +
-      `<div class="home-ticker__lane">${laneHtml}</div>` +
-      `<div class="home-ticker__lane" aria-hidden="true">${laneHtml}</div>` +
-      "</div>";
+    el.innerHTML = `<span class="ticker-content">${laneHtml}</span>`;
+    const tickerContent = el.querySelector(".ticker-content");
+    if (tickerContent) tickerContent.innerHTML += tickerContent.innerHTML;
   };
 
   function renderTicker() {
@@ -171,7 +165,7 @@
         window.tmMountTicker(el, data.items);
       })
       .catch(() => {
-        el.classList.remove("home-ticker--marquee");
+        el.classList.add("ticker-wrap");
         el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';
       });
   }

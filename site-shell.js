@@ -124,6 +124,14 @@
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
+  function filterWebTickerItems(items) {
+    const list = Array.isArray(items) ? items : [];
+    if (window.innerWidth <= 768) return list;
+    return list.filter((item) => !String(item?.label || "").includes("금시세"));
+  }
+
+  window.tmFilterWebTickerItems = filterWebTickerItems;
+
   function renderTicker() {
     const el = document.getElementById("home-ticker");
     if (!el) return;
@@ -133,7 +141,7 @@
         return res.json();
       })
       .then((data) => {
-        const items = Array.isArray(data.items) ? data.items : [];
+        const items = filterWebTickerItems(data.items);
         if (!items.length) {
           el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
           return;

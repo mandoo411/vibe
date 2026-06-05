@@ -301,13 +301,35 @@
       </div>`;
   }
 
-  async function fetchAnalysis(query) {
-    const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(query)}`, { cache: "no-store" });
+  async function fetchAnalysis(resolved) {
+    if (!resolved || !/^\d{6}$/.test(resolved.code)) {
+      throw new Error("종목을 찾을 수 없습니다");
+    }
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: resolved.code, name: resolved.name }),
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || "분석을 불러오지 못했습니다");
     if (data && data.error) throw new Error(data.error);
     if (!data || !data.analysis) throw new Error("분석을 불러오지 못했습니다");
     return data;
+  }
+
+  async function resolveForAnalysis(qRaw) {
+    await loadStockList();
+    const q = String(qRaw || "").trim();
+    if (!q) return null;
+
+    const params = new URLSearchParams(window.location.search);
+    const urlCode = code6Maybe(params.get("code") || "");
+    const urlName = String(params.get("name") || "").trim();
+    if (/^\d{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
+      return { code: urlCode, name: urlName || q, query: urlName || urlCode };
+    }
+
+    return resolveQueryLocal(q);
   }
 
   async function runAnalysis(qRaw) {
@@ -323,10 +345,11 @@
     showLoading();
 
     try {
-      await loadStockList();
-      const resolved = resolveQueryLocal(q);
-      const apiQuery = resolved ? resolved.query : q;
-      const data = await fetchAnalysis(apiQuery);
+      const resolved = await resolveForAnalysis(q);
+      if (!resolved || !/^\d{6}$/.test(resolved.code)) {
+        throw new Error("종목을 찾을 수 없습니다");
+      }
+      const data = await fetchAnalysis(resolved);
       renderAnalysis(data);
     } catch (e) {
       showError((e && e.message) || "분석을 불러오지 못했습니다");
@@ -354,10 +377,10 @@
         if (e.key === "Enter") runAnalysis(input.value);
       });
     }
-    document.querySelectorAll(".ai-search-popular__chip, .ai-live-insight").forEach((el) => {
+    document.querySelectorAll(".ai-search-popular__chip").forEach((el) => {
       el.addEventListener("click", () => {
-        const q = el.getAttribute("data-query") || "";
-        runAnalysis(q);
+        const query = el.getAttribute("data-query") || "";
+        runAnalysis(query);
       });
     });
   }

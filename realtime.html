@@ -345,9 +345,15 @@
         color: var(--text-primary, #131722);
         font-family: inherit;
         outline: none;
+        text-align: center;
       }
       .rt-tab-search input::placeholder {
         color: var(--text-dim);
+        text-align: center;
+      }
+      .rt-tab-search input:focus,
+      .rt-tab-search input:not(:placeholder-shown) {
+        text-align: left;
       }
       .rt-tab-search input:focus {
         box-shadow: 0 0 0 3px rgba(51, 57, 191, 0.14);

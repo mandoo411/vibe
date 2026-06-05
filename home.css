@@ -704,6 +704,16 @@ body[data-theme="dark"] .home-nav__ai-badge {
     font-size: 11px;
     font-weight: 700;
   }
+
+  html[data-theme="light"] .page-home-v2 .home-ai-card__input {
+    background: rgba(255, 255, 255, 0.94);
+    color: #1a237e;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+  }
+
+  html[data-theme="light"] .page-home-v2 .home-ai-card__input::placeholder {
+    color: #6b7280;
+  }
 }
 
 .home-side {

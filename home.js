@@ -509,10 +509,21 @@
       el.innerHTML = '<p class="home-empty">오늘 예정된 지표가 없습니다.</p>';
       return;
     }
+    const trEvent =
+      typeof window.tmTranslateIndicator === "function"
+        ? (name) => window.tmTranslateIndicator(name)
+        : (name) => String(name || "");
+    const trCountry =
+      typeof window.tmTranslateCountry === "function"
+        ? (name) => window.tmTranslateCountry(name)
+        : (name) => String(name || "");
+
     el.innerHTML =
       list
         .map((r) => {
-          const label = `${escapeHtml(r.time || "")} ${escapeHtml(r.event || "")} ${escapeHtml(r.country || "")}`.trim();
+          const eventKo = trEvent(r.event);
+          const countryKo = trCountry(r.country);
+          const label = `${escapeHtml(r.time || "")} ${escapeHtml(eventKo)} ${escapeHtml(countryKo)}`.trim();
           return `<div class="home-mini-row"><span class="home-mini-row__name">${label}</span>${impBadge(r)}</div>`;
         })
         .join("") + '<div style="margin-top:8px"><a class="home-section__more" href="./weekly-market.html">전체 일정 보기 →</a></div>';

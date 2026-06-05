@@ -2276,6 +2276,13 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     color: #f3f4f6;
   }
 
+  [data-theme="dark"] .page-home-v2 .home-section--realtime .home-tr__name,
+  body[data-theme="dark"] .page-home-v2 .home-section--realtime .home-tr__name,
+  [data-theme="dark"] .page-home-v2 .home-section--realtime .home-tr__price,
+  body[data-theme="dark"] .page-home-v2 .home-section--realtime .home-tr__price {
+    color: #c8ccff;
+  }
+
   /* AI CTA 移대뱶 */
   .page-home-v2 .home-ai-card {
     position: relative;

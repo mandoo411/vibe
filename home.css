@@ -2133,6 +2133,12 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     color: #9ca3af;
   }
 
+  /* 종목명 헤더: 순위열(16px)+간격(4px)+종목 첫 글자(13px) — 데이터 행의 2번째 글자(성) 위에 종 정렬 */
+  .page-home-v2 .home-section--realtime .home-th--rt .home-rt-col--name {
+    padding-left: calc(16px + 4px + 13px);
+    box-sizing: border-box;
+  }
+
   .page-home-v2 .home-section--realtime .home-tr--rt {
     display: grid;
     align-items: center;

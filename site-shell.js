@@ -124,36 +124,15 @@
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
-  const TICKER_DESKTOP_MQ = window.matchMedia("(min-width: 769px)");
-  let tickerResizeBound = false;
+  const TICKER_SCROLL_SEC = 35;
 
   function buildTickerItemHtml(item) {
     const pctHtml = tickerPctHtml(item);
-    return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
+    return `<span class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</span>`;
   }
 
-  function measureTickerMarquee(el) {
-    const track = el.querySelector(".home-ticker__track");
-    const lane = el.querySelector(".home-ticker__lane");
-    if (!track || !lane) return;
-    const w = lane.getBoundingClientRect().width;
-    if (w <= 0) return;
-    const pxPerSec = 48;
-    track.style.setProperty("--tm-ticker-scroll-w", `${w}px`);
-    track.style.setProperty("--tm-ticker-duration", `${Math.max(28, w / pxPerSec)}s`);
-  }
-
-  function bindTickerResize() {
-    if (tickerResizeBound) return;
-    tickerResizeBound = true;
-    window.addEventListener("resize", () => {
-      const el = document.getElementById("home-ticker");
-      if (el?.classList.contains("home-ticker--marquee")) measureTickerMarquee(el);
-    });
-  }
-
-  function shouldUseTickerMarquee() {
-    return TICKER_DESKTOP_MQ.matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function buildTickerLaneHtml(items) {
+    return items.map(buildTickerItemHtml).join("");
   }
 
   window.tmMountTicker = function tmMountTicker(el, items) {
@@ -164,20 +143,20 @@
       el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
       return;
     }
-    const itemsHtml = list.map(buildTickerItemHtml).join("");
-    if (shouldUseTickerMarquee()) {
-      el.classList.add("home-ticker--marquee");
-      el.innerHTML =
-        '<div class="home-ticker__track">' +
-        `<div class="home-ticker__lane">${itemsHtml}</div>` +
-        `<div class="home-ticker__lane" aria-hidden="true">${itemsHtml}</div>` +
-        "</div>";
-      bindTickerResize();
-      requestAnimationFrame(() => measureTickerMarquee(el));
+    const laneHtml = buildTickerLaneHtml(list);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      el.classList.remove("home-ticker--marquee");
+      el.innerHTML = `<span class="home-ticker__lane home-ticker__lane--static">${laneHtml}</span>`;
       return;
     }
-    el.classList.remove("home-ticker--marquee");
-    el.innerHTML = itemsHtml;
+    el.classList.add("home-ticker--marquee");
+    el.style.setProperty("--tm-ticker-duration", `${TICKER_SCROLL_SEC}s`);
+    el.innerHTML =
+      '<div class="home-ticker__track">' +
+      `<div class="home-ticker__lane">${laneHtml}</div>` +
+      `<div class="home-ticker__lane" aria-hidden="true">${laneHtml}</div>` +
+      "</div>";
   };
 
   function renderTicker() {

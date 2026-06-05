@@ -1,0 +1,500 @@
+/* AI 종목분석 — 7카드 결과 패널 */
+.ai-analysis-panel {
+  margin-top: 20px;
+}
+
+.ai-analysis-panel[hidden] {
+  display: none !important;
+}
+
+.ai-analysis-stock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 14px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--bg-primary, #fff);
+  border: 0.5px solid rgba(200, 210, 255, 0.6);
+  box-shadow: 0 2px 10px rgba(51, 57, 191, 0.06);
+}
+
+[data-theme="dark"] .ai-analysis-stock {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ai-analysis-stock__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-analysis-stock__name {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-analysis-stock__code {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-analysis-stock__price {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 900;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-analysis-stock__price.is-up {
+  color: #e24b4a;
+}
+
+.ai-analysis-stock__price.is-down {
+  color: #3b82f6;
+}
+
+.ai-analysis-stock__chg {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ai-analysis-stock__chg.is-up {
+  color: #e24b4a;
+}
+
+.ai-analysis-stock__chg.is-down {
+  color: #3b82f6;
+}
+
+.ai-analysis-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: rgba(51, 57, 191, 0.06);
+  color: #3339bf;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+[data-theme="dark"] .ai-analysis-status {
+  background: rgba(99, 102, 241, 0.12);
+  color: #a8b4ff;
+}
+
+.ai-analysis-status__spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(51, 57, 191, 0.2);
+  border-top-color: #3339bf;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ai-analysis-error {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(226, 75, 74, 0.08);
+  border: 1px solid rgba(226, 75, 74, 0.25);
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+[data-theme="dark"] .ai-analysis-error {
+  background: rgba(226, 75, 74, 0.12);
+  color: #fca5a5;
+}
+
+.ai-analysis-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 768px) {
+  .ai-analysis-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ai-card--summary {
+    grid-column: 1 / -1;
+  }
+
+  .ai-card--signals {
+    grid-column: 1 / -1;
+  }
+}
+
+.ai-card {
+  background: var(--bg-primary, #fff);
+  border-radius: 18px;
+  padding: 16px 18px;
+  border: 0.5px solid rgba(200, 210, 255, 0.55);
+  box-shadow: 0 2px 12px rgba(51, 57, 191, 0.06);
+}
+
+[data-theme="dark"] .ai-card {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ai-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--text-primary, #131722);
+  letter-spacing: -0.2px;
+}
+
+[data-theme="dark"] .ai-card__title {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-card__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(51, 57, 191, 0.1);
+  color: #3339bf;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ai-card__body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary, #2a2e39);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .ai-card__body {
+  color: var(--text-body, #d1d5db);
+}
+
+/* ① 요약 카드 */
+.ai-card--summary .ai-card__body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 20px;
+}
+
+.ai-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.ai-summary-badge--buy {
+  background: #e24b4a;
+}
+
+.ai-summary-badge--hold {
+  background: #f59e0b;
+}
+
+.ai-summary-badge--avoid {
+  background: #6b7280;
+}
+
+.ai-summary-prob {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-summary-prob__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+}
+
+.ai-summary-prob__value {
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1;
+  color: #3339bf;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+[data-theme="dark"] .ai-summary-prob__value {
+  color: #a8b4ff;
+}
+
+.ai-summary-desc {
+  flex: 1;
+  min-width: 200px;
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* ④ 이벤트 */
+.ai-event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-event {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 10px;
+}
+
+.ai-event__badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ai-event__badge--good {
+  background: #16a34a;
+}
+
+.ai-event__badge--bad {
+  background: #e24b4a;
+}
+
+.ai-event__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-event__date {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+  white-space: nowrap;
+}
+
+/* ⑥ AI 판단 */
+.ai-opinion-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-opinion-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.ai-opinion-row__label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #3339bf;
+  padding-top: 2px;
+}
+
+[data-theme="dark"] .ai-opinion-row__label {
+  color: #a8b4ff;
+}
+
+.ai-opinion-prices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(200, 210, 255, 0.5);
+}
+
+[data-theme="dark"] .ai-opinion-prices {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.ai-opinion-price {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(51, 57, 191, 0.06);
+  text-align: center;
+}
+
+[data-theme="dark"] .ai-opinion-price {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.ai-opinion-price__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+  margin-bottom: 4px;
+}
+
+.ai-opinion-price__value {
+  font-size: 15px;
+  font-weight: 900;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-opinion-price__value {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-opinion-comment {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(51, 57, 191, 0.05);
+  font-size: 13px;
+  font-weight: 600;
+  font-style: italic;
+}
+
+[data-theme="dark"] .ai-opinion-comment {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ⑦ 신호 요약 */
+.ai-signals {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ai-signals__counts {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ai-signals__up {
+  color: #e24b4a;
+}
+
+.ai-signals__down {
+  color: #3b82f6;
+}
+
+.ai-signals__gauge {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.15);
+  overflow: hidden;
+  display: flex;
+}
+
+.ai-signals__gauge-up {
+  height: 100%;
+  background: linear-gradient(90deg, #e24b4a, #f87171);
+  border-radius: 999px 0 0 999px;
+  transition: width 0.4s ease;
+}
+
+.ai-signals__gauge-down {
+  height: 100%;
+  background: linear-gradient(90deg, #60a5fa, #3b82f6);
+  border-radius: 0 999px 999px 0;
+  transition: width 0.4s ease;
+}
+
+/* 스켈레톤 */
+.ai-card.is-skeleton .ai-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-skel-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(200, 210, 255, 0.25) 25%,
+    rgba(200, 210, 255, 0.45) 50%,
+    rgba(200, 210, 255, 0.25) 75%
+  );
+  background-size: 200% 100%;
+  animation: ai-skel-shimmer 1.2s ease-in-out infinite;
+}
+
+[data-theme="dark"] .ai-skel-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.ai-skel-line--short {
+  width: 55%;
+}
+
+.ai-skel-line--mid {
+  width: 78%;
+}
+
+@keyframes ai-skel-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.ai-search-card__submit.is-loading {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.ai-search-card__submit .ai-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}

@@ -386,19 +386,65 @@ const STOCK_MAP = (() => {
   return map;
 })();
 
+let STOCK_LIST_CACHE = null;
+
+function getStockList() {
+  if (STOCK_LIST_CACHE) return STOCK_LIST_CACHE;
+  try {
+    STOCK_LIST_CACHE = require("../assets/stock-list.json");
+  } catch {
+    STOCK_LIST_CACHE = [];
+  }
+  if (!Array.isArray(STOCK_LIST_CACHE)) STOCK_LIST_CACHE = [];
+  return STOCK_LIST_CACHE;
+}
+
+function findNameByCode(code6) {
+  const hit = getStockList().find((x) => x && normalizeCode6(x.code) === code6);
+  return hit ? sanitizeStr(hit.name) : "";
+}
+
 function resolveStock(queryRaw) {
   const q = sanitizeStr(queryRaw);
   const code6 = normalizeCode6(q);
-  if (/^\d{6}$/.test(code6)) return { stockName: q, stockCode: code6, resolvedBy: "code" };
+  if (/^\d{6}$/.test(code6)) {
+    const name = findNameByCode(code6) || q;
+    return { stockName: name, stockCode: code6, resolvedBy: "code" };
+  }
 
   const key = normalizeNameKey(q);
   if (!key) return null;
   const hit = STOCK_MAP.get(key);
   if (hit) return { stockName: hit.stockName, stockCode: hit.stockCode, resolvedBy: "map" };
 
-  // 약한 보조: "삼성전자 005930" 같은 입력에서 6자리만 추출
+  const list = getStockList();
+  const exact = list.find((x) => x && normalizeNameKey(x.name) === key);
+  if (exact) {
+    return {
+      stockName: sanitizeStr(exact.name),
+      stockCode: normalizeCode6(exact.code),
+      resolvedBy: "list",
+    };
+  }
+
+  const partial = list.filter((x) => {
+    if (!x || !x.name) return false;
+    const nk = normalizeNameKey(x.name);
+    return nk.includes(key) || key.includes(nk);
+  });
+  if (partial.length === 1) {
+    return {
+      stockName: sanitizeStr(partial[0].name),
+      stockCode: normalizeCode6(partial[0].code),
+      resolvedBy: "list-partial",
+    };
+  }
+
   const embedded = (q.match(/\b\d{6}\b/) || [])[0];
-  if (embedded) return { stockName: q, stockCode: embedded, resolvedBy: "embedded" };
+  if (embedded) {
+    const name = findNameByCode(embedded) || q;
+    return { stockName: name, stockCode: embedded, resolvedBy: "embedded" };
+  }
 
   return null;
 }
@@ -935,17 +981,130 @@ function safeParseJsonOnly(text) {
   return JSON.parse(sliced);
 }
 
+const CLAUDE_SYSTEM_PROMPT =
+  "당신은 한국 주식 전문 애널리스트입니다.\n" +
+  "제공된 데이터를 기반으로 분석하되\n" +
+  "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
+  "반드시 JSON 형식으로만 응답하고\n" +
+  "다른 텍스트는 절대 포함하지 마세요.";
+
+const CLAUDE_RESPONSE_SCHEMA = `{
+  "summary": {
+    "signal": "매수|관망|회피",
+    "probability": 75,
+    "description": "3줄 이내 핵심 요약 (일반인 언어)"
+  },
+  "story": "왜 지금 이 가격인가 - 최근 상승/하락 이유, 테마/섹터 흐름 스토리텔링",
+  "supply": "수급 분석 - 외국인/기관 동향, 거래량 변화 직관적으로",
+  "events": [
+    {"type": "호재|악재", "content": "이벤트 내용", "date": "날짜 또는 예정"}
+  ],
+  "chart": "차트 흐름 - 지지/저항, 이평선 배열, 현재 위치",
+  "opinion": {
+    "short": "단기 시나리오",
+    "mid": "중기 시나리오",
+    "long": "장기 시나리오",
+    "entry": 0,
+    "stop": 0,
+    "target": 0,
+    "comment": "저라면 이렇게 접근하겠다"
+  },
+  "signals": {
+    "up": 6,
+    "down": 2
+  }
+}`;
+
+function normalizeSignal(v) {
+  const s = sanitizeStr(v);
+  if (s === "매수" || s === "관망" || s === "회피") return s;
+  return "관망";
+}
+
+function normalizeAnalysis(raw, quote) {
+  const price = toNum(quote && quote.currentPrice) || 0;
+  if (!raw || typeof raw !== "object") {
+    return {
+      summary: {
+        signal: "관망",
+        probability: 50,
+        description: "분석을 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      },
+      story: "",
+      supply: "",
+      events: [],
+      chart: "",
+      opinion: {
+        short: "",
+        mid: "",
+        long: "",
+        entry: price,
+        stop: 0,
+        target: 0,
+        comment: "",
+      },
+      signals: { up: 0, down: 0 },
+      _error: true,
+    };
+  }
+
+  const summary = raw.summary && typeof raw.summary === "object" ? raw.summary : {};
+  const probRaw = toNum(summary.probability);
+  const probability =
+    probRaw == null ? 50 : Math.max(0, Math.min(100, Math.round(probRaw)));
+
+  const events = Array.isArray(raw.events)
+    ? raw.events
+        .filter((e) => e && typeof e === "object")
+        .map((e) => ({
+          type: sanitizeStr(e.type) === "악재" ? "악재" : "호재",
+          content: sanitizeStr(e.content),
+          date: sanitizeStr(e.date),
+        }))
+        .filter((e) => e.content)
+    : [];
+
+  const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
+  const signals = raw.signals && typeof raw.signals === "object" ? raw.signals : {};
+  const up = toNum(signals.up);
+  const down = toNum(signals.down);
+
+  return {
+    summary: {
+      signal: normalizeSignal(summary.signal),
+      probability,
+      description: sanitizeStr(summary.description) || "요약 정보가 없습니다.",
+    },
+    story: sanitizeStr(raw.story),
+    supply: sanitizeStr(raw.supply),
+    events,
+    chart: sanitizeStr(raw.chart),
+    opinion: {
+      short: sanitizeStr(opinion.short),
+      mid: sanitizeStr(opinion.mid),
+      long: sanitizeStr(opinion.long),
+      entry: toNum(opinion.entry) ?? price,
+      stop: toNum(opinion.stop) ?? 0,
+      target: toNum(opinion.target) ?? 0,
+      comment: sanitizeStr(opinion.comment),
+    },
+    signals: {
+      up: up == null ? 0 : Math.max(0, Math.round(up)),
+      down: down == null ? 0 : Math.max(0, Math.round(down)),
+    },
+  };
+}
+
 async function claudeAnalyze(input) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
-  const model = sanitizeStr(process.env.ANTHROPIC_MODEL) || "claude-sonnet-4-5";
+  const model = sanitizeStr(process.env.ANTHROPIC_MODEL) || "claude-sonnet-4-20250514";
 
   const user = [
-    "너는 한국 주식 단기 트레이딩 보조 애널리스트다.",
-    "아래 시세 데이터를 기반으로만 판단하고, 모르는 정보는 추측하지 마라.",
+    "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
+    "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
     "",
-    "반드시 다음 JSON 형식으로만 답하라. 코드블록(``` ) 금지, 설명 문장 금지, JSON 외 문자 금지.",
-    '{ "summary": "...", "technicalAnalysis": "...", "buyZone": "...", "stopLoss": "...", "targetPrice": "...", "opinion": "강력매수/매수/중립/매도/강력매도", "reason": "..." }',
+    CLAUDE_RESPONSE_SCHEMA,
     "",
     "입력 데이터:",
     JSON.stringify(input),
@@ -953,8 +1112,9 @@ async function claudeAnalyze(input) {
 
   const msg = await client.messages.create({
     model,
-    max_tokens: 700,
-    temperature: 0.2,
+    max_tokens: 2200,
+    temperature: 0.25,
+    system: CLAUDE_SYSTEM_PROMPT,
     messages: [{ role: "user", content: user }],
   });
 
@@ -965,7 +1125,8 @@ async function claudeAnalyze(input) {
           .map((c) => c.text)
           .join("\n")
       : "";
-  return safeParseJsonOnly(text);
+  const parsed = safeParseJsonOnly(text);
+  return normalizeAnalysis(parsed, input);
 }
 
 module.exports = async function handler(req, res) {
@@ -990,60 +1151,68 @@ module.exports = async function handler(req, res) {
   }
 
   let quote;
+  let supply = null;
   try {
-    const [q1, q2] = await Promise.all([
+    const [q1, q2, supplyRaw] = await Promise.all([
       kisInquirePrice(resolved.stockCode),
       kisInquirePrice2(resolved.stockCode),
+      kisInvestorTradeByStockDaily(resolved.stockCode).catch(() => null),
     ]);
     quote = { ...q1, creditRate: q2.creditRate, creditLoanBalance: q2.creditLoanBalance };
+    supply = supplyRaw;
+    if (!supply) {
+      try {
+        supply = await kisInquireInvestor(resolved.stockCode);
+      } catch (e) {
+        console.warn("[stock-analysis] investor failed", e && e.message);
+      }
+    }
+    if (!supply) {
+      try {
+        supply = await fetchNaverStockSupply(resolved.stockCode);
+      } catch (e2) {
+        console.warn("[stock-analysis] naver supply failed", e2 && e2.message);
+      }
+    }
   } catch (e) {
     console.error("[stock-analysis] KIS error", resolved.stockCode, e && e.message, e);
     json(res, 502, { error: "시세 조회 실패" });
     return;
   }
 
+  const supplyForAi = normalizeSupplyToEok(supply, quote.currentPrice);
+
   let analysis;
   try {
     analysis = await claudeAnalyze({
       stockName: resolved.stockName,
       stockCode: resolved.stockCode,
+      market: quote.market || "",
       currentPrice: quote.currentPrice,
       change: quote.change,
       changeRate: quote.changeRate,
       volume: quote.volume,
+      volTurnoverRate: quote.volTurnoverRate,
       open: quote.open,
       high: quote.high,
       low: quote.low,
+      prevClose: quote.prevClose,
       high52w: quote.high52w,
       low52w: quote.low52w,
+      creditRate: quote.creditRate,
+      creditLoanBalance: quote.creditLoanBalance,
+      creditLoanRmndRate: quote.creditLoanRmndRate,
+      marketCap: quote.marketCap,
+      per: quote.per,
+      financials: quote.financials,
+      supply: supplyForAi,
     });
   } catch (e) {
     console.error("[stock-analysis] Claude error", e && e.message, e);
-    analysis = {
-      summary: "현재 분석을 생성할 수 없습니다.",
-      technicalAnalysis: "현재 분석을 생성할 수 없습니다.",
-      buyZone: "",
-      stopLoss: "",
-      targetPrice: "",
-      opinion: "중립",
-      reason: "Claude 응답 오류로 분석을 생성하지 못했습니다.",
-    };
+    analysis = normalizeAnalysis(null, quote);
   }
 
-  let supply = null;
   let profit = null;
-  try {
-    supply = await kisInvestorTradeByStockDaily(resolved.stockCode);
-    if (!supply) supply = await kisInquireInvestor(resolved.stockCode);
-    if (!supply) supply = await fetchNaverStockSupply(resolved.stockCode);
-  } catch (e) {
-    console.warn("[stock-analysis] investor failed", e && e.message);
-    try {
-      supply = await fetchNaverStockSupply(resolved.stockCode);
-    } catch (e2) {
-      console.warn("[stock-analysis] naver supply failed", e2 && e2.message);
-    }
-  }
   try {
     profit = await kisIncomeStatement(resolved.stockCode);
   } catch (e) {

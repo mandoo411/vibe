@@ -1,14 +1,10 @@
 (function () {
-  const input = document.getElementById("ai-stock-query");
-  const btn = document.getElementById("ai-stock-submit");
-  const panel = document.getElementById("ai-analysis-panel");
-
+  let input = null;
+  let btn = null;
+  let panel = null;
   let stockList = [];
   let running = false;
-
-  function $(id) {
-    return document.getElementById(id);
-  }
+  let initialized = false;
 
   function escapeHtml(s) {
     return String(s == null ? "" : s)
@@ -21,6 +17,16 @@
   function toNum(v) {
     const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
     return Number.isFinite(n) ? n : null;
+  }
+
+  function safeParseJson(text) {
+    const raw = String(text == null ? "" : text).trim();
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 
   function normalizeNameKey(name) {
@@ -44,7 +50,8 @@
     if (stockList.length) return stockList;
     try {
       const res = await fetch("/assets/stock-list.json?t=" + Date.now(), { cache: "no-store" });
-      const data = await res.json().catch(() => []);
+      const text = await res.text();
+      const data = safeParseJson(text);
       if (Array.isArray(data)) {
         stockList = data
           .filter((x) => x && x.code && x.name)
@@ -234,11 +241,7 @@
     if (!panel) return;
     let analysis = data && data.analysis;
     if (typeof analysis === "string") {
-      try {
-        analysis = JSON.parse(analysis);
-      } catch {
-        analysis = null;
-      }
+      analysis = safeParseJson(analysis);
     }
     if (!analysis || typeof analysis !== "object") {
       showError("분석을 불러오지 못했습니다");
@@ -309,8 +312,9 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: resolved.code, name: resolved.name }),
+      cache: "no-store",
     });
-    const data = await res.json().catch(() => ({}));
+    const data = safeParseJson(await res.text()) || {};
     if (!res.ok) throw new Error((data && data.error) || "분석을 불러오지 못했습니다");
     if (data && data.error) throw new Error(data.error);
     if (!data || !data.analysis) throw new Error("분석을 불러오지 못했습니다");
@@ -370,22 +374,58 @@
     return "";
   }
 
-  function bindEvents() {
-    if (btn) btn.addEventListener("click", () => runAnalysis(input && input.value));
-    if (input) {
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") runAnalysis(input.value);
-      });
-    }
-    document.querySelectorAll(".ai-search-popular__chip").forEach((el) => {
-      el.addEventListener("click", () => {
-        const query = el.getAttribute("data-query") || "";
-        runAnalysis(query);
-      });
-    });
+  function onSubmitClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    runAnalysis(input ? input.value : "");
   }
 
-  bindEvents();
-  const boot = initialQuery();
-  if (boot) runAnalysis(boot);
+  function onInputKeydown(e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      runAnalysis(input ? input.value : "");
+    }
+  }
+
+  function onSectionClick(e) {
+    const chip = e.target && e.target.closest ? e.target.closest(".ai-search-popular__chip") : null;
+    if (!chip) return;
+    e.preventDefault();
+    runAnalysis(chip.getAttribute("data-query") || "");
+  }
+
+  function bindEvents() {
+    if (btn) {
+      btn.addEventListener("click", onSubmitClick);
+    }
+    if (input) {
+      input.addEventListener("keydown", onInputKeydown);
+    }
+    const section = document.getElementById("ai-stock-analysis");
+    if (section) {
+      section.addEventListener("click", onSectionClick);
+    }
+  }
+
+  function init() {
+    if (initialized) return;
+    initialized = true;
+
+    input = document.getElementById("ai-stock-query");
+    btn = document.getElementById("ai-stock-submit");
+    panel = document.getElementById("ai-analysis-panel");
+
+    if (!btn || !panel) return;
+
+    bindEvents();
+
+    const boot = initialQuery();
+    if (boot) runAnalysis(boot);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();

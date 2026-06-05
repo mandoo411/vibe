@@ -125,13 +125,18 @@ async function finnhubQuote(symbol, label) {
   return { id: symbol, label, value: price, changePct };
 }
 
-async function yahooQuote(symbol, label) {
-  const res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`);
+async function yahooQuote(symbol, label, { range = "2d" } = {}) {
+  const res = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=${encodeURIComponent(range)}`
+  );
   const body = await res.json();
   const meta = body?.chart?.result?.[0]?.meta || {};
   const price = toNum(meta.regularMarketPrice);
-  const previous = toNum(meta.chartPreviousClose || meta.previousClose);
-  const changePct = price != null && previous ? ((price - previous) / previous) * 100 : null;
+  const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
+  let changePct = null;
+  if (price != null && previous) changePct = ((price - previous) / previous) * 100;
+  const rmChgPct = toNum(meta.regularMarketChangePercent);
+  if (rmChgPct != null && Number.isFinite(rmChgPct)) changePct = rmChgPct;
   return { id: symbol, label, value: price, changePct };
 }
 
@@ -165,7 +170,15 @@ async function cryptoUsdQuote(geckoId, yahooSymbol, label) {
 }
 
 async function btc() {
-  return cryptoUsdQuote("bitcoin", "BTC-USD", "비트코인");
+  // 티커: 전일대비 % (Yahoo 2d). CoinGecko 24h 롤링·Yahoo 5d는 기준가가 어긋나 -3%대로 부풀어짐.
+  try {
+    const q = await yahooQuote("BTC-USD", "비트코인", { range: "2d" });
+    if (q.value != null) return q;
+  } catch (_) {}
+  try {
+    return await geckoQuote("bitcoin", "비트코인");
+  } catch (_) {}
+  return { label: "비트코인", value: null, changePct: null };
 }
 
 async function naverStockBasic(code6, label) {

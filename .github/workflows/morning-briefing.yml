@@ -1,9 +1,12 @@
 name: Morning Briefing
 
-# 평일 07:30 KST = 전날 22:30 UTC (월~금 KST 장전)
+# 평일 06:00 KST 장전 실행 (08:00 KST 전 웹 반영 목표)
+# GitHub cron은 UTC 고정 — KST 평일(월~금)은 전날 UTC 일~목에 매핑
+#   06:00 KST 월 = 일 21:00 UTC → cron "0 21 * * 0-4"
+# (이전 "30 22 * * 1-5"는 KST 화~토 07:30에 돌아 월요일 브리핑이 늦었음)
 on:
   schedule:
-    - cron: "30 22 * * 1-5"
+    - cron: "0 21 * * 0-4"
   workflow_dispatch:
 
 permissions:

@@ -1,6 +1,7 @@
 name: Daily Market Sync
 
-# 평일 17:00 KST (= 08:00 UTC) 자동 실행
+# 평일 16:00 KST (= 07:00 UTC) 자동 실행 — 18:00 KST 전 웹 반영 목표
+# (15:30 장마감·save-prev-top50 15:40 KST 이후 데이터 확보, 여유 2시간)
 # 한국 증시 마감 이후 KIS API + Naver 뉴스 + Telegram + Claude 분류 실행
 # 한국 공휴일에도 동작하지만 sync:kis가 더미(0%) 데이터를 받으면
 # 프런트엔드의 isDayEmpty()가 빈 상태로 처리합니다.
@@ -9,7 +10,7 @@ name: Daily Market Sync
 # 이 워크플로에는 OAuth 재발급·Secret 반영 Step 없음. refresh-kis-token.yml이 갱신한 KIS_ACCESS_TOKEN만 사용.
 on:
   schedule:
-    - cron: "0 8 * * 1-5"
+    - cron: "0 7 * * 1-5"
   workflow_dispatch:
 
 # data/daily-market.json 자동 커밋을 위해 쓰기 권한 필요
@@ -88,13 +89,14 @@ jobs:
             git push
           fi
 
+      - name: Send Telegram daily market report
+        run: node --env-file=.env scripts/telegram-daily-market.mjs
+
+      # push 직후 /api/repo-data로 즉시 반영; 정적 폴백용 prod 배포는 텔레그램 이후
       - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes
-
-      - name: Send Telegram daily market report
-        run: node --env-file=.env scripts/telegram-daily-market.mjs
 
       - name: Cleanup secrets
         if: always()

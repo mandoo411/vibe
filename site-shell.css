@@ -705,10 +705,10 @@ body.tm-nav-sheet-open {
   border-bottom-color: #1f2937;
 }
 
-.page-tm-v2 .home-ticker-bar .home-ticker.ticker-wrap,
-.page-home-v2 .home-ticker-bar .home-ticker.ticker-wrap,
 .page-tm-v2 .home-ticker-bar .ticker-wrap,
-.page-home-v2 .home-ticker-bar .ticker-wrap {
+.page-home-v2 .home-ticker-bar .ticker-wrap,
+.page-tm-v2 .home-ticker-bar .home-ticker.ticker-wrap,
+.page-home-v2 .home-ticker-bar .home-ticker.ticker-wrap {
   flex: 1;
   min-width: 0;
   height: 36px;
@@ -717,23 +717,33 @@ body.tm-nav-sheet-open {
   background: transparent;
   border: none;
   border-radius: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  overflow: hidden;
+  width: 100%;
   white-space: nowrap;
+}
+
+.page-tm-v2 .home-ticker-bar .ticker-track,
+.page-home-v2 .home-ticker-bar .ticker-track {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.page-tm-v2 .home-ticker-bar .ticker-wrap:hover .ticker-track,
+.page-home-v2 .home-ticker-bar .ticker-wrap:hover .ticker-track {
+  animation-play-state: paused;
 }
 
 .page-tm-v2 .home-ticker-bar .ticker-content,
 .page-home-v2 .home-ticker-bar .ticker-content {
-  display: inline-block;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
   white-space: nowrap;
-  will-change: transform;
-  animation: marquee 35s linear infinite;
-}
-
-.page-tm-v2 .home-ticker-bar .ticker-content:hover,
-.page-home-v2 .home-ticker-bar .ticker-content:hover {
-  animation-play-state: paused;
 }
 
 .page-tm-v2 .home-ticker-bar .ticker-content--static,
@@ -1936,10 +1946,6 @@ body[data-theme="dark"] .home-ticker-bar__label {
     white-space: nowrap;
   }
 
-  .page-tm-v2 .home-ticker-bar .ticker-content,
-  .page-home-v2 .home-ticker-bar .ticker-content {
-    animation-duration: 25s;
-  }
 
   .page-tm-v2 .home-empty {
     display: inline-flex;

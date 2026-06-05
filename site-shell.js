@@ -133,24 +133,53 @@
     return items.map(buildTickerItemHtml).join("");
   }
 
+  function initMarquee() {
+    if (window.innerWidth <= 768) return;
+    const wrap = document.querySelector(".ticker-wrap");
+    if (!wrap) return;
+
+    wrap.querySelectorAll(".ticker-track").forEach((node) => node.remove());
+    wrap.querySelectorAll(".ticker-content").forEach((node, idx) => {
+      if (idx > 0) node.remove();
+    });
+
+    const content = wrap.querySelector(".ticker-content");
+    if (!content) return;
+
+    const clone = content.cloneNode(true);
+    clone.setAttribute("aria-hidden", "true");
+
+    const track = document.createElement("div");
+    track.className = "ticker-track";
+    track.appendChild(content);
+    track.appendChild(clone);
+    wrap.appendChild(track);
+
+    track.style.animation = "none";
+    void track.offsetWidth;
+    track.style.animation = "marquee 35s linear infinite";
+  }
+
+  function scheduleMarquee() {
+    setTimeout(initMarquee, 500);
+  }
+
   window.tmMountTicker = function tmMountTicker(el, items) {
     if (!el) return;
     const list = Array.isArray(items) ? items : [];
     el.classList.add("ticker-wrap");
-    el.classList.remove("home-ticker--marquee");
     if (!list.length) {
       el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
       return;
     }
     const laneHtml = buildTickerLaneHtml(list);
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) {
+    if (reducedMotion || window.innerWidth <= 768) {
       el.innerHTML = `<span class="ticker-content ticker-content--static">${laneHtml}</span>`;
       return;
     }
     el.innerHTML = `<span class="ticker-content">${laneHtml}</span>`;
-    const tickerContent = el.querySelector(".ticker-content");
-    if (tickerContent) tickerContent.innerHTML += tickerContent.innerHTML;
+    scheduleMarquee();
   };
 
   function renderTicker() {

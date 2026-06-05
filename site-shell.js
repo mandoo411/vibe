@@ -124,6 +124,62 @@
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
+  const TICKER_DESKTOP_MQ = window.matchMedia("(min-width: 769px)");
+  let tickerResizeBound = false;
+
+  function buildTickerItemHtml(item) {
+    const pctHtml = tickerPctHtml(item);
+    return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
+  }
+
+  function measureTickerMarquee(el) {
+    const track = el.querySelector(".home-ticker__track");
+    const lane = el.querySelector(".home-ticker__lane");
+    if (!track || !lane) return;
+    const w = lane.getBoundingClientRect().width;
+    if (w <= 0) return;
+    const pxPerSec = 48;
+    track.style.setProperty("--tm-ticker-scroll-w", `${w}px`);
+    track.style.setProperty("--tm-ticker-duration", `${Math.max(28, w / pxPerSec)}s`);
+  }
+
+  function bindTickerResize() {
+    if (tickerResizeBound) return;
+    tickerResizeBound = true;
+    window.addEventListener("resize", () => {
+      const el = document.getElementById("home-ticker");
+      if (el?.classList.contains("home-ticker--marquee")) measureTickerMarquee(el);
+    });
+  }
+
+  function shouldUseTickerMarquee() {
+    return TICKER_DESKTOP_MQ.matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  window.tmMountTicker = function tmMountTicker(el, items) {
+    if (!el) return;
+    const list = Array.isArray(items) ? items : [];
+    if (!list.length) {
+      el.classList.remove("home-ticker--marquee");
+      el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
+      return;
+    }
+    const itemsHtml = list.map(buildTickerItemHtml).join("");
+    if (shouldUseTickerMarquee()) {
+      el.classList.add("home-ticker--marquee");
+      el.innerHTML =
+        '<div class="home-ticker__track">' +
+        `<div class="home-ticker__lane">${itemsHtml}</div>` +
+        `<div class="home-ticker__lane" aria-hidden="true">${itemsHtml}</div>` +
+        "</div>";
+      bindTickerResize();
+      requestAnimationFrame(() => measureTickerMarquee(el));
+      return;
+    }
+    el.classList.remove("home-ticker--marquee");
+    el.innerHTML = itemsHtml;
+  };
+
   function renderTicker() {
     const el = document.getElementById("home-ticker");
     if (!el) return;
@@ -133,19 +189,10 @@
         return res.json();
       })
       .then((data) => {
-        const items = Array.isArray(data.items) ? data.items : [];
-        if (!items.length) {
-          el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
-          return;
-        }
-        el.innerHTML = items
-          .map((item) => {
-            const pctHtml = tickerPctHtml(item);
-            return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
-          })
-          .join("");
+        window.tmMountTicker(el, data.items);
       })
       .catch(() => {
+        el.classList.remove("home-ticker--marquee");
         el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';
       });
   }

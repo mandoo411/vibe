@@ -284,10 +284,20 @@ function normalizeAnalysis(raw, quote) {
   };
 }
 
+function claudeModelCandidates() {
+  const envModel = sanitizeStr(process.env.ANTHROPIC_MODEL);
+  const models = [
+    envModel,
+    "claude-sonnet-4-20250514",
+    "claude-sonnet-4-5",
+    "claude-3-5-sonnet-20241022",
+  ].filter(Boolean);
+  return [...new Set(models)];
+}
+
 async function claudeAnalyze(quote, stockName) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
-  const model = sanitizeStr(process.env.ANTHROPIC_MODEL) || "claude-sonnet-4-20250514";
 
   const user = [
     "아래 실시간 시세 데이터를 분석하여 반드시 JSON 형식으로만 응답하세요.",
@@ -320,24 +330,41 @@ async function claudeAnalyze(quote, stockName) {
     }),
   ].join("\n");
 
-  const msg = await client.messages.create({
-    model,
-    max_tokens: 4000,
-    temperature: 0.25,
-    system: CLAUDE_SYSTEM_PROMPT,
-    messages: [{ role: "user", content: user }],
-  });
+  let lastErr = null;
+  for (const model of claudeModelCandidates()) {
+    try {
+      const msg = await client.messages.create({
+        model,
+        max_tokens: 4000,
+        temperature: 0.25,
+        system: CLAUDE_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: user }],
+      });
 
-  const text =
-    msg && Array.isArray(msg.content)
-      ? msg.content
-          .filter((c) => c && c.type === "text")
-          .map((c) => c.text)
-          .join("\n")
-      : "";
+      const text =
+        msg && Array.isArray(msg.content)
+          ? msg.content
+              .filter((c) => c && c.type === "text")
+              .map((c) => c.text)
+              .join("\n")
+          : "";
 
-  const parsed = parseJsonFromText(text);
-  return normalizeAnalysis(parsed, quote);
+      const parsed = parseJsonFromText(text);
+      const normalized = normalizeAnalysis(parsed, quote);
+      if (normalized._error) {
+        throw new Error("Claude JSON parse failed");
+      }
+      console.log("[analyze] Claude ok", model);
+      return normalized;
+    } catch (e) {
+      lastErr = e;
+      console.warn("[analyze] Claude model failed", model, e && e.message);
+    }
+  }
+
+  const err = new Error((lastErr && lastErr.message) || "Claude analysis failed");
+  err.cause = lastErr;
+  throw err;
 }
 
 async function readBody(req) {
@@ -407,10 +434,12 @@ module.exports = async function handler(req, res) {
   const stockName = name || quote.stockName || code6;
 
   let analysis;
+  let analysisError = "";
   try {
     analysis = await claudeAnalyze(quote, stockName);
   } catch (e) {
-    console.error("[analyze] Claude error", e && e.message);
+    analysisError = (e && e.message) || "Claude 분석 실패";
+    console.error("[analyze] Claude error", analysisError);
     analysis = normalizeAnalysis(null, quote);
   }
 
@@ -421,5 +450,8 @@ module.exports = async function handler(req, res) {
     changeAmt: quote.changeAmt,
     changeRate: quote.changeRate,
     analysis,
+    analysisError: analysisError || undefined,
   });
 };
+
+module.exports.default = module.exports;

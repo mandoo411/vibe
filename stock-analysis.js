@@ -6,6 +6,13 @@
   let panel = null;
   let stockList = [];
   let running = false;
+  let loadingTimer = null;
+
+  const LOADING_STEPS = [
+    "KIS 시세 불러오는 중...",
+    "최신 뉴스 검색 중...",
+    "AI가 분석하는 중...",
+  ];
 
   const CSP_SAFE = true; // eval/new Function 미사용, JSON.parse만 사용
 
@@ -161,12 +168,32 @@
       .join("");
   }
 
+  function clearLoadingTimer() {
+    if (loadingTimer) {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+    }
+  }
+
+  function updateLoadingMessage(msg) {
+    const el = document.getElementById("ai-loading-msg");
+    if (el) el.textContent = msg;
+  }
+
   function showLoading() {
     if (!panel) return;
+    clearLoadingTimer();
     panel.hidden = false;
+    let step = 0;
     panel.innerHTML =
-      '<div class="ai-analysis-status" role="status"><span class="ai-analysis-status__spinner"></span><span>AI가 분석 중입니다...</span></div>' +
+      '<div class="ai-analysis-status" role="status" aria-live="polite">' +
+      '<span class="ai-analysis-status__spinner" aria-hidden="true"></span>' +
+      `<span id="ai-loading-msg">${escapeHtml(LOADING_STEPS[0])}</span></div>` +
       `<div class="ai-analysis-cards">${skeletonCardsHtml()}</div>`;
+    loadingTimer = setInterval(() => {
+      step = (step + 1) % LOADING_STEPS.length;
+      updateLoadingMessage(LOADING_STEPS[step]);
+    }, 2500);
   }
 
   function showError(msg) {
@@ -311,6 +338,7 @@
       console.error("[AI분석] 실패", err);
       showError((err && err.message) || "분석을 불러오지 못했습니다");
     } finally {
+      clearLoadingTimer();
       running = false;
       setButtonLoading(false);
     }

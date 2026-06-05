@@ -6,12 +6,33 @@
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
 
-const CLAUDE_SYSTEM_PROMPT =
-  "당신은 한국 주식 전문 애널리스트입니다.\n" +
-  "제공된 실시간 데이터를 기반으로 분석하되\n" +
-  "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
-  "반드시 아래 JSON 형식으로만 응답하고\n" +
-  "마크다운 코드블록 없이 순수 JSON만 반환하세요.";
+const WEB_SEARCH_TOOLS = [
+  {
+    type: "web_search_20250305",
+    name: "web_search",
+    max_uses: 3,
+  },
+];
+
+function todayKoreaLabel() {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+}
+
+function buildSystemPrompt(todayLabel) {
+  return [
+    "당신은 한국 주식 전문 애널리스트입니다.",
+    `오늘은 ${todayLabel}이다.`,
+    "제공된 KIS 실시간 시세와 web_search로 확인한 최신 뉴스만 근거로 분석하세요.",
+    "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
+    "2024년 등 과거 뉴스를 학습 기억으로 추측하지 마세요. 검색으로 확인된 최신 정보만 사용하세요.",
+    "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
+  ].join("\n");
+}
 
 const CLAUDE_RESPONSE_SCHEMA = `{
   "summary": {
@@ -192,16 +213,64 @@ async function fetchKisQuote(code6) {
   };
 }
 
+function extractTextFromContent(content) {
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((b) => b && b.type === "text")
+    .map((b) => b.text)
+    .join("\n");
+}
+
+function logContentBlocks(msg) {
+  if (!msg || !Array.isArray(msg.content)) return;
+  const types = msg.content.map((b) => b && b.type).filter(Boolean);
+  console.log("[analyze] content block types", types.join(", "));
+  if (types.includes("web_search_tool_result")) {
+    console.log("[analyze] web_search_tool_result detected");
+  }
+}
+
 function parseJsonFromText(text) {
   let t = String(text || "").trim();
   t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   try {
     return JSON.parse(t);
-  } catch {
+  } catch (firstErr) {
     const match = t.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
-    throw new Error("Claude returned non-JSON");
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (secondErr) {
+        console.error("[analyze] JSON 파싱 실패", t.slice(0, 2000));
+        throw secondErr;
+      }
+    }
+    console.error("[analyze] JSON 파싱 실패", t.slice(0, 2000));
+    throw firstErr;
   }
+}
+
+async function messagesCreateWithPause(client, options, maxPauseTurns = 2) {
+  let messages = [...(options.messages || [])];
+  const { messages: _omit, ...rest } = options;
+  let response = null;
+
+  for (let turn = 0; turn <= maxPauseTurns; turn++) {
+    response = await client.messages.create({
+      ...rest,
+      messages,
+    });
+    logContentBlocks(response);
+
+    if (!response || response.stop_reason !== "pause_turn") {
+      break;
+    }
+
+    console.log("[analyze] pause_turn — continuing", turn + 1);
+    messages = messages.concat([{ role: "assistant", content: response.content }]);
+  }
+
+  return response;
 }
 
 function normalizeSignal(v) {
@@ -286,27 +355,28 @@ function normalizeAnalysis(raw, quote) {
 
 function claudeModelCandidates() {
   const envModel = sanitizeStr(process.env.ANTHROPIC_MODEL);
-  const models = [
-    envModel,
-    "claude-sonnet-4-20250514",
-    "claude-sonnet-4-5",
-    "claude-3-5-sonnet-20241022",
-  ].filter(Boolean);
+  const models = [envModel, "claude-sonnet-4-5", "claude-sonnet-4-20250514"].filter(Boolean);
   return [...new Set(models)];
 }
 
-async function claudeAnalyze(quote, stockName) {
-  const Anthropic = require("@anthropic-ai/sdk");
-  const client = new Anthropic({ apiKey: requireAnthropicKey() });
-
-  const user = [
-    "아래 실시간 시세 데이터를 분석하여 반드시 JSON 형식으로만 응답하세요.",
+function buildUserPrompt(quote, stockName, todayLabel) {
+  const name = stockName || quote.stockName || quote.stockCode;
+  return [
+    `오늘은 ${todayLabel}이다.`,
+    `분석 종목: ${name} (${quote.stockCode})`,
+    "",
+    "반드시 web_search로 해당 종목의 '최근 1개월 이내' 뉴스와 주가 변동 이유를 검색해서 분석에 반영하라.",
+    "2024년 등 과거 뉴스를 추측으로 쓰지 말 것. 검색으로 확인된 최신 정보만 사용하라.",
+    `검색 쿼리 예: '${name} 주가 이유 최신', '${name} 뉴스'`,
+    "4번 '다가오는 이벤트'는 반드시 검색으로 확인된 실제 예정 일정/뉴스만 쓰고, 날짜는 최근~미래 날짜로. 과거 날짜 금지.",
+    "",
+    "아래 KIS 실시간 시세를 함께 참고하고, 최종 답변은 반드시 JSON 형식으로만 응답하세요.",
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
     "입력 데이터:",
     JSON.stringify({
-      stockName: stockName || quote.stockName,
+      stockName: name,
       stockCode: quote.stockCode,
       market: quote.market,
       currentPrice: quote.currentPrice,
@@ -327,34 +397,41 @@ async function claudeAnalyze(quote, stockName) {
       institutionNetBuy: quote.institutionNetBuy,
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
+      analysisDate: todayLabel,
     }),
   ].join("\n");
+}
+
+async function claudeAnalyze(quote, stockName) {
+  const Anthropic = require("@anthropic-ai/sdk");
+  const client = new Anthropic({ apiKey: requireAnthropicKey() });
+  const todayLabel = todayKoreaLabel();
+  const user = buildUserPrompt(quote, stockName, todayLabel);
+  const system = buildSystemPrompt(todayLabel);
 
   let lastErr = null;
   for (const model of claudeModelCandidates()) {
     try {
-      const msg = await client.messages.create({
-        model,
-        max_tokens: 4000,
-        temperature: 0.25,
-        system: CLAUDE_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: user }],
-      });
+      const msg = await messagesCreateWithPause(
+        client,
+        {
+          model,
+          max_tokens: 8000,
+          temperature: 0.25,
+          system,
+          tools: WEB_SEARCH_TOOLS,
+          messages: [{ role: "user", content: user }],
+        },
+        2
+      );
 
-      const text =
-        msg && Array.isArray(msg.content)
-          ? msg.content
-              .filter((c) => c && c.type === "text")
-              .map((c) => c.text)
-              .join("\n")
-          : "";
-
-      const parsed = parseJsonFromText(text);
+      const fullText = extractTextFromContent(msg && msg.content);
+      const parsed = parseJsonFromText(fullText);
       const normalized = normalizeAnalysis(parsed, quote);
       if (normalized._error) {
         throw new Error("Claude JSON parse failed");
       }
-      console.log("[analyze] Claude ok", model);
+      console.log("[analyze] Claude ok", model, "stop_reason=", msg && msg.stop_reason);
       return normalized;
     } catch (e) {
       lastErr = e;

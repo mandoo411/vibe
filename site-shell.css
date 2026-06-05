@@ -706,6 +706,13 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   border-bottom: 1px solid #e5e7eb;
 }
 
+@media (min-width: 769px) {
+  html[data-theme="light"] .page-tm-v2 .home-ticker-bar,
+  html[data-theme="light"] .page-home-v2 .home-ticker-bar {
+    background: #fff;
+  }
+}
+
 [data-theme="dark"] .page-tm-v2 .home-ticker-bar,
 [data-theme="dark"] .page-home-v2 .home-ticker-bar {
   background: var(--bg-secondary, #1c2030);

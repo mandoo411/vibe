@@ -338,8 +338,13 @@
 
   async function runAnalysis(qRaw) {
     const q = String(qRaw || "").trim();
-    if (!q || running) {
-      if (!q && input) input.focus();
+    if (!q) {
+      if (input) input.focus();
+      console.warn("[stock-analysis] runAnalysis: empty query");
+      return;
+    }
+    if (running) {
+      console.warn("[stock-analysis] runAnalysis: already running");
       return;
     }
 
@@ -375,8 +380,9 @@
   }
 
   function onSubmitClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
+    console.log("버튼 클릭됨");
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
     runAnalysis(input ? input.value : "");
   }
 
@@ -395,37 +401,95 @@
   }
 
   function bindEvents() {
+    const submitEl = document.getElementById("ai-stock-submit");
+    console.log("[stock-analysis] bindEvents", {
+      btnRef: !!btn,
+      submitEl: !!submitEl,
+      panel: !!panel,
+      input: !!input,
+      readyState: document.readyState,
+    });
+
+    submitEl?.addEventListener("click", () => {
+      console.log("버튼 클릭됨");
+    });
+
     if (btn) {
       btn.addEventListener("click", onSubmitClick);
+    } else if (submitEl) {
+      btn = submitEl;
+      submitEl.addEventListener("click", onSubmitClick);
     }
+
     if (input) {
       input.addEventListener("keydown", onInputKeydown);
     }
+
     const section = document.getElementById("ai-stock-analysis");
     if (section) {
       section.addEventListener("click", onSectionClick);
     }
+
+    document.addEventListener(
+      "click",
+      (e) => {
+        const hit =
+          e.target && e.target.closest
+            ? e.target.closest("#ai-stock-submit, .ai-search-card__submit")
+            : null;
+        if (!hit || hit === btn) return;
+        console.log("버튼 클릭됨 (delegation)");
+        onSubmitClick(e);
+      },
+      false
+    );
   }
 
   function init() {
     if (initialized) return;
     initialized = true;
 
+    console.log("[stock-analysis] init start", { readyState: document.readyState });
+
     input = document.getElementById("ai-stock-query");
     btn = document.getElementById("ai-stock-submit");
     panel = document.getElementById("ai-analysis-panel");
 
-    if (!btn || !panel) return;
+    console.log("[stock-analysis] elements", {
+      input: input,
+      btn: btn,
+      panel: panel,
+      btnIsNull: btn === null,
+      panelIsNull: panel === null,
+    });
+
+    if (!btn) {
+      console.error("[stock-analysis] #ai-stock-submit not found — event not bound");
+      return;
+    }
+    if (!panel) {
+      console.error("[stock-analysis] #ai-analysis-panel not found — event not bound");
+      return;
+    }
 
     bindEvents();
+    console.log("[stock-analysis] init complete, listeners attached");
 
     const boot = initialQuery();
-    if (boot) runAnalysis(boot);
+    if (boot) {
+      console.log("[stock-analysis] auto-run", boot);
+      runAnalysis(boot);
+    }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  function bootScript() {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
   }
+
+  bootScript();
 })();
+

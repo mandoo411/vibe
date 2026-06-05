@@ -195,10 +195,6 @@
   function renderTicker(items) {
     const el = $("home-ticker");
     if (!el) return;
-    if (typeof window.tmMountTicker === "function") {
-      window.tmMountTicker(el, items);
-      return;
-    }
     const list = Array.isArray(items) ? items : [];
     if (!list.length) {
       el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';

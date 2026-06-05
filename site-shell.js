@@ -124,64 +124,6 @@
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
   }
 
-  function buildTickerItemHtml(item) {
-    const pctHtml = tickerPctHtml(item);
-    return `<span class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</span>`;
-  }
-
-  function buildTickerLaneHtml(items) {
-    return items.map(buildTickerItemHtml).join("");
-  }
-
-  function initMarquee() {
-    if (window.innerWidth <= 768) return;
-    const wrap = document.querySelector(".ticker-wrap");
-    if (!wrap) return;
-
-    wrap.querySelectorAll(".ticker-track").forEach((node) => node.remove());
-    wrap.querySelectorAll(".ticker-content").forEach((node, idx) => {
-      if (idx > 0) node.remove();
-    });
-
-    const content = wrap.querySelector(".ticker-content");
-    if (!content) return;
-
-    const clone = content.cloneNode(true);
-    clone.setAttribute("aria-hidden", "true");
-
-    const track = document.createElement("div");
-    track.className = "ticker-track";
-    track.appendChild(content);
-    track.appendChild(clone);
-    wrap.appendChild(track);
-
-    track.style.animation = "none";
-    void track.offsetWidth;
-    track.style.animation = "marquee 35s linear infinite";
-  }
-
-  function scheduleMarquee() {
-    setTimeout(initMarquee, 500);
-  }
-
-  window.tmMountTicker = function tmMountTicker(el, items) {
-    if (!el) return;
-    const list = Array.isArray(items) ? items : [];
-    el.classList.add("ticker-wrap");
-    if (!list.length) {
-      el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
-      return;
-    }
-    const laneHtml = buildTickerLaneHtml(list);
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion || window.innerWidth <= 768) {
-      el.innerHTML = `<span class="ticker-content ticker-content--static">${laneHtml}</span>`;
-      return;
-    }
-    el.innerHTML = `<span class="ticker-content">${laneHtml}</span>`;
-    scheduleMarquee();
-  };
-
   function renderTicker() {
     const el = document.getElementById("home-ticker");
     if (!el) return;
@@ -191,10 +133,19 @@
         return res.json();
       })
       .then((data) => {
-        window.tmMountTicker(el, data.items);
+        const items = Array.isArray(data.items) ? data.items : [];
+        if (!items.length) {
+          el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
+          return;
+        }
+        el.innerHTML = items
+          .map((item) => {
+            const pctHtml = tickerPctHtml(item);
+            return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
+          })
+          .join("");
       })
       .catch(() => {
-        el.classList.add("ticker-wrap");
         el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';
       });
   }

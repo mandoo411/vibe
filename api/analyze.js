@@ -102,15 +102,16 @@ const STOCK_ANALYSIS_TOOL = {
           aiComment: { type: "string" },
         },
       },
-      signals: {
-        type: "object",
-        properties: {
-          bullCount: { type: "number" },
-          bearCount: { type: "number" },
-        },
-      },
     },
-    required: ["summary", "priceReason", "supplyDemand", "chartAnalysis", "aiJudgment", "signals"],
+    required: [
+      "summary",
+      "priceReason",
+      "supplyDemand",
+      "upcomingEvents",
+      "materialAnalysis",
+      "chartAnalysis",
+      "aiJudgment",
+    ],
   },
 };
 
@@ -148,18 +149,29 @@ function buildSystemPrompt(today) {
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
     "",
     `4번 다가오는 이벤트 규칙 (반드시 준수):
+- upcomingEvents는 반드시 1개 이상 채울 것.
 - 오늘은 ${today} 이다. 이 날짜 이후의 미래 이벤트만 포함할 것.
 - 2024년, 2025년 날짜는 절대 포함 금지. 2026년 이후만 허용.
 - 웹검색 결과에서 '예정' '방문 예정' '출시 예정' '발표 예정' '~할 계획' '~에 참석' 키워드가 있는 것만 선별.
 - '했다' '밝혔다' '기록했다' '하락했다' 등 과거형은 절대 이벤트로 넣지 말 것.
-- 미래 이벤트가 없으면 솔직하게 '현재 확인된 예정 이벤트 없음'으로 표시.
+- 웹검색에서 미래 이벤트가 없으면 아래 공식 일정으로 채워줘:
+  · 삼성전자: 2분기 실적발표 (2026년 7월 말 예정)
+  · LG전자: 2분기 실적발표 (2026년 7월 말 예정)
+  · 그 외 종목: '[종목명] 다음 실적발표일'로 검색해서 채울 것
+- 이벤트가 정말 없으면 배열을 비우지 말고
+  [{ label:'정보없음', title:'현재 확인된 예정 이벤트 없음', date:'', type:'neutral' }] 로 채울 것
 - 이벤트 제목은 구체적으로: ❌'CEO 해외 일정' → ✅'젠슨황 방한 / 삼성 CEO 회동 예정'
 - 날짜를 정확히 모르면 '2026년 하반기 예정' 식으로 표현.`,
     "",
-    `5번 재료 분석 — web_search 결과 기반:
-① 핵심 재료 목록(최대 4개): 재료명, 강도(상/중/하), 주가 반영도 0~100%, reflectionNote, judgment(한줄)
-② unreflected: 미반영 핵심 재료 1~2개, 반영 예상 시점·조건
-③ summary: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
+    `5번 재료 분석 — web_search 결과 기반 (반드시 준수):
+- materialAnalysis.materials는 반드시 2개 이상 채울 것.
+- 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
+- 재료가 없으면 아래처럼 기본 재료로 채울 것:
+  · 실적 모멘텀: 다음 실적발표 예상치 기반
+  · 업종 트렌드: 해당 업종 현재 흐름
+- strength는 반드시 '강'/'중'/'하' 중 하나.
+- reflectionPct는 반드시 0-100 사이 숫자.
+- aiComment: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
     "",
     `6번 차트 흐름 분석 — 제공된 실제 MA/RSI 수치만 사용(추정 금지). 아래 항목 전부 수치와 근거 포함:
 ① 이동평균선: 20일/60일/120일/200일선 대비 현재가 위치와 해석
@@ -177,8 +189,6 @@ function buildSystemPrompt(today) {
 - 확률 합계는 반드시 100%
 - AI 총평은 실제 트레이더 말투로 3-5문장
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
-    "",
-    "8번 신호 요약: signals.bullCount/bearCount — 분석 근거 상승·하락 신호 개수",
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
     "direction은 매수|관망|회피 중 하나, confidence는 0~100 상승 확률입니다.",
@@ -247,8 +257,7 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "probability": 25
       }
     ]
-  },
-  "signals": { "up": 6, "down": 2 }
+  }
 }`;
 
 function setCors(res) {
@@ -453,6 +462,19 @@ function extractStockAnalysisToolUse(msg) {
   return block && block.input && typeof block.input === "object" ? block.input : null;
 }
 
+function normalizeEventType(raw) {
+  const t = sanitizeStr(raw);
+  if (t === "악재" || t === "bad" || t === "bear") return "악재";
+  if (t === "neutral" || t === "정보없음") return "neutral";
+  return "호재";
+}
+
+function normalizeStrength(raw) {
+  const s = sanitizeStr(raw);
+  if (s === "상" || s === "강" || s === "high") return "상";
+  if (s === "하" || s === "low") return "하";
+  return "중";
+}
 function mapDirectionToSignal(direction) {
   const d = sanitizeStr(direction);
   if (/매수|buy|bull|상승/i.test(d)) return "매수";
@@ -482,12 +504,11 @@ function mapToolInputToLegacy(input) {
   const summary = input.summary && typeof input.summary === "object" ? input.summary : {};
   const mat = input.materialAnalysis && typeof input.materialAnalysis === "object" ? input.materialAnalysis : {};
   const j = input.aiJudgment && typeof input.aiJudgment === "object" ? input.aiJudgment : {};
-  const sig = input.signals && typeof input.signals === "object" ? input.signals : {};
 
   const events = Array.isArray(input.upcomingEvents)
     ? input.upcomingEvents
         .map((e) => ({
-          type: sanitizeStr(e && e.type) === "악재" ? "악재" : "호재",
+          type: normalizeEventType(e && e.type),
           content: sanitizeStr((e && (e.title || e.label || e.content)) || ""),
           date: sanitizeStr(e && e.date),
         }))
@@ -498,8 +519,7 @@ function mapToolInputToLegacy(input) {
     ? mat.materials
         .slice(0, 4)
         .map((it) => {
-          const strength = sanitizeStr(it && it.strength);
-          const strengthNorm = strength === "상" || strength === "중" || strength === "하" ? strength : "중";
+          const strengthNorm = normalizeStrength(it && it.strength);
           const reflectionPctRaw = toNum(it && it.reflectionPct);
           return {
             name: sanitizeStr(it && it.name),
@@ -545,10 +565,6 @@ function mapToolInputToLegacy(input) {
       target: toNum(j.target),
       comment: sanitizeStr(j.aiComment || j.comment),
       scenarios,
-    },
-    signals: {
-      up: toNum(sig.bullCount ?? sig.up) ?? 0,
-      down: toNum(sig.bearCount ?? sig.down) ?? 0,
     },
   };
 }
@@ -619,7 +635,6 @@ function normalizeAnalysis(raw, quote) {
         comment: "",
         scenarios: [],
       },
-      signals: { up: 0, down: 0 },
       _error: true,
     };
   }
@@ -633,7 +648,7 @@ function normalizeAnalysis(raw, quote) {
     ? raw.events
         .filter((e) => e && typeof e === "object")
         .map((e) => ({
-          type: sanitizeStr(e.type) === "악재" ? "악재" : "호재",
+          type: normalizeEventType(e.type),
           content: sanitizeStr(e.content),
           date: sanitizeStr(e.date),
         }))
@@ -646,8 +661,7 @@ function normalizeAnalysis(raw, quote) {
         .filter((it) => it && typeof it === "object")
         .slice(0, 4)
         .map((it) => {
-          const strength = sanitizeStr(it.strength);
-          const strengthNorm = strength === "상" || strength === "중" || strength === "하" ? strength : "중";
+          const strengthNorm = normalizeStrength(it.strength);
           const reflectionPctRaw = toNum(it.reflectionPct ?? it.reflection_pct);
           const reflectionPct =
             reflectionPctRaw == null
@@ -665,9 +679,6 @@ function normalizeAnalysis(raw, quote) {
     : [];
 
   const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
-  const signals = raw.signals && typeof raw.signals === "object" ? raw.signals : {};
-  const up = toNum(signals.up);
-  const down = toNum(signals.down);
 
   const scenarios = Array.isArray(opinion.scenarios)
     ? opinion.scenarios
@@ -711,10 +722,6 @@ function normalizeAnalysis(raw, quote) {
       comment: sanitizeStr(opinion.comment),
       scenarios,
     },
-    signals: {
-      up: up == null ? 0 : Math.max(0, Math.round(up)),
-      down: down == null ? 0 : Math.max(0, Math.round(down)),
-    },
   };
 }
 
@@ -756,17 +763,25 @@ function buildUserPrompt(quote, stockName, today, indicators) {
     "- 학습데이터·과거 기억 금지. web_search 확인 정보만 사용.",
     "",
     `4번 다가오는 이벤트 규칙 (반드시 준수):
+- upcomingEvents는 반드시 1개 이상 채울 것.
 - 오늘은 ${today} 이다. 이 날짜 이후 미래 이벤트만. 2024·2025년 날짜 금지, 2026년 이후만.
 - '예정/방문 예정/출시 예정/발표 예정/~할 계획/~에 참석' 키워드만. 과거형 금지.
-- 없으면 events: [] (프론트는 '현재 확인된 예정 이벤트 없음' 표시). 구체적 제목 필수.`,
+- 웹검색에서 미래 이벤트가 없으면 아래 공식 일정으로 채워줘:
+  · 삼성전자: 2분기 실적발표 (2026년 7월 말 예정)
+  · LG전자: 2분기 실적발표 (2026년 7월 말 예정)
+  · 그 외 종목: '[종목명] 다음 실적발표일'로 검색해서 채울 것
+- 이벤트가 정말 없으면 배열을 비우지 말고
+  [{ label:'정보없음', title:'현재 확인된 예정 이벤트 없음', date:'', type:'neutral' }] 로 채울 것`,
     "",
-    "5번 재료 분석 — web_search 기반 핵심 재료 4개 이내, unreflected, summary(트레이더 말투 3~5문장).",
+    `5번 재료 분석 — web_search 기반 (반드시 준수):
+- materialAnalysis.materials는 반드시 2개 이상 채울 것.
+- 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
+- 재료가 없으면 기본 재료로 채울 것: 실적 모멘텀(다음 실적발표 예상치), 업종 트렌드(해당 업종 흐름).
+- strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자.`,
     "",
     "6번 차트 — 제공된 실제 MA/RSI 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
     "",
     "7번 AI 주관적 판단 — short/mid/long + scenarios A/B/C(확률 합 100%) + comment. 5번 재료 반영 필수.",
-    "",
-    "8번 signals — bullCount/bearCount 신호 개수.",
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
     "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",

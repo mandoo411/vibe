@@ -210,6 +210,35 @@
     return v > 0 ? "is-up" : "is-down";
   }
 
+  function emphasizeMetrics(text) {
+    return String(text || "").replace(
+      /(\d[\d,]*(?:\.\d+)?)\s*(%|원|주|억|조|배)/g,
+      '<span class="ai-em">$1$2</span>'
+    );
+  }
+
+  function formatProseText(text, emptyMsg) {
+    const raw = String(text || "").trim();
+    if (!raw) return `<p class="ai-prose-empty">${escapeHtml(emptyMsg || "내용이 없습니다.")}</p>`;
+    const paras = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    return paras
+      .map((p) => `<p class="ai-prose-p">${emphasizeMetrics(escapeHtml(p))}</p>`)
+      .join("");
+  }
+
+  function normalizeStrength(strength) {
+    const s = String(strength || "").trim();
+    if (s === "상" || s === "강") return "상";
+    if (s === "하") return "하";
+    return "중";
+  }
+
+  function strengthLabel(strength) {
+    const n = normalizeStrength(strength);
+    if (n === "상") return "강";
+    if (n === "하") return "하";
+    return "중";
+  }
   function signalBadgeClass(signal) {
     if (signal === "매수") return "ai-summary-badge--buy";
     if (signal === "회피") return "ai-summary-badge--avoid";
@@ -240,16 +269,15 @@
       "재료 분석",
       "차트 흐름 분석",
       "AI 주관적 판단",
-      "신호 요약",
     ];
     return titles
       .map((title, i) => {
-        const extra = i === 0 || i === 7 ? " ai-card--summary" : "";
-        const sig = i === 7 ? " ai-card--signals" : "";
+        const extra = i === 0 ? " ai-card--summary" : "";
         const chart = i === 5 ? " ai-card--chart" : "";
         const opinion = i === 6 ? " ai-card--opinion" : "";
         const materials = i === 4 ? " ai-card--materials" : "";
-        return `<article class="ai-card is-skeleton${extra}${sig}${chart}${opinion}${materials}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
+        const half = i === 1 || i === 2 ? " ai-card--half" : "";
+        return `<article class="ai-card is-skeleton${extra}${half}${chart}${opinion}${materials}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
       })
       .join("");
   }
@@ -396,28 +424,45 @@
     return "ai-chart-dot--gray";
   }
 
+  function parseChartLine(line) {
+    const raw = String(line || "").trim();
+    const m = raw.match(/^[①②③④⑤⑥⑦⑧⑨]?\s*([^:：—\-]+?)[:：—\-]\s*(.+)$/);
+    if (m) return { title: m[1].trim(), body: m[2].trim() };
+    return { title: "", body: raw };
+  }
+
   function renderChartText(text) {
     const raw = String(text || "").trim();
     if (!raw) return `<p class="ai-chart-text-empty">차트 분석이 없습니다.</p>`;
     const lines = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
     if (lines.length <= 1 && !/①|②|③/.test(raw)) {
-      return `<div class="ai-chart-text"><div class="ai-chart-line"><span class="ai-chart-dot ai-chart-dot--gray"></span><span>${escapeHtml(raw)}</span></div></div>`;
+      return (
+        `<div class="ai-chart-text">` +
+        `<div class="ai-chart-item"><span class="ai-chart-dot ai-chart-dot--gray"></span><div class="ai-chart-item__content"><span>${escapeHtml(raw)}</span></div></div>` +
+        `</div>`
+      );
     }
     return (
       `<div class="ai-chart-text">` +
       lines
-        .map(
-          (line) =>
-            `<div class="ai-chart-line"><span class="ai-chart-dot ${chartDotClass(line)}"></span><span>${escapeHtml(line)}</span></div>`
-        )
+        .map((line) => {
+          const parsed = parseChartLine(line);
+          const dotCls = chartDotClass(parsed.title || line);
+          const titleHtml = parsed.title
+            ? `<span class="ai-chart-item__title">${escapeHtml(parsed.title)}</span>`
+            : "";
+          const bodyHtml = emphasizeMetrics(escapeHtml(parsed.body));
+          return `<div class="ai-chart-item"><span class="ai-chart-dot ${dotCls}"></span><div class="ai-chart-item__content">${titleHtml}<span>${bodyHtml}</span></div></div>`;
+        })
         .join("") +
       `</div>`
     );
   }
 
   function materialBorderClass(strength) {
-    if (strength === "상") return "ai-mat-card--high";
-    if (strength === "하") return "ai-mat-card--low";
+    const n = normalizeStrength(strength);
+    if (n === "상") return "ai-mat-card--high";
+    if (n === "하") return "ai-mat-card--low";
     return "ai-mat-card--mid";
   }
 
@@ -691,9 +736,16 @@
     return (
       "<ul class=\"ai-event-list\">" +
       events
-        .map((e) => {
-          const isBad = e.type === "악재";
-          return `<li class="ai-event"><span class="ai-event__badge ${isBad ? "ai-event__badge--bad" : "ai-event__badge--good"}">${escapeHtml(e.type)}</span><span class="ai-event__content">${escapeHtml(e.content)}</span>${e.date ? `<span class="ai-event__date">${escapeHtml(e.date)}</span>` : ""}</li>`;
+          .map((e) => {
+          const type = String(e.type || "");
+          const badgeCls =
+            type === "악재"
+              ? "ai-event__badge--bad"
+              : type === "neutral"
+                ? "ai-event__badge--neutral"
+                : "ai-event__badge--good";
+          const badgeLabel = type === "neutral" ? "정보" : escapeHtml(type || "호재");
+          return `<li class="ai-event"><span class="ai-event__badge ${badgeCls}">${badgeLabel}</span><span class="ai-event__content">${escapeHtml(e.content)}</span>${e.date ? `<span class="ai-event__date">${escapeHtml(e.date)}</span>` : ""}</li>`;
         })
         .join("") +
       "</ul>"
@@ -789,7 +841,7 @@
     const cards = items.length
       ? items
           .map((it) => {
-            const strength = it.strength || "중";
+            const strength = normalizeStrength(it.strength || "중");
             const strengthCls =
               strength === "상"
                 ? "ai-mat-strength--high"
@@ -802,7 +854,7 @@
             const barCls = reflectBarClass(pct);
             return (
               `<article class="ai-mat-card ${borderCls}">` +
-              `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strength)}</span></div>` +
+              `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strengthLabel(it.strength))}</span></div>` +
               `<div class="ai-mat-reflect"><div class="ai-mat-reflect__track"><div class="ai-mat-reflect__bar ${barCls}" style="width:${pct}%"></div></div><span class="ai-mat-reflect__label">${escapeHtml(note)}</span></div>` +
               `<p class="ai-mat-card__judgment">${escapeHtml(it.judgment || "")}</p>` +
               `</article>`
@@ -811,10 +863,10 @@
           .join("")
       : '<p class="ai-mat-empty">확인된 핵심 재료가 없습니다.</p>';
     const unreflected = m.unreflected
-      ? `<div class="ai-mat-unreflected"><span class="ai-mat-unreflected__label">미반영 핵심 재료</span><p>${escapeHtml(m.unreflected)}</p></div>`
+      ? `<div class="ai-mat-unreflected"><span class="ai-mat-unreflected__label">미반영 핵심 재료</span>${formatProseText(m.unreflected)}</div>`
       : "";
     const summary = m.summary
-      ? `<div class="ai-mat-summary"><span class="ai-mat-summary__label">AI 재료 종합 판단</span><p>${escapeHtml(m.summary)}</p></div>`
+      ? `<div class="ai-mat-summary"><span class="ai-mat-summary__label">AI 재료 종합 판단</span>${formatProseText(m.summary)}</div>`
       : "";
     return `<div class="ai-mat-grid">${cards}</div>${unreflected}${summary}`;
   }
@@ -852,7 +904,7 @@
       .filter(([, t]) => t)
       .map(
         ([label, text]) =>
-          `<div class="ai-outlook-card"><span class="ai-outlook-card__label">${escapeHtml(label)}</span><p class="ai-outlook-card__text">${escapeHtml(text)}</p></div>`
+          `<div class="ai-outlook-card"><span class="ai-outlook-card__label">${escapeHtml(label)}</span>${formatProseText(text)}</div>`
       )
       .join("");
     const prices = [
@@ -869,7 +921,7 @@
     const scenarioHtml = scenarios.length
       ? scenarios.map(renderScenarioCard).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
-    const comment = o.comment ? `<div class="ai-opinion-comment">${escapeHtml(o.comment)}</div>` : "";
+    const comment = o.comment ? `<div class="ai-opinion-comment">${formatProseText(o.comment)}</div>` : "";
     return (
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
@@ -880,15 +932,6 @@
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +
       `</div>`
     );
-  }
-
-  function renderSignals(signals) {
-    const up = Math.max(0, Math.round(toNum(signals && signals.up) || 0));
-    const down = Math.max(0, Math.round(toNum(signals && signals.down) || 0));
-    const total = up + down || 1;
-    const upPct = Math.round((up / total) * 100);
-    const downPct = 100 - upPct;
-    return `<div class="ai-signals"><div class="ai-signals__counts"><span class="ai-signals__up">상승 신호 ${up}개</span><span class="ai-signals__down">하락 신호 ${down}개</span></div><div class="ai-signals__gauge"><span class="ai-signals__gauge-up" style="width:${upPct}%"></span><span class="ai-signals__gauge-down" style="width:${downPct}%"></span></div></div>`;
   }
 
   function renderAnalysis(data, chartData, chartPeriod) {
@@ -915,14 +958,13 @@
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
-        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${escapeHtml(analysis.story || "분석 내용이 없습니다.")}</div></article>
-        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${escapeHtml(analysis.supply || "수급 정보가 없습니다.")}</div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
+        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
+        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
         <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion)}</div></article>
-        <article class="ai-card ai-card--signals"><h3 class="ai-card__title"><span class="ai-card__num">8</span>신호 요약</h3><div class="ai-card__body">${renderSignals(analysis.signals)}</div></article>
       </div>`;
 
     if (isDomesticCode(data.stockCode) && chartData) {

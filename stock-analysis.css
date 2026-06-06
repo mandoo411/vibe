@@ -110,7 +110,7 @@
   --color-up: #e24b4a;
   --color-down: #3b82f6;
   --ai-body-size: 15px;
-  --ai-body-lh: 1.8;
+  --ai-body-lh: 1.9;
 }
 
 [data-theme="dark"] #ai-stock-analysis {
@@ -326,7 +326,7 @@
   background: var(--color-background-primary);
   border: 0.5px solid var(--color-border-tertiary);
   border-radius: 12px;
-  padding: 18px 20px;
+  padding: 24px 28px;
   margin-bottom: 14px;
 }
 
@@ -365,18 +365,48 @@
   font-weight: 400;
   color: var(--text-primary, #2a2e39);
   align-items: flex-start;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 [data-theme="dark"] .ai-card__body {
   color: var(--text-body, #d1d5db);
 }
 
+.ai-prose-p {
+  margin: 0 0 14px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.ai-prose-p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-prose-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.ai-em {
+  font-weight: 500;
+}
+
 /* ① 요약 */
 .ai-card--summary .ai-card__body {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.ai-summary-left {
+  flex-shrink: 0;
+  min-width: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
 }
 
 .ai-summary-badge {
@@ -431,10 +461,16 @@
 
 .ai-summary-desc {
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
   margin: 0;
-  align-self: center;
   white-space: pre-line;
+}
+
+/* ②③ 2열 카드 */
+.ai-card--half .ai-card__body {
+  padding: 20px 22px;
+  border-radius: 10px;
+  background: var(--color-background-secondary);
 }
 
 /* ④ 이벤트 */
@@ -472,6 +508,11 @@
 
 .ai-event__badge--bad {
   background: #e24b4a;
+}
+
+.ai-event__badge--neutral {
+  background: #9ca3af;
+  color: #fff;
 }
 
 .ai-event__content {
@@ -807,7 +848,33 @@
 .ai-chart-text {
   display: flex;
   flex-direction: column;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.ai-chart-item {
+  display: flex;
+  align-items: flex-start;
   gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  font-size: var(--ai-body-size);
+  line-height: var(--ai-body-lh);
+}
+
+.ai-chart-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ai-chart-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-chart-item__title {
+  font-weight: 500;
+  margin-right: 4px;
 }
 
 .ai-chart-line {
@@ -869,18 +936,18 @@
 .ai-opinion-col--right {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .ai-outlook-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 14px;
 }
 
 .ai-outlook-card {
-  padding: 12px;
+  padding: 16px 18px;
   border-radius: 8px;
   background: var(--color-background-secondary);
 }
@@ -948,7 +1015,7 @@
 
 .ai-scenario {
   border-radius: 0 8px 8px 0;
-  padding: 12px 14px;
+  padding: 16px 18px;
   background: var(--color-background-secondary);
   border-left: 4px solid #eab308;
 }
@@ -979,9 +1046,21 @@
 }
 
 .ai-scenario__prob {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
-  color: var(--color-text-secondary);
+  line-height: 1.2;
+}
+
+.ai-scenario--bull .ai-scenario__prob {
+  color: #22c55e;
+}
+
+.ai-scenario--neutral .ai-scenario__prob {
+  color: #eab308;
+}
+
+.ai-scenario--bear .ai-scenario__prob {
+  color: #e24b4a;
 }
 
 .ai-scenario-row {
@@ -989,9 +1068,13 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 6px 10px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.ai-scenario-row:last-child {
+  margin-bottom: 0;
 }
 
 .ai-scenario-row__k {
@@ -1012,49 +1095,6 @@
 .ai-scenario-empty {
   margin: 0;
   color: var(--color-text-secondary);
-}
-
-/* ── ⑧ 신호 요약 ── */
-.ai-signals {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.ai-signals__counts {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.ai-signals__up {
-  color: var(--color-up);
-}
-
-.ai-signals__down {
-  color: var(--color-down);
-}
-
-.ai-signals__gauge {
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(59, 130, 246, 0.15);
-  overflow: hidden;
-  display: flex;
-}
-
-.ai-signals__gauge-up {
-  height: 100%;
-  background: #e24b4a;
-  transition: width 0.4s ease;
-}
-
-.ai-signals__gauge-down {
-  height: 100%;
-  background: #3b82f6;
-  transition: width 0.4s ease;
 }
 
 /* ── 스켈레톤 ── */
@@ -1120,8 +1160,7 @@
   .ai-card--summary,
   .ai-card--materials,
   .ai-card--chart,
-  .ai-card--opinion,
-  .ai-card--signals {
+  .ai-card--opinion {
     grid-column: 1 / -1;
   }
 
@@ -1160,6 +1199,23 @@
 
   .ai-card {
     margin-bottom: 12px;
+    padding: 18px 20px;
+  }
+
+  .ai-card--summary .ai-card__body {
+    flex-wrap: wrap;
+  }
+
+  .ai-summary-left {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    min-width: 100%;
+  }
+
+  .ai-card--half .ai-card__body {
+    padding: 16px 18px;
   }
 
   .ai-opinion-price__value {

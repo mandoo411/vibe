@@ -14,6 +14,108 @@ const WEB_SEARCH_TOOLS = [
   },
 ];
 
+const STOCK_ANALYSIS_TOOL = {
+  name: "stock_analysis",
+  description: "주식 분석 결과를 JSON으로 반환",
+  input_schema: {
+    type: "object",
+    properties: {
+      summary: {
+        type: "object",
+        properties: {
+          direction: { type: "string" },
+          confidence: { type: "number" },
+          reason: { type: "string" },
+        },
+      },
+      priceReason: { type: "string" },
+      supplyDemand: { type: "string" },
+      upcomingEvents: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string" },
+            title: { type: "string" },
+            date: { type: "string" },
+            type: { type: "string" },
+          },
+        },
+      },
+      materialAnalysis: {
+        type: "object",
+        properties: {
+          materials: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                strength: { type: "string" },
+                reflectionPct: { type: "number" },
+                comment: { type: "string" },
+              },
+            },
+          },
+          aiComment: { type: "string" },
+        },
+      },
+      chartAnalysis: { type: "string" },
+      aiJudgment: {
+        type: "object",
+        properties: {
+          shortTerm: { type: "string" },
+          midTerm: { type: "string" },
+          longTerm: { type: "string" },
+          entryPrice: { type: "number" },
+          stopLoss: { type: "number" },
+          target: { type: "number" },
+          scenarioA: {
+            type: "object",
+            properties: {
+              condition: { type: "string" },
+              entry: { type: "number" },
+              target: { type: "number" },
+              stopLoss: { type: "number" },
+              probability: { type: "number" },
+            },
+          },
+          scenarioB: {
+            type: "object",
+            properties: {
+              condition: { type: "string" },
+              entry: { type: "number" },
+              target: { type: "number" },
+              stopLoss: { type: "number" },
+              probability: { type: "number" },
+            },
+          },
+          scenarioC: {
+            type: "object",
+            properties: {
+              condition: { type: "string" },
+              strategy: { type: "string" },
+              downTarget: { type: "number" },
+              probability: { type: "number" },
+            },
+          },
+          aiComment: { type: "string" },
+        },
+      },
+      signals: {
+        type: "object",
+        properties: {
+          bullCount: { type: "number" },
+          bearCount: { type: "number" },
+        },
+      },
+    },
+    required: ["summary", "priceReason", "supplyDemand", "chartAnalysis", "aiJudgment", "signals"],
+  },
+};
+
+const ANALYSIS_TOOLS = [...WEB_SEARCH_TOOLS, STOCK_ANALYSIS_TOOL];
+
 const CLAUDE_MODEL = "claude-sonnet-4-6";
 
 const ANALYSIS_PARSE_ERROR_MSG =
@@ -76,15 +178,11 @@ function buildSystemPrompt(today) {
 - AI 총평은 실제 트레이더 말투로 3-5문장
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
-    "8번 신호 요약: signals.up/down — 분석 근거 상승·하락 신호 개수",
+    "8번 신호 요약: signals.bullCount/bearCount — 분석 근거 상승·하락 신호 개수",
     "",
-    `응답은 반드시 순수 JSON만 출력하라.
-마크다운 코드블록(\`\`\`json) 절대 사용 금지.
-설명 텍스트, 주석 없이 JSON 객체만 출력.
-JSON 문자열 값 안에 큰따옴표(") 사용 금지 → 작은따옴표(') 사용.
-JSON 문자열 값 안에 줄바꿈 금지.`,
-    "",
-    "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
+    "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
+    "direction은 매수|관망|회피 중 하나, confidence는 0~100 상승 확률입니다.",
+    "scenario A/B/C 확률 합계는 100%입니다.",
   ].join("\n");
 }
 
@@ -349,21 +447,140 @@ function parseRequestBodyJson(text) {
   }
 }
 
-async function messagesCreateWithPause(client, options, maxPauseTurns = 2) {
+function extractStockAnalysisToolUse(msg) {
+  if (!msg || !Array.isArray(msg.content)) return null;
+  const block = msg.content.find((b) => b && b.type === "tool_use" && b.name === "stock_analysis");
+  return block && block.input && typeof block.input === "object" ? block.input : null;
+}
+
+function mapDirectionToSignal(direction) {
+  const d = sanitizeStr(direction);
+  if (/매수|buy|bull|상승/i.test(d)) return "매수";
+  if (/회피|avoid|bear|하락|매도/i.test(d)) return "회피";
+  if (/관망|hold|neutral|중립/i.test(d)) return "관망";
+  return normalizeSignal(d);
+}
+
+function mapScenarioRaw(raw, label, type) {
+  if (!raw || typeof raw !== "object") return null;
+  return {
+    label,
+    type,
+    condition: sanitizeStr(raw.condition),
+    entry: toNum(raw.entry),
+    target: toNum(raw.target),
+    stop: toNum(raw.stopLoss ?? raw.stop),
+    strategy: sanitizeStr(raw.strategy),
+    targetLow: toNum(raw.downTarget ?? raw.targetLow),
+    probability: toNum(raw.probability),
+  };
+}
+
+function mapToolInputToLegacy(input) {
+  if (!input || typeof input !== "object") return null;
+
+  const summary = input.summary && typeof input.summary === "object" ? input.summary : {};
+  const mat = input.materialAnalysis && typeof input.materialAnalysis === "object" ? input.materialAnalysis : {};
+  const j = input.aiJudgment && typeof input.aiJudgment === "object" ? input.aiJudgment : {};
+  const sig = input.signals && typeof input.signals === "object" ? input.signals : {};
+
+  const events = Array.isArray(input.upcomingEvents)
+    ? input.upcomingEvents
+        .map((e) => ({
+          type: sanitizeStr(e && e.type) === "악재" ? "악재" : "호재",
+          content: sanitizeStr((e && (e.title || e.label || e.content)) || ""),
+          date: sanitizeStr(e && e.date),
+        }))
+        .filter((e) => e.content)
+    : [];
+
+  const materialItems = Array.isArray(mat.materials)
+    ? mat.materials
+        .slice(0, 4)
+        .map((it) => {
+          const strength = sanitizeStr(it && it.strength);
+          const strengthNorm = strength === "상" || strength === "중" || strength === "하" ? strength : "중";
+          const reflectionPctRaw = toNum(it && it.reflectionPct);
+          return {
+            name: sanitizeStr(it && it.name),
+            strength: strengthNorm,
+            reflectionPct:
+              reflectionPctRaw == null ? null : Math.max(0, Math.min(100, Math.round(reflectionPctRaw))),
+            reflectionNote: "",
+            judgment: sanitizeStr(it && (it.comment || it.judgment)),
+          };
+        })
+        .filter((it) => it.name)
+    : [];
+
+  const scenarios = [
+    mapScenarioRaw(j.scenarioA, "A", "강세"),
+    mapScenarioRaw(j.scenarioB, "B", "중립"),
+    mapScenarioRaw(j.scenarioC, "C", "약세"),
+  ]
+    .filter(Boolean)
+    .filter((s) => s.condition || s.strategy);
+
+  return {
+    summary: {
+      signal: mapDirectionToSignal(summary.direction || summary.signal),
+      probability: toNum(summary.confidence ?? summary.probability),
+      description: sanitizeStr(summary.reason || summary.description),
+    },
+    story: sanitizeStr(input.priceReason || input.story),
+    supply: sanitizeStr(input.supplyDemand || input.supply),
+    events,
+    materials: {
+      items: materialItems,
+      unreflected: sanitizeStr(mat.unreflected || ""),
+      summary: sanitizeStr(mat.aiComment || mat.summary || ""),
+    },
+    chart: sanitizeStr(input.chartAnalysis || input.chart),
+    opinion: {
+      short: sanitizeStr(j.shortTerm || j.short),
+      mid: sanitizeStr(j.midTerm || j.mid),
+      long: sanitizeStr(j.longTerm || j.long),
+      entry: toNum(j.entryPrice ?? j.entry),
+      stop: toNum(j.stopLoss ?? j.stop),
+      target: toNum(j.target),
+      comment: sanitizeStr(j.aiComment || j.comment),
+      scenarios,
+    },
+    signals: {
+      up: toNum(sig.bullCount ?? sig.up) ?? 0,
+      down: toNum(sig.bearCount ?? sig.down) ?? 0,
+    },
+  };
+}
+
+function parseAnalysisFromResponse(msg) {
+  const toolInput = extractStockAnalysisToolUse(msg);
+  if (toolInput) {
+    const mapped = mapToolInputToLegacy(toolInput);
+    if (mapped) return mapped;
+  }
+  const fullText = extractTextFromContent(msg);
+  return safeParseJSON(fullText);
+}
+
+async function messagesCreateWithPause(client, options, maxPauseTurns = 4) {
   let messages = [...(options.messages || [])];
   const { messages: _omit, ...rest } = options;
   let response = null;
 
   for (let turn = 0; turn <= maxPauseTurns; turn++) {
+    const toolChoice =
+      turn >= maxPauseTurns ? { type: "tool", name: "stock_analysis" } : { type: "auto" };
     response = await client.messages.create({
       ...rest,
+      tools: ANALYSIS_TOOLS,
+      tool_choice: toolChoice,
       messages,
     });
     logContentBlocks(response);
 
-    if (!response || response.stop_reason !== "pause_turn") {
-      break;
-    }
+    if (extractStockAnalysisToolUse(response)) break;
+    if (!response || response.stop_reason !== "pause_turn") break;
 
     console.log("[analyze] pause_turn — continuing", turn + 1);
     messages = messages.concat([{ role: "assistant", content: response.content }]);
@@ -549,12 +766,11 @@ function buildUserPrompt(quote, stockName, today, indicators) {
     "",
     "7번 AI 주관적 판단 — short/mid/long + scenarios A/B/C(확률 합 100%) + comment. 5번 재료 반영 필수.",
     "",
-    "8번 signals — up/down 신호 개수.",
+    "8번 signals — bullCount/bearCount 신호 개수.",
     "",
-    "아래 KIS 실시간 시세를 참고하고, web_search 2회 후 JSON만 응답하세요.",
+    "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
+    "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",
     indicatorBlock,
-    "",
-    CLAUDE_RESPONSE_SCHEMA,
     "",
     "입력 데이터:",
     JSON.stringify({
@@ -601,16 +817,16 @@ async function claudeAnalyze(quote, stockName, indicators) {
           max_tokens: 3500,
           temperature: 0.25,
           system,
-          tools: WEB_SEARCH_TOOLS,
+          betas: ["output-128k-2025-02-19"],
           messages: [{ role: "user", content: user }],
         },
-        2
+        4
       );
 
-      const fullText = extractTextFromContent(msg && msg.content);
-      const parsed = safeParseJSON(fullText);
+      const parsed = parseAnalysisFromResponse(msg);
       if (parsed == null) {
-        console.error("[analyze] raw response (500 chars):", String(fullText || "").slice(0, 500));
+        const fallbackText = extractTextFromContent(msg && msg.content);
+        console.error("[analyze] raw response (500 chars):", String(fallbackText || "").slice(0, 500));
         throw new Error(ANALYSIS_PARSE_ERROR_MSG);
       }
       const normalized = normalizeAnalysis(parsed, quote);

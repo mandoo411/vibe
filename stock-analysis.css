@@ -690,11 +690,82 @@
   color: var(--color-text-secondary);
 }
 
-/* ── ⑥ 차트 ── */
-.ai-chart-block {
+/* ── ⑥ Lightweight Charts ── */
+.ai-chart-preview-slot {
+  margin-bottom: 14px;
+}
+
+.ai-lw-chart-wrap {
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-background-secondary);
+}
+
+.ai-chart-toolbar {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 8px 10px;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
+}
+
+#ai-stock-analysis .rt-chart-interval-btn {
+  appearance: none;
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 3.25rem;
+  padding: 8px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#ai-stock-analysis .rt-chart-interval-btn:hover,
+#ai-stock-analysis .rt-chart-interval-btn:focus-visible {
+  color: var(--text-primary, #131722);
+  outline: none;
+}
+
+#ai-stock-analysis .rt-chart-interval-btn[aria-pressed="true"] {
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.45);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.ai-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border-tertiary);
+  background: var(--color-background-primary);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.ai-chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-chart-legend__dot {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.ai-lw-chart-host {
+  width: 100%;
+  height: 400px;
 }
 
 .ai-chart-tv {
@@ -711,6 +782,12 @@
   width: 100%;
   height: 400px;
   border: 0;
+}
+
+.ai-chart-block {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .ai-chart-text {
@@ -1075,8 +1152,9 @@
     font-size: 15px;
   }
 
+  .ai-lw-chart-host,
   .ai-chart-tv,
   .ai-tv-widget {
-    height: 280px;
+    height: 260px;
   }
 }

@@ -17,7 +17,7 @@ const WEB_SEARCH_TOOLS = [
 const CLAUDE_MODEL = "claude-sonnet-4-6";
 
 const ANALYSIS_PARSE_ERROR_MSG =
-  "분석을 완료했으나 데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.";
+  "AI 분석 응답 처리 중 오류. 다시 시도해주세요.";
 
 /** 프롬프트 주입용 한국 시각 기준 오늘 날짜 */
 function todayKoreaLabel() {
@@ -59,9 +59,9 @@ function buildSystemPrompt(today) {
 ② unreflected: 미반영 핵심 재료 1~2개, 반영 예상 시점·조건
 ③ summary: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
     "",
-    `6번 차트 흐름 분석 — 아래 항목 전부 수치와 근거 포함:
+    `6번 차트 흐름 분석 — 제공된 실제 MA/RSI 수치만 사용(추정 금지). 아래 항목 전부 수치와 근거 포함:
 ① 이동평균선: 20일/60일/120일/200일선 대비 현재가 위치와 해석
-② RSI: 최근 흐름 기반 추정값 + 과매수/과매도 해석
+② RSI: 제공된 RSI(14) 값 + 과매수/과매도 해석
 ③ 일목균형표: 전환선/기준선/구름대 위아래 여부
 ④ 지지선/저항선: 1차·2차 수치 명시
 ⑤ 전고점/전저점: 수치와 의미 (high52w/low52w 활용)
@@ -77,6 +77,12 @@ function buildSystemPrompt(today) {
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
     "8번 신호 요약: signals.up/down — 분석 근거 상승·하락 신호 개수",
+    "",
+    `응답은 반드시 순수 JSON만 출력하라.
+마크다운 코드블록(\`\`\`json) 절대 사용 금지.
+설명 텍스트, 주석 없이 JSON 객체만 출력.
+JSON 문자열 값 안에 큰따옴표(") 사용 금지 → 작은따옴표(') 사용.
+JSON 문자열 값 안에 줄바꿈 금지.`,
     "",
     "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
   ].join("\n");
@@ -318,26 +324,27 @@ function logContentBlocks(msg) {
   }
 }
 
-function safeParseJSON(text) {
+function safeParseJSON(raw) {
   try {
-    const cleaned = String(text || "")
-      .replace(/```json/gi, "")
+    let text = String(raw || "")
+      .replace(/```json[\s\S]*?```/g, (m) => m.replace(/```json|```/g, ""))
       .replace(/```/g, "")
-      .replace(/\r\n?/g, " ")
-      .replace(/[\x00-\x1F\x7F]/g, " ")
       .trim();
-    return JSON.parse(cleaned);
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("No JSON found");
+    text = text.slice(start, end + 1);
+    return JSON.parse(text);
   } catch (e) {
-    try {
-      const match = String(text || "").match(/\{[\s\S]*\}/);
-      if (match) {
-        const blob = match[0]
-          .replace(/\r\n?/g, " ")
-          .replace(/[\x00-\x1F\x7F]/g, " ");
-        return JSON.parse(blob);
-      }
-    } catch (_) {}
-    console.error("JSON parse error:", e.message);
+    console.error("JSON parse error:", e.message, String(raw || "").slice(0, 500));
+    return null;
+  }
+}
+
+function parseRequestBodyJson(text) {
+  try {
+    return JSON.parse(String(text || "").trim() || "{}");
+  } catch {
     return null;
   }
 }
@@ -500,9 +507,27 @@ function claudeModelCandidates() {
   return [CLAUDE_MODEL];
 }
 
-function buildUserPrompt(quote, stockName, today) {
+function buildUserPrompt(quote, stockName, today, indicators) {
   const name = stockName || quote.stockName || quote.stockCode;
   const year = seoulYear();
+  const ind = indicators && typeof indicators === "object" ? indicators : {};
+  const ma20 = toNum(ind.ma20);
+  const ma60 = toNum(ind.ma60);
+  const ma120 = toNum(ind.ma120);
+  const ma200 = toNum(ind.ma200);
+  const rsi14 = toNum(ind.rsi14);
+  const fmtMa = (n) => (n == null ? "—" : `${Math.round(n).toLocaleString("ko-KR")}`);
+  const fmtRsi = (n) => (n == null ? "—" : String(n));
+  const indicatorBlock =
+    ma20 != null || ma60 != null || ma120 != null || ma200 != null || rsi14 != null
+      ? [
+          "",
+          "실제 기술적 지표 (추정 금지, 아래 수치만 사용):",
+          `20일선: ${fmtMa(ma20)}원 / 60일선: ${fmtMa(ma60)}원`,
+          `120일선: ${fmtMa(ma120)}원 / 200일선: ${fmtMa(ma200)}원`,
+          `RSI(14): ${fmtRsi(rsi14)}`,
+        ].join("\n")
+      : "";
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
     `분석 종목: ${name} (${quote.stockCode})`,
@@ -520,13 +545,14 @@ function buildUserPrompt(quote, stockName, today) {
     "",
     "5번 재료 분석 — web_search 기반 핵심 재료 4개 이내, unreflected, summary(트레이더 말투 3~5문장).",
     "",
-    "6번 차트 — MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
+    "6번 차트 — 제공된 실제 MA/RSI 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
     "",
     "7번 AI 주관적 판단 — short/mid/long + scenarios A/B/C(확률 합 100%) + comment. 5번 재료 반영 필수.",
     "",
     "8번 signals — up/down 신호 개수.",
     "",
     "아래 KIS 실시간 시세를 참고하고, web_search 2회 후 JSON만 응답하세요.",
+    indicatorBlock,
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
@@ -558,11 +584,11 @@ function buildUserPrompt(quote, stockName, today) {
   ].join("\n");
 }
 
-async function claudeAnalyze(quote, stockName) {
+async function claudeAnalyze(quote, stockName, indicators) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const today = todayKoreaLabel();
-  const user = buildUserPrompt(quote, stockName, today);
+  const user = buildUserPrompt(quote, stockName, today, indicators);
   const system = buildSystemPrompt(today);
 
   let lastErr = null;
@@ -584,6 +610,7 @@ async function claudeAnalyze(quote, stockName) {
       const fullText = extractTextFromContent(msg && msg.content);
       const parsed = safeParseJSON(fullText);
       if (parsed == null) {
+        console.error("[analyze] raw response (500 chars):", String(fullText || "").slice(0, 500));
         throw new Error(ANALYSIS_PARSE_ERROR_MSG);
       }
       const normalized = normalizeAnalysis(parsed, quote);
@@ -606,7 +633,7 @@ async function claudeAnalyze(quote, stockName) {
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") {
-    const parsed = safeParseJSON(req.body || "{}");
+    const parsed = parseRequestBodyJson(req.body);
     if (parsed == null) throw new Error("Invalid JSON body");
     return parsed;
   }
@@ -616,7 +643,7 @@ async function readBody(req) {
       data += chunk;
     });
     req.on("end", () => {
-      const parsed = safeParseJSON(data || "{}");
+      const parsed = parseRequestBodyJson(data);
       if (parsed == null) {
         reject(new Error("Invalid JSON body"));
         return;
@@ -668,10 +695,26 @@ module.exports = async function handler(req, res) {
 
   const stockName = name || quote.stockName || code6;
 
+  const indicators = {
+    ma20: toNum(body && body.ma20),
+    ma60: toNum(body && body.ma60),
+    ma120: toNum(body && body.ma120),
+    ma200: toNum(body && body.ma200),
+    rsi14: toNum(body && body.rsi14),
+  };
+  if (body && body.indicators && typeof body.indicators === "object") {
+    const bi = body.indicators;
+    indicators.ma20 = toNum(bi.ma20) ?? indicators.ma20;
+    indicators.ma60 = toNum(bi.ma60) ?? indicators.ma60;
+    indicators.ma120 = toNum(bi.ma120) ?? indicators.ma120;
+    indicators.ma200 = toNum(bi.ma200) ?? indicators.ma200;
+    indicators.rsi14 = toNum(bi.rsi14) ?? indicators.rsi14;
+  }
+
   let analysis;
   let analysisError = "";
   try {
-    analysis = await claudeAnalyze(quote, stockName);
+    analysis = await claudeAnalyze(quote, stockName, indicators);
   } catch (e) {
     analysisError =
       e && e.message === ANALYSIS_PARSE_ERROR_MSG

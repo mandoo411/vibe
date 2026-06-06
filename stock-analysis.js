@@ -8,6 +8,8 @@
   let running = false;
   let loadingTimer = null;
   let progressTimer = null;
+  let lwChartsPromise = null;
+  let aiChartBundle = null;
   const acState = { open: false, items: [], active: -1 };
 
   const LOADING_STEPS = [
@@ -425,6 +427,251 @@
     return "ai-mat-reflect__bar--high";
   }
 
+  function isDomesticCode(code) {
+    const digits = String(code || "").replace(/\D/g, "");
+    return /^\d{6}$/.test(digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6));
+  }
+
+  function getAiChartHeight() {
+    return window.matchMedia("(max-width: 768px)").matches ? 260 : 400;
+  }
+
+  function extractChartIndicators(chartData) {
+    if (!chartData) return {};
+    const pickLast = (arr) => {
+      if (!Array.isArray(arr)) return null;
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i] != null) return arr[i];
+      }
+      return null;
+    };
+    return {
+      ma20: pickLast(chartData.ma20),
+      ma60: pickLast(chartData.ma60),
+      ma120: pickLast(chartData.ma120),
+      ma200: pickLast(chartData.ma200),
+      rsi14: chartData.rsi14 == null ? null : chartData.rsi14,
+    };
+  }
+
+  async function fetchKisChart(code, period) {
+    const res = await fetch(
+      `/api/kis-chart?code=${encodeURIComponent(code)}&period=${encodeURIComponent(period || "D")}`,
+      { cache: "no-store" }
+    );
+    const data = safeParseJson(await res.text()) || {};
+    if (!res.ok) throw new Error(data.error || `차트 HTTP ${res.status}`);
+    if (!Array.isArray(data.candles) || !data.candles.length) throw new Error("차트 데이터가 없습니다");
+    return data;
+  }
+
+  function ensureLightweightCharts() {
+    if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
+      return Promise.resolve(window.LightweightCharts);
+    }
+    if (!lwChartsPromise) {
+      lwChartsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.async = true;
+        s.src = "https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js";
+        s.crossOrigin = "anonymous";
+        s.onload = () => {
+          if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
+            resolve(window.LightweightCharts);
+          } else {
+            lwChartsPromise = null;
+            reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+          }
+        };
+        s.onerror = () => {
+          lwChartsPromise = null;
+          reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+        };
+        document.head.appendChild(s);
+      });
+    }
+    return lwChartsPromise;
+  }
+
+  function disposeAiChart() {
+    if (aiChartBundle) {
+      try {
+        if (aiChartBundle.ro) aiChartBundle.ro.disconnect();
+        if (aiChartBundle.chart) aiChartBundle.chart.remove();
+      } catch (_) {}
+      aiChartBundle = null;
+    }
+  }
+
+  function getLwTheme() {
+    const dark = isDarkTheme();
+    return {
+      bg: dark ? "#131722" : "#ffffff",
+      text: dark ? "#aaaaaa" : "#555555",
+      grid: dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
+    };
+  }
+
+  function buildMaLineData(candles, maArr) {
+    const out = [];
+    for (let i = 0; i < candles.length; i++) {
+      const v = maArr && maArr[i];
+      if (v != null) out.push({ time: candles[i].time, value: v });
+    }
+    return out;
+  }
+
+  async function mountAiLwChart(hostEl, chartData) {
+    if (!hostEl || !chartData || !Array.isArray(chartData.candles) || !chartData.candles.length) return;
+    disposeAiChart();
+    const LC = await ensureLightweightCharts();
+    hostEl.innerHTML = "";
+    const h = getAiChartHeight();
+    const w = Math.max(hostEl.clientWidth, 280);
+    const t = getLwTheme();
+    const chart = LC.createChart(hostEl, {
+      width: w,
+      height: h,
+      layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
+      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
+    });
+    const candleOpts = {
+      upColor: "#e24b4a",
+      downColor: "#3b82f6",
+      borderUpColor: "#e24b4a",
+      borderDownColor: "#3b82f6",
+      wickUpColor: "#e24b4a",
+      wickDownColor: "#3b82f6",
+    };
+    let candleSeries;
+    if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
+      candleSeries = chart.addSeries(LC.CandlestickSeries, candleOpts);
+    } else if (typeof chart.addCandlestickSeries === "function") {
+      candleSeries = chart.addCandlestickSeries(candleOpts);
+    } else {
+      throw new Error("캔들 시리즈를 초기화하지 못했습니다.");
+    }
+    candleSeries.setData(chartData.candles);
+
+    const specs = [
+      [chartData.ma20, "#ef4444"],
+      [chartData.ma60, "#3b82f6"],
+      [chartData.ma120, "#22c55e"],
+      [chartData.ma200, "#f97316"],
+    ];
+    for (const [arr, color] of specs) {
+      const lineData = buildMaLineData(chartData.candles, arr);
+      if (!lineData.length) continue;
+      const lineOpts = { color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false };
+      let line;
+      if (LC.LineSeries && typeof chart.addSeries === "function") {
+        line = chart.addSeries(LC.LineSeries, lineOpts);
+      } else {
+        line = chart.addLineSeries(lineOpts);
+      }
+      line.setData(lineData);
+    }
+    chart.timeScale().fitContent();
+
+    const ro = new ResizeObserver(() => {
+      const nw = hostEl.clientWidth;
+      if (nw > 0) chart.applyOptions({ width: nw, height: getAiChartHeight() });
+    });
+    ro.observe(hostEl);
+    aiChartBundle = { chart, ro };
+  }
+
+  function applyAiChartTheme() {
+    if (!aiChartBundle || !aiChartBundle.chart) return;
+    const t = getLwTheme();
+    aiChartBundle.chart.applyOptions({
+      layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
+      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+    });
+  }
+
+  function renderChartShell(stockCode, stockName, chartText, useTradingView) {
+    if (useTradingView) {
+      const sym = tradingViewSymbol(stockCode, stockName);
+      return (
+        `<div class="ai-chart-block">` +
+        `<div class="ai-chart-tv"><iframe class="ai-tv-widget" data-symbol="${escapeHtml(sym)}" title="${escapeHtml(stockName || stockCode)} TradingView chart" src="${escapeHtml(tradingViewUrl(sym))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe></div>` +
+        renderChartText(chartText) +
+        `</div>`
+      );
+    }
+    return (
+      `<div class="ai-chart-block">` +
+      `<div class="ai-lw-chart-wrap" data-ai-chart-code="${escapeHtml(stockCode)}">` +
+      `<div class="ai-chart-toolbar" role="toolbar" aria-label="캔들 주기">` +
+      `<button type="button" class="rt-chart-interval-btn ai-chart-period-btn" data-ai-period="D" aria-pressed="true">일봉</button>` +
+      `<button type="button" class="rt-chart-interval-btn ai-chart-period-btn" data-ai-period="W" aria-pressed="false">주봉</button>` +
+      `<button type="button" class="rt-chart-interval-btn ai-chart-period-btn" data-ai-period="M" aria-pressed="false">월봉</button>` +
+      `</div>` +
+      `<div class="ai-chart-legend">` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#ef4444"></i>20일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#3b82f6"></i>60일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#22c55e"></i>120일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#f97316"></i>200일</span>` +
+      `</div>` +
+      `<div class="ai-lw-chart-host" role="region" aria-label="캔들 차트"></div>` +
+      `</div>` +
+      renderChartText(chartText) +
+      `</div>`
+    );
+  }
+
+  function wireAiChart(stockCode, chartData, activePeriod) {
+    const wrap = panel && panel.querySelector(".ai-lw-chart-wrap");
+    if (!wrap || !isDomesticCode(stockCode)) return;
+    const host = wrap.querySelector(".ai-lw-chart-host");
+    const period = activePeriod || "D";
+    if (host && chartData) void mountAiLwChart(host, chartData);
+
+    wrap.querySelectorAll(".ai-chart-period-btn").forEach((btn) => {
+      const p = btn.getAttribute("data-ai-period") || "D";
+      btn.setAttribute("aria-pressed", p === period ? "true" : "false");
+      if (btn.dataset.wired === "1") return;
+      btn.dataset.wired = "1";
+      btn.addEventListener("click", async () => {
+        const next = btn.getAttribute("data-ai-period") || "D";
+        wrap.querySelectorAll(".ai-chart-period-btn").forEach((b) =>
+          b.setAttribute("aria-pressed", b === btn ? "true" : "false")
+        );
+        try {
+          const data = await fetchKisChart(stockCode, next);
+          await mountAiLwChart(host, data);
+        } catch (err) {
+          console.error("[AI분석] 차트 주기 변경 실패", err);
+        }
+      });
+    });
+  }
+
+  function renderChartWhileAnalyzing(resolved, quote, chartData) {
+    if (!panel || !chartData) return;
+    const headerHost = document.getElementById("ai-loading-quote-host");
+    if (headerHost) headerHost.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
+
+    let slot = document.getElementById("ai-chart-preview-slot");
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.id = "ai-chart-preview-slot";
+      slot.className = "ai-chart-preview-slot";
+      const loadingPanel = panel.querySelector(".ai-loading-panel");
+      if (loadingPanel) panel.insertBefore(slot, loadingPanel);
+      else panel.appendChild(slot);
+    }
+    slot.innerHTML =
+      `<article class="ai-card ai-card--chart">` +
+      `<h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3>` +
+      `<div class="ai-card__body">${renderChartShell(resolved.code, resolved.name, "", false)}</div>` +
+      `</article>`;
+    wireAiChart(resolved.code, chartData, "D");
+  }
+
   function showLoading(resolved) {
     if (!panel) return;
     clearLoadingTimer();
@@ -553,13 +800,8 @@
   }
 
   function renderChartSection(stockCode, stockName, chartText) {
-    const sym = tradingViewSymbol(stockCode, stockName);
-    return (
-      `<div class="ai-chart-block">` +
-      `<div class="ai-chart-tv"><iframe class="ai-tv-widget" data-symbol="${escapeHtml(sym)}" title="${escapeHtml(stockName || stockCode)} TradingView chart" src="${escapeHtml(tradingViewUrl(sym))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe></div>` +
-      renderChartText(chartText) +
-      `</div>`
-    );
+    const useTv = !isDomesticCode(stockCode);
+    return renderChartShell(stockCode, stockName, chartText, useTv);
   }
 
   function scenarioCardClass(label, type) {
@@ -677,8 +919,9 @@
     return `<div class="ai-signals"><div class="ai-signals__counts"><span class="ai-signals__up">상승 신호 ${up}개</span><span class="ai-signals__down">하락 신호 ${down}개</span></div><div class="ai-signals__gauge"><span class="ai-signals__gauge-up" style="width:${upPct}%"></span><span class="ai-signals__gauge-down" style="width:${downPct}%"></span></div></div>`;
   }
 
-  function renderAnalysis(data) {
+  function renderAnalysis(data, chartData, chartPeriod) {
     if (!panel) return;
+    disposeAiChart();
     let analysis = data && data.analysis;
     if (typeof analysis === "string") analysis = safeParseJson(analysis);
     if (!analysis || typeof analysis !== "object") {
@@ -709,16 +952,31 @@
         <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion)}</div></article>
         <article class="ai-card ai-card--signals"><h3 class="ai-card__title"><span class="ai-card__num">8</span>신호 요약</h3><div class="ai-card__body">${renderSignals(analysis.signals)}</div></article>
       </div>`;
+
+    if (isDomesticCode(data.stockCode) && chartData) {
+      wireAiChart(data.stockCode, chartData, chartPeriod || "D");
+    } else {
+      refreshTradingViewCharts();
+    }
   }
 
-  async function fetchAnalysis(code, name) {
-    console.log("[AI분석] fetch 시작", { code, name });
+  async function fetchAnalysis(code, name, indicators) {
+    console.log("[AI분석] fetch 시작", { code, name, indicators });
+    const ind = indicators && typeof indicators === "object" ? indicators : {};
     let res;
     try {
       res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, name }),
+        body: JSON.stringify({
+          code,
+          name,
+          ma20: ind.ma20,
+          ma60: ind.ma60,
+          ma120: ind.ma120,
+          ma200: ind.ma200,
+          rsi14: ind.rsi14,
+        }),
         cache: "no-store",
       });
     } catch (err) {
@@ -757,10 +1015,20 @@
       if (input) input.value = resolved.name || resolved.code;
       showLoading(resolved);
 
-      const data = await fetchAnalysis(resolved.code, resolved.name);
+      const quotePromise = fetchQuickQuote(resolved.code);
+      let chartData = null;
+      if (isDomesticCode(resolved.code)) {
+        chartData = await fetchKisChart(resolved.code, "D");
+        const quote = await quotePromise;
+        renderChartWhileAnalyzing(resolved, quote, chartData);
+      } else {
+        await quotePromise;
+      }
+
+      const indicators = extractChartIndicators(chartData);
+      const data = await fetchAnalysis(resolved.code, resolved.name, indicators);
       finishLoadingProgress();
-      renderAnalysis(data);
-      refreshTradingViewCharts();
+      renderAnalysis(data, chartData, "D");
     } catch (err) {
       console.error("[AI분석] 실패", err);
       showError((err && err.message) || "분석을 불러오지 못했습니다");
@@ -893,7 +1161,10 @@
     if (themeBtn && !themeBtn.dataset.aiTvThemeBound) {
       themeBtn.dataset.aiTvThemeBound = "1";
       themeBtn.addEventListener("click", () => {
-        setTimeout(refreshTradingViewCharts, 0);
+        setTimeout(() => {
+          refreshTradingViewCharts();
+          applyAiChartTheme();
+        }, 0);
       });
     }
 

@@ -456,7 +456,7 @@
 
   async function fetchKisChart(code, period) {
     const res = await fetch(
-      `/api/kis-chart?code=${encodeURIComponent(code)}&period=${encodeURIComponent(period || "D")}`,
+      `/api/kis-stock-quote?code=${encodeURIComponent(code)}&chart=1&period=${encodeURIComponent(period || "D")}`,
       { cache: "no-store" }
     );
     const data = safeParseJson(await res.text()) || {};

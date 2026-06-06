@@ -61,7 +61,6 @@
     }
   },
   "routes": [
-    { "src": "/api/kis-chart", "dest": "/api/kis-stock-quote?chart=1" },
     { "handle": "filesystem" },
     { "src": "/apple-touch-icon.png", "dest": "/icon-t-180.png" },
     { "src": "/apple-touch-icon-precomposed.png", "dest": "/icon-t-180.png" },

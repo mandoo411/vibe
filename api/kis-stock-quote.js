@@ -1,7 +1,7 @@
 /**
  * KIS 종목 시세(시세1+시세2) 합쳐서 반환
  * GET /api/kis-stock-quote?code=005930
- * GET /api/kis-chart?code=005930&period=D|W|M  (rewrite → 동일 핸들러)
+ * GET /api/kis-stock-quote?code=005930&chart=1&period=D|W|M
  */
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";

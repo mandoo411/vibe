@@ -15,21 +15,29 @@ const WEB_SEARCH_TOOLS = [
 ];
 
 function todayKoreaLabel() {
-  return new Intl.DateTimeFormat("ko-KR", {
+  return new Date().toLocaleDateString("ko-KR", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "long",
     day: "numeric",
-  }).format(new Date());
+  });
 }
 
-function buildSystemPrompt(todayLabel) {
+function buildSystemPrompt(today) {
   return [
+    `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요. 학습데이터의 과거 정보가 아니라 web_search 결과의 최신 뉴스를 반드시 사용하세요.`,
     "당신은 한국 주식 전문 애널리스트입니다.",
-    `오늘은 ${todayLabel}이다.`,
+    "분석을 시작하기 전 반드시 web_search로 해당 종목의 최근 1주일 뉴스를 검색하세요. 검색 없이 JSON을 작성하지 마세요.",
+    "web_search 결과는 2번(story, 왜 지금 이 가격인가)과 4번(events, 다가오는 이벤트)에 반드시 반영하세요.",
     "제공된 KIS 실시간 시세와 web_search로 확인한 최신 뉴스만 근거로 분석하세요.",
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
     "2024년 등 과거 뉴스를 학습 기억으로 추측하지 마세요. 검색으로 확인된 최신 정보만 사용하세요.",
+    "",
+    "4번 '다가오는 이벤트' 작성 규칙:",
+    `- 반드시 ${today} 이후의 미래 이벤트만 넣을 것. 과거 날짜는 절대 금지.`,
+    "- events[].date는 오늘 이후 날짜만 허용. 확인되지 않은 일정은 넣지 말 것.",
+    "- web_search로 확인된 최신 뉴스·공시·일정에 근거할 것.",
+    "",
     "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
   ].join("\n");
 }
@@ -359,18 +367,24 @@ function claudeModelCandidates() {
   return [...new Set(models)];
 }
 
-function buildUserPrompt(quote, stockName, todayLabel) {
+function buildUserPrompt(quote, stockName, today) {
   const name = stockName || quote.stockName || quote.stockCode;
   return [
-    `오늘은 ${todayLabel}이다.`,
+    `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
     `분석 종목: ${name} (${quote.stockCode})`,
     "",
-    "반드시 web_search로 해당 종목의 '최근 1개월 이내' 뉴스와 주가 변동 이유를 검색해서 분석에 반영하라.",
-    "2024년 등 과거 뉴스를 추측으로 쓰지 말 것. 검색으로 확인된 최신 정보만 사용하라.",
-    `검색 쿼리 예: '${name} 주가 이유 최신', '${name} 뉴스'`,
-    "4번 '다가오는 이벤트'는 반드시 검색으로 확인된 실제 예정 일정/뉴스만 쓰고, 날짜는 최근~미래 날짜로. 과거 날짜 금지.",
+    "【필수】 분석 JSON 작성 전 web_search 실행:",
+    `- '${name}' 또는 '${name} ${quote.stockCode}' 관련 최근 1주일 뉴스를 반드시 검색하세요.`,
+    `- 검색 쿼리 예: '${name} 주가 뉴스 최근 1주', '${name} 실적 일정', '${name} 공시'`,
+    "- 검색 결과를 2번 story(왜 지금 이 가격인가)와 4번 events(다가오는 이벤트)에 반드시 반영하세요.",
+    "- 학습데이터·과거 기억으로 채우지 말고, web_search로 확인된 최신 정보만 사용하세요.",
     "",
-    "아래 KIS 실시간 시세를 함께 참고하고, 최종 답변은 반드시 JSON 형식으로만 응답하세요.",
+    "4번 '다가오는 이벤트' 규칙:",
+    `- ${today} 이후의 미래 이벤트만 포함. 과거 날짜 절대 금지.`,
+    "- web_search 최신 뉴스·공시에 근거한 실제 예정 일정만 작성.",
+    "- 확인되지 않은 이벤트는 빈 배열 []로 두세요.",
+    "",
+    "아래 KIS 실시간 시세를 함께 참고하고, web_search 후 최종 답변은 반드시 JSON 형식으로만 응답하세요.",
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
@@ -397,7 +411,7 @@ function buildUserPrompt(quote, stockName, todayLabel) {
       institutionNetBuy: quote.institutionNetBuy,
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
-      analysisDate: todayLabel,
+      analysisDate: today,
     }),
   ].join("\n");
 }
@@ -405,9 +419,9 @@ function buildUserPrompt(quote, stockName, todayLabel) {
 async function claudeAnalyze(quote, stockName) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
-  const todayLabel = todayKoreaLabel();
-  const user = buildUserPrompt(quote, stockName, todayLabel);
-  const system = buildSystemPrompt(todayLabel);
+  const today = todayKoreaLabel();
+  const user = buildUserPrompt(quote, stockName, today);
+  const system = buildSystemPrompt(today);
 
   let lastErr = null;
   for (const model of claudeModelCandidates()) {

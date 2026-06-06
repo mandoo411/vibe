@@ -650,6 +650,12 @@
   border-radius: 999px;
 }
 
+.ai-mat-card button,
+.ai-mat-dismiss,
+.ai-mat-close {
+  display: none !important;
+}
+
 .ai-mat-strength--high {
   background: rgba(226, 75, 74, 0.15);
   color: #e24b4a;

@@ -193,8 +193,58 @@
 
   function fmtPrice(n) {
     const v = toNum(n);
-    if (v == null) return "—";
+    if (v == null || v === 0) return "—";
     return Math.round(v).toLocaleString("ko-KR");
+  }
+
+  function resolveOpinionPrices(op, currentPrice) {
+    const o = op && typeof op === "object" ? op : {};
+    const cp = toNum(currentPrice) || 0;
+    let entry = toNum(o.entry);
+    let stop = toNum(o.stop);
+    let target = toNum(o.target);
+
+    if (!entry || entry <= 0) {
+      entry = cp > 0 ? cp : null;
+    }
+    if (entry && (!stop || stop <= 0)) {
+      stop = Math.round(entry * 0.95);
+    }
+    if (entry && (!target || target <= 0)) {
+      target = Math.round(entry * 1.15);
+    }
+
+    return {
+      entry: entry ?? (cp > 0 ? cp : 0),
+      stop: stop ?? 0,
+      target: target ?? 0,
+    };
+  }
+
+  function formatEventDate(raw) {
+    const s = String(raw || "").trim();
+    if (!s) return "일정 미정";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    if (/^\d{4}년\s*(상반기|하반기)\s*예정/.test(s)) return s;
+    if (/^\d{4}년\s*\d{1,2}월\s*예정/.test(s)) return s;
+    const iso = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+    if (iso) {
+      const mm = String(iso[2]).padStart(2, "0");
+      const dd = String(iso[3]).padStart(2, "0");
+      return `${iso[1]}-${mm}-${dd}`;
+    }
+    const monthOnly = s.match(/(\d{4})\s*년?\s*(\d{1,2})\s*월/);
+    if (monthOnly && !/\d{1,2}\s*일/.test(s)) {
+      return `${monthOnly[1]}년 ${Number(monthOnly[2])}월 예정`;
+    }
+    const half = s.match(/(\d{4})\s*년?\s*(상반기|하반기)/);
+    if (half) return `${half[1]}년 ${half[2]} 예정`;
+    return s;
+  }
+
+  function lwChartPriceFormatter(price) {
+    if (price >= 10000) return `${(price / 10000).toFixed(0)}만`;
+    return Math.round(price).toLocaleString("ko-KR");
   }
 
   function fmtPct(n) {
@@ -581,6 +631,9 @@
       grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
+      localization: {
+        priceFormatter: lwChartPriceFormatter,
+      },
     });
     const candleOpts = {
       upColor: "#e24b4a",
@@ -622,7 +675,10 @@
 
     const ro = new ResizeObserver(() => {
       const nw = hostEl.clientWidth;
-      if (nw > 0) chart.applyOptions({ width: nw, height: getAiChartHeight() });
+      if (nw > 0) {
+        chart.applyOptions({ width: nw, height: getAiChartHeight() });
+        chart.timeScale().fitContent();
+      }
     });
     ro.observe(hostEl);
     aiChartBundle = { chart, ro };
@@ -745,7 +801,8 @@
                 ? "ai-event__badge--neutral"
                 : "ai-event__badge--good";
           const badgeLabel = type === "neutral" ? "정보" : escapeHtml(type || "호재");
-          return `<li class="ai-event"><span class="ai-event__badge ${badgeCls}">${badgeLabel}</span><span class="ai-event__content">${escapeHtml(e.content)}</span>${e.date ? `<span class="ai-event__date">${escapeHtml(e.date)}</span>` : ""}</li>`;
+          const dateLabel = formatEventDate(e.date);
+          return `<li class="ai-event"><span class="ai-event__badge ${badgeCls}">${badgeLabel}</span><span class="ai-event__content">${escapeHtml(e.content)}</span><span class="ai-event__date">${escapeHtml(dateLabel)}</span></li>`;
         })
         .join("") +
       "</ul>"
@@ -894,8 +951,9 @@
     return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
-  function renderOpinion(op) {
+  function renderOpinion(op, currentPrice) {
     const o = op && typeof op === "object" ? op : {};
+    const prices = resolveOpinionPrices(o, currentPrice);
     const outlooks = [
       ["단기 (1-2주)", o.short],
       ["중기 (1-3개월)", o.mid],
@@ -907,10 +965,10 @@
           `<div class="ai-outlook-card"><span class="ai-outlook-card__label">${escapeHtml(label)}</span>${formatProseText(text)}</div>`
       )
       .join("");
-    const prices = [
-      ["진입가", o.entry],
-      ["손절가", o.stop],
-      ["목표가", o.target],
+    const priceRows = [
+      ["진입가", prices.entry],
+      ["손절가", prices.stop],
+      ["목표가", prices.target],
     ]
       .map(
         ([label, val]) =>
@@ -926,7 +984,7 @@
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
-      `<div class="ai-opinion-prices">${prices}</div>` +
+      `<div class="ai-opinion-prices">${priceRows}</div>` +
       `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +
@@ -964,7 +1022,7 @@
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
-        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion)}</div></article>
+        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice)}</div></article>
       </div>`;
 
     if (isDomesticCode(data.stockCode) && chartData) {

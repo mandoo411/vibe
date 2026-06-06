@@ -63,6 +63,18 @@ const STOCK_ANALYSIS_TOOL = {
       chartAnalysis: { type: "string" },
       aiJudgment: {
         type: "object",
+        required: [
+          "shortTerm",
+          "midTerm",
+          "longTerm",
+          "entryPrice",
+          "stopLoss",
+          "target",
+          "scenarioA",
+          "scenarioB",
+          "scenarioC",
+          "aiComment",
+        ],
         properties: {
           shortTerm: { type: "string" },
           midTerm: { type: "string" },
@@ -182,12 +194,20 @@ function buildSystemPrompt(today) {
 ⑥ 엘리어트 파동: 현재 구간 추정 및 근거`,
     "",
     `7번 AI 주관적 판단 지침:
+- aiJudgment 필드는 반드시 모든 하위 필드를 채울 것.
+- 특히 아래 필드는 절대 누락 금지:
+  · shortTerm, midTerm, longTerm: 문자열로 반드시 작성
+  · entryPrice, stopLoss, target: 반드시 숫자 (0 금지)
+    현재가 기준으로 합리적인 수치 계산해서 넣을 것
+    entryPrice = 현재가 ± 1~2%
+    stopLoss = entryPrice 기준 -3~5%
+    target = entryPrice 기준 +10~20%
+  · scenarioA/B/C: probability 합계 반드시 100
+  · aiComment: 반드시 3문장 이상
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
 - 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률%
 - 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률%
 - 시나리오 C (약세): 조건 / 대응전략 / 목표 하단 / 확률%
-- 확률 합계는 반드시 100%
-- AI 총평은 실제 트레이더 말투로 3-5문장
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
@@ -498,6 +518,29 @@ function mapScenarioRaw(raw, label, type) {
   };
 }
 
+function resolveOpinionPrices(entryRaw, stopRaw, targetRaw, currentPrice) {
+  const cp = toNum(currentPrice) || 0;
+  let entry = toNum(entryRaw);
+  let stop = toNum(stopRaw);
+  let target = toNum(targetRaw);
+
+  if (!entry || entry <= 0) {
+    entry = cp > 0 ? cp : null;
+  }
+  if (entry && (!stop || stop <= 0)) {
+    stop = Math.round(entry * 0.95);
+  }
+  if (entry && (!target || target <= 0)) {
+    target = Math.round(entry * 1.15);
+  }
+
+  return {
+    entry: entry ?? (cp > 0 ? cp : 0),
+    stop: stop ?? 0,
+    target: target ?? 0,
+  };
+}
+
 function mapToolInputToLegacy(input) {
   if (!input || typeof input !== "object") return null;
 
@@ -541,6 +584,8 @@ function mapToolInputToLegacy(input) {
     .filter(Boolean)
     .filter((s) => s.condition || s.strategy);
 
+  const prices = resolveOpinionPrices(j.entryPrice ?? j.entry, j.stopLoss ?? j.stop, j.target, null);
+
   return {
     summary: {
       signal: mapDirectionToSignal(summary.direction || summary.signal),
@@ -557,12 +602,12 @@ function mapToolInputToLegacy(input) {
     },
     chart: sanitizeStr(input.chartAnalysis || input.chart),
     opinion: {
-      short: sanitizeStr(j.shortTerm || j.short),
-      mid: sanitizeStr(j.midTerm || j.mid),
-      long: sanitizeStr(j.longTerm || j.long),
-      entry: toNum(j.entryPrice ?? j.entry),
-      stop: toNum(j.stopLoss ?? j.stop),
-      target: toNum(j.target),
+      short: sanitizeStr(j.shortTerm || j.short) || "단기 전망 정보가 없습니다.",
+      mid: sanitizeStr(j.midTerm || j.mid) || "중기 전망 정보가 없습니다.",
+      long: sanitizeStr(j.longTerm || j.long) || "장기 전망 정보가 없습니다.",
+      entry: prices.entry,
+      stop: prices.stop,
+      target: prices.target,
       comment: sanitizeStr(j.aiComment || j.comment),
       scenarios,
     },
@@ -697,6 +742,8 @@ function normalizeAnalysis(raw, quote) {
         .filter((s) => s.condition || s.strategy)
     : [];
 
+  const prices = resolveOpinionPrices(opinion.entry, opinion.stop, opinion.target, price);
+
   return {
     summary: {
       signal: normalizeSignal(summary.signal),
@@ -713,12 +760,12 @@ function normalizeAnalysis(raw, quote) {
     },
     chart: sanitizeStr(raw.chart),
     opinion: {
-      short: sanitizeStr(opinion.short),
-      mid: sanitizeStr(opinion.mid),
-      long: sanitizeStr(opinion.long),
-      entry: toNum(opinion.entry) ?? price,
-      stop: toNum(opinion.stop) ?? 0,
-      target: toNum(opinion.target) ?? 0,
+      short: sanitizeStr(opinion.short) || "단기 전망 정보가 없습니다.",
+      mid: sanitizeStr(opinion.mid) || "중기 전망 정보가 없습니다.",
+      long: sanitizeStr(opinion.long) || "장기 전망 정보가 없습니다.",
+      entry: prices.entry,
+      stop: prices.stop,
+      target: prices.target,
       comment: sanitizeStr(opinion.comment),
       scenarios,
     },
@@ -781,7 +828,12 @@ function buildUserPrompt(quote, stockName, today, indicators) {
     "",
     "6번 차트 — 제공된 실제 MA/RSI 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
     "",
-    "7번 AI 주관적 판단 — short/mid/long + scenarios A/B/C(확률 합 100%) + comment. 5번 재료 반영 필수.",
+    `7번 AI 주관적 판단 (aiJudgment 필수 — 하위 필드 절대 누락 금지):
+- shortTerm, midTerm, longTerm: 문자열 필수
+- entryPrice, stopLoss, target: 숫자 필수(0 금지). 현재가 ${quote.currentPrice || "—"}원 기준
+  entryPrice=현재가±1~2%, stopLoss=entry-3~5%, target=entry+10~20%
+- scenarioA/B/C probability 합 100, aiComment 3문장 이상
+- 5번 재료 반영 필수`,
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
     "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",

@@ -307,11 +307,13 @@
       return {
         stockName: data.stockName || "",
         stockCode: data.stockCode || code,
+        market: data.market || "",
         currentPrice: data.currentPrice,
         changeRate: data.changeRate,
         high52w: toNum(raw1.w52_hgpr),
         low52w: toNum(raw1.w52_lwpr),
         marketCapRaw: data.marketCapRaw || raw1.hts_avls || raw1.stck_avls || "",
+        pbr: toNum(raw1.pbr ?? data.financials?.pbr),
       };
     } catch (err) {
       console.warn("[AI분석] quick quote 실패", err);
@@ -319,24 +321,108 @@
     }
   }
 
-  function renderLoadingQuoteHeader(quote, fallbackName, fallbackCode) {
-    const name = (quote && quote.stockName) || fallbackName || "";
-    const code = (quote && quote.stockCode) || fallbackCode || "";
-    const priceCls = chgClass(quote && quote.changeRate);
+  function fmtPbr(n) {
+    const v = toNum(n);
+    if (v == null) return "—";
+    return v.toFixed(1);
+  }
+
+  function renderMetaGrid(opts) {
+    const o = opts || {};
+    const cells = [
+      ["52주 고점", fmtPrice(o.high52w)],
+      ["52주 저점", fmtPrice(o.low52w)],
+      ["시가총액", formatMarketCapPretty(o.marketCapRaw)],
+      ["PBR", fmtPbr(o.pbr)],
+    ];
     return (
-      `<div class="ai-loading-quote">` +
-      `<div class="ai-loading-quote__top">` +
-      `<h2 class="ai-loading-quote__name">${escapeHtml(name)}</h2>` +
-      `<span class="ai-loading-quote__code">${escapeHtml(code)}</span>` +
-      `</div>` +
-      `<div class="ai-loading-quote__stats">` +
-      `<div class="ai-loading-quote__price ${priceCls}">${escapeHtml(fmtPrice(quote && quote.currentPrice))}<span class="ai-loading-quote__unit">원</span></div>` +
-      `<div class="ai-loading-quote__chg ${priceCls}">${escapeHtml(fmtPct(quote && quote.changeRate))}</div>` +
-      `<div class="ai-loading-quote__meta"><span>52주 고</span><strong>${escapeHtml(fmtPrice(quote && quote.high52w))}</strong></div>` +
-      `<div class="ai-loading-quote__meta"><span>52주 저</span><strong>${escapeHtml(fmtPrice(quote && quote.low52w))}</strong></div>` +
-      `<div class="ai-loading-quote__meta"><span>시총</span><strong>${escapeHtml(formatMarketCapPretty(quote && quote.marketCapRaw))}</strong></div>` +
-      `</div></div>`
+      `<div class="ai-stock-meta">` +
+      cells
+        .map(
+          ([label, val]) =>
+            `<div class="ai-stock-meta__cell"><span class="ai-stock-meta__label">${escapeHtml(label)}</span><span class="ai-stock-meta__value">${escapeHtml(val)}</span></div>`
+        )
+        .join("") +
+      `</div>`
     );
+  }
+
+  function renderStockHeader(data) {
+    const priceCls = chgClass(data.changeRate);
+    const market = String(data.market || "").trim();
+    return (
+      `<header class="ai-stock-header">` +
+      `<div class="ai-stock-header__top">` +
+      `<div class="ai-stock-header__identity">` +
+      `<h2 class="ai-stock-header__name">${escapeHtml(data.stockName || "")}</h2>` +
+      `<div class="ai-stock-header__sub">` +
+      `<span class="ai-stock-header__code">${escapeHtml(data.stockCode || "")}</span>` +
+      (market ? `<span class="ai-stock-header__market">${escapeHtml(market)}</span>` : "") +
+      `</div></div>` +
+      `<div class="ai-stock-header__quote ${priceCls}">` +
+      `<div class="ai-stock-header__price">${escapeHtml(fmtPrice(data.currentPrice))}<span class="ai-stock-header__won">원</span></div>` +
+      `<div class="ai-stock-header__chg">${escapeHtml(fmtPct(data.changeRate))}</div>` +
+      `</div></div>` +
+      renderMetaGrid(data) +
+      `</header>`
+    );
+  }
+
+  function renderLoadingQuoteHeader(quote, fallbackName, fallbackCode) {
+    const payload = {
+      stockName: (quote && quote.stockName) || fallbackName || "",
+      stockCode: (quote && quote.stockCode) || fallbackCode || "",
+      market: quote && quote.market,
+      currentPrice: quote && quote.currentPrice,
+      changeRate: quote && quote.changeRate,
+      high52w: quote && quote.high52w,
+      low52w: quote && quote.low52w,
+      marketCapRaw: quote && quote.marketCapRaw,
+      pbr: quote && quote.pbr,
+    };
+    return renderStockHeader(payload);
+  }
+
+  function chartDotClass(line) {
+    const t = String(line || "");
+    if (/엘리어트|파동/i.test(t)) return "ai-chart-dot--green";
+    if (/전고|전저|52주/i.test(t)) return "ai-chart-dot--gray";
+    if (/지지|저항/i.test(t)) return "ai-chart-dot--yellow";
+    if (/일목|구름/i.test(t)) return "ai-chart-dot--purple";
+    if (/RSI/i.test(t)) return "ai-chart-dot--blue";
+    if (/이동평균|MA|20일|60일|120일|200일/i.test(t)) return "ai-chart-dot--red";
+    return "ai-chart-dot--gray";
+  }
+
+  function renderChartText(text) {
+    const raw = String(text || "").trim();
+    if (!raw) return `<p class="ai-chart-text-empty">차트 분석이 없습니다.</p>`;
+    const lines = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    if (lines.length <= 1 && !/①|②|③/.test(raw)) {
+      return `<div class="ai-chart-text"><div class="ai-chart-line"><span class="ai-chart-dot ai-chart-dot--gray"></span><span>${escapeHtml(raw)}</span></div></div>`;
+    }
+    return (
+      `<div class="ai-chart-text">` +
+      lines
+        .map(
+          (line) =>
+            `<div class="ai-chart-line"><span class="ai-chart-dot ${chartDotClass(line)}"></span><span>${escapeHtml(line)}</span></div>`
+        )
+        .join("") +
+      `</div>`
+    );
+  }
+
+  function materialBorderClass(strength) {
+    if (strength === "상") return "ai-mat-card--high";
+    if (strength === "하") return "ai-mat-card--low";
+    return "ai-mat-card--mid";
+  }
+
+  function reflectBarClass(pct) {
+    if (pct <= 30) return "ai-mat-reflect__bar--low";
+    if (pct <= 60) return "ai-mat-reflect__bar--mid";
+    return "ai-mat-reflect__bar--high";
   }
 
   function showLoading(resolved) {
@@ -347,7 +433,7 @@
     let step = 0;
     const header =
       `<div id="ai-loading-quote-host" class="ai-loading-quote-host">` +
-      `<div class="ai-loading-quote ai-loading-quote--pending"><span class="ai-loading-quote__name">${escapeHtml(resolved.name || "")}</span><span class="ai-loading-quote__code">${escapeHtml(resolved.code || "")}</span><span class="ai-loading-quote__pending">시세 불러오는 중…</span></div></div>`;
+      `<div class="ai-loading-quote ai-loading-quote--pending"><p class="ai-loading-quote__pending">${escapeHtml(resolved.name || "")} · ${escapeHtml(resolved.code || "")} — 시세 불러오는 중…</p></div></div>`;
     panel.innerHTML =
       header +
       `<div class="ai-loading-panel" role="status" aria-live="polite">` +
@@ -468,11 +554,10 @@
 
   function renderChartSection(stockCode, stockName, chartText) {
     const sym = tradingViewSymbol(stockCode, stockName);
-    const text = chartText || "차트 분석이 없습니다.";
     return (
       `<div class="ai-chart-block">` +
       `<div class="ai-chart-tv"><iframe class="ai-tv-widget" data-symbol="${escapeHtml(sym)}" title="${escapeHtml(stockName || stockCode)} TradingView chart" src="${escapeHtml(tradingViewUrl(sym))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe></div>` +
-      `<div class="ai-chart-text">${escapeHtml(text)}</div>` +
+      renderChartText(chartText) +
       `</div>`
     );
   }
@@ -499,10 +584,12 @@
                   : "ai-mat-strength--mid";
             const pct = Math.max(0, Math.min(100, toNum(it.reflectionPct) || 0));
             const note = it.reflectionNote || (pct ? `${pct}% 반영` : "");
+            const borderCls = materialBorderClass(strength);
+            const barCls = reflectBarClass(pct);
             return (
-              `<article class="ai-mat-card">` +
+              `<article class="ai-mat-card ${borderCls}">` +
               `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strength)}</span></div>` +
-              `<div class="ai-mat-reflect"><div class="ai-mat-reflect__track"><div class="ai-mat-reflect__bar" style="width:${pct}%"></div></div><span class="ai-mat-reflect__label">${escapeHtml(note)}</span></div>` +
+              `<div class="ai-mat-reflect"><div class="ai-mat-reflect__track"><div class="ai-mat-reflect__bar ${barCls}" style="width:${pct}%"></div></div><span class="ai-mat-reflect__label">${escapeHtml(note)}</span></div>` +
               `<p class="ai-mat-card__judgment">${escapeHtml(it.judgment || "")}</p>` +
               `</article>`
             );
@@ -530,7 +617,6 @@
       isBear ? ["대응전략", s.strategy] : ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
       isBear ? ["목표 하단", s.targetLow != null ? `${fmtPrice(s.targetLow)}원` : null] : ["목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
       isBear ? null : ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
-      ["확률", probText],
     ]
       .filter(Boolean)
       .filter(([, v]) => v)
@@ -539,20 +625,20 @@
           `<div class="ai-scenario-row"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
       )
       .join("");
-    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안</span><span class="ai-scenario__type">${type}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
+    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
   function renderOpinion(op) {
     const o = op && typeof op === "object" ? op : {};
-    const rows = [
-      ["단기(1-2주)", o.short],
-      ["중기(1-3개월)", o.mid],
-      ["장기(6개월-1년)", o.long],
+    const outlooks = [
+      ["단기 (1-2주)", o.short],
+      ["중기 (1-3개월)", o.mid],
+      ["장기 (6개월-1년)", o.long],
     ]
       .filter(([, t]) => t)
       .map(
         ([label, text]) =>
-          `<div class="ai-opinion-row"><span class="ai-opinion-row__label">${escapeHtml(label)}</span><span>${escapeHtml(text)}</span></div>`
+          `<div class="ai-outlook-card"><span class="ai-outlook-card__label">${escapeHtml(label)}</span><p class="ai-outlook-card__text">${escapeHtml(text)}</p></div>`
       )
       .join("");
     const prices = [
@@ -573,7 +659,7 @@
     return (
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
-      `<div class="ai-opinion-grid">${rows || "<p>전망 정보가 없습니다.</p>"}</div>` +
+      `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
       `<div class="ai-opinion-prices">${prices}</div>` +
       `${comment}` +
       `</div>` +
@@ -604,7 +690,6 @@
     const signal = summary.signal || "관망";
     const prob = toNum(summary.probability);
     const probText = prob == null ? "—" : `${prob}%`;
-    const priceCls = chgClass(data.changeRate);
     const errBanner =
       analysis._error && data.analysisError
         ? `<div class="ai-analysis-error" style="margin-bottom:12px">${escapeHtml(data.analysisError)}</div>`
@@ -613,11 +698,11 @@
     panel.hidden = false;
     panel.innerHTML =
       errBanner +
-      `<div class="ai-analysis-stock"><h2 class="ai-analysis-stock__name">${escapeHtml(data.stockName || "")}</h2><span class="ai-analysis-stock__code">${escapeHtml(data.stockCode || "")}</span><span class="ai-analysis-stock__price ${priceCls}">${escapeHtml(fmtPrice(data.currentPrice))}원</span><span class="ai-analysis-stock__chg ${priceCls}">${escapeHtml(fmtPct(data.changeRate))}</span></div>` +
+      renderStockHeader(data) +
       `<div class="ai-analysis-cards">
         <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
-        <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${escapeHtml(analysis.story || "분석 내용이 없습니다.")}</div></article>
-        <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${escapeHtml(analysis.supply || "수급 정보가 없습니다.")}</div></article>
+        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${escapeHtml(analysis.story || "분석 내용이 없습니다.")}</div></article>
+        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${escapeHtml(analysis.supply || "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>

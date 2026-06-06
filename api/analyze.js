@@ -693,6 +693,9 @@ module.exports = async function handler(req, res) {
     high52w: quote.high52w,
     low52w: quote.low52w,
     marketCapRaw: quote.marketCapRaw || "",
+    market: quote.market || "",
+    pbr: quote.pbr == null ? null : quote.pbr,
+    per: quote.per == null ? null : quote.per,
     analysis,
     analysisError: analysisError || undefined,
   });

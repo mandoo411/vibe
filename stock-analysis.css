@@ -100,121 +100,80 @@
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
-/* AI 종목분석 — 7카드 결과 패널 */
+/* ── Design tokens ── */
+#ai-stock-analysis {
+  --color-background-primary: var(--bg-primary, #ffffff);
+  --color-background-secondary: #f6f7fb;
+  --color-border-tertiary: rgba(200, 210, 255, 0.55);
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-up: #e24b4a;
+  --color-down: #3b82f6;
+  --ai-body-size: 15px;
+  --ai-body-lh: 1.8;
+}
+
+[data-theme="dark"] #ai-stock-analysis {
+  --color-background-primary: var(--panel-surface, #1a1f35);
+  --color-background-secondary: #141828;
+  --color-border-tertiary: rgba(255, 255, 255, 0.1);
+  --color-text-secondary: #9ca3af;
+}
+
+/* ── AI 분석 버튼 ── */
+#ai-stock-analysis .ai-search-card__submit {
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 15px rgba(109, 40, 217, 0.4);
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+#ai-stock-analysis .ai-search-card__submit:hover:not(:disabled):not(.is-loading) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+#ai-stock-analysis .ai-search-card__submit.is-loading {
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+#ai-stock-analysis .ai-search-card__submit .ai-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+
+/* ── 결과 패널 ── */
 .ai-analysis-panel {
   margin-top: 20px;
+  font-size: var(--ai-body-size);
+  line-height: var(--ai-body-lh);
 }
 
 .ai-analysis-panel[hidden] {
   display: none !important;
 }
 
-.ai-analysis-stock {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px 14px;
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: var(--bg-primary, #fff);
-  border: 0.5px solid rgba(200, 210, 255, 0.6);
-  box-shadow: 0 2px 10px rgba(51, 57, 191, 0.06);
-}
-
-[data-theme="dark"] .ai-analysis-stock {
-  background: var(--panel-surface, #1a1f35);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.ai-analysis-stock__name {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--text-primary, #131722);
-}
-
-[data-theme="dark"] .ai-analysis-stock__name {
-  color: var(--text-title, #f3f4f6);
-}
-
-.ai-analysis-stock__code {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.ai-analysis-stock__price {
-  margin-left: auto;
-  font-size: 20px;
-  font-weight: 900;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.ai-analysis-stock__price.is-up {
-  color: #e24b4a;
-}
-
-.ai-analysis-stock__price.is-down {
-  color: #3b82f6;
-}
-
-.ai-analysis-stock__chg {
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.ai-analysis-stock__chg.is-up {
-  color: #e24b4a;
-}
-
-.ai-analysis-stock__chg.is-down {
-  color: #3b82f6;
-}
-
-.ai-analysis-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 20px;
-  margin-bottom: 16px;
-  border-radius: 14px;
-  background: rgba(51, 57, 191, 0.06);
-  color: #3339bf;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-[data-theme="dark"] .ai-analysis-status {
-  background: rgba(99, 102, 241, 0.12);
-  color: #a8b4ff;
-}
-
-.ai-analysis-status__spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(51, 57, 191, 0.2);
-  border-top-color: #3339bf;
-  border-radius: 50%;
-  animation: ai-spin 0.8s linear infinite;
-}
-
-@keyframes ai-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .ai-analysis-error {
-  padding: 16px;
-  border-radius: 14px;
+  padding: 14px 16px;
+  border-radius: 10px;
   background: rgba(226, 75, 74, 0.08);
   border: 1px solid rgba(226, 75, 74, 0.25);
   color: #b91c1c;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   text-align: center;
 }
 
@@ -223,61 +182,151 @@
   color: #fca5a5;
 }
 
+/* ── 종목 헤더 ── */
+.ai-stock-header {
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+}
+
+.ai-stock-header__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-bottom: 14px;
+}
+
+.ai-stock-header__identity {
+  min-width: 0;
+}
+
+.ai-stock-header__name {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-stock-header__name {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-stock-header__sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.ai-stock-header__code {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 500;
+}
+
+.ai-stock-header__market {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-background-secondary);
+  font-size: 12px;
+}
+
+.ai-stock-header__quote {
+  text-align: right;
+}
+
+.ai-stock-header__price {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.2;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-stock-header__won {
+  font-size: 14px;
+  margin-left: 2px;
+  font-weight: 500;
+}
+
+.ai-stock-header__chg {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.ai-stock-header__quote.is-up,
+.ai-stock-header__quote.is-up .ai-stock-header__price,
+.ai-stock-header__quote.is-up .ai-stock-header__chg {
+  color: var(--color-up);
+}
+
+.ai-stock-header__quote.is-down,
+.ai-stock-header__quote.is-down .ai-stock-header__price,
+.ai-stock-header__quote.is-down .ai-stock-header__chg {
+  color: var(--color-down);
+}
+
+.ai-stock-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.ai-stock-meta__cell {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+}
+
+.ai-stock-meta__label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.ai-stock-meta__value {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-stock-meta__value {
+  color: var(--text-title, #f3f4f6);
+}
+
+/* ── 섹션 카드 ── */
 .ai-analysis-cards {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
-}
-
-@media (min-width: 768px) {
-  .ai-analysis-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .ai-card--summary {
-    grid-column: 1 / -1;
-  }
-
-  .ai-card--chart {
-    grid-column: 1 / -1;
-  }
-
-  .ai-card--materials {
-    grid-column: 1 / -1;
-  }
-
-  .ai-card--opinion {
-    grid-column: 1 / -1;
-  }
-
-  .ai-card--signals {
-    grid-column: 1 / -1;
-  }
+  gap: 0;
 }
 
 .ai-card {
-  background: var(--bg-primary, #fff);
-  border-radius: 18px;
-  padding: 16px 18px;
-  border: 0.5px solid rgba(200, 210, 255, 0.55);
-  box-shadow: 0 2px 12px rgba(51, 57, 191, 0.06);
-}
-
-[data-theme="dark"] .ai-card {
-  background: var(--panel-surface, #1a1f35);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
 }
 
 .ai-card__title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 900;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text-primary, #131722);
-  letter-spacing: -0.2px;
 }
 
 [data-theme="dark"] .ai-card__title {
@@ -288,27 +337,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: rgba(51, 57, 191, 0.1);
-  color: #3339bf;
-  font-size: 11px;
-  font-weight: 900;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .ai-card__body {
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: var(--ai-body-size);
+  line-height: var(--ai-body-lh);
+  font-weight: 400;
   color: var(--text-primary, #2a2e39);
-  font-weight: 500;
 }
 
 [data-theme="dark"] .ai-card__body {
   color: var(--text-body, #d1d5db);
 }
 
-/* ① 요약 카드 */
+/* ① 요약 */
 .ai-card--summary .ai-card__body {
   display: flex;
   flex-wrap: wrap;
@@ -324,8 +374,8 @@
   height: 32px;
   padding: 0 14px;
   border-radius: 999px;
-  font-size: 14px;
-  font-weight: 900;
+  font-size: 15px;
+  font-weight: 500;
   color: #fff;
 }
 
@@ -334,7 +384,8 @@
 }
 
 .ai-summary-badge--hold {
-  background: #f59e0b;
+  background: #eab308;
+  color: #111;
 }
 
 .ai-summary-badge--avoid {
@@ -348,21 +399,21 @@
 }
 
 .ai-summary-prob__label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .ai-summary-prob__value {
-  font-size: 32px;
-  font-weight: 900;
-  line-height: 1;
-  color: #3339bf;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-primary, #131722);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 [data-theme="dark"] .ai-summary-prob__value {
-  color: #a8b4ff;
+  color: var(--text-title, #f3f4f6);
 }
 
 .ai-summary-desc {
@@ -396,13 +447,13 @@
   padding: 0 8px;
   border-radius: 6px;
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 500;
   color: #fff;
   flex-shrink: 0;
 }
 
 .ai-event__badge--good {
-  background: #16a34a;
+  background: #22c55e;
 }
 
 .ai-event__badge--bad {
@@ -415,110 +466,40 @@
 }
 
 .ai-event__date {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .ai-event-empty {
-  color: var(--text-secondary, #5d606b);
-  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
-/* 로딩 C안 */
+/* ── 로딩 C안 ── */
 .ai-loading-quote-host {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-.ai-loading-quote {
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--bg-primary, #fff);
-  border: 0.5px solid rgba(200, 210, 255, 0.6);
-  box-shadow: 0 2px 10px rgba(51, 57, 191, 0.06);
+.ai-loading-quote--pending {
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
 }
 
-[data-theme="dark"] .ai-loading-quote {
-  background: var(--panel-surface, #1a1f35);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.ai-loading-quote__top {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.ai-loading-quote__name {
+.ai-loading-quote__pending {
   margin: 0;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.ai-loading-quote__code {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.ai-loading-quote__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-  align-items: center;
-}
-
-.ai-loading-quote__price {
-  font-size: 22px;
-  font-weight: 900;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.ai-loading-quote__unit {
-  font-size: 14px;
-  margin-left: 2px;
-}
-
-.ai-loading-quote__chg {
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.ai-loading-quote__meta {
-  display: flex;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-secondary, #5d606b);
-}
-
-.ai-loading-quote__meta strong {
-  color: var(--text-primary, #131722);
-  font-weight: 800;
-}
-
-[data-theme="dark"] .ai-loading-quote__meta strong {
-  color: var(--text-title, #f3f4f6);
-}
-
-.ai-loading-quote--pending .ai-loading-quote__pending {
-  display: block;
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--text-secondary, #5d606b);
+  font-size: 15px;
+  color: var(--color-text-secondary);
 }
 
 .ai-loading-panel {
-  padding: 20px 16px;
-  border-radius: 16px;
-  background: rgba(51, 57, 191, 0.06);
+  padding: 18px 20px;
+  border-radius: 12px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
   text-align: center;
-}
-
-[data-theme="dark"] .ai-loading-panel {
-  background: rgba(99, 102, 241, 0.12);
 }
 
 .ai-loading-progress {
@@ -531,68 +512,65 @@
 .ai-loading-progress__track {
   flex: 1;
   height: 8px;
-  border-radius: 999px;
-  background: rgba(51, 57, 191, 0.15);
+  border-radius: 4px;
+  background: var(--color-background-secondary);
   overflow: hidden;
 }
 
 .ai-loading-progress__bar {
   height: 100%;
   width: 0;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #5560e8, #3339bf);
+  border-radius: 4px;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
   transition: width 0.35s ease;
 }
 
 .ai-loading-progress__pct {
   min-width: 36px;
-  font-size: 12px;
-  font-weight: 800;
-  color: #3339bf;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
 .ai-loading-panel__msg {
-  margin: 0 0 6px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #3339bf;
-}
-
-[data-theme="dark"] .ai-loading-panel__msg,
-[data-theme="dark"] .ai-loading-progress__pct {
-  color: #a8b4ff;
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
 .ai-loading-panel__hint {
   margin: 0;
-  font-size: 11px;
-  color: var(--text-secondary, #5d606b);
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
-/* ⑤ 재료 분석 */
+/* ── ⑤ 재료 분석 ── */
 .ai-mat-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-@media (min-width: 768px) {
-  .ai-mat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .ai-mat-card {
   padding: 12px 14px;
-  border-radius: 14px;
-  border: 0.5px solid rgba(200, 210, 255, 0.55);
-  background: rgba(51, 57, 191, 0.04);
+  margin-bottom: 10px;
+  border-radius: 0 8px 8px 0;
+  background: var(--color-background-secondary);
+  border-left: 3px solid #eab308;
 }
 
-[data-theme="dark"] .ai-mat-card {
-  background: rgba(99, 102, 241, 0.08);
-  border-color: rgba(255, 255, 255, 0.1);
+.ai-mat-card--high {
+  border-left-color: #e24b4a;
+}
+
+.ai-mat-card--mid {
+  border-left-color: #eab308;
+}
+
+.ai-mat-card--low {
+  border-left-color: #9ca3af;
 }
 
 .ai-mat-card__head {
@@ -604,31 +582,32 @@
 }
 
 .ai-mat-card__name {
-  font-size: 14px;
-  font-weight: 900;
-  line-height: 1.35;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .ai-mat-strength {
   flex-shrink: 0;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 500;
   padding: 2px 8px;
   border-radius: 999px;
-  color: #fff;
 }
 
 .ai-mat-strength--high {
-  background: #e24b4a;
+  background: rgba(226, 75, 74, 0.15);
+  color: #e24b4a;
 }
 
 .ai-mat-strength--mid {
-  background: #f59e0b;
-  color: #111;
+  background: rgba(234, 179, 8, 0.2);
+  color: #a16207;
 }
 
 .ai-mat-strength--low {
-  background: #9ca3af;
+  background: rgba(156, 163, 175, 0.25);
+  color: #6b7280;
 }
 
 .ai-mat-reflect {
@@ -636,8 +615,8 @@
 }
 
 .ai-mat-reflect__track {
-  height: 8px;
-  border-radius: 999px;
+  height: 6px;
+  border-radius: 3px;
   background: rgba(156, 163, 175, 0.25);
   overflow: hidden;
   margin-bottom: 4px;
@@ -645,67 +624,73 @@
 
 .ai-mat-reflect__bar {
   height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #9ca3af, #22c55e);
+  border-radius: 3px;
   transition: width 0.4s ease;
 }
 
+.ai-mat-reflect__bar--low {
+  background: #e24b4a;
+}
+
+.ai-mat-reflect__bar--mid {
+  background: #eab308;
+}
+
+.ai-mat-reflect__bar--high {
+  background: #22c55e;
+}
+
 .ai-mat-reflect__label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .ai-mat-card__judgment {
   margin: 0;
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.ai-mat-unreflected,
-.ai-mat-summary {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
 .ai-mat-unreflected {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
 }
 
 .ai-mat-summary {
-  background: rgba(51, 57, 191, 0.08);
-  border: 1px solid rgba(51, 57, 191, 0.2);
-}
-
-[data-theme="dark"] .ai-mat-summary {
-  background: rgba(99, 102, 241, 0.12);
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
 }
 
 .ai-mat-unreflected__label,
 .ai-mat-summary__label {
   display: block;
-  font-size: 11px;
-  font-weight: 900;
+  font-size: 12px;
+  font-weight: 500;
   margin-bottom: 6px;
-  color: #3339bf;
+  color: var(--color-text-secondary);
 }
 
 .ai-mat-unreflected p,
 .ai-mat-summary p {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 15px;
+  line-height: 1.7;
   white-space: pre-line;
 }
 
 .ai-mat-empty {
   margin: 0;
-  color: var(--text-secondary, #5d606b);
+  color: var(--color-text-secondary);
 }
 
-/* ⑤ 차트 + TradingView */
+/* ── ⑥ 차트 ── */
 .ai-chart-block {
   display: flex;
   flex-direction: column;
@@ -715,15 +700,10 @@
 .ai-chart-tv {
   width: 100%;
   height: 400px;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 0.5px solid rgba(200, 210, 255, 0.55);
-  background: var(--bg-primary, #fff);
-}
-
-[data-theme="dark"] .ai-chart-tv {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: #131722;
+  border: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
 }
 
 .ai-tv-widget {
@@ -734,21 +714,61 @@
 }
 
 .ai-chart-text {
-  white-space: pre-line;
-  line-height: 1.65;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
+.ai-chart-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--ai-body-size);
+  line-height: var(--ai-body-lh);
+}
+
+.ai-chart-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 50%;
+}
+
+.ai-chart-dot--red {
+  background: #e24b4a;
+}
+
+.ai-chart-dot--blue {
+  background: #3b82f6;
+}
+
+.ai-chart-dot--purple {
+  background: #7c3aed;
+}
+
+.ai-chart-dot--yellow {
+  background: #eab308;
+}
+
+.ai-chart-dot--gray {
+  background: #9ca3af;
+}
+
+.ai-chart-dot--green {
+  background: #22c55e;
+}
+
+.ai-chart-text-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* ── ⑦ AI 주관적 판단 ── */
 .ai-opinion-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-}
-
-@media (min-width: 768px) {
-  .ai-opinion-layout {
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
+  gap: 14px;
 }
 
 .ai-opinion-col {
@@ -758,135 +778,65 @@
 .ai-opinion-col--right {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.ai-scenario {
-  border-radius: 14px;
-  padding: 12px 14px 12px 12px;
-  background: var(--bg-primary, #fff);
-  border: 0.5px solid rgba(200, 210, 255, 0.45);
-}
-
-[data-theme="dark"] .ai-scenario {
-  background: #141828;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.ai-scenario--bull {
-  border-left: 4px solid #22c55e;
-}
-
-.ai-scenario--neutral {
-  border-left: 4px solid #eab308;
-}
-
-.ai-scenario--bear {
-  border-left: 4px solid #e24b4a;
-}
-
-.ai-scenario__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.ai-scenario__label {
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.ai-scenario__type {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
-}
-
-.ai-scenario-row {
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: 8px;
-  font-size: 12px;
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.ai-scenario-row__k {
-  font-weight: 800;
-  color: var(--text-secondary, #5d606b);
-}
-
-.ai-scenario-row__v {
-  font-weight: 600;
-}
-
-.ai-scenario-empty {
-  margin: 0;
-  color: var(--text-secondary, #5d606b);
-}
-
-.ai-opinion-grid {
-  display: grid;
   gap: 10px;
 }
 
-.ai-opinion-row {
-  display: grid;
-  grid-template-columns: 52px 1fr;
-  gap: 8px;
-  align-items: start;
+.ai-outlook-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.ai-opinion-row__label {
-  font-size: 11px;
-  font-weight: 900;
-  color: #3339bf;
-  padding-top: 2px;
+.ai-outlook-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
 }
 
-[data-theme="dark"] .ai-opinion-row__label {
-  color: #a8b4ff;
+.ai-outlook-card__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.ai-outlook-card__text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.ai-outlook-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
 }
 
 .ai-opinion-prices {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(200, 210, 255, 0.5);
-}
-
-[data-theme="dark"] .ai-opinion-prices {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
 }
 
 .ai-opinion-price {
-  flex: 1;
-  min-width: 90px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(51, 57, 191, 0.06);
+  padding: 12px 10px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
   text-align: center;
-}
-
-[data-theme="dark"] .ai-opinion-price {
-  background: rgba(99, 102, 241, 0.1);
 }
 
 .ai-opinion-price__label {
   display: block;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-secondary, #5d606b);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 .ai-opinion-price__value {
-  font-size: 15px;
-  font-weight: 900;
+  display: block;
+  font-size: 17px;
+  font-weight: 500;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   color: var(--text-primary, #131722);
 }
@@ -896,20 +846,84 @@
 }
 
 .ai-opinion-comment {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(51, 57, 191, 0.05);
-  font-size: 13px;
-  font-weight: 600;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  font-size: 15px;
+  font-weight: 400;
   font-style: italic;
+  line-height: 1.7;
 }
 
-[data-theme="dark"] .ai-opinion-comment {
-  background: rgba(99, 102, 241, 0.08);
+.ai-scenario {
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+  background: var(--color-background-secondary);
+  border-left: 4px solid #eab308;
 }
 
-/* ⑦ 신호 요약 */
+.ai-scenario--bull {
+  border-left-color: #22c55e;
+}
+
+.ai-scenario--neutral {
+  border-left-color: #eab308;
+}
+
+.ai-scenario--bear {
+  border-left-color: #e24b4a;
+}
+
+.ai-scenario__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-scenario__label {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.ai-scenario__prob {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.ai-scenario-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ai-scenario-row__k {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.ai-scenario-row__v {
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-scenario-row__v {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-scenario-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+/* ── ⑧ 신호 요약 ── */
 .ai-signals {
   display: flex;
   flex-direction: column;
@@ -920,21 +934,21 @@
   display: flex;
   justify-content: center;
   gap: 24px;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .ai-signals__up {
-  color: #e24b4a;
+  color: var(--color-up);
 }
 
 .ai-signals__down {
-  color: #3b82f6;
+  color: var(--color-down);
 }
 
 .ai-signals__gauge {
-  height: 12px;
-  border-radius: 999px;
+  height: 8px;
+  border-radius: 4px;
   background: rgba(59, 130, 246, 0.15);
   overflow: hidden;
   display: flex;
@@ -942,19 +956,17 @@
 
 .ai-signals__gauge-up {
   height: 100%;
-  background: linear-gradient(90deg, #e24b4a, #f87171);
-  border-radius: 999px 0 0 999px;
+  background: #e24b4a;
   transition: width 0.4s ease;
 }
 
 .ai-signals__gauge-down {
   height: 100%;
-  background: linear-gradient(90deg, #60a5fa, #3b82f6);
-  border-radius: 0 999px 999px 0;
+  background: #3b82f6;
   transition: width 0.4s ease;
 }
 
-/* 스켈레톤 */
+/* ── 스켈레톤 ── */
 .ai-card.is-skeleton .ai-card__body {
   display: flex;
   flex-direction: column;
@@ -992,6 +1004,12 @@
   width: 78%;
 }
 
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes ai-skel-shimmer {
   0% {
     background-position: 200% 0;
@@ -1001,19 +1019,64 @@
   }
 }
 
-.ai-search-card__submit.is-loading {
-  opacity: 0.75;
-  pointer-events: none;
+/* ── Desktop (769px+) ── */
+@media (min-width: 769px) {
+  .ai-analysis-cards {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 14px;
+  }
+
+  .ai-card--summary,
+  .ai-card--materials,
+  .ai-card--chart,
+  .ai-card--opinion,
+  .ai-card--signals {
+    grid-column: 1 / -1;
+  }
+
+  .ai-opinion-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
 }
 
-.ai-search-card__submit .ai-btn-spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  margin-right: 6px;
-  vertical-align: -2px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: ai-spin 0.8s linear infinite;
+/* ── Mobile (768px 이하) ── */
+@media (max-width: 768px) {
+  #ai-stock-analysis {
+    --ai-body-size: 14px;
+  }
+
+  #ai-stock-analysis .ai-search-card__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #ai-stock-analysis .ai-search-card__submit {
+    width: 100%;
+  }
+
+  .ai-stock-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ai-stock-header,
+  .ai-card,
+  .ai-loading-panel,
+  .ai-loading-quote--pending {
+    padding: 14px 16px;
+    border-radius: 10px;
+  }
+
+  .ai-card {
+    margin-bottom: 12px;
+  }
+
+  .ai-opinion-price__value {
+    font-size: 15px;
+  }
+
+  .ai-chart-tv,
+  .ai-tv-widget {
+    height: 280px;
+  }
 }

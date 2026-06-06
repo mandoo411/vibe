@@ -14,7 +14,7 @@ const WEB_SEARCH_TOOLS = [
   },
 ];
 
-const CLAUDE_MODEL = "claude-sonnet-4-5-20251022";
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 
 /** 프롬프트 주입용 한국 시각 기준 오늘 날짜 */
 function todayKoreaLabel() {

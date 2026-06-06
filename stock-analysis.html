@@ -33,7 +33,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./hub.css" />
-    <link rel="stylesheet" href="./stock-analysis.css?v=9" />
+    <link rel="stylesheet" href="./stock-analysis.css?v=10" />
   </head>
   <body class="page-tm-v2" data-tm-tab="analysis">
     <div class="tm-wrap">
@@ -90,7 +90,7 @@
             <span class="ai-search-card__badge">NEW</span>
           </div>
 
-          <div class="ai-search-card__row">
+          <div class="ai-search-input-row ai-search-card__row">
             <div class="ai-search-card__input-wrap">
               <input
                 id="ai-stock-query"
@@ -104,7 +104,7 @@
               />
               <div id="ai-stock-ac" class="rt-ac" hidden role="listbox" aria-label="종목 자동완성"></div>
             </div>
-            <button id="ai-stock-submit" class="ai-search-card__submit" type="button">AI 분석</button>
+            <button id="analyzeBtn" type="button">AI 분석</button>
           </div>
 
           <p class="ai-search-card__hint">
@@ -162,6 +162,6 @@
       </nav>
     </div>
 
-    <script src="./stock-analysis.js?v=9"></script>
+    <script src="./stock-analysis.js?v=10"></script>
   </body>
 </html>

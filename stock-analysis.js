@@ -650,28 +650,6 @@
     });
   }
 
-  function renderChartWhileAnalyzing(resolved, quote, chartData) {
-    if (!panel || !chartData) return;
-    const headerHost = document.getElementById("ai-loading-quote-host");
-    if (headerHost) headerHost.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
-
-    let slot = document.getElementById("ai-chart-preview-slot");
-    if (!slot) {
-      slot = document.createElement("div");
-      slot.id = "ai-chart-preview-slot";
-      slot.className = "ai-chart-preview-slot";
-      const loadingPanel = panel.querySelector(".ai-loading-panel");
-      if (loadingPanel) panel.insertBefore(slot, loadingPanel);
-      else panel.appendChild(slot);
-    }
-    slot.innerHTML =
-      `<article class="ai-card ai-card--chart">` +
-      `<h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3>` +
-      `<div class="ai-card__body">${renderChartShell(resolved.code, resolved.name, "", false)}</div>` +
-      `</article>`;
-    wireAiChart(resolved.code, chartData, "D");
-  }
-
   function showLoading(resolved) {
     if (!panel) return;
     clearLoadingTimer();
@@ -693,12 +671,6 @@
       step = (step + 1) % LOADING_STEPS.length;
       updateLoadingMessage(LOADING_STEPS[step]);
     }, 3000);
-
-    void fetchQuickQuote(resolved.code).then((quote) => {
-      const host = document.getElementById("ai-loading-quote-host");
-      if (!host) return;
-      host.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
-    });
   }
 
   function finishLoadingProgress() {
@@ -1015,18 +987,25 @@
       if (input) input.value = resolved.name || resolved.code;
       showLoading(resolved);
 
-      const quotePromise = fetchQuickQuote(resolved.code);
-      let chartData = null;
-      if (isDomesticCode(resolved.code)) {
-        chartData = await fetchKisChart(resolved.code, "D");
-        const quote = await quotePromise;
-        renderChartWhileAnalyzing(resolved, quote, chartData);
-      } else {
-        await quotePromise;
-      }
+      void fetchQuickQuote(resolved.code).then((quote) => {
+        const host = document.getElementById("ai-loading-quote-host");
+        if (!host) return;
+        host.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
+      });
 
-      const indicators = extractChartIndicators(chartData);
-      const data = await fetchAnalysis(resolved.code, resolved.name, indicators);
+      const isDomestic = isDomesticCode(resolved.code);
+      const chartPromise = isDomestic
+        ? fetchKisChart(resolved.code, "D").catch((err) => {
+            console.warn("[AI분석] chart fetch 실패", err);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const analyzePromise = chartPromise.then((chartData) =>
+        fetchAnalysis(resolved.code, resolved.name, extractChartIndicators(chartData))
+      );
+
+      const [chartData, data] = await Promise.all([chartPromise, analyzePromise]);
       finishLoadingProgress();
       renderAnalysis(data, chartData, "D");
     } catch (err) {
@@ -1052,7 +1031,7 @@
 
   function init() {
     input = document.getElementById("ai-stock-query");
-    btn = document.getElementById("ai-stock-submit");
+    btn = document.getElementById("analyzeBtn");
     panel = document.getElementById("ai-analysis-panel");
 
     console.log("[AI분석] init", {
@@ -1065,7 +1044,7 @@
     });
 
     if (!btn) {
-      console.error("[AI분석] #ai-stock-submit 없음 — 리스너 미등록");
+      console.error("[AI분석] #analyzeBtn 없음 — 리스너 미등록");
       return;
     }
     if (!panel) {

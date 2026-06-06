@@ -120,35 +120,47 @@
   --color-text-secondary: #9ca3af;
 }
 
-/* ── AI 분석 버튼 ── */
-#ai-stock-analysis .ai-search-card__submit {
+/* ── 검색창 + AI 분석 버튼 ── */
+#ai-stock-analysis .ai-search-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#ai-stock-analysis button#analyzeBtn {
   background: linear-gradient(135deg, #1d4ed8, #7c3aed);
   color: #ffffff;
   font-size: 15px;
   font-weight: 500;
-  padding: 12px 28px;
-  border-radius: 8px;
+  padding: 0 28px;
+  height: 44px;
   border: none;
+  border-radius: 8px;
   box-shadow: 0 4px 15px rgba(109, 40, 217, 0.4);
-  transition: filter 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.2s, transform 0.2s;
+  flex-shrink: 0;
 }
 
-#ai-stock-analysis .ai-search-card__submit:hover:not(:disabled):not(.is-loading) {
+#ai-stock-analysis button#analyzeBtn:hover:not(:disabled):not(.is-loading) {
   filter: brightness(1.1);
   transform: translateY(-1px);
 }
 
-#ai-stock-analysis .ai-search-card__submit.is-loading {
+#ai-stock-analysis button#analyzeBtn.is-loading {
   opacity: 0.85;
   pointer-events: none;
 }
 
-#ai-stock-analysis .ai-search-card__submit .ai-btn-spinner {
+#ai-stock-analysis button#analyzeBtn .ai-btn-spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
   margin-right: 6px;
-  vertical-align: -2px;
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
@@ -352,6 +364,7 @@
   line-height: var(--ai-body-lh);
   font-weight: 400;
   color: var(--text-primary, #2a2e39);
+  align-items: flex-start;
 }
 
 [data-theme="dark"] .ai-card__body {
@@ -362,8 +375,8 @@
 .ai-card--summary .ai-card__body {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 14px 20px;
+  align-items: center;
+  gap: 16px;
 }
 
 .ai-summary-badge {
@@ -420,6 +433,7 @@
   flex: 1;
   min-width: 200px;
   margin: 0;
+  align-self: center;
   white-space: pre-line;
 }
 
@@ -1123,12 +1137,12 @@
     --ai-body-size: 14px;
   }
 
-  #ai-stock-analysis .ai-search-card__row {
+  #ai-stock-analysis .ai-search-input-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  #ai-stock-analysis .ai-search-card__submit {
+  #ai-stock-analysis button#analyzeBtn {
     width: 100%;
   }
 

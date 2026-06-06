@@ -10,10 +10,13 @@ const WEB_SEARCH_TOOLS = [
   {
     type: "web_search_20250305",
     name: "web_search",
-    max_uses: 1,
+    max_uses: 2,
   },
 ];
 
+const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+
+/** 프롬프트 주입용 한국 시각 기준 오늘 날짜 */
 function todayKoreaLabel() {
   return new Date().toLocaleDateString("ko-KR", {
     timeZone: "Asia/Seoul",
@@ -23,20 +26,41 @@ function todayKoreaLabel() {
   });
 }
 
+function seoulYear() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+  }).format(new Date());
+}
+
 function buildSystemPrompt(today) {
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요. 학습데이터의 과거 정보가 아니라 web_search 결과의 최신 뉴스를 반드시 사용하세요.`,
     "당신은 한국 주식 전문 애널리스트입니다.",
-    "분석을 시작하기 전 반드시 web_search로 해당 종목의 최근 1주일 뉴스를 검색하세요. 검색 없이 JSON을 작성하지 마세요.",
-    "web_search 결과는 2번(story, 왜 지금 이 가격인가)과 4번(events, 다가오는 이벤트)에 반드시 반영하세요.",
-    "제공된 KIS 실시간 시세와 web_search로 확인한 최신 뉴스만 근거로 분석하세요.",
+    "JSON 작성 전 web_search를 정확히 2회 실행하세요. 검색 없이 답변하지 마세요.",
+    "web_search 결과는 2번(story)과 4번(events)에 반드시 반영하세요.",
+    "제공된 KIS 실시간 시세와 web_search 최신 뉴스만 근거로 분석하세요.",
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
-    "2024년 등 과거 뉴스를 학습 기억으로 추측하지 마세요. 검색으로 확인된 최신 정보만 사용하세요.",
     "",
-    "4번 '다가오는 이벤트' 작성 규칙:",
-    `- 반드시 ${today} 이후의 미래 이벤트만 넣을 것. 과거 날짜는 절대 금지.`,
-    "- events[].date는 오늘 이후 날짜만 허용. 확인되지 않은 일정은 넣지 말 것.",
-    "- web_search로 확인된 최신 뉴스·공시·일정에 근거할 것.",
+    "4번 '다가오는 이벤트' 규칙:",
+    `- ${today} 이후 날짜가 언급된 것만 포함. 과거 날짜·과거형 문장(했다/밝혔다/기록했다) 완전 제외.`,
+    '- "예정" "방문 예정" "출시 예정" "발표 예정" "~할 계획" 키워드가 있는 뉴스만 이벤트 후보로 선별.',
+    "- 이벤트 제목은 구체적으로 (❌ CEO 해외 일정 → ✅ 젠슨황 방한 / 삼성 CEO 회동 예정).",
+    "- 확실한 미래 일정이 없으면 events를 빈 배열 []로 두고 chart나 story에 언급하지 말 것. 프론트는 빈 배열 시 '현재 확인된 예정 이벤트 없음' 표시.",
+    '- 날짜 불명확하면 "2026년 하반기 예정"처럼 쓰고 억지로 구체 날짜 넣지 말 것.',
+    "",
+    "5번 '차트 흐름 분석' 규칙 — KIS 시세 데이터 기반, 아래 항목을 모두 포함하고 각 항목마다 수치·근거 명시:",
+    "- 이동평균선: 20/60/120/200일선 대비 현재가 위치",
+    "- RSI 추정 (최근 가격 흐름 기반)",
+    "- 일목균형표: 전환선/기준선/구름대 위·아래 여부",
+    "- 지지선·저항선 수치 (예: 1차 지지 116,500원 / 2차 지지 112,000원)",
+    "- 52주 전고점·전저점(입력 데이터 high52w/low52w) 언급",
+    "- 엘리어트 파동 관점 현재 구간 추정",
+    "",
+    "6번 'AI 주관적 판단' 규칙:",
+    "- short=단기(1-2주), mid=중기(1-3개월), long=장기(6개월-1년) 전망을 각각 상세히",
+    "- scenarios A(강세)/B(중립)/C(약세): 조건·진입·목표·손절(또는 C는 strategy·목표하단)·probability(%) 필수",
+    "- comment: AI 총평 3-5문장, 실제 트레이더 말투",
     "",
     "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
   ].join("\n");
@@ -55,13 +79,41 @@ const CLAUDE_RESPONSE_SCHEMA = `{
   ],
   "chart": "차트 흐름 분석",
   "opinion": {
-    "short": "단기 시나리오",
-    "mid": "중기 시나리오",
-    "long": "장기 시나리오",
+    "short": "단기(1-2주) 전망",
+    "mid": "중기(1-3개월) 전망",
+    "long": "장기(6개월-1년) 전망",
     "entry": 0,
     "stop": 0,
     "target": 0,
-    "comment": "저라면 이렇게 접근하겠다"
+    "comment": "AI 총평 3-5문장",
+    "scenarios": [
+      {
+        "label": "A",
+        "type": "강세",
+        "condition": "발동 조건",
+        "entry": 0,
+        "target": 0,
+        "stop": 0,
+        "probability": 40
+      },
+      {
+        "label": "B",
+        "type": "중립",
+        "condition": "발동 조건",
+        "entry": 0,
+        "target": 0,
+        "stop": 0,
+        "probability": 35
+      },
+      {
+        "label": "C",
+        "type": "약세",
+        "condition": "발동 조건",
+        "strategy": "대응 전략",
+        "targetLow": 0,
+        "probability": 25
+      }
+    ]
   },
   "signals": { "up": 6, "down": 2 }
 }`;
@@ -308,6 +360,7 @@ function normalizeAnalysis(raw, quote) {
         stop: 0,
         target: 0,
         comment: "",
+        scenarios: [],
       },
       signals: { up: 0, down: 0 },
       _error: true,
@@ -335,6 +388,23 @@ function normalizeAnalysis(raw, quote) {
   const up = toNum(signals.up);
   const down = toNum(signals.down);
 
+  const scenarios = Array.isArray(opinion.scenarios)
+    ? opinion.scenarios
+        .filter((s) => s && typeof s === "object")
+        .map((s) => ({
+          label: sanitizeStr(s.label) || "A",
+          type: sanitizeStr(s.type) || "중립",
+          condition: sanitizeStr(s.condition),
+          entry: toNum(s.entry),
+          target: toNum(s.target),
+          stop: toNum(s.stop),
+          strategy: sanitizeStr(s.strategy),
+          targetLow: toNum(s.targetLow ?? s.target_low),
+          probability: toNum(s.probability),
+        }))
+        .filter((s) => s.condition || s.strategy)
+    : [];
+
   return {
     summary: {
       signal: normalizeSignal(summary.signal),
@@ -353,6 +423,7 @@ function normalizeAnalysis(raw, quote) {
       stop: toNum(opinion.stop) ?? 0,
       target: toNum(opinion.target) ?? 0,
       comment: sanitizeStr(opinion.comment),
+      scenarios,
     },
     signals: {
       up: up == null ? 0 : Math.max(0, Math.round(up)),
@@ -363,30 +434,33 @@ function normalizeAnalysis(raw, quote) {
 
 function claudeModelCandidates() {
   const envModel = sanitizeStr(process.env.ANTHROPIC_MODEL);
-  const sonnetModels = ["claude-sonnet-4-5", "claude-sonnet-4-20250514"];
-  const models = [];
-  if (envModel && /sonnet/i.test(envModel)) models.push(envModel);
-  return [...new Set([...models, ...sonnetModels])];
+  if (envModel === CLAUDE_MODEL) return [CLAUDE_MODEL];
+  return [CLAUDE_MODEL];
 }
 
 function buildUserPrompt(quote, stockName, today) {
   const name = stockName || quote.stockName || quote.stockCode;
+  const year = seoulYear();
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
     `분석 종목: ${name} (${quote.stockCode})`,
     "",
-    "【필수】 분석 JSON 작성 전 web_search 실행:",
-    `- '${name}' 또는 '${name} ${quote.stockCode}' 관련 최근 1주일 뉴스를 반드시 검색하세요.`,
-    `- 검색 쿼리 예: '${name} 주가 뉴스 최근 1주', '${name} 실적 일정', '${name} 공시'`,
-    "- 검색 결과를 2번 story(왜 지금 이 가격인가)와 4번 events(다가오는 이벤트)에 반드시 반영하세요.",
-    "- 학습데이터·과거 기억으로 채우지 말고, web_search로 확인된 최신 정보만 사용하세요.",
+    "【필수】 web_search 2회 — JSON 작성 전 반드시 실행:",
+    `- 검색1 (한국어): "${name} 일정 예정 ${year}"`,
+    `- 검색2 (영어): "[${name}의 영문기업명 또는 CEO명] schedule event ${year}" (영문명/CEO명 추정 가능하면 사용)`,
+    "- 2회 검색 결과를 2번 story(왜 지금 이 가격)와 4번 events(다가오는 이벤트)에 반드시 반영.",
+    "- 학습데이터·과거 기억 금지. web_search 확인 정보만 사용.",
     "",
     "4번 '다가오는 이벤트' 규칙:",
-    `- ${today} 이후의 미래 이벤트만 포함. 과거 날짜 절대 금지.`,
-    "- web_search 최신 뉴스·공시에 근거한 실제 예정 일정만 작성.",
-    "- 확인되지 않은 이벤트는 빈 배열 []로 두세요.",
+    `- ${today} 이후 날짜만. "예정/방문 예정/출시 예정/발표 예정/~할 계획" 키워드 있는 것만.`,
+    '- 과거형("했다/밝혔다/기록했다") 완전 제외. 구체적 제목(예: 젠슨황 방한).',
+    "- 미래 일정 없으면 events: []. 날짜 불명확하면 '2026년 하반기 예정' 등으로.",
     "",
-    "아래 KIS 실시간 시세를 함께 참고하고, web_search 후 최종 답변은 반드시 JSON 형식으로만 응답하세요.",
+    "5번 '차트 흐름 분석' — 아래 KIS 시세로 MA20/60/120/200, RSI, 일목, 지지·저항, 52주 고저, 엘리어트 모두 수치 포함.",
+    "",
+    "6번 'AI 주관적 판단' — short/mid/long 상세 + scenarios A/B/C(조건·진입·목표·손절·확률%) + comment 3-5문장.",
+    "",
+    "아래 KIS 실시간 시세를 참고하고, web_search 2회 후 JSON만 응답하세요.",
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",

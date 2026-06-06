@@ -240,7 +240,9 @@
       .map((title, i) => {
         const extra = i === 0 || i === 6 ? " ai-card--summary" : "";
         const sig = i === 6 ? " ai-card--signals" : "";
-        return `<article class="ai-card is-skeleton${extra}${sig}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
+        const chart = i === 4 ? " ai-card--chart" : "";
+        const opinion = i === 5 ? " ai-card--opinion" : "";
+        return `<article class="ai-card is-skeleton${extra}${sig}${chart}${opinion}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
       })
       .join("");
   }
@@ -281,7 +283,7 @@
 
   function renderEvents(events) {
     if (!Array.isArray(events) || !events.length) {
-      return '<p class="ai-card__body">확인된 주요 이벤트가 없습니다.</p>';
+      return '<p class="ai-card__body ai-event-empty">현재 확인된 예정 이벤트 없음</p>';
     }
     return (
       "<ul class=\"ai-event-list\">" +
@@ -295,12 +297,124 @@
     );
   }
 
-  function renderOpinion(op) {
+  function isDarkTheme() {
+    return (
+      document.documentElement.getAttribute("data-theme") === "dark" ||
+      document.body.classList.contains("dark-mode") ||
+      document.body.classList.contains("dark")
+    );
+  }
+
+  function tradingViewSymbol(stockCode, stockName) {
+    const code = String(stockCode || "").replace(/\D/g, "");
+    if (/^\d{6}$/.test(code)) return `KRX:${code}`;
+    const ticker = String(stockName || stockCode || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9.]/g, "");
+    if (!ticker) return "KRX:005930";
+    const nyseTickers = new Set(["BRK.B", "BRK.A", "JPM", "V", "WMT", "XOM", "BAC", "DIS", "T", "KO", "PFE"]);
+    const prefix = nyseTickers.has(ticker) ? "NYSE" : "NASDAQ";
+    return `${prefix}:${ticker}`;
+  }
+
+  function tradingViewMaStudies() {
+    return JSON.stringify(
+      [20, 60, 120, 200].map((length) => ({
+        id: "MASimple@tv-basicstudies",
+        inputs: { length, source: "close" },
+      }))
+    );
+  }
+
+  function tradingViewUrl(symbol) {
+    const isDark = isDarkTheme();
+    const theme = isDark ? "dark" : "light";
+    const chartBg = isDark ? "#131722" : "#ffffff";
+    const params = new URLSearchParams({
+      symbol,
+      interval: "D",
+      timezone: "Asia/Seoul",
+      theme,
+      style: "1",
+      locale: "kr",
+      toolbar_bg: chartBg,
+      bgcolor: chartBg,
+      gridcolor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
+      hide_side_toolbar: "0",
+      allow_symbol_change: "1",
+      save_image: "0",
+      calendar: "0",
+      withdateranges: "1",
+      hideideas: "1",
+      studies: tradingViewMaStudies(),
+      up_color: "#e24b4a",
+      down_color: "#3b82f6",
+      border_up_color: "#e24b4a",
+      border_down_color: "#3b82f6",
+      wick_up_color: "#e24b4a",
+      wick_down_color: "#3b82f6",
+    });
+    if (typeof window.tmTradingViewCandleOverrides === "function") {
+      params.set("overrides", JSON.stringify(window.tmTradingViewCandleOverrides(isDark)));
+    }
+    return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
+  }
+
+  function refreshTradingViewCharts() {
+    document.querySelectorAll(".ai-tv-widget").forEach((iframe) => {
+      const sym = iframe.getAttribute("data-symbol");
+      if (sym) iframe.src = tradingViewUrl(sym);
+    });
+  }
+
+  function renderChartSection(stockCode, stockName, chartText) {
+    const sym = tradingViewSymbol(stockCode, stockName);
+    const text = chartText || "차트 분석이 없습니다.";
+    return (
+      `<div class="ai-chart-block">` +
+      `<div class="ai-chart-tv"><iframe class="ai-tv-widget" data-symbol="${escapeHtml(sym)}" title="${escapeHtml(stockName || stockCode)} TradingView chart" src="${escapeHtml(tradingViewUrl(sym))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe></div>` +
+      `<div class="ai-chart-text">${escapeHtml(text)}</div>` +
+      `</div>`
+    );
+  }
+
+  function scenarioCardClass(label, type) {
+    const t = String(type || label || "").toUpperCase();
+    if (label === "A" || t.includes("강")) return "ai-scenario--bull";
+    if (label === "C" || t.includes("약")) return "ai-scenario--bear";
+    return "ai-scenario--neutral";
+  }
+
+  function renderScenarioCard(s) {
+    const label = escapeHtml(s.label || "?");
+    const type = escapeHtml(s.type || "");
+    const cls = scenarioCardClass(s.label, s.type);
+    const prob = toNum(s.probability);
+    const probText = prob == null ? "—" : `${Math.round(prob)}%`;
+    const isBear = String(s.label) === "C" || String(s.type).includes("약");
+    const lines = [
+      ["조건", s.condition],
+      isBear ? ["대응", s.strategy] : ["진입", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
+      isBear ? ["목표 하단", s.targetLow != null ? `${fmtPrice(s.targetLow)}원` : null] : ["목표", s.target != null ? `${fmtPrice(s.target)}원` : null],
+      isBear ? null : ["손절", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
+    ]
+      .filter(Boolean)
+      .filter(([, v]) => v)
+      .map(
+        ([k, v]) =>
+          `<div class="ai-scenario-row"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
+      )
+      .join("");
+    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안</span><span class="ai-scenario__type">${type}</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
+  }
+
+  function renderOpinion(op, signals) {
     const o = op && typeof op === "object" ? op : {};
     const rows = [
-      ["단기", o.short],
-      ["중기", o.mid],
-      ["장기", o.long],
+      ["단기(1-2주)", o.short],
+      ["중기(1-3개월)", o.mid],
+      ["장기(6개월-1년)", o.long],
     ]
       .filter(([, t]) => t)
       .map(
@@ -318,8 +432,22 @@
           `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(fmtPrice(val))}</span></div>`
       )
       .join("");
+    const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
+    const scenarioHtml = scenarios.length
+      ? scenarios.map(renderScenarioCard).join("")
+      : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
     const comment = o.comment ? `<div class="ai-opinion-comment">"${escapeHtml(o.comment)}"</div>` : "";
-    return `<div class="ai-opinion-grid">${rows || "<p>시나리오 정보가 없습니다.</p>"}</div><div class="ai-opinion-prices">${prices}</div>${comment}`;
+    return (
+      `<div class="ai-opinion-layout">` +
+      `<div class="ai-opinion-col ai-opinion-col--left">` +
+      `<div class="ai-opinion-grid">${rows || "<p>전망 정보가 없습니다.</p>"}</div>` +
+      `<div class="ai-opinion-prices">${prices}</div>` +
+      `<div class="ai-opinion-signals-wrap">${renderSignals(signals)}</div>` +
+      `</div>` +
+      `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +
+      `${comment}` +
+      `</div>`
+    );
   }
 
   function renderSignals(signals) {
@@ -359,8 +487,8 @@
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${escapeHtml(analysis.story || "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${escapeHtml(analysis.supply || "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
-        <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">5</span>차트 흐름 분석</h3><div class="ai-card__body">${escapeHtml(analysis.chart || "차트 분석이 없습니다.")}</div></article>
-        <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">6</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion)}</div></article>
+        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">5</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
+        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">6</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, analysis.signals)}</div></article>
         <article class="ai-card ai-card--signals"><h3 class="ai-card__title"><span class="ai-card__num">7</span>신호 요약</h3><div class="ai-card__body">${renderSignals(analysis.signals)}</div></article>
       </div>`;
   }
@@ -412,6 +540,7 @@
 
       const data = await fetchAnalysis(resolved.code, resolved.name);
       renderAnalysis(data);
+      refreshTradingViewCharts();
     } catch (err) {
       console.error("[AI분석] 실패", err);
       showError((err && err.message) || "분석을 불러오지 못했습니다");
@@ -538,6 +667,14 @@
     }
 
     void loadStockList();
+
+    const themeBtn = document.getElementById("theme-toggle");
+    if (themeBtn && !themeBtn.dataset.aiTvThemeBound) {
+      themeBtn.dataset.aiTvThemeBound = "1";
+      themeBtn.addEventListener("click", () => {
+        setTimeout(refreshTradingViewCharts, 0);
+      });
+    }
 
     document.getElementById("ai-stock-analysis")?.addEventListener("click", (e) => {
       const chip = e.target && e.target.closest ? e.target.closest(".ai-search-popular__chip") : null;

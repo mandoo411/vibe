@@ -1,3 +1,105 @@
+/* 종목 검색 자동완성 (realtime-board.js와 동일 스타일) */
+.ai-search-card__input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-search-card__input-wrap .ai-search-card__input {
+  width: 100%;
+}
+
+.rt-ac {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(40px + 6px);
+  z-index: 20;
+  background: var(--bg-panel, #fff);
+  border: 1px solid var(--border-strong, rgba(200, 210, 255, 0.7));
+  border-radius: 10px;
+  box-shadow: var(--sheet-shadow, 0 8px 24px rgba(51, 57, 191, 0.12));
+  overflow: hidden;
+}
+
+.rt-ac[hidden] {
+  display: none;
+}
+
+.rt-ac-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.rt-ac-item:hover,
+.rt-ac-item.is-active {
+  background: var(--accent-dim, rgba(51, 57, 191, 0.08));
+}
+
+.rt-ac-item__main {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rt-ac-item__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, var(--text-primary, #131722));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rt-ac-item__code {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-dim, var(--text-secondary, #5d606b));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rt-ac-item__badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border, rgba(200, 210, 255, 0.7));
+  color: var(--text-dim, var(--text-secondary, #5d606b));
+  background: var(--bg-tertiary, #f6f7ff);
+  white-space: nowrap;
+}
+
+.rt-ac-more {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-dim, var(--text-secondary, #5d606b));
+  border-top: 1px solid var(--border, rgba(200, 210, 255, 0.5));
+  background: var(--surface-bar, #f6f7ff);
+}
+
+[data-theme="dark"] .rt-ac {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .rt-ac-item__name {
+  color: var(--text-title, #f3f4f6);
+}
+
+[data-theme="dark"] .rt-ac-item__badge {
+  background: #141828;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .rt-ac-more {
+  background: #141828;
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
 /* AI 종목분석 — 7카드 결과 패널 */
 .ai-analysis-panel {
   margin-top: 20px;

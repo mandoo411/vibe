@@ -91,13 +91,19 @@
           </div>
 
           <div class="ai-search-card__row">
-            <input
-              id="ai-stock-query"
-              class="ai-search-card__input"
-              type="text"
-              placeholder="종목명 또는 티커 (예: 삼성전자)"
-              autocomplete="off"
-            />
+            <div class="ai-search-card__input-wrap">
+              <input
+                id="ai-stock-query"
+                class="ai-search-card__input"
+                type="text"
+                placeholder="종목명 또는 티커 (예: 삼성전자)"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="ai-stock-ac"
+                aria-expanded="false"
+              />
+              <div id="ai-stock-ac" class="rt-ac" hidden role="listbox" aria-label="종목 자동완성"></div>
+            </div>
             <button id="ai-stock-submit" class="ai-search-card__submit" type="button">AI 분석</button>
           </div>
 
@@ -156,6 +162,6 @@
       </nav>
     </div>
 
-    <script src="./stock-analysis.js?v=4"></script>
+    <script src="./stock-analysis.js?v=5"></script>
   </body>
 </html>

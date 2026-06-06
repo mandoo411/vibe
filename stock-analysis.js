@@ -7,6 +7,7 @@
   let stockList = [];
   let running = false;
   let loadingTimer = null;
+  const acState = { open: false, items: [], active: -1 };
 
   const LOADING_STEPS = [
     "KIS 시세 불러오는 중...",
@@ -67,6 +68,7 @@
           .map((x) => ({
             code: code6Maybe(x.code),
             name: String(x.name || "").trim(),
+            market: String(x.market || "").toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI",
           }))
           .filter((x) => /^\d{6}$/.test(x.code) && x.name);
       }
@@ -93,6 +95,81 @@
     });
     if (partial.length === 1) return { code: partial[0].code, name: partial[0].name };
     return null;
+  }
+
+  function acHost() {
+    return document.getElementById("ai-stock-ac");
+  }
+
+  function setAutocompleteExpanded(open) {
+    if (input) input.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  function closeAutocomplete() {
+    const host = acHost();
+    acState.open = false;
+    acState.items = [];
+    acState.active = -1;
+    if (host) host.hidden = true;
+    setAutocompleteExpanded(false);
+  }
+
+  function renderAutocomplete(items, total) {
+    const host = acHost();
+    if (!host) return;
+    if (!items || !items.length) {
+      closeAutocomplete();
+      return;
+    }
+    acState.open = true;
+    acState.items = items;
+    if (acState.active >= items.length) acState.active = items.length - 1;
+    if (acState.active < 0) acState.active = 0;
+    host.hidden = false;
+    setAutocompleteExpanded(true);
+    host.innerHTML =
+      items
+        .map((it, idx) => {
+          const activeCls = idx === acState.active ? " is-active" : "";
+          return `<div class="rt-ac-item${activeCls}" data-ac-idx="${idx}" role="option" tabindex="-1">
+            <div class="rt-ac-item__main">
+              <span class="rt-ac-item__name">${escapeHtml(it.name)}</span>
+              <span class="rt-ac-item__code">${escapeHtml(it.code)}</span>
+            </div>
+            <span class="rt-ac-item__badge">${escapeHtml(it.market)}</span>
+          </div>`;
+        })
+        .join("") +
+      (total > items.length ? `<div class="rt-ac-more">외 ${escapeHtml(String(total - items.length))}개 더 있습니다</div>` : "");
+  }
+
+  function moveAutocomplete(delta) {
+    if (!acState.open || !acState.items.length) return;
+    const next = Math.max(0, Math.min(acState.items.length - 1, (acState.active || 0) + delta));
+    acState.active = next;
+    renderAutocomplete(acState.items, acState.items.length);
+  }
+
+  function pickActiveAutocomplete() {
+    if (!acState.open || !acState.items.length) return null;
+    const idx = acState.active;
+    return idx >= 0 && idx < acState.items.length ? acState.items[idx] : null;
+  }
+
+  function filterStocksForAutocomplete(q) {
+    const lc = q.toLowerCase();
+    return (stockList || []).filter((x) => {
+      const name = String(x.name || "").toLowerCase();
+      const code = String(x.code || "");
+      return name.includes(lc) || code.includes(q) || code.includes(lc);
+    });
+  }
+
+  function pickStockItem(item) {
+    if (!item || !input) return;
+    input.value = item.code;
+    closeAutocomplete();
+    runAnalysis(item.code);
   }
 
   async function resolveForAnalysis(qRaw) {
@@ -321,6 +398,7 @@
     }
     if (running) return;
 
+    closeAutocomplete();
     running = true;
     if (input) input.value = q;
     setButtonLoading(true);
@@ -383,13 +461,83 @@
     });
 
     if (input) {
+      input.addEventListener("input", async () => {
+        const q = String(input.value || "").trim();
+        if (q.length < 2) {
+          closeAutocomplete();
+          return;
+        }
+        await loadStockList();
+        const matches = filterStocksForAutocomplete(q);
+        renderAutocomplete(matches.slice(0, 8), matches.length);
+      });
+
       input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          if (acState.open) {
+            e.preventDefault();
+            moveAutocomplete(1);
+          }
+          return;
+        }
+        if (e.key === "ArrowUp") {
+          if (acState.open) {
+            e.preventDefault();
+            moveAutocomplete(-1);
+          }
+          return;
+        }
         if (e.key === "Enter") {
+          const picked = pickActiveAutocomplete();
+          if (picked) {
+            e.preventDefault();
+            pickStockItem(picked);
+            return;
+          }
           e.preventDefault();
           onAnalyzeClick();
+          return;
+        }
+        if (e.key === "Escape") {
+          closeAutocomplete();
         }
       });
     }
+
+    const ac = acHost();
+    if (ac && !ac.dataset.wired) {
+      ac.dataset.wired = "1";
+      ac.addEventListener("mousemove", (e) => {
+        const it = e.target && e.target.closest ? e.target.closest("[data-ac-idx]") : null;
+        if (!it) return;
+        const idx = Number(it.getAttribute("data-ac-idx") || "-1");
+        if (Number.isFinite(idx) && idx >= 0) {
+          acState.active = idx;
+          renderAutocomplete(acState.items, acState.items.length);
+        }
+      });
+      ac.addEventListener("mousedown", (e) => {
+        const it = e.target && e.target.closest ? e.target.closest("[data-ac-idx]") : null;
+        if (!it) return;
+        e.preventDefault();
+        const idx = Number(it.getAttribute("data-ac-idx") || "-1");
+        const picked = idx >= 0 && idx < acState.items.length ? acState.items[idx] : null;
+        if (picked) pickStockItem(picked);
+      });
+    }
+
+    if (!document.body.dataset.aiAcOutside) {
+      document.body.dataset.aiAcOutside = "1";
+      document.addEventListener("mousedown", (e) => {
+        const host = acHost();
+        if (!host || host.hidden) return;
+        const t = e.target;
+        if (host.contains(t) || (input && input.contains(t))) return;
+        closeAutocomplete();
+      });
+    }
+
+    void loadStockList();
 
     document.getElementById("ai-stock-analysis")?.addEventListener("click", (e) => {
       const chip = e.target && e.target.closest ? e.target.closest(".ai-search-popular__chip") : null;

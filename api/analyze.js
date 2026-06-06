@@ -16,6 +16,9 @@ const WEB_SEARCH_TOOLS = [
 
 const CLAUDE_MODEL = "claude-sonnet-4-6";
 
+const ANALYSIS_PARSE_ERROR_MSG =
+  "분석을 완료했으나 데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.";
+
 /** 프롬프트 주입용 한국 시각 기준 오늘 날짜 */
 function todayKoreaLabel() {
   return new Date().toLocaleDateString("ko-KR", {
@@ -193,10 +196,8 @@ async function kisGetJson(path, trId, params) {
     },
   });
   const text = await res.text();
-  let j;
-  try {
-    j = JSON.parse(text);
-  } catch {
+  const j = safeParseJSON(text);
+  if (j == null) {
     const err = new Error(`KIS invalid JSON: ${text.slice(0, 200)}`);
     err.statusCode = 502;
     throw err;
@@ -290,23 +291,27 @@ function logContentBlocks(msg) {
   }
 }
 
-function parseJsonFromText(text) {
-  let t = String(text || "").trim();
-  t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+function safeParseJSON(text) {
   try {
-    return JSON.parse(t);
-  } catch (firstErr) {
-    const match = t.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        return JSON.parse(match[0]);
-      } catch (secondErr) {
-        console.error("[analyze] JSON 파싱 실패", t.slice(0, 2000));
-        throw secondErr;
+    const cleaned = String(text || "")
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .replace(/\r\n?/g, " ")
+      .replace(/[\x00-\x1F\x7F]/g, " ")
+      .trim();
+    return JSON.parse(cleaned);
+  } catch (e) {
+    try {
+      const match = String(text || "").match(/\{[\s\S]*\}/);
+      if (match) {
+        const blob = match[0]
+          .replace(/\r\n?/g, " ")
+          .replace(/[\x00-\x1F\x7F]/g, " ");
+        return JSON.parse(blob);
       }
-    }
-    console.error("[analyze] JSON 파싱 실패", t.slice(0, 2000));
-    throw firstErr;
+    } catch (_) {}
+    console.error("JSON parse error:", e.message);
+    return null;
   }
 }
 
@@ -516,7 +521,10 @@ async function claudeAnalyze(quote, stockName) {
       );
 
       const fullText = extractTextFromContent(msg && msg.content);
-      const parsed = parseJsonFromText(fullText);
+      const parsed = safeParseJSON(fullText);
+      if (parsed == null) {
+        throw new Error(ANALYSIS_PARSE_ERROR_MSG);
+      }
       const normalized = normalizeAnalysis(parsed, quote);
       if (normalized._error) {
         throw new Error("Claude JSON parse failed");
@@ -537,11 +545,9 @@ async function claudeAnalyze(quote, stockName) {
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") {
-    try {
-      return JSON.parse(req.body || "{}");
-    } catch {
-      throw new Error("Invalid JSON body");
-    }
+    const parsed = safeParseJSON(req.body || "{}");
+    if (parsed == null) throw new Error("Invalid JSON body");
+    return parsed;
   }
   return new Promise((resolve, reject) => {
     let data = "";
@@ -549,11 +555,12 @@ async function readBody(req) {
       data += chunk;
     });
     req.on("end", () => {
-      try {
-        resolve(JSON.parse(data || "{}"));
-      } catch {
+      const parsed = safeParseJSON(data || "{}");
+      if (parsed == null) {
         reject(new Error("Invalid JSON body"));
+        return;
       }
+      resolve(parsed);
     });
     req.on("error", reject);
   });
@@ -605,9 +612,15 @@ module.exports = async function handler(req, res) {
   try {
     analysis = await claudeAnalyze(quote, stockName);
   } catch (e) {
-    analysisError = (e && e.message) || "Claude 분석 실패";
+    analysisError =
+      e && e.message === ANALYSIS_PARSE_ERROR_MSG
+        ? ANALYSIS_PARSE_ERROR_MSG
+        : (e && e.message) || "Claude 분석 실패";
     console.error("[analyze] Claude error", analysisError);
     analysis = normalizeAnalysis(null, quote);
+    if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
+      analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
+    }
   }
 
   json(res, 200, {

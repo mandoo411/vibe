@@ -817,7 +817,6 @@ async function claudeAnalyze(quote, stockName, indicators) {
           max_tokens: 3500,
           temperature: 0.25,
           system,
-          betas: ["output-128k-2025-02-19"],
           messages: [{ role: "user", content: user }],
         },
         4

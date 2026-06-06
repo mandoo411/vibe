@@ -7,12 +7,15 @@
   let stockList = [];
   let running = false;
   let loadingTimer = null;
+  let progressTimer = null;
   const acState = { open: false, items: [], active: -1 };
 
   const LOADING_STEPS = [
-    "KIS 시세 불러오는 중...",
-    "최신 뉴스 검색 중...",
-    "AI가 분석하는 중...",
+    "최신 뉴스 및 재료 수집 중...",
+    "기술적 지표 분석 중...",
+    "재료 강도 평가 중...",
+    "AI 시나리오 시뮬레이션 중...",
+    "최종 투자 판단 생성 중...",
   ];
 
   const CSP_SAFE = true; // eval/new Function 미사용, JSON.parse만 사용
@@ -232,17 +235,19 @@
       "왜 지금 이 가격인가",
       "수급 분석",
       "다가오는 이벤트",
+      "재료 분석",
       "차트 흐름 분석",
       "AI 주관적 판단",
       "신호 요약",
     ];
     return titles
       .map((title, i) => {
-        const extra = i === 0 || i === 6 ? " ai-card--summary" : "";
-        const sig = i === 6 ? " ai-card--signals" : "";
-        const chart = i === 4 ? " ai-card--chart" : "";
-        const opinion = i === 5 ? " ai-card--opinion" : "";
-        return `<article class="ai-card is-skeleton${extra}${sig}${chart}${opinion}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
+        const extra = i === 0 || i === 7 ? " ai-card--summary" : "";
+        const sig = i === 7 ? " ai-card--signals" : "";
+        const chart = i === 5 ? " ai-card--chart" : "";
+        const opinion = i === 6 ? " ai-card--opinion" : "";
+        const materials = i === 4 ? " ai-card--materials" : "";
+        return `<article class="ai-card is-skeleton${extra}${sig}${chart}${opinion}${materials}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(title)}</h3><div class="ai-card__body">${skelBody}</div></article>`;
       })
       .join("");
   }
@@ -259,20 +264,113 @@
     if (el) el.textContent = msg;
   }
 
-  function showLoading() {
+  function formatMarketCapPretty(raw) {
+    const n = toNum(raw);
+    if (n == null) return "—";
+    if (n >= 10000) return `${(n / 10000).toFixed(1)}조`;
+    if (n >= 1) return `${Math.round(n).toLocaleString("ko-KR")}억`;
+    return `${Math.round(n).toLocaleString("ko-KR")}`;
+  }
+
+  function clearProgressTimer() {
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
+  }
+
+  function setProgressPct(pct) {
+    const bar = document.getElementById("ai-loading-progress-bar");
+    const label = document.getElementById("ai-loading-progress-pct");
+    const v = Math.max(0, Math.min(100, Math.round(pct)));
+    if (bar) bar.style.width = `${v}%`;
+    if (label) label.textContent = `${v}%`;
+  }
+
+  function startProgressAnimation() {
+    clearProgressTimer();
+    setProgressPct(0);
+    let pct = 0;
+    progressTimer = setInterval(() => {
+      if (pct >= 95) return;
+      pct += pct < 60 ? 2 : pct < 85 ? 1 : 0.5;
+      setProgressPct(Math.min(95, pct));
+    }, 400);
+  }
+
+  async function fetchQuickQuote(code) {
+    try {
+      const res = await fetch(`/api/kis-stock-quote?code=${encodeURIComponent(code)}`, { cache: "no-store" });
+      const data = safeParseJson(await res.text()) || {};
+      if (!res.ok) return null;
+      const raw1 = data.raw1 || {};
+      return {
+        stockName: data.stockName || "",
+        stockCode: data.stockCode || code,
+        currentPrice: data.currentPrice,
+        changeRate: data.changeRate,
+        high52w: toNum(raw1.w52_hgpr),
+        low52w: toNum(raw1.w52_lwpr),
+        marketCapRaw: data.marketCapRaw || raw1.hts_avls || raw1.stck_avls || "",
+      };
+    } catch (err) {
+      console.warn("[AI분석] quick quote 실패", err);
+      return null;
+    }
+  }
+
+  function renderLoadingQuoteHeader(quote, fallbackName, fallbackCode) {
+    const name = (quote && quote.stockName) || fallbackName || "";
+    const code = (quote && quote.stockCode) || fallbackCode || "";
+    const priceCls = chgClass(quote && quote.changeRate);
+    return (
+      `<div class="ai-loading-quote">` +
+      `<div class="ai-loading-quote__top">` +
+      `<h2 class="ai-loading-quote__name">${escapeHtml(name)}</h2>` +
+      `<span class="ai-loading-quote__code">${escapeHtml(code)}</span>` +
+      `</div>` +
+      `<div class="ai-loading-quote__stats">` +
+      `<div class="ai-loading-quote__price ${priceCls}">${escapeHtml(fmtPrice(quote && quote.currentPrice))}<span class="ai-loading-quote__unit">원</span></div>` +
+      `<div class="ai-loading-quote__chg ${priceCls}">${escapeHtml(fmtPct(quote && quote.changeRate))}</div>` +
+      `<div class="ai-loading-quote__meta"><span>52주 고</span><strong>${escapeHtml(fmtPrice(quote && quote.high52w))}</strong></div>` +
+      `<div class="ai-loading-quote__meta"><span>52주 저</span><strong>${escapeHtml(fmtPrice(quote && quote.low52w))}</strong></div>` +
+      `<div class="ai-loading-quote__meta"><span>시총</span><strong>${escapeHtml(formatMarketCapPretty(quote && quote.marketCapRaw))}</strong></div>` +
+      `</div></div>`
+    );
+  }
+
+  function showLoading(resolved) {
     if (!panel) return;
     clearLoadingTimer();
+    clearProgressTimer();
     panel.hidden = false;
     let step = 0;
+    const header =
+      `<div id="ai-loading-quote-host" class="ai-loading-quote-host">` +
+      `<div class="ai-loading-quote ai-loading-quote--pending"><span class="ai-loading-quote__name">${escapeHtml(resolved.name || "")}</span><span class="ai-loading-quote__code">${escapeHtml(resolved.code || "")}</span><span class="ai-loading-quote__pending">시세 불러오는 중…</span></div></div>`;
     panel.innerHTML =
-      '<div class="ai-analysis-status" role="status" aria-live="polite">' +
-      '<span class="ai-analysis-status__spinner" aria-hidden="true"></span>' +
-      `<span id="ai-loading-msg">${escapeHtml(LOADING_STEPS[0])}</span></div>` +
-      `<div class="ai-analysis-cards">${skeletonCardsHtml()}</div>`;
+      header +
+      `<div class="ai-loading-panel" role="status" aria-live="polite">` +
+      `<div class="ai-loading-progress"><div class="ai-loading-progress__track"><div id="ai-loading-progress-bar" class="ai-loading-progress__bar"></div></div><span id="ai-loading-progress-pct" class="ai-loading-progress__pct">0%</span></div>` +
+      `<p id="ai-loading-msg" class="ai-loading-panel__msg">${escapeHtml(LOADING_STEPS[0])}</p>` +
+      `<p class="ai-loading-panel__hint">보통 15~25초 소요됩니다</p>` +
+      `</div>`;
+    startProgressAnimation();
     loadingTimer = setInterval(() => {
       step = (step + 1) % LOADING_STEPS.length;
       updateLoadingMessage(LOADING_STEPS[step]);
-    }, 2500);
+    }, 3000);
+
+    void fetchQuickQuote(resolved.code).then((quote) => {
+      const host = document.getElementById("ai-loading-quote-host");
+      if (!host) return;
+      host.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
+    });
+  }
+
+  function finishLoadingProgress() {
+    clearProgressTimer();
+    setProgressPct(100);
   }
 
   function showError(msg) {
@@ -386,6 +484,40 @@
     return "ai-scenario--neutral";
   }
 
+  function renderMaterials(materials) {
+    const m = materials && typeof materials === "object" ? materials : {};
+    const items = Array.isArray(m.items) ? m.items.slice(0, 4) : [];
+    const cards = items.length
+      ? items
+          .map((it) => {
+            const strength = it.strength || "중";
+            const strengthCls =
+              strength === "상"
+                ? "ai-mat-strength--high"
+                : strength === "하"
+                  ? "ai-mat-strength--low"
+                  : "ai-mat-strength--mid";
+            const pct = Math.max(0, Math.min(100, toNum(it.reflectionPct) || 0));
+            const note = it.reflectionNote || (pct ? `${pct}% 반영` : "");
+            return (
+              `<article class="ai-mat-card">` +
+              `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strength)}</span></div>` +
+              `<div class="ai-mat-reflect"><div class="ai-mat-reflect__track"><div class="ai-mat-reflect__bar" style="width:${pct}%"></div></div><span class="ai-mat-reflect__label">${escapeHtml(note)}</span></div>` +
+              `<p class="ai-mat-card__judgment">${escapeHtml(it.judgment || "")}</p>` +
+              `</article>`
+            );
+          })
+          .join("")
+      : '<p class="ai-mat-empty">확인된 핵심 재료가 없습니다.</p>';
+    const unreflected = m.unreflected
+      ? `<div class="ai-mat-unreflected"><span class="ai-mat-unreflected__label">미반영 핵심 재료</span><p>${escapeHtml(m.unreflected)}</p></div>`
+      : "";
+    const summary = m.summary
+      ? `<div class="ai-mat-summary"><span class="ai-mat-summary__label">AI 재료 종합 판단</span><p>${escapeHtml(m.summary)}</p></div>`
+      : "";
+    return `<div class="ai-mat-grid">${cards}</div>${unreflected}${summary}`;
+  }
+
   function renderScenarioCard(s) {
     const label = escapeHtml(s.label || "?");
     const type = escapeHtml(s.type || "");
@@ -395,9 +527,10 @@
     const isBear = String(s.label) === "C" || String(s.type).includes("약");
     const lines = [
       ["조건", s.condition],
-      isBear ? ["대응", s.strategy] : ["진입", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
-      isBear ? ["목표 하단", s.targetLow != null ? `${fmtPrice(s.targetLow)}원` : null] : ["목표", s.target != null ? `${fmtPrice(s.target)}원` : null],
-      isBear ? null : ["손절", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
+      isBear ? ["대응전략", s.strategy] : ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
+      isBear ? ["목표 하단", s.targetLow != null ? `${fmtPrice(s.targetLow)}원` : null] : ["목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
+      isBear ? null : ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
+      ["확률", probText],
     ]
       .filter(Boolean)
       .filter(([, v]) => v)
@@ -406,10 +539,10 @@
           `<div class="ai-scenario-row"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
       )
       .join("");
-    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안</span><span class="ai-scenario__type">${type}</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
+    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안</span><span class="ai-scenario__type">${type}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
-  function renderOpinion(op, signals) {
+  function renderOpinion(op) {
     const o = op && typeof op === "object" ? op : {};
     const rows = [
       ["단기(1-2주)", o.short],
@@ -436,16 +569,15 @@
     const scenarioHtml = scenarios.length
       ? scenarios.map(renderScenarioCard).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
-    const comment = o.comment ? `<div class="ai-opinion-comment">"${escapeHtml(o.comment)}"</div>` : "";
+    const comment = o.comment ? `<div class="ai-opinion-comment">${escapeHtml(o.comment)}</div>` : "";
     return (
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-opinion-grid">${rows || "<p>전망 정보가 없습니다.</p>"}</div>` +
       `<div class="ai-opinion-prices">${prices}</div>` +
-      `<div class="ai-opinion-signals-wrap">${renderSignals(signals)}</div>` +
+      `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +
-      `${comment}` +
       `</div>`
     );
   }
@@ -487,9 +619,10 @@
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${escapeHtml(analysis.story || "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${escapeHtml(analysis.supply || "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
-        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">5</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
-        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">6</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, analysis.signals)}</div></article>
-        <article class="ai-card ai-card--signals"><h3 class="ai-card__title"><span class="ai-card__num">7</span>신호 요약</h3><div class="ai-card__body">${renderSignals(analysis.signals)}</div></article>
+        <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
+        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
+        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion)}</div></article>
+        <article class="ai-card ai-card--signals"><h3 class="ai-card__title"><span class="ai-card__num">8</span>신호 요약</h3><div class="ai-card__body">${renderSignals(analysis.signals)}</div></article>
       </div>`;
   }
 
@@ -528,9 +661,7 @@
 
     closeAutocomplete();
     running = true;
-    if (input) input.value = q;
     setButtonLoading(true);
-    showLoading();
 
     try {
       const resolved = await resolveForAnalysis(q);
@@ -538,7 +669,11 @@
         throw new Error("종목을 찾을 수 없습니다. 한국 상장 종목명 또는 6자리 코드를 입력해 주세요.");
       }
 
+      if (input) input.value = resolved.name || resolved.code;
+      showLoading(resolved);
+
       const data = await fetchAnalysis(resolved.code, resolved.name);
+      finishLoadingProgress();
       renderAnalysis(data);
       refreshTradingViewCharts();
     } catch (err) {
@@ -546,6 +681,7 @@
       showError((err && err.message) || "분석을 불러오지 못했습니다");
     } finally {
       clearLoadingTimer();
+      clearProgressTimer();
       running = false;
       setButtonLoading(false);
     }

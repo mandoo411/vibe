@@ -242,6 +242,10 @@
     grid-column: 1 / -1;
   }
 
+  .ai-card--materials {
+    grid-column: 1 / -1;
+  }
+
   .ai-card--opinion {
     grid-column: 1 / -1;
   }
@@ -422,6 +426,285 @@
   font-weight: 600;
 }
 
+/* 로딩 C안 */
+.ai-loading-quote-host {
+  margin-bottom: 16px;
+}
+
+.ai-loading-quote {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--bg-primary, #fff);
+  border: 0.5px solid rgba(200, 210, 255, 0.6);
+  box-shadow: 0 2px 10px rgba(51, 57, 191, 0.06);
+}
+
+[data-theme="dark"] .ai-loading-quote {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ai-loading-quote__top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ai-loading-quote__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ai-loading-quote__code {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-loading-quote__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+}
+
+.ai-loading-quote__price {
+  font-size: 22px;
+  font-weight: 900;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-loading-quote__unit {
+  font-size: 14px;
+  margin-left: 2px;
+}
+
+.ai-loading-quote__chg {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ai-loading-quote__meta {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary, #5d606b);
+}
+
+.ai-loading-quote__meta strong {
+  color: var(--text-primary, #131722);
+  font-weight: 800;
+}
+
+[data-theme="dark"] .ai-loading-quote__meta strong {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-loading-quote--pending .ai-loading-quote__pending {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary, #5d606b);
+}
+
+.ai-loading-panel {
+  padding: 20px 16px;
+  border-radius: 16px;
+  background: rgba(51, 57, 191, 0.06);
+  text-align: center;
+}
+
+[data-theme="dark"] .ai-loading-panel {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.ai-loading-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ai-loading-progress__track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(51, 57, 191, 0.15);
+  overflow: hidden;
+}
+
+.ai-loading-progress__bar {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5560e8, #3339bf);
+  transition: width 0.35s ease;
+}
+
+.ai-loading-progress__pct {
+  min-width: 36px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #3339bf;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.ai-loading-panel__msg {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #3339bf;
+}
+
+[data-theme="dark"] .ai-loading-panel__msg,
+[data-theme="dark"] .ai-loading-progress__pct {
+  color: #a8b4ff;
+}
+
+.ai-loading-panel__hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-secondary, #5d606b);
+}
+
+/* ⑤ 재료 분석 */
+.ai-mat-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .ai-mat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ai-mat-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 0.5px solid rgba(200, 210, 255, 0.55);
+  background: rgba(51, 57, 191, 0.04);
+}
+
+[data-theme="dark"] .ai-mat-card {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.ai-mat-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-mat-card__name {
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.ai-mat-strength {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.ai-mat-strength--high {
+  background: #e24b4a;
+}
+
+.ai-mat-strength--mid {
+  background: #f59e0b;
+  color: #111;
+}
+
+.ai-mat-strength--low {
+  background: #9ca3af;
+}
+
+.ai-mat-reflect {
+  margin-bottom: 8px;
+}
+
+.ai-mat-reflect__track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(156, 163, 175, 0.25);
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.ai-mat-reflect__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9ca3af, #22c55e);
+  transition: width 0.4s ease;
+}
+
+.ai-mat-reflect__label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary, #5d606b);
+}
+
+.ai-mat-card__judgment {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.ai-mat-unreflected,
+.ai-mat-summary {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.ai-mat-unreflected {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.ai-mat-summary {
+  background: rgba(51, 57, 191, 0.08);
+  border: 1px solid rgba(51, 57, 191, 0.2);
+}
+
+[data-theme="dark"] .ai-mat-summary {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.ai-mat-unreflected__label,
+.ai-mat-summary__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  margin-bottom: 6px;
+  color: #3339bf;
+}
+
+.ai-mat-unreflected p,
+.ai-mat-summary p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+.ai-mat-empty {
+  margin: 0;
+  color: var(--text-secondary, #5d606b);
+}
+
 /* ⑤ 차트 + TradingView */
 .ai-chart-block {
   display: flex;
@@ -455,21 +738,16 @@
   line-height: 1.65;
 }
 
-/* ⑥ AI 판단 — 2열 레이아웃 */
 .ai-opinion-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 @media (min-width: 768px) {
   .ai-opinion-layout {
     grid-template-columns: 1fr 1fr;
     align-items: start;
-  }
-
-  .ai-opinion-comment {
-    grid-column: 1 / -1;
   }
 }
 
@@ -480,43 +758,31 @@
 .ai-opinion-col--right {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.ai-opinion-signals-wrap {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(200, 210, 255, 0.5);
-}
-
-[data-theme="dark"] .ai-opinion-signals-wrap {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  gap: 12px;
 }
 
 .ai-scenario {
   border-radius: 14px;
-  padding: 12px 14px;
-  border: 2px solid transparent;
+  padding: 12px 14px 12px 12px;
   background: var(--bg-primary, #fff);
+  border: 0.5px solid rgba(200, 210, 255, 0.45);
 }
 
 [data-theme="dark"] .ai-scenario {
   background: #141828;
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .ai-scenario--bull {
-  border-color: #16a34a;
-  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.15);
+  border-left: 4px solid #22c55e;
 }
 
 .ai-scenario--neutral {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15);
+  border-left: 4px solid #eab308;
 }
 
 .ai-scenario--bear {
-  border-color: #e24b4a;
-  box-shadow: 0 0 0 1px rgba(226, 75, 74, 0.15);
+  border-left: 4px solid #e24b4a;
 }
 
 .ai-scenario__head {
@@ -538,28 +804,9 @@
   color: var(--text-secondary, #5d606b);
 }
 
-.ai-scenario__prob {
-  margin-left: auto;
-  font-size: 12px;
-  font-weight: 900;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-}
-
-.ai-scenario--bull .ai-scenario__prob {
-  color: #16a34a;
-}
-
-.ai-scenario--neutral .ai-scenario__prob {
-  color: #d97706;
-}
-
-.ai-scenario--bear .ai-scenario__prob {
-  color: #e24b4a;
-}
-
 .ai-scenario-row {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 64px 1fr;
   gap: 8px;
   font-size: 12px;
   line-height: 1.5;

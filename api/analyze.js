@@ -41,29 +41,42 @@ function buildSystemPrompt(today) {
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요. 학습데이터의 과거 정보가 아니라 web_search 결과의 최신 뉴스를 반드시 사용하세요.`,
     "당신은 한국 주식 전문 애널리스트입니다.",
     "JSON 작성 전 web_search를 정확히 2회 실행하세요. 검색 없이 답변하지 마세요.",
-    "web_search 결과는 2번(story)과 4번(events)에 반드시 반영하세요.",
+    "web_search 결과는 2번(story), 4번(events), 5번(materials 재료 분석)에 반드시 반영하세요.",
     "제공된 KIS 실시간 시세와 web_search 최신 뉴스만 근거로 분석하세요.",
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
     "",
-    "4번 '다가오는 이벤트' 규칙:",
-    `- ${today} 이후 날짜가 언급된 것만 포함. 과거 날짜·과거형 문장(했다/밝혔다/기록했다) 완전 제외.`,
-    '- "예정" "방문 예정" "출시 예정" "발표 예정" "~할 계획" 키워드가 있는 뉴스만 이벤트 후보로 선별.',
-    "- 이벤트 제목은 구체적으로 (❌ CEO 해외 일정 → ✅ 젠슨황 방한 / 삼성 CEO 회동 예정).",
-    "- 확실한 미래 일정이 없으면 events를 빈 배열 []로 두고 chart나 story에 언급하지 말 것. 프론트는 빈 배열 시 '현재 확인된 예정 이벤트 없음' 표시.",
-    '- 날짜 불명확하면 "2026년 하반기 예정"처럼 쓰고 억지로 구체 날짜 넣지 말 것.',
+    `4번 다가오는 이벤트 규칙 (반드시 준수):
+- 오늘은 ${today} 이다. 이 날짜 이후의 미래 이벤트만 포함할 것.
+- 2024년, 2025년 날짜는 절대 포함 금지. 2026년 이후만 허용.
+- 웹검색 결과에서 '예정' '방문 예정' '출시 예정' '발표 예정' '~할 계획' '~에 참석' 키워드가 있는 것만 선별.
+- '했다' '밝혔다' '기록했다' '하락했다' 등 과거형은 절대 이벤트로 넣지 말 것.
+- 미래 이벤트가 없으면 솔직하게 '현재 확인된 예정 이벤트 없음'으로 표시.
+- 이벤트 제목은 구체적으로: ❌'CEO 해외 일정' → ✅'젠슨황 방한 / 삼성 CEO 회동 예정'
+- 날짜를 정확히 모르면 '2026년 하반기 예정' 식으로 표현.`,
     "",
-    "5번 '차트 흐름 분석' 규칙 — KIS 시세 데이터 기반, 아래 항목을 모두 포함하고 각 항목마다 수치·근거 명시:",
-    "- 이동평균선: 20/60/120/200일선 대비 현재가 위치",
-    "- RSI 추정 (최근 가격 흐름 기반)",
-    "- 일목균형표: 전환선/기준선/구름대 위·아래 여부",
-    "- 지지선·저항선 수치 (예: 1차 지지 116,500원 / 2차 지지 112,000원)",
-    "- 52주 전고점·전저점(입력 데이터 high52w/low52w) 언급",
-    "- 엘리어트 파동 관점 현재 구간 추정",
+    `5번 재료 분석 — web_search 결과 기반:
+① 핵심 재료 목록(최대 4개): 재료명, 강도(상/중/하), 주가 반영도 0~100%, reflectionNote, judgment(한줄)
+② unreflected: 미반영 핵심 재료 1~2개, 반영 예상 시점·조건
+③ summary: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
     "",
-    "6번 'AI 주관적 판단' 규칙:",
-    "- short=단기(1-2주), mid=중기(1-3개월), long=장기(6개월-1년) 전망을 각각 상세히",
-    "- scenarios A(강세)/B(중립)/C(약세): 조건·진입·목표·손절(또는 C는 strategy·목표하단)·probability(%) 필수",
-    "- comment: AI 총평 3-5문장, 실제 트레이더 말투",
+    `6번 차트 흐름 분석 — 아래 항목 전부 수치와 근거 포함:
+① 이동평균선: 20일/60일/120일/200일선 대비 현재가 위치와 해석
+② RSI: 최근 흐름 기반 추정값 + 과매수/과매도 해석
+③ 일목균형표: 전환선/기준선/구름대 위아래 여부
+④ 지지선/저항선: 1차·2차 수치 명시
+⑤ 전고점/전저점: 수치와 의미 (high52w/low52w 활용)
+⑥ 엘리어트 파동: 현재 구간 추정 및 근거`,
+    "",
+    `7번 AI 주관적 판단 지침:
+- 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
+- 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률%
+- 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률%
+- 시나리오 C (약세): 조건 / 대응전략 / 목표 하단 / 확률%
+- 확률 합계는 반드시 100%
+- AI 총평은 실제 트레이더 말투로 3-5문장
+- 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
+    "",
+    "8번 신호 요약: signals.up/down — 분석 근거 상승·하락 신호 개수",
     "",
     "최종 답변은 반드시 아래 JSON 형식만 포함하고, 마크다운 코드블록 없이 순수 JSON만 반환하세요.",
   ].join("\n");
@@ -80,6 +93,19 @@ const CLAUDE_RESPONSE_SCHEMA = `{
   "events": [
     {"type": "호재|악재", "content": "내용", "date": "날짜"}
   ],
+  "materials": {
+    "items": [
+      {
+        "name": "재료명",
+        "strength": "상|중|하",
+        "reflectionPct": 30,
+        "reflectionNote": "30% 반영 — 아직 미반영 구간 큼",
+        "judgment": "한줄 판단"
+      }
+    ],
+    "unreflected": "미반영 핵심 재료 1~2개 설명",
+    "summary": "AI 재료 종합 판단 3~5문장"
+  },
   "chart": "차트 흐름 분석",
   "opinion": {
     "short": "단기(1-2주) 전망",
@@ -271,6 +297,7 @@ async function fetchKisQuote(code6) {
     low52w: toNum(o1.w52_lwpr),
     volTurnoverRate: toNum(o1.vol_tnrt),
     foreignHoldRate: toNum(o1.hts_frgn_ehrt ?? o1.frgn_hldn_qty_rt),
+    marketCapRaw: sanitizeStr(o1.hts_avls || o1.stck_avls),
   };
 }
 
@@ -356,6 +383,7 @@ function normalizeAnalysis(raw, quote) {
       story: "",
       supply: "",
       events: [],
+      materials: { items: [], unreflected: "", summary: "" },
       chart: "",
       opinion: {
         short: "",
@@ -386,6 +414,30 @@ function normalizeAnalysis(raw, quote) {
           date: sanitizeStr(e.date),
         }))
         .filter((e) => e.content)
+    : [];
+
+  const materialsRaw = raw.materials && typeof raw.materials === "object" ? raw.materials : {};
+  const materialItems = Array.isArray(materialsRaw.items)
+    ? materialsRaw.items
+        .filter((it) => it && typeof it === "object")
+        .slice(0, 4)
+        .map((it) => {
+          const strength = sanitizeStr(it.strength);
+          const strengthNorm = strength === "상" || strength === "중" || strength === "하" ? strength : "중";
+          const reflectionPctRaw = toNum(it.reflectionPct ?? it.reflection_pct);
+          const reflectionPct =
+            reflectionPctRaw == null
+              ? null
+              : Math.max(0, Math.min(100, Math.round(reflectionPctRaw)));
+          return {
+            name: sanitizeStr(it.name),
+            strength: strengthNorm,
+            reflectionPct,
+            reflectionNote: sanitizeStr(it.reflectionNote ?? it.reflection_note),
+            judgment: sanitizeStr(it.judgment),
+          };
+        })
+        .filter((it) => it.name)
     : [];
 
   const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
@@ -419,6 +471,11 @@ function normalizeAnalysis(raw, quote) {
     story: sanitizeStr(raw.story),
     supply: sanitizeStr(raw.supply),
     events,
+    materials: {
+      items: materialItems,
+      unreflected: sanitizeStr(materialsRaw.unreflected),
+      summary: sanitizeStr(materialsRaw.summary),
+    },
     chart: sanitizeStr(raw.chart),
     opinion: {
       short: sanitizeStr(opinion.short),
@@ -453,17 +510,21 @@ function buildUserPrompt(quote, stockName, today) {
     "【필수】 web_search 2회 — JSON 작성 전 반드시 실행:",
     `- 검색1 (한국어): "${name} 일정 예정 ${year}"`,
     `- 검색2 (영어): "[${name}의 영문기업명 또는 CEO명] schedule event ${year}" (영문명/CEO명 추정 가능하면 사용)`,
-    "- 2회 검색 결과를 2번 story(왜 지금 이 가격)와 4번 events(다가오는 이벤트)에 반드시 반영.",
+    "- 2회 검색 결과를 2번 story, 4번 events, 5번 materials(재료 분석)에 반드시 반영.",
     "- 학습데이터·과거 기억 금지. web_search 확인 정보만 사용.",
     "",
-    "4번 '다가오는 이벤트' 규칙:",
-    `- ${today} 이후 날짜만. "예정/방문 예정/출시 예정/발표 예정/~할 계획" 키워드 있는 것만.`,
-    '- 과거형("했다/밝혔다/기록했다") 완전 제외. 구체적 제목(예: 젠슨황 방한).',
-    "- 미래 일정 없으면 events: []. 날짜 불명확하면 '2026년 하반기 예정' 등으로.",
+    `4번 다가오는 이벤트 규칙 (반드시 준수):
+- 오늘은 ${today} 이다. 이 날짜 이후 미래 이벤트만. 2024·2025년 날짜 금지, 2026년 이후만.
+- '예정/방문 예정/출시 예정/발표 예정/~할 계획/~에 참석' 키워드만. 과거형 금지.
+- 없으면 events: [] (프론트는 '현재 확인된 예정 이벤트 없음' 표시). 구체적 제목 필수.`,
     "",
-    "5번 '차트 흐름 분석' — 아래 KIS 시세로 MA20/60/120/200, RSI, 일목, 지지·저항, 52주 고저, 엘리어트 모두 수치 포함.",
+    "5번 재료 분석 — web_search 기반 핵심 재료 4개 이내, unreflected, summary(트레이더 말투 3~5문장).",
     "",
-    "6번 'AI 주관적 판단' — short/mid/long 상세 + scenarios A/B/C(조건·진입·목표·손절·확률%) + comment 3-5문장.",
+    "6번 차트 — MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
+    "",
+    "7번 AI 주관적 판단 — short/mid/long + scenarios A/B/C(확률 합 100%) + comment. 5번 재료 반영 필수.",
+    "",
+    "8번 signals — up/down 신호 개수.",
     "",
     "아래 KIS 실시간 시세를 참고하고, web_search 2회 후 JSON만 응답하세요.",
     "",
@@ -629,6 +690,9 @@ module.exports = async function handler(req, res) {
     currentPrice: quote.currentPrice,
     changeAmt: quote.changeAmt,
     changeRate: quote.changeRate,
+    high52w: quote.high52w,
+    low52w: quote.low52w,
+    marketCapRaw: quote.marketCapRaw || "",
     analysis,
     analysisError: analysisError || undefined,
   });

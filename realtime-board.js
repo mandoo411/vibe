@@ -224,6 +224,7 @@
           q,
           volTurnoverRate: data && (data.volTurnoverRate ?? data.vol_tnrt),
           creditRate: data && (data.creditRate ?? data.crdt_rate),
+          whol_loan_rmnd_rate: data && data.whol_loan_rmnd_rate,
           creditLoanRmndRate: data && (data.creditLoanRmndRate ?? data.loanRmndRate ?? data.wholLoanRmndRate),
           keys: data ? Object.keys(data).slice(0, 60) : [],
         });
@@ -1780,32 +1781,26 @@
     return `<div class="rt-acc-cell"><div class="rt-acc-cell__k">${escapeHtml(label)}</div><div class="${cls}">${valueHtml}</div></div>`;
   }
 
-  /** 신용융자잔고율(%) — 1%↑ 주황, 3%↑ 빨강 */
-  function creditLoanRmndRateCls(pct) {
-    if (pct == null || !Number.isFinite(pct)) return "";
-    if (pct >= 3) return "rt-acc-val--credit-high";
-    if (pct >= 1) return "rt-acc-val--credit-warn";
-    return "";
-  }
-
   function formatCreditLoanRmndRate(data) {
+    console.log("[신용융자잔고]", data && data.whol_loan_rmnd_rate);
     const raw =
-      data.creditLoanRmndRate ??
-      data.wholLoanRmndRate ??
       data.whol_loan_rmnd_rate ??
+      data.wholLoanRmndRate ??
+      data.creditLoanRmndRate ??
       data.loanRmndRate ??
       data.loan_rmnd_ratem ??
       data.itewhol_loan_rmnd_ratem ??
-      data.crd_rsrv_rate ??
-      data.raw?.loan_rmnd_ratem ??
-      data.raw?.itewhol_loan_rmnd_ratem ??
-      data.raw?.crd_rsrv_rate ??
       null;
-    let n = Number(raw);
-    if (!Number.isFinite(n) || n <= 0) return { text: "—", cls: "" };
-    if (Math.abs(n) > 0 && Math.abs(n) <= 1) n *= 100;
-    if (!Number.isFinite(n) || n <= 0) return { text: "—", cls: "" };
-    return { text: `${escapeHtml(n.toFixed(2))}%`, cls: creditLoanRmndRateCls(n) };
+    if (raw === undefined || raw === null || raw === "") return { text: "-", cls: "" };
+    const loanRate = parseFloat(String(raw).replace(/,/g, ""));
+    if (!Number.isFinite(loanRate) || Number.isNaN(loanRate)) return { text: "-", cls: "" };
+    let pct = loanRate;
+    if (Math.abs(pct) > 0 && Math.abs(pct) < 0.01) pct *= 100;
+    if (!Number.isFinite(pct) || pct <= 0) return { text: "-", cls: "" };
+    return {
+      text: `${escapeHtml(pct.toFixed(2))}%`,
+      cls: "rt-acc-val--credit-warn",
+    };
   }
 
   function stockPanelChartShellHtml(chartId) {

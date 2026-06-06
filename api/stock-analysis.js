@@ -106,7 +106,8 @@ const CREDIT_LOAN_RATE_PRIORITY = [
 function normalizePctRate(n) {
   if (n == null || !Number.isFinite(n)) return null;
   let x = Number(n);
-  if (Math.abs(x) > 0 && Math.abs(x) <= 1) x *= 100;
+  // KIS whol_loan_rmnd_rate는 0.36 = 0.36% 형태. 0.01 미만만 비율(0.0036→0.36%)로 간주.
+  if (Math.abs(x) > 0 && Math.abs(x) < 0.01) x *= 100;
   if (!Number.isFinite(x) || x <= 0 || x > 100) return null;
   return Math.round(x * 100) / 100;
 }
@@ -1290,6 +1291,7 @@ module.exports = async function handler(req, res) {
     creditLoanBalance: quote.creditLoanBalance == null ? null : quote.creditLoanBalance,
     creditLoanRmndRate: quote.creditLoanRmndRate == null ? null : quote.creditLoanRmndRate,
     wholLoanRmndRate: quote.creditLoanRmndRate == null ? null : quote.creditLoanRmndRate,
+    whol_loan_rmnd_rate: quote.creditLoanRmndRate == null ? null : quote.creditLoanRmndRate,
     tradingValue: tradingValueNxt,
     foreignHoldRate: quote.financials?.foreignHoldRate ?? null,
     foreignLimitRate: quote.financials?.foreignLimitRate ?? null,

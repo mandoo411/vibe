@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * companiesmarketcap.com TOP100 → api/world-market-ranked.js 생성
+ * companiesmarketcap.com TOP100 → lib/world-market-ranked.js 생성
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 
 const CMC_HOME = "https://companiesmarketcap.com/";
-const OUT_PATH = path.resolve("api/world-market-ranked.js");
+const OUT_PATH = path.resolve("lib/world-market-ranked.js");
 
 const SUFFIX_COUNTRY = [
   [".KS", "South Korea"],

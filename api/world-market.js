@@ -2,8 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
-const RANKED_COMPANIES = require("./world-market-ranked.js");
-const KO_NAMES = require("./world-market-names-ko.js");
+const RANKED_COMPANIES = require("../lib/world-market-ranked.js");
+const KO_NAMES = require("../lib/world-market-names-ko.js");
 
 const CACHE_PATH = path.join(__dirname, "..", "data", "world-market-cache.json");
 let fileCache = { at: 0, data: null };

@@ -28,7 +28,7 @@ async function loadRankedList() {
   } catch (error) {
     console.warn(`Live CMC ranked list failed, using file: ${error.message}`);
   }
-  return require("../api/world-market-ranked.js");
+  return require("../lib/world-market-ranked.js");
 }
 
 const OUTPUT_PATH = path.resolve(process.env.WORLD_MARKET_CACHE_PATH || "data/world-market-cache.json");

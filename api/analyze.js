@@ -10,7 +10,7 @@ const WEB_SEARCH_TOOLS = [
   {
     type: "web_search_20250305",
     name: "web_search",
-    max_uses: 3,
+    max_uses: 1,
   },
 ];
 
@@ -363,8 +363,10 @@ function normalizeAnalysis(raw, quote) {
 
 function claudeModelCandidates() {
   const envModel = sanitizeStr(process.env.ANTHROPIC_MODEL);
-  const models = [envModel, "claude-sonnet-4-5", "claude-sonnet-4-20250514"].filter(Boolean);
-  return [...new Set(models)];
+  const sonnetModels = ["claude-sonnet-4-5", "claude-sonnet-4-20250514"];
+  const models = [];
+  if (envModel && /sonnet/i.test(envModel)) models.push(envModel);
+  return [...new Set([...models, ...sonnetModels])];
 }
 
 function buildUserPrompt(quote, stockName, today) {
@@ -430,7 +432,7 @@ async function claudeAnalyze(quote, stockName) {
         client,
         {
           model,
-          max_tokens: 8000,
+          max_tokens: 3500,
           temperature: 0.25,
           system,
           tools: WEB_SEARCH_TOOLS,

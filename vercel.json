@@ -50,7 +50,7 @@
     "api/analyze.js": {
       "maxDuration": 120
     },
-    "api/kis-chart.js": {
+    "api/kis-stock-quote.js": {
       "maxDuration": 30
     },
     "api/world-market.js": {
@@ -61,6 +61,7 @@
     }
   },
   "routes": [
+    { "src": "/api/kis-chart", "dest": "/api/kis-stock-quote?chart=1" },
     { "handle": "filesystem" },
     { "src": "/apple-touch-icon.png", "dest": "/icon-t-180.png" },
     { "src": "/apple-touch-icon-precomposed.png", "dest": "/icon-t-180.png" },

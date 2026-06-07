@@ -35,7 +35,24 @@
     <link rel="stylesheet" href="./hub.css" />
     <link rel="stylesheet" href="./stock-analysis.css?v=12" />
   </head>
-  <body class="page-tm-v2" data-tm-tab="analysis">
+  <body class="page-tm-v2 ai-access-gate-open" data-tm-tab="analysis">
+    <div
+      id="ai-access-gate"
+      class="ai-access-gate"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-access-gate-title"
+    >
+      <div class="ai-access-gate__backdrop" aria-hidden="true"></div>
+      <div class="ai-access-gate__card">
+        <h2 id="ai-access-gate-title" class="ai-access-gate__title">서비스 준비 중</h2>
+        <p class="ai-access-gate__text">
+          AI 종목분석은 현재 베타 테스트 중입니다.<br />
+          정식 오픈 시 알림을 드리겠습니다.
+        </p>
+        <a class="ai-access-gate__btn" href="./index.html">홈으로 돌아가기</a>
+      </div>
+    </div>
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -56,7 +73,9 @@
         </button>
         <nav class="home-nav__menu">
           <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
-          <a class="home-nav__link" href="./stock-analysis.html" aria-current="page">AI 종목분석</a>
+          <span class="home-nav__link home-nav__link--disabled is-disabled" aria-current="page" aria-disabled="true"
+            >AI 종목분석 <span class="home-nav__soon-badge">SOON</span></span
+          >
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>

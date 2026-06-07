@@ -100,6 +100,88 @@
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
+/* ── 접근 제한 모달 ── */
+.ai-access-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.ai-access-gate__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.ai-access-gate__card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 400px);
+  padding: 28px 24px 24px;
+  border-radius: 16px;
+  background: var(--color-background-primary, #fff);
+  border: 0.5px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+  text-align: center;
+}
+
+[data-theme="dark"] .ai-access-gate__card {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ai-access-gate__title {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-access-gate__title {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-access-gate__text {
+  margin: 0 0 22px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.ai-access-gate__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(109, 40, 217, 0.35);
+}
+
+.ai-access-gate__btn:hover {
+  filter: brightness(1.08);
+}
+
+.ai-access-gate-open .tm-wrap {
+  pointer-events: none;
+  user-select: none;
+}
+
+.ai-access-gate-open {
+  overflow: hidden;
+}
+
 /* ── Design tokens ── */
 #ai-stock-analysis {
   --color-background-primary: var(--bg-primary, #ffffff);

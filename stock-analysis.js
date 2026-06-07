@@ -1130,6 +1130,8 @@
   }
 
   function init() {
+    if (document.getElementById("ai-access-gate")) return;
+
     input = document.getElementById("ai-stock-query");
     btn = document.getElementById("analyzeBtn");
     panel = document.getElementById("ai-analysis-panel");

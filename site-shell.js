@@ -30,6 +30,10 @@
 
   const BOTTOM_NAV_PRIMARY = ["home", "realtime", "analysis", "crypto"];
 
+  /** AI 종목분석 접근 제한 (베타) */
+  const ANALYSIS_PAGE_LOCKED = true;
+  const ANALYSIS_HREF = "./stock-analysis.html";
+
   const TM_ALL_PAGES = [
     { id: "home", href: "./index.html", label: "홈", icon: "ti-home" },
     { id: "realtime", href: "./realtime.html", label: "실시간시세", icon: "ti-activity" },
@@ -81,6 +85,36 @@
     const file = path.split("/").pop() || "";
     const hit = TM_ALL_PAGES.find((p) => p.href.endsWith(file));
     return hit ? hit.id : null;
+  }
+
+  function appendSoonBadge(el) {
+    if (!el || el.querySelector(".home-nav__soon-badge")) return;
+    const badge = document.createElement("span");
+    badge.className = "home-nav__soon-badge";
+    badge.textContent = "SOON";
+    el.appendChild(badge);
+  }
+
+  function lockAnalysisNavLink(el) {
+    if (!el || el.dataset.analysisLocked === "1") return;
+    el.dataset.analysisLocked = "1";
+    el.classList.add("is-disabled", "home-nav__link--disabled", "tm-bottom-nav__item--disabled");
+    el.setAttribute("aria-disabled", "true");
+    if (el.tagName === "A") {
+      el.addEventListener("click", (e) => e.preventDefault());
+    }
+    appendSoonBadge(el);
+  }
+
+  function applyAnalysisNavLock() {
+    if (!ANALYSIS_PAGE_LOCKED) return;
+    document.querySelectorAll(`a[href*="stock-analysis.html"]`).forEach((el) => {
+      if (el.closest(".ai-access-gate")) return;
+      lockAnalysisNavLink(el);
+    });
+    document.querySelectorAll(".home-nav__link--disabled[aria-disabled='true']").forEach((el) => {
+      if (!el.querySelector(".home-nav__soon-badge")) appendSoonBadge(el);
+    });
   }
 
   function syncBodyTab() {
@@ -192,14 +226,20 @@
   function createBottomNavItem(tabId) {
     const page = TM_ALL_PAGES.find((p) => p.id === tabId);
     const isMenu = tabId === "menu";
-    const el = document.createElement(isMenu ? "button" : "a");
+    const isLockedAnalysis = !isMenu && tabId === "analysis" && ANALYSIS_PAGE_LOCKED;
+    const el = document.createElement(isMenu || isLockedAnalysis ? "button" : "a");
     el.className = "tm-bottom-nav__item" + (isMenu ? " tm-bottom-nav__item--menu" : "");
+    if (isLockedAnalysis) el.className += " tm-bottom-nav__item--disabled is-disabled";
     el.dataset.tmTab = tabId;
     if (isMenu) {
       el.type = "button";
       el.setAttribute("aria-label", "전체 메뉴");
       el.setAttribute("aria-controls", "tm-nav-sheet");
       el.setAttribute("aria-expanded", "false");
+    } else if (isLockedAnalysis) {
+      el.type = "button";
+      el.setAttribute("aria-disabled", "true");
+      el.disabled = true;
     } else if (page) {
       el.href = page.href;
     }
@@ -210,6 +250,7 @@
     const label = document.createElement("span");
     label.textContent = BOTTOM_NAV_LABELS[tabId] || page?.label || tabId;
     el.append(iconWrap, label);
+    if (isLockedAnalysis) appendSoonBadge(el);
     return el;
   }
 
@@ -224,6 +265,12 @@
         const p = pageById(id);
         if (!p) return "";
         const label = NAV_SHEET_LABELS[id] || p.label;
+        if (id === "analysis" && ANALYSIS_PAGE_LOCKED) {
+          return (
+            `<span class="tm-nav-sheet__cell tm-nav-sheet__cell--disabled is-disabled" data-tm-page="${p.id}" aria-disabled="true">` +
+            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span><span class="home-nav__soon-badge">SOON</span></span>`
+          );
+        }
         return (
           `<a class="tm-nav-sheet__cell" href="${p.href}" data-tm-page="${p.id}">` +
           `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span></a>`
@@ -352,6 +399,7 @@
 
   function boot() {
     enhanceShell();
+    applyAnalysisNavLock();
     bindNavToggle();
     if (!document.body.classList.contains("page-home-v2")) {
       renderTicker();

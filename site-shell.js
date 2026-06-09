@@ -87,14 +87,6 @@
     return hit ? hit.id : null;
   }
 
-  function appendSoonBadge(el) {
-    if (!el || el.querySelector(".home-nav__soon-badge")) return;
-    const badge = document.createElement("span");
-    badge.className = "home-nav__soon-badge";
-    badge.textContent = "SOON";
-    el.appendChild(badge);
-  }
-
   function ensureAnalysisGate() {
     if (document.getElementById("ai-access-gate")) return;
     const gate = document.createElement("div");
@@ -138,18 +130,17 @@
     el.classList.remove("is-disabled", "home-nav__link--disabled", "tm-bottom-nav__item--disabled");
     el.removeAttribute("aria-current");
     el.setAttribute("aria-disabled", "true");
-    appendSoonBadge(el);
     bindAnalysisGateTrigger(el);
   }
 
   function applyAnalysisNavLock() {
     if (!ANALYSIS_PAGE_LOCKED) return;
+    document.querySelectorAll(".home-nav__soon-badge").forEach((el) => el.remove());
     document.querySelectorAll('a[href*="stock-analysis.html"]').forEach((el) => {
       if (el.closest(".ai-access-gate")) return;
       lockAnalysisNavLink(el);
     });
     document.querySelectorAll(".home-nav__link--analysis-locked").forEach((el) => {
-      if (!el.querySelector(".home-nav__soon-badge")) appendSoonBadge(el);
       bindAnalysisGateTrigger(el);
     });
     document.querySelectorAll("[data-analysis-locked]").forEach(bindAnalysisGateTrigger);
@@ -308,7 +299,7 @@
         if (id === "analysis" && ANALYSIS_PAGE_LOCKED) {
           return (
             `<button type="button" class="tm-nav-sheet__cell home-nav__link--analysis-locked" data-tm-page="${p.id}" data-analysis-locked="1">` +
-            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span><span class="home-nav__soon-badge">SOON</span></button>`
+            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span></button>`
           );
         }
         return (

@@ -861,8 +861,9 @@ body[data-theme="dark"] .home-nav__ai-badge {
     padding-left: 0;
   }
 
-  /* 미국시장 종목 헤더: 심볼 로고 열 위에 종목 정렬 */
-  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col {
+  /* 미국시장·암호화폐 헤더: 심볼 로고 열 위에 종목/코인 정렬 */
+  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col,
+  .page-home-v2 .home-section--crypto .home-th--coin .home-th__identity-col {
     display: grid;
     grid-template-columns: 16px 32px minmax(0, 1fr);
     column-gap: 8px;
@@ -870,7 +871,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
     min-width: 0;
   }
 
-  .page-home-v2 .home-section--us .home-th--us .home-th__name-over-logo {
+  .page-home-v2 .home-section--us .home-th--us .home-th__name-over-logo,
+  .page-home-v2 .home-section--crypto .home-th--coin .home-th__name-over-logo {
     grid-column: 2;
     justify-self: center;
     text-align: center;
@@ -2197,11 +2199,13 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   }
 
   .page-home-v2 .home-section--realtime .home-th--rt .home-rank--ghost,
-  .page-home-v2 .home-section--us .home-th--us .home-rank--ghost {
+  .page-home-v2 .home-section--us .home-th--us .home-rank--ghost,
+  .page-home-v2 .home-section--crypto .home-th--coin .home-rank--ghost {
     display: none;
   }
 
-  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col {
+  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col,
+  .page-home-v2 .home-section--crypto .home-th--coin .home-th__identity-col {
     display: block;
   }
 

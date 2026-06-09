@@ -181,14 +181,19 @@ body.page-home-v2 {
     margin-left: 0;
     min-width: 0;
     padding-left: max(8px, var(--home-nav-menu-inset));
-    padding-right: 1ch;
+    padding-right: 8px;
     gap: 0;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,
   .page-tm-v2 .home-nav__menu > .home-nav__home-btn {
-    flex: 0 0 auto;
-    margin-right: 8px;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 36px;
+    max-width: 48px;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
@@ -196,15 +201,20 @@ body.page-home-v2 {
     flex: 1 1 0;
     justify-content: center;
     min-width: 0;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__theme,
   .page-tm-v2 .home-nav__menu > .home-nav__theme {
-    flex: 0 0 auto;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 36px;
+    max-width: 48px;
     flex-shrink: 0;
-    margin-left: 8px;
+    margin-left: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .page-home-v2 .home-ticker-bar .home-ticker,
@@ -248,27 +258,31 @@ body.page-home-v2 {
   color: var(--accent, #3339bf);
 }
 
-.home-nav__soon-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: 10px;
-  background: #6b7280;
-  color: #ffffff;
-  padding: 2px 6px;
-  border-radius: 4px;
-  vertical-align: middle;
-  margin-left: 4px;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
 .home-nav__link--analysis-locked {
   cursor: pointer;
+  color: #b0b5bf;
+  opacity: 0.88;
+}
+
+.home-nav__link--analysis-locked:hover {
+  background: transparent;
+  color: #9ca3af;
+  opacity: 1;
 }
 
 .home-nav__link--analysis-locked[aria-current="page"] {
   background: transparent;
-  color: var(--text-secondary, #444);
+  color: #b0b5bf;
+}
+
+[data-theme="dark"] .home-nav__link--analysis-locked,
+body[data-theme="dark"] .home-nav__link--analysis-locked {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .home-nav__link--analysis-locked:hover,
+body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
+  color: #9ca3af;
 }
 
 .tm-bottom-nav__item--analysis-locked {
@@ -277,6 +291,13 @@ body.page-home-v2 {
 
 .tm-nav-sheet__cell.home-nav__link--analysis-locked {
   cursor: pointer;
+  color: #b0b5bf;
+  opacity: 0.88;
+}
+
+.tm-nav-sheet__cell.home-nav__link--analysis-locked:hover {
+  color: #9ca3af;
+  opacity: 1;
 }
 
 /* AI 종목분석 접근 제한 모달 */

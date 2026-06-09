@@ -108,12 +108,15 @@
   }
 
   function rowTradingValue(row) {
-    const tv = row && Number(row.tradingValue);
-    if (Number.isFinite(tv) && tv > 0) return tv;
     const price = row && Number(row.price);
     const volume = row && Number(row.volume);
-    if (Number.isFinite(price) && Number.isFinite(volume)) return Math.round(price * volume);
-    return Number.isFinite(tv) ? tv : null;
+    const calc =
+      Number.isFinite(price) && Number.isFinite(volume) ? Math.round(price * volume) : null;
+    const tv = row && Number(row.tradingValue);
+    const stored = Number.isFinite(tv) && tv > 0 ? tv : null;
+    if (calc != null && stored != null) return Math.max(calc, stored);
+    if (calc != null) return calc;
+    return stored;
   }
 
   function normalizeQuery(q) {
@@ -262,26 +265,20 @@
   }
 
   function tradingViewUrl(data) {
-    const tv = window.tmTradingViewEmbedTheme
-      ? window.tmTradingViewEmbedTheme()
-      : { theme: "dark", toolbar_bg: "#1e2235" };
-    const params = new URLSearchParams({
-      symbol: tradingViewSymbol(data),
-      interval: "D",
-      timezone: "Asia/Seoul",
-      theme: tv.theme,
-      style: "1",
-      locale: "kr",
-      toolbar_bg: tv.toolbar_bg,
-      hide_side_toolbar: "0",
-      allow_symbol_change: "1",
-      save_image: "0",
-      calendar: "0",
-      studies: "[]",
-      withdateranges: "1",
-      hideideas: "1",
-    });
-    return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
+    const sym = tradingViewSymbol(data);
+    if (window.tmTradingViewWidgetEmbedUrl) return window.tmTradingViewWidgetEmbedUrl(sym);
+    return `https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(sym)}`;
+  }
+
+  function tvChartShellHtml(iframeClass, tvSymbol, ticker, title, src) {
+    return [
+      `<div class="tm-tv-chart-shell">`,
+      `  <div class="tm-tv-chart-toolbar">`,
+      `    <button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>`,
+      `  </div>`,
+      `  <iframe class="${iframeClass}" data-tv-symbol="${escapeHtml(tvSymbol)}" data-symbol="${escapeHtml(ticker)}" title="${escapeHtml(title)}" src="${escapeHtml(src)}" loading="lazy" allowtransparency="true" scrolling="no"></iframe>`,
+      `</div>`,
+    ].join("");
   }
 
   function usStockAccHtml(data) {
@@ -346,7 +343,13 @@
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
       `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden>`,
       `      <div class="rt-chart-body">`,
-      `        <iframe class="us-tv-widget" title="${escapeHtml((data.stockName || data.stockCode) + " chart")}" data-symbol="${ticker}" src="${escapeHtml(tradingViewUrl(data))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe>`,
+      tvChartShellHtml(
+        "us-tv-widget",
+        tradingViewSymbol(data),
+        String(data.stockCode || ""),
+        `${data.stockName || data.stockCode || ""} chart`,
+        tradingViewUrl(data)
+      ),
       `      </div>`,
       `    </div>`,
       `  </footer>`,
@@ -379,6 +382,7 @@
         iframe.src = tradingViewUrl(data);
         iframe.dataset.mounted = "1";
       }
+      if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(chartHost);
     });
   }
 

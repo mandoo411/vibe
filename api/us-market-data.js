@@ -258,6 +258,19 @@ function computeTradingValue(price, volume) {
   return Math.round(price * volume);
 }
 
+function resolveRowTradingValue(row) {
+  if (!row) return null;
+  const price = row.price;
+  const volume = row.volume;
+  const candidates = [
+    pickUsTradingValue(row, null, price, volume),
+    computeTradingValue(price, volume),
+    row.tradingValue,
+  ].filter((n) => n != null && Number.isFinite(n) && n > 0);
+  if (!candidates.length) return null;
+  return Math.round(Math.max(...candidates));
+}
+
 function resolveChangePoints(row, price, changePct) {
   const prev = round2(
     toNum(
@@ -379,7 +392,7 @@ function mapRankRow(row, rank) {
   const changePoints = resolveChangePoints(row, price, changePct);
   const volume = pickUsVolume(row, null);
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
-  const tradingValue = pickUsTradingValue(row, null, price, volume) ?? computeTradingValue(price, volume);
+  const tradingValue = resolveRowTradingValue({ ...row, price, volume });
   const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
     rank: rawRank != null ? Math.round(rawRank) : rank,
@@ -753,6 +766,8 @@ async function enrichRowFromUsDetail(row) {
 function isSuspiciouslyLowTradingValue(row) {
   if (!row || row.price == null || row.marketCap == null) return false;
   const tv = row.tradingValue;
+  const calc = computeTradingValue(row.price, row.volume);
+  if (calc != null && tv != null && calc > tv * 1.2) return true;
   if (tv == null || tv <= 0) return row.marketCap > 20e9;
   if (row.marketCap > 50e9 && tv < 50e6) return true;
   if (row.volume != null && row.volume < 5000 && row.marketCap > 20e9) return true;
@@ -781,10 +796,7 @@ async function enrichRankRows(rows) {
   }
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
-    const tradingValue =
-      row.tradingValue ??
-      pickUsTradingValue(row, null, row.price, row.volume) ??
-      computeTradingValue(row.price, row.volume);
+    const tradingValue = resolveRowTradingValue(row);
     return {
       ...row,
       marketCap: row.marketCap != null ? row.marketCap : cap && cap.marketCap != null ? cap.marketCap : null,
@@ -828,7 +840,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v8", async () => {
+  return cached("ranking:market-cap:v9", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -875,7 +887,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v8",
+    "ranking:market-cap:v9",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1034,7 +1046,7 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v8",
+    "ranking:market-cap:v9",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1133,7 +1145,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v8", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v9", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

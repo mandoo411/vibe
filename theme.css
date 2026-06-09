@@ -198,3 +198,57 @@ body {
 .live-delta--flat {
   color: var(--text-secondary);
 }
+
+.tm-tv-chart-shell {
+  background: #ffffff;
+  border-radius: 4px;
+  overflow: hidden;
+}
+[data-theme="dark"] .tm-tv-chart-shell {
+  background: #131722;
+}
+.tm-tv-chart-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: inherit;
+  border-bottom: 1px solid var(--border);
+}
+.tm-tv-fullscreen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-bar);
+  color: var(--text-muted);
+  font-family: "Noto Sans KR", -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tm-tv-fullscreen-btn:hover,
+.tm-tv-fullscreen-btn:focus-visible {
+  color: var(--accent-bright);
+  border-color: var(--accent-highlight);
+  outline: none;
+}
+.tm-tv-chart-shell:fullscreen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #131722;
+}
+.tm-tv-chart-shell:fullscreen .crypto-tv-widget,
+.tm-tv-chart-shell:fullscreen .us-tv-widget {
+  flex: 1 1 auto;
+  height: auto !important;
+  min-height: 0;
+}
+[data-theme="light"] .tm-tv-chart-shell:fullscreen {
+  background: #ffffff;
+}

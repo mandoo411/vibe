@@ -429,7 +429,12 @@
         height: 420px;
         border: 0;
         display: block;
-        background: var(--crypto-tv-chart-bg);
+        background: #ffffff;
+      }
+      [data-theme="dark"] .crypto-tv-widget,
+      [data-theme="dark"] .crypto-chart-box,
+      [data-theme="dark"] .tm-tv-chart-shell {
+        background: #131722;
       }
       .crypto-error {
         margin-top: 12px;
@@ -1208,63 +1213,45 @@
         }
 
         function tradingViewUrl(symbol) {
-          const isDark =
-            document.documentElement.getAttribute("data-theme") === "dark" ||
-            document.body.classList.contains("dark");
-          const theme = isDark ? "dark" : "light";
-          const chartBg = isDark ? "#131722" : "#ffffff";
-          const params = new URLSearchParams({
-            symbol: tradingViewSymbol(symbol),
-            interval: "D",
-            timezone: "Asia/Seoul",
-            theme,
-            style: "1",
-            locale: "kr",
-            toolbar_bg: chartBg,
-            bgcolor: chartBg,
-            gridcolor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
-            hide_side_toolbar: "0",
-            allow_symbol_change: "1",
-            save_image: "0",
-            calendar: "0",
-            withdateranges: "1",
-            hideideas: "1",
-            up_color: "#e24b4a",
-            down_color: "#3b82f6",
-            border_up_color: "#e24b4a",
-            border_down_color: "#3b82f6",
-            wick_up_color: "#e24b4a",
-            wick_down_color: "#3b82f6",
-          });
-          if (typeof window.tmTradingViewCandleOverrides === "function") {
-            params.set("overrides", JSON.stringify(window.tmTradingViewCandleOverrides(isDark)));
-          }
-          return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
+          const tvSym = tradingViewSymbol(symbol);
+          if (window.tmTradingViewWidgetEmbedUrl) return window.tmTradingViewWidgetEmbedUrl(tvSym);
+          return `https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(tvSym)}`;
         }
 
         function refreshTradingViewCharts() {
-          document.querySelectorAll(".crypto-tv-widget, .realtime-tv-widget").forEach((iframe) => {
-            const sym = iframe.dataset.symbol;
-            if (sym) iframe.src = tradingViewUrl(sym);
+          if (window.tmRefreshTradingViewIframes) {
+            window.tmRefreshTradingViewIframes(".crypto-tv-widget");
+            return;
+          }
+          document.querySelectorAll(".crypto-tv-widget").forEach((iframe) => {
+            const sym = iframe.getAttribute("data-tv-symbol");
+            if (sym) iframe.src = tradingViewUrl(sym.replace(/^BINANCE:|^CRYPTOCAP:/, ""));
           });
         }
 
         window.tmTradingViewUrl = tradingViewUrl;
 
         function chartRowHtml(c) {
+          const tvSym = tradingViewSymbol(c.symbol);
           return `<tr class="crypto-chart-row">
             <td colspan="8">
               <div class="crypto-chart-box">
                 <p class="crypto-chart-title">${escapeHtml(c.name)} · TradingView</p>
-                <iframe
-                  class="crypto-tv-widget"
-                  data-symbol="${escapeHtml(c.symbol)}"
-                  title="${escapeHtml(c.name)} TradingView chart"
-                  src="${escapeHtml(tradingViewUrl(c.symbol))}"
-                  loading="lazy"
-                  allowtransparency="true"
-                  scrolling="no"
-                ></iframe>
+                <div class="tm-tv-chart-shell">
+                  <div class="tm-tv-chart-toolbar">
+                    <button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>
+                  </div>
+                  <iframe
+                    class="crypto-tv-widget"
+                    data-tv-symbol="${escapeHtml(tvSym)}"
+                    data-symbol="${escapeHtml(c.symbol)}"
+                    title="${escapeHtml(c.name)} TradingView chart"
+                    src="${escapeHtml(tradingViewUrl(c.symbol))}"
+                    loading="lazy"
+                    allowtransparency="true"
+                    scrolling="no"
+                  ></iframe>
+                </div>
               </div>
             </td>
           </tr>`;
@@ -1280,6 +1267,7 @@
             if (state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
           }
           body.innerHTML = parts.join("") || '<tr><td colspan="8"><p class="home-empty">데이터 없음</p></td></tr>';
+          if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(body);
         }
 
         function renderPagination() {
@@ -1365,12 +1353,7 @@
         }
 
         function wireThemeChartRefresh() {
-          const btn = document.getElementById("theme-toggle");
-          if (!btn || btn.dataset.cryptoTvThemeBound === "1") return;
-          btn.dataset.cryptoTvThemeBound = "1";
-          btn.addEventListener("click", () => {
-            setTimeout(refreshTradingViewCharts, 0);
-          });
+          /* theme.js bindTradingViewThemeRefresh handles toggle */
         }
 
         async function refreshAll() {

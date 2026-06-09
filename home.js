@@ -321,18 +321,6 @@
     return `./realtime.html?tab=${encodeURIComponent(t)}`;
   }
 
-  function isHomeRtWebView() {
-    return window.matchMedia("(min-width: 769px)").matches;
-  }
-
-  function formatHomeRtDisplayName(name) {
-    const raw = String(name || "").trim();
-    if (!raw) return "—";
-    if (!isHomeRtWebView()) return raw;
-    const base = raw.endsWith("명") ? raw.slice(0, -1) : raw;
-    return base.slice(0, 2) || raw.slice(0, 2);
-  }
-
   function renderHomeRtTable(stocks) {
     const el = $("home-rt-body");
     if (!el) return;
@@ -350,7 +338,7 @@
         const price = r.price != null ? Number(String(r.price).replace(/,/g, "")).toLocaleString("ko-KR") : "—";
         const metric = formatHomeRtMetric(r, homeRtTab);
         const ariaLabel = r.code ? `${r.name} ${r.code}` : String(r.name || "");
-        const displayName = formatHomeRtDisplayName(r.name);
+        const displayName = String(r.name || "").trim() || "—";
         return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(displayName)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div>${homeRtPctHtml(pct, chgCls)}<div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
@@ -667,16 +655,6 @@
     });
   }
 
-  function bindHomeRtViewport() {
-    const mq = window.matchMedia("(min-width: 769px)");
-    const onChange = () => {
-      const hit = homeRtCache[homeRtTab];
-      if (hit) renderHomeRtTable(hit.stocks);
-    };
-    if (typeof mq.addEventListener === "function") mq.addEventListener("change", onChange);
-    else if (typeof mq.addListener === "function") mq.addListener(onChange);
-  }
-
   function bindMobileHomeUi() {
     const input = $("home-ai-input");
     const mq = window.matchMedia("(max-width: 768px)");
@@ -697,7 +675,6 @@
     bindNavToggle();
     bindMobileHomeUi();
     bindHomeRtTabs();
-    bindHomeRtViewport();
     bindHomeUsTabs();
     syncHomeRtChrome();
     await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadHomeUsTab("cap"), loadUsAndCrypto(), loadSideCards()]);

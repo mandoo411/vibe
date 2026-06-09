@@ -269,6 +269,148 @@ function marketLabelFromRow(row) {
   return hint || "";
 }
 
+const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
+const OVERSEAS_DETAIL_PATH = "/uapi/overseas-price/v1/quotations/price-detail";
+const OVERSEAS_DETAIL_TR_ID = "HHDFS76200200";
+const US_EXCHANGES = ["NAS", "NYS"];
+
+function pickFirst(row, keys) {
+  if (!row || typeof row !== "object") return "";
+  for (const key of keys) {
+    const value = row[key];
+    if (value != null && String(value).trim() !== "") return value;
+    const upper = String(key).toUpperCase();
+    if (row[upper] != null && String(row[upper]).trim() !== "") return row[upper];
+  }
+  return "";
+}
+
+function round2(n) {
+  if (n == null || !Number.isFinite(n)) return null;
+  return Math.round(n * 100) / 100;
+}
+
+function normalizeUsTicker(raw) {
+  const s = sanitizeStr(raw).toUpperCase().replace(/[^A-Z0-9.]/g, "");
+  if (!s || s.length > 16) return "";
+  return s;
+}
+
+function usExchangeLabel(excd) {
+  const e = sanitizeStr(excd).toUpperCase();
+  if (e === "NYS") return "NYSE";
+  if (e === "NAS") return "NASDAQ";
+  return e || "US";
+}
+
+function resolveUsChangeAmt(row, price, changeRate) {
+  const prev = round2(
+    toNum(
+      pickFirst(row, [
+        "base",
+        "BASE",
+        "prdy_clpr",
+        "PRDY_CLPR",
+        "ovrs_prdy_clpr",
+        "OVRS_PRDY_CLPR",
+        "ovrs_stck_prdy_clpr",
+        "OVRS_STCK_PRDY_CLPR",
+      ])
+    )
+  );
+  if (price != null && prev != null) return round2(price - prev);
+  if (price != null && changeRate != null && Number.isFinite(changeRate)) {
+    const prevFromPct = price / (1 + changeRate / 100);
+    return round2(price - prevFromPct);
+  }
+  const raw = round2(toNum(pickFirst(row, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS", "ovrs_stck_prdy_vrss", "OVRS_STCK_PRDY_VRSS"])));
+  if (raw == null) return null;
+  if (changeRate == null || changeRate === 0) return raw;
+  if (changeRate < 0 && raw > 0) return round2(-Math.abs(raw));
+  if (changeRate > 0 && raw < 0) return round2(Math.abs(raw));
+  return raw;
+}
+
+async function fetchUsStockQuote(ticker) {
+  let lastError = null;
+  for (const exchange of US_EXCHANGES) {
+    try {
+      const [priceRes, detailRes] = await Promise.all([
+        kisGetJson(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, { AUTH: "", EXCD: exchange, SYMB: ticker }),
+        kisGetJson(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, { AUTH: "", EXCD: exchange, SYMB: ticker }),
+      ]);
+      const p = (priceRes && priceRes.output) || {};
+      const d = (detailRes && detailRes.output) || {};
+      const merged = { ...d, ...p };
+      const currentPrice = round2(toNum(pickFirst(merged, ["last", "LAST", "stck_prpr", "STCK_PRPR"])));
+      if (currentPrice == null) continue;
+      const changeRate = round2(toNum(pickFirst(merged, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+      const changeAmt = resolveUsChangeAmt(merged, currentPrice, changeRate);
+      const volume = toNum(pickFirst(merged, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "pvol", "PVOL"]));
+      const tradingValue =
+        toNum(pickFirst(merged, ["tamt", "TAMT", "acml_tr_pbmn", "ACML_TR_PBMN", "tr_pbmn", "TR_PBMN"])) ||
+        (currentPrice != null && volume != null ? currentPrice * volume : null);
+      const marketCap = toNum(pickFirst(merged, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
+      const open = round2(toNum(pickFirst(merged, ["open", "OPEN", "stck_oprc", "STCK_OPRC"])));
+      const high = round2(toNum(pickFirst(merged, ["high", "HIGH", "stck_hgpr", "STCK_HGPR"])));
+      const low = round2(toNum(pickFirst(merged, ["low", "LOW", "stck_lwpr", "STCK_LWPR"])));
+      const prevClose = round2(
+        toNum(
+          pickFirst(merged, [
+            "base",
+            "BASE",
+            "prdy_clpr",
+            "PRDY_CLPR",
+            "ovrs_prdy_clpr",
+            "OVRS_PRDY_CLPR",
+            "ovrs_stck_prdy_clpr",
+            "OVRS_STCK_PRDY_CLPR",
+          ])
+        )
+      );
+      const high52w = round2(toNum(pickFirst(merged, ["h52p", "H52P", "w52_hgpr", "W52_HGPR"])));
+      const low52w = round2(toNum(pickFirst(merged, ["l52p", "L52P", "w52_lwpr", "W52_LWPR"])));
+      const per = toNum(pickFirst(merged, ["perx", "PERX", "per", "PER"]));
+      const eps = toNum(pickFirst(merged, ["epsx", "EPSX", "eps", "EPS"]));
+      const stockName =
+        sanitizeStr(
+          pickFirst(merged, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME", "prdt_name", "PRDT_NAME", "rsym", "RSYM"])
+        ) || ticker;
+
+      return {
+        stockCode: ticker,
+        stockName,
+        market: usExchangeLabel(exchange),
+        exchange,
+        currentPrice,
+        changeAmt,
+        changeRate,
+        volume: volume == null ? null : Math.round(volume),
+        tradingValue: tradingValue == null ? null : Math.round(tradingValue),
+        marketCap: marketCap == null ? null : Math.round(marketCap),
+        prevClose,
+        open,
+        high,
+        low,
+        high52w,
+        low52w,
+        financials: { per, eps },
+      };
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  const err = new Error(lastError && lastError.message ? lastError.message : `US quote not found: ${ticker}`);
+  err.statusCode = 404;
+  throw err;
+}
+
+async function handleUsQuoteRequest(res, ticker) {
+  const quote = await fetchUsStockQuote(ticker);
+  return json(res, 200, quote);
+}
+
 module.exports = async (req, res) => {
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
@@ -282,6 +424,15 @@ module.exports = async (req, res) => {
 
   try {
     const url = new URL(req.url, "http://localhost");
+    const market = sanitizeStr(url.searchParams.get("market")).toUpperCase();
+    const usTicker = normalizeUsTicker(url.searchParams.get("code") || url.searchParams.get("ticker") || "");
+    if (market === "US" || market === "OVERSEAS") {
+      if (!usTicker) {
+        return json(res, 400, { error: "code(티커)가 필요합니다." });
+      }
+      return await handleUsQuoteRequest(res, usTicker);
+    }
+
     const code6 = normalizeCode6(url.searchParams.get("code") || "");
     const isChartPath = /\/kis-chart\/?$/i.test(url.pathname);
     const isChart =

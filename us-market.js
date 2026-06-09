@@ -108,10 +108,11 @@
   }
 
   function rowTradingValue(row) {
+    const tv = row && Number(row.tradingValue);
+    if (Number.isFinite(tv) && tv > 0) return tv;
     const price = row && Number(row.price);
     const volume = row && Number(row.volume);
     if (Number.isFinite(price) && Number.isFinite(volume)) return Math.round(price * volume);
-    const tv = row && Number(row.tradingValue);
     return Number.isFinite(tv) ? tv : null;
   }
 

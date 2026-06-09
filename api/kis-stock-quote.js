@@ -327,11 +327,46 @@ function resolveUsStockName(detail, price, ticker, nameHint) {
   return ticker;
 }
 
+function kisSymbolVariants(ticker) {
+  const t = sanitizeStr(ticker).toUpperCase();
+  if (!t) return [];
+  const variants = new Set([t]);
+  for (const v of [...variants]) {
+    if (v.includes("/")) {
+      variants.add(v.replace(/\//g, "."));
+      variants.add(v.replace(/\//g, "-"));
+    }
+    if (v.includes(".")) {
+      variants.add(v.replace(/\./g, "/"));
+      variants.add(v.replace(/\./g, "-"));
+    }
+    if (v.includes("-")) {
+      variants.add(v.replace(/-/g, "/"));
+      variants.add(v.replace(/-/g, "."));
+    }
+  }
+  const classShare = t.match(/^([A-Z]{2,})([AB])$/);
+  if (classShare) {
+    const base = classShare[1];
+    const cls = classShare[2];
+    variants.add(`${base}/${cls}`);
+    variants.add(`${base}.${cls}`);
+    variants.add(`${base}-${cls}`);
+  }
+  return [...variants];
+}
+
 function pickUsVolume(detail, price) {
   const tvol = toNum(pickFirst(detail, ["tvol", "TVOL"]));
   const pvol = toNum(pickFirst(detail, ["pvol", "PVOL"]));
   const priceVol = toNum(pickFirst(price, ["tvol", "TVOL"]));
-  const candidates = [tvol, pvol, priceVol].filter((n) => n != null && n > 0);
+  const pricePvol = toNum(pickFirst(price, ["pvol", "PVOL"]));
+  const tvolMax = Math.max(...[tvol, priceVol].filter((n) => n != null && n > 0), 0) || null;
+  const pvolMax = Math.max(...[pvol, pricePvol].filter((n) => n != null && n > 0), 0) || null;
+  if (tvolMax != null && pvolMax != null && tvolMax < pvolMax * 0.05) {
+    return Math.round(pvolMax);
+  }
+  const candidates = [tvolMax, pvolMax].filter((n) => n != null && n > 0);
   if (!candidates.length) return null;
   return Math.round(Math.max(...candidates));
 }
@@ -376,12 +411,14 @@ function resolveUsChangeAmt(row, price, changeRate) {
 
 async function fetchUsStockQuote(ticker, nameHint) {
   let lastError = null;
-  for (const exchange of US_EXCHANGES) {
-    try {
-      const [priceRes, detailRes] = await Promise.all([
-        kisGetJson(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, { AUTH: "", EXCD: exchange, SYMB: ticker }),
-        kisGetJson(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, { AUTH: "", EXCD: exchange, SYMB: ticker }),
-      ]);
+  const symbols = kisSymbolVariants(ticker);
+  for (const sym of symbols) {
+    for (const exchange of US_EXCHANGES) {
+      try {
+        const [priceRes, detailRes] = await Promise.all([
+          kisGetJson(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, { AUTH: "", EXCD: exchange, SYMB: sym }),
+          kisGetJson(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, { AUTH: "", EXCD: exchange, SYMB: sym }),
+        ]);
       const p = (priceRes && priceRes.output) || {};
       const d = (detailRes && detailRes.output) || {};
       const merged = { ...d, ...p };
@@ -419,27 +456,28 @@ async function fetchUsStockQuote(ticker, nameHint) {
       const eps = toNum(pickFirst(d, ["epsx", "EPSX", "eps", "EPS"]));
       const stockName = resolveUsStockName(d, p, ticker, nameHint);
 
-      return {
-        stockCode: ticker,
-        stockName,
-        market: usExchangeLabel(exchange),
-        exchange,
-        currentPrice,
-        changeAmt,
-        changeRate,
-        volume,
-        tradingValue,
-        marketCap: marketCap == null ? null : Math.round(marketCap),
-        prevClose,
-        open,
-        high,
-        low,
-        high52w,
-        low52w,
-        financials: { per, eps },
-      };
-    } catch (e) {
-      lastError = e;
+        return {
+          stockCode: ticker,
+          stockName,
+          market: usExchangeLabel(exchange),
+          exchange,
+          currentPrice,
+          changeAmt,
+          changeRate,
+          volume,
+          tradingValue,
+          marketCap: marketCap == null ? null : Math.round(marketCap),
+          prevClose,
+          open,
+          high,
+          low,
+          high52w,
+          low52w,
+          financials: { per, eps },
+        };
+      } catch (e) {
+        lastError = e;
+      }
     }
   }
   const err = new Error(lastError && lastError.message ? lastError.message : `US quote not found: ${ticker}`);

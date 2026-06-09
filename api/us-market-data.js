@@ -305,9 +305,70 @@ function pickUsVolume(detail, price) {
   const tvol = toNum(pickFirst(detail, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
   const pvol = toNum(pickFirst(detail, ["pvol", "PVOL"]));
   const priceVol = price ? toNum(pickFirst(price, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"])) : null;
-  const candidates = [tvol, pvol, priceVol].filter((n) => n != null && n > 0);
+  const pricePvol = price ? toNum(pickFirst(price, ["pvol", "PVOL"])) : null;
+  const tvolMax = Math.max(...[tvol, priceVol].filter((n) => n != null && n > 0), 0) || null;
+  const pvolMax = Math.max(...[pvol, pricePvol].filter((n) => n != null && n > 0), 0) || null;
+  // 장 시작·프리마켓 직후 tvol은 당일 누적만 반영되어 전일 pvol 대비 극소일 수 있음
+  if (tvolMax != null && pvolMax != null && tvolMax < pvolMax * 0.05) {
+    return Math.round(pvolMax);
+  }
+  const candidates = [tvolMax, pvolMax].filter((n) => n != null && n > 0);
   if (!candidates.length) return null;
   return Math.round(Math.max(...candidates));
+}
+
+function pickUsTradingValue(detail, price, currentPrice, volume) {
+  const tamt = toNum(pickFirst(detail, ["tamt", "TAMT"]));
+  const pamt = toNum(pickFirst(detail, ["pamt", "PAMT"]));
+  const priceAmt = price ? toNum(pickFirst(price, ["tamt", "TAMT"])) : null;
+  const candidates = [tamt, pamt, priceAmt].filter((n) => n != null && n > 0);
+  if (candidates.length) return Math.round(Math.max(...candidates));
+  if (currentPrice != null && volume != null) return Math.round(currentPrice * volume);
+  return null;
+}
+
+function kisSymbolVariants(ticker) {
+  const t = sanitizeStr(ticker).toUpperCase();
+  if (!t) return [];
+  const variants = new Set([t]);
+  for (const v of [...variants]) {
+    if (v.includes("/")) {
+      variants.add(v.replace(/\//g, "."));
+      variants.add(v.replace(/\//g, "-"));
+    }
+    if (v.includes(".")) {
+      variants.add(v.replace(/\./g, "/"));
+      variants.add(v.replace(/\./g, "-"));
+    }
+    if (v.includes("-")) {
+      variants.add(v.replace(/-/g, "/"));
+      variants.add(v.replace(/-/g, "."));
+    }
+  }
+  const classShare = t.match(/^([A-Z]{2,})([AB])$/);
+  if (classShare) {
+    const base = classShare[1];
+    const cls = classShare[2];
+    variants.add(`${base}/${cls}`);
+    variants.add(`${base}.${cls}`);
+    variants.add(`${base}-${cls}`);
+  }
+  return [...variants];
+}
+
+async function fetchUsPriceDetail(exchange, symb) {
+  const [priceBody, detailBody] = await Promise.all([
+    kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, { AUTH: "", EXCD: exchange, SYMB: symb }),
+    kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, { AUTH: "", EXCD: exchange, SYMB: symb }),
+  ]);
+  const p = outputObject(priceBody);
+  const d = outputObject(detailBody);
+  const price = round2(
+    toNum(pickFirst(p, ["last", "LAST", "stck_prpr", "STCK_PRPR"])) ||
+      toNum(pickFirst(d, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+  );
+  if (price == null) return null;
+  return { p, d, price, exchange };
 }
 
 function mapRankRow(row, rank) {
@@ -318,7 +379,7 @@ function mapRankRow(row, rank) {
   const changePoints = resolveChangePoints(row, price, changePct);
   const volume = pickUsVolume(row, null);
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
-  const tradingValue = computeTradingValue(price, volume);
+  const tradingValue = pickUsTradingValue(row, null, price, volume) ?? computeTradingValue(price, volume);
   const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
     rank: rawRank != null ? Math.round(rawRank) : rank,
@@ -626,36 +687,39 @@ async function mapPool(items, concurrency, fn) {
 
 async function enrichRowFromUsDetail(row) {
   if (!row || !row.ticker) return row;
-  const exchange = row.exchange || "NAS";
-  try {
-    const detailBody = await kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
-      AUTH: "",
-      EXCD: exchange,
-      SYMB: row.ticker,
-    });
-    const d = outputObject(detailBody);
-    const price =
-      row.price ??
-      round2(
-        toNum(pickFirst(d, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
-      );
-    const volume = pickUsVolume(d, null) ?? row.volume;
-    const changePct = parseRankingChangePct(d, price) ?? row.changePct;
-    const changePoints = resolveChangePoints(d, price, changePct);
-    const tradingValue = computeTradingValue(price, volume);
-    const detailName = sanitizeStr(pickFirst(d, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
-    const name =
-      row.name && row.name !== row.ticker
-        ? row.name
-        : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
-          ? detailName
-          : row.name;
-    return { ...row, name, price, volume, changePct, changePoints, tradingValue };
-  } catch (e) {
-    console.warn("[us-market-data] detail enrich", row.ticker, e && e.message);
-    const tradingValue = computeTradingValue(row.price, row.volume);
-    return tradingValue != null ? { ...row, tradingValue } : row;
+  const exchanges = [row.exchange || "NAS", "NYS"].filter((e, i, a) => a.indexOf(e) === i);
+  const symbols = kisSymbolVariants(row.ticker);
+  let lastErr = null;
+  for (const sym of symbols) {
+    for (const exchange of exchanges) {
+      try {
+        const hit = await fetchUsPriceDetail(exchange, sym);
+        if (!hit) continue;
+        const { p, d, price: detailPrice } = hit;
+        const price = row.price ?? detailPrice;
+        const merged = { ...d, ...p };
+        const volume = pickUsVolume(d, p) ?? row.volume;
+        const changePct = parseRankingChangePct(merged, price) ?? row.changePct;
+        const changePoints = resolveChangePoints(merged, price, changePct);
+        const tradingValue =
+          pickUsTradingValue(d, p, price, volume) ?? computeTradingValue(price, volume);
+        const detailName = sanitizeStr(pickFirst(d, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
+        const name =
+          row.name && row.name !== row.ticker
+            ? row.name
+            : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
+              ? detailName
+              : row.name;
+        return { ...row, exchange, name, price, volume, changePct, changePoints, tradingValue };
+      } catch (e) {
+        lastErr = e;
+      }
+    }
   }
+  console.warn("[us-market-data] detail enrich", row.ticker, lastErr && lastErr.message);
+  const tradingValue =
+    pickUsTradingValue(row, null, row.price, row.volume) ?? computeTradingValue(row.price, row.volume);
+  return tradingValue != null ? { ...row, tradingValue } : row;
 }
 
 async function enrichRankRows(rows) {
@@ -671,7 +735,10 @@ async function enrichRankRows(rows) {
   const detailed = await mapPool(rows, 10, enrichRowFromUsDetail);
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
-    const tradingValue = computeTradingValue(row.price, row.volume) ?? row.tradingValue;
+    const tradingValue =
+      row.tradingValue ??
+      pickUsTradingValue(row, null, row.price, row.volume) ??
+      computeTradingValue(row.price, row.volume);
     return {
       ...row,
       marketCap: row.marketCap != null ? row.marketCap : cap && cap.marketCap != null ? cap.marketCap : null,
@@ -715,7 +782,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v3", async () => {
+  return cached("ranking:market-cap:v4", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -723,7 +790,7 @@ function fetchMarketCapTop50() {
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v3",
+    "ranking:gainers:v4",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -742,7 +809,7 @@ function fetchGainersTop50() {
 
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
-    "ranking:trade-value:v3",
+    "ranking:trade-value:v4",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
     (exchange) => ({
@@ -762,9 +829,9 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v3",
-    "ranking:gainers:v3",
-    "ranking:trade-value:v3",
+    "ranking:market-cap:v4",
+    "ranking:gainers:v4",
+    "ranking:trade-value:v4",
     "ranking:market-cap",
     "ranking:gainers:v2",
     "ranking:trade-value:v2",
@@ -921,9 +988,9 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v3",
-    "ranking:gainers:v3",
-    "ranking:trade-value:v3",
+    "ranking:market-cap:v4",
+    "ranking:gainers:v4",
+    "ranking:trade-value:v4",
     "ranking:market-cap",
     "ranking:gainers:v2",
     "ranking:trade-value:v2",
@@ -1020,17 +1087,17 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v3", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v4", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers:v3", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v4", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v3", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v4", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

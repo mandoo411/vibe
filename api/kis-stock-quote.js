@@ -5,6 +5,7 @@
  */
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
+const { isKisRsymToken, isLikelyUsSectorName, resolveUsDisplayName } = require("../lib/us-stock-display-name");
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -304,13 +305,9 @@ function usExchangeLabel(excd) {
   return e || "US";
 }
 
-function isKisRsymToken(value) {
-  return /^D(NYS|NAS|AMS)[A-Z0-9.]{1,12}$/i.test(sanitizeStr(value));
-}
-
 function resolveUsStockName(detail, price, ticker, nameHint) {
   const hint = sanitizeStr(nameHint);
-  if (hint && !isKisRsymToken(hint)) return hint;
+  const goodHint = hint && !isKisRsymToken(hint) && !isLikelyUsSectorName(hint) ? hint : "";
   for (const key of [
     "e_icod",
     "E_ICOD",
@@ -322,9 +319,11 @@ function resolveUsStockName(detail, price, ticker, nameHint) {
     "PRDT_NAME",
   ]) {
     const candidate = sanitizeStr(pickFirst(detail, [key]) || pickFirst(price, [key]));
-    if (candidate && !isKisRsymToken(candidate)) return candidate;
+    if (candidate && !isKisRsymToken(candidate) && !isLikelyUsSectorName(candidate)) {
+      return resolveUsDisplayName(ticker, candidate);
+    }
   }
-  return ticker;
+  return resolveUsDisplayName(ticker, goodHint || ticker);
 }
 
 function kisSymbolVariants(ticker) {

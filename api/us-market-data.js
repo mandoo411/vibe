@@ -41,6 +41,24 @@ const US_SECTORS = [
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
 
+const KO_SEARCH_ALIASES = new Map([
+  ["리게티", "Rigetti"],
+  ["리게티컴퓨팅", "Rigetti"],
+  ["리게티 컴퓨팅", "Rigetti"],
+  ["아이온큐", "IonQ"],
+  ["아이온 큐", "IonQ"],
+  ["엔비디아", "NVIDIA"],
+  ["애플", "Apple"],
+  ["마이크로소프트", "Microsoft"],
+  ["아마존", "Amazon"],
+  ["구글", "Alphabet"],
+  ["알파벳", "Alphabet"],
+  ["메타", "Meta"],
+  ["테슬라", "Tesla"],
+  ["팔란티어", "Palantir"],
+  ["코인베이스", "Coinbase"],
+]);
+
 function isKisTokenError(body) {
   if (!body || typeof body !== "object") return false;
   if (body.msg_cd === "EGW00121") return true;
@@ -192,12 +210,29 @@ function normalizePeriod(raw) {
   return p === "W" || p === "M" ? p : "D";
 }
 
-function mapRankRow(row, rank) {
-  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
-  const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
-  const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
-  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
-  let changePoints = round2(
+function resolveChangePoints(row, price, changePct) {
+  const prev = round2(
+    toNum(
+      pickFirst(row, [
+        "prdy_clpr",
+        "PRDY_CLPR",
+        "ovrs_prdy_clpr",
+        "OVRS_PRDY_CLPR",
+        "base",
+        "BASE",
+        "ovrs_stck_prdy_clpr",
+        "OVRS_STCK_PRDY_CLPR",
+      ])
+    )
+  );
+  if (price != null && prev != null) {
+    return round2(price - prev);
+  }
+  if (price != null && changePct != null && Number.isFinite(changePct)) {
+    const prevFromPct = price / (1 + changePct / 100);
+    return round2(price - prevFromPct);
+  }
+  const raw = round2(
     toNum(
       pickFirst(row, [
         "diff",
@@ -211,9 +246,19 @@ function mapRankRow(row, rank) {
       ])
     )
   );
-  if (changePoints == null && price != null && changePct != null) {
-    changePoints = round2((price * changePct) / 100);
-  }
+  if (raw == null) return null;
+  if (changePct == null || changePct === 0) return raw;
+  if (changePct < 0 && raw > 0) return round2(-Math.abs(raw));
+  if (changePct > 0 && raw < 0) return round2(Math.abs(raw));
+  return raw;
+}
+
+function mapRankRow(row, rank) {
+  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
+  const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
+  const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
+  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+  const changePoints = resolveChangePoints(row, price, changePct);
   const volume = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
   const directTradingValue = toNum(
@@ -312,7 +357,7 @@ async function fetchOverseasQuote({ symbol, exchange, yahoo }) {
     toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
   );
   let changePct = parseOverseasChangePct(out);
-  let changePoints = round2(toNum(pickFirst(out, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"])));
+  let changePoints = resolveChangePoints(out, price, changePct);
 
   if (changePct == null && yahoo) {
     try {
@@ -499,7 +544,44 @@ async function fetchSectors() {
   });
 }
 
-async function fetchMergedRanking(cacheKey, path, trId, params, sortKey) {
+async function getMarketCapRowsCached() {
+  const capHit = memoryCache.get("ranking:market-cap");
+  if (capHit && Array.isArray(capHit.value) && capHit.expiresAt > Date.now()) {
+    return capHit.value;
+  }
+  return fetchMarketCapTop50();
+}
+
+async function enrichRankRows(rows) {
+  let capByTicker = new Map();
+  try {
+    const caps = await getMarketCapRowsCached();
+    for (const row of caps) {
+      if (row && row.ticker) capByTicker.set(row.ticker, row);
+    }
+  } catch (e) {
+    console.warn("[us-market-data] enrich market cap", e && e.message);
+  }
+  return rows.map((row) => {
+    const cap = capByTicker.get(row.ticker);
+    const tradingValue =
+      row.tradingValue != null
+        ? row.tradingValue
+        : cap && cap.tradingValue != null
+          ? cap.tradingValue
+          : row.price != null && row.volume != null
+            ? Math.round(row.price * row.volume)
+            : null;
+    return {
+      ...row,
+      marketCap: row.marketCap != null ? row.marketCap : cap && cap.marketCap != null ? cap.marketCap : null,
+      tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
+      changePoints: resolveChangePoints(row, row.price, row.changePct),
+    };
+  });
+}
+
+async function fetchMergedRanking(cacheKey, path, trId, params, sortKey, { enrich = true } = {}) {
   return cached(cacheKey, async () => {
     const all = [];
     for (const exchange of EXCHANGES) {
@@ -510,11 +592,12 @@ async function fetchMergedRanking(cacheKey, path, trId, params, sortKey) {
       }));
       all.push(...rows);
     }
-    return all
+    const ranked = all
       .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, 50)
       .map((row, i) => ({ ...row, rank: i + 1 }));
+    return enrich ? enrichRankRows(ranked) : ranked;
   });
 }
 
@@ -530,7 +613,8 @@ function fetchMarketCapTop50() {
       KEYB: "",
       VOL_RANG: "0",
     }),
-    "marketCap"
+    "marketCap",
+    { enrich: false }
   );
 }
 
@@ -548,7 +632,8 @@ function fetchGainersTop50() {
       NDAY: "0",
       VOL_RANG: "0",
     }),
-    "changePct"
+    "changePct",
+    { enrich: true }
   );
 }
 
@@ -567,7 +652,8 @@ function fetchTradeValueTop50() {
       PRC2: "",
       VOL_RANG: "0",
     }),
-    "tradingValue"
+    "tradingValue",
+    { enrich: true }
   );
 }
 
@@ -580,6 +666,184 @@ function findCachedRankRow(ticker) {
     if (row) return row;
   }
   return null;
+}
+
+function yahooExchangeToKis(exch) {
+  const e = sanitizeStr(exch).toUpperCase();
+  if (e.includes("NMS") || e.includes("NGM") || e.includes("NAS")) return "NAS";
+  if (e.includes("NYS") || e.includes("NYQ")) return "NYS";
+  return "NAS";
+}
+
+async function fetchYahooEquityQuote(symbol) {
+  const sym = normalizeTicker(symbol);
+  if (!sym) return null;
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(sym)}`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      accept: "application/json",
+    },
+  });
+  if (!res.ok) throw new Error(`Yahoo quote HTTP ${res.status}`);
+  const body = await res.json();
+  const q = body?.quoteResponse?.result?.[0];
+  if (!q || q.regularMarketPrice == null) return null;
+  const price = round2(toNum(q.regularMarketPrice));
+  const changePct = round2(toNum(q.regularMarketChangePercent));
+  const changePoints = round2(toNum(q.regularMarketChange));
+  const volume = toNum(q.regularMarketVolume);
+  const marketCap = toNum(q.marketCap);
+  const tradingValue =
+    price != null && volume != null ? Math.round(price * volume) : null;
+  return {
+    ticker: sanitizeStr(q.symbol) || sym,
+    name: sanitizeStr(q.longName || q.shortName) || sym,
+    exchange: yahooExchangeToKis(q.exchange),
+    price,
+    changePct,
+    changePoints:
+      changePoints != null
+        ? changePoints
+        : resolveChangePoints({}, price, changePct),
+    volume: volume != null ? Math.round(volume) : null,
+    marketCap: marketCap != null ? Math.round(marketCap) : null,
+    tradingValue,
+  };
+}
+
+async function fetchYahooSymbolSearch(query) {
+  const q = sanitizeStr(query);
+  if (!q || q.length < 1) return [];
+  const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=12&newsCount=0&listsCount=0`;
+  const res = await fetch(url, {
+    headers: {
+      "user-agent": "Mozilla/5.0",
+      accept: "application/json",
+    },
+  });
+  if (!res.ok) throw new Error(`Yahoo search HTTP ${res.status}`);
+  const body = await res.json();
+  const quotes = Array.isArray(body?.quotes) ? body.quotes : [];
+  const seen = new Set();
+  const results = [];
+  for (const item of quotes) {
+    const quoteType = sanitizeStr(item.quoteType).toUpperCase();
+    if (quoteType && quoteType !== "EQUITY") continue;
+    const ticker = normalizeTicker(item.symbol);
+    if (!ticker || seen.has(ticker)) continue;
+    seen.add(ticker);
+    results.push({
+      ticker,
+      name: sanitizeStr(item.longname || item.shortname || item.symbol) || ticker,
+      exchange: yahooExchangeToKis(item.exchange),
+    });
+    if (results.length >= 12) break;
+  }
+  return results;
+}
+
+async function fetchStockQuote(ticker) {
+  const sym = normalizeTicker(ticker);
+  if (!sym) throw new Error("Missing or invalid ticker");
+
+  const cached = findCachedRankRow(sym);
+  if (cached && cached.price != null) {
+    return {
+      ...cached,
+      changePoints: resolveChangePoints(cached, cached.price, cached.changePct),
+    };
+  }
+
+  for (const exchange of EXCHANGES) {
+    try {
+      const body = await kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, {
+        AUTH: "",
+        EXCD: exchange,
+        SYMB: sym,
+      });
+      const out = outputObject(body);
+      const price = round2(
+        toNum(pickFirst(out, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+      );
+      if (price == null) continue;
+      const changePct = parseOverseasChangePct(out);
+      const volume = toNum(pickFirst(out, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
+      const name =
+        sanitizeStr(pickFirst(out, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME", "prdt_name", "PRDT_NAME"])) ||
+        sym;
+      const tradingValue =
+        price != null && volume != null ? Math.round(price * volume) : null;
+      let marketCap = null;
+      try {
+        const caps = await getMarketCapRowsCached();
+        const hit = caps.find((row) => row.ticker === sym);
+        if (hit) marketCap = hit.marketCap;
+      } catch (e) {
+        /* optional */
+      }
+      return {
+        ticker: sym,
+        name,
+        exchange,
+        price,
+        changePct,
+        changePoints: resolveChangePoints(out, price, changePct),
+        volume: volume != null ? Math.round(volume) : null,
+        marketCap,
+        tradingValue,
+      };
+    } catch (e) {
+      console.warn("[us-market-data] quote", sym, exchange, e && e.message);
+    }
+  }
+
+  const yahoo = await fetchYahooEquityQuote(sym);
+  if (yahoo) return yahoo;
+  throw new Error(`Quote not found: ${sym}`);
+}
+
+async function searchUsSymbols(query) {
+  const q = sanitizeStr(query);
+  if (!q) return [];
+  const upper = q.toUpperCase();
+  const local = [];
+  const keys = ["ranking:market-cap", "ranking:gainers", "ranking:trade-value"];
+  const seen = new Set();
+  for (const key of keys) {
+    const hit = memoryCache.get(key);
+    if (!hit || !Array.isArray(hit.value) || hit.expiresAt <= Date.now()) continue;
+    for (const row of hit.value) {
+      if (!row || !row.ticker || seen.has(row.ticker)) continue;
+      const ticker = String(row.ticker).toUpperCase();
+      const name = String(row.name || "").toLowerCase();
+      if (ticker.includes(upper) || name.includes(q.toLowerCase())) {
+        seen.add(row.ticker);
+        local.push({ ticker: row.ticker, name: row.name || row.ticker, exchange: row.exchange || "NAS" });
+      }
+    }
+  }
+  const compact = q.replace(/\s+/g, "").toLowerCase();
+  const alias = KO_SEARCH_ALIASES.get(compact) || KO_SEARCH_ALIASES.get(q.toLowerCase());
+  const remoteQueries = alias ? [q, alias] : [q];
+  let remote = [];
+  for (const term of remoteQueries) {
+    try {
+      const hits = await fetchYahooSymbolSearch(term);
+      remote.push(...hits);
+    } catch (e) {
+      console.warn("[us-market-data] search", term, e && e.message);
+    }
+  }
+  const merged = [];
+  const mergedSeen = new Set();
+  for (const row of [...local, ...remote]) {
+    const t = normalizeTicker(row.ticker);
+    if (!t || mergedSeen.has(t)) continue;
+    mergedSeen.add(t);
+    merged.push({ ...row, ticker: t });
+  }
+  return merged.slice(0, 12);
 }
 
 function fetchPseudoCandles(ticker) {
@@ -664,9 +928,33 @@ module.exports = async function handler(req, res) {
       json(res, 200, payload);
       return;
     }
+    if (action === "quote") {
+      const ticker = normalizeTicker(req.query && req.query.ticker);
+      if (!ticker) {
+        json(res, 400, { error: "Missing or invalid ticker" });
+        return;
+      }
+      const payload = await cachedPayload(`quote:${ticker}`, async () => ({
+        stock: await fetchStockQuote(ticker),
+      }));
+      json(res, 200, payload);
+      return;
+    }
+    if (action === "search") {
+      const q = sanitizeStr(req.query && (req.query.q || req.query.query));
+      if (!q) {
+        json(res, 400, { error: "Missing search query" });
+        return;
+      }
+      const payload = await cachedPayload(`search:${q.toLowerCase()}`, async () => ({
+        results: await searchUsSymbols(q),
+      }));
+      json(res, 200, payload);
+      return;
+    }
 
     json(res, 400, {
-      error: "Unknown action. Use indices, sectors, market-cap, gainers, volume, or candle.",
+      error: "Unknown action. Use indices, sectors, market-cap, gainers, volume, candle, quote, or search.",
     });
   } catch (e) {
     console.error("[us-market-data]", action, e && e.message, e);

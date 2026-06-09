@@ -35,9 +35,12 @@
     activeTab: "market-cap",
     rowsByTab: {},
     clientCache: new Map(),
+    quoteCache: new Map(),
     openTicker: null,
     pollTimer: null,
     acIndex: -1,
+    acTimer: null,
+    acRequestId: 0,
   };
 
   function $(id) {
@@ -159,8 +162,38 @@
     if (exact) return exact.ticker;
     const byName = rows.find((r) => String(r.name || "").toLowerCase().includes(raw.toLowerCase()));
     if (byName) return byName.ticker;
-    if (/^[A-Z][A-Z0-9.]{0,9}$/.test(upper)) return upper;
+    if (/^[A-Za-z][A-Za-z0-9.]{0,9}$/.test(raw)) return upper;
     return null;
+  }
+
+  async function resolveTickerFromQueryAsync(q) {
+    const local = resolveTickerFromQuery(q);
+    if (local && findRowByTicker(local)) return local;
+    try {
+      const pack = await fetchJson("search", FETCH_TIMEOUT_MS, { q });
+      const hit = (pack.results || []).find((row) => row && row.ticker);
+      if (hit) return hit.ticker;
+    } catch (e) {
+      console.warn("[us-market] search resolve", e);
+    }
+    return local;
+  }
+
+  async function fetchStockQuoteRow(ticker) {
+    const sym = String(ticker || "").toUpperCase();
+    if (!sym) return null;
+    const cached = state.quoteCache.get(sym);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    const hit = findRowByTicker(sym);
+    if (hit && hit.price != null && hit.changePoints != null && hit.marketCap != null) {
+      return hit;
+    }
+    const pack = await fetchJson("quote", FETCH_TIMEOUT_MS, { ticker: sym });
+    const row = pack.stock || null;
+    if (row) {
+      state.quoteCache.set(sym, { value: row, expiresAt: Date.now() + CLIENT_CACHE_MS });
+    }
+    return row;
   }
 
   function tradingViewSymbol(row) {
@@ -215,7 +248,6 @@
   }
 
   function rankRowHtml(row) {
-    const cfg = TAB_CONFIG[state.activeTab];
     const chgCls = deltaClass(row.changePct);
     const vs = formatVsCell(row);
     const open = state.openTicker === row.ticker;
@@ -229,7 +261,7 @@
       <td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>
       <td class="rt-td-chg num"><span class="delta ${chgCls}">${escapeHtml(fmtPct(row.changePct))}</span></td>
       <td class="rt-td-tv num">${escapeHtml(fmtUsdCompact(row.tradingValue))}</td>
-      <td class="rt-td-mcap num">${escapeHtml(cfg.valueFormat(row[cfg.valueKey]))}</td>
+      <td class="rt-td-mcap num">${escapeHtml(fmtUsdCompact(row.marketCap))}</td>
     </tr>`;
   }
 
@@ -239,7 +271,8 @@
     if (metricH) metricH.textContent = cfg.valueLabel;
     const table = $("us-rank-table");
     if (table) {
-      table.setAttribute("data-rt-tab", cfg.rtTab);
+      table.setAttribute("data-us-tab", state.activeTab);
+      table.removeAttribute("data-rt-tab");
     }
     const body = $("us-rank-tbody");
     if (!body) return;
@@ -307,18 +340,16 @@
   }
 
   async function prefetchOtherTabs() {
-    const others = Object.keys(TAB_CONFIG).filter((t) => t !== state.activeTab);
-    await Promise.all(
-      others.map(async (tab) => {
-        if (state.rowsByTab[tab]) return;
-        try {
-          const pack = await fetchJson(TAB_CONFIG[tab].action);
-          state.rowsByTab[tab] = pack.stocks || [];
-        } catch (e) {
-          console.warn("[us-market] prefetch", tab, e);
-        }
-      })
-    );
+    const order = ["market-cap", "gainers", "volume"].filter((t) => t !== state.activeTab);
+    for (const tab of order) {
+      if (state.rowsByTab[tab]) continue;
+      try {
+        const pack = await fetchJson(TAB_CONFIG[tab].action);
+        state.rowsByTab[tab] = pack.stocks || [];
+      } catch (e) {
+        console.warn("[us-market] prefetch", tab, e);
+      }
+    }
   }
 
   async function refreshAll(force) {
@@ -355,6 +386,7 @@
         </div>
         <div class="rt-acc-header__right">
           <span class="rt-acc-price">${escapeHtml(fmtUsdPrice(row.price))}</span>
+          <span class="rt-acc-chg delta ${chgCls}">${escapeHtml(fmtUsdChange(row.changePoints))}</span>
           <span class="rt-acc-chg delta ${chgCls}">${escapeHtml(fmtPct(row.changePct))}</span>
           <button type="button" class="rt-acc-close" id="us-stock-panel-close" aria-label="닫기">×</button>
         </div>
@@ -401,24 +433,52 @@
       .join("");
   }
 
+  function filterLocalRows(q) {
+    const raw = normalizeQuery(q);
+    const lower = raw.toLowerCase();
+    const upper = raw.toUpperCase();
+    return allKnownRows().filter((row) => {
+      const ticker = String(row.ticker || "").toUpperCase();
+      const name = String(row.name || "").toLowerCase();
+      return ticker.includes(upper) || name.includes(lower);
+    });
+  }
+
   function filterAutocomplete(q) {
     const raw = normalizeQuery(q);
     if (!raw) {
       closeAutocomplete();
       return;
     }
-    const lower = raw.toLowerCase();
-    const upper = raw.toUpperCase();
-    const rows = allKnownRows().filter((row) => {
-      const ticker = String(row.ticker || "").toUpperCase();
-      const name = String(row.name || "").toLowerCase();
-      return ticker.includes(upper) || name.includes(lower);
-    });
-    state.acIndex = rows.length ? 0 : -1;
-    renderAutocomplete(rows);
+    const local = filterLocalRows(raw);
+    state.acIndex = local.length ? 0 : -1;
+    renderAutocomplete(local);
+    if (state.acTimer) clearTimeout(state.acTimer);
+    const requestId = ++state.acRequestId;
+    state.acTimer = setTimeout(async () => {
+      try {
+        const pack = await fetchJson("search", FETCH_TIMEOUT_MS, { q: raw });
+        if (requestId !== state.acRequestId) return;
+        const input = $("us-stock-search-input");
+        if (!input || normalizeQuery(input.value) !== raw) return;
+        const remote = pack.results || [];
+        const seen = new Set();
+        const merged = [];
+        for (const row of [...local, ...remote]) {
+          const ticker = String(row.ticker || "").toUpperCase();
+          if (!ticker || seen.has(ticker)) continue;
+          seen.add(ticker);
+          merged.push(row);
+        }
+        state.acIndex = merged.length ? 0 : -1;
+        renderAutocomplete(merged);
+      } catch (e) {
+        console.warn("[us-market] autocomplete", e);
+      }
+    }, 280);
   }
 
-  function searchUsStock() {
+  async function searchUsStock() {
     const input = $("us-stock-search-input");
     const btn = $("us-stock-search-btn");
     const panel = $("us-stock-result-panel");
@@ -432,27 +492,32 @@
     }
     closeAutocomplete();
     if (btn) btn.disabled = true;
-    const ticker = resolveTickerFromQuery(q);
-    if (!ticker) {
-      panel.hidden = false;
-      panel.innerHTML = `<p class="rt-lw-chart-err">종목을 찾을 수 없습니다. 티커(예: NVDA)를 입력해 주세요.</p>`;
-      if (btn) btn.disabled = false;
-      return;
-    }
-    const row = findRowByTicker(ticker) || { ticker, name: ticker };
-    state.openTicker = null;
-    renderRankTable();
     panel.hidden = false;
-    panel.innerHTML = stockPanelHtml(row);
-    const closeBtn = $("us-stock-panel-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        panel.hidden = true;
-        panel.innerHTML = "";
-        if (input) input.value = "";
-      });
+    panel.innerHTML = `<div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>종목 조회 중…</p></div>`;
+    try {
+      const ticker = await resolveTickerFromQueryAsync(q);
+      if (!ticker) {
+        panel.innerHTML = `<p class="rt-lw-chart-err">종목을 찾을 수 없습니다. 종목명 또는 티커(예: NVDA, RGTI)를 입력해 주세요.</p>`;
+        return;
+      }
+      const row = (await fetchStockQuoteRow(ticker)) || findRowByTicker(ticker) || { ticker, name: ticker };
+      state.openTicker = null;
+      renderRankTable();
+      panel.innerHTML = stockPanelHtml(row);
+      const closeBtn = $("us-stock-panel-close");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+          panel.hidden = true;
+          panel.innerHTML = "";
+          if (input) input.value = "";
+        });
+      }
+    } catch (e) {
+      console.error("[us-market] search", e);
+      panel.innerHTML = `<p class="rt-lw-chart-err">종목을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>`;
+    } finally {
+      if (btn) btn.disabled = false;
     }
-    if (btn) btn.disabled = false;
   }
 
   window.searchUsStock = searchUsStock;
@@ -504,12 +569,7 @@
       if (e.key === "ArrowDown") {
         e.preventDefault();
         state.acIndex = Math.min(items.length - 1, state.acIndex + 1);
-        renderAutocomplete(
-          allKnownRows().filter((row) => {
-            const q = normalizeQuery(input.value).toLowerCase();
-            return String(row.name || "").toLowerCase().includes(q) || String(row.ticker || "").toUpperCase().includes(q.toUpperCase());
-          })
-        );
+        renderAutocomplete(filterLocalRows(input.value));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         state.acIndex = Math.max(0, state.acIndex - 1);

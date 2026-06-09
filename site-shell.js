@@ -95,26 +95,64 @@
     el.appendChild(badge);
   }
 
+  function ensureAnalysisGate() {
+    if (document.getElementById("ai-access-gate")) return;
+    const gate = document.createElement("div");
+    gate.id = "ai-access-gate";
+    gate.className = "ai-access-gate";
+    gate.hidden = true;
+    gate.setAttribute("role", "dialog");
+    gate.setAttribute("aria-modal", "true");
+    gate.setAttribute("aria-labelledby", "ai-access-gate-title");
+    gate.innerHTML =
+      '<div class="ai-access-gate__backdrop" aria-hidden="true"></div>' +
+      '<div class="ai-access-gate__card">' +
+      '<h2 id="ai-access-gate-title" class="ai-access-gate__title">서비스 준비 중</h2>' +
+      '<p class="ai-access-gate__text">AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.</p>' +
+      '<a class="ai-access-gate__btn" href="./index.html">홈으로 돌아가기</a>' +
+      "</div>";
+    document.body.insertBefore(gate, document.body.firstChild);
+  }
+
+  function openAnalysisGate() {
+    ensureAnalysisGate();
+    const gate = document.getElementById("ai-access-gate");
+    if (gate) gate.hidden = false;
+    document.body.classList.add("ai-access-gate-open");
+    setNavSheetOpen(false);
+  }
+
+  function bindAnalysisGateTrigger(el) {
+    if (!el || el.dataset.analysisGateBound === "1") return;
+    el.dataset.analysisGateBound = "1";
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      openAnalysisGate();
+    });
+  }
+
   function lockAnalysisNavLink(el) {
     if (!el || el.dataset.analysisLocked === "1") return;
     el.dataset.analysisLocked = "1";
-    el.classList.add("is-disabled", "home-nav__link--disabled", "tm-bottom-nav__item--disabled");
+    el.classList.add("home-nav__link--analysis-locked");
+    el.classList.remove("is-disabled", "home-nav__link--disabled", "tm-bottom-nav__item--disabled");
+    el.removeAttribute("aria-current");
     el.setAttribute("aria-disabled", "true");
-    if (el.tagName === "A") {
-      el.addEventListener("click", (e) => e.preventDefault());
-    }
     appendSoonBadge(el);
+    bindAnalysisGateTrigger(el);
   }
 
   function applyAnalysisNavLock() {
     if (!ANALYSIS_PAGE_LOCKED) return;
-    document.querySelectorAll(`a[href*="stock-analysis.html"]`).forEach((el) => {
+    document.querySelectorAll('a[href*="stock-analysis.html"]').forEach((el) => {
       if (el.closest(".ai-access-gate")) return;
       lockAnalysisNavLink(el);
     });
-    document.querySelectorAll(".home-nav__link--disabled[aria-disabled='true']").forEach((el) => {
+    document.querySelectorAll(".home-nav__link--analysis-locked").forEach((el) => {
       if (!el.querySelector(".home-nav__soon-badge")) appendSoonBadge(el);
+      bindAnalysisGateTrigger(el);
     });
+    document.querySelectorAll("[data-analysis-locked]").forEach(bindAnalysisGateTrigger);
   }
 
   function syncBodyTab() {
@@ -229,7 +267,7 @@
     const isLockedAnalysis = !isMenu && tabId === "analysis" && ANALYSIS_PAGE_LOCKED;
     const el = document.createElement(isMenu || isLockedAnalysis ? "button" : "a");
     el.className = "tm-bottom-nav__item" + (isMenu ? " tm-bottom-nav__item--menu" : "");
-    if (isLockedAnalysis) el.className += " tm-bottom-nav__item--disabled is-disabled";
+    if (isLockedAnalysis) el.className += " tm-bottom-nav__item--analysis-locked home-nav__link--analysis-locked";
     el.dataset.tmTab = tabId;
     if (isMenu) {
       el.type = "button";
@@ -238,8 +276,7 @@
       el.setAttribute("aria-expanded", "false");
     } else if (isLockedAnalysis) {
       el.type = "button";
-      el.setAttribute("aria-disabled", "true");
-      el.disabled = true;
+      el.dataset.analysisLocked = "1";
     } else if (page) {
       el.href = page.href;
     }
@@ -250,7 +287,10 @@
     const label = document.createElement("span");
     label.textContent = BOTTOM_NAV_LABELS[tabId] || page?.label || tabId;
     el.append(iconWrap, label);
-    if (isLockedAnalysis) appendSoonBadge(el);
+    if (isLockedAnalysis) {
+      appendSoonBadge(el);
+      bindAnalysisGateTrigger(el);
+    }
     return el;
   }
 
@@ -267,8 +307,8 @@
         const label = NAV_SHEET_LABELS[id] || p.label;
         if (id === "analysis" && ANALYSIS_PAGE_LOCKED) {
           return (
-            `<span class="tm-nav-sheet__cell tm-nav-sheet__cell--disabled is-disabled" data-tm-page="${p.id}" aria-disabled="true">` +
-            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span><span class="home-nav__soon-badge">SOON</span></span>`
+            `<button type="button" class="tm-nav-sheet__cell home-nav__link--analysis-locked" data-tm-page="${p.id}" data-analysis-locked="1">` +
+            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span><span class="home-nav__soon-badge">SOON</span></button>`
           );
         }
         return (
@@ -310,6 +350,11 @@
     navSheetBound = true;
     ensureNavSheet();
     document.addEventListener("click", (e) => {
+      if (e.target.closest("[data-analysis-locked]")) {
+        e.preventDefault();
+        openAnalysisGate();
+        return;
+      }
       if (e.target.closest(".tm-bottom-nav__item--menu")) {
         e.preventDefault();
         const sheet = document.getElementById("tm-nav-sheet");
@@ -317,7 +362,7 @@
         return;
       }
       if (e.target.closest("[data-close-sheet]")) setNavSheetOpen(false);
-      if (e.target.closest(".tm-nav-sheet__cell")) setNavSheetOpen(false);
+      if (e.target.closest(".tm-nav-sheet__cell:not([data-analysis-locked])")) setNavSheetOpen(false);
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") setNavSheetOpen(false);

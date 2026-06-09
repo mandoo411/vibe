@@ -851,6 +851,31 @@ body[data-theme="dark"] .home-nav__ai-badge {
   .page-home-v2 .home-section--realtime .home-rt-col__name-m {
     display: none;
   }
+
+  /* 종목 헤더: 순위 열 맞춘 뒤 종목명 첫 글자(삼) 위에 종목 정렬 */
+  .page-home-v2 .home-section--realtime .home-th--rt .home-rt-col--name {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    column-gap: 6px;
+    align-items: center;
+    padding-left: 0;
+  }
+
+  /* 미국시장 종목 헤더: 심볼 로고 열 위에 종목 정렬 */
+  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col {
+    display: grid;
+    grid-template-columns: 16px 32px minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .page-home-v2 .home-section--us .home-th--us .home-th__name-over-logo {
+    grid-column: 2;
+    justify-self: center;
+    text-align: center;
+    white-space: nowrap;
+  }
 }
 
 .home-rt-col--price,
@@ -1025,6 +1050,11 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
   font-variant-numeric: tabular-nums;
   text-align: right;
   line-height: 1;
+}
+
+.home-rank--ghost {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .home-tr__name-wrap {
@@ -2157,10 +2187,22 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     color: #9ca3af;
   }
 
-  /* 종목명 헤더: 순위열(16px)+간격(4px)+종목 첫 글자(13px) — 데이터 행의 2번째 글자(성) 위에 종 정렬 */
+  /* 종목명 헤더: 순위열(16px)+간격(4px) — 데이터 행 종목 첫 글자(삼) 위에 종목 정렬 */
   .page-home-v2 .home-section--realtime .home-th--rt .home-rt-col--name {
-    padding-left: calc(16px + 4px + 13px);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: calc(16px + 4px);
     box-sizing: border-box;
+  }
+
+  .page-home-v2 .home-section--realtime .home-th--rt .home-rank--ghost,
+  .page-home-v2 .home-section--us .home-th--us .home-rank--ghost {
+    display: none;
+  }
+
+  .page-home-v2 .home-section--us .home-th--us .home-th__identity-col {
+    display: block;
   }
 
   .page-home-v2 .home-section--realtime .home-tr--rt {

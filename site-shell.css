@@ -931,36 +931,35 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   border-top: 1px solid #2a2f4a;
 }
 
-/* 서브페이지 타이틀·영문 키커: 전 페이지 동일 (마감시황 기준) */
-.page-tm-v2 .masthead.masthead--title-only .masthead__title {
-  font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
-  font-size: 28px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
+/* 서브페이지 타이틀·영문 키커: 웹 전 페이지 실시간시세와 동일 컴팩트 규격 */
+@media (min-width: 769px) {
+  .page-tm-v2 .masthead.masthead--title-only {
+    min-height: 0;
+    height: auto;
+    overflow: visible;
+    padding: 14px 0 12px;
+    margin-bottom: 0;
+  }
 
-/* 실시간시세 — 타이틀 영역 컴팩트 */
-.page-tm-v2 .page--realtime .masthead.masthead--title-only {
-  min-height: 0;
-  height: auto;
-  padding: 14px 0 12px;
-}
+  .page-tm-v2 .masthead.masthead--title-only .masthead__copy {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 
-.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__copy {
-  padding-top: 0;
-  padding-bottom: 0;
-}
+  .page-tm-v2 .masthead.masthead--title-only .masthead__title {
+    font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
+    font-size: 24px;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
 
-.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
-  font-size: 24px;
-  line-height: 1.12;
-}
-
-.page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
-  margin: 0 0 4px;
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+    margin: 0 0 4px;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
 }
 
 /* 영문 라벨(kicker): masthead · section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */

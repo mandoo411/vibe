@@ -658,7 +658,7 @@ async function fetchSectors() {
 }
 
 async function fetchMarketCapLookup() {
-  return cached("ranking:market-cap:lookup:v2", async () => {
+  return cached("ranking:market-cap:lookup:v3", async () => {
     const all = [];
     for (const exchange of EXCHANGES) {
       const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
@@ -799,6 +799,7 @@ async function enrichRankRows(rows) {
     const tradingValue = resolveRowTradingValue(row);
     return {
       ...row,
+      name: resolveUsDisplayName(row.ticker, row.name),
       marketCap: row.marketCap != null ? row.marketCap : cap && cap.marketCap != null ? cap.marketCap : null,
       tradingValue,
       changePoints:
@@ -840,7 +841,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v10", async () => {
+  return cached("ranking:market-cap:v11", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -887,7 +888,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v10",
+    "ranking:market-cap:v11",
     "ranking:gainers:v5",
     "ranking:trade-value:v5",
     "ranking:market-cap",
@@ -1047,7 +1048,7 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v10",
+    "ranking:market-cap:v11",
     "ranking:gainers:v5",
     "ranking:trade-value:v5",
     "ranking:market-cap",
@@ -1146,7 +1147,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v10", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v11", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

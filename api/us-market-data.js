@@ -570,14 +570,10 @@ async function enrichRowFromUsDetail(row) {
     const pvol = toNum(pickFirst(out, ["pvol", "PVOL"]));
     const tamt = toNum(pickFirst(out, ["tamt", "TAMT"]));
     const pamt = toNum(pickFirst(out, ["pamt", "PAMT"]));
-    const volume =
-      tvol != null && tvol > 0 ? Math.round(tvol) : pvol != null && pvol > 0 ? Math.round(pvol) : row.volume;
-    const tradingValue =
-      tamt != null && tamt > 0
-        ? Math.round(tamt)
-        : pamt != null && pamt > 0
-          ? Math.round(pamt)
-          : row.tradingValue;
+    const volCandidates = [tvol, pvol].filter((n) => n != null && n > 0);
+    const volume = volCandidates.length ? Math.round(Math.max(...volCandidates)) : row.volume;
+    const tvCandidates = [tamt, pamt].filter((n) => n != null && n > 0);
+    const tradingValue = tvCandidates.length ? Math.round(Math.max(...tvCandidates)) : row.tradingValue;
     const detailName = sanitizeStr(pickFirst(out, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
     const name =
       row.name && row.name !== row.ticker

@@ -331,32 +331,19 @@ function pickUsVolume(detail, price) {
   const tvol = toNum(pickFirst(detail, ["tvol", "TVOL"]));
   const pvol = toNum(pickFirst(detail, ["pvol", "PVOL"]));
   const priceVol = toNum(pickFirst(price, ["tvol", "TVOL"]));
-  const chosen =
-    tvol != null && tvol > 0
-      ? tvol
-      : priceVol != null && priceVol > 0
-        ? priceVol
-        : pvol != null && pvol > 0
-          ? pvol
-          : null;
-  return chosen == null ? null : Math.round(chosen);
+  const candidates = [tvol, pvol, priceVol].filter((n) => n != null && n > 0);
+  if (!candidates.length) return null;
+  return Math.round(Math.max(...candidates));
 }
 
 function pickUsTradingValue(detail, price, currentPrice, volume) {
   const tamt = toNum(pickFirst(detail, ["tamt", "TAMT"]));
   const pamt = toNum(pickFirst(detail, ["pamt", "PAMT"]));
   const priceAmt = toNum(pickFirst(price, ["tamt", "TAMT"]));
-  const chosen =
-    tamt != null && tamt > 0
-      ? tamt
-      : priceAmt != null && priceAmt > 0
-        ? priceAmt
-        : pamt != null && pamt > 0
-          ? pamt
-          : currentPrice != null && volume != null
-            ? currentPrice * volume
-            : null;
-  return chosen == null ? null : Math.round(chosen);
+  const candidates = [tamt, pamt, priceAmt].filter((n) => n != null && n > 0);
+  if (candidates.length) return Math.round(Math.max(...candidates));
+  if (currentPrice != null && volume != null) return Math.round(currentPrice * volume);
+  return null;
 }
 
 function resolveUsChangeAmt(row, price, changeRate) {

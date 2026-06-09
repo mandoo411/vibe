@@ -750,6 +750,15 @@ async function enrichRowFromUsDetail(row) {
   return tradingValue != null ? { ...row, tradingValue } : row;
 }
 
+function isSuspiciouslyLowTradingValue(row) {
+  if (!row || row.price == null || row.marketCap == null) return false;
+  const tv = row.tradingValue;
+  if (tv == null || tv <= 0) return row.marketCap > 20e9;
+  if (row.marketCap > 50e9 && tv < 50e6) return true;
+  if (row.volume != null && row.volume < 5000 && row.marketCap > 20e9) return true;
+  return false;
+}
+
 async function enrichRankRows(rows) {
   let capByTicker = new Map();
   try {
@@ -760,7 +769,16 @@ async function enrichRankRows(rows) {
   } catch (e) {
     console.warn("[us-market-data] enrich market cap", e && e.message);
   }
-  const detailed = await mapPool(rows, 10, enrichRowFromUsDetail);
+  const detailed = await mapPool(rows, 3, enrichRowFromUsDetail);
+  for (let i = 0; i < detailed.length; i++) {
+    if (!isSuspiciouslyLowTradingValue(detailed[i])) continue;
+    try {
+      const retry = await enrichRowFromUsDetail(detailed[i]);
+      if ((retry.tradingValue || 0) > (detailed[i].tradingValue || 0)) detailed[i] = retry;
+    } catch (e) {
+      console.warn("[us-market-data] enrich retry", detailed[i].ticker, e && e.message);
+    }
+  }
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
     const tradingValue =
@@ -810,7 +828,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v7", async () => {
+  return cached("ranking:market-cap:v8", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -857,7 +875,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v7",
+    "ranking:market-cap:v8",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1016,7 +1034,7 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v7",
+    "ranking:market-cap:v8",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1115,7 +1133,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v7", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v8", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

@@ -2,355 +2,50 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#ffffff" />
     <title>TotalMoney AI · 미국시장</title>
-    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=3">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=3">
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=3">
-    <link rel="shortcut icon" href="/favicon.ico?v=3">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=3" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=3" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=3" />
+    <link rel="shortcut icon" href="/favicon.ico?v=3" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
     <script src="./site-shell.js" defer></script>
     <link rel="stylesheet" href="./theme.css" />
     <link rel="stylesheet" href="./site-shell.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
-    />
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
+    <link rel="stylesheet" href="./realtime-board.css" />
     <style>
-      .us-wrap {
-        max-width: none;
-        margin: 0;
-        padding: 0;
-      }
-      .us-meta-bar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 10px 16px;
-        padding: 8px 12px;
-        margin-bottom: 14px;
-        background: var(--surface-bar);
-        border: 1px solid var(--border-strong);
-        border-radius: var(--radius);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--text-muted);
-      }
-      .us-meta-bar__poll {
-        margin-left: auto;
-        color: var(--text-dim);
-      }
-      .us-section {
-        margin-bottom: 22px;
-      }
-      .us-section__title {
-        margin: 0 0 10px;
-      }
-      .us-index-strip {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-      }
-      @media (max-width: 720px) {
-        .us-index-strip {
-          grid-template-columns: 1fr;
-        }
-      }
-      .us-index-chip {
-        padding: 12px 14px;
-        background: var(--bg-panel);
-        border: 1px solid var(--border-strong);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        font-family: var(--font-mono);
-      }
-      .us-index-chip__name {
-        font-size: 10px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-      }
-      .us-index-chip__price {
-        margin-top: 6px;
-        font-size: 20px;
-        font-weight: 600;
-        color: var(--text);
-        font-variant-numeric: tabular-nums;
-      }
-      .us-index-chip__sub {
-        margin-top: 4px;
-        font-size: 12px;
-        font-variant-numeric: tabular-nums;
-      }
-      .us-sector-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-      }
-      @media (max-width: 900px) {
-        .us-sector-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-      @media (max-width: 480px) {
-        .us-sector-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .us-sector-card {
-        padding: 12px 14px;
-        background: var(--bg-panel);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        font-family: var(--font-mono);
-      }
-      .us-sector-card__sym {
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        color: var(--text-dim);
-      }
-      .us-sector-card__name {
-        margin-top: 2px;
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text);
-      }
-      .us-sector-card__pct {
-        margin-top: 8px;
-        font-size: 18px;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-      }
-      .us-delta--up {
-        color: var(--up-color);
-      }
-      .us-delta--down {
-        color: var(--down-color);
-      }
-      .us-delta--flat {
-        color: var(--text-muted);
-      }
-      .us-panel {
-        border: 1px solid var(--border-strong);
-        border-radius: var(--radius);
-        background: var(--bg-panel);
-        box-shadow: var(--sheet-shadow);
-        overflow: hidden;
-      }
-      .us-panel__head {
-        padding: 8px 12px;
-        border-bottom: 1px solid var(--border);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        color: var(--text-muted);
-        letter-spacing: 0.08em;
-      }
-      .us-rank-tabs {
-        display: flex;
-        gap: 6px;
-        padding: 8px;
-        border-bottom: 1px solid var(--border);
-        background: var(--surface-bar);
-      }
-      .us-rank-tab {
-        flex: 1;
-        min-width: 0;
-        padding: 9px 10px;
-        border: 1px solid var(--border);
-        border-radius: 3px;
-        background: var(--bg-tertiary);
-        color: var(--text-muted);
-        font-family: var(--font-mono);
-        font-size: 11px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .us-rank-tab[aria-selected="true"] {
-        color: var(--accent-bright);
-        border-color: var(--border-strong);
-        box-shadow: inset 0 -2px 0 0 var(--accent-bright);
-      }
-      .us-scroll {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .us-table {
-        width: 100%;
-        min-width: 720px;
-        border-collapse: collapse;
-        font-family: var(--font-mono);
-        font-size: 12px;
-      }
-      .us-table th,
-      .us-table td {
-        padding: 6px 10px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: middle;
-      }
-      .us-table th {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-        background: var(--bg-tertiary);
-        color: var(--text-dim);
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-      }
-      .us-table tbody tr:nth-child(even) td {
-        background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
-      }
-      .us-table tr:hover td {
-        background: var(--accent-dim);
-      }
-      .us-table .num {
-        text-align: right;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-      }
-      .us-name-chart-btn {
-        font: inherit;
-        font-weight: 600;
-        color: var(--text);
-        background: none;
-        border: 0;
-        padding: 0;
-        cursor: pointer;
-        text-align: left;
-      }
-      .us-name-chart-btn:hover,
-      .us-name-chart-btn:focus-visible {
-        color: var(--accent-bright);
-        text-decoration: underline;
-        outline: none;
-      }
-      .us-ticker {
-        display: block;
-        font-size: 10px;
-        color: var(--text-dim);
-        margin-top: 2px;
-      }
-      .us-error {
-        margin-top: 12px;
-        padding: 10px 12px;
-        background: var(--down-surface);
-        border: 1px solid var(--down-border);
-        color: var(--down-text);
-        font-size: 13px;
-        border-radius: var(--radius);
-      }
-      .rt-chart-row td {
-        padding: 0 !important;
-        border-bottom: 1px solid var(--border-strong);
-        background: var(--surface-inset);
-      }
-      .rt-chart-wrap {
-        width: 100%;
-        min-height: 420px;
-        border-top: 1px solid var(--border);
-        background: var(--surface-inset);
-      }
-      .rt-chart-body {
-        position: relative;
-        min-height: 420px;
-      }
       .us-tv-widget {
+        display: block;
         width: 100%;
         height: 420px;
         border: 0;
-        display: block;
-        background: var(--surface-inset);
+      }
+      /* 미국시장은 단일 지표 열 — 실시간시세 탭별 숨김 규칙 무효화 */
+      #us-rank-table.rt-table[data-rt-tab="gainers"] .rt-td-mcap,
+      #us-rank-table.rt-table[data-rt-tab="gainers"] th.rt-td-mcap,
+      #us-rank-table.rt-table[data-rt-tab="tv"] .rt-td-mcap,
+      #us-rank-table.rt-table[data-rt-tab="tv"] th.rt-td-mcap {
+        display: table-cell !important;
       }
       @media (max-width: 768px) {
-        .us-index-strip {
-          grid-template-columns: 1fr;
-        }
-        .us-sector-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-        .us-rank-tabs {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 4px;
-          padding: 6px;
-        }
-        .us-rank-tab {
-          width: 100%;
-          padding: 8px 2px;
-          font-size: 9px;
-          letter-spacing: -0.04em;
-          white-space: nowrap;
-        }
-        .us-panel__head {
-          font-size: 10px;
-          letter-spacing: 0.02em;
-        }
-        .us-table {
-          min-width: 0;
-          table-layout: fixed;
-          font-size: 11.5px;
-        }
-        .us-table th,
-        .us-table td {
-          padding: 6px 4px;
-        }
-        .us-table th:nth-child(1),
-        .us-table td:nth-child(1) {
-          width: 34px;
-        }
-        .us-table th:nth-child(2),
-        .us-table td:nth-child(2) {
-          width: auto;
-        }
-        .us-table th:nth-child(3),
-        .us-table td:nth-child(3) {
-          display: none;
-        }
-        .us-table th:nth-child(4),
-        .us-table td:nth-child(4) {
-          width: 72px;
-        }
-        .us-table th:nth-child(5),
-        .us-table td:nth-child(5) {
-          width: 58px;
-        }
-        .us-table th:nth-child(6),
-        .us-table td:nth-child(6) {
-          width: 70px;
-        }
-        .us-name-chart-btn {
-          display: block;
-          max-width: 100%;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          font-size: 11.5px;
-        }
-        .us-table th {
-          font-size: 9.5px;
-        }
         .us-tv-widget {
           height: 360px;
         }
       }
     </style>
   </head>
-  <body class="page-tm-v2">
+  <body class="page-tm-v2" data-tm-tab="us">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -390,61 +85,68 @@
       </div>
 
       <main class="tm-main">
-<div class="page">
-      <div class="us-wrap">
-        <header class="masthead masthead--title-only">
-          <div class="masthead__copy">
-            <p class="masthead__kicker">US Markets</p>
-            <h1 class="masthead__title">미국시장</h1>
-          </div>
-        </header>
+        <div class="page page--realtime">
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">US MARKETS</p>
+              <h1 class="masthead__title">미국시장</h1>
+            </div>
+          </header>
 
-        <div class="us-meta-bar" aria-live="polite">
-          <span id="us-updated">데이터 로딩 중…</span>
-          <span class="us-meta-bar__poll">갱신 주기 5분</span>
+          <div class="rt-wrap">
+            <div class="rt-panel" role="tabpanel">
+              <div class="rt-tabs" role="tablist" aria-label="미국시장 보기">
+                <div class="rt-tabs-row-tabs">
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="market-cap" aria-selected="true" id="us-tab-cap" aria-label="시가총액 TOP 50">
+                    <span class="rt-tab-label--full">시가총액 TOP 50</span><span class="rt-tab-label--short">시가총액</span>
+                  </button>
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="gainers" aria-selected="false" id="us-tab-gainers" aria-label="상승률 TOP 50">
+                    <span class="rt-tab-label--full">상승률 TOP 50</span><span class="rt-tab-label--short">상승률</span>
+                  </button>
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="volume" aria-selected="false" id="us-tab-tv" aria-label="거래대금 TOP 50">
+                    <span class="rt-tab-label--full">거래대금 TOP 50</span><span class="rt-tab-label--short">거래대금</span>
+                  </button>
+                </div>
+                <div class="rt-tab-search">
+                  <div class="rt-tab-search-wrap">
+                    <input type="text" id="us-stock-search-input" placeholder="종목명 또는 티커 검색" autocomplete="off" />
+                    <div id="us-ac" class="rt-ac" hidden></div>
+                    <button type="button" id="us-stock-search-btn">조회</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="us-stock-result-panel" class="rt-stock-panel" hidden aria-live="polite"></div>
+
+              <div class="table-box">
+                <div class="rt-scroll">
+                  <table class="rt-table" id="us-rank-table" data-rt-tab="cap" aria-label="미국시장 TOP 50">
+                    <colgroup>
+                      <col class="rt-col-rank" />
+                      <col class="rt-col-name" />
+                      <col class="rt-col-price" />
+                      <col class="rt-col-chg" />
+                      <col class="rt-col-mcap" />
+                    </colgroup>
+                    <thead>
+                      <tr id="us-rank-head">
+                        <th class="rt-td-rank">순위</th>
+                        <th class="rt-td-name">종목명</th>
+                        <th class="num rt-td-vs">티커</th>
+                        <th class="num rt-td-price">현재가</th>
+                        <th class="num rt-td-chg">등락률</th>
+                        <th class="num rt-td-mcap" id="us-metric-h">시가총액</th>
+                      </tr>
+                    </thead>
+                    <tbody id="us-rank-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <p id="us-error" class="rt-error" hidden></p>
+          </div>
         </div>
-
-        <section class="us-section" aria-labelledby="us-sec-indices">
-          <h2 class="us-section__title" id="us-sec-indices">① 주요 지수/선물</h2>
-          <div id="us-indexes" class="us-index-strip"></div>
-        </section>
-
-        <section class="us-section" aria-labelledby="us-sec-sectors">
-          <h2 class="us-section__title" id="us-sec-sectors">② 섹터별 ETF</h2>
-          <div id="us-sectors" class="us-sector-grid"></div>
-        </section>
-
-        <section class="us-section" aria-labelledby="us-sec-rankings">
-          <h2 class="us-section__title" id="us-sec-rankings">③ 미국시장 TOP 50</h2>
-          <div class="us-panel">
-            <div class="us-panel__head">탭 클릭 시 해당 데이터만 불러옵니다 · 종목명 클릭 시 차트</div>
-            <div class="us-rank-tabs" role="tablist" aria-label="미국시장 순위">
-              <button class="us-rank-tab" type="button" data-us-rank-tab="market-cap" role="tab" aria-selected="true">
-                시총 TOP50
-              </button>
-              <button class="us-rank-tab" type="button" data-us-rank-tab="gainers" role="tab" aria-selected="false">
-                상승률 TOP50
-              </button>
-              <button class="us-rank-tab" type="button" data-us-rank-tab="volume" role="tab" aria-selected="false">
-                거래대금 TOP50
-              </button>
-            </div>
-            <div class="us-scroll">
-              <table class="us-table" aria-label="미국시장 TOP 50">
-                <thead>
-                  <tr id="us-rank-head">
-                    <th class="num">순위</th>
-                  </tr>
-                </thead>
-                <tbody id="us-rank-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <p id="us-error" class="us-error" hidden></p>
-      </div>
-    </div>
       </main>
 
       <footer class="home-footer">
@@ -472,13 +174,7 @@
         </div>
       </footer>
 
-      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
-        <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
-        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
-        <a class="tm-bottom-nav__item" href="./crypto.html" data-tm-tab="crypto"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></a>
-        <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
-        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
-      </nav>
+      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
 
     <script src="./us-market.js"></script>

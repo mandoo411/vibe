@@ -581,12 +581,33 @@ async function fetchSectors() {
   });
 }
 
+async function fetchMarketCapLookup() {
+  return cached("ranking:market-cap:lookup", async () => {
+    const all = [];
+    for (const exchange of EXCHANGES) {
+      const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
+        AUTH: "",
+        CURR_GB: US_RANKING_CURRENCY,
+        EXCD: exchange,
+        KEYB: "",
+        VOL_RANG: "0",
+      });
+      const rows = outputRows(body, "output2").map((row, i) => ({
+        ...mapRankRow(row, all.length + i + 1),
+        exchange,
+      }));
+      all.push(...rows);
+    }
+    return all
+      .filter((row) => row.ticker && row.price != null && row.marketCap != null)
+      .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+      .slice(0, 50)
+      .map((row, i) => ({ ...row, rank: i + 1 }));
+  });
+}
+
 async function getMarketCapRowsCached() {
-  const capHit = memoryCache.get("ranking:market-cap:v3");
-  if (capHit && Array.isArray(capHit.value) && capHit.expiresAt > Date.now()) {
-    return capHit.value;
-  }
-  return fetchMarketCapTop50();
+  return fetchMarketCapLookup();
 }
 
 async function mapPool(items, concurrency, fn) {
@@ -607,30 +628,20 @@ async function enrichRowFromUsDetail(row) {
   if (!row || !row.ticker) return row;
   const exchange = row.exchange || "NAS";
   try {
-    const [priceBody, detailBody] = await Promise.all([
-      kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, {
-        AUTH: "",
-        EXCD: exchange,
-        SYMB: row.ticker,
-      }),
-      kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
-        AUTH: "",
-        EXCD: exchange,
-        SYMB: row.ticker,
-      }),
-    ]);
-    const p = outputObject(priceBody);
+    const detailBody = await kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
+      AUTH: "",
+      EXCD: exchange,
+      SYMB: row.ticker,
+    });
     const d = outputObject(detailBody);
-    const merged = { ...d, ...p };
     const price =
       row.price ??
       round2(
-        toNum(pickFirst(p, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])) ??
-          toNum(pickFirst(d, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+        toNum(pickFirst(d, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
       );
-    const volume = pickUsVolume(d, p) ?? row.volume;
-    const changePct = parseRankingChangePct(merged, price) ?? row.changePct;
-    const changePoints = resolveChangePoints(merged, price, changePct);
+    const volume = pickUsVolume(d, null) ?? row.volume;
+    const changePct = parseRankingChangePct(d, price) ?? row.changePct;
+    const changePoints = resolveChangePoints(d, price, changePct);
     const tradingValue = computeTradingValue(price, volume);
     const detailName = sanitizeStr(pickFirst(d, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
     const name =
@@ -657,7 +668,7 @@ async function enrichRankRows(rows) {
   } catch (e) {
     console.warn("[us-market-data] enrich market cap", e && e.message);
   }
-  const detailed = await mapPool(rows, 6, enrichRowFromUsDetail);
+  const detailed = await mapPool(rows, 10, enrichRowFromUsDetail);
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
     const tradingValue = computeTradingValue(row.price, row.volume) ?? row.tradingValue;
@@ -704,20 +715,10 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return fetchMergedRanking(
-    "ranking:market-cap:v3",
-    MARKET_CAP_PATH,
-    MARKET_CAP_TR_ID,
-    (exchange) => ({
-      AUTH: "",
-      CURR_GB: US_RANKING_CURRENCY,
-      EXCD: exchange,
-      KEYB: "",
-      VOL_RANG: "0",
-    }),
-    "marketCap",
-    { enrich: true }
-  );
+  return cached("ranking:market-cap:v3", async () => {
+    const ranked = await fetchMarketCapLookup();
+    return enrichRankRows(ranked);
+  });
 }
 
 function fetchGainersTop50() {
@@ -755,7 +756,7 @@ function fetchTradeValueTop50() {
       VOL_RANG: "0",
     }),
     "tradingValue",
-    { enrich: true, resort: true, pickCount: 80 }
+    { enrich: true, resort: true, pickCount: 60 }
   );
 }
 

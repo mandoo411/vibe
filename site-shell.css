@@ -2065,11 +2065,19 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item {
     position: relative;
-    padding: 10px 0 8px;
+    padding: 10px 2px 8px;
     gap: 3px;
     color: #aaa;
     font-size: 10px;
     font-weight: 400;
+  }
+
+  .tm-bottom-nav--v2 .tm-bottom-nav__item > span:last-child {
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item.is-active {

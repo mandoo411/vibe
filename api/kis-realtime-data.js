@@ -586,7 +586,8 @@ function naverVolumeFromStock(s) {
 function finalizeRowQuoteFields(row) {
   if (!row) return row;
   const out = { ...row };
-  out.tradingValue = out.tradingValue || pickAcmlTrPbmn(out) || calcTradingValueWon(out.price, out.volume) || "";
+  const fromPriceVol = calcTradingValueWon(out.price, out.volume);
+  out.tradingValue = fromPriceVol || pickAcmlTrPbmn(out) || out.tradingValue || "";
   return out;
 }
 
@@ -893,7 +894,7 @@ function naverStockTradingValueRaw(s) {
 
 /** 거래대금 TOP100 — 후보 풀(정규장 리스트) → NXT통합 거래량으로 재정렬 */
 async function fetchNaverTradingValueTop100() {
-  const cacheKey = "naver-tv-integrated-json:100:stocks-only";
+  const cacheKey = "naver-tv-integrated-json:100:stocks-only:nxt-v2";
   const cached = rankPageCacheGet(cacheKey);
   if (cached) return cached;
 
@@ -1444,7 +1445,7 @@ module.exports = async function handler(req, res) {
 
     if (action === "market-cap") {
       const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-      const cacheKey = `market-cap:${range.page}:${range.pageSize}`;
+      const cacheKey = `market-cap:nxt-v2:${range.page}:${range.pageSize}`;
       const cached = rankPageCacheGet(cacheKey);
       if (cached) {
         json(res, 200, { ...cached, cached: true });
@@ -1468,7 +1469,7 @@ module.exports = async function handler(req, res) {
     if (action === "gainers") {
       try {
         const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-        const cacheKey = `gainers:${range.page}:${range.pageSize}`;
+        const cacheKey = `gainers:nxt-v2:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });
@@ -1496,7 +1497,7 @@ module.exports = async function handler(req, res) {
     if (action === "trading-value") {
       try {
         const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-        const cacheKey = `trading-value:${range.page}:${range.pageSize}`;
+        const cacheKey = `trading-value:nxt-v2:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });

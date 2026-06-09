@@ -361,10 +361,10 @@
   }
 
   function formatRowTradeVal(r) {
-    const tvRaw = r && r.tradingValue != null ? Number(String(r.tradingValue).replace(/,/g, "")) : null;
-    if (tvRaw != null && Number.isFinite(tvRaw) && tvRaw > 0) return formatTradeVal(String(tvRaw));
     const calc = calcTradeValFromPriceVol(r && r.price, r && r.volume);
     if (calc != null) return formatTradeVal(String(calc));
+    const tvRaw = r && r.tradingValue != null ? Number(String(r.tradingValue).replace(/,/g, "")) : null;
+    if (tvRaw != null && Number.isFinite(tvRaw) && tvRaw > 0) return formatTradeVal(String(tvRaw));
     return "—";
   }
 

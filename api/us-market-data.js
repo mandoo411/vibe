@@ -690,6 +690,7 @@ async function enrichRowFromUsDetail(row) {
   const exchanges = [row.exchange || "NAS", "NYS"].filter((e, i, a) => a.indexOf(e) === i);
   const symbols = kisSymbolVariants(row.ticker);
   let lastErr = null;
+  let best = null;
   for (const sym of symbols) {
     for (const exchange of exchanges) {
       try {
@@ -734,12 +735,15 @@ async function enrichRowFromUsDetail(row) {
             : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
               ? detailName
               : row.name;
-        return { ...row, exchange, name, price, volume, changePct, changePoints, tradingValue };
+        const candidate = { ...row, exchange, name, price, volume, changePct, changePoints, tradingValue };
+        const score = tradingValue || 0;
+        if (!best || score > (best.tradingValue || 0)) best = candidate;
       } catch (e) {
         lastErr = e;
       }
     }
   }
+  if (best) return best;
   console.warn("[us-market-data] detail enrich", row.ticker, lastErr && lastErr.message);
   const tradingValue =
     pickUsTradingValue(row, null, row.price, row.volume) ?? computeTradingValue(row.price, row.volume);
@@ -806,7 +810,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v6", async () => {
+  return cached("ranking:market-cap:v7", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -853,7 +857,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v6",
+    "ranking:market-cap:v7",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1012,7 +1016,7 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v6",
+    "ranking:market-cap:v7",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1111,7 +1115,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v6", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v7", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

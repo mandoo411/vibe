@@ -160,6 +160,7 @@ body.page-home-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
     --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
+    --home-nav-menu-gap: 3ch;
   }
 
   .page-home-v2 .home-nav,
@@ -182,37 +183,18 @@ body.page-home-v2 {
     min-width: 0;
     padding-left: max(8px, var(--home-nav-menu-inset));
     padding-right: 8px;
-    gap: 0;
+    gap: var(--home-nav-menu-gap);
+    flex-wrap: nowrap;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,
-  .page-tm-v2 .home-nav__menu > .home-nav__home-btn {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 36px;
-    max-width: 48px;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
+  .page-tm-v2 .home-nav__menu > .home-nav__home-btn,
   .page-home-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
-  .page-tm-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme) {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 0;
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-
+  .page-tm-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
   .page-home-v2 .home-nav__menu > .home-nav__theme,
   .page-tm-v2 .home-nav__menu > .home-nav__theme {
-    flex: 1 1 0;
-    justify-content: center;
-    min-width: 36px;
-    max-width: 48px;
-    flex-shrink: 0;
-    margin-left: 0;
+    flex: 0 0 auto;
+    margin: 0;
     padding-left: 0;
     padding-right: 0;
   }

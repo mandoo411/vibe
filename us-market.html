@@ -31,12 +31,64 @@
         height: 420px;
         border: 0;
       }
-      /* 미국시장은 단일 지표 열 — 실시간시세 탭별 숨김 규칙 무효화 */
-      #us-rank-table.rt-table[data-rt-tab="gainers"] .rt-td-mcap,
-      #us-rank-table.rt-table[data-rt-tab="gainers"] th.rt-td-mcap,
-      #us-rank-table.rt-table[data-rt-tab="tv"] .rt-td-mcap,
-      #us-rank-table.rt-table[data-rt-tab="tv"] th.rt-td-mcap {
-        display: table-cell !important;
+      @media (min-width: 769px) {
+        .page--realtime .rt-panel:has(#us-rank-table) .rt-scroll {
+          overflow-x: auto;
+          scrollbar-gutter: stable;
+        }
+        #us-rank-table {
+          --us-rank-w: 50px;
+          --us-name-w: 140px;
+          --us-ticker-w: 58px;
+        }
+        #us-rank-table col.rt-col-rank {
+          width: var(--us-rank-w);
+        }
+        #us-rank-table col.rt-col-name {
+          width: var(--us-name-w);
+        }
+        #us-rank-table col.rt-col-ticker {
+          width: var(--us-ticker-w);
+        }
+        #us-rank-table .rt-td-rank,
+        #us-rank-table th.rt-td-rank {
+          position: sticky;
+          left: 0;
+          z-index: 3;
+          background: var(--bg-tertiary);
+        }
+        #us-rank-table .rt-td-name,
+        #us-rank-table th.rt-td-name {
+          position: sticky;
+          left: var(--us-rank-w);
+          z-index: 3;
+          background: var(--bg-tertiary);
+        }
+        #us-rank-table .rt-td-ticker,
+        #us-rank-table th.rt-td-ticker {
+          position: sticky;
+          left: calc(var(--us-rank-w) + var(--us-name-w));
+          z-index: 3;
+          background: var(--bg-tertiary);
+          box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.08);
+        }
+        #us-rank-table tbody .rt-td-rank,
+        #us-rank-table tbody .rt-td-name,
+        #us-rank-table tbody .rt-td-ticker {
+          background: var(--bg-secondary, #fff);
+        }
+        [data-theme="dark"] #us-rank-table tbody .rt-td-rank,
+        [data-theme="dark"] #us-rank-table tbody .rt-td-name,
+        [data-theme="dark"] #us-rank-table tbody .rt-td-ticker {
+          background: var(--bg-secondary, #1a1f35);
+        }
+        #us-rank-table th.rt-td-ticker,
+        #us-rank-table td.rt-td-ticker {
+          text-align: right;
+          color: var(--text-dim);
+          font-size: 13px;
+          font-weight: 600;
+        }
       }
       @media (max-width: 768px) {
         .us-tv-widget {
@@ -101,7 +153,7 @@
                     <span class="rt-tab-label--full">시가총액 TOP 50</span><span class="rt-tab-label--short">시가총액</span>
                   </button>
                   <button type="button" class="rt-tab" role="tab" data-us-tab="gainers" aria-selected="false" id="us-tab-gainers" aria-label="상승률 TOP 50">
-                    <span class="rt-tab-label--full">상승률 TOP 50</span><span class="rt-tab-label--short">상승률</span>
+                    <span class="rt-tab-label--full"><span data-us-tab-measure-end>상승</span>률 TOP 50</span><span class="rt-tab-label--short">상승률</span>
                   </button>
                   <button type="button" class="rt-tab" role="tab" data-us-tab="volume" aria-selected="false" id="us-tab-tv" aria-label="거래대금 TOP 50">
                     <span class="rt-tab-label--full">거래대금 TOP 50</span><span class="rt-tab-label--short">거래대금</span>
@@ -124,17 +176,22 @@
                     <colgroup>
                       <col class="rt-col-rank" />
                       <col class="rt-col-name" />
+                      <col class="rt-col-ticker" />
                       <col class="rt-col-price" />
+                      <col class="rt-col-vs" />
                       <col class="rt-col-chg" />
+                      <col class="rt-col-tv" />
                       <col class="rt-col-mcap" />
                     </colgroup>
                     <thead>
                       <tr id="us-rank-head">
                         <th class="rt-td-rank">순위</th>
                         <th class="rt-td-name">종목명</th>
-                        <th class="num rt-td-vs">티커</th>
-                        <th class="num rt-td-price">현재가</th>
+                        <th class="num rt-td-ticker">티커</th>
+                        <th class="num rt-td-price">가격</th>
+                        <th class="num rt-td-vs">대비</th>
                         <th class="num rt-td-chg">등락률</th>
+                        <th class="num rt-td-tv">거래대금</th>
                         <th class="num rt-td-mcap" id="us-metric-h">시가총액</th>
                       </tr>
                     </thead>

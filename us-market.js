@@ -18,15 +18,15 @@
     gainers: {
       rtTab: "gainers",
       action: "gainers",
-      valueKey: "volume",
-      valueLabel: "거래량",
-      valueFormat: fmtNumberCompact,
+      valueKey: "marketCap",
+      valueLabel: "시가총액",
+      valueFormat: fmtUsdCompact,
     },
     volume: {
       rtTab: "tv",
       action: "volume",
-      valueKey: "tradingValue",
-      valueLabel: "거래대금",
+      valueKey: "marketCap",
+      valueLabel: "시가총액",
       valueFormat: fmtUsdCompact,
     },
   };
@@ -68,6 +68,19 @@
   function fmtUsdPrice(n) {
     if (n == null || !Number.isFinite(n)) return "—";
     return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  function fmtUsdChange(n) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    if (n === 0) return "0";
+    const sign = n > 0 ? "+" : "";
+    return `${sign}${n.toFixed(2)}`;
+  }
+
+  function formatVsCell(row) {
+    const n = row && Number.isFinite(Number(row.changePoints)) ? Number(row.changePoints) : null;
+    if (n == null) return { html: "—", cls: "" };
+    return { html: escapeHtml(fmtUsdChange(n)), cls: n > 0 ? "rt-vs-pos" : n < 0 ? "rt-vs-neg" : "" };
   }
 
   function fmtNumberCompact(n) {
@@ -184,7 +197,7 @@
   function chartRowHtml(ticker) {
     const row = findRowByTicker(ticker) || { ticker };
     return `<tr class="rt-detail-row rt-chart-row" data-chart-for="${escapeHtml(ticker)}">
-      <td colspan="6">
+      <td colspan="8">
         <div class="rt-chart-wrap">
           <div class="rt-chart-body">
             <iframe
@@ -204,15 +217,18 @@
   function rankRowHtml(row) {
     const cfg = TAB_CONFIG[state.activeTab];
     const chgCls = deltaClass(row.changePct);
+    const vs = formatVsCell(row);
     const open = state.openTicker === row.ticker;
     return `<tr class="rt-stock-row us-stock-row" data-ticker="${escapeHtml(row.ticker)}">
       <td class="rt-td-rank num">${row.rank != null ? escapeHtml(String(row.rank)) : "—"}</td>
       <td class="rt-td-name">
         <button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${escapeHtml(row.name || row.ticker)}</button>
       </td>
-      <td class="rt-td-vs num">${escapeHtml(row.ticker || "—")}</td>
+      <td class="rt-td-ticker num">${escapeHtml(row.ticker || "—")}</td>
       <td class="rt-td-price num">${escapeHtml(fmtUsdPrice(row.price))}</td>
+      <td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>
       <td class="rt-td-chg num"><span class="delta ${chgCls}">${escapeHtml(fmtPct(row.changePct))}</span></td>
+      <td class="rt-td-tv num">${escapeHtml(fmtUsdCompact(row.tradingValue))}</td>
       <td class="rt-td-mcap num">${escapeHtml(cfg.valueFormat(row[cfg.valueKey]))}</td>
     </tr>`;
   }
@@ -229,7 +245,7 @@
     if (!body) return;
     const rows = state.rowsByTab[state.activeTab] || [];
     if (!rows.length) {
-      body.innerHTML = `<tr class="rt-table-loading"><td colspan="6" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
+      body.innerHTML = `<tr class="rt-table-loading"><td colspan="8" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
       return;
     }
     const parts = [];
@@ -239,6 +255,7 @@
     }
     body.innerHTML = parts.join("");
     body.querySelectorAll(".rt-chart-row").forEach((row) => row.classList.add("rt-chart-row--ready"));
+    syncUsPriceColumnAlign();
   }
 
   function setTabs() {
@@ -251,7 +268,30 @@
   function showTableLoading() {
     const body = $("us-rank-tbody");
     if (!body) return;
-    body.innerHTML = `<tr class="rt-table-loading"><td colspan="6" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
+    body.innerHTML = `<tr class="rt-table-loading"><td colspan="8" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
+  }
+
+  function syncUsPriceColumnAlign() {
+    const table = $("us-rank-table");
+    const marker = document.querySelector("#us-tab-gainers [data-us-tab-measure-end]");
+    const priceTh = table && table.querySelector("th.rt-td-price");
+    if (!table || !marker || !priceTh) return;
+    if (!window.matchMedia("(min-width: 769px)").matches) {
+      table.style.removeProperty("--us-name-w");
+      return;
+    }
+    const gapX = marker.getBoundingClientRect().right;
+    const priceLeft = priceTh.getBoundingClientRect().left;
+    const delta = gapX - priceLeft;
+    if (Math.abs(delta) < 0.5) return;
+    const current = parseFloat(getComputedStyle(table).getPropertyValue("--us-name-w")) || 140;
+    table.style.setProperty("--us-name-w", `${Math.max(72, Math.round(current + delta))}px`);
+    const priceLeft2 = priceTh.getBoundingClientRect().left;
+    const remain = gapX - priceLeft2;
+    if (Math.abs(remain) >= 0.5) {
+      const next = parseFloat(getComputedStyle(table).getPropertyValue("--us-name-w")) || 140;
+      table.style.setProperty("--us-name-w", `${Math.max(72, Math.round(next + remain))}px`);
+    }
   }
 
   async function loadActiveTab(force) {
@@ -508,12 +548,27 @@
     }, POLL_MS);
   }
 
+  function wireLayoutSync() {
+    if (window.__usLayoutSyncWired) return;
+    window.__usLayoutSyncWired = true;
+    window.addEventListener("resize", () => {
+      const table = $("us-rank-table");
+      if (table) table.style.removeProperty("--us-name-w");
+      syncUsPriceColumnAlign();
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(syncUsPriceColumnAlign).catch(() => {});
+    }
+  }
+
   async function init() {
     wireTabs();
     wireTable();
     wireSearch();
+    wireLayoutSync();
     setTabs();
     await refreshAll(false);
+    syncUsPriceColumnAlign();
     startPolling();
   }
 

@@ -197,6 +197,23 @@ function mapRankRow(row, rank) {
   const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
   const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
   const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+  let changePoints = round2(
+    toNum(
+      pickFirst(row, [
+        "diff",
+        "DIFF",
+        "prdy_vrss",
+        "PRDY_VRSS",
+        "ovrs_stck_prdy_vrss",
+        "OVRS_STCK_PRDY_VRSS",
+        "change",
+        "CHANGE",
+      ])
+    )
+  );
+  if (changePoints == null && price != null && changePct != null) {
+    changePoints = round2((price * changePct) / 100);
+  }
   const volume = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
   const directTradingValue = toNum(
@@ -227,6 +244,7 @@ function mapRankRow(row, rank) {
     name,
     price,
     changePct,
+    changePoints,
     volume: volume != null ? Math.round(volume) : null,
     marketCap: marketCap != null ? Math.round(marketCap) : null,
     tradingValue: tradingValue != null ? Math.round(tradingValue) : null,

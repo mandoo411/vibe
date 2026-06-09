@@ -13,6 +13,8 @@ const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
 const OVERSEAS_INDEX_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price-detail";
 const OVERSEAS_INDEX_PRICE_TR_ID = "HHDFS76200200";
+const OVERSEAS_DETAIL_PATH = OVERSEAS_INDEX_PRICE_PATH;
+const OVERSEAS_DETAIL_TR_ID = OVERSEAS_INDEX_PRICE_TR_ID;
 const MARKET_CAP_PATH = "/uapi/overseas-stock/v1/ranking/market-cap";
 const MARKET_CAP_TR_ID = "HHDFS76350100";
 const UPDOWN_RATE_PATH = "/uapi/overseas-stock/v1/ranking/updown-rate";
@@ -253,22 +255,20 @@ function resolveChangePoints(row, price, changePct) {
   return raw;
 }
 
-function mapRankRow(row, rank) {
-  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
-  const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
-  const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
-  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
-  const changePoints = resolveChangePoints(row, price, changePct);
-  const tvol = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
-  const pvol = toNum(pickFirst(row, ["pvol", "PVOL"]));
-  const volume = tvol != null && tvol > 0 ? tvol : pvol;
-  const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
-  const directTradingValue = toNum(
-    pickFirst(row, [
-      "tamt",
-      "TAMT",
-      "pamt",
-      "PAMT",
+function pickUsVolume(detail, price) {
+  const tvol = toNum(pickFirst(detail, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
+  const pvol = toNum(pickFirst(detail, ["pvol", "PVOL"]));
+  const priceVol = price ? toNum(pickFirst(price, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"])) : null;
+  const candidates = [tvol, pvol, priceVol].filter((n) => n != null && n > 0);
+  if (!candidates.length) return null;
+  return Math.round(Math.max(...candidates));
+}
+
+function pickUsTradingValue(detail, price, currentPrice, volume) {
+  const tamt = toNum(pickFirst(detail, ["tamt", "TAMT"]));
+  const pamt = toNum(pickFirst(detail, ["pamt", "PAMT"]));
+  const trPbmn = toNum(
+    pickFirst(detail, [
       "tr_pbmn",
       "TR_PBMN",
       "acml_tr_pbmn",
@@ -281,11 +281,27 @@ function mapRankRow(row, rank) {
       "TRADING_VALUE",
     ])
   );
-  const patternTradingValue =
-    directTradingValue ??
-    pickNumberByPattern(row, /pbmn|tamt|trading.*value|trade.*value|amount/i, /tomv|mket|market|cap|avls/i);
-  const tradingValue =
-    patternTradingValue != null ? patternTradingValue : price != null && volume != null ? price * volume : null;
+  const patternTv = pickNumberByPattern(
+    detail,
+    /pbmn|tamt|trading.*value|trade.*value|amount/i,
+    /tomv|mket|market|cap|avls/i
+  );
+  const priceAmt = price ? toNum(pickFirst(price, ["tamt", "TAMT"])) : null;
+  const candidates = [tamt, pamt, trPbmn, patternTv, priceAmt].filter((n) => n != null && n > 0);
+  if (candidates.length) return Math.round(Math.max(...candidates));
+  if (currentPrice != null && volume != null) return Math.round(currentPrice * volume);
+  return null;
+}
+
+function mapRankRow(row, rank) {
+  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
+  const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
+  const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
+  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+  const changePoints = resolveChangePoints(row, price, changePct);
+  const volume = pickUsVolume(row, null);
+  const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
+  const tradingValue = pickUsTradingValue(row, null, price, volume);
   const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
     rank: rawRank != null ? Math.round(rawRank) : rank,
@@ -560,28 +576,33 @@ async function enrichRowFromUsDetail(row) {
   if (!row || !row.ticker) return row;
   const exchange = row.exchange || "NAS";
   try {
-    const body = await kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
-      AUTH: "",
-      EXCD: exchange,
-      SYMB: row.ticker,
-    });
-    const out = outputObject(body);
-    const tvol = toNum(pickFirst(out, ["tvol", "TVOL"]));
-    const pvol = toNum(pickFirst(out, ["pvol", "PVOL"]));
-    const tamt = toNum(pickFirst(out, ["tamt", "TAMT"]));
-    const pamt = toNum(pickFirst(out, ["pamt", "PAMT"]));
-    const volCandidates = [tvol, pvol].filter((n) => n != null && n > 0);
-    const volume = volCandidates.length ? Math.round(Math.max(...volCandidates)) : row.volume;
-    const tvCandidates = [tamt, pamt].filter((n) => n != null && n > 0);
-    const tradingValue = tvCandidates.length ? Math.round(Math.max(...tvCandidates)) : row.tradingValue;
-    const detailName = sanitizeStr(pickFirst(out, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
+    const [priceBody, detailBody] = await Promise.all([
+      kisGet(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, {
+        AUTH: "",
+        EXCD: exchange,
+        SYMB: row.ticker,
+      }),
+      kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
+        AUTH: "",
+        EXCD: exchange,
+        SYMB: row.ticker,
+      }),
+    ]);
+    const p = outputObject(priceBody);
+    const d = outputObject(detailBody);
+    const price =
+      row.price ??
+      round2(toNum(pickFirst(p, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
+    const volume = pickUsVolume(d, p) ?? row.volume;
+    const tradingValue = pickUsTradingValue(d, p, price, volume) ?? row.tradingValue;
+    const detailName = sanitizeStr(pickFirst(d, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
     const name =
       row.name && row.name !== row.ticker
         ? row.name
         : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
           ? detailName
           : row.name;
-    return { ...row, name, volume, tradingValue };
+    return { ...row, name, price, volume, tradingValue };
   } catch (e) {
     console.warn("[us-market-data] detail enrich", row.ticker, e && e.message);
     return row;

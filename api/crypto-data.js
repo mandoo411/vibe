@@ -157,16 +157,44 @@ function syntheticSparkline(price, change1h, change24h, change7d) {
   return out.every((v) => v != null) ? out : null;
 }
 
+async function fetchCoinGeckoSparklineMap() {
+  const map = new Map();
+  try {
+    for (let page = 1; page <= 2; page++) {
+      const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=${page}&sparkline=true`;
+      const res = await fetch(url, {
+        headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
+      });
+      if (!res.ok) continue;
+      const rows = await res.json();
+      if (!Array.isArray(rows)) continue;
+      for (const row of rows) {
+        const sym = sanitizeStr(row.symbol).toUpperCase();
+        const prices = row.sparkline_in_7d && row.sparkline_in_7d.price;
+        if (!sym || !Array.isArray(prices) || prices.length < 8) continue;
+        map.set(
+          sym,
+          prices.map((v) => toNum(v)).filter((v) => v != null && Number.isFinite(v))
+        );
+      }
+    }
+  } catch (e) {
+    console.warn("[crypto-data] coingecko sparkline", e && e.message);
+  }
+  return map;
+}
+
 async function fetchListings() {
-  return cached("listings", async () => {
+  return cached("listings:v2", async () => {
     const params = {
       limit: 400,
       start: 1,
       aux: "cmc_rank,max_supply,circulating_supply,total_supply",
     };
-    const [krwData, usdData] = await Promise.all([
+    const [krwData, usdData, sparkMap] = await Promise.all([
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "KRW" }),
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "USD" }),
+      fetchCoinGeckoSparklineMap(),
     ]);
     const rows = Array.isArray(krwData.data) ? krwData.data : [];
     const usdById = new Map(
@@ -188,15 +216,17 @@ async function fetchListings() {
           Math.round(toNum(usd.fully_diluted_market_cap) || toNum(coin.fully_diluted_market_cap) || 0) || null;
         if (!fdvUsd && maxSupply != null && priceUsd != null) fdvUsd = Math.round(maxSupply * priceUsd);
         if (!fdvKrw && maxSupply != null && priceKrw != null) fdvKrw = Math.round(maxSupply * priceKrw);
+        const symbol = sanitizeStr(coin.symbol);
         const sparkline =
           pickSparkline(coin, usd) ||
           pickSparkline(coin, krw) ||
+          sparkMap.get(symbol.toUpperCase()) ||
           syntheticSparkline(priceUsd ?? priceKrw, toNum(usd.percent_change_1h ?? krw.percent_change_1h), toNum(usd.percent_change_24h ?? krw.percent_change_24h), toNum(usd.percent_change_7d ?? krw.percent_change_7d));
         return {
           rank: toNum(coin.cmc_rank) || i + 1,
           id: toNum(coin.id),
           name: sanitizeStr(coin.name),
-          symbol: sanitizeStr(coin.symbol),
+          symbol,
           price: priceKrw,
           priceKrw,
           priceUsd,

@@ -703,6 +703,24 @@ async function enrichRowFromUsDetail(row) {
           pickUsTradingValue(d, p, price, volume) ??
           pickUsTradingValue(merged, null, price, volume) ??
           computeTradingValue(price, volume);
+        const pamt = toNum(pickFirst(merged, ["pamt", "PAMT"]));
+        const tamt = toNum(pickFirst(merged, ["tamt", "TAMT"]));
+        const tvolRaw = toNum(pickFirst(merged, ["tvol", "TVOL"]));
+        const pvolRaw = toNum(pickFirst(merged, ["pvol", "PVOL"]));
+        const sessionReset =
+          pamt == null &&
+          tamt == null &&
+          tvolRaw != null &&
+          pvolRaw != null &&
+          pvolRaw > 0 &&
+          tvolRaw < pvolRaw * 0.05;
+        if (sessionReset) {
+          volume = Math.round(pvolRaw);
+          tradingValue =
+            pickUsTradingValue(d, p, price, volume) ??
+            pickUsTradingValue(merged, null, price, volume) ??
+            computeTradingValue(price, volume);
+        }
         if (volume == null && tradingValue == null && row.volume == null) continue;
         const changePct = parseRankingChangePct(merged, price) ?? row.changePct;
         const changePoints = resolveChangePoints(merged, price, changePct);
@@ -788,7 +806,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v5", async () => {
+  return cached("ranking:market-cap:v6", async () => {
     const ranked = await fetchMarketCapLookup();
     return enrichRankRows(ranked);
   });
@@ -835,7 +853,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
-    "ranking:market-cap:v5",
+    "ranking:market-cap:v6",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -994,7 +1012,7 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
-    "ranking:market-cap:v5",
+    "ranking:market-cap:v6",
     "ranking:gainers:v4",
     "ranking:trade-value:v4",
     "ranking:market-cap",
@@ -1093,7 +1111,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v5", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v6", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

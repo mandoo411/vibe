@@ -304,6 +304,61 @@ function usExchangeLabel(excd) {
   return e || "US";
 }
 
+function isKisRsymToken(value) {
+  return /^D(NYS|NAS|AMS)[A-Z0-9.]{1,12}$/i.test(sanitizeStr(value));
+}
+
+function resolveUsStockName(detail, price, ticker, nameHint) {
+  const hint = sanitizeStr(nameHint);
+  if (hint && !isKisRsymToken(hint)) return hint;
+  for (const key of [
+    "e_icod",
+    "E_ICOD",
+    "ovrs_item_name",
+    "OVRS_ITEM_NAME",
+    "name",
+    "NAME",
+    "prdt_name",
+    "PRDT_NAME",
+  ]) {
+    const candidate = sanitizeStr(pickFirst(detail, [key]) || pickFirst(price, [key]));
+    if (candidate && !isKisRsymToken(candidate)) return candidate;
+  }
+  return ticker;
+}
+
+function pickUsVolume(detail, price) {
+  const tvol = toNum(pickFirst(detail, ["tvol", "TVOL"]));
+  const pvol = toNum(pickFirst(detail, ["pvol", "PVOL"]));
+  const priceVol = toNum(pickFirst(price, ["tvol", "TVOL"]));
+  const chosen =
+    tvol != null && tvol > 0
+      ? tvol
+      : priceVol != null && priceVol > 0
+        ? priceVol
+        : pvol != null && pvol > 0
+          ? pvol
+          : null;
+  return chosen == null ? null : Math.round(chosen);
+}
+
+function pickUsTradingValue(detail, price, currentPrice, volume) {
+  const tamt = toNum(pickFirst(detail, ["tamt", "TAMT"]));
+  const pamt = toNum(pickFirst(detail, ["pamt", "PAMT"]));
+  const priceAmt = toNum(pickFirst(price, ["tamt", "TAMT"]));
+  const chosen =
+    tamt != null && tamt > 0
+      ? tamt
+      : priceAmt != null && priceAmt > 0
+        ? priceAmt
+        : pamt != null && pamt > 0
+          ? pamt
+          : currentPrice != null && volume != null
+            ? currentPrice * volume
+            : null;
+  return chosen == null ? null : Math.round(chosen);
+}
+
 function resolveUsChangeAmt(row, price, changeRate) {
   const prev = round2(
     toNum(
@@ -332,7 +387,7 @@ function resolveUsChangeAmt(row, price, changeRate) {
   return raw;
 }
 
-async function fetchUsStockQuote(ticker) {
+async function fetchUsStockQuote(ticker, nameHint) {
   let lastError = null;
   for (const exchange of US_EXCHANGES) {
     try {
@@ -343,18 +398,20 @@ async function fetchUsStockQuote(ticker) {
       const p = (priceRes && priceRes.output) || {};
       const d = (detailRes && detailRes.output) || {};
       const merged = { ...d, ...p };
-      const currentPrice = round2(toNum(pickFirst(merged, ["last", "LAST", "stck_prpr", "STCK_PRPR"])));
+      const currentPrice = round2(
+        toNum(pickFirst(p, ["last", "LAST", "stck_prpr", "STCK_PRPR"])) ||
+          toNum(pickFirst(d, ["last", "LAST", "stck_prpr", "STCK_PRPR"]))
+      );
       if (currentPrice == null) continue;
       const changeRate = round2(toNum(pickFirst(merged, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
       const changeAmt = resolveUsChangeAmt(merged, currentPrice, changeRate);
-      const volume = toNum(pickFirst(merged, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "pvol", "PVOL"]));
-      const tradingValue =
-        toNum(pickFirst(merged, ["tamt", "TAMT", "acml_tr_pbmn", "ACML_TR_PBMN", "tr_pbmn", "TR_PBMN"])) ||
-        (currentPrice != null && volume != null ? currentPrice * volume : null);
-      const marketCap = toNum(pickFirst(merged, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
-      const open = round2(toNum(pickFirst(merged, ["open", "OPEN", "stck_oprc", "STCK_OPRC"])));
-      const high = round2(toNum(pickFirst(merged, ["high", "HIGH", "stck_hgpr", "STCK_HGPR"])));
-      const low = round2(toNum(pickFirst(merged, ["low", "LOW", "stck_lwpr", "STCK_LWPR"])));
+      const volume = pickUsVolume(d, p);
+      const tradingValue = pickUsTradingValue(d, p, currentPrice, volume);
+      const marketCap = toNum(pickFirst(d, ["tomv", "TOMV", "mket_avls", "MKET_AVLS", "mcap", "MCAP"])) ||
+        toNum(pickFirst(p, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
+      const open = round2(toNum(pickFirst(d, ["open", "OPEN", "stck_oprc", "STCK_OPRC"])));
+      const high = round2(toNum(pickFirst(d, ["high", "HIGH", "stck_hgpr", "STCK_HGPR"])));
+      const low = round2(toNum(pickFirst(d, ["low", "LOW", "stck_lwpr", "STCK_LWPR"])));
       const prevClose = round2(
         toNum(
           pickFirst(merged, [
@@ -369,14 +426,11 @@ async function fetchUsStockQuote(ticker) {
           ])
         )
       );
-      const high52w = round2(toNum(pickFirst(merged, ["h52p", "H52P", "w52_hgpr", "W52_HGPR"])));
-      const low52w = round2(toNum(pickFirst(merged, ["l52p", "L52P", "w52_lwpr", "W52_LWPR"])));
-      const per = toNum(pickFirst(merged, ["perx", "PERX", "per", "PER"]));
-      const eps = toNum(pickFirst(merged, ["epsx", "EPSX", "eps", "EPS"]));
-      const stockName =
-        sanitizeStr(
-          pickFirst(merged, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME", "prdt_name", "PRDT_NAME", "rsym", "RSYM"])
-        ) || ticker;
+      const high52w = round2(toNum(pickFirst(d, ["h52p", "H52P", "w52_hgpr", "W52_HGPR"])));
+      const low52w = round2(toNum(pickFirst(d, ["l52p", "L52P", "w52_lwpr", "W52_LWPR"])));
+      const per = toNum(pickFirst(d, ["perx", "PERX", "per", "PER"]));
+      const eps = toNum(pickFirst(d, ["epsx", "EPSX", "eps", "EPS"]));
+      const stockName = resolveUsStockName(d, p, ticker, nameHint);
 
       return {
         stockCode: ticker,
@@ -386,8 +440,8 @@ async function fetchUsStockQuote(ticker) {
         currentPrice,
         changeAmt,
         changeRate,
-        volume: volume == null ? null : Math.round(volume),
-        tradingValue: tradingValue == null ? null : Math.round(tradingValue),
+        volume,
+        tradingValue,
         marketCap: marketCap == null ? null : Math.round(marketCap),
         prevClose,
         open,
@@ -406,8 +460,8 @@ async function fetchUsStockQuote(ticker) {
   throw err;
 }
 
-async function handleUsQuoteRequest(res, ticker) {
-  const quote = await fetchUsStockQuote(ticker);
+async function handleUsQuoteRequest(res, ticker, nameHint) {
+  const quote = await fetchUsStockQuote(ticker, nameHint);
   return json(res, 200, quote);
 }
 
@@ -430,7 +484,8 @@ module.exports = async (req, res) => {
       if (!usTicker) {
         return json(res, 400, { error: "code(티커)가 필요합니다." });
       }
-      return await handleUsQuoteRequest(res, usTicker);
+      const nameHint = sanitizeStr(url.searchParams.get("name"));
+      return await handleUsQuoteRequest(res, usTicker, nameHint);
     }
 
     const code6 = normalizeCode6(url.searchParams.get("code") || "");

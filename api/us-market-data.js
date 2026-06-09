@@ -259,12 +259,16 @@ function mapRankRow(row, rank) {
   const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
   const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
   const changePoints = resolveChangePoints(row, price, changePct);
-  const volume = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
+  const tvol = toNum(pickFirst(row, ["tvol", "TVOL", "acml_vol", "ACML_VOL", "volume", "VOLUME"]));
+  const pvol = toNum(pickFirst(row, ["pvol", "PVOL"]));
+  const volume = tvol != null && tvol > 0 ? tvol : pvol;
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
   const directTradingValue = toNum(
     pickFirst(row, [
       "tamt",
       "TAMT",
+      "pamt",
+      "PAMT",
       "tr_pbmn",
       "TR_PBMN",
       "acml_tr_pbmn",
@@ -552,6 +556,42 @@ async function getMarketCapRowsCached() {
   return fetchMarketCapTop50();
 }
 
+async function enrichRowFromUsDetail(row) {
+  if (!row || !row.ticker) return row;
+  const exchange = row.exchange || "NAS";
+  try {
+    const body = await kisGet(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, {
+      AUTH: "",
+      EXCD: exchange,
+      SYMB: row.ticker,
+    });
+    const out = outputObject(body);
+    const tvol = toNum(pickFirst(out, ["tvol", "TVOL"]));
+    const pvol = toNum(pickFirst(out, ["pvol", "PVOL"]));
+    const tamt = toNum(pickFirst(out, ["tamt", "TAMT"]));
+    const pamt = toNum(pickFirst(out, ["pamt", "PAMT"]));
+    const volume =
+      tvol != null && tvol > 0 ? Math.round(tvol) : pvol != null && pvol > 0 ? Math.round(pvol) : row.volume;
+    const tradingValue =
+      tamt != null && tamt > 0
+        ? Math.round(tamt)
+        : pamt != null && pamt > 0
+          ? Math.round(pamt)
+          : row.tradingValue;
+    const detailName = sanitizeStr(pickFirst(out, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
+    const name =
+      row.name && row.name !== row.ticker
+        ? row.name
+        : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
+          ? detailName
+          : row.name;
+    return { ...row, name, volume, tradingValue };
+  } catch (e) {
+    console.warn("[us-market-data] detail enrich", row.ticker, e && e.message);
+    return row;
+  }
+}
+
 async function enrichRankRows(rows) {
   let capByTicker = new Map();
   try {
@@ -562,7 +602,8 @@ async function enrichRankRows(rows) {
   } catch (e) {
     console.warn("[us-market-data] enrich market cap", e && e.message);
   }
-  return rows.map((row) => {
+  const detailed = await Promise.all(rows.map((row) => enrichRowFromUsDetail(row)));
+  return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
     const tradingValue =
       row.tradingValue != null

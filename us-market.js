@@ -244,6 +244,37 @@
     return escapeHtml(fmtNumberCompact(n));
   }
 
+  function tradingViewSymbol(data) {
+    const ticker = String((data && data.stockCode) || "").toUpperCase().replace(/[^A-Z0-9.]/g, "");
+    if (!ticker) return "NASDAQ:AAPL";
+    const exchange = String((data && data.exchange) || "").toUpperCase();
+    const prefix = exchange === "NYS" ? "NYSE" : "NASDAQ";
+    return `${prefix}:${ticker}`;
+  }
+
+  function tradingViewUrl(data) {
+    const tv = window.tmTradingViewEmbedTheme
+      ? window.tmTradingViewEmbedTheme()
+      : { theme: "dark", toolbar_bg: "#1e2235" };
+    const params = new URLSearchParams({
+      symbol: tradingViewSymbol(data),
+      interval: "D",
+      timezone: "Asia/Seoul",
+      theme: tv.theme,
+      style: "1",
+      locale: "kr",
+      toolbar_bg: tv.toolbar_bg,
+      hide_side_toolbar: "0",
+      allow_symbol_change: "1",
+      save_image: "0",
+      calendar: "0",
+      studies: "[]",
+      withdateranges: "1",
+      hideideas: "1",
+    });
+    return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
+  }
+
   function usStockAccHtml(data) {
     const name = escapeHtml(data.stockName || data.stockCode || "—");
     const ticker = escapeHtml(data.stockCode || "");
@@ -256,6 +287,7 @@
     const aiHref = `./stock-analysis.html?q=${encodeURIComponent(String(data.stockCode || ""))}`;
     const closeBtn = `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
     const fin = data.financials || {};
+    const chartId = `us-chart-${String(data.stockCode || "").replace(/[^A-Za-z0-9]/g, "")}`;
 
     const basicGrid = [
       accGridCell("시가", fmtUsdCell(data.open)),
@@ -264,18 +296,19 @@
       accGridCell("전일종가", fmtUsdCell(data.prevClose)),
     ].join("");
 
+    const metricsGrid = [
+      accGridCell("52주고", fmtUsdCell(data.high52w), "rt-acc-val--hi"),
+      accGridCell("52주저", fmtUsdCell(data.low52w), "rt-acc-val--lo"),
+      accGridCell("PER", fmtPer(fin.per)),
+      accGridCell("EPS", fmtEps(fin.eps)),
+    ].join("");
+
     const volumeGrid = [
       accGridCell("거래량", fmtVolumeUs(data.volume)),
       accGridCell("거래대금", escapeHtml(fmtUsdCompact(data.tradingValue))),
       accGridCell("시가총액", escapeHtml(fmtUsdCompact(data.marketCap))),
+      `<div class="rt-acc-cell rt-acc-cell--spacer" aria-hidden="true"></div>`,
     ].join("");
-
-    const rangeGrid = [
-      accGridCell("52주고", fmtUsdCell(data.high52w), "rt-acc-val--hi"),
-      accGridCell("52주저", fmtUsdCell(data.low52w), "rt-acc-val--lo"),
-    ].join("");
-
-    const finGrid = [accGridCell("PER", fmtPer(fin.per)), accGridCell("EPS", fmtEps(fin.eps))].join("");
 
     return [
       `<div class="rt-acc">`,
@@ -297,24 +330,60 @@
       `    </div>`,
       `  </header>`,
       `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${volumeGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--2 rt-acc-grid--section">${rangeGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--2 rt-acc-grid--section">${finGrid}</div>`,
+      `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${metricsGrid}</div>`,
+      `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${volumeGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
+      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden>`,
+      `      <div class="rt-chart-body">`,
+      `        <iframe class="us-tv-widget" title="${escapeHtml((data.stockName || data.stockCode) + " chart")}" data-symbol="${ticker}" src="${escapeHtml(tradingViewUrl(data))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe>`,
+      `      </div>`,
+      `    </div>`,
       `  </footer>`,
       `</div>`,
     ].join("");
   }
 
-  async function fetchUsKisQuote(ticker) {
+  function wireUsStockAcc(host, data) {
+    if (!host) return;
+    wireDetailAccordionClose(host);
+    const toggle = host.querySelector(".us-chart-toggle");
+    const chartId = toggle && toggle.getAttribute("data-chart-target");
+    const chartHost = chartId ? document.getElementById(chartId) : null;
+    if (!toggle || !chartHost) return;
+    let chartOpen = false;
+    const setToggle = (open) => {
+      chartOpen = !!open;
+      toggle.setAttribute("aria-expanded", chartOpen ? "true" : "false");
+      toggle.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
+      chartHost.hidden = !chartOpen;
+    };
+    setToggle(false);
+    toggle.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      setToggle(!chartOpen);
+      if (!chartOpen) return;
+      const iframe = chartHost.querySelector(".us-tv-widget");
+      if (iframe && !iframe.dataset.mounted) {
+        iframe.src = tradingViewUrl(data);
+        iframe.dataset.mounted = "1";
+      }
+    });
+  }
+
+  async function fetchUsKisQuote(ticker, nameHint) {
     const sym = String(ticker || "").toUpperCase();
-    const cached = state.quoteCache.get(`kis:${sym}`);
+    const cacheKey = `kis:${sym}:${String(nameHint || "")}`;
+    const cached = state.quoteCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
-    const res = await fetch(`${KIS_QUOTE_API}?code=${encodeURIComponent(sym)}&market=US`, { cache: "no-store" });
+    const qs = new URLSearchParams({ code: sym, market: "US" });
+    if (nameHint) qs.set("name", nameHint);
+    const res = await fetch(`${KIS_QUOTE_API}?${qs.toString()}`, { cache: "no-store" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
-    state.quoteCache.set(`kis:${sym}`, { value: data, expiresAt: Date.now() + CLIENT_CACHE_MS });
+    state.quoteCache.set(cacheKey, { value: data, expiresAt: Date.now() + CLIENT_CACHE_MS });
     return data;
   }
 
@@ -347,7 +416,8 @@
     const host = row.querySelector(".rt-detail-acc");
     if (!host) return;
     if (host.dataset.loadedFor === ticker && host.querySelector(".rt-acc")) {
-      wireDetailAccordionClose(host);
+      const existingData = host.dataset.quoteJson ? JSON.parse(host.dataset.quoteJson) : { stockCode: ticker };
+      wireUsStockAcc(host, existingData);
       return;
     }
 
@@ -363,7 +433,11 @@
 
     host.innerHTML = buildDetailSkeleton();
     try {
-      const res = await fetch(`${KIS_QUOTE_API}?code=${encodeURIComponent(ticker)}&market=US`, {
+      const listRow = findRowByTicker(ticker);
+      const nameHint = listRow && listRow.name ? listRow.name : "";
+      const qs = new URLSearchParams({ code: ticker, market: "US" });
+      if (nameHint) qs.set("name", nameHint);
+      const res = await fetch(`${KIS_QUOTE_API}?${qs.toString()}`, {
         cache: "no-store",
         signal: ctrl.signal,
       });
@@ -371,13 +445,13 @@
       if (ctrl.signal.aborted) return;
       if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
       if (state.openTicker !== ticker) return;
-      const listRow = findRowByTicker(ticker);
-      if (listRow && listRow.name && (!data.stockName || data.stockName === ticker)) {
+      if (listRow && listRow.name && (!data.stockName || data.stockName === ticker || /^D(NYS|NAS|AMS)/i.test(data.stockName))) {
         data.stockName = listRow.name;
       }
       host.innerHTML = usStockAccHtml(data);
       host.dataset.loadedFor = ticker;
-      wireDetailAccordionClose(host);
+      host.dataset.quoteJson = JSON.stringify(data);
+      wireUsStockAcc(host, data);
     } catch (e) {
       if (e && e.name === "AbortError") return;
       if (state.openTicker !== ticker) return;
@@ -630,17 +704,19 @@
         panel.innerHTML = `<p class="rt-lw-chart-err">종목을 찾을 수 없습니다. 종목명 또는 티커(예: NVDA, RGTI)를 입력해 주세요.</p>`;
         return;
       }
+      const listRow = findRowByTicker(ticker);
       let quote;
       try {
-        quote = await fetchUsKisQuote(ticker);
+        quote = await fetchUsKisQuote(ticker, listRow && listRow.name ? listRow.name : "");
       } catch (e) {
-        const listRow = findRowByTicker(ticker);
         if (listRow) quote = mapListRowToQuote(listRow);
         else throw e;
       }
+      if (listRow && listRow.name) quote.stockName = listRow.name;
       state.openTicker = null;
       renderRankTable();
       panel.innerHTML = usStockAccHtml(quote);
+      wireUsStockAcc(panel, quote);
       const closeBtn = panel.querySelector(".rt-acc-close");
       if (closeBtn) {
         closeBtn.addEventListener("click", () => {

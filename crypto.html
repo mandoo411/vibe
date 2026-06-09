@@ -1081,11 +1081,11 @@
             </div>
             <div class="crypto-metric-card">
               <div class="crypto-metric-card__label">전체 시가총액</div>
-              <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.totalMarketCap))}</div>
+              <div class="crypto-metric-card__value">${escapeHtml(fmtMoney(moneyValue(g, "totalMarketCap")))}</div>
             </div>
             <div class="crypto-metric-card">
               <div class="crypto-metric-card__label">24시간 거래대금</div>
-              <div class="crypto-metric-card__value">₩${escapeHtml(fmtKrw(g.volume24h))}</div>
+              <div class="crypto-metric-card__value">${escapeHtml(fmtMoney(moneyValue(g, "volume24h")))}</div>
             </div>
             <div class="crypto-metric-card crypto-gauge">
               <div class="crypto-gauge__dial"><span class="crypto-gauge__score">${escapeHtml(score)}</span></div>
@@ -1200,6 +1200,7 @@
               if (next !== "KRW" && next !== "USD") return;
               state.currency = next;
               syncCurrencyButtons();
+              renderGlobal();
               renderTable();
               renderPagination();
             });

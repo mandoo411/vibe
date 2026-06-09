@@ -839,6 +839,20 @@ body[data-theme="dark"] .home-nav__ai-badge {
   overflow: hidden;
 }
 
+.home-rt-col__name-web {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .page-home-v2 .home-section--realtime .home-rt-col__name-web {
+    display: inline;
+  }
+
+  .page-home-v2 .home-section--realtime .home-rt-col__name-m {
+    display: none;
+  }
+}
+
 .home-rt-col--price,
 .home-rt-col--chg,
 .home-rt-col--metric {

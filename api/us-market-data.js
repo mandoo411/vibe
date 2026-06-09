@@ -572,6 +572,20 @@ async function getMarketCapRowsCached() {
   return fetchMarketCapTop50();
 }
 
+async function mapPool(items, concurrency, fn) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  const workers = Math.min(Math.max(1, concurrency), items.length);
+  await Promise.all(Array.from({ length: workers }, () => worker()));
+  return results;
+}
+
 async function enrichRowFromUsDetail(row) {
   if (!row || !row.ticker) return row;
   const exchange = row.exchange || "NAS";
@@ -619,7 +633,7 @@ async function enrichRankRows(rows) {
   } catch (e) {
     console.warn("[us-market-data] enrich market cap", e && e.message);
   }
-  const detailed = await Promise.all(rows.map((row) => enrichRowFromUsDetail(row)));
+  const detailed = await mapPool(rows, 6, enrichRowFromUsDetail);
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
     const tradingValue =
@@ -678,7 +692,7 @@ function fetchMarketCapTop50() {
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers",
+    "ranking:gainers:v2",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -696,27 +710,45 @@ function fetchGainersTop50() {
 }
 
 function fetchTradeValueTop50() {
-  return fetchMergedRanking(
-    "ranking:trade-value",
-    TRADE_PBMN_PATH,
-    TRADE_PBMN_TR_ID,
-    (exchange) => ({
-      AUTH: "",
-      CURR_GB: US_RANKING_CURRENCY,
-      EXCD: exchange,
-      KEYB: "",
-      NDAY: "0",
-      PRC1: "",
-      PRC2: "",
-      VOL_RANG: "0",
-    }),
-    "tradingValue",
-    { enrich: true }
-  );
+  return cached("ranking:trade-value:v2", async () => {
+    const all = [];
+    for (const exchange of EXCHANGES) {
+      const body = await kisGet(TRADE_PBMN_PATH, TRADE_PBMN_TR_ID, {
+        AUTH: "",
+        CURR_GB: US_RANKING_CURRENCY,
+        EXCD: exchange,
+        KEYB: "",
+        NDAY: "0",
+        PRC1: "",
+        PRC2: "",
+        VOL_RANG: "0",
+      });
+      const rows = outputRows(body, "output2").map((row, i) => ({
+        ...mapRankRow(row, all.length + i + 1),
+        exchange,
+      }));
+      all.push(...rows);
+    }
+    const candidates = all
+      .filter((row) => row.ticker && row.price != null && row.tradingValue != null)
+      .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
+      .slice(0, 50);
+    const enriched = await enrichRankRows(candidates);
+    return enriched
+      .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
+      .slice(0, 50)
+      .map((row, i) => ({ ...row, rank: i + 1 }));
+  });
 }
 
 function findCachedRankRow(ticker) {
-  const keys = ["ranking:market-cap", "ranking:gainers", "ranking:trade-value"];
+  const keys = [
+    "ranking:market-cap",
+    "ranking:gainers:v2",
+    "ranking:trade-value:v2",
+    "ranking:gainers",
+    "ranking:trade-value",
+  ];
   for (const key of keys) {
     const hit = memoryCache.get(key);
     if (!hit || !Array.isArray(hit.value) || hit.expiresAt <= Date.now()) continue;
@@ -866,7 +898,13 @@ async function searchUsSymbols(query) {
   if (!q) return [];
   const upper = q.toUpperCase();
   const local = [];
-  const keys = ["ranking:market-cap", "ranking:gainers", "ranking:trade-value"];
+  const keys = [
+    "ranking:market-cap",
+    "ranking:gainers:v2",
+    "ranking:trade-value:v2",
+    "ranking:gainers",
+    "ranking:trade-value",
+  ];
   const seen = new Set();
   for (const key of keys) {
     const hit = memoryCache.get(key);
@@ -967,7 +1005,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v2", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

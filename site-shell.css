@@ -248,8 +248,8 @@ body.page-home-v2 {
   transition: background 0.15s, color 0.15s;
 }
 
-.home-nav__link:hover {
-  background: color-mix(in srgb, var(--accent, #3339bf) 10%, transparent);
+.home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
+  background: transparent;
   color: var(--accent, #3339bf);
 }
 
@@ -1347,8 +1347,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
   color: #c8ccff;
 }
 
-[data-theme="dark"] .home-nav__link:hover {
-  background: rgba(255, 255, 255, 0.06);
+[data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
+  background: transparent;
   color: #ffffff;
 }
 

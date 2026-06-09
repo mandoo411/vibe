@@ -100,8 +100,8 @@ body.page-home-v2 {
   transition: background 0.15s, color 0.15s;
 }
 
-.home-nav__link:hover {
-  background: rgba(51, 57, 191, 0.08);
+.home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
+  background: transparent;
   color: #3339bf;
 }
 

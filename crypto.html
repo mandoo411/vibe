@@ -205,7 +205,7 @@
       }
       .crypto-table {
         width: 100%;
-        min-width: 860px;
+        min-width: 940px;
         border-collapse: collapse;
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 13px;
@@ -244,7 +244,8 @@
         font-size: 13px;
       }
       .crypto-table th.crypto-col-name {
-        padding-left: 44px;
+        padding-left: 10px;
+        text-align: left;
       }
       .crypto-table tbody tr:nth-child(even) td {
         background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
@@ -258,20 +259,22 @@
         white-space: nowrap;
       }
       .crypto-coin-name {
-        font-size: 13px;
+        font-size: 10px;
         font-weight: 500;
-        color: var(--text);
-        line-height: 1.35;
+        color: var(--text-dim);
+        line-height: 1.2;
         min-width: 0;
+        max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
       .crypto-symbol-inline {
-        font-size: 11px;
-        color: #9ca3af;
-        font-weight: 500;
-        line-height: 1.2;
+        font-size: 12px;
+        color: var(--text);
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: 0.02em;
       }
       .crypto-th-sort {
         cursor: pointer;
@@ -313,29 +316,33 @@
         color: #3b82f6;
       }
       .crypto-coin-cell {
-        display: grid;
-        grid-template-columns: 24px minmax(0, 1fr);
-        column-gap: 10px;
-        row-gap: 1px;
-        align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
         min-width: 0;
+        max-width: 100%;
       }
       .crypto-coin-cell__logo {
-        grid-row: 1 / span 2;
-        grid-column: 1;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
+        line-height: 0;
       }
       .crypto-coin-cell__logo img {
         display: block;
       }
-      .crypto-coin-cell__text {
-        grid-column: 2;
-        min-width: 0;
-      }
       .crypto-col-name {
-        min-width: 140px;
+        min-width: 72px;
+        max-width: 108px;
+      }
+      .crypto-col-spark {
+        width: 92px;
+        text-align: right;
+      }
+      .crypto-col-spark svg {
+        display: block;
+        margin-left: auto;
       }
       .crypto-mcap-tabs {
         display: flex;
@@ -494,58 +501,56 @@
           padding: 10px 4px;
         }
         .crypto-table th.crypto-col-name {
-          padding-left: 38px;
+          padding-left: 4px;
         }
         .crypto-page-btn {
           padding: 6px 10px;
         }
         .crypto-col-rank {
-          width: 30px;
-          min-width: 30px;
-          max-width: 30px;
-        }
-        .crypto-coin-cell {
-          grid-template-columns: 20px minmax(0, 1fr);
-          column-gap: 8px;
+          width: 26px;
+          min-width: 26px;
+          max-width: 26px;
         }
         .crypto-coin-cell__logo img {
-          width: 20px !important;
-          height: 20px !important;
+          width: 18px !important;
+          height: 18px !important;
         }
         .crypto-col-name {
-          width: auto;
+          width: 22%;
+          min-width: 0;
+          max-width: none;
           overflow: hidden;
         }
+        .crypto-symbol-inline {
+          font-size: 11px;
+        }
+        .crypto-coin-name {
+          font-size: 9px;
+        }
+        .crypto-col-volume,
+        .crypto-col-fdv,
+        .crypto-col-spark {
+          display: none !important;
+        }
         .crypto-col-price {
-          width: 90px;
-          padding-right: 4px;
+          width: 28%;
+          padding-right: 2px;
           text-align: right;
           font-variant-numeric: tabular-nums;
         }
         .crypto-col-24h {
-          width: 58px;
-          padding-right: 4px;
+          width: 16%;
+          padding-right: 2px;
           text-align: right;
-        }
-        .crypto-col-volume {
-          width: 62px;
-          text-align: right;
-          font-variant-numeric: tabular-nums;
         }
         .crypto-col-mcap {
-          width: 62px;
-          text-align: right;
-          font-variant-numeric: tabular-nums;
-        }
-        .crypto-col-fdv {
-          width: 62px;
+          width: 22%;
           text-align: right;
           font-variant-numeric: tabular-nums;
         }
         .crypto-col-price,
         .crypto-col-mcap,
-        .crypto-col-volume,
-        .crypto-col-fdv {
+        .crypto-col-24h {
           font-size: 12px;
         }
         .crypto-meta-bar__poll {
@@ -635,7 +640,7 @@
                   <thead>
                     <tr>
                       <th class="num crypto-col-rank">#</th>
-                      <th class="crypto-col-name">코인명</th>
+                      <th class="crypto-col-name">코인</th>
                       <th class="num crypto-col-price">가격</th>
                       <th class="num crypto-col-24h">24H</th>
                       <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">거래대금</th>
@@ -643,6 +648,7 @@
                         시총 <span class="sort-icon">▼</span>
                       </th>
                       <th class="num crypto-col-fdv crypto-th-sort" data-sort="fullyDilutedMarketCap">FDV</th>
+                      <th class="num crypto-col-spark">7D</th>
                     </tr>
                   </thead>
                   <tbody id="crypto-tbody"></tbody>
@@ -1067,13 +1073,24 @@
             </div>`;
         }
 
+        function displayCoinName(name) {
+          const n = String(name || "").trim();
+          if (!n) return "-";
+          const stripped = n.replace(/coin$/i, "").trim();
+          return stripped || n;
+        }
+
+        function sparklineCell(c) {
+          const pts = resolveSparkline(c);
+          if (!pts || pts.length < 2) return "-";
+          return sparklineSvg(pts, sparklineColor(c, pts), false);
+        }
+
         function coinNameCellHtml(c) {
           return `<div class="crypto-coin-cell">
                 <div class="crypto-coin-cell__logo">${coinLogoHtml(c)}</div>
-                <div class="crypto-coin-cell__text">
-                  <div class="crypto-coin-name">${escapeHtml(c.name)}</div>
-                  <div class="crypto-symbol-inline">${escapeHtml(c.symbol)}</div>
-                </div>
+                <div class="crypto-symbol-inline">${escapeHtml(c.symbol)}</div>
+                <div class="crypto-coin-name">${escapeHtml(displayCoinName(c.name))}</div>
               </div>`;
         }
 
@@ -1087,6 +1104,7 @@
             <td class="num crypto-col-volume">${escapeHtml(fmtVolumeCell(c))}</td>
             <td class="num crypto-col-mcap">${escapeHtml(fmtMcapCell(c))}</td>
             <td class="num crypto-col-fdv">${escapeHtml(fmtFdvCell(c))}</td>
+            <td class="num crypto-col-spark">${sparklineCell(c)}</td>
           </tr>`;
         }
 
@@ -1103,7 +1121,7 @@
           sortCoins(pageCoins);
           body.innerHTML =
             pageCoins.map((c) => coinRowHtml(c)).join("") ||
-            '<tr><td colspan="7"><p class="home-empty">데이터 없음</p></td></tr>';
+            '<tr><td colspan="8"><p class="home-empty">데이터 없음</p></td></tr>';
         }
 
         function renderPagination() {

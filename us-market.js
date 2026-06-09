@@ -107,6 +107,14 @@
     return `$${Math.round(n)}`;
   }
 
+  function rowTradingValue(row) {
+    const price = row && Number(row.price);
+    const volume = row && Number(row.volume);
+    if (Number.isFinite(price) && Number.isFinite(volume)) return Math.round(price * volume);
+    const tv = row && Number(row.tradingValue);
+    return Number.isFinite(tv) ? tv : null;
+  }
+
   function normalizeQuery(q) {
     return String(q || "").trim();
   }
@@ -476,7 +484,7 @@
       <td class="rt-td-price num">${escapeHtml(fmtUsdPrice(row.price))}</td>
       <td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>
       <td class="rt-td-chg num"><span class="delta ${chgCls}">${escapeHtml(fmtPct(row.changePct))}</span></td>
-      <td class="rt-td-tv num">${escapeHtml(fmtUsdCompact(row.tradingValue))}</td>
+      <td class="rt-td-tv num">${escapeHtml(fmtUsdCompact(rowTradingValue(row)))}</td>
       <td class="rt-td-mcap num">${escapeHtml(fmtUsdCompact(row.marketCap))}</td>
     </tr>`;
   }

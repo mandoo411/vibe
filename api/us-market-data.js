@@ -212,6 +212,52 @@ function normalizePeriod(raw) {
   return p === "W" || p === "M" ? p : "D";
 }
 
+function normalizeUsTickerFromRow(row) {
+  let ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO"]));
+  if (ticker) return ticker;
+  const rsym = sanitizeStr(pickFirst(row, ["rsym", "RSYM"]));
+  if (!rsym) return "";
+  const stripped = rsym.replace(/^D(NYS|NAS|AMS)/i, "");
+  return stripped || rsym;
+}
+
+function applyUsRateSign(rate, row) {
+  if (rate == null || !Number.isFinite(rate)) return null;
+  const sign = sanitizeStr(pickFirst(row, ["sign", "SIGN"]));
+  // KIS: 1=상한 2=상승 3=보합 4=하한 5=하락
+  if (sign === "4" || sign === "5") return round2(-Math.abs(rate));
+  if (sign === "1" || sign === "2") return round2(Math.abs(rate));
+  if (sign === "3") return 0;
+  return rate;
+}
+
+function parseRankingChangePct(row, price) {
+  const direct = applyUsRateSign(
+    round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]))),
+    row
+  );
+  if (direct != null) return direct;
+
+  const prev = round2(
+    toNum(pickFirst(row, ["base", "BASE", "prdy_clpr", "PRDY_CLPR", "ovrs_prdy_clpr", "OVRS_PRDY_CLPR"]))
+  );
+  if (price != null && prev != null && prev !== 0) {
+    return round2(((price - prev) / prev) * 100);
+  }
+
+  const diff = round2(toNum(pickFirst(row, ["diff", "DIFF", "prdy_vrss", "PRDY_VRSS"])));
+  if (price != null && diff != null) {
+    const prevFromDiff = price - diff;
+    if (prevFromDiff !== 0) return round2((diff / prevFromDiff) * 100);
+  }
+  return null;
+}
+
+function computeTradingValue(price, volume) {
+  if (price == null || volume == null || !Number.isFinite(price) || !Number.isFinite(volume)) return null;
+  return Math.round(price * volume);
+}
+
 function resolveChangePoints(row, price, changePct) {
   const prev = round2(
     toNum(
@@ -264,44 +310,15 @@ function pickUsVolume(detail, price) {
   return Math.round(Math.max(...candidates));
 }
 
-function pickUsTradingValue(detail, price, currentPrice, volume) {
-  const tamt = toNum(pickFirst(detail, ["tamt", "TAMT"]));
-  const pamt = toNum(pickFirst(detail, ["pamt", "PAMT"]));
-  const trPbmn = toNum(
-    pickFirst(detail, [
-      "tr_pbmn",
-      "TR_PBMN",
-      "acml_tr_pbmn",
-      "ACML_TR_PBMN",
-      "hts_acml_tr_pbmn",
-      "HTS_ACML_TR_PBMN",
-      "ovrs_stck_tr_pbmn",
-      "OVRS_STCK_TR_PBMN",
-      "tradingValue",
-      "TRADING_VALUE",
-    ])
-  );
-  const patternTv = pickNumberByPattern(
-    detail,
-    /pbmn|tamt|trading.*value|trade.*value|amount/i,
-    /tomv|mket|market|cap|avls/i
-  );
-  const priceAmt = price ? toNum(pickFirst(price, ["tamt", "TAMT"])) : null;
-  const candidates = [tamt, pamt, trPbmn, patternTv, priceAmt].filter((n) => n != null && n > 0);
-  if (candidates.length) return Math.round(Math.max(...candidates));
-  if (currentPrice != null && volume != null) return Math.round(currentPrice * volume);
-  return null;
-}
-
 function mapRankRow(row, rank) {
-  const ticker = sanitizeStr(pickFirst(row, ["symb", "SYMB", "ovrs_pdno", "OVRS_PDNO", "rsym", "RSYM"]));
+  const ticker = normalizeUsTickerFromRow(row);
   const name = sanitizeStr(pickFirst(row, ["name", "NAME", "ovrs_item_name", "OVRS_ITEM_NAME"])) || ticker;
   const price = round2(toNum(pickFirst(row, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
-  const changePct = round2(toNum(pickFirst(row, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"])));
+  const changePct = parseRankingChangePct(row, price);
   const changePoints = resolveChangePoints(row, price, changePct);
   const volume = pickUsVolume(row, null);
   const marketCap = toNum(pickFirst(row, ["tomv", "TOMV", "mket_avls", "MKET_AVLS"]));
-  const tradingValue = pickUsTradingValue(row, null, price, volume);
+  const tradingValue = computeTradingValue(price, volume);
   const rawRank = toNum(pickFirst(row, ["rank", "RANK"]));
   return {
     rank: rawRank != null ? Math.round(rawRank) : rank,
@@ -565,7 +582,7 @@ async function fetchSectors() {
 }
 
 async function getMarketCapRowsCached() {
-  const capHit = memoryCache.get("ranking:market-cap");
+  const capHit = memoryCache.get("ranking:market-cap:v3");
   if (capHit && Array.isArray(capHit.value) && capHit.expiresAt > Date.now()) {
     return capHit.value;
   }
@@ -604,11 +621,17 @@ async function enrichRowFromUsDetail(row) {
     ]);
     const p = outputObject(priceBody);
     const d = outputObject(detailBody);
+    const merged = { ...d, ...p };
     const price =
       row.price ??
-      round2(toNum(pickFirst(p, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])));
+      round2(
+        toNum(pickFirst(p, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"])) ??
+          toNum(pickFirst(d, ["last", "LAST", "ovrs_nmix_prpr", "OVRS_NMIX_PRPR", "stck_prpr", "STCK_PRPR"]))
+      );
     const volume = pickUsVolume(d, p) ?? row.volume;
-    const tradingValue = pickUsTradingValue(d, p, price, volume) ?? row.tradingValue;
+    const changePct = parseRankingChangePct(merged, price) ?? row.changePct;
+    const changePoints = resolveChangePoints(merged, price, changePct);
+    const tradingValue = computeTradingValue(price, volume);
     const detailName = sanitizeStr(pickFirst(d, ["e_icod", "E_ICOD", "ovrs_item_name", "OVRS_ITEM_NAME"]));
     const name =
       row.name && row.name !== row.ticker
@@ -616,10 +639,11 @@ async function enrichRowFromUsDetail(row) {
         : detailName && !/^D(NYS|NAS|AMS)[A-Z0-9]/i.test(detailName)
           ? detailName
           : row.name;
-    return { ...row, name, price, volume, tradingValue };
+    return { ...row, name, price, volume, changePct, changePoints, tradingValue };
   } catch (e) {
     console.warn("[us-market-data] detail enrich", row.ticker, e && e.message);
-    return row;
+    const tradingValue = computeTradingValue(row.price, row.volume);
+    return tradingValue != null ? { ...row, tradingValue } : row;
   }
 }
 
@@ -636,24 +660,25 @@ async function enrichRankRows(rows) {
   const detailed = await mapPool(rows, 6, enrichRowFromUsDetail);
   return detailed.map((row) => {
     const cap = capByTicker.get(row.ticker);
-    const tradingValue =
-      row.tradingValue != null
-        ? row.tradingValue
-        : cap && cap.tradingValue != null
-          ? cap.tradingValue
-          : row.price != null && row.volume != null
-            ? Math.round(row.price * row.volume)
-            : null;
+    const tradingValue = computeTradingValue(row.price, row.volume) ?? row.tradingValue;
     return {
       ...row,
       marketCap: row.marketCap != null ? row.marketCap : cap && cap.marketCap != null ? cap.marketCap : null,
-      tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
-      changePoints: resolveChangePoints(row, row.price, row.changePct),
+      tradingValue,
+      changePoints:
+        row.changePoints != null ? row.changePoints : resolveChangePoints(row, row.price, row.changePct),
     };
   });
 }
 
-async function fetchMergedRanking(cacheKey, path, trId, params, sortKey, { enrich = true } = {}) {
+async function fetchMergedRanking(
+  cacheKey,
+  path,
+  trId,
+  params,
+  sortKey,
+  { enrich = true, resort = false, pickCount = 50 } = {}
+) {
   return cached(cacheKey, async () => {
     const all = [];
     for (const exchange of EXCHANGES) {
@@ -664,18 +689,23 @@ async function fetchMergedRanking(cacheKey, path, trId, params, sortKey, { enric
       }));
       all.push(...rows);
     }
-    const ranked = all
+    let ranked = all
       .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
-      .slice(0, 50)
-      .map((row, i) => ({ ...row, rank: i + 1 }));
-    return enrich ? enrichRankRows(ranked) : ranked;
+      .slice(0, pickCount);
+    if (enrich) ranked = await enrichRankRows(ranked);
+    if (resort) {
+      ranked = ranked.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0)).slice(0, 50);
+    } else if (ranked.length > 50) {
+      ranked = ranked.slice(0, 50);
+    }
+    return ranked.map((row, i) => ({ ...row, rank: i + 1 }));
   });
 }
 
 function fetchMarketCapTop50() {
   return fetchMergedRanking(
-    "ranking:market-cap",
+    "ranking:market-cap:v3",
     MARKET_CAP_PATH,
     MARKET_CAP_TR_ID,
     (exchange) => ({
@@ -686,13 +716,13 @@ function fetchMarketCapTop50() {
       VOL_RANG: "0",
     }),
     "marketCap",
-    { enrich: false }
+    { enrich: true }
   );
 }
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v2",
+    "ranking:gainers:v3",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -710,39 +740,30 @@ function fetchGainersTop50() {
 }
 
 function fetchTradeValueTop50() {
-  return cached("ranking:trade-value:v2", async () => {
-    const all = [];
-    for (const exchange of EXCHANGES) {
-      const body = await kisGet(TRADE_PBMN_PATH, TRADE_PBMN_TR_ID, {
-        AUTH: "",
-        CURR_GB: US_RANKING_CURRENCY,
-        EXCD: exchange,
-        KEYB: "",
-        NDAY: "0",
-        PRC1: "",
-        PRC2: "",
-        VOL_RANG: "0",
-      });
-      const rows = outputRows(body, "output2").map((row, i) => ({
-        ...mapRankRow(row, all.length + i + 1),
-        exchange,
-      }));
-      all.push(...rows);
-    }
-    const candidates = all
-      .filter((row) => row.ticker && row.price != null && row.tradingValue != null)
-      .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
-      .slice(0, 50);
-    const enriched = await enrichRankRows(candidates);
-    return enriched
-      .sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0))
-      .slice(0, 50)
-      .map((row, i) => ({ ...row, rank: i + 1 }));
-  });
+  return fetchMergedRanking(
+    "ranking:trade-value:v3",
+    TRADE_PBMN_PATH,
+    TRADE_PBMN_TR_ID,
+    (exchange) => ({
+      AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
+      EXCD: exchange,
+      KEYB: "",
+      NDAY: "0",
+      PRC1: "",
+      PRC2: "",
+      VOL_RANG: "0",
+    }),
+    "tradingValue",
+    { enrich: true, resort: true, pickCount: 80 }
+  );
 }
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v3",
+    "ranking:gainers:v3",
+    "ranking:trade-value:v3",
     "ranking:market-cap",
     "ranking:gainers:v2",
     "ranking:trade-value:v2",
@@ -899,6 +920,9 @@ async function searchUsSymbols(query) {
   const upper = q.toUpperCase();
   const local = [];
   const keys = [
+    "ranking:market-cap:v3",
+    "ranking:gainers:v3",
+    "ranking:trade-value:v3",
     "ranking:market-cap",
     "ranking:gainers:v2",
     "ranking:trade-value:v2",
@@ -995,17 +1019,17 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v3", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v3", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v2", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v3", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

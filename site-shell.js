@@ -400,6 +400,18 @@
       '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>';
   }
 
+  function reorderGnbAnalysisLink() {
+    const menu = document.querySelector(".home-nav__menu");
+    if (!menu) return;
+    const analysis =
+      menu.querySelector('a[href*="stock-analysis"]') ||
+      menu.querySelector(".home-nav__link--analysis-locked");
+    const themeBtn = menu.querySelector(".home-nav__theme");
+    if (!analysis || !themeBtn) return;
+    if (analysis.nextElementSibling === themeBtn) return;
+    menu.insertBefore(analysis, themeBtn);
+  }
+
   function wrapShellTop() {
     const wrap = document.querySelector(".tm-wrap, .home-wrap");
     const nav = wrap?.querySelector(".home-nav");
@@ -431,6 +443,7 @@
     if (!document.body.classList.contains("page-tm-v2")) return;
     syncBodyTab();
     wrapShellTop();
+    reorderGnbAnalysisLink();
     injectMobileMeta();
     rebuildBottomNav();
     if (typeof window.tmBindThemeToggle === "function") {

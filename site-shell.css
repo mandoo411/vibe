@@ -196,21 +196,15 @@ body.page-home-v2 {
     flex: 1 1 0;
     justify-content: center;
     min-width: 0;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .page-home-v2 .home-nav__menu > .home-nav__link[href*="stock-analysis"],
-  .page-tm-v2 .home-nav__menu > .home-nav__link[href*="stock-analysis"] {
-    flex: 0 0 auto;
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__theme,
   .page-tm-v2 .home-nav__menu > .home-nav__theme {
     flex: 0 0 auto;
-    margin-left: 10px;
+    flex-shrink: 0;
+    margin-left: 8px;
   }
 
   .page-home-v2 .home-ticker-bar .home-ticker,

@@ -311,7 +311,6 @@
         </div>
       </header>
       <div class="page-meta-bar" aria-live="polite">
-        <p class="masthead__notice" id="masthead-notice" hidden></p>
         <span id="briefing-updated">미국 마감, 환율, 시장 지표</span>
       </div>
       <main class="briefing-grid" aria-live="polite">
@@ -608,22 +607,13 @@
           $("briefing-updated").textContent = data.updatedAt
             ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
             : "미국 마감, 환율, 시장 지표";
-          const errs = Array.isArray(data.errors) ? data.errors : [];
-          if (errs.length || data.aiAnalysis?._fallback) {
-            $("masthead-notice").hidden = false;
-            $("masthead-notice").textContent =
-              errs.some((e) => /credit balance|too low/i.test(String(e)))
-                ? "AI 분석 일시 중단(Anthropic 크레딧). 지수·뉴스·실시간 API는 정상 표시됩니다."
-                : `브리핑 일부 수집 오류: ${errs[0] || "AI 폴백"}`;
-          }
           renderAnalysis(data.aiAnalysis || {});
           await loadUsMarketLive(data.usMarket?.indices, data.topStocks, data.sectors);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
           renderMacroList(data);
         } catch (error) {
-          $("masthead-notice").hidden = false;
-          $("masthead-notice").textContent = `브리핑 데이터를 불러오지 못했습니다: ${error instanceof Error ? error.message : error}`;
+          console.warn("[briefing] load failed", error);
         }
       }
 

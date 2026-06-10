@@ -533,38 +533,113 @@
       }
       #crypto-news-panel {
         display: none;
-        padding: 10px 12px 12px;
+        padding: 0;
+        background: var(--bg-panel);
       }
       #crypto-news-panel.is-open {
         display: block;
       }
       .crypto-news-list {
-        display: grid;
-        gap: 9px;
+        display: flex;
+        flex-direction: column;
       }
       .crypto-news-card {
-        border: 1px solid var(--accent-highlight);
-        background: var(--accent-dim);
-        padding: 10px 12px;
+        margin: 0;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        background: transparent;
+        padding: 11px 14px;
+        transition: background 0.15s ease;
+      }
+      .crypto-news-card:last-child {
+        border-bottom: none;
+      }
+      .crypto-news-card:hover,
+      .crypto-news-card[open] {
+        background: color-mix(in srgb, var(--bg-secondary, #f0f3fa) 55%, transparent);
       }
       .crypto-news-card summary {
         cursor: pointer;
-        color: var(--text);
-        font-weight: 650;
+        list-style: none;
+        color: var(--text-primary, var(--text));
+        font-weight: 600;
+        line-height: 1.4;
+      }
+      .crypto-news-card summary::-webkit-details-marker {
+        display: none;
+      }
+      .crypto-news-card__title {
+        display: block;
+        margin-top: 3px;
+        font-size: 13px;
+        font-weight: 500;
         line-height: 1.45;
+        color: var(--text-primary, var(--text));
       }
       .crypto-news-card__meta {
         display: block;
-        margin-bottom: 4px;
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         font-size: 10px;
-        color: var(--text-dim);
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: var(--text-secondary, var(--text-dim));
       }
       .crypto-news-card__body {
         margin: 8px 0 0;
-        color: var(--text-muted);
+        color: var(--text-secondary, var(--text-muted));
+        font-size: 12px;
+        line-height: 1.55;
+      }
+      .crypto-news-card__read {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent-brand, #0f8387);
+        text-decoration: none;
+      }
+      .crypto-news-card__read:hover {
+        text-decoration: underline;
+      }
+      .crypto-news-empty {
+        margin: 0;
+        padding: 28px 16px;
+        text-align: center;
         font-size: 13px;
-        line-height: 1.5;
+        color: var(--text-secondary, var(--text-muted));
+      }
+      [data-theme="light"] .crypto-news-card {
+        border-bottom-color: rgba(15, 131, 135, 0.12);
+      }
+      [data-theme="light"] .crypto-news-card:hover,
+      [data-theme="light"] .crypto-news-card[open] {
+        background: rgba(239, 246, 255, 0.72);
+      }
+      [data-theme="light"] .crypto-news-card__meta {
+        color: #0f8387;
+      }
+      [data-theme="dark"] .crypto-news-card {
+        border-bottom-color: var(--border-color);
+      }
+      [data-theme="dark"] .crypto-news-card:hover,
+      [data-theme="dark"] .crypto-news-card[open] {
+        background: var(--surface-hover, #152238);
+      }
+      [data-theme="dark"] .crypto-news-card__meta {
+        color: var(--accent-gold, #d4af37);
+      }
+      [data-theme="dark"] .crypto-news-card__read {
+        color: #e8c96a;
+      }
+      @media (min-width: 769px) {
+        .crypto-news-card {
+          padding: 10px 16px;
+        }
+        .crypto-news-card__title {
+          font-size: 13px;
+        }
       }
       @media (max-width: 768px) {
         .crypto-global-grid {
@@ -1080,21 +1155,24 @@
                     const summaryHtml = n.summary
                       ? `<p class="crypto-news-card__body">${escapeHtml(String(n.summary).slice(0, 200))}…</p>`
                       : "";
-                    return `<a href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer" style="display:block; text-decoration:none; color:inherit;">
-      <details class="crypto-news-card">
+                    const url = String(n.url || "").trim();
+                    const readLink = url
+                      ? `<a class="crypto-news-card__read" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">원문 보기 →</a>`
+                      : "";
+                    return `<details class="crypto-news-card">
         <summary>
           <span class="crypto-news-card__meta">${escapeHtml(n.source || "Crypto News")} · ${escapeHtml(fmtNewsTime(n.publishedAt))}</span>
-          <span style="font-size:13px; font-weight:500; color:var(--text); line-height:1.5;">${escapeHtml(n.title || "")}</span>
+          <span class="crypto-news-card__title">${escapeHtml(n.title || "")}</span>
         </summary>
         ${summaryHtml}
-      </details>
-    </a>`;
+        ${readLink}
+      </details>`;
                   })
                   .join("")
-              : '<p class="home-empty">최근 뉴스가 없습니다.</p>';
+              : '<p class="crypto-news-empty">최근 뉴스가 없습니다.</p>';
           } catch {
             if (badge) badge.textContent = "";
-            panel.innerHTML = '<p class="home-empty">뉴스를 불러오지 못했습니다.</p>';
+            panel.innerHTML = '<p class="crypto-news-empty">뉴스를 불러오지 못했습니다.</p>';
           }
         }
 

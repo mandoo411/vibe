@@ -469,48 +469,48 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 [data-theme="dark"] .home-nav__home-btn,
 body[data-theme="dark"] .home-nav__home-btn {
-  background: #242b3d;
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--accent-icon, #9ec9d6);
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--accent-gold);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] .home-nav__home-btn:hover,
 body[data-theme="dark"] .home-nav__home-btn:hover {
-  background: #2d3550;
-  border-color: rgba(255, 255, 255, 0.18);
-  color: var(--accent-icon, #9ec9d6);
+  background: color-mix(in srgb, var(--accent-blue) 88%, var(--accent-gold) 12%);
+  border-color: var(--interactive-hover-border);
+  color: var(--accent-gold);
 }
 
 [data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"],
 body[data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"] {
-  background: #242b3d;
-  color: var(--accent-icon, #9ec9d6);
+  background: var(--accent-blue);
+  color: var(--accent-gold);
 }
 
 [data-theme="dark"] .home-nav__home-btn i,
 body[data-theme="dark"] .home-nav__home-btn i {
-  color: var(--accent-icon, #9ec9d6);
+  color: var(--accent-gold);
 }
 
 [data-theme="dark"] .home-nav__theme,
 body[data-theme="dark"] .home-nav__theme {
-  background: #242b3d;
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--accent-blue);
+  border-color: var(--border-color);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
 [data-theme="dark"] .home-nav__theme:hover,
 body[data-theme="dark"] .home-nav__theme:hover {
-  background: #2d3550;
-  border-color: rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--accent-blue) 88%, var(--accent-gold) 12%);
+  border-color: var(--interactive-hover-border);
 }
 
 [data-theme="dark"] .home-nav__theme i,
 [data-theme="dark"] .home-nav__theme #theme-icon,
 body[data-theme="dark"] .home-nav__theme i,
 body[data-theme="dark"] .home-nav__theme #theme-icon {
-  color: var(--accent-icon, #9ec9d6);
+  color: var(--accent-gold);
 }
 
 .home-top {
@@ -1046,9 +1046,9 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 
 [data-theme="dark"] .page-tm-v2 .page-meta-bar,
 [data-theme="dark"] .page-tm-v2 .market-meta-bar {
-  background: var(--panel-surface, #1a1f35);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-muted-ui, #9ca3af);
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 /* 영문 라벨(kicker): section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */
@@ -1409,15 +1409,15 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-footer {
-  background: var(--gradient-hero-dark) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, var(--body-bg) 0%, var(--header-bg) 100%) !important;
+  border-top: 1px solid var(--border-color);
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] body.page-tm-v2,
 [data-theme="dark"] body.page-home-v2,
 [data-theme="dark"] body {
-  background: var(--bg-primary, #0f1618);
+  background: var(--body-bg);
   color: var(--text-primary);
 }
 
@@ -1435,21 +1435,21 @@ body[data-theme="dark"] .home-ticker-bar__label {
 [data-theme="dark"] .page-tm-v2 .home-top,
 [data-theme="dark"] .page-home-v2 .home-top {
   background: var(--gradient-hero-dark);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 0 var(--border-color);
 }
 
 [data-theme="dark"] .home-nav__link {
-  color: #b0d4d6;
+  color: var(--text-secondary);
 }
 
 [data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
   background: transparent;
-  color: #6ec4c8;
+  color: var(--accent-gold);
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"]::after {
@@ -1457,17 +1457,18 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-nav__brand-name {
-  color: #e8eaef;
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .home-nav__brand-sub,
 [data-theme="dark"] .home-nav__brand-sub > span:first-child {
-  color: #787b86;
+  color: var(--text-muted-ui);
 }
 
 [data-theme="dark"] .home-nav__toggle {
-  background: rgba(255, 255, 255, 0.08);
-  color: #a8b4ff;
+  background: var(--accent-blue);
+  color: var(--accent-gold);
+  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .hub-hero {

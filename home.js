@@ -510,10 +510,6 @@
       el.innerHTML = '<p class="home-empty">오늘 예정된 지표가 없습니다.</p>';
       return;
     }
-    const trEvent =
-      typeof window.tmTranslateIndicator === "function"
-        ? (name) => window.tmTranslateIndicator(name)
-        : (name) => String(name || "");
     const trCountry =
       typeof window.tmTranslateCountry === "function"
         ? (name) => window.tmTranslateCountry(name)
@@ -522,7 +518,12 @@
     el.innerHTML =
       list
         .map((r) => {
-          const eventKo = trEvent(r.event);
+          const eventKo =
+            typeof window.tmEventLabelText === "function"
+              ? window.tmEventLabelText(r)
+              : typeof window.tmTranslateIndicator === "function"
+                ? window.tmTranslateIndicator(r.event)
+                : String(r.event || "");
           const countryKo = trCountry(r.country);
           const label = `${escapeHtml(r.time || "")} ${escapeHtml(eventKo)} ${escapeHtml(countryKo)}`.trim();
           return `<div class="home-mini-row"><span class="home-mini-row__name">${label}</span>${impBadge(r)}</div>`;

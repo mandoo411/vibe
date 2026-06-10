@@ -81,14 +81,14 @@ const INDICATOR_KO = {
   "Consumer Price Index YoY": "소비자물가지수 (연간)",
   "Producer Price Index MoM": "생산자물가지수 (월간)",
   "Producer Price Index YoY": "생산자물가지수 (연간)",
-  "Inflation Rate YoY": "인플레이션율 (연간)",
-  "Inflation Rate MoM": "인플레이션율 (월간)",
-  "Inflation Rate YoY Prel": "인플레이션율 (연간, 속보치)",
-  "Inflation Rate MoM Prel": "인플레이션율 (월간, 속보치)",
+  "Inflation Rate YoY": "소비자물가지수 (연간)",
+  "Inflation Rate MoM": "소비자물가지수 (월간)",
+  "Inflation Rate YoY Prel": "소비자물가지수 (연간, 속보치)",
+  "Inflation Rate MoM Prel": "소비자물가지수 (월간, 속보치)",
   "CPI YoY Prel": "소비자물가 (연간, 속보치)",
   "CPI MoM Prel": "소비자물가 (월간, 속보치)",
-  "Core Inflation Rate YoY": "근원 인플레이션율 (연간)",
-  "Core Inflation Rate MoM": "근원 인플레이션율 (월간)",
+  "Core Inflation Rate YoY": "근원 소비자물가지수 (연간)",
+  "Core Inflation Rate MoM": "근원 소비자물가지수 (월간)",
   "Employment Change": "고용변화",
   "Interest Rate Decision": "금리 결정",
   "Monetary Policy Statement": "통화정책 성명",
@@ -185,7 +185,127 @@ function translateIndicator(name) {
     });
   return partial ? INDICATOR_KO[partial] : raw;
 }
+
+function stripLegacyPeriodLabel(text) {
+  return String(text || "")
+    .replace(/\s*·\s*(월간|연간|분기)\s*$/g, "")
+    .replace(/\s*\(\s*(월간|연간|분기)[^)]*\)/g, "")
+    .trim();
+}
+
+function parseLegacyPeriod(text) {
+  const t = String(text || "");
+  if (/\(연간|연간\)|\byoy\b|\by\/y\b/i.test(t)) return "연간";
+  if (/\(월간|월간\)|\bmom\b|\bm\/m\b/i.test(t)) return "월간";
+  if (/\(분기|분기\)|\bqoq\b|\bq\/q\b/i.test(t)) return "분기";
+  return null;
+}
+
+function detectIndicatorPeriod(...texts) {
+  const t = texts.filter(Boolean).join(" ");
+  if (/\b(yoy|y\/y|annual|yearly)\b/i.test(t) || /\(연간\)/i.test(t)) return "연간";
+  if (/\b(mom|m\/m|monthly)\b/i.test(t) || /\(월간\)/i.test(t)) return "월간";
+  if (/\b(qoq|q\/q|quarterly)\b/i.test(t) || /\(분기\)/i.test(t)) return "분기";
+  return null;
+}
+
+function normalizeCountryCode(country) {
+  const c = String(country || "").trim();
+  if (!c) return "";
+  const u = c.toUpperCase();
+  if (/^(US|USA|U\.S\.|UNITED STATES)$/.test(u) || c === "미국") return "US";
+  if (/^(KR|KOREA|SOUTH KOREA|ROK)$/.test(u) || c === "한국" || c === "대한민국") return "KR";
+  return u.length === 2 ? u : c;
+}
+
+function isUnitedStates(country) {
+  return normalizeCountryCode(country) === "US";
+}
+
+function resolveFormalIndicator(row) {
+  const raw = String(row?.event || "").trim();
+  const translated = translateIndicator(raw);
+  const search = `${raw} ${translated}`;
+  const period = detectIndicatorPeriod(raw, translated) || parseLegacyPeriod(translated);
+
+  if (/근원\s*인플레이션|Core\s*Inflation\s*Rate|Core\s*CPI/i.test(search)) {
+    return { nameKo: "근원 소비자물가지수", abbr: "Core CPI", period };
+  }
+  if (/인플레이션율|Inflation\s*Rate/i.test(search) && !/근원|Core/i.test(search)) {
+    return { nameKo: "소비자물가지수", abbr: "CPI", period };
+  }
+  if (/\bCPI\b|Consumer\s*Price\s*Index|소비자물가/i.test(search) && !/PPI|Producer|생산자물가/i.test(search)) {
+    const isCore = /근원|Core/i.test(search);
+    return {
+      nameKo: isCore ? "근원 소비자물가지수" : "소비자물가지수",
+      abbr: isCore ? "Core CPI" : "CPI",
+      period,
+    };
+  }
+  if (/생산자물가|\bPPI\b|Producer\s*Price/i.test(search)) {
+    const isCore = /근원|Core/i.test(search);
+    return {
+      nameKo: isCore ? "근원 생산자물가지수" : "생산자물가지수",
+      abbr: isCore ? "Core PPI" : "PPI",
+      period,
+    };
+  }
+  if (/개인소비|PCE|Personal\s*Consumption/i.test(search)) {
+    const isCore = /근원|Core/i.test(search);
+    const isPrice = /Price\s*Index|물가/i.test(search);
+    return {
+      nameKo: isPrice
+        ? isCore
+          ? "근원 개인소비지출 물가지수"
+          : "개인소비지출 물가지수"
+        : "개인소비지출",
+      abbr: isCore ? "Core PCE" : "PCE",
+      period,
+    };
+  }
+  if (
+    isUnitedStates(row?.country) &&
+    (/금리\s*결정|기준금리|Fed\s*Interest|FOMC.*Decision|Interest\s*Rate\s*Decision/i.test(search) ||
+      /^연준\s*금리/i.test(translated))
+  ) {
+    return { nameKo: "기준금리 결정", abbr: "FOMC", period: null };
+  }
+  if (/비농업|Non[\s-]?Farm|\bNFP\b/i.test(search)) {
+    return { nameKo: "비농업 고용", abbr: "NFP", period };
+  }
+  if (/실업률|Unemployment\s*Rate/i.test(search)) {
+    return { nameKo: "실업률", abbr: "Unemployment", period };
+  }
+  if (/국내총생산|\bGDP\b/i.test(search)) {
+    return { nameKo: "국내총생산", abbr: "GDP", period };
+  }
+  if (/소비자심리|Michigan\s*Consumer|UMich|Consumer\s*Sentiment/i.test(search)) {
+    return { nameKo: "소비자심리지수", abbr: "UMich", period };
+  }
+  if (/\bISM\b|공급관리/i.test(search)) {
+    const isServices = /Non[\s-]?Manufacturing|Services/i.test(search);
+    return { nameKo: isServices ? "ISM 서비스업지수" : "ISM 제조업지수", abbr: "ISM", period };
+  }
+  if (/구매관리자|PMI|Purchasing\s*Managers/i.test(search)) {
+    return { nameKo: "구매관리자지수", abbr: "PMI", period };
+  }
+  return { nameKo: null, abbr: null, period };
+}
+
+function tmEventLabelText(row) {
+  const formal = resolveFormalIndicator(row);
+  const translated = translateIndicator(row?.event || "");
+  const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
+  const abbr = formal.abbr;
+  const period = formal.period || parseLegacyPeriod(translated);
+  let label = nameKo;
+  if (abbr) label += ` (${abbr})`;
+  if (period) label += ` · ${period}`;
+  return label;
+}
+
 window.tmTranslateIndicator = translateIndicator;
+window.tmEventLabelText = tmEventLabelText;
 const COUNTRY_KO = {
   "United States": "미국",
   US: "미국",

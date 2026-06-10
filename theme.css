@@ -18,8 +18,11 @@ body.page-tm-v2 {
 :root,
 [data-theme="light"],
 [data-theme="dark"] {
-  --gradient-primary: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
-  --gradient-hero-dark: linear-gradient(135deg, #0f1a4a 0%, #3d1a6e 100%);
+  --gradient-primary: linear-gradient(135deg, #07264b 0%, #0f8387 100%);
+  --gradient-hero-dark: linear-gradient(135deg, #07264b 0%, #0f8387 100%);
+  --accent-brand-deep: #07264b;
+  --accent-brand: #0f8387;
+  --home-ai-surface: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
 }
 
 [data-theme="dark"] {

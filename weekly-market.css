@@ -1109,7 +1109,7 @@ a:hover {
   flex-shrink: 0;
   padding: 2px 8px;
   border-radius: 4px;
-  background: #1d4ed8;
+  background: var(--accent-brand, #0f8387);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -1311,7 +1311,7 @@ a:hover {
 
 [data-theme="dark"] .tab[aria-selected="true"] {
   color: #ffffff;
-  border-bottom-color: #7c3aed;
+  border-bottom-color: var(--accent-brand, #0f8387);
 }
 
 .week-panel {

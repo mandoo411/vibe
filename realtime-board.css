@@ -331,8 +331,8 @@
         text-align: left;
       }
       .rt-tab-search input:focus {
-        border-color: #1d4ed8;
-        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.14);
+        border-color: var(--accent-brand, #0f8387);
+        box-shadow: 0 0 0 3px rgba(15, 131, 135, 0.18);
       }
       .rt-tab-search button {
         box-sizing: border-box;
@@ -364,7 +364,7 @@
       }
       [data-theme="dark"] .rt-tab-search input:focus,
       .dark-mode .rt-tab-search input:focus {
-        border-color: #1d4ed8;
+        border-color: var(--accent-brand, #0f8387);
       }
 
       .rt-stock-panel {
@@ -695,9 +695,9 @@
       .rt-acc-btn--chart {
         flex: 1;
         min-width: 0;
-        border: 1.5px solid #1d4ed8;
+        border: 1.5px solid var(--accent-brand, #0f8387);
         background: transparent;
-        color: #1d4ed8;
+        color: var(--accent-brand, #0f8387);
       }
       .rt-acc-btn--chart:hover {
         background: rgba(29, 78, 216, 0.08);
@@ -1099,7 +1099,7 @@
           font-weight: 700;
           padding: 0 4px;
           line-height: 1.2;
-          box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
+          box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
         }
         .rt-tab[aria-selected="false"] {
           flex: 1 1 0;
@@ -1303,10 +1303,10 @@
         padding: 0 6px;
         font-size: 14px;
         font-weight: 700;
-        box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
+        box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
       }
       .rt-tab[aria-selected="false"]:hover {
-        border-color: color-mix(in srgb, #1d4ed8 35%, var(--color-border, var(--border)));
+        border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 35%, var(--color-border, var(--border)));
       }
 
       [data-theme="dark"] .rt-tab[aria-selected="false"],
@@ -1321,7 +1321,7 @@
         background: var(--gradient-primary);
         color: #ffffff;
         border: none;
-        box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
+        box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
       }
       .rt-panel {
         border: 1px solid var(--accent-highlight);

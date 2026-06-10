@@ -238,7 +238,7 @@ body.page-home-v2 {
 .home-nav__link[aria-current="page"] {
   position: relative;
   background: transparent;
-  color: #1d4ed8;
+  color: var(--accent-brand, #0f8387);
 }
 
 .home-nav__link[aria-current="page"]::after {
@@ -1035,7 +1035,7 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   color: var(--text-muted);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-left: 3px solid #1d4ed8;
+  border-left: 3px solid var(--accent-brand, #0f8387);
   border-radius: var(--radius, 8px);
 }
 
@@ -1409,8 +1409,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-footer {
-  background: #0d1020 !important;
-  border-top: 1px solid #2a2f4a;
+  background: var(--gradient-primary) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 

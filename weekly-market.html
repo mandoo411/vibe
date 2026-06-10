@@ -461,8 +461,7 @@
 
         function itemsForDate(type, ymd) {
           const rows = state.data?.[type] || [];
-          const sameDateRows = rows.filter((row) => row.date === ymd);
-          return type === "economicCalendar" ? sameDateRows.filter(isHighImpact) : sameDateRows;
+          return rows.filter((row) => row.date === ymd);
         }
 
         function filterWatchlistEarnings(rows) {
@@ -488,19 +487,59 @@
           return `${n.toLocaleString("ko-KR")}원`;
         }
 
-        function impactClass(impact) {
-          const key = String(impact || "low").toLowerCase();
-          if (key.includes("high")) return "impact-high";
-          if (key.includes("medium")) return "impact-medium";
-          return "impact-low";
+        function eventLabelText(row) {
+          return translateIndicator(row?.event || "");
         }
 
-        function isHighImpact(row) {
+        function eventSearchText(row) {
+          const label = eventLabelText(row);
+          return `${label} ${row?.event || ""}`.trim();
+        }
+
+        function isMediumOnlyIndicator(text) {
+          const t = String(text || "");
+          if (/FOMC\s*의사록|FOMC\s*회의록|의사록/i.test(t)) return true;
+          if ((/FOMC\s*위원\s*연설|연준\s*위원\s*연설/i.test(t)) && !/기자회견/i.test(t)) return true;
+          if (/\bPPI\b|생산자물가/i.test(t)) return true;
+          if (/\bISM\b|\bPMI\b/i.test(t)) return true;
+          return false;
+        }
+
+        function isKeyIndicator(row) {
+          const t = eventSearchText(row);
+          if (isMediumOnlyIndicator(t)) return false;
+          return (
+            /CPI|소비자물가/i.test(t) ||
+            /FOMC\s*금리\s*결정|기준금리\s*결정|금리\s*결정/i.test(t) ||
+            /파월\s*기자회견|연준의장\s*기자회견/i.test(t) ||
+            /고용|비농업|실업률|\bNFP\b/i.test(t) ||
+            /\bPCE\b/i.test(t) ||
+            /금통위|한국은행\s*금리/i.test(t) ||
+            /\bGDP\b/i.test(t)
+          );
+        }
+
+        function resolveImpactKey(row) {
+          const text = eventSearchText(row);
+          if (isMediumOnlyIndicator(text)) return "medium";
           const impact = row && row.impact;
           const importance = Number(row && row.importance);
-          if (impact === 3 || impact === "3") return true;
-          if (String(impact || "").toLowerCase() === "high") return true;
-          return Number.isFinite(importance) && importance >= 3;
+          if (impact === 3 || impact === "3" || String(impact || "").toLowerCase() === "high") return "high";
+          if (impact === 2 || impact === "2" || String(impact || "").toLowerCase() === "medium") return "medium";
+          if (Number.isFinite(importance)) {
+            if (importance >= 3) return "high";
+            if (importance === 2) return "medium";
+          }
+          return "low";
+        }
+
+        function impactRank(key) {
+          return { high: 3, medium: 2, low: 1 }[key] || 0;
+        }
+
+        function impactBadgeHtml(key) {
+          const label = { high: "높음", medium: "보통", low: "낮음" }[key] || "낮음";
+          return `<span class="impact-badge impact-badge--${key}">${label}</span>`;
         }
 
         const INDICATOR_REGEX = [
@@ -596,20 +635,28 @@
         }
 
         function renderEconomic(rows) {
-          const highRows = (rows || []).filter(isHighImpact);
-          if (!highRows.length) return '<p class="empty-text">경제지표 일정 없음</p>';
+          const list = [...(rows || [])].sort((a, b) => {
+            const d = impactRank(resolveImpactKey(b)) - impactRank(resolveImpactKey(a));
+            return d !== 0 ? d : String(a.time || "").localeCompare(String(b.time || ""));
+          });
+          if (!list.length) return '<p class="empty-text">경제지표 일정 없음</p>';
           return `<div class="schedule-table-wrap"><table class="schedule-table">
             <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>중요도</th></tr></thead>
-            <tbody>${highRows
-              .map(
-                (r) => `<tr class="${impactClass(r.impact)}">
+            <tbody>${list
+              .map((r) => {
+                const impactKey = resolveImpactKey(r);
+                const label = eventLabelText(r) || "—";
+                const isKey = isKeyIndicator(r);
+                const rowClass = [`impact-${impactKey}`, isKey ? "schedule-row--key" : ""].filter(Boolean).join(" ");
+                const keyBadge = isKey ? '<span class="key-indicator-badge">핵심</span>' : "";
+                return `<tr class="${rowClass}">
                   <td data-label="시간">${escapeHtml(r.time || "—")}</td>
-                  <td data-label="지표명"><strong>${escapeHtml(translateIndicator(r.event || "—"))}</strong><span>${escapeHtml(r.country || "")}</span></td>
+                  <td data-label="지표명"><div class="schedule-event-head">${keyBadge}<strong>${escapeHtml(label)}</strong></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
                   <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous, r.unit))}</td>
                   <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate, r.unit))}</td>
-                  <td data-label="중요도">${escapeHtml(r.impact || "low")}</td>
-                </tr>`
-              )
+                  <td data-label="중요도">${impactBadgeHtml(impactKey)}</td>
+                </tr>`;
+              })
               .join("")}</tbody>
           </table></div>`;
         }

@@ -1054,26 +1054,61 @@ a:hover {
   line-height: 1.4;
 }
 
-.schedule-table td span {
+.schedule-table td .schedule-event-country {
   display: block;
   margin-top: 2px;
   color: var(--text-dim);
   line-height: 1.35;
 }
 
-.impact-high strong,
-.impact-high td:last-child {
-  color: var(--accent-bright);
+.schedule-event-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
 }
 
-.impact-medium strong,
-.impact-medium td:last-child {
-  color: var(--text-primary);
+.schedule-table tr.schedule-row--key {
+  border-left: 3px solid #e24b4a;
 }
 
-.impact-low strong,
-.impact-low td:last-child {
-  color: var(--text-dim);
+.key-indicator-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.impact-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  border-radius: 4px;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.impact-badge--high {
+  background: #fee2e2;
+  color: #a32d2d;
+}
+
+.impact-badge--medium {
+  background: #fef9c3;
+  color: #854f0b;
+}
+
+.impact-badge--low {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 .earnings-grid {
@@ -1434,6 +1469,17 @@ a:hover {
   content: "";
 }
 
+.page-tm-v2 .selected-day--compact .schedule-event-head {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.page-tm-v2 .selected-day--compact .impact-badge,
+.page-tm-v2 .selected-day--compact .key-indicator-badge {
+  flex-shrink: 0;
+}
+
 .page-tm-v2 .selected-day--compact .kr-schedule-block {
   margin-top: 8px;
 }
@@ -1526,6 +1572,19 @@ a:hover {
     padding: 12px;
     border: 1px solid var(--border);
     background: var(--bg-secondary);
+  }
+
+  .schedule-table tr.schedule-row--key {
+    border-left: 3px solid #e24b4a;
+    padding-left: 9px;
+  }
+
+  .schedule-event-head {
+    gap: 4px;
+  }
+
+  .schedule-table td[data-label="중요도"] .impact-badge {
+    margin-top: 2px;
   }
 
   .schedule-table tr:last-child {

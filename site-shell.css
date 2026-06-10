@@ -471,7 +471,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 body[data-theme="dark"] .home-nav__home-btn {
   background: #242b3d;
   border-color: rgba(255, 255, 255, 0.12);
-  color: #ffd84d;
+  color: var(--accent-icon, #9ec9d6);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
@@ -479,18 +479,18 @@ body[data-theme="dark"] .home-nav__home-btn {
 body[data-theme="dark"] .home-nav__home-btn:hover {
   background: #2d3550;
   border-color: rgba(255, 255, 255, 0.18);
-  color: #ffd84d;
+  color: var(--accent-icon, #9ec9d6);
 }
 
 [data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"],
 body[data-theme="dark"] .home-nav__link.home-nav__home-btn[aria-current="page"] {
   background: #242b3d;
-  color: #ffd84d;
+  color: var(--accent-icon, #9ec9d6);
 }
 
 [data-theme="dark"] .home-nav__home-btn i,
 body[data-theme="dark"] .home-nav__home-btn i {
-  color: #ffd84d;
+  color: var(--accent-icon, #9ec9d6);
 }
 
 [data-theme="dark"] .home-nav__theme,
@@ -510,7 +510,7 @@ body[data-theme="dark"] .home-nav__theme:hover {
 [data-theme="dark"] .home-nav__theme #theme-icon,
 body[data-theme="dark"] .home-nav__theme i,
 body[data-theme="dark"] .home-nav__theme #theme-icon {
-  color: #ffd84d;
+  color: var(--accent-icon, #9ec9d6);
 }
 
 .home-top {
@@ -1409,8 +1409,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-footer {
-  background: var(--gradient-primary) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--gradient-hero-dark) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
 }
 
@@ -1769,28 +1769,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
   color: #445066;
 }
 
-[data-theme="dark"] .home-ai-card {
-  background: #1e2448;
-  border: 1px solid #3339bf;
-}
-
-[data-theme="dark"] .home-ai-card__title {
-  color: #c8ccff;
-}
-
-[data-theme="dark"] .home-ai-card__sub {
-  color: #7788aa;
-}
-
-[data-theme="dark"] .home-ai-card__input {
-  background: #141828;
-  border: 1px solid #2a3560;
-  color: #c8ccff;
-}
-
 [data-theme="dark"] .home-ai-card__btn {
   background: var(--gradient-primary);
-  color: white;
+  color: #ffffff;
 }
 
 .home-ai-card__btn:hover {

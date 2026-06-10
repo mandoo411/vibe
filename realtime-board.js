@@ -221,33 +221,6 @@
     return digits.slice(-6);
   }
 
-  function mapKisQuoteToPanel(raw) {
-    if (!raw || typeof raw !== "object") return {};
-    const fin = raw.financials && typeof raw.financials === "object" ? raw.financials : {};
-    return {
-      stockCode: raw.stockCode,
-      stockName: raw.stockName,
-      market: raw.market,
-      currentPrice: raw.currentPrice,
-      changeRate: raw.changeRate,
-      changeValue: raw.changeAmt,
-      change: raw.changeAmt,
-      open: raw.open,
-      high: raw.high,
-      low: raw.low,
-      volume: raw.volume,
-      prevClose: raw.prevClose,
-      prevVolume: raw.prevVolume,
-      warn: raw.warn,
-      marketCapRaw: raw.marketCapRaw,
-      tradingValue: raw.tradingValue,
-      per: fin.per,
-      financials: fin,
-      supply: {},
-      profit: {},
-    };
-  }
-
   function enrichPanelFromTableRow(panel, code6) {
     if (!panel || panel.stockName) return panel;
     const rows = getCurrentRows() || [];
@@ -261,16 +234,24 @@
     if (!/^\d{6}$/.test(code6)) throw new Error("종목을 찾을 수 없습니다.");
     const fetchOpts = { cache: "no-store" };
     if (opts && opts.signal) fetchOpts.signal = opts.signal;
-    const res = await fetch(`/api/kis-stock-quote?code=${encodeURIComponent(code6)}`, fetchOpts);
+    const res = await fetch(
+      `/api/stock-analysis?q=${encodeURIComponent(code6)}&quoteOnly=1`,
+      fetchOpts
+    );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
     if (data && data.error) throw new Error(data.error);
     try {
       if (typeof window !== "undefined" && /(?:\?|&)rtDebug=1\b/.test(window.location.search || "")) {
-        console.log("[realtime-board] /api/kis-stock-quote", { code6, keys: data ? Object.keys(data).slice(0, 60) : [] });
+        console.log("[realtime-board] /api/stock-analysis quoteOnly", {
+          code6,
+          volTurnoverRate: data && data.volTurnoverRate,
+          creditLoanRmndRate: data && data.creditLoanRmndRate,
+          keys: data ? Object.keys(data).slice(0, 60) : [],
+        });
       }
     } catch (_) {}
-    return enrichPanelFromTableRow(mapKisQuoteToPanel(data), code6);
+    return enrichPanelFromTableRow(data || {}, code6);
   }
 
   function hideLoadingOverlay() {
@@ -1803,6 +1784,8 @@
     const n = Number(String(rawOrNum == null ? "" : rawOrNum).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
     if (n >= 1e8 && n <= 5e15) return formatWonJoEok(n);
+    // KIS hts_avls 등 억원 단위(약 1만~1억 미만)
+    if (n >= 1e4 && n < 1e8) return formatWonJoEok(n * 1e8);
     return n.toLocaleString("ko-KR");
   }
 

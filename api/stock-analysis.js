@@ -1144,6 +1144,9 @@ module.exports = async function handler(req, res) {
   const q =
     sanitizeStr(req.query && (req.query.q || req.query.query || req.query.name || req.query.code)) ||
     "";
+  const quoteOnly =
+    sanitizeStr(req.query && req.query.quoteOnly) === "1" ||
+    sanitizeStr(req.query && req.query.detail) === "1";
 
   const resolved = resolveStock(q);
   if (!resolved) {
@@ -1181,36 +1184,38 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const supplyForAi = normalizeSupplyToEok(supply, quote.currentPrice);
+  const supplyNormalized = normalizeSupplyToEok(supply, quote.currentPrice);
 
-  let analysis;
-  try {
-    analysis = await claudeAnalyze({
-      stockName: resolved.stockName,
-      stockCode: resolved.stockCode,
-      market: quote.market || "",
-      currentPrice: quote.currentPrice,
-      change: quote.change,
-      changeRate: quote.changeRate,
-      volume: quote.volume,
-      volTurnoverRate: quote.volTurnoverRate,
-      open: quote.open,
-      high: quote.high,
-      low: quote.low,
-      prevClose: quote.prevClose,
-      high52w: quote.high52w,
-      low52w: quote.low52w,
-      creditRate: quote.creditRate,
-      creditLoanBalance: quote.creditLoanBalance,
-      creditLoanRmndRate: quote.creditLoanRmndRate,
-      marketCap: quote.marketCap,
-      per: quote.per,
-      financials: quote.financials,
-      supply: supplyForAi,
-    });
-  } catch (e) {
-    console.error("[stock-analysis] Claude error", e && e.message, e);
-    analysis = normalizeAnalysis(null, quote);
+  let analysis = null;
+  if (!quoteOnly) {
+    try {
+      analysis = await claudeAnalyze({
+        stockName: resolved.stockName,
+        stockCode: resolved.stockCode,
+        market: quote.market || "",
+        currentPrice: quote.currentPrice,
+        change: quote.change,
+        changeRate: quote.changeRate,
+        volume: quote.volume,
+        volTurnoverRate: quote.volTurnoverRate,
+        open: quote.open,
+        high: quote.high,
+        low: quote.low,
+        prevClose: quote.prevClose,
+        high52w: quote.high52w,
+        low52w: quote.low52w,
+        creditRate: quote.creditRate,
+        creditLoanBalance: quote.creditLoanBalance,
+        creditLoanRmndRate: quote.creditLoanRmndRate,
+        marketCap: quote.marketCap,
+        per: quote.per,
+        financials: quote.financials,
+        supply: supplyNormalized,
+      });
+    } catch (e) {
+      console.error("[stock-analysis] Claude error", e && e.message, e);
+      analysis = normalizeAnalysis(null, quote);
+    }
   }
 
   let profit = null;
@@ -1303,7 +1308,7 @@ module.exports = async function handler(req, res) {
     profit,
     high52w: quote.high52w,
     low52w: quote.low52w,
-    analysis,
+    ...(quoteOnly ? {} : { analysis }),
   });
 };
 

@@ -129,11 +129,13 @@ async function fetchKoreaIndex({ code, sparkSymbol, id, name }) {
   }
   let sparkline = [];
   try {
-    const y = await fetchYahooChart(sparkSymbol);
-    sparkline = y.sparkline;
-    if (value == null && y.value != null) {
-      value = roundN(y.value, 2);
-      changePct = y.changePct;
+    sparkline = await fetchYahooSparkline(sparkSymbol);
+    if (value == null) {
+      const q = await fetchYahooQuote(sparkSymbol);
+      if (q.value != null) {
+        value = roundN(q.value, 2);
+        changePct = q.changePct;
+      }
     }
   } catch {
     /* sparkline optional */
@@ -141,22 +143,37 @@ async function fetchKoreaIndex({ code, sparkSymbol, id, name }) {
   return { id, symbol: code, name, value, changePct, sparkline, unit: "pt" };
 }
 
-async function fetchYahooChart(symbol) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
+/** 전일 종가 대비 — market-ticker.js yahooQuote 와 동일 (range=2d) */
+async function fetchYahooQuote(symbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}: ${symbol}`);
   const body = await res.json();
-  const result = body?.chart?.result?.[0];
-  if (!result) throw new Error(`Yahoo empty: ${symbol}`);
-  const meta = result.meta || {};
-  const closes = (result.indicators?.quote?.[0]?.close || []).filter((v) => v != null).map((v) => roundN(v, 4));
+  const meta = body?.chart?.result?.[0]?.meta || {};
   const price = toNum(meta.regularMarketPrice);
   const previous = toNum(meta.chartPreviousClose ?? meta.previousClose);
   let changePct = null;
   if (price != null && previous) changePct = roundN(((price - previous) / previous) * 100, 2);
   const rmChgPct = toNum(meta.regularMarketChangePercent);
   if (rmChgPct != null && Number.isFinite(rmChgPct)) changePct = roundN(rmChgPct, 2);
-  return { value: price != null ? roundN(price, 4) : null, changePct, sparkline: closes };
+  if (symbol === "KRW=X" && changePct != null && Math.abs(changePct) < 0.0001) changePct = null;
+  return { value: price != null ? roundN(price, 4) : null, changePct };
+}
+
+/** 스파크라인용 1mo 종가 배열 */
+async function fetchYahooSparkline(symbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}: ${symbol}`);
+  const body = await res.json();
+  const result = body?.chart?.result?.[0];
+  if (!result) throw new Error(`Yahoo empty: ${symbol}`);
+  return (result.indicators?.quote?.[0]?.close || []).filter((v) => v != null).map((v) => roundN(v, 4));
+}
+
+async function fetchYahooFull(symbol) {
+  const [quote, sparkline] = await Promise.all([fetchYahooQuote(symbol), fetchYahooSparkline(symbol)]);
+  return { ...quote, sparkline };
 }
 
 function yahooToItem(def, chart) {
@@ -228,7 +245,7 @@ async function buildOverview() {
     Promise.all(
       YAHOO_DEFS.map(async (def) => {
         try {
-          const chart = await fetchYahooChart(def.symbol);
+          const chart = await fetchYahooFull(def.symbol);
           return { def, chart, error: null };
         } catch (e) {
           return { def, chart: { value: null, changePct: null, sparkline: [] }, error: e?.message || String(e) };

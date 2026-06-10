@@ -109,38 +109,55 @@
           return pct > 0 ? "market-card__change--up" : "market-card__change--down";
         }
 
-        function sparkTrend(pct, points) {
-          if (pct != null && Number.isFinite(pct) && Math.abs(pct) >= 0.0001) return pct > 0;
-          if (!Array.isArray(points) || points.length < 2) return null;
-          return points[points.length - 1] >= points[0];
+        function sparkTrend(pct) {
+          if (pct == null || !Number.isFinite(pct) || Math.abs(pct) < 0.0001) return null;
+          return pct > 0;
         }
 
-        function sparklineSvg(points, up) {
+        function sparklineSvg(points, up, itemId) {
           if (!Array.isArray(points) || points.length < 2) return "";
-          const w = 88;
-          const h = 32;
+          const w = 100;
+          const h = 40;
+          const pad = 4;
           const min = Math.min(...points);
           const max = Math.max(...points);
           const range = max - min || 1;
           const step = w / (points.length - 1);
-          let d = "";
+          let lineD = "";
           points.forEach((p, i) => {
             const x = (i * step).toFixed(1);
-            const y = (h - 3 - ((p - min) / range) * (h - 6)).toFixed(1);
-            d += `${i === 0 ? "M" : "L"}${x},${y} `;
+            const y = (h - pad - ((p - min) / range) * (h - pad * 2)).toFixed(1);
+            lineD += `${i === 0 ? "M" : "L"}${x},${y} `;
           });
+          const lastX = ((points.length - 1) * step).toFixed(1);
+          const areaD = `${lineD.trim()} L ${lastX},${h} L 0,${h} Z`;
           const trend = up === true ? "market-spark--up" : up === false ? "market-spark--down" : "market-spark--flat";
-          return `<svg class="market-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d.trim()}"/></svg>`;
+          const gid = `spark-${String(itemId || "x").replace(/[^a-z0-9_-]/gi, "")}`;
+          return `<svg class="market-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
+            <defs>
+              <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${up === true ? "#e24b4a" : up === false ? "#3b82f6" : "currentColor"}" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="${up === true ? "#e24b4a" : up === false ? "#3b82f6" : "currentColor"}" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path class="market-spark__area" d="${areaD}" fill="url(#${gid})"/>
+            <path class="market-spark__line" d="${lineD.trim()}"/>
+          </svg>`;
+        }
+
+        function changeChipHtml(pct) {
+          const cls = changeClass(pct);
+          const arrow =
+            cls === "market-card__change--up" ? "▲" : cls === "market-card__change--down" ? "▼" : "−";
+          return `<span class="market-card__change ${cls}"><span class="market-card__change-arrow" aria-hidden="true">${arrow}</span>${fmtPct(pct)}</span>`;
         }
 
         function cardHtml(item) {
           const pct = item.changePct;
           const sub = item.rating ? `<div class="market-card__sub">${item.rating}</div>` : "";
           const changeHtml =
-            item.id === "fear-greed" || item.id === "btc-dominance"
-              ? ""
-              : `<div class="market-card__change ${changeClass(pct)}">${fmtPct(pct)}</div>`;
-          const spark = sparklineSvg(item.sparkline, sparkTrend(pct, item.sparkline));
+            item.id === "fear-greed" || item.id === "btc-dominance" ? "" : changeChipHtml(pct);
+          const spark = sparklineSvg(item.sparkline, sparkTrend(pct), item.id);
           return `<article class="market-card" data-id="${item.id}">
             <div class="market-card__name">${item.name}</div>
             <div class="market-card__body">

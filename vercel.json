@@ -31,32 +31,6 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
   ],
-  "functions": {
-    "api/kis-realtime-data.js": {
-      "maxDuration": 60
-    },
-    "api/us-market-data.js": {
-      "maxDuration": 60
-    },
-    "api/crypto-data.js": {
-      "maxDuration": 60
-    },
-    "api/crypto-news.js": {
-      "maxDuration": 30
-    },
-    "api/analyze.js": {
-      "maxDuration": 120
-    },
-    "api/kis-stock-quote.js": {
-      "maxDuration": 30
-    },
-    "api/world-market.js": {
-      "maxDuration": 60
-    },
-    "api/repo-data.js": {
-      "maxDuration": 15
-    }
-  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/apple-touch-icon.png", "dest": "/icon-t-180.png" },

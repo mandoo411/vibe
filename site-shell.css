@@ -1992,6 +1992,11 @@ body[data-theme="dark"] .home-ticker-bar__label {
     padding-bottom: 10px;
   }
 
+  .page-tm-v2 .crypto-table td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
   .page-tm-v2 .crypto-table .crypto-col-rank,
   .page-tm-v2 .world-table th.world-col-rank,
   .page-tm-v2 .world-table td.world-col-rank {

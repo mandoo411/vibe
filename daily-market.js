@@ -66,7 +66,6 @@
     topGainers: $("day-topgainers"),
     topGainersMeta: $("day-topgainers-meta"),
     themes: $("day-themes"),
-    news: $("day-news"),
     archivePrev: $("archive-prev"),
     archiveNext: $("archive-next"),
     archiveTitle: $("archive-title"),
@@ -239,9 +238,7 @@
       hasArr("indexes") ||
       hasArr("notableStocks") ||
       hasMeaningfulTopGainers ||
-      hasArr("themes") ||
-      hasArr("news") ||
-      hasArr("pressNews")
+      hasArr("themes")
     );
   }
 
@@ -298,7 +295,6 @@
       if (els.topGainers) els.topGainers.innerHTML = "";
       if (els.topGainersMeta) els.topGainersMeta.textContent = "";
       els.themes.innerHTML = "";
-      els.news.innerHTML = "";
     } else {
       if (els.headline) {
         els.headline.textContent =
@@ -324,7 +320,6 @@
         els.topGainersMeta.textContent = ts ? `갱신: ${ts}` : "";
       }
       els.themes.innerHTML = renderThemes(day && day.themes);
-      els.news.innerHTML = renderNews(day);
     }
 
     renderArchive();
@@ -433,69 +428,6 @@
   function renderCheckpoints(arr) {
     if (!Array.isArray(arr) || !arr.length) return '<li class="empty-line">체크포인트 없음</li>';
     return arr.map((p) => `<li>${escapeHtml(sanitizeUserCopy(p))}</li>`).join("");
-  }
-
-  function renderNews(day) {
-    const telegram = Array.isArray(day?.telegramMessages) ? day.telegramMessages : [];
-    const press = Array.isArray(day?.pressNews) ? day.pressNews : [];
-    const legacy = Array.isArray(day?.news) ? day.news : [];
-    const items = [];
-    for (const msg of telegram.slice(0, 15)) {
-      const text = sanitizeStr(msg.text);
-      items.push({
-        title: `[${sanitizeStr(msg.channel) || "텔레그램"}] ${text.slice(0, 80)}${text.length > 80 ? "…" : ""}`,
-        body: text,
-        source: msg.channel || "텔레그램",
-        telegram: true,
-      });
-    }
-    for (const n of press) {
-      items.push({
-        title: n.title,
-        body: n.content || "",
-        source: n.source,
-        url: n.url,
-      });
-    }
-    for (const n of legacy) {
-      if (!items.some((i) => i.title === n.title)) items.push(n);
-    }
-    if (!items.length) return '<p class="empty-line">기록 없음</p>';
-    return `<ul class="news-list">${items
-      .map((n) => {
-        const title = escapeHtml(n && n.title);
-        const source = sanitizeStr(n && n.source);
-        const url = typeof (n && n.url) === "string" && /^https?:\/\//i.test(n.url) ? n.url : "";
-        const body = sanitizeStr(n && (n.body || n.note || n.summary));
-        const preview = body.length > 100 ? `${body.slice(0, 100)}…` : body;
-        if (n && n.telegram) {
-          return `<li class="news-item news-item--telegram">
-            <details>
-              <summary class="news-item__title">${title}</summary>
-              <p class="news-item__note">${escapeHtml(body || preview)}</p>
-              ${source ? `<p class="news-item__meta">${escapeHtml(source)}</p>` : ""}
-            </details>
-          </li>`;
-        }
-        if (url) {
-          return `<li class="news-item news-item--press">
-            <a class="press-news-card" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
-              <span class="press-news-card__source">${escapeHtml(source)}</span>
-              <span class="press-news-card__title">${title}</span>
-              ${preview ? `<span class="press-news-card__preview">${escapeHtml(preview)}</span>` : ""}
-              <span class="press-news-card__link">원문 보기 →</span>
-            </a>
-          </li>`;
-        }
-        return `<li class="news-item">
-          <details>
-            <summary class="news-item__title">${title}</summary>
-            <p class="news-item__note">${escapeHtml(body)}</p>
-            ${source ? `<p class="news-item__meta">${escapeHtml(source)}</p>` : ""}
-          </details>
-        </li>`;
-      })
-      .join("")}</ul>`;
   }
 
   function renderIndexes(arr) {

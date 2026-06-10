@@ -218,7 +218,20 @@
       }
       .crypto-table td {
         font-size: 13px;
-        line-height: 1.6;
+        line-height: 1.35;
+      }
+
+      @media (min-width: 769px) {
+        .crypto-table th,
+        .crypto-table td {
+          padding-top: 5px;
+          padding-bottom: 5px;
+        }
+
+        .crypto-coin-cell__logo img {
+          width: 20px !important;
+          height: 20px !important;
+        }
       }
       .crypto-table th {
         position: sticky;
@@ -259,21 +272,15 @@
         white-space: nowrap;
       }
       .crypto-coin-name {
-        font-size: 10px;
-        font-weight: 500;
-        color: var(--text-dim);
-        line-height: 1.2;
+        line-height: 1.15;
         min-width: 0;
         max-width: 148px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
       }
       .crypto-symbol-inline {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--text);
         font-weight: 600;
-        line-height: 1.25;
+        line-height: 1.15;
         letter-spacing: 0.02em;
       }
       .crypto-th-sort {
@@ -317,9 +324,9 @@
       }
       .crypto-coin-cell {
         display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
         min-width: 0;
         max-width: 100%;
       }
@@ -336,9 +343,11 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 2px;
+        justify-content: center;
+        gap: 0;
         min-width: 0;
         max-width: 100%;
+        line-height: 1.15;
       }
       .crypto-col-name {
         min-width: 108px;
@@ -399,6 +408,11 @@
         color: var(--accent-bright);
         text-decoration: underline;
         outline: none;
+      }
+      .crypto-name-btn.crypto-coin-name {
+        font-size: 10px;
+        font-weight: 500;
+        color: var(--text-dim);
       }
       .crypto-chart-row td {
         padding: 0 !important;

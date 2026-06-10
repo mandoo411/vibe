@@ -312,7 +312,7 @@
       </header>
       <div class="page-meta-bar" aria-live="polite">
         <p class="masthead__notice" id="masthead-notice" hidden></p>
-        <span id="briefing-updated">미국 마감, 환율, 주요 뉴스</span>
+        <span id="briefing-updated">미국 마감, 환율, 시장 지표</span>
       </div>
       <main class="briefing-grid" aria-live="polite">
         <section class="briefing-card briefing-card--wide">
@@ -352,10 +352,6 @@
           <ul class="briefing-list" id="crypto-list"></ul>
         </section>
 
-        <section class="briefing-card briefing-card--wide briefing-card--news">
-          <h2>주요 뉴스 (텔레그램)</h2>
-          <div class="briefing-news-list" id="news-list"></div>
-        </section>
       </main>
     </div>
       </main>
@@ -587,31 +583,6 @@
         `;
       }
 
-      function renderNews(rows) {
-        const list = Array.isArray(rows) ? rows.slice(0, 20) : [];
-        $("news-list").innerHTML = list.length
-          ? list.map((n, i) => {
-              const summary = n.summary || n.note || "";
-              if (n.telegram || summary) {
-                return `<details class="briefing-news-card is-telegram">
-                  <summary><span>${escapeHtml(n.source || n.channel || "텔레그램")} · ${escapeHtml(fmtNewsTime(n.publishedAt || n.datetime))}</span><strong>${escapeHtml(n.title || n.headline || "제목 없음")}</strong></summary>
-                  <p class="briefing-news-summary">${escapeHtml(summary || n.title || n.headline || "")}</p>
-                </details>`;
-              }
-              if (n.url) {
-                return `<a class="briefing-news-card" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer">
-                  <span>${escapeHtml(n.source || "뉴스")} · ${escapeHtml(fmtNewsTime(n.publishedAt))}</span>
-                  <strong>${escapeHtml(n.title || "제목 없음")}</strong>
-                </a>`;
-              }
-              return `<div class="briefing-news-card">
-                <span>${escapeHtml(n.source || "뉴스")} · ${escapeHtml(fmtNewsTime(n.publishedAt || n.datetime))}</span>
-                <strong>${escapeHtml(n.title || n.headline || "제목 없음")}</strong>
-              </div>`;
-            }).join("")
-          : '<p class="empty-text">뉴스 없음</p>';
-      }
-
       function renderMacroList(data) {
         const comments = data.aiAnalysis?.marketComments || {};
         const rates = data.forex?.rates || {};
@@ -636,7 +607,7 @@
           const data = await tmFetchJson("data/morning-briefing.json");
           $("briefing-updated").textContent = data.updatedAt
             ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
-            : "미국 마감, 환율, 주요 뉴스";
+            : "미국 마감, 환율, 시장 지표";
           const errs = Array.isArray(data.errors) ? data.errors : [];
           if (errs.length || data.aiAnalysis?._fallback) {
             $("masthead-notice").hidden = false;
@@ -650,7 +621,6 @@
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
           renderMacroList(data);
-          renderNews(data.news || []);
         } catch (error) {
           $("masthead-notice").hidden = false;
           $("masthead-notice").textContent = `브리핑 데이터를 불러오지 못했습니다: ${error instanceof Error ? error.message : error}`;

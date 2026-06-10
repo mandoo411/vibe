@@ -1863,7 +1863,7 @@
     function setToggle(open) {
       chartOpen = !!open;
       toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
-      toggleBtn.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
+      toggleBtn.textContent = chartOpen ? "차트 닫기" : "차트 보기";
       chartHost.hidden = !chartOpen;
       chartHost.style.display = chartOpen ? "" : "none";
       if (!chartOpen) {
@@ -2101,7 +2101,7 @@
       `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--profit">${profitGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
-      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
       `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
       `  </footer>`,
       `</div>`,

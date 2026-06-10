@@ -340,7 +340,7 @@
       `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${volumeGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
-      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기 ▼</button>`,
+      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
       `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden>`,
       `      <div class="rt-chart-body">`,
       tvChartShellHtml(
@@ -368,7 +368,7 @@
     const setToggle = (open) => {
       chartOpen = !!open;
       toggle.setAttribute("aria-expanded", chartOpen ? "true" : "false");
-      toggle.textContent = chartOpen ? "차트 닫기 ▲" : "차트 보기 ▼";
+      toggle.textContent = chartOpen ? "차트 닫기" : "차트 보기";
       chartHost.hidden = !chartOpen;
     };
     setToggle(false);

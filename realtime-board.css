@@ -111,6 +111,12 @@
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
       }
+
+      [data-theme="dark"] .rt-tabs,
+      .dark-mode .rt-tabs {
+        background: var(--panel-surface, #1a1f35);
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+      }
       .rt-tabs-row-tabs {
         display: flex;
         gap: 8px;

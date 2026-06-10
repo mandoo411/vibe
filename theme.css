@@ -92,9 +92,13 @@ body {
   background-color: var(--loading-bg, #0d1020);
 }
 
-[data-theme="dark"] .page-tm-v2 .masthead__title,
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__title,
 [data-theme="dark"] .hub-hero__title {
   color: var(--text-title, #f3f4f6);
+}
+
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__title {
+  color: #ffffff;
 }
 
 [data-theme="dark"] .page-tm-v2 .tm-main,

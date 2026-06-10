@@ -90,10 +90,28 @@
   user-select: none;
 }
 
+[data-theme="dark"] .day-nav {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .day-nav__btn,
+[data-theme="dark"] .day-nav__today {
+  background: #1a1f35;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-body, #d1d5db);
+}
+
+[data-theme="dark"] .day-nav__btn:hover,
+[data-theme="dark"] .day-nav__today:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 [data-theme="dark"] .day-nav__date-label {
   background: var(--bg-elevated, #1e2235);
   color: var(--text-body, #d1d5db);
-  border-color: var(--border);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .day-nav__spacer {

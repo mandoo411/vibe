@@ -960,58 +960,98 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   color: rgba(255, 255, 255, 0.78);
 }
 
-.page-tm-v2 .masthead.masthead--title-only + .page-hero-sub {
-  margin-top: 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+/* 서브페이지 히어로 — 라이트/다크 동일 높이·타이포 (테마 전환 시 점프 방지) */
+.page-tm-v2 .masthead.masthead--title-only {
+  box-sizing: border-box;
+  min-height: 72px;
+  height: auto;
+  overflow: visible;
+  padding: 14px 0 12px;
+  margin-bottom: 0;
 }
 
-[data-theme="light"] .page-tm-v2 .masthead.masthead--title-only + .page-hero-sub {
-  background: var(--gradient-primary);
+.page-tm-v2 .masthead.masthead--title-only .masthead__copy {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
-[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only + .page-hero-sub {
-  background: var(--gradient-hero-dark);
+.page-tm-v2 .masthead.masthead--title-only .masthead__title {
+  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-.page-tm-v2 .masthead.masthead--title-only + .page-hero-sub .masthead__meta,
-.page-tm-v2 .masthead.masthead--title-only + .page-hero-sub .masthead__notice {
-  color: rgba(255, 255, 255, 0.62);
+.page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  font-family: var(--font-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.78);
 }
 
-/* 서브페이지 타이틀·영문 키커: 웹 전 페이지 실시간시세와 동일 컴팩트 규격 */
-@media (min-width: 769px) {
-  .page-tm-v2 .masthead.masthead--title-only {
-    min-height: 0;
-    height: auto;
-    overflow: visible;
-    padding: 14px 0 12px;
-    margin-bottom: 0;
-  }
-
-  .page-tm-v2 .masthead.masthead--title-only .masthead__copy {
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .page-tm-v2 .masthead.masthead--title-only .masthead__title {
-    font-family: var(--font-display, "Cormorant Garamond", Georgia, serif);
-    font-size: 24px;
-    font-weight: 650;
-    letter-spacing: -0.02em;
-    line-height: 1.12;
-  }
-
-  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-    margin: 0 0 4px;
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    font-weight: 700;
-  }
+/* 히어로 아래 메타 박스 (암호화폐·시장·마감시황 등 공통) */
+.page-tm-v2 .page-meta-bar,
+.page-tm-v2 .market-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 4px 0 14px;
+  padding: 8px 12px;
+  background: var(--surface-bar, var(--bg-secondary, #f0f3fa));
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--radius, 8px);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted, var(--text-secondary));
 }
 
-/* 영문 라벨(kicker): masthead · section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */
-.page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+.page-tm-v2 .page-meta-bar__row,
+.page-tm-v2 .page-meta-bar .masthead__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.page-tm-v2 .page-meta-bar__poll {
+  margin-left: auto;
+  color: var(--text-dim, var(--text-secondary));
+}
+
+.page-tm-v2 .page-meta-bar__notice,
+.page-tm-v2 .page-meta-bar .masthead__notice {
+  flex: 1 1 100%;
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid #1d4ed8;
+  border-radius: var(--radius, 8px);
+}
+
+.page-tm-v2 .page-meta-bar__notice[hidden],
+.page-tm-v2 .page-meta-bar .masthead__notice[hidden] {
+  display: none !important;
+}
+
+[data-theme="dark"] .page-tm-v2 .page-meta-bar,
+[data-theme="dark"] .page-tm-v2 .market-meta-bar {
+  background: var(--panel-surface, #1a1f35);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted-ui, #9ca3af);
+}
+
+/* 영문 라벨(kicker): section-kicker · 섹션 영문 제목 — 전 페이지 11px 통일 */
 .page-tm-v2 .section-kicker,
 .page-tm-v2 .us-section__title,
 .page-tm-v2 .crypto-section__title {
@@ -1022,11 +1062,6 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   text-transform: uppercase;
   line-height: 1.2;
   color: var(--accent, #2962ff);
-}
-
-.page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-  margin: 0 0 6px;
-  font-weight: 700;
 }
 
 .page-tm-v2 .section-kicker {
@@ -1041,7 +1076,10 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   color: var(--accent-bright, var(--accent, #2962ff));
 }
 
-[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
+  color: rgba(255, 255, 255, 0.78);
+}
+
 [data-theme="dark"] .page-tm-v2 .section-kicker,
 [data-theme="dark"] .page-tm-v2 .us-section__title,
 [data-theme="dark"] .page-tm-v2 .crypto-section__title {
@@ -1059,6 +1097,7 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 .page-tm-v2 .day-nav,
 .page-tm-v2 .us-meta-bar,
 .page-tm-v2 .crypto-meta-bar,
+.page-tm-v2 .page-meta-bar,
 .page-tm-v2 .market-meta-bar,
 .page-tm-v2 .rt-strip,
 .page-tm-v2 .rt-meta-bar {
@@ -1432,19 +1471,10 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
 [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__title {
   color: #ffffff;
-  font-family: "Noto Sans KR", -apple-system, sans-serif;
-  font-size: 28px;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
 }
 
 [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only {
   background: var(--gradient-hero-dark);
-}
-
-[data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
-  font-weight: 700;
 }
 
 [data-theme="dark"] .hub-hero__title {
@@ -1962,7 +1992,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   .page-tm-v2 .masthead.masthead--title-only,
   .page-tm-v2 .page--realtime .masthead.masthead--title-only {
     height: auto;
-    min-height: 0;
+    min-height: 72px;
     overflow: visible;
     padding: 16px 0;
     margin-bottom: 0;
@@ -1973,31 +2003,14 @@ body[data-theme="dark"] .home-ticker-bar__label {
     padding-bottom: 0;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__title,
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
-    font-family: "Noto Sans KR", -apple-system, sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+  .page-tm-v2 .page-meta-bar,
+  .page-tm-v2 .market-meta-bar {
+    margin-bottom: 12px;
   }
 
-  .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.78);
-    margin: 0 0 6px;
-    font-weight: 700;
-  }
-
-  [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
-  [data-theme="dark"] .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__kicker {
-    color: rgba(255, 255, 255, 0.78);
-  }
-
-  .page-tm-v2 .page-hero-sub {
-    margin: 0 0 16px;
+  .page-tm-v2 .page-meta-bar__poll {
+    width: 100%;
+    margin-left: 0;
   }
 
   .page-tm-v2 .section-kicker,
@@ -2052,11 +2065,6 @@ body[data-theme="dark"] .home-ticker-bar__label {
   .page-tm-v2 .home-ticker__pct {
     font-size: 12px;
     line-height: 1.2;
-  }
-
-  [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__title,
-  [data-theme="dark"] .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__title {
-    color: var(--text-title, #f3f4f6);
   }
 
   .home-footer__sns {

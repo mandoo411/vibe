@@ -2,34 +2,6 @@
   font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.page-market .masthead.masthead--title-only .masthead__title {
-  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.market-meta-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
-  margin: 4px 0 14px;
-  padding: 8px 12px;
-  background: var(--surface-bar, var(--bg-secondary, #f0f3fa));
-  border: 1px solid var(--border-strong, var(--border));
-  border-radius: var(--radius, 8px);
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--text-muted, var(--text-secondary));
-}
-
-.market-meta-bar__poll {
-  margin-left: auto;
-  color: var(--text-dim, var(--text-secondary));
-}
-
 .page-market .market-body {
   box-sizing: border-box;
   padding-top: 0;
@@ -265,8 +237,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 18px 16px;
+  justify-content: center;
+  gap: 4px;
+  min-height: 124px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg-secondary);
@@ -290,13 +264,22 @@
 }
 
 .market-gauge {
-  width: 100%;
-  max-width: 160px;
+  display: block;
+  width: 80px;
+  height: 44px;
+  max-width: 80px;
+  flex-shrink: 0;
+}
+
+.market-gauge--donut {
+  width: 56px;
+  height: 56px;
+  max-width: 56px;
 }
 
 .market-gauge__value {
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
@@ -316,10 +299,10 @@
 }
 
 .market-vix__value {
-  font-size: 36px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .market-vix--calm {
@@ -401,13 +384,6 @@
 
   .market-card--featured {
     grid-column: span 2;
-  }
-}
-
-@media (max-width: 768px) {
-  .market-meta-bar__poll {
-    width: 100%;
-    margin-left: 0;
   }
 }
 

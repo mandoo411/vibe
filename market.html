@@ -72,9 +72,9 @@
               <h1 class="masthead__title">시장 지표 종합</h1>
             </div>
           </header>
-          <div class="market-meta-bar" aria-live="polite">
+          <div class="page-meta-bar market-meta-bar" aria-live="polite">
             <span id="market-updated">데이터 로딩 중…</span>
-            <span class="market-meta-bar__poll">갱신 주기 2분</span>
+            <span class="page-meta-bar__poll">갱신 주기 2분</span>
           </div>
           <div class="market-body">
             <div id="market-error" class="market-error" hidden></div>
@@ -84,6 +84,31 @@
           </div>
         </div>
       </main>
+
+      <footer class="home-footer">
+        <div class="home-footer__top">
+          <div>
+            <div class="home-footer__brand-name">TotalMoney AI</div>
+            <div class="home-footer__slogan">실시간 시장을 AI로 분석하세요</div>
+          </div>
+          <div class="home-footer__divider" aria-hidden="true"></div>
+          <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
+          <div class="home-footer__sns">
+            <a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="#" aria-label="YouTube"><i class="ti ti-brand-youtube"></i></a>
+            <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
+          </div>
+        </div>
+        <div class="home-footer__bottom">
+          <span>© 2026 TotalMoney AI</span>
+          <div class="home-footer__links">
+            <a href="#">이용약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="mailto:contact@totalmoney.ai">문의하기</a>
+          </div>
+          <span>Data by KIS · FMP · CMC</span>
+        </div>
+      </footer>
 
       <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
@@ -232,7 +257,7 @@
           const endDeg = 180 - pct * 180;
           const bg = arcPath(60, 58, 44, 180, 0);
           const fg = pct > 0 ? arcPath(60, 58, 44, 180, endDeg) : "";
-          return `<svg class="market-gauge" viewBox="0 0 120 72" width="120" height="72" aria-hidden="true">
+          return `<svg class="market-gauge" viewBox="0 0 120 72" width="80" height="44" aria-hidden="true">
             <path d="${bg}" fill="none" stroke="var(--border)" stroke-width="8" stroke-linecap="round"/>
             ${fg ? `<path d="${fg}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>` : ""}
           </svg>`;
@@ -243,7 +268,7 @@
           const pct = v / max;
           const c = 2 * Math.PI * 36;
           const dash = c * pct;
-          return `<svg class="market-gauge" viewBox="0 0 88 88" width="88" height="88" aria-hidden="true">
+          return `<svg class="market-gauge market-gauge--donut" viewBox="0 0 88 88" width="56" height="56" aria-hidden="true">
             <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="8"/>
             <circle cx="44" cy="44" r="36" fill="none" stroke="${color}" stroke-width="8"
               stroke-dasharray="${dash.toFixed(2)} ${(c - dash).toFixed(2)}"
@@ -279,12 +304,10 @@
             </article>`;
           }
           const vm = vixMeta(item.value);
-          return `<article class="market-gauge-card market-gauge-card--featured" data-id="vix">
+          return `<article class="market-gauge-card" data-id="vix">
             <div class="market-gauge-card__name">${item.name}</div>
             <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
             <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
-            <div class="market-gauge__hint">변동성 지수</div>
-            ${sparklineSvg(item.sparkline, sparkTrend(item.changePct), "vix", true)}
           </article>`;
         }
 

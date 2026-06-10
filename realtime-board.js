@@ -213,24 +213,56 @@
     return "";
   }
 
-  async function fetchExistingStockAnalysis(q) {
-    const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+  function normalizeCode6ForQuote(raw) {
+    const digits = String(raw || "").replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.length === 6) return digits;
+    if (digits.length < 6) return digits.padStart(6, "0");
+    return digits.slice(-6);
+  }
+
+  function mapKisQuoteToPanel(raw) {
+    if (!raw || typeof raw !== "object") return {};
+    const fin = raw.financials && typeof raw.financials === "object" ? raw.financials : {};
+    return {
+      stockCode: raw.stockCode,
+      stockName: raw.stockName,
+      market: raw.market,
+      currentPrice: raw.currentPrice,
+      changeRate: raw.changeRate,
+      changeValue: raw.changeAmt,
+      change: raw.changeAmt,
+      open: raw.open,
+      high: raw.high,
+      low: raw.low,
+      volume: raw.volume,
+      prevClose: raw.prevClose,
+      prevVolume: raw.prevVolume,
+      warn: raw.warn,
+      marketCapRaw: raw.marketCapRaw,
+      tradingValue: raw.tradingValue,
+      per: fin.per,
+      financials: fin,
+      supply: {},
+      profit: {},
+    };
+  }
+
+  async function fetchStockQuoteDetail(q, opts) {
+    const code6 = normalizeCode6ForQuote(q);
+    if (!/^\d{6}$/.test(code6)) throw new Error("종목을 찾을 수 없습니다.");
+    const fetchOpts = { cache: "no-store" };
+    if (opts && opts.signal) fetchOpts.signal = opts.signal;
+    const res = await fetch(`/api/kis-stock-quote?code=${encodeURIComponent(code6)}`, fetchOpts);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
     if (data && data.error) throw new Error(data.error);
     try {
       if (typeof window !== "undefined" && /(?:\?|&)rtDebug=1\b/.test(window.location.search || "")) {
-        console.log("[realtime-board] /api/stock-analysis", {
-          q,
-          volTurnoverRate: data && (data.volTurnoverRate ?? data.vol_tnrt),
-          creditRate: data && (data.creditRate ?? data.crdt_rate),
-          whol_loan_rmnd_rate: data && data.whol_loan_rmnd_rate,
-          creditLoanRmndRate: data && (data.creditLoanRmndRate ?? data.loanRmndRate ?? data.wholLoanRmndRate),
-          keys: data ? Object.keys(data).slice(0, 60) : [],
-        });
+        console.log("[realtime-board] /api/kis-stock-quote", { code6, keys: data ? Object.keys(data).slice(0, 60) : [] });
       }
     } catch (_) {}
-    return data || {};
+    return mapKisQuoteToPanel(data);
   }
 
   function hideLoadingOverlay() {
@@ -1910,17 +1942,8 @@
 
     host.innerHTML = buildStockResultSkeleton();
     try {
-      const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(code)}`, {
-        cache: "no-store",
-        signal: ctrl.signal,
-      });
-      const data = await res.json().catch(() => ({}));
+      const data = await fetchStockQuoteDetail(code, { signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
-      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
-      if (data && data.error) {
-        host.innerHTML = `<p class="rt-lw-chart-err">${escapeHtml(data.error)}</p>`;
-        return;
-      }
       if (state.openChartCode !== code) return;
       host.innerHTML = stockPanelHtml(data, { accordion: true });
       host.dataset.loadedFor = code;
@@ -2215,7 +2238,7 @@
       }
 
       // 기존 구현(시세 조회/결과 표시 로직)을 그대로 사용
-      const data = await fetchExistingStockAnalysis(code6);
+      const data = await fetchStockQuoteDetail(code6);
       panel.innerHTML = stockPanelHtml(data);
 
       const hidePanel = () => {

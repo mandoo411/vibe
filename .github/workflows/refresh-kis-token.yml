@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Vercel 프로젝트 식별자 — 비밀이 아닙니다.
+  # Vercel 프로젝트(bori-cal) — production alias: vibe-mu-nine.vercel.app
   VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
   VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
 
@@ -72,8 +72,14 @@ jobs:
           fi
           TOKEN_VALUE="$(cat kis_access_token.txt)"
           npx --yes vercel@53.2.0 env rm KIS_ACCESS_TOKEN production --yes --token "$VERCEL_TOKEN" >/dev/null 2>&1 || true
-          printf "%s" "$TOKEN_VALUE" | npx --yes vercel@53.2.0 env add KIS_ACCESS_TOKEN production --token "$VERCEL_TOKEN"
+          printf "%s" "$TOKEN_VALUE" | npx --yes vercel@53.2.0 env add KIS_ACCESS_TOKEN production --token "$VERCEL_TOKEN" --force
           echo "KIS_ACCESS_TOKEN updated in Vercel Production environment."
+
+      - name: Redeploy Vercel production
+        if: steps.kis.outputs.issued == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes
 
       - name: Cleanup token file
         if: always()

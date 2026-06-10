@@ -7,7 +7,7 @@
   width: 100%;
   margin: 0 0 0;
   padding: 14px 0 12px;
-  background: linear-gradient(135deg, #1e2590 0%, #3339bf 60%, #4a52d4 100%);
+  background: var(--gradient-primary);
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 4px 14px rgba(30, 37, 144, 0.18);
 }
@@ -63,7 +63,7 @@
 }
 
 [data-theme="dark"] .page-market .market-page-hero {
-  background: linear-gradient(135deg, #1e2460 0%, #3339bf 55%, #4a52d4 100%);
+  background: var(--gradient-hero-dark);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
@@ -88,7 +88,7 @@
   min-height: 52px;
   margin-top: 2px;
   border-radius: 2px;
-  background: #3339bf;
+  background: var(--gradient-primary);
 }
 
 .market-section__en {

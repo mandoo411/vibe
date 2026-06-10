@@ -90,7 +90,7 @@ body.page-home-premium .tm-market-ticker__track {
 }
 
 body.page-home-premium .tm-site-nav__link[aria-current="page"] {
-  background: linear-gradient(135deg, #5560e8, #3339BF);
+  background: var(--gradient-primary);
   box-shadow: 0 14px 30px rgba(51, 57, 191, 0.26);
 }
 
@@ -111,7 +111,7 @@ body.page-home-premium .tm-site-nav__link[aria-current="page"] {
 }
 
 body.page-home-premium .tm-theme-toggle {
-  background: linear-gradient(135deg, #5560e8, #3339BF);
+  background: var(--gradient-primary);
   box-shadow: 0 16px 28px rgba(51, 57, 191, 0.26);
 }
 
@@ -169,7 +169,7 @@ body.page-home-premium .masthead__copy {
   border-radius: 20px;
   font-size: 10px;
   font-weight: 700;
-  background: linear-gradient(135deg, #3339BF, #5560e8);
+  background: var(--gradient-primary);
   color: white;
   box-shadow: 0 10px 20px rgba(51, 57, 191, 0.18);
 }
@@ -187,9 +187,9 @@ body.page-home-premium .market-sub {
 
 .dark-mode .live-badge,
 [data-theme="dark"] .live-badge {
-  background: linear-gradient(135deg, #1e2460, #252c78) !important;
-  color: #b0b8ff !important;
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  background: var(--gradient-primary) !important;
+  color: #ffffff !important;
+  border: none;
 }
 
 [data-theme="dark"].page-home-premium .market-sub,
@@ -231,7 +231,7 @@ body.page-home-premium .market-sub {
   width: 52px !important;
   height: 52px !important;
   border-radius: 14px !important;
-  background: linear-gradient(145deg, #3339BF, #5560e8) !important;
+  background: var(--gradient-primary) !important;
   box-shadow: 0 4px 14px rgba(51, 57, 191, 0.4) !important;
 }
 

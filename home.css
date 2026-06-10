@@ -21,6 +21,13 @@ body.page-home-v2 {
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
 }
 
+@media (min-width: 769px) {
+  html[data-theme="light"] .page-home-v2 .home-wrap {
+    background: #f4f6ff;
+    box-shadow: none;
+  }
+}
+
 .home-nav {
   display: flex;
   align-items: center;
@@ -103,6 +110,12 @@ body.page-home-v2 {
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
   color: #3339bf;
+}
+
+@media (min-width: 769px) {
+  html[data-theme="light"] .page-home-v2 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
+    color: #0f8387;
+  }
 }
 
 .home-nav__link[aria-current="page"] {

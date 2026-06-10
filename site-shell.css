@@ -2228,3 +2228,37 @@ body[data-theme="dark"] .home-ticker-bar__label {
     display: none;
   }
 }
+
+/* 라이트 웹: 네비 틸 포인트 · 바디 배경 통일(푸터 위 흰 박스 제거) */
+@media (min-width: 769px) {
+  html[data-theme="light"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
+    color: #0f8387;
+  }
+
+  html[data-theme="light"] .home-nav__home-btn,
+  html[data-theme="light"] .home-nav__home-btn:hover,
+  html[data-theme="light"] .home-nav__link.home-nav__home-btn[aria-current="page"],
+  html[data-theme="light"] .home-nav__link.home-nav__home-btn[aria-current="page"]:hover {
+    color: #0f8387;
+  }
+
+  html[data-theme="light"] .home-nav__home-btn i {
+    color: #0f8387;
+  }
+
+  html[data-theme="light"] body.page-tm-v2,
+  html[data-theme="light"] body.page-home-v2 {
+    background: #f4f6ff;
+    background-image: none;
+  }
+
+  html[data-theme="light"] .tm-wrap,
+  html[data-theme="light"] .home-wrap {
+    background: #f4f6ff;
+    box-shadow: none;
+  }
+
+  html[data-theme="light"] .home-main {
+    background: #f4f6ff;
+  }
+}

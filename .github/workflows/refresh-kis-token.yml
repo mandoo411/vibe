@@ -75,12 +75,6 @@ jobs:
           printf "%s" "$TOKEN_VALUE" | npx --yes vercel@53.2.0 env add KIS_ACCESS_TOKEN production --token "$VERCEL_TOKEN"
           echo "KIS_ACCESS_TOKEN updated in Vercel Production environment."
 
-      - name: Redeploy Vercel production
-        if: steps.kis.outputs.issued == 'true'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes
-
       - name: Cleanup token file
         if: always()
         run: rm -f kis_access_token.txt

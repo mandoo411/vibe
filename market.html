@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>TotalMoney AI · 시장</title>
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=3" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=3" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=3" />
+    <link rel="shortcut icon" href="/favicon.ico?v=3" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./market.css" />
+  </head>
+  <body class="page-tm-v2 page-market">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
+            </div>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <a class="home-nav__link" href="./briefing.html">브리핑</a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./market.html" aria-current="page">시장</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./us-market.html">미국시장</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </header>
+
+      <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
+        <span class="home-empty">시장 지표 로딩 중…</span>
+      </div>
+
+      <main class="tm-main">
+        <div class="page">
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">Market Overview</p>
+              <h1 class="masthead__title">시장 지표 종합</h1>
+            </div>
+          </header>
+          <p class="market-updated" id="market-updated">데이터 로딩 중…</p>
+          <div id="market-error" class="market-error" hidden></div>
+          <div id="market-root">
+            <p class="market-empty">지표를 불러오는 중…</p>
+          </div>
+        </div>
+      </main>
+
+      <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동"></nav>
+    </div>
+
+    <script>
+      (function () {
+        const $ = (id) => document.getElementById(id);
+
+        function fmtPct(n) {
+          if (n == null || !Number.isFinite(n)) return "—";
+          const sign = n > 0 ? "+" : "";
+          return `${sign}${n.toFixed(2)}%`;
+        }
+
+        function fmtValue(item) {
+          if (item.value == null || !Number.isFinite(item.value)) return "—";
+          const v = item.value;
+          if (item.id === "usdkrw") return v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+          if (item.unit === "%") return `${v.toFixed(item.id === "btc-dominance" ? 2 : 2)}%`;
+          if (item.id === "fear-greed") return String(Math.round(v));
+          if (v >= 10000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+          if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+          return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+        }
+
+        function changeClass(pct) {
+          if (pct == null || !Number.isFinite(pct) || Math.abs(pct) < 0.0001) return "market-card__change--flat";
+          return pct > 0 ? "market-card__change--up" : "market-card__change--down";
+        }
+
+        function sparkTrend(pct, points) {
+          if (pct != null && Number.isFinite(pct) && Math.abs(pct) >= 0.0001) return pct > 0;
+          if (!Array.isArray(points) || points.length < 2) return null;
+          return points[points.length - 1] >= points[0];
+        }
+
+        function sparklineSvg(points, up) {
+          if (!Array.isArray(points) || points.length < 2) return "";
+          const w = 88;
+          const h = 32;
+          const min = Math.min(...points);
+          const max = Math.max(...points);
+          const range = max - min || 1;
+          const step = w / (points.length - 1);
+          let d = "";
+          points.forEach((p, i) => {
+            const x = (i * step).toFixed(1);
+            const y = (h - 3 - ((p - min) / range) * (h - 6)).toFixed(1);
+            d += `${i === 0 ? "M" : "L"}${x},${y} `;
+          });
+          const trend = up === true ? "market-spark--up" : up === false ? "market-spark--down" : "market-spark--flat";
+          return `<svg class="market-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d.trim()}"/></svg>`;
+        }
+
+        function cardHtml(item) {
+          const pct = item.changePct;
+          const sub = item.rating ? `<div class="market-card__sub">${item.rating}</div>` : "";
+          const changeHtml =
+            item.id === "fear-greed" || item.id === "btc-dominance"
+              ? ""
+              : `<div class="market-card__change ${changeClass(pct)}">${fmtPct(pct)}</div>`;
+          const spark = sparklineSvg(item.sparkline, sparkTrend(pct, item.sparkline));
+          return `<article class="market-card" data-id="${item.id}">
+            <div class="market-card__name">${item.name}</div>
+            <div class="market-card__body">
+              <div class="market-card__quote">
+                <div class="market-card__value">${fmtValue(item)}</div>
+                ${changeHtml}
+                ${sub}
+              </div>
+              ${spark}
+            </div>
+          </article>`;
+        }
+
+        function sectionHtml(title, items) {
+          if (!items || !items.length) return "";
+          return `<section class="market-section">
+            <h2 class="market-section__title">${title}</h2>
+            <div class="market-grid">${items.map(cardHtml).join("")}</div>
+          </section>`;
+        }
+
+        function render(data) {
+          const s = data.sections || {};
+          const major = [...(s.korea || []), ...(s.us || [])];
+          const html = [
+            sectionHtml("주요 지수", major),
+            sectionHtml("글로벌 지수", s.global),
+            sectionHtml("금리 · 환율", s.ratesFx),
+            sectionHtml("원자재", s.commodities),
+            sectionHtml("시장 심리", s.sentiment),
+          ]
+            .filter(Boolean)
+            .join("");
+          $("market-root").innerHTML = html || '<p class="market-empty">표시할 지표가 없습니다.</p>';
+          if (data.updatedAt) {
+            const d = new Date(data.updatedAt);
+            $("market-updated").textContent = `업데이트: ${d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} (KST)`;
+          }
+        }
+
+        async function load() {
+          try {
+            const res = await fetch("/api/market-overview?t=" + Date.now(), { cache: "no-store" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            $("market-error").hidden = true;
+            render(data);
+          } catch (e) {
+            $("market-error").hidden = false;
+            $("market-error").textContent = "시장 지표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+            $("market-root").innerHTML = '<p class="market-empty">데이터 없음</p>';
+            $("market-updated").textContent = "";
+          }
+        }
+
+        load();
+      })();
+    </script>
+  </body>
+</html>

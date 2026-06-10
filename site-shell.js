@@ -44,6 +44,7 @@
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
     { id: "daily", href: "./daily-market.html", label: "마감시황", icon: "ti-chart-bar" },
+    { id: "market", href: "./market.html", label: "시장", icon: "ti-chart-line" },
     { id: "us", href: "./us-market.html", label: "미국시장", icon: "ti-building-skyscraper" },
     { id: "crypto", href: "./crypto.html", label: "암호화폐", icon: "ti-currency-bitcoin" },
     { id: "world", href: "./world-market.html", label: "글로벌랭킹", icon: "ti-world" },
@@ -53,7 +54,8 @@
   const NAV_SHEET_GRID = [
     ["home", "realtime", "analysis"],
     ["schedule", "briefing", "daily"],
-    ["us", "crypto", "world"],
+    ["market", "us", "crypto"],
+    ["world"],
   ];
 
   const NAV_SHEET_LABELS = {
@@ -63,6 +65,7 @@
     schedule: "일정",
     briefing: "브리핑",
     daily: "마감시황",
+    market: "시장",
     us: "미국시장",
     crypto: "암호화폐",
     world: "글로벌랭킹",
@@ -72,6 +75,7 @@
     "/": "home",
     "/index.html": "home",
     "/daily-market.html": "daily",
+    "/market.html": "market",
     "/briefing.html": "briefing",
     "/realtime.html": "realtime",
     "/weekly-market.html": "schedule",

@@ -1,0 +1,157 @@
+.page-market .masthead__kicker {
+  color: var(--accent);
+}
+
+.market-updated {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0 0 20px;
+}
+
+.market-section {
+  margin-bottom: 28px;
+}
+
+.market-section__title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+}
+
+.market-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  min-height: 108px;
+}
+
+.market-card__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.market-card__body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.market-card__quote {
+  min-width: 0;
+}
+
+.market-card__value {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-card__change {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-card__change--up {
+  color: #e24b4a;
+}
+
+.market-card__change--down {
+  color: #3b82f6;
+}
+
+.market-card__change--flat {
+  color: var(--text-dim);
+}
+
+.market-card__sub {
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.market-spark {
+  flex-shrink: 0;
+  display: block;
+}
+
+.market-spark path {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.market-spark--up path {
+  stroke: #e24b4a;
+}
+
+.market-spark--down path {
+  stroke: #3b82f6;
+}
+
+.market-spark--flat path {
+  stroke: var(--text-dim);
+}
+
+.market-empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.market-error {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, #e24b4a 12%, transparent);
+  color: var(--text-primary);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+  .market-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .market-card {
+    padding: 10px 12px;
+    min-height: 100px;
+  }
+
+  .market-card__value {
+    font-size: 15px;
+  }
+
+  .market-spark {
+    width: 72px;
+    height: 28px;
+  }
+}
+
+@media (min-width: 960px) {
+  .market-grid {
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  }
+}

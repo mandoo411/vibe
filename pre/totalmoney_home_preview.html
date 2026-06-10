@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TotalMoney AI - 홈 리디자인 프리뷰</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', -apple-system, sans-serif; background: #f4f6ff; }
+
+/* 전체 너비 제한 래퍼 */
+.page-wrap { max-width: 1200px; margin: 0 auto; background: white; box-shadow: 0 0 40px rgba(0,0,0,0.08); min-height: 100vh; }
+
+/* NAV */
+.nav { background: #3339BF; padding: 0 28px; display: flex; align-items: center; gap: 8px; height: 50px; position: sticky; top: 0; z-index: 100; }
+.logo-box { background: rgba(255,255,255,0.15); border-radius: 6px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center; line-height: 1.2; margin-right: 10px; flex-shrink: 0; }
+.logo-box .tm { color: white; font-size: 11px; font-weight: 700; }
+.logo-box .powered { color: rgba(255,255,255,0.6); font-size: 7px; }
+.ni { font-size: 11px; color: rgba(255,255,255,0.75); padding: 4px 8px; border-radius: 4px; white-space: nowrap; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+.ni:hover, .ni.on { background: rgba(255,255,255,0.2); color: white; }
+.nav-right { margin-left: auto; flex-shrink: 0; }
+.dark-btn { width: 30px; height: 30px; background: rgba(255,255,255,0.1); border-radius: 50%; border: none; cursor: pointer; color: white; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+/* TICKER */
+.ticker { background: #fafbff; border-bottom: 1px solid #e4e8ff; padding: 7px 28px; display: flex; gap: 20px; overflow-x: auto; }
+.ticker::-webkit-scrollbar { display: none; }
+.ti { font-size: 12px; display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+.tn { color: #999; }
+.tv { font-weight: 500; color: #111; }
+.tu { color: #e24b4a; }
+.td { color: #1d9e75; }
+
+/* HERO */
+.hero { background: linear-gradient(135deg, #1e2590 0%, #3339BF 55%, #4a52d4 100%); padding: 32px 28px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.hero-tag { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: rgba(255,255,255,0.5); margin-bottom: 8px; text-transform: uppercase; }
+.hero-title { font-size: 26px; font-weight: 600; color: white; line-height: 1.35; margin-bottom: 8px; }
+.hero-title span { color: #ffd84d; }
+.hero-sub { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 18px; }
+.hero-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-primary { background: #ffd84d; color: #1a1f6e; font-size: 12px; font-weight: 700; padding: 9px 18px; border-radius: 7px; border: none; cursor: pointer; }
+.btn-secondary { background: rgba(255,255,255,0.12); color: white; font-size: 12px; padding: 9px 18px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; }
+.hero-stats { display: flex; gap: 8px; flex-shrink: 0; }
+.hs { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 16px; text-align: center; min-width: 80px; }
+.hs-val { font-size: 15px; font-weight: 600; color: white; }
+.hs-label { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+.hs-chg { font-size: 11px; margin-top: 3px; }
+
+/* SHORTCUTS */
+.shortcuts { background: white; padding: 10px 28px; display: flex; gap: 8px; border-bottom: 1px solid #eef0ff; overflow-x: auto; }
+.shortcuts::-webkit-scrollbar { display: none; }
+.sc { display: flex; align-items: center; gap: 5px; background: #f5f7ff; border-radius: 20px; padding: 5px 13px; font-size: 11px; color: #3339BF; font-weight: 500; white-space: nowrap; cursor: pointer; border: 0.5px solid #dde3ff; transition: all 0.15s; text-decoration: none; }
+.sc:hover { background: #3339BF; color: white; }
+.sc i { font-size: 13px; }
+
+/* MAIN */
+.main { padding: 16px 28px 32px; display: grid; grid-template-columns: 1fr 1fr 280px; gap: 14px; }
+
+/* SECTION 공통 */
+.section { background: white; border-radius: 10px; border: 1px solid #eef0f8; overflow: hidden; }
+.sec-head { padding: 12px 14px 9px; border-bottom: 1px solid #f4f5ff; display: flex; align-items: center; justify-content: space-between; }
+.sec-title { font-size: 13px; font-weight: 600; color: #111; }
+.sec-more { font-size: 11px; color: #3339BF; cursor: pointer; text-decoration: none; }
+.sec-body { padding: 4px 14px 8px; }
+
+/* TABLE */
+.th-row { display: grid; grid-template-columns: 22px 1fr 80px 58px; gap: 6px; padding: 5px 0 4px; font-size: 10px; color: #ccc; border-bottom: 1px solid #f5f5f5; }
+.tr { display: grid; grid-template-columns: 22px 1fr 80px 58px; gap: 6px; align-items: center; padding: 7px 0; border-bottom: 1px solid #fafafa; font-size: 12px; cursor: pointer; transition: background 0.1s; }
+.tr:last-child { border-bottom: none; }
+.tr:hover { background: #f8f9ff; margin: 0 -14px; padding: 7px 14px; }
+.rank { color: #ddd; font-size: 10px; text-align: center; font-weight: 600; }
+.rank.top3 { color: #3339BF; }
+.sname { font-weight: 500; color: #111; font-size: 12px; }
+.scode { font-size: 10px; color: #ccc; }
+.price { text-align: right; font-weight: 500; color: #111; }
+.chg { text-align: right; font-weight: 600; font-size: 11px; }
+.up { color: #e24b4a; }
+.dn { color: #1d9e75; }
+
+.col-mid { display: flex; flex-direction: column; gap: 12px; }
+
+.coin-row { display: grid; grid-template-columns: 26px 1fr 88px 58px; gap: 6px; align-items: center; padding: 7px 0; border-bottom: 1px solid #fafafa; font-size: 12px; cursor: pointer; }
+.coin-row:last-child { border-bottom: none; }
+.coin-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+
+/* SIDE */
+.side { display: flex; flex-direction: column; gap: 12px; }
+.ai-card { background: linear-gradient(135deg, #2730a8, #4a52d4); border-radius: 10px; padding: 14px; }
+.ai-card-title { font-size: 13px; font-weight: 600; color: white; margin-bottom: 3px; }
+.ai-card-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-bottom: 10px; line-height: 1.5; }
+.ai-input-mock { background: rgba(255,255,255,0.15); border-radius: 6px; padding: 7px 10px; font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2); }
+.ai-btn { background: #ffd84d; color: #1a1f6e; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 6px; border: none; cursor: pointer; width: 100%; }
+
+.mini-card { background: white; border-radius: 10px; border: 1px solid #eef0f8; padding: 12px 14px; }
+.mc-title { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 8px; }
+.mc-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 11px; border-bottom: 1px solid #f8f8f8; }
+.mc-row:last-child { border-bottom: none; }
+.mc-name { color: #555; }
+.mc-imp { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+.imp-h { background: #fff0f0; color: #e24b4a; }
+.imp-m { background: #fff8ec; color: #BA7517; }
+
+.brief-card { background: white; border-radius: 10px; border: 1px solid #eef0f8; padding: 12px 14px; }
+.brief-text { font-size: 12px; color: #444; line-height: 1.7; }
+.brief-time { font-size: 10px; color: #ccc; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<div class="nav">
+  <div class="logo-box"><span class="tm">TM AI</span><span class="powered">powered by AI</span></div>
+  <a class="ni on" href="#">홈</a>
+  <a class="ni" href="#">마감시황</a>
+  <a class="ni" href="#">브리핑</a>
+  <a class="ni" href="#">실시간시세</a>
+  <a class="ni" href="#">일정</a>
+  <a class="ni" href="#">미국시장</a>
+  <a class="ni" href="#">암호화폐</a>
+  <a class="ni" href="#">글로벌 랭킹</a>
+  <a class="ni" href="#">AI 종목분석</a>
+  <div class="nav-right"><button class="dark-btn">🌙</button></div>
+</div>
+
+<div class="ticker">
+  <div class="ti"><span class="tn">코스피</span><span class="tv">8,476.15</span><span class="tu">+3.55%</span></div>
+  <div class="ti"><span class="tn">코스닥</span><span class="tv">1,074.8</span><span class="td">-2.68%</span></div>
+  <div class="ti"><span class="tn">원/달러</span><span class="tv">1,506.78</span></div>
+  <div class="ti"><span class="tn">WTI</span><span class="tv">87.36</span><span class="td">-0.95%</span></div>
+  <div class="ti"><span class="tn">금시세</span><span class="tv">4,593</span><span class="tu">+2.06%</span></div>
+  <div class="ti"><span class="tn">BTC</span><span class="tv">$73,955</span><span class="tu">+0.53%</span></div>
+  <div class="ti"><span class="tn">ETH</span><span class="tv">$3,812</span><span class="tu">+1.82%</span></div>
+  <div class="ti"><span class="tn">S&P500</span><span class="tv">5,248</span><span class="tu">+1.20%</span></div>
+  <div class="ti"><span class="tn">나스닥</span><span class="tv">18,271</span><span class="tu">+0.90%</span></div>
+</div>
+
+<div class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">AI Powered Market Platform</div>
+    <div class="hero-title">실시간 시장을<br><span>AI로 분석</span>하세요</div>
+    <div class="hero-sub">국내외 주식·암호화폐·경제지표를 한 곳에서</div>
+    <div class="hero-btns">
+      <button class="btn-primary">🤖 AI 종목분석 시작</button>
+      <button class="btn-secondary">📈 실시간시세 보기</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-val">8,476</div><div class="hs-label">코스피</div><div class="hs-chg tu">▲ 3.55%</div></div>
+    <div class="hs"><div class="hs-val">$73,955</div><div class="hs-label">BTC</div><div class="hs-chg tu">▲ 0.53%</div></div>
+    <div class="hs"><div class="hs-val">1,506</div><div class="hs-label">원/달러</div><div class="hs-chg" style="color:rgba(255,255,255,0.4);">— —</div></div>
+    <div class="hs"><div class="hs-val">5,248</div><div class="hs-label">S&P500</div><div class="hs-chg tu">▲ 1.20%</div></div>
+  </div>
+</div>
+
+<div class="shortcuts">
+  <a class="sc" href="#"><i class="ti ti-chart-bar"></i> 마감시황</a>
+  <a class="sc" href="#"><i class="ti ti-file-description"></i> 브리핑</a>
+  <a class="sc" href="#"><i class="ti ti-activity"></i> 실시간시세</a>
+  <a class="sc" href="#"><i class="ti ti-calendar"></i> 일정</a>
+  <a class="sc" href="#"><i class="ti ti-brand-apple"></i> 미국시장</a>
+  <a class="sc" href="#"><i class="ti ti-currency-bitcoin"></i> 암호화폐</a>
+  <a class="sc" href="#"><i class="ti ti-world"></i> 글로벌랭킹</a>
+  <a class="sc" href="#"><i class="ti ti-robot"></i> AI 종목분석</a>
+</div>
+
+<div class="main">
+  <div class="section">
+    <div class="sec-head"><div class="sec-title">🇰🇷 국내 시가총액 TOP</div><a class="sec-more" href="#">더보기 →</a></div>
+    <div class="sec-body">
+      <div class="th-row"><div></div><div>종목명</div><div style="text-align:right;">현재가</div><div style="text-align:right;">등락률</div></div>
+      <div class="tr"><div class="rank top3">1</div><div><div class="sname">삼성전자</div><div class="scode">005930</div></div><div class="price">58,200</div><div class="chg dn">-0.51%</div></div>
+      <div class="tr"><div class="rank top3">2</div><div><div class="sname">SK하이닉스</div><div class="scode">000660</div></div><div class="price">213,000</div><div class="chg up">+2.40%</div></div>
+      <div class="tr"><div class="rank top3">3</div><div><div class="sname">LG에너지솔루션</div><div class="scode">373220</div></div><div class="price">312,000</div><div class="chg dn">-1.26%</div></div>
+      <div class="tr"><div class="rank">4</div><div><div class="sname">삼성바이오로직스</div><div class="scode">207940</div></div><div class="price">875,000</div><div class="chg up">+1.04%</div></div>
+      <div class="tr"><div class="rank">5</div><div><div class="sname">현대차</div><div class="scode">005380</div></div><div class="price">198,500</div><div class="chg up">+0.76%</div></div>
+      <div class="tr"><div class="rank">6</div><div><div class="sname">NAVER</div><div class="scode">035420</div></div><div class="price">162,500</div><div class="chg dn">-0.92%</div></div>
+      <div class="tr"><div class="rank">7</div><div><div class="sname">카카오</div><div class="scode">035720</div></div><div class="price">38,200</div><div class="chg dn">-1.03%</div></div>
+    </div>
+  </div>
+
+  <div class="col-mid">
+    <div class="section">
+      <div class="sec-head"><div class="sec-title">🇺🇸 미국시장</div><a class="sec-more" href="#">더보기 →</a></div>
+      <div class="sec-body">
+        <div class="th-row"><div></div><div>지수</div><div style="text-align:right;">현재가</div><div style="text-align:right;">등락률</div></div>
+        <div class="tr"><div class="rank" style="color:#e24b4a;">●</div><div><div class="sname">S&P 500</div></div><div class="price">5,248.80</div><div class="chg up">+1.20%</div></div>
+        <div class="tr"><div class="rank" style="color:#3339BF;">●</div><div><div class="sname">나스닥</div></div><div class="price">18,271.00</div><div class="chg up">+0.90%</div></div>
+        <div class="tr"><div class="rank" style="color:#888;">●</div><div><div class="sname">다우존스</div></div><div class="price">38,904.00</div><div class="chg dn">-0.30%</div></div>
+        <div class="tr"><div class="rank" style="color:#f7931a;">●</div><div><div class="sname">WTI 원유</div></div><div class="price">87.36</div><div class="chg dn">-0.95%</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="sec-head"><div class="sec-title">₿ 암호화폐 TOP</div><a class="sec-more" href="#">더보기 →</a></div>
+      <div class="sec-body">
+        <div class="th-row" style="grid-template-columns:26px 1fr 88px 58px;"><div></div><div>코인</div><div style="text-align:right;">현재가</div><div style="text-align:right;">등락률</div></div>
+        <div class="coin-row"><div><div class="coin-icon" style="background:#f7931a;">B</div></div><div><div class="sname">Bitcoin</div><div class="scode">BTC</div></div><div class="price">$73,955</div><div class="chg up">+0.53%</div></div>
+        <div class="coin-row"><div><div class="coin-icon" style="background:#627eea;">E</div></div><div><div class="sname">Ethereum</div><div class="scode">ETH</div></div><div class="price">$3,812</div><div class="chg up">+1.82%</div></div>
+        <div class="coin-row"><div><div class="coin-icon" style="background:#346aa9;">X</div></div><div><div class="sname">XRP</div><div class="scode">XRP</div></div><div class="price">$0.582</div><div class="chg dn">-0.94%</div></div>
+        <div class="coin-row"><div><div class="coin-icon" style="background:#26a17b;">T</div></div><div><div class="sname">Tether</div><div class="scode">USDT</div></div><div class="price">$1.000</div><div class="chg" style="color:#888;">0.00%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div class="ai-card">
+      <div class="ai-card-title">🤖 AI 종목분석</div>
+      <div class="ai-card-sub">종목명을 입력하면 AI가 즉시 분석해드려요</div>
+      <div class="ai-input-mock">종목명 입력 (예: 삼성전자, AAPL)</div>
+      <button class="ai-btn">AI 분석 시작 →</button>
+    </div>
+    <div class="mini-card">
+      <div class="mc-title">📅 오늘 경제지표</div>
+      <div class="mc-row"><span class="mc-name">05:00 소비자신뢰지수 JP</span><span class="mc-imp imp-h">HIGH</span></div>
+      <div class="mc-row"><span class="mc-name">06:45 인플레이션 FR</span><span class="mc-imp imp-m">MID</span></div>
+      <div class="mc-row"><span class="mc-name">10:30 GDP 성장률 IN</span><span class="mc-imp imp-h">HIGH</span></div>
+      <div class="mc-row"><span class="mc-name">12:30 GDP(분기) CA</span><span class="mc-imp imp-m">MID</span></div>
+      <div style="margin-top:8px;"><a class="sec-more" href="#">전체 일정 보기 →</a></div>
+    </div>
+    <div class="brief-card">
+      <div class="mc-title">📰 AI 장 브리핑</div>
+      <div class="brief-text">코스피 +3.55% 강세 마감. 외국인 순매수 지속되며 반도체주 강세. BTC $73,955 소폭 상승. 오늘 미국 GDP 지표 발표 예정으로 변동성 주의.</div>
+      <div class="brief-time">2026.05.29 07:41 KST 업데이트</div>
+      <div style="margin-top:8px;"><a class="sec-more" href="#">전체 브리핑 보기 →</a></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

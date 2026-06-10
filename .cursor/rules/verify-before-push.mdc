@@ -1,0 +1,33 @@
+---
+description: Verify changes locally before git push; deploy only when user asks
+alwaysApply: true
+---
+
+# Verify Before Push & Deploy
+
+## Git push
+
+- Do **not** `git push` after every fix unless the user explicitly asks to push.
+- Before the first push for a task:
+  1. Run relevant checks (API handler smoke test, script dry-run, or open the changed page logic).
+  2. Confirm no obvious errors (syntax, broken references, wrong deploy artifact).
+  3. Summarize what was verified and what was **not** deployed yet.
+- Prefer **one** push per completed, verified change set—not push → discover bug → push again.
+
+## Vercel / production deploy
+
+- Do **not** run `vercel deploy`, `npx vercel deploy --prod`, or trigger production deploy unless the user explicitly requests deploy.
+- This project hits Vercel free-tier daily deployment limits easily; `data/**` commits should not burn deploy quota.
+- If UI/HTML changed but deploy is blocked or not requested, tell the user to verify locally (`world-market.html`, `vercel dev`) and deploy once when ready.
+
+## Commits
+
+- Do **not** create git commits unless the user asks, per existing commit rules.
+- When user asks to push: verify first, then commit (if needed) + push in that order.
+
+## When user says "fix and push"
+
+1. Implement fix  
+2. Verify locally  
+3. Commit + push only if verification passes  
+4. Deploy only if they also asked for deploy/Vercel

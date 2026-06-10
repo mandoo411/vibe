@@ -1,0 +1,21 @@
+---
+description: Infer mobile vs web from screenshot aspect ratio when viewport is not stated
+alwaysApply: true
+---
+
+# Screenshot viewport inference (mobile vs web)
+
+When the user uploads screenshot(s) for UI/layout fixes and does **not** explicitly say "모바일" or "웹/데스크톱", infer the target viewport from the image shape:
+
+| Screenshot shape | Target |
+|------------------|--------|
+| **Tall and narrow** (phone portrait, DevTools device frame ~400px wide, long vertical scroll) | **Mobile** — apply changes inside `@media (max-width: 768px)` (or existing mobile breakpoints). Do **not** change desktop/global layout unless the screenshot clearly shows desktop too. |
+| **Wide and short** (full browser width, short vertical crop, multi-column desktop layout) | **Web/desktop** — apply base/global styles; do **not** scope mobile-only flex/table overrides to all breakpoints. |
+
+## Implementation rules
+
+1. **Confirm inference briefly** in the reply (one line): e.g. "스크린샷이 세로로 길어 모바일 기준으로 수정했습니다."
+2. If **both** shapes appear in one message, treat each screenshot separately.
+3. If ambiguous (square crop, unclear), ask once before changing shared CSS; prefer **not** applying mobile flex/table hacks globally.
+4. Realtime table: mobile = flex row + fixed px columns + tab column hide; web = normal `<table>` with all six columns visible.
+5. Never regress desktop when fixing mobile (lesson: flex `display:block` on `thead`/`tbody` must stay inside mobile media queries only).

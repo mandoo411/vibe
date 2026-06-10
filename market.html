@@ -66,13 +66,11 @@
 
       <main class="tm-main">
         <div class="page">
-          <header class="masthead masthead--title-only">
-            <div class="masthead__copy">
-              <p class="masthead__kicker">Market Overview</p>
-              <h1 class="masthead__title">시장 지표 종합</h1>
-            </div>
+          <header class="market-hero">
+            <p class="market-hero__en">MARKET OVERVIEW</p>
+            <h1 class="market-hero__title">시장 지표 종합</h1>
+            <p class="market-hero__updated" id="market-updated">데이터 로딩 중…</p>
           </header>
-          <p class="market-updated" id="market-updated">데이터 로딩 중…</p>
           <div id="market-error" class="market-error" hidden></div>
           <div id="market-root">
             <p class="market-empty">지표를 불러오는 중…</p>
@@ -87,6 +85,15 @@
       (function () {
         const $ = (id) => document.getElementById(id);
 
+        const SECTIONS = [
+          { key: "korea", en: "KOREA", ko: "국내 증시", sub: "코스피·코스닥 실시간" },
+          { key: "us", en: "WALL STREET", ko: "미국 증시", sub: "S&P500·나스닥·다우·선물" },
+          { key: "global", en: "GLOBAL", ko: "글로벌 증시", sub: "아시아·유럽 주요 지수" },
+          { key: "ratesFx", en: "RATES & FX", ko: "금리 · 환율", sub: "미국채·달러·원달러" },
+          { key: "commodities", en: "COMMODITIES", ko: "원자재", sub: "에너지·귀금속·농산물" },
+          { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
+        ];
+
         function fmtPct(n) {
           if (n == null || !Number.isFinite(n)) return "—";
           const sign = n > 0 ? "+" : "";
@@ -98,8 +105,7 @@
           const v = item.value;
           const digits = item.id === "gold" || item.id === "platinum" ? 1 : item.id === "natgas" || item.id === "copper" ? 3 : 2;
           if (item.id === "usdkrw") return v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
-          if (item.unit === "%") return `${v.toFixed(item.id === "btc-dominance" ? 2 : 2)}%`;
-          if (item.id === "fear-greed") return String(Math.round(v));
+          if (item.unit === "%") return `${v.toFixed(2)}%`;
           if (item.currency === "USD") {
             return `$${v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })}`;
           }
@@ -107,8 +113,6 @@
             if (v < 50 || v > 3000) console.warn("[market] unusual agri quote", item.id, v);
             return `${v.toLocaleString("en-US", { maximumFractionDigits: digits })}¢`;
           }
-          if (v >= 10000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
-          if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
           return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
         }
 
@@ -122,10 +126,10 @@
           return pct > 0;
         }
 
-        function sparklineSvg(points, up, itemId) {
+        function sparklineSvg(points, up, itemId, featured) {
           if (!Array.isArray(points) || points.length < 2) return "";
-          const w = 100;
-          const h = 40;
+          const w = featured ? 200 : 100;
+          const h = featured ? 48 : 40;
           const pad = 4;
           const min = Math.min(...points);
           const max = Math.max(...points);
@@ -140,14 +144,13 @@
           const lastX = ((points.length - 1) * step).toFixed(1);
           const areaD = `${lineD.trim()} L ${lastX},${h} L 0,${h} Z`;
           const trend = up === true ? "market-spark--up" : up === false ? "market-spark--down" : "market-spark--flat";
+          const color = up === true ? "#e24b4a" : up === false ? "#3b82f6" : "#9ca3af";
           const gid = `spark-${String(itemId || "x").replace(/[^a-z0-9_-]/gi, "")}`;
-          return `<svg class="market-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
-            <defs>
-              <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="${up === true ? "#e24b4a" : up === false ? "#3b82f6" : "currentColor"}" stop-opacity="0.28"/>
-                <stop offset="100%" stop-color="${up === true ? "#e24b4a" : up === false ? "#3b82f6" : "currentColor"}" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
+          return `<svg class="market-spark ${trend}" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true" preserveAspectRatio="none">
+            <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+            </linearGradient></defs>
             <path class="market-spark__area" d="${areaD}" fill="url(#${gid})"/>
             <path class="market-spark__line" d="${lineD.trim()}"/>
           </svg>`;
@@ -155,24 +158,21 @@
 
         function changeChipHtml(pct) {
           const cls = changeClass(pct);
-          const arrow =
-            cls === "market-card__change--up" ? "▲" : cls === "market-card__change--down" ? "▼" : "−";
+          const arrow = cls === "market-card__change--up" ? "▲" : cls === "market-card__change--down" ? "▼" : "−";
           return `<span class="market-card__change ${cls}"><span class="market-card__change-arrow" aria-hidden="true">${arrow}</span>${fmtPct(pct)}</span>`;
         }
 
-        function cardHtml(item) {
+        function cardHtml(item, featured) {
           const pct = item.changePct;
-          const subText = item.rating || item.hint || "";
+          const subText = item.hint || "";
           const sub = subText ? `<div class="market-card__sub">${subText}</div>` : "";
-          const changeHtml =
-            item.id === "fear-greed" || item.id === "btc-dominance" ? "" : changeChipHtml(pct);
-          const spark = sparklineSvg(item.sparkline, sparkTrend(pct), item.id);
-          return `<article class="market-card" data-id="${item.id}">
+          const spark = sparklineSvg(item.sparkline, sparkTrend(pct), item.id, featured);
+          return `<article class="market-card${featured ? " market-card--featured" : ""}" data-id="${item.id}">
             <div class="market-card__name">${item.name}</div>
             <div class="market-card__body">
               <div class="market-card__quote">
                 <div class="market-card__value">${fmtValue(item)}</div>
-                ${changeHtml}
+                ${changeChipHtml(pct)}
                 ${sub}
               </div>
               ${spark}
@@ -180,16 +180,119 @@
           </article>`;
         }
 
-        function sectionHtml(title, items) {
-          if (!items || !items.length) return "";
+        function gridHtml(items) {
+          if (!items?.length) return "";
+          return items.map((item, i) => cardHtml(item, i === 0)).join("");
+        }
+
+        function sectionHead(meta) {
+          return `<header class="market-section__head">
+            <div class="market-section__bar" aria-hidden="true"></div>
+            <div>
+              <p class="market-section__en">${meta.en}</p>
+              <h2 class="market-section__ko">${meta.ko}</h2>
+              <p class="market-section__sub">${meta.sub}</p>
+            </div>
+          </header>`;
+        }
+
+        function fearGreedMeta(score) {
+          const n = Number(score);
+          if (!Number.isFinite(n)) return { label: "—", color: "#9ca3af" };
+          if (n <= 25) return { label: "극단적 공포", color: "#3b82f6" };
+          if (n <= 45) return { label: "공포", color: "#3b82f6" };
+          if (n <= 55) return { label: "중립", color: "#9ca3af" };
+          if (n <= 75) return { label: "탐욕", color: "#e24b4a" };
+          return { label: "극단적 탐욕", color: "#e24b4a" };
+        }
+
+        function polar(cx, cy, r, deg) {
+          const rad = (deg * Math.PI) / 180;
+          return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+        }
+
+        function arcPath(cx, cy, r, startDeg, endDeg) {
+          const start = polar(cx, cy, r, startDeg);
+          const end = polar(cx, cy, r, endDeg);
+          const large = Math.abs(endDeg - startDeg) > 180 ? 1 : 0;
+          const sweep = endDeg < startDeg ? 1 : 0;
+          return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${large} ${sweep} ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+        }
+
+        function semiGaugeSvg(value, max, color, uid) {
+          const v = Math.max(0, Math.min(max, Number(value) || 0));
+          const pct = v / max;
+          const endDeg = 180 - pct * 180;
+          const bg = arcPath(60, 58, 44, 180, 0);
+          const fg = pct > 0 ? arcPath(60, 58, 44, 180, endDeg) : "";
+          return `<svg class="market-gauge" viewBox="0 0 120 72" width="120" height="72" aria-hidden="true">
+            <path d="${bg}" fill="none" stroke="var(--border)" stroke-width="8" stroke-linecap="round"/>
+            ${fg ? `<path d="${fg}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>` : ""}
+          </svg>`;
+        }
+
+        function donutGaugeSvg(value, max, color, uid) {
+          const v = Math.max(0, Math.min(max, Number(value) || 0));
+          const pct = v / max;
+          const c = 2 * Math.PI * 36;
+          const dash = c * pct;
+          return `<svg class="market-gauge" viewBox="0 0 88 88" width="88" height="88" aria-hidden="true">
+            <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="8"/>
+            <circle cx="44" cy="44" r="36" fill="none" stroke="${color}" stroke-width="8"
+              stroke-dasharray="${dash.toFixed(2)} ${(c - dash).toFixed(2)}"
+              transform="rotate(-90 44 44)" stroke-linecap="round"/>
+          </svg>`;
+        }
+
+        function vixMeta(v) {
+          const n = Number(v);
+          if (!Number.isFinite(n)) return { cls: "market-vix--calm", label: "변동성 지수" };
+          if (n < 20) return { cls: "market-vix--calm", label: "안정 구간" };
+          if (n < 30) return { cls: "market-vix--caution", label: "주의 구간" };
+          return { cls: "market-vix--danger", label: "위험 구간" };
+        }
+
+        function sentimentCardHtml(item) {
+          if (item.id === "fear-greed") {
+            const meta = fearGreedMeta(item.value);
+            return `<article class="market-gauge-card" data-id="fear-greed">
+              <div class="market-gauge-card__name">${item.name}</div>
+              ${semiGaugeSvg(item.value, 100, meta.color, "fng")}
+              <div class="market-gauge__value" style="color:${meta.color}">${item.value ?? "—"}</div>
+              <div class="market-gauge__label" style="color:${meta.color}">${meta.label}</div>
+            </article>`;
+          }
+          if (item.id === "btc-dominance") {
+            const color = "#f59e0b";
+            return `<article class="market-gauge-card" data-id="btc-dominance">
+              <div class="market-gauge-card__name">${item.name}</div>
+              ${donutGaugeSvg(item.value, 100, color, "btc")}
+              <div class="market-gauge__value" style="color:${color}">${item.value != null ? item.value.toFixed(1) : "—"}%</div>
+              <div class="market-gauge__hint">비트코인 시총 비중</div>
+            </article>`;
+          }
+          const vm = vixMeta(item.value);
+          return `<article class="market-gauge-card market-gauge-card--featured" data-id="vix">
+            <div class="market-gauge-card__name">${item.name}</div>
+            <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
+            <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
+            <div class="market-gauge__hint">변동성 지수</div>
+            ${sparklineSvg(item.sparkline, sparkTrend(item.changePct), "vix", true)}
+          </article>`;
+        }
+
+        function sentimentSectionHtml(items) {
+          if (!items?.length) return "";
+          const meta = SECTIONS.find((s) => s.key === "sentiment");
           return `<section class="market-section">
-            <h2 class="market-section__title">${title}</h2>
-            <div class="market-grid">${items.map(cardHtml).join("")}</div>
+            ${sectionHead(meta)}
+            <div class="market-sentiment-grid">${items.map(sentimentCardHtml).join("")}</div>
           </section>`;
         }
 
         function commoditiesSectionHtml(items) {
-          if (!items || !items.length) return "";
+          if (!items?.length) return "";
+          const meta = SECTIONS.find((s) => s.key === "commodities");
           const groups = [
             { key: "energy", title: "에너지" },
             { key: "precious", title: "귀금속" },
@@ -204,26 +307,47 @@
             .filter((g) => byGroup[g.key]?.length)
             .map(
               (g) => `<div class="market-subsection">
-              <h3 class="market-subsection__title">${g.title}</h3>
-              <div class="market-grid">${byGroup[g.key].map(cardHtml).join("")}</div>
-            </div>`
+                <h3 class="market-subsection__title">${g.title}</h3>
+                <div class="market-grid">${gridHtml(byGroup[g.key])}</div>
+              </div>`
             )
             .join("");
-          return `<section class="market-section market-section--commodities">
-            <h2 class="market-section__title">원자재</h2>
-            ${body}
+          return `<section class="market-section">${sectionHead(meta)}${body}</section>`;
+        }
+
+        function globalSectionHtml(global) {
+          const asia = global?.asia || [];
+          const europe = global?.europe || [];
+          if (!asia.length && !europe.length) return "";
+          const meta = SECTIONS.find((s) => s.key === "global");
+          const parts = [];
+          if (asia.length) {
+            parts.push(`<div class="market-subsection"><h3 class="market-subsection__title">아시아</h3><div class="market-grid">${gridHtml(asia)}</div></div>`);
+          }
+          if (europe.length) {
+            parts.push(`<div class="market-subsection"><h3 class="market-subsection__title">유럽</h3><div class="market-grid">${gridHtml(europe)}</div></div>`);
+          }
+          return `<section class="market-section">${sectionHead(meta)}${parts.join("")}</section>`;
+        }
+
+        function simpleSectionHtml(key, items) {
+          if (!items?.length) return "";
+          const meta = SECTIONS.find((s) => s.key === key);
+          return `<section class="market-section">
+            ${sectionHead(meta)}
+            <div class="market-grid">${gridHtml(items)}</div>
           </section>`;
         }
 
         function render(data) {
           const s = data.sections || {};
-          const major = [...(s.korea || []), ...(s.us || [])];
           const html = [
-            sectionHtml("주요 지수", major),
-            sectionHtml("글로벌 지수", s.global),
-            sectionHtml("금리 · 환율", s.ratesFx),
+            simpleSectionHtml("korea", s.korea),
+            simpleSectionHtml("us", s.us),
+            globalSectionHtml(s.global),
+            simpleSectionHtml("ratesFx", s.ratesFx),
             commoditiesSectionHtml(s.commodities),
-            sectionHtml("시장 심리", s.sentiment),
+            sentimentSectionHtml(s.sentiment),
           ]
             .filter(Boolean)
             .join("");

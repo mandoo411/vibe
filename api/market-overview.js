@@ -16,7 +16,6 @@ const YAHOO_DEFS = [
   { id: "sp500", symbol: "^GSPC", name: "S&P 500", bucket: "us" },
   { id: "nasdaq", symbol: "^IXIC", name: "나스닥", bucket: "us" },
   { id: "dow", symbol: "^DJI", name: "다우존스", bucket: "us" },
-  { id: "russell", symbol: "^RUT", name: "러셀 2000", bucket: "us" },
   { id: "nasdaq-futures", symbol: "NQ=F", name: "나스닥 선물", bucket: "us" },
   { id: "n225", symbol: "^N225", name: "닛케이 225", bucket: "global", region: "asia" },
   { id: "hsi", symbol: "^HSI", name: "항셍", bucket: "global", region: "asia" },
@@ -63,7 +62,7 @@ const KOREA_SPARK = [
 
 const ORDER = {
   korea: ["kospi", "kosdaq", "kospi200", "ewy"],
-  us: ["sp500", "nasdaq", "dow", "russell", "nasdaq-futures"],
+  us: ["nasdaq", "sp500", "dow", "nasdaq-futures"],
   asia: ["n225", "hsi", "sse", "twii"],
   europe: ["dax", "ftse", "cac", "stoxx50"],
   ratesFx: ["us10y", "us2y", "dxy", "usdkrw"],

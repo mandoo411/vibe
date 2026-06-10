@@ -496,9 +496,9 @@
   function impBadge(row) {
     const imp = String(row.impact || "").toLowerCase();
     const n = toNum(row.importance);
-    if (imp === "high" || n >= 3) return '<span class="home-imp--h">HIGH</span>';
-    if (imp === "medium" || n === 2) return '<span class="home-imp--m">MID</span>';
-    return '<span class="home-imp--m">MID</span>';
+    if (imp === "high" || n >= 3) return '<span class="home-imp--h">높음</span>';
+    if (imp === "medium" || n === 2) return '<span class="home-imp--m">보통</span>';
+    return '<span class="home-imp--m">보통</span>';
   }
 
   function renderSchedule(rows) {

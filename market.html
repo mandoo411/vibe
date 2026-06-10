@@ -66,14 +66,24 @@
 
       <main class="tm-main">
         <div class="page">
-          <header class="market-hero">
-            <p class="market-hero__en">MARKET OVERVIEW</p>
-            <h1 class="market-hero__title">시장 지표 종합</h1>
-            <p class="market-hero__updated" id="market-updated">데이터 로딩 중…</p>
-          </header>
-          <div id="market-error" class="market-error" hidden></div>
-          <div id="market-root">
-            <p class="market-empty">지표를 불러오는 중…</p>
+          <div class="market-page-hero">
+            <header class="masthead masthead--title-only">
+              <div class="masthead__copy">
+                <p class="masthead__kicker">MARKET OVERVIEW</p>
+                <h1 class="masthead__title">시장 지표 종합</h1>
+              </div>
+            </header>
+            <div class="page-hero-sub">
+              <div class="masthead__meta">
+                <span id="market-updated">데이터 로딩 중…</span>
+              </div>
+            </div>
+          </div>
+          <div class="market-body">
+            <div id="market-error" class="market-error" hidden></div>
+            <div id="market-root">
+              <p class="market-empty">지표를 불러오는 중…</p>
+            </div>
           </div>
         </div>
       </main>

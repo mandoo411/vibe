@@ -96,9 +96,17 @@
         function fmtValue(item) {
           if (item.value == null || !Number.isFinite(item.value)) return "—";
           const v = item.value;
+          const digits = item.id === "gold" || item.id === "platinum" ? 1 : item.id === "natgas" || item.id === "copper" ? 3 : 2;
           if (item.id === "usdkrw") return v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
           if (item.unit === "%") return `${v.toFixed(item.id === "btc-dominance" ? 2 : 2)}%`;
           if (item.id === "fear-greed") return String(Math.round(v));
+          if (item.currency === "USD") {
+            return `$${v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })}`;
+          }
+          if (item.currency === "cents") {
+            if (v < 50 || v > 3000) console.warn("[market] unusual agri quote", item.id, v);
+            return `${v.toLocaleString("en-US", { maximumFractionDigits: digits })}¢`;
+          }
           if (v >= 10000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
           if (v >= 1000) return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
           return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
@@ -154,7 +162,8 @@
 
         function cardHtml(item) {
           const pct = item.changePct;
-          const sub = item.rating ? `<div class="market-card__sub">${item.rating}</div>` : "";
+          const subText = item.rating || item.hint || "";
+          const sub = subText ? `<div class="market-card__sub">${subText}</div>` : "";
           const changeHtml =
             item.id === "fear-greed" || item.id === "btc-dominance" ? "" : changeChipHtml(pct);
           const spark = sparklineSvg(item.sparkline, sparkTrend(pct), item.id);
@@ -179,6 +188,33 @@
           </section>`;
         }
 
+        function commoditiesSectionHtml(items) {
+          if (!items || !items.length) return "";
+          const groups = [
+            { key: "energy", title: "에너지" },
+            { key: "precious", title: "귀금속" },
+            { key: "agri", title: "농산물" },
+          ];
+          const byGroup = items.reduce((acc, item) => {
+            const key = item.group || "energy";
+            (acc[key] = acc[key] || []).push(item);
+            return acc;
+          }, {});
+          const body = groups
+            .filter((g) => byGroup[g.key]?.length)
+            .map(
+              (g) => `<div class="market-subsection">
+              <h3 class="market-subsection__title">${g.title}</h3>
+              <div class="market-grid">${byGroup[g.key].map(cardHtml).join("")}</div>
+            </div>`
+            )
+            .join("");
+          return `<section class="market-section market-section--commodities">
+            <h2 class="market-section__title">원자재</h2>
+            ${body}
+          </section>`;
+        }
+
         function render(data) {
           const s = data.sections || {};
           const major = [...(s.korea || []), ...(s.us || [])];
@@ -186,7 +222,7 @@
             sectionHtml("주요 지수", major),
             sectionHtml("글로벌 지수", s.global),
             sectionHtml("금리 · 환율", s.ratesFx),
-            sectionHtml("원자재", s.commodities),
+            commoditiesSectionHtml(s.commodities),
             sectionHtml("시장 심리", s.sentiment),
           ]
             .filter(Boolean)

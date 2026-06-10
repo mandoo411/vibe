@@ -26,11 +26,31 @@ const YAHOO_DEFS = [
   { id: "us2y", symbol: "2YY=F", name: "미국 2년물", bucket: "ratesFx", unit: "%", decimals: 2 },
   { id: "dxy", symbol: "DX-Y.NYB", name: "달러인덱스", bucket: "ratesFx", decimals: 2 },
   { id: "usdkrw", symbol: "KRW=X", name: "원/달러", bucket: "ratesFx", decimals: 2 },
-  { id: "wti", symbol: "CL=F", name: "WTI 유가", bucket: "commodities", decimals: 2 },
-  { id: "gold", symbol: "GC=F", name: "금", bucket: "commodities", decimals: 1 },
-  { id: "silver", symbol: "SI=F", name: "은", bucket: "commodities", decimals: 2 },
+  { id: "wti", symbol: "CL=F", name: "WTI 원유", bucket: "commodities", commodityGroup: "energy", currency: "USD", decimals: 2 },
+  { id: "brent", symbol: "BZ=F", name: "브렌트유", bucket: "commodities", commodityGroup: "energy", currency: "USD", decimals: 2 },
+  { id: "natgas", symbol: "NG=F", name: "천연가스", bucket: "commodities", commodityGroup: "energy", currency: "USD", decimals: 3 },
+  { id: "gold", symbol: "GC=F", name: "금", bucket: "commodities", commodityGroup: "precious", currency: "USD", decimals: 1 },
+  { id: "silver", symbol: "SI=F", name: "은", bucket: "commodities", commodityGroup: "precious", currency: "USD", decimals: 2 },
+  { id: "platinum", symbol: "PL=F", name: "백금", bucket: "commodities", commodityGroup: "precious", currency: "USD", decimals: 1 },
+  { id: "copper", symbol: "HG=F", name: "구리", bucket: "commodities", commodityGroup: "precious", currency: "USD", decimals: 3, hint: "경기 선행지표" },
+  { id: "wheat", symbol: "ZW=F", name: "밀", bucket: "commodities", commodityGroup: "agri", currency: "cents", decimals: 2 },
+  { id: "corn", symbol: "ZC=F", name: "옥수수", bucket: "commodities", commodityGroup: "agri", currency: "cents", decimals: 2 },
+  { id: "soy", symbol: "ZS=F", name: "대두", bucket: "commodities", commodityGroup: "agri", currency: "cents", decimals: 2 },
   { id: "vix", symbol: "^VIX", name: "VIX", bucket: "sentiment", decimals: 2 },
 ];
+
+const COMMODITY_VALUE_BANDS = {
+  wti: [15, 250],
+  brent: [15, 250],
+  natgas: [0.5, 30],
+  gold: [800, 6000],
+  silver: [8, 120],
+  platinum: [400, 4000],
+  copper: [1.5, 12],
+  wheat: [200, 2500],
+  corn: [200, 2500],
+  soy: [400, 2500],
+};
 
 const KOREA_SPARK = [
   { code: "0001", sparkSymbol: "^KS11", id: "kospi", name: "코스피" },
@@ -178,12 +198,28 @@ async function fetchYahooFull(symbol) {
 
 function yahooToItem(def, chart) {
   const digits = def.decimals ?? (def.unit === "%" ? 2 : def.bucket === "global" && def.region === "asia" ? 2 : 2);
+  const value = chart.value != null ? roundN(chart.value, digits) : null;
+  if (def.bucket === "commodities" && value != null) {
+    const band = COMMODITY_VALUE_BANDS[def.id];
+    if (band && (value < band[0] || value > band[1])) {
+      console.warn("[market-overview] suspicious commodity value", {
+        id: def.id,
+        symbol: def.symbol,
+        value,
+        changePct: chart.changePct,
+        expected: band,
+      });
+    }
+  }
   return {
     id: def.id,
     symbol: def.symbol,
     name: def.name,
     region: def.region || null,
-    value: chart.value != null ? roundN(chart.value, digits) : null,
+    group: def.commodityGroup || null,
+    hint: def.hint || null,
+    currency: def.currency || null,
+    value,
     changePct: chart.changePct,
     sparkline: chart.sparkline,
     unit: def.unit || null,
@@ -291,6 +327,9 @@ async function buildOverview() {
     return europeOrder.indexOf(a.id) - europeOrder.indexOf(b.id);
   });
   byBucket.us.sort(sortBy(["sp500", "nasdaq", "dow"]));
+  byBucket.commodities.sort(
+    sortBy(["wti", "brent", "natgas", "gold", "silver", "platinum", "copper", "wheat", "corn", "soy"])
+  );
   byBucket.sentiment.push(fearGreed, btcDominance);
 
   return {

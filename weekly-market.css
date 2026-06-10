@@ -834,7 +834,7 @@ a:hover {
 [data-theme="dark"] .calendar-weekday--sun,
 .dark-mode .calendar-cell--sun,
 [data-theme="dark"] .calendar-cell--sun {
-  color: #8892ff;
+  color: var(--accent-gold);
 }
 
 .calendar-cell {
@@ -1280,14 +1280,14 @@ a:hover {
 }
 
 [data-theme="dark"] .week-tabs {
-  background: var(--panel-surface, #1a1f35);
-  border-bottom-color: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
+  border-bottom-color: var(--border-color);
 }
 
 [data-theme="dark"] .week-tab {
-  background: #1a1f35;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-body, #d1d5db);
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 [data-theme="dark"] .week-tab span {

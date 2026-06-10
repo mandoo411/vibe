@@ -91,12 +91,12 @@
 }
 
 [data-theme="dark"] .rt-ac-item__badge {
-  background: #141828;
+  background: var(--header-bg);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme="dark"] .rt-ac-more {
-  background: #141828;
+  background: var(--header-bg);
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -115,7 +115,7 @@
 
 [data-theme="dark"] #ai-stock-analysis {
   --color-background-primary: var(--panel-surface, #1a1f35);
-  --color-background-secondary: #141828;
+  --color-background-secondary: var(--header-bg);
   --color-border-tertiary: rgba(255, 255, 255, 0.1);
   --color-text-secondary: #9ca3af;
 }

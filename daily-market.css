@@ -91,27 +91,27 @@
 }
 
 [data-theme="dark"] .day-nav {
-  background: var(--panel-surface, #1a1f35);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
+  border-color: var(--border-color);
 }
 
 [data-theme="dark"] .day-nav__btn,
 [data-theme="dark"] .day-nav__today {
-  background: #1a1f35;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-body, #d1d5db);
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 [data-theme="dark"] .day-nav__btn:hover,
 [data-theme="dark"] .day-nav__today:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--surface-hover);
+  border-color: var(--interactive-hover-border);
 }
 
 [data-theme="dark"] .day-nav__date-label {
-  background: var(--bg-elevated, #1e2235);
-  color: var(--text-body, #d1d5db);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--accent-blue);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
 }
 
 .day-nav__spacer {
@@ -290,14 +290,15 @@ body.tm-mobile-calendar-open::before {
 
 .dark-mode #calendar-toggle,
 [data-theme="dark"] #calendar-toggle {
-  background: #1c2030;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #8892ff;
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--accent-gold);
 }
 
 .dark-mode #calendar-toggle:hover,
 [data-theme="dark"] #calendar-toggle:hover {
-  background: #252c3a;
+  background: var(--surface-hover);
+  border-color: var(--interactive-hover-border);
 }
 
 /* Detail */
@@ -392,12 +393,12 @@ body.tm-mobile-calendar-open::before {
 
 .dark-mode .loading-bar-track,
 [data-theme="dark"] .loading-bar-track {
-  background: #1e2460 !important;
+  background: color-mix(in srgb, var(--accent-gold) 14%, var(--card-bg)) !important;
 }
 
 .dark-mode .loading-bar-inner,
 [data-theme="dark"] .loading-bar-inner {
-  background: linear-gradient(90deg, transparent, #8892ff, transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent) !important;
 }
 
 .day-body.is-empty > .day-block {
@@ -863,7 +864,7 @@ body.tm-mobile-calendar-open::before {
 [data-theme="dark"] .archive-dow span:first-child,
 .dark-mode .cell--sun,
 [data-theme="dark"] .cell--sun {
-  color: #8892ff;
+  color: var(--accent-gold);
 }
 
 .cell--has::after {

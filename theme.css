@@ -46,8 +46,11 @@ body.page-tm-v2 {
   /* Legacy token map */
   --bg-primary: var(--body-bg);
   --bg-secondary: var(--card-bg);
-  --bg-tertiary: #162544;
+  --bg-tertiary: #132038;
+  --bg-elevated: #132038;
   --panel-surface: var(--card-bg);
+  --hero-surface-end: #0b1528;
+  --surface-hover: #152238;
   --loading-bg: var(--body-bg);
   --page-body-top: var(--header-bg);
   --page-body-glow: rgba(42, 54, 86, 0.32);
@@ -263,6 +266,65 @@ body {
 
 [data-theme="dark"] .home-nav__link[aria-current="page"]::after {
   background: var(--accent-gold);
+}
+
+/* 다크: 구 네이비 패널 톤 통일 */
+[data-theme="dark"] .day-nav,
+[data-theme="dark"] .day-nav__btn,
+[data-theme="dark"] .day-nav__today,
+[data-theme="dark"] .week-tab,
+[data-theme="dark"] .week-tabs,
+[data-theme="dark"] .home-rt-tab:not(.is-active),
+[data-theme="dark"] .briefing-card,
+[data-theme="dark"] .ai-access-gate__card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .day-nav__btn:hover,
+[data-theme="dark"] .day-nav__today:hover,
+[data-theme="dark"] .home-tr:hover,
+[data-theme="dark"] .week-tab:hover:not([aria-selected="true"]) {
+  background: var(--surface-hover);
+}
+
+[data-theme="dark"] .day-nav__date-label,
+[data-theme="dark"] #calendar-toggle {
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .loading-bar-track {
+  background: color-mix(in srgb, var(--accent-gold) 14%, var(--card-bg)) !important;
+}
+
+[data-theme="dark"] .loading-bar-inner {
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent) !important;
+}
+
+[data-theme="dark"] .home-th div,
+[data-theme="dark"] .home-tr .scode,
+[data-theme="dark"] .home-tr__code,
+[data-theme="dark"] .home-brief-time,
+[data-theme="dark"] .tm-bottom-nav__item {
+  color: var(--text-muted-ui);
+}
+
+[data-theme="dark"] .home-tr .sname,
+[data-theme="dark"] .home-tr .price,
+[data-theme="dark"] .home-tr__name,
+[data-theme="dark"] .home-tr__price,
+[data-theme="dark"] .home-mini-card__title,
+[data-theme="dark"] .home-section--realtime .home-tr__name,
+[data-theme="dark"] .home-section--realtime .home-tr__price {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .home-brief-text,
+[data-theme="dark"] .home-mini-card .mc-row,
+[data-theme="dark"] .home-mini-row {
+  color: var(--text-secondary);
 }
 
 [data-theme="light"] {

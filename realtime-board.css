@@ -359,7 +359,7 @@
       [data-theme="dark"] .rt-tab-search input,
       .dark-mode .rt-tab-search input {
         border-color: rgba(255, 255, 255, 0.1);
-        background: #1a1f35;
+        background: var(--card-bg);
         color: #ffffff;
       }
       [data-theme="dark"] .rt-tab-search input:focus,
@@ -1311,7 +1311,7 @@
 
       [data-theme="dark"] .rt-tab[aria-selected="false"],
       .dark-mode .rt-tab[aria-selected="false"] {
-        background: #1a1f35;
+        background: var(--card-bg);
         border: 1px solid rgba(255, 255, 255, 0.1);
         color: var(--text-body, #d1d5db);
       }

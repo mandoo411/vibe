@@ -1170,11 +1170,12 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 }
 
 [data-theme="dark"] .page-tm-v2 .briefing-grid {
-  background: #2a2f4a;
+  background: var(--accent-blue);
 }
 
 [data-theme="dark"] .page-tm-v2 .briefing-card {
-  background: var(--bg-secondary, #1c2030);
+  background: var(--card-bg);
+  border-color: var(--border-color);
 }
 
 /* 패널·시트: tm-wrap 좌우 끝까지 (헤더 border와 동일 너비) */
@@ -1364,13 +1365,13 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 
 /* 다크모드 A안 */
 [data-theme="dark"] .home-nav {
-  background: #1a1f35;
-  border-bottom: 1px solid #2a2f4a;
+  background: transparent;
+  border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-ticker {
-  background: #141828;
-  border-bottom: 1px solid #2a2f4a;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-ticker__name,
@@ -1393,19 +1394,19 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-hero__panel {
-  background: #0f1528;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--accent-blue);
+  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-shortcuts {
-  background: #141828;
-  border-bottom: 1px solid #2a2f4a;
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-shortcuts__pill {
-  background: #1e2440;
-  color: #7788cc;
-  border: 1px solid #2a3560;
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-footer {
@@ -1570,9 +1571,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .ai-search-card__input {
-  background: #141828;
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--text-body, #d1d5db);
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .ai-search-card__input::placeholder {
@@ -1618,9 +1619,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .ai-search-card__result {
-  background: #141828;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-body, #d1d5db);
+  background: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-primary);
 }
 
 .page-tm-v2 .ai-stock-section {
@@ -1670,14 +1671,14 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .ai-search-popular__chip {
-  background: #141828;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-body, #d1d5db);
+  background: var(--accent-blue);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 [data-theme="dark"] .ai-search-popular__chip:hover {
-  border-color: #6366f1;
-  color: #a8b4ff;
+  border-color: var(--interactive-hover-border);
+  color: var(--accent-gold);
 }
 
 @media (max-width: 768px) {
@@ -1704,76 +1705,37 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-section {
-  background: #1a1f35;
-  border: 1px solid #2a2f4a;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-section__title {
-  color: #c8ccff;
+  color: var(--text-primary);
 }
 
 [data-theme="dark"] .home-section__more {
-  color: #7788cc;
+  color: var(--accent-gold);
 }
 
 [data-theme="dark"] .home-section__head {
-  border-bottom-color: #2a2f4a;
+  border-bottom-color: var(--border-color);
 }
 
 [data-theme="dark"] .home-th {
-  border-bottom-color: #2a2f4a;
-}
-
-[data-theme="dark"] .home-th div {
-  color: #556080;
+  border-bottom-color: var(--border-color);
 }
 
 [data-theme="dark"] .home-col-mid .home-section {
-  background: #1a1f35;
-  border: 1px solid #2a2f4a;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-tr {
-  border-bottom: 1px solid #2a2f4a;
+  border-bottom: 1px solid var(--border-color);
 }
 
 [data-theme="dark"] .home-tr:hover {
-  background: #222840;
-}
-
-[data-theme="dark"] .home-tr .sname,
-[data-theme="dark"] .home-tr .price,
-[data-theme="dark"] .home-tr__name,
-[data-theme="dark"] .home-tr__price {
-  color: #c8ccff;
-}
-
-[data-theme="dark"] .home-tr .scode,
-[data-theme="dark"] .home-tr__code {
-  color: #556080;
-}
-
-[data-theme="dark"] .home-mini-card {
-  background: #1a1f35;
-  border: 1px solid #2a2f4a;
-}
-
-[data-theme="dark"] .home-mini-card__title {
-  color: #c8ccff;
-}
-
-[data-theme="dark"] .home-mini-card .mc-row,
-[data-theme="dark"] .home-mini-row {
-  border-bottom: 1px solid #2a2f4a;
-  color: #8899bb;
-}
-
-[data-theme="dark"] .home-brief-text {
-  color: #8899bb;
-}
-
-[data-theme="dark"] .home-brief-time {
-  color: #445066;
+  background: var(--surface-hover);
 }
 
 [data-theme="dark"] .home-ai-card__btn {
@@ -2094,8 +2056,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   [data-theme="dark"] .tm-bottom-nav {
-    background: #1a1f35;
-    border-top-color: #2a2f4a;
+    background: var(--header-bg);
+    border-top-color: var(--border-color);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
   }
 
@@ -2138,8 +2100,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   [data-theme="dark"] .tm-bottom-nav--v2 {
-    background: #1a1f35;
-    border-top-color: #2a2f4a;
+    background: var(--header-bg);
+    border-top-color: var(--border-color);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
   }
 
@@ -2201,26 +2163,26 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   [data-theme="dark"] .tm-nav-sheet__panel {
-    background: #1a1f35;
+    background: var(--card-bg);
   }
 
   [data-theme="dark"] .tm-nav-sheet__head {
-    border-bottom-color: #2a2f4a;
+    border-bottom-color: var(--border-color);
   }
 
   [data-theme="dark"] .tm-nav-sheet__head h2 {
-    color: #e8ecff;
+    color: var(--text-primary);
   }
 
   [data-theme="dark"] .tm-nav-sheet__cell {
-    background: #141828;
-    border-color: #2a3560;
-    color: #e8ecff;
+    background: var(--accent-blue);
+    border-color: var(--border-color);
+    color: var(--text-primary);
   }
 
   [data-theme="dark"] .tm-claude-card {
-    background: linear-gradient(135deg, #1a1f35, #141828);
-    border-color: #2a3560;
+    background: linear-gradient(135deg, var(--card-bg), var(--header-bg));
+    border-color: var(--border-color);
   }
 
   [data-theme="dark"] .tm-claude-card__mark {
@@ -2242,11 +2204,15 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   [data-theme="dark"] .tm-bottom-nav__item {
-    color: #556080;
+    color: var(--text-muted-ui);
   }
 
   [data-theme="dark"] .tm-bottom-nav__item.is-active {
-    color: #8892ff;
+    color: var(--accent-gold);
+  }
+
+  [data-theme="dark"] .tm-bottom-nav--v2 .tm-bottom-nav__item.is-active {
+    color: var(--accent-gold);
   }
 
   .page-tm-v2 .tm-main table,

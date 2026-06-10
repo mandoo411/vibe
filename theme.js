@@ -17,7 +17,7 @@
 
   function setMetaThemeColor(theme) {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "light" ? "#ffffff" : "#131722");
+    if (meta) meta.setAttribute("content", theme === "light" ? "#ffffff" : "#0f1618");
   }
 
   function updateThemeIcon(theme) {

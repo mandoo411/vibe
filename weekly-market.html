@@ -487,8 +487,126 @@
           return `${n.toLocaleString("ko-KR")}원`;
         }
 
+        function stripLegacyPeriodLabel(text) {
+          return String(text || "")
+            .replace(/\s*·\s*(월간|연간|분기)\s*$/g, "")
+            .replace(/\s*\(\s*(월간|연간|분기)[^)]*\)/g, "")
+            .trim();
+        }
+
+        function parseLegacyPeriod(text) {
+          const t = String(text || "");
+          if (/\(연간|연간\)|\byoy\b|\by\/y\b/i.test(t)) return "연간";
+          if (/\(월간|월간\)|\bmom\b|\bm\/m\b/i.test(t)) return "월간";
+          if (/\(분기|분기\)|\bqoq\b|\bq\/q\b/i.test(t)) return "분기";
+          return null;
+        }
+
+        function detectIndicatorPeriod(...texts) {
+          const t = texts.filter(Boolean).join(" ");
+          if (/\b(yoy|y\/y|annual|yearly)\b/i.test(t) || /\(연간\)/i.test(t)) return "연간";
+          if (/\b(mom|m\/m|monthly)\b/i.test(t) || /\(월간\)/i.test(t)) return "월간";
+          if (/\b(qoq|q\/q|quarterly)\b/i.test(t) || /\(분기\)/i.test(t)) return "분기";
+          return null;
+        }
+
+        function isUnitedStates(country) {
+          const c = String(country || "").trim();
+          return /^(US|USA|U\.S\.|United States)$/i.test(c) || c === "미국";
+        }
+
+        function resolveFormalIndicator(row) {
+          const raw = String(row?.event || "").trim();
+          const translated = translateIndicator(raw);
+          const search = `${raw} ${translated}`;
+          const period = detectIndicatorPeriod(raw, translated) || parseLegacyPeriod(translated);
+
+          if (/근원\s*인플레이션|Core\s*Inflation\s*Rate|Core\s*CPI/i.test(search)) {
+            return { nameKo: "근원 소비자물가지수", abbr: "Core CPI", period };
+          }
+          if (/인플레이션율|Inflation\s*Rate/i.test(search) && !/근원|Core/i.test(search)) {
+            return { nameKo: "소비자물가지수", abbr: "CPI", period };
+          }
+          if (/\bCPI\b|Consumer\s*Price\s*Index|소비자물가/i.test(search) && !/PPI|Producer|생산자물가/i.test(search)) {
+            const isCore = /근원|Core/i.test(search);
+            return {
+              nameKo: isCore ? "근원 소비자물가지수" : "소비자물가지수",
+              abbr: isCore ? "Core CPI" : "CPI",
+              period,
+            };
+          }
+          if (/생산자물가|\bPPI\b|Producer\s*Price/i.test(search)) {
+            const isCore = /근원|Core/i.test(search);
+            return {
+              nameKo: isCore ? "근원 생산자물가지수" : "생산자물가지수",
+              abbr: isCore ? "Core PPI" : "PPI",
+              period,
+            };
+          }
+          if (/개인소비|PCE|Personal\s*Consumption/i.test(search)) {
+            const isCore = /근원|Core/i.test(search);
+            const isPrice = /Price\s*Index|물가/i.test(search);
+            return {
+              nameKo: isPrice
+                ? isCore
+                  ? "근원 개인소비지출 물가지수"
+                  : "개인소비지출 물가지수"
+                : "개인소비지출",
+              abbr: isCore ? "Core PCE" : "PCE",
+              period,
+            };
+          }
+          if (
+            isUnitedStates(row?.country) &&
+            (/금리\s*결정|기준금리|Fed\s*Interest|FOMC.*Decision|Interest\s*Rate\s*Decision/i.test(search) ||
+              /^연준\s*금리/i.test(translated))
+          ) {
+            return { nameKo: "기준금리 결정", abbr: "FOMC", period: null };
+          }
+          if (/비농업|Non[\s-]?Farm|\bNFP\b/i.test(search)) {
+            return { nameKo: "비농업 고용", abbr: "NFP", period };
+          }
+          if (/실업률|Unemployment\s*Rate/i.test(search)) {
+            return { nameKo: "실업률", abbr: "Unemployment", period };
+          }
+          if (/국내총생산|\bGDP\b/i.test(search)) {
+            return { nameKo: "국내총생산", abbr: "GDP", period };
+          }
+          if (/소비자심리|Michigan\s*Consumer|UMich|Consumer\s*Sentiment/i.test(search)) {
+            return { nameKo: "소비자심리지수", abbr: "UMich", period };
+          }
+          if (/\bISM\b|공급관리/i.test(search)) {
+            const isServices = /Non[\s-]?Manufacturing|Services/i.test(search);
+            return { nameKo: isServices ? "ISM 서비스업지수" : "ISM 제조업지수", abbr: "ISM", period };
+          }
+          if (/구매관리자|PMI|Purchasing\s*Managers/i.test(search)) {
+            return { nameKo: "구매관리자지수", abbr: "PMI", period };
+          }
+          return { nameKo: null, abbr: null, period };
+        }
+
         function eventLabelText(row) {
-          return translateIndicator(row?.event || "");
+          const formal = resolveFormalIndicator(row);
+          const translated = translateIndicator(row?.event || "");
+          const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
+          const abbr = formal.abbr;
+          const period = formal.period || parseLegacyPeriod(translated);
+          let label = nameKo;
+          if (abbr) label += ` (${abbr})`;
+          if (period) label += ` · ${period}`;
+          return label;
+        }
+
+        function indicatorDisplayHtml(row) {
+          const formal = resolveFormalIndicator(row);
+          const translated = translateIndicator(row?.event || "");
+          const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
+          const abbr = formal.abbr;
+          const period = formal.period || parseLegacyPeriod(translated);
+          const parts = [`<strong class="indicator-name-ko">${escapeHtml(nameKo)}</strong>`];
+          if (abbr) parts.push(`<span class="indicator-abbr">(${escapeHtml(abbr)})</span>`);
+          if (period) parts.push(`<span class="indicator-period">· ${escapeHtml(period)}</span>`);
+          return parts.join(" ");
         }
 
         function eventSearchText(row) {
@@ -645,13 +763,13 @@
             <tbody>${list
               .map((r) => {
                 const impactKey = resolveImpactKey(r);
-                const label = eventLabelText(r) || "—";
                 const isKey = isKeyIndicator(r);
                 const rowClass = [`impact-${impactKey}`, isKey ? "schedule-row--key" : ""].filter(Boolean).join(" ");
                 const keyBadge = isKey ? '<span class="key-indicator-badge">핵심</span>' : "";
+                const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
                 return `<tr class="${rowClass}">
                   <td data-label="시간">${escapeHtml(r.time || "—")}</td>
-                  <td data-label="지표명"><div class="schedule-event-head">${keyBadge}<strong>${escapeHtml(label)}</strong></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
+                  <td data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
                   <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous, r.unit))}</td>
                   <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate, r.unit))}</td>
                   <td data-label="중요도">${impactBadgeHtml(impactKey)}</td>

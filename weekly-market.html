@@ -511,9 +511,22 @@
           return null;
         }
 
-        function isUnitedStates(country) {
+        function normalizeCountryCode(country) {
           const c = String(country || "").trim();
-          return /^(US|USA|U\.S\.|United States)$/i.test(c) || c === "미국";
+          if (!c) return "";
+          const u = c.toUpperCase();
+          if (/^(US|USA|U\.S\.|UNITED STATES)$/.test(u) || c === "미국") return "US";
+          if (/^(KR|KOREA|SOUTH KOREA|ROK)$/.test(u) || c === "한국" || c === "대한민국") return "KR";
+          return u.length === 2 ? u : c;
+        }
+
+        function isUnitedStates(country) {
+          return normalizeCountryCode(country) === "US";
+        }
+
+        function isUsOrKrCountry(row) {
+          const code = normalizeCountryCode(row?.country);
+          return code === "US" || code === "KR";
         }
 
         function resolveFormalIndicator(row) {
@@ -621,21 +634,29 @@
           if ((/FOMC\s*위원\s*연설|연준\s*위원\s*연설/i.test(t)) && !/기자회견/i.test(t)) return true;
           if (/\bPPI\b|생산자물가/i.test(t)) return true;
           if (/\bISM\b|\bPMI\b/i.test(t)) return true;
+          if (/소비자심리|Michigan\s*Consumer|UMich|Consumer\s*Sentiment/i.test(t)) return true;
           return false;
         }
 
         function isKeyIndicator(row) {
+          if (!isUsOrKrCountry(row)) return false;
           const t = eventSearchText(row);
           if (isMediumOnlyIndicator(t)) return false;
-          return (
-            /CPI|소비자물가/i.test(t) ||
-            /FOMC\s*금리\s*결정|기준금리\s*결정|금리\s*결정/i.test(t) ||
-            /파월\s*기자회견|연준의장\s*기자회견/i.test(t) ||
-            /고용|비농업|실업률|\bNFP\b/i.test(t) ||
-            /\bPCE\b/i.test(t) ||
-            /금통위|한국은행\s*금리/i.test(t) ||
-            /\bGDP\b/i.test(t)
-          );
+
+          const isUS = normalizeCountryCode(row?.country) === "US";
+
+          if (/소비자물가|\bCPI\b/i.test(t) && !/PPI|Producer|생산자물가/i.test(t)) return true;
+          if (/근원\s*소비자물가|Core\s*CPI/i.test(t)) return true;
+          if (/기준금리|금리\s*결정|\bFOMC\b|금통위|한국은행/i.test(t)) return true;
+          if (/국내총생산|\bGDP\b/i.test(t)) return true;
+
+          if (isUS) {
+            if (/고용|비농업|실업률|\bNFP\b/i.test(t)) return true;
+            if (/개인소비지출|\bPCE\b/i.test(t)) return true;
+            if (/파월\s*기자회견|연준의장\s*기자회견/i.test(t)) return true;
+          }
+
+          return false;
         }
 
         function resolveImpactKey(row) {

@@ -66,18 +66,15 @@
 
       <main class="tm-main">
         <div class="page">
-          <div class="market-page-hero">
-            <header class="masthead masthead--title-only">
-              <div class="masthead__copy">
-                <p class="masthead__kicker">MARKET OVERVIEW</p>
-                <h1 class="masthead__title">시장 지표 종합</h1>
-              </div>
-            </header>
-            <div class="page-hero-sub">
-              <div class="masthead__meta">
-                <span id="market-updated">데이터 로딩 중…</span>
-              </div>
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">MARKET OVERVIEW</p>
+              <h1 class="masthead__title">시장 지표 종합</h1>
             </div>
+          </header>
+          <div class="market-meta-bar" aria-live="polite">
+            <span id="market-updated">데이터 로딩 중…</span>
+            <span class="market-meta-bar__poll">갱신 주기 2분</span>
           </div>
           <div class="market-body">
             <div id="market-error" class="market-error" hidden></div>

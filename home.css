@@ -477,7 +477,6 @@ body[data-theme="dark"] .home-nav__ai-badge {
     color: #ffffff;
   }
 
-  /* 웹 다크: 히어로 하단과 바디 구분 */
   [data-theme="dark"] .page-home-v2 .home-hero {
     background: linear-gradient(180deg, var(--header-bg) 0%, var(--hero-surface-end, #0b1528) 100%);
     border-bottom: 1px solid var(--border-color);
@@ -1460,12 +1459,6 @@ body[data-theme="dark"] .page-home-v2 .home-ticker-bar .home-ticker {
   border: 1px solid var(--border-color);
 }
 
-[data-theme="dark"] .home-footer {
-  background: linear-gradient(180deg, var(--body-bg) 0%, var(--header-bg) 100%);
-  border-top: 1px solid var(--border-color);
-  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
-}
-
 [data-theme="dark"] .home-wrap,
 [data-theme="dark"] body {
   background: var(--body-bg);
@@ -1479,12 +1472,6 @@ body[data-theme="dark"].page-home-v2 {
 [data-theme="dark"] .page-home-v2 .home-wrap,
 body[data-theme="dark"] .page-home-v2 .home-wrap {
   background: transparent;
-}
-
-[data-theme="dark"] .page-home-v2 .home-top,
-body[data-theme="dark"] .page-home-v2 .home-top {
-  background: var(--gradient-hero-dark);
-  box-shadow: 0 1px 0 var(--border-color);
 }
 
 [data-theme="dark"] .page-home-v2 .home-ticker-bar,

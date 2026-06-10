@@ -504,16 +504,29 @@
       .crypto-news-badge:empty {
         display: none;
       }
-      [data-theme="dark"] .crypto-tab {
-        background: #1a1f35;
-        border-color: rgba(255, 255, 255, 0.1);
-        color: var(--text-body, #d1d5db);
+      [data-theme="dark"] .crypto-section-head--tools {
+        background: transparent;
+      }
+      [data-theme="dark"] .crypto-tab:not(.active) {
+        background: color-mix(in srgb, var(--card-bg, #111d35) 55%, var(--body-bg, #0d172a) 45%);
+        border-color: var(--border-color, rgba(212, 175, 55, 0.15));
+        color: var(--text-secondary, #aab4c5);
+        box-shadow: none;
+      }
+      [data-theme="dark"] .crypto-tab:not(.active):hover {
+        background: color-mix(in srgb, var(--card-bg, #111d35) 72%, var(--body-bg, #0d172a) 28%);
+        border-color: rgba(212, 175, 55, 0.22);
+        color: var(--text-primary, #ffffff);
       }
       [data-theme="dark"] .crypto-tab.active {
         background: var(--gradient-primary);
         color: #ffffff;
         border: none;
-        box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      [data-theme="dark"] .crypto-currency-toggle {
+        background: color-mix(in srgb, var(--card-bg, #111d35) 55%, var(--body-bg, #0d172a) 45%);
+        border-color: var(--border-color, rgba(212, 175, 55, 0.15));
       }
       [data-theme="dark"] .crypto-page-btn {
         background: #1c2030;

@@ -248,6 +248,14 @@
     };
   }
 
+  function enrichPanelFromTableRow(panel, code6) {
+    if (!panel || panel.stockName) return panel;
+    const rows = getCurrentRows() || [];
+    const hit = rows.find((r) => r && r.code === code6);
+    if (hit && hit.name) panel.stockName = hit.name;
+    return panel;
+  }
+
   async function fetchStockQuoteDetail(q, opts) {
     const code6 = normalizeCode6ForQuote(q);
     if (!/^\d{6}$/.test(code6)) throw new Error("종목을 찾을 수 없습니다.");
@@ -262,7 +270,7 @@
         console.log("[realtime-board] /api/kis-stock-quote", { code6, keys: data ? Object.keys(data).slice(0, 60) : [] });
       }
     } catch (_) {}
-    return mapKisQuoteToPanel(data);
+    return enrichPanelFromTableRow(mapKisQuoteToPanel(data), code6);
   }
 
   function hideLoadingOverlay() {

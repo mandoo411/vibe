@@ -476,15 +476,55 @@
     }
   }
 
+  function isMobileLayout() {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches
+    );
+  }
+
+  function mobileLastColumnLabel() {
+    return state.activeTab === "volume" ? "거래대금" : "시가총액";
+  }
+
+  function mobileLastColumnValue(row) {
+    if (state.activeTab === "volume") {
+      return escapeHtml(fmtUsdCompact(rowTradingValue(row)));
+    }
+    return escapeHtml(fmtUsdCompact(row.marketCap));
+  }
+
+  function syncMobileHeaderRow() {
+    const last = document.querySelector(".rt-header-row .rt-col-last");
+    if (last) last.textContent = mobileLastColumnLabel();
+  }
+
   function rankRowHtml(row) {
     const chgCls = deltaClass(row.changePct);
     const vs = formatVsCell(row);
     const open = state.openTicker === row.ticker;
+    const nameBtn = `<button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${escapeHtml(row.name || row.ticker)}</button>`;
+
+    if (isMobileLayout()) {
+      const rank = row.rank != null ? escapeHtml(String(row.rank)) : "—";
+      const price = escapeHtml(fmtUsdPrice(row.price));
+      const lastVal = mobileLastColumnValue(row);
+      const rowInner = [
+        `<div class="rt-mobile-row">`,
+        `  <span class="rt-col-rank">${rank}</span>`,
+        `  <span class="rt-col-name">${nameBtn}</span>`,
+        `  <span class="rt-col-price">${price}</span>`,
+        `  <span class="rt-col-change"><span class="delta ${chgCls}">${escapeHtml(fmtPct(row.changePct))}</span></span>`,
+        `  <span class="rt-col-last">${lastVal}</span>`,
+        `</div>`,
+      ].join("");
+      return `<tr class="rt-stock-row us-stock-row" data-ticker="${escapeHtml(row.ticker)}"><td colspan="${TABLE_COLSPAN}">${rowInner}</td></tr>`;
+    }
+
     return `<tr class="rt-stock-row us-stock-row" data-ticker="${escapeHtml(row.ticker)}">
       <td class="rt-td-rank num">${row.rank != null ? escapeHtml(String(row.rank)) : "—"}</td>
-      <td class="rt-td-name">
-        <button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${escapeHtml(row.name || row.ticker)}</button>
-      </td>
+      <td class="rt-td-name">${nameBtn}</td>
       <td class="rt-td-ticker num">${escapeHtml(row.ticker || "—")}</td>
       <td class="rt-td-price num">${escapeHtml(fmtUsdPrice(row.price))}</td>
       <td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>
@@ -501,8 +541,9 @@
     const table = $("us-rank-table");
     if (table) {
       table.setAttribute("data-us-tab", state.activeTab);
-      table.removeAttribute("data-rt-tab");
+      table.setAttribute("data-rt-tab", cfg.rtTab);
     }
+    syncMobileHeaderRow();
     const body = $("us-rank-tbody");
     if (!body) return;
     const rows = state.rowsByTab[state.activeTab] || [];
@@ -839,10 +880,16 @@
   function wireLayoutSync() {
     if (window.__usLayoutSyncWired) return;
     window.__usLayoutSyncWired = true;
+    let wasMobile = isMobileLayout();
     window.addEventListener("resize", () => {
       const table = $("us-rank-table");
       if (table) table.style.removeProperty("--us-name-w");
       syncUsPriceColumnAlign();
+      const mobile = isMobileLayout();
+      if (mobile !== wasMobile) {
+        wasMobile = mobile;
+        renderRankTable();
+      }
     });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(syncUsPriceColumnAlign).catch(() => {});

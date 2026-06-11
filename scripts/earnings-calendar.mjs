@@ -160,7 +160,7 @@ async function fetchDartKrEarnings(from, to) {
   const list = Array.isArray(payload.list) ? payload.list : [];
   const out = list
     .map((row) => {
-      const code = String(row.stock_code || "").trim();
+      const code = String(row.stock_code || "").trim().padStart(6, "0");
       if (!KR_CODE_SET.has(code)) return null;
       const rcept = String(row.rcept_dt || "");
       const date = rcept.length === 8

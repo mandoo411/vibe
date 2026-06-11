@@ -525,7 +525,12 @@ async function main() {
   ]);
 
   try {
-    await writeEarningsCalendar(await collectEarningsCalendar({ today }));
+    const earningsData = await collectEarningsCalendar({ today });
+    console.log(
+      `실적 캘린더: US ${earningsData.us.length}건, KR ${earningsData.kr.length}건` +
+        (process.env.DART_API_KEY ? " (DART 연동)" : " (DART 미설정)")
+    );
+    await writeEarningsCalendar(earningsData);
   } catch (error) {
     console.log(`❌ 실적 캘린더 저장 실패: ${error instanceof Error ? error.message : error}`);
   }

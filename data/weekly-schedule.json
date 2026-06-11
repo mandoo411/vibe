@@ -1,76 +1,16 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-11 19:40 KST",
-    "from": "2026-06-11",
-    "to": "2026-06-25",
-    "historyFrom": "2026-03-13",
+    "lastUpdatedKst": "2026-06-12 07:50 KST",
+    "from": "2026-06-12",
+    "to": "2026-06-26",
+    "historyFrom": "2026-03-14",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
     {
-      "date": "2026-06-11",
-      "event": "Main Refinancing Rate",
-      "country": "EU",
-      "time": "21:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "2.15%",
-      "estimate": "2.40%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-11",
-      "event": "Monetary Policy Statement",
-      "country": "EU",
-      "time": "21:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-11",
-      "event": "Core PPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "1.0%",
-      "estimate": "0.5%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-11",
-      "event": "PPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "1.4%",
-      "estimate": "0.7%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-11",
-      "event": "ECB Press Conference",
-      "country": "EU",
-      "time": "21:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
       "date": "2026-06-12",
-      "event": "GDP m/m",
+      "event": "GDP (MoM)",
       "country": "GB",
       "time": "15:00",
       "impact": "high",
@@ -78,6 +18,18 @@
       "actual": "",
       "previous": "0.3%",
       "estimate": "-0.1%",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-12",
+      "event": "German CPI (MoM)",
+      "country": "DE",
+      "time": "15:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.6%",
+      "estimate": "-0.2%",
       "unit": ""
     }
   ],

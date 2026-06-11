@@ -786,6 +786,30 @@ function liteEnrichRankRows(rows) {
   }));
 }
 
+/** 순위표 거래대금 — 프리마켓(pvol/pamt) 포함 상세 시세로 보강 (종목검색과 동일) */
+async function enrichRowTradingValueOnly(row) {
+  try {
+    const hit = await enrichRowFromUsDetail(row);
+    return {
+      ...row,
+      exchange: hit.exchange || row.exchange,
+      price: hit.price ?? row.price,
+      volume: hit.volume ?? row.volume,
+      tradingValue: resolveRowTradingValue(hit),
+      changePct: hit.changePct ?? row.changePct,
+      changePoints: hit.changePoints ?? row.changePoints,
+    };
+  } catch (e) {
+    console.warn("[us-market-data] tv enrich", row && row.ticker, e && e.message);
+    return liteEnrichRankRows([row])[0];
+  }
+}
+
+async function enrichRankListRows(rows) {
+  const base = liteEnrichRankRows(rows);
+  return mapPool(base, 4, enrichRowTradingValueOnly);
+}
+
 async function enrichRankRows(rows) {
   let capByTicker = new Map();
   try {
@@ -843,7 +867,7 @@ async function fetchMergedRanking(
       .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, pickCount);
-    if (enrich) ranked = liteEnrichRankRows(ranked);
+    if (enrich) ranked = await enrichRankListRows(ranked);
     if (resort) {
       ranked = ranked.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0)).slice(0, 50);
     } else if (ranked.length > 50) {
@@ -854,15 +878,15 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v12", async () => {
+  return cached("ranking:market-cap:v13", async () => {
     const ranked = await fetchMarketCapLookup();
-    return liteEnrichRankRows(ranked);
+    return enrichRankListRows(ranked);
   });
 }
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v5",
+    "ranking:gainers:v6",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -881,7 +905,7 @@ function fetchGainersTop50() {
 
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
-    "ranking:trade-value:v5",
+    "ranking:trade-value:v6",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
     (exchange) => ({
@@ -901,9 +925,12 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v13",
     "ranking:market-cap:v12",
     "ranking:market-cap:v11",
+    "ranking:gainers:v6",
     "ranking:gainers:v5",
+    "ranking:trade-value:v6",
     "ranking:trade-value:v5",
     "ranking:market-cap",
     "ranking:gainers:v2",

@@ -742,12 +742,12 @@ async function buildNxtIntegratedTvTop100(candidateByCode) {
 }
 
 function quoteOverlayNeeded(row) {
-  const base = finalizeRowQuoteFields(row);
-  const price = String(base.price || "").trim();
-  const vol = String(base.volume || "").trim();
-  const tv = Number(String(base.tradingValue || "").replace(/,/g, ""));
-  if (!price || !vol) return true;
-  return !Number.isFinite(tv) || tv <= 0;
+  if (row && row.volumeNxtIntegrated) return false;
+  const code = String(row?.code || "")
+    .replace(/\D/g, "")
+    .padStart(6, "0")
+    .slice(-6);
+  return /^\d{6}$/.test(code);
 }
 
 /** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 */
@@ -1458,7 +1458,7 @@ module.exports = async function handler(req, res) {
 
     if (action === "market-cap") {
       const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-      const cacheKey = `market-cap:nxt-v2:${range.page}:${range.pageSize}`;
+      const cacheKey = `market-cap:nxt-v3:${range.page}:${range.pageSize}`;
       const cached = rankPageCacheGet(cacheKey);
       if (cached) {
         json(res, 200, { ...cached, cached: true });
@@ -1482,7 +1482,7 @@ module.exports = async function handler(req, res) {
     if (action === "gainers") {
       try {
         const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-        const cacheKey = `gainers:nxt-v2:${range.page}:${range.pageSize}`;
+        const cacheKey = `gainers:nxt-v3:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });
@@ -1510,7 +1510,7 @@ module.exports = async function handler(req, res) {
     if (action === "trading-value") {
       try {
         const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
-        const cacheKey = `trading-value:nxt-v2:${range.page}:${range.pageSize}`;
+        const cacheKey = `trading-value:nxt-v3:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });

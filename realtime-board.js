@@ -1780,13 +1780,14 @@
     renderTable();
   }
 
+  /** 시가총액 — KIS hts_avls/stck_avls는 억원, 원 단위(1e8+)도 처리. 억은 정수만 */
   function formatMarketCapPretty(rawOrNum) {
     const n = Number(String(rawOrNum == null ? "" : rawOrNum).replace(/,/g, ""));
     if (!Number.isFinite(n) || n <= 0) return "—";
-    if (n >= 1e8 && n <= 5e15) return formatWonJoEok(n);
-    // KIS hts_avls 등 억원 단위(약 1만~1억 미만)
-    if (n >= 1e4 && n < 1e8) return formatWonJoEok(n * 1e8);
-    return n.toLocaleString("ko-KR");
+    const eok = n >= 1e8 ? Math.round(n / 1e8) : Math.round(n);
+    if (eok <= 0) return "—";
+    if (eok >= 10000) return `${Math.round(eok / 10000)}조`;
+    return `${eok}억`;
   }
 
   function buildStockResultSkeleton() {
@@ -2047,7 +2048,7 @@
       accGridCell("전일종가", prevClose),
       accGridCell("거래량", vol),
       accGridCell("거래대금", tvDisp),
-      accGridCell("시총", mcap),
+      accGridCell("시가총액", mcap),
       accGridCell("거래량회전율", volTurnoverRate),
       accGridCell("PER", finPer),
       accGridCell("PBR", finPbr),

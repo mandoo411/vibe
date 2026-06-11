@@ -10,8 +10,10 @@ import {
   enrichEconomicPrevious,
   mapEconomicRow,
 } from "./economic-calendar-util.mjs";
-
-const FINNHUB_BASE_URL = "https://finnhub.io/api/v1";
+import {
+  fetchEconomicCalendar,
+  fetchInvestingEarningsCalendar,
+} from "./investing-calendar.mjs";
 const RSS_SOURCES = [
   { url: "https://www.mk.co.kr/rss/30100041/", name: "매일경제" },
   { url: "https://www.yna.co.kr/rss/economy.xml", name: "연합뉴스" },
@@ -378,24 +380,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchJson(url) {
-  const res = await fetch(url, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "TotalMoneyAI/1.0",
-    },
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`Finnhub HTTP ${res.status}: ${text.slice(0, 300)}`);
-  }
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(`Invalid JSON from Finnhub: ${text.slice(0, 300)}`);
-  }
-}
-
 function detectHtmlCharset(contentType, htmlSnippet) {
   const fromHeader = String(contentType || "").match(/charset=([^;]+)/i);
   if (fromHeader) return fromHeader[1].trim().toLowerCase();
@@ -450,9 +434,9 @@ function normalizeEconomic(data, { minDate } = {}) {
     .map((row) => ({ ...row, impact: "high", importance: 3 }));
 }
 
-function normalizeEarnings(data) {
-  const rows = Array.isArray(data?.earningsCalendar) ? data.earningsCalendar : [];
-  return rows
+function normalizeEarnings(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  return list
     .map((row) => ({
       date: String(row.date || "").slice(0, 10),
       symbol: String(row.symbol || "").trim().toUpperCase(),
@@ -642,6 +626,22 @@ function parseClaudeJson(text) {
   return JSON.parse(body.slice(start, end + 1));
 }
 
+async function fetchEconomicCalendarMerged(today, to) {
+  const rows = await fetchEconomicCalendar(today, to);
+  return mergeEconomicResponses({ economicCalendar: rows });
+}
+
+async function fetchEarningsCalendarSafe(from, to) {
+  try {
+    return await fetchInvestingEarningsCalendar(from, to);
+  } catch (error) {
+    console.log(
+      `❌ Investing 실적캘린더 실패: ${error instanceof Error ? error.message : error}`
+    );
+    return [];
+  }
+}
+
 async function analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news }) {
   const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
   const payload = { economicCalendar, earningsCalendar, krIPO, krEarnings, news };
@@ -678,41 +678,29 @@ ${JSON.stringify(payload).slice(0, 60000)}`,
 }
 
 async function main() {
-  const token = requireEnv("FINNHUB_API_KEY");
   const today = seoulYmd();
   const to = addDaysYmd(today, 14);
   const historyFrom = addDaysYmd(today, -90);
-  const yesterday = addDaysYmd(today, -1);
 
-  const economicForwardUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
-  economicForwardUrl.searchParams.set("from", today);
-  economicForwardUrl.searchParams.set("to", to);
-  economicForwardUrl.searchParams.set("token", token);
-
-  const economicHistoryUrl = new URL(`${FINNHUB_BASE_URL}/calendar/economic`);
-  economicHistoryUrl.searchParams.set("from", historyFrom);
-  economicHistoryUrl.searchParams.set("to", yesterday);
-  economicHistoryUrl.searchParams.set("token", token);
-
-  const earningsUrl = new URL(`${FINNHUB_BASE_URL}/calendar/earnings`);
-  earningsUrl.searchParams.set("from", today);
-  earningsUrl.searchParams.set("to", to);
-  earningsUrl.searchParams.set("token", token);
-
-  const [economicForwardRaw, economicHistoryRaw, earningsRaw, news, krIPO, krEarnings] = await Promise.all([
-    fetchJson(economicForwardUrl),
-    historyFrom <= yesterday ? fetchJson(economicHistoryUrl) : Promise.resolve({ economicCalendar: [] }),
-    fetchJson(earningsUrl),
+  const [economicMerged, earningsRaw, news, krIPO, krEarnings] = await Promise.all([
+    fetchEconomicCalendarMerged(today, to),
+    fetchEarningsCalendarSafe(today, to),
     fetchKoreanNews(),
     fetchKRIPO(today, to),
     fetchKREarnings(today, to),
   ]);
 
-  const economicMerged = mergeEconomicResponses(economicHistoryRaw, economicForwardRaw);
   const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: today });
   console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
   const earningsCalendar = normalizeEarnings(earningsRaw);
-  const analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news });
+  console.log(`미국 실적 ${earningsCalendar.length}건 (워치리스트 필터 후)`);
+
+  let analysis = { topEvents: [], marketImpacts: [], watchEarnings: [] };
+  try {
+    analysis = await analyzeWithClaude({ economicCalendar, earningsCalendar, krIPO, krEarnings, news });
+  } catch (error) {
+    console.log(`❌ Claude 분석 실패: ${error instanceof Error ? error.message : error}`);
+  }
 
   const data = {
     meta: {
@@ -721,7 +709,7 @@ async function main() {
       from: today,
       to,
       historyFrom,
-      source: "finnhub+38-detail+naver+claude",
+      source: "investing+forexfactory+38-detail+naver+claude",
     },
     economicCalendar,
     earningsCalendar,

@@ -1,4 +1,4 @@
-/** Finnhub 경제 캘린더 정규화·이전값 보강 (weekly-schedule / UI 공용) */
+/** 경제 캘린더 정규화·이전값 보강 (weekly-schedule / UI 공용) */
 
 export function economicRowsFromResponse(data) {
   if (Array.isArray(data)) return data;

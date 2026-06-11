@@ -36,6 +36,43 @@ const KR_CODES = {
 
 const KR_CODE_SET = new Set(Object.keys(KR_CODES));
 
+const EARNINGS_REPORT_RE =
+  /분기보고서|반기보고서|사업보고서|연결재무제표|별도재무제표|실적|영업이익|매출액|잠정|실적발표|공정공시|단일판매|공시/i;
+
+function normalizeCorpName(value) {
+  return String(value || "")
+    .replace(/\(주\)|㈜|주식회사/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+const KR_NAME_TO_CODE = Object.fromEntries(
+  Object.entries(KR_CODES).flatMap(([code, name]) => {
+    const base = normalizeCorpName(name);
+    const aliases = [base];
+    if (name === "NAVER") aliases.push("naver", "네이버");
+    if (name.includes("POSCO")) aliases.push("posco홀딩스", "포스코홀딩스");
+    if (name === "SK하이닉스") aliases.push("에스케이하이닉스");
+    return aliases.map((alias) => [alias, code]);
+  })
+);
+
+function resolveKrCode(row) {
+  const raw = String(row.stock_code || "").replace(/\D/g, "");
+  const code = raw ? raw.padStart(6, "0") : "";
+  if (code && code !== "000000" && KR_CODE_SET.has(code)) return code;
+  const corp = normalizeCorpName(row.corp_name);
+  if (KR_NAME_TO_CODE[corp]) return KR_NAME_TO_CODE[corp];
+  for (const [alias, mapped] of Object.entries(KR_NAME_TO_CODE)) {
+    if (corp.includes(alias) || alias.includes(corp)) return mapped;
+  }
+  return "";
+}
+
+function isEarningsReport(reportName) {
+  return EARNINGS_REPORT_RE.test(String(reportName || ""));
+}
+
 export function seoulYmd(date = new Date()) {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Asia/Seoul",
@@ -141,37 +178,51 @@ async function fetchDartKrEarnings(from, to) {
     console.log("⚠️ DART_API_KEY 없음 — 한국 실적 skip");
     return [];
   }
-  const url = new URL("https://opendart.fss.or.kr/api/list.json");
-  url.searchParams.set("crtfc_key", apiKey);
-  url.searchParams.set("bgn_de", ymdCompact(from));
-  url.searchParams.set("end_de", ymdCompact(to));
-  url.searchParams.set("pblntf_ty", "A");
-  url.searchParams.set("page_count", "100");
-  const res = await fetch(url, {
-    headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
-    signal: AbortSignal.timeout(30000),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`DART HTTP ${res.status}: ${text.slice(0, 200)}`);
-  const payload = JSON.parse(text);
-  if (payload.status !== "000") {
-    throw new Error(`DART API ${payload.status}: ${payload.message || "error"}`);
-  }
-  const list = Array.isArray(payload.list) ? payload.list : [];
-  const out = list
-    .map((row) => {
-      const code = String(row.stock_code || "").trim().padStart(6, "0");
-      if (!KR_CODE_SET.has(code)) return null;
+
+  const byKey = new Map();
+  let scanned = 0;
+  let totalPage = 1;
+
+  for (let page = 1; page <= totalPage && page <= 30; page += 1) {
+    const url = new URL("https://opendart.fss.or.kr/api/list.json");
+    url.searchParams.set("crtfc_key", apiKey);
+    url.searchParams.set("bgn_de", ymdCompact(from));
+    url.searchParams.set("end_de", ymdCompact(to));
+    url.searchParams.set("page_no", String(page));
+    url.searchParams.set("page_count", "100");
+
+    const res = await fetch(url, {
+      headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
+      signal: AbortSignal.timeout(30000),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`DART HTTP ${res.status}: ${text.slice(0, 200)}`);
+    const payload = JSON.parse(text);
+    if (payload.status !== "000") {
+      throw new Error(`DART API ${payload.status}: ${payload.message || "error"}`);
+    }
+
+    totalPage = Number(payload.total_page) || 1;
+    const list = Array.isArray(payload.list) ? payload.list : [];
+    scanned += list.length;
+
+    for (const row of list) {
+      const code = resolveKrCode(row);
+      if (!code) continue;
+      const reportName = String(row.report_nm || "").trim();
+      if (!isEarningsReport(reportName)) continue;
       const rcept = String(row.rcept_dt || "");
-      const date = rcept.length === 8
-        ? `${rcept.slice(0, 4)}-${rcept.slice(4, 6)}-${rcept.slice(6, 8)}`
-        : "";
-      if (!date) return null;
-      return {
+      const date =
+        rcept.length === 8
+          ? `${rcept.slice(0, 4)}-${rcept.slice(4, 6)}-${rcept.slice(6, 8)}`
+          : "";
+      if (!date) continue;
+      const item = {
         date,
         code,
+        symbol: code,
         name: KR_CODES[code] || String(row.corp_name || "").trim(),
-        reportName: String(row.report_nm || "").trim(),
+        reportName,
         hour: "",
         epsEstimate: null,
         epsActual: null,
@@ -180,9 +231,14 @@ async function fetchDartKrEarnings(from, to) {
         core: true,
         market: "KR",
       };
-    })
-    .filter(Boolean);
-  console.log(`✅ DART 한국 실적 ${from}~${to} (${out.length}건)`);
+      byKey.set(`${date}|${code}|${reportName}`, item);
+    }
+
+    if (!list.length) break;
+  }
+
+  const out = [...byKey.values()];
+  console.log(`✅ DART 한국 실적 ${from}~${to} (${out.length}건, ${scanned}건 스캔)`);
   return out;
 }
 

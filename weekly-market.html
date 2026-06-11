@@ -136,17 +136,6 @@
           <div class="week-panels" id="week-panels"></div>
         </section>
 
-        <section class="schedule-card" aria-labelledby="ai-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker tm-claude-kicker">Claude AI</p>
-              <h2 class="section-title" id="ai-title">Claude AI 주간 분석</h2>
-            </div>
-          </div>
-          <div class="analysis-grid" id="analysis-grid" hidden></div>
-          <p class="analysis-placeholder" id="analysis-placeholder">매주 월요일 오전 업데이트</p>
-        </section>
-
         <section class="schedule-card schedule-card--earnings" aria-labelledby="earnings-title">
           <div class="section-head">
             <div>
@@ -159,6 +148,17 @@
             <button type="button" class="earnings-market-tab" role="tab" aria-selected="false" data-market="kr">한국</button>
           </div>
           <div class="earnings-section-body" id="earnings-section-body"></div>
+        </section>
+
+        <section class="schedule-card" aria-labelledby="ai-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker tm-claude-kicker">Claude AI</p>
+              <h2 class="section-title" id="ai-title">Claude AI 주간 분석</h2>
+            </div>
+          </div>
+          <div class="analysis-grid" id="analysis-grid" hidden></div>
+          <p class="analysis-placeholder" id="analysis-placeholder">매주 월요일 오전 업데이트</p>
         </section>
         </div>
 
@@ -967,7 +967,11 @@
           const market = state.earningsMarket;
           const rows = (market === "kr" ? state.earningsData?.kr : state.earningsData?.us) || [];
           if (!rows.length) {
-            body.innerHTML = '<p class="empty-text">이번 주 주요 실적 발표 없음</p>';
+            const msg =
+              market === "kr"
+                ? "이번 주 한국 실적·공시 일정 없음 (DART 동기화 후 표시)"
+                : "이번 주 미국 실적 발표 없음 (FMP 동기화 후 표시)";
+            body.innerHTML = `<p class="empty-text">${escapeHtml(msg)}</p>`;
             return;
           }
           const grouped = rows.reduce((acc, row) => {
@@ -1239,6 +1243,18 @@
             ]);
             state.data = normalizeScheduleData(schedule);
             state.earningsData = earnings;
+            const usCount = earnings?.us?.length || 0;
+            const krCount = earnings?.kr?.length || 0;
+            if (!usCount && krCount) state.earningsMarket = "kr";
+            else if (usCount && !krCount) state.earningsMarket = "us";
+            const krTab = $("earnings-market-tabs")?.querySelector('[data-market="kr"]');
+            const usTab = $("earnings-market-tabs")?.querySelector('[data-market="us"]');
+            if (krTab && usTab) {
+              krTab.classList.toggle("is-active", state.earningsMarket === "kr");
+              usTab.classList.toggle("is-active", state.earningsMarket === "us");
+              krTab.setAttribute("aria-selected", state.earningsMarket === "kr" ? "true" : "false");
+              usTab.setAttribute("aria-selected", state.earningsMarket === "us" ? "true" : "false");
+            }
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;

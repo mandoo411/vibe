@@ -952,12 +952,17 @@ a:hover {
 
 .schedule-filter.is-active {
   border-color: transparent;
-  background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
+  background: var(--gradient-primary, linear-gradient(135deg, #07264b 0%, #0f8387 100%));
   color: #fff;
 }
 
 [data-theme="dark"] .schedule-filter {
   border-color: color-mix(in srgb, var(--border) 80%, #fff 8%);
+}
+
+[data-theme="dark"] .schedule-filter.is-active {
+  background: linear-gradient(135deg, #0a3040 0%, #0f8387 100%);
+  color: #fff;
 }
 
 .time-cell {
@@ -969,7 +974,11 @@ a:hover {
 .countdown {
   font-size: 11px;
   font-weight: 600;
-  color: #7c3aed;
+  color: #0f8387;
+}
+
+[data-theme="dark"] .countdown {
+  color: #5eead4;
 }
 
 .countdown--done {
@@ -1072,9 +1081,15 @@ a:hover {
 }
 
 .earnings-market-tab.is-active {
-  border-color: var(--accent-brand, #0f8387);
-  color: var(--accent-brand, #0f8387);
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent);
+  border-color: #0f8387;
+  color: #0f8387;
+  background: color-mix(in srgb, #0f8387 12%, transparent);
+}
+
+[data-theme="dark"] .earnings-market-tab.is-active {
+  border-color: #5eead4;
+  color: #5eead4;
+  background: color-mix(in srgb, #0f8387 22%, transparent);
 }
 
 .earnings-section-body {
@@ -1130,8 +1145,13 @@ a:hover {
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
-  background: color-mix(in srgb, #7c3aed 14%, transparent);
-  color: #7c3aed;
+  background: color-mix(in srgb, #0f8387 14%, transparent);
+  color: #0f8387;
+}
+
+[data-theme="dark"] .earnings-hour-badge {
+  background: color-mix(in srgb, #0f8387 24%, transparent);
+  color: #5eead4;
 }
 
 .earnings-card__metrics {

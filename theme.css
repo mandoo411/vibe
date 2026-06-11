@@ -422,3 +422,43 @@ body {
 [data-theme="light"] .tm-tv-chart-shell:fullscreen {
   background: #ffffff;
 }
+
+/* 모바일·iOS: Fullscreen API 미지원 시 CSS 전체화면 폴백 */
+.tm-tv-chart-shell--expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border-radius: 0;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0)
+    env(safe-area-inset-left, 0);
+  background: var(--body-bg, #131722);
+}
+.tm-tv-chart-shell--expanded .crypto-tv-widget,
+.tm-tv-chart-shell--expanded .us-tv-widget,
+.tm-tv-chart-shell--expanded .realtime-tv-widget,
+.tm-tv-chart-shell--expanded .ai-tv-widget {
+  flex: 1 1 auto;
+  width: 100%;
+  height: auto !important;
+  min-height: 0;
+}
+[data-theme="light"] .tm-tv-chart-shell--expanded {
+  background: #ffffff;
+}
+html.tm-tv-chart-fs-lock,
+html.tm-tv-chart-fs-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+@media (max-width: 768px) {
+  .tm-tv-fullscreen-btn {
+    min-height: 36px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+}

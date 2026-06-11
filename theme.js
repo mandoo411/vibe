@@ -172,6 +172,106 @@
     });
   }
 
+  function chartShellFullscreenActive(shell) {
+    const nativeEl =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement;
+    return nativeEl === shell || shell.classList.contains("tm-tv-chart-shell--expanded");
+  }
+
+  function setChartFullscreenBtn(btn, on) {
+    if (!btn) return;
+    btn.textContent = on ? "전체화면 닫기" : "전체화면";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function rememberChartShellAnchor(shell) {
+    if (shell.__tmFsAnchor) return;
+    shell.__tmFsAnchor = { parent: shell.parentNode, next: shell.nextSibling };
+  }
+
+  function restoreChartShellAnchor(shell) {
+    const anchor = shell.__tmFsAnchor;
+    if (!anchor || !anchor.parent) return;
+    if (anchor.next && anchor.next.parentNode === anchor.parent) {
+      anchor.parent.insertBefore(shell, anchor.next);
+    } else {
+      anchor.parent.appendChild(shell);
+    }
+  }
+
+  function lockChartPageScroll(lock) {
+    document.documentElement.classList.toggle("tm-tv-chart-fs-lock", !!lock);
+  }
+
+  function enterChartExpandedFullscreen(shell, btn) {
+    rememberChartShellAnchor(shell);
+    document.body.appendChild(shell);
+    shell.classList.add("tm-tv-chart-shell--expanded");
+    lockChartPageScroll(true);
+    setChartFullscreenBtn(btn, true);
+  }
+
+  function exitChartExpandedFullscreen(shell, btn) {
+    shell.classList.remove("tm-tv-chart-shell--expanded");
+    restoreChartShellAnchor(shell);
+    if (!document.querySelector(".tm-tv-chart-shell--expanded")) {
+      lockChartPageScroll(false);
+    }
+    setChartFullscreenBtn(btn, false);
+  }
+
+  async function enterChartFullscreen(shell, btn) {
+    const req = shell.requestFullscreen || shell.webkitRequestFullscreen || shell.msRequestFullscreen;
+    if (req && document.fullscreenEnabled !== false) {
+      try {
+        await req.call(shell);
+        setChartFullscreenBtn(btn, true);
+        return;
+      } catch (_) {
+        /* iOS·일부 모바일: div 전체화면 미지원 → CSS 폴백 */
+      }
+    }
+    enterChartExpandedFullscreen(shell, btn);
+  }
+
+  function exitChartFullscreen(shell, btn) {
+    const nativeEl =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement;
+    if (nativeEl === shell) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      if (exit) exit.call(document);
+      return;
+    }
+    if (shell.classList.contains("tm-tv-chart-shell--expanded")) {
+      exitChartExpandedFullscreen(shell, btn);
+    }
+  }
+
+  function onChartNativeFullscreenChange(shell, btn) {
+    const nativeEl =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement;
+    const on = nativeEl === shell;
+    setChartFullscreenBtn(btn, on);
+    if (!on && shell.classList.contains("tm-tv-chart-shell--expanded")) return;
+    if (!on) lockChartPageScroll(false);
+  }
+
+  if (!window.__tmTvChartFsEscapeWired) {
+    window.__tmTvChartFsEscapeWired = true;
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      const expanded = document.querySelector(".tm-tv-chart-shell--expanded");
+      if (!expanded) return;
+      exitChartExpandedFullscreen(expanded, expanded.querySelector(".tm-tv-fullscreen-btn"));
+    });
+  }
+
   function wireTradingViewChartTools(root) {
     const host = root && root.querySelector ? root : document;
     host.querySelectorAll(".tm-tv-chart-shell").forEach((shell) => {
@@ -182,16 +282,14 @@
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (document.fullscreenElement === shell) {
-          document.exitFullscreen?.();
+        if (chartShellFullscreenActive(shell)) {
+          exitChartFullscreen(shell, btn);
           return;
         }
-        shell.requestFullscreen?.();
+        enterChartFullscreen(shell, btn);
       });
-      shell.addEventListener("fullscreenchange", () => {
-        const on = document.fullscreenElement === shell;
-        btn.textContent = on ? "전체화면 닫기" : "전체화면";
-      });
+      shell.addEventListener("fullscreenchange", () => onChartNativeFullscreenChange(shell, btn));
+      shell.addEventListener("webkitfullscreenchange", () => onChartNativeFullscreenChange(shell, btn));
     });
   }
 

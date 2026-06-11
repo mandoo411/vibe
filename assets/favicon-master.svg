@@ -4,15 +4,10 @@
       <stop offset="0%" stop-color="#07264b"/>
       <stop offset="100%" stop-color="#0f8387"/>
     </linearGradient>
-    <linearGradient id="tm" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#f4f8fc"/>
-      <stop offset="100%" stop-color="#c5d4e6"/>
-    </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <g transform="translate(116 155) scale(3.89)" fill="url(#tm)">
-    <rect x="2" y="2" width="34" height="9" rx="1"/>
-    <rect x="10.5" y="11" width="9" height="39" rx="0.8"/>
-    <path d="M19.5 11h9L38 29 47.5 11H56.5V50H47.5V23L38 39 28.5 23V50H19.5V11z"/>
-  </g>
+  <rect width="512" height="512" fill="#07264b"/>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle"
+    font-family="Arial Black, sans-serif"
+    font-size="352" font-weight="900" fill="#f59e0b">T</text>
 </svg>

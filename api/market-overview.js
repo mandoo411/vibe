@@ -12,7 +12,7 @@ let memoryCache = { at: 0, data: null, promise: null };
 
 const YAHOO_DEFS = [
   { id: "kospi200", symbol: "^KS200", name: "코스피 200", bucket: "korea" },
-  { id: "ewy", symbol: "EWY", name: "한국 ETF (EWY)", bucket: "korea", hint: "미국상장·야간 한국 방향성" },
+  { id: "ewy", symbol: "EWY", name: "한국 ETF (EWY)", bucket: "korea" },
   { id: "sp500", symbol: "^GSPC", name: "S&P 500", bucket: "us" },
   { id: "nasdaq", symbol: "^IXIC", name: "나스닥", bucket: "us" },
   { id: "dow", symbol: "^DJI", name: "다우존스", bucket: "us" },

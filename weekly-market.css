@@ -545,7 +545,7 @@ a:hover {
     margin: 0 0 6px;
     font-size: 12px;
     letter-spacing: 2px;
-    color: #6366f1;
+    color: var(--accent-brand);
     font-weight: 700;
   }
 
@@ -782,7 +782,7 @@ a:hover {
 }
 
 .dot--economic {
-  background: #3b82f6;
+  background: var(--accent-brand);
 }
 
 .dot--earnings {

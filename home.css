@@ -1,7 +1,7 @@
 ﻿/* TotalMoney AI ????由щ뵒?먯씤 */
 body.page-home-v2 {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f4f6ff;
+  background: var(--bg-secondary);
   color: #111;
   margin: 0;
   --home-brand-gradient: var(--gradient-primary);
@@ -23,7 +23,7 @@ body.page-home-v2 {
 
 @media (min-width: 769px) {
   html[data-theme="light"] .page-home-v2 .home-wrap {
-    background: #f4f6ff;
+    background: var(--bg-secondary);
     box-shadow: none;
   }
 }
@@ -34,8 +34,8 @@ body.page-home-v2 {
   gap: 10px;
   min-height: 60px;
   padding: 10px 32px 10px 24px;
-  background: #f5f7ff;
-  border-bottom: 1px solid #e8ecff;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-brand) 12%, var(--border));
   position: sticky;
   top: 0;
   z-index: 100;
@@ -109,7 +109,7 @@ body.page-home-v2 {
 
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 @media (min-width: 769px) {
@@ -119,8 +119,8 @@ body.page-home-v2 {
 }
 
 .home-nav__link[aria-current="page"] {
-  background: #eef1ff;
-  color: #3339bf;
+  background: var(--bg-tertiary);
+  color: var(--accent-brand);
 }
 
 .home-nav__home-btn {
@@ -131,34 +131,34 @@ body.page-home-v2 {
   border-radius: 10px;
   justify-content: center;
   background: #ffffff;
-  border: 1px solid rgba(51, 57, 191, 0.18);
-  color: #3339bf;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  border: 1px solid rgba(15, 131, 135, 0.18);
+  color: var(--accent-brand);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
 }
 
 .home-nav__home-btn:hover {
-  background: #eef1ff;
-  border-color: rgba(51, 57, 191, 0.35);
-  color: #3339bf;
-  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
+  background: var(--bg-tertiary);
+  border-color: rgba(15, 131, 135, 0.35);
+  color: var(--accent-brand);
+  box-shadow: 0 4px 12px rgba(15, 131, 135, 0.14);
 }
 
 .home-nav__link.home-nav__home-btn[aria-current="page"] {
   background: #ffffff;
-  color: #3339bf;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  color: var(--accent-brand);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
 }
 
 .home-nav__link.home-nav__home-btn[aria-current="page"]:hover {
-  background: #eef1ff;
-  color: #3339bf;
+  background: var(--bg-tertiary);
+  color: var(--accent-brand);
 }
 
 .home-nav__home-btn i {
   font-size: 17px;
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 .home-nav__theme {
@@ -166,7 +166,7 @@ body.page-home-v2 {
   height: 36px;
   min-width: 36px;
   padding: 0;
-  border: 1px solid rgba(51, 57, 191, 0.18);
+  border: 1px solid rgba(15, 131, 135, 0.18);
   border-radius: 50%;
   background: #ffffff;
   color: #ffd84d;
@@ -176,14 +176,14 @@ body.page-home-v2 {
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .home-nav__theme:hover {
-  background: #eef1ff;
-  border-color: rgba(51, 57, 191, 0.35);
-  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
+  background: var(--bg-tertiary);
+  border-color: rgba(15, 131, 135, 0.35);
+  box-shadow: 0 4px 12px rgba(15, 131, 135, 0.14);
 }
 
 .home-nav__theme i,
@@ -275,8 +275,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: none;
   margin-left: auto;
   border: none;
-  background: rgba(51, 57, 191, 0.1);
-  color: #3339bf;
+  background: rgba(15, 131, 135, 0.1);
+  color: var(--accent-brand);
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -555,7 +555,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-hero__row-pct.is-down {
-  color: #60a5fa;
+  color: var(--down-color);
 }
 
 .home-shortcuts {
@@ -621,8 +621,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
   display: flex;
   gap: 8px;
   padding: 10px 24px;
-  background: #fafbff;
-  border-bottom: 1px solid #eef0ff;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--bg-tertiary);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -638,8 +638,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
   padding: 6px 14px;
   border-radius: 20px;
   background: #fff;
-  border: 1px solid #dde3ff;
-  color: #3339bf;
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 18%, var(--border));
+  color: var(--accent-brand);
   font-size: 11px;
   font-weight: 600;
   text-decoration: none;
@@ -647,7 +647,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-shortcuts__pill:hover {
-  background: #3339bf;
+  background: var(--accent-brand);
   color: #fff;
 }
 
@@ -657,7 +657,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
   align-items: start;
   gap: 14px;
   padding: 16px var(--shell-pad-inline-end, 32px) 32px var(--shell-pad-inline, 24px);
-  background: #f4f6ff;
+  background: var(--bg-secondary);
 }
 
 .home-section {
@@ -683,7 +683,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 .home-section__more {
   font-size: 11px;
-  color: #3339bf;
+  color: var(--accent-brand);
   text-decoration: none;
 }
 
@@ -1005,7 +1005,7 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
 }
 
 .home-tr:hover {
-  background: #f8f9ff;
+  background: var(--bg-secondary);
   margin: 0 -14px;
   padding: 7px 14px;
 }
@@ -1099,7 +1099,7 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
 }
 
 .home-tr__rank.is-top3 {
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 .home-tr__name {
@@ -1533,7 +1533,7 @@ body.page-home-v2 .home-tr__chg.is-down {
 }
 
 body.page-home-v2 .home-hero__row-pct.is-down {
-  color: #60a5fa;
+  color: var(--down-color);
 }
 
 /* Home KR realtime header colors */
@@ -1945,7 +1945,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     width: 3px;
     height: 16px;
     border-radius: 2px;
-    background: #3339bf;
+    background: var(--accent-brand);
     flex-shrink: 0;
   }
 
@@ -2223,7 +2223,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     width: 3px;
     height: 14px;
     border-radius: 2px;
-    background: #3339bf;
+    background: var(--accent-brand);
     flex-shrink: 0;
   }
 
@@ -2560,7 +2560,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active {
-    color: #3339bf;
+    color: var(--accent-brand);
     font-weight: 700;
   }
 
@@ -2573,7 +2573,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     width: 32px;
     height: 2px;
     border-radius: 0 0 2px 2px;
-    background: #3339bf;
+    background: var(--accent-brand);
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__icon {
@@ -2584,7 +2584,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active .tm-bottom-nav__icon {
-    color: #3339bf;
+    color: var(--accent-brand);
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item i {

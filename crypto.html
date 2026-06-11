@@ -308,13 +308,13 @@
         margin: 0 4px;
         background: white;
         color: #444;
-        border: 1px solid #dde3ff;
+        border: 1px solid color-mix(in srgb, var(--accent-brand) 18%, var(--border));
       }
       .crypto-page-btn.is-active {
         font-weight: 600;
-        background: #3339bf;
+        background: var(--accent-brand);
         color: white;
-        border-color: #3339bf;
+        border-color: var(--accent-brand);
       }
       .crypto-delta--up {
         color: #e24b4a;
@@ -382,7 +382,7 @@
         white-space: nowrap;
       }
       .mcap-tab.is-active {
-        background: #3339bf;
+        background: var(--accent-brand);
         color: #fff;
       }
       .crypto-delta--flat {
@@ -534,9 +534,9 @@
         color: #aaa;
       }
       [data-theme="dark"] .crypto-page-btn.is-active {
-        background: #3339bf;
+        background: var(--accent-brand);
         color: #fff;
-        border-color: #3339bf;
+        border-color: var(--accent-brand);
       }
       [data-theme="dark"] .crypto-currency-btn {
         color: var(--text-muted);

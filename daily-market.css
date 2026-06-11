@@ -276,7 +276,7 @@ body.tm-mobile-calendar-open::before {
   border-radius: 10px;
   padding: 6px 14px;
   font-size: 12px;
-  color: var(--accent-secondary, #3339bf);
+  color: var(--accent-secondary, var(--accent-brand));
   cursor: pointer;
   font-family: var(--font-mono);
   font-weight: 600;
@@ -364,7 +364,7 @@ body.tm-mobile-calendar-open::before {
 .day-prep .loading-bar-inner {
   width: 60px;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--accent-secondary, #3339bf), transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-secondary, var(--accent-brand)), transparent);
   border-radius: 4px;
 }
 

@@ -101,13 +101,13 @@ body.page-tm-v2 {
   --bg-primary: #ffffff;
   --bg-secondary: #f0f3fa;
   --bg-tertiary: #e8ecf5;
-  --page-body-top: #eff6ff;
-  --page-body-glow: rgba(59, 130, 246, 0.14);
-  --page-body-glow-soft: rgba(99, 102, 241, 0.12);
+  --page-body-top: #f0f7f7;
+  --page-body-glow: rgba(15, 131, 135, 0.10);
+  --page-body-glow-soft: rgba(7, 38, 75, 0.06);
   --text-primary: #131722;
   --text-secondary: #5d606b;
-  --accent: #2962ff;
-  --accent-secondary: #26a69a;
+  --accent: #0f8387;
+  --accent-secondary: #0a6b6e;
   /* 국내 주식 관례: 상승 빨강 · 하락 초록 */
   --up-color: #e24b4a;
   --up: var(--up-color);

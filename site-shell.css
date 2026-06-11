@@ -3,7 +3,7 @@
 body.page-tm-v2,
 body.page-home-v2 {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f4f6ff;
+  background: var(--bg-secondary);
   color: var(--text-primary, #111);
   margin: 0;
   --home-brand-gradient: var(--gradient-primary);
@@ -40,8 +40,8 @@ body.page-home-v2 {
   gap: 10px;
   min-height: 60px;
   padding: 10px var(--shell-pad-inline-end, 32px) 10px var(--shell-pad-inline, 24px);
-  background: var(--bg-secondary, #f5f7ff);
-  border-bottom: 1px solid var(--border, #e8ecff);
+  background: var(--bg-secondary, var(--bg-secondary));
+  border-bottom: 1px solid var(--border, color-mix(in srgb, var(--accent-brand) 12%, var(--border)));
   position: sticky;
   top: 0;
   z-index: 100;
@@ -232,7 +232,7 @@ body.page-home-v2 {
 
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
-  color: var(--accent, #3339bf);
+  color: var(--accent, var(--accent-brand));
 }
 
 .home-nav__link[aria-current="page"] {
@@ -393,34 +393,34 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   border-radius: 10px;
   justify-content: center;
   background: #ffffff;
-  border: 1px solid rgba(51, 57, 191, 0.18);
-  color: #3339bf;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  border: 1px solid rgba(15, 131, 135, 0.18);
+  color: var(--accent-brand);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
   flex-shrink: 0;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s;
 }
 
 .home-nav__home-btn:hover {
-  background: #eef1ff;
-  border-color: rgba(51, 57, 191, 0.35);
-  color: #3339bf;
-  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
+  background: var(--bg-tertiary);
+  border-color: rgba(15, 131, 135, 0.35);
+  color: var(--accent-brand);
+  box-shadow: 0 4px 12px rgba(15, 131, 135, 0.14);
 }
 
 .home-nav__link.home-nav__home-btn[aria-current="page"] {
   background: #ffffff;
-  color: #3339bf;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  color: var(--accent-brand);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
 }
 
 .home-nav__link.home-nav__home-btn[aria-current="page"]:hover {
-  background: #eef1ff;
-  color: #3339bf;
+  background: var(--bg-tertiary);
+  color: var(--accent-brand);
 }
 
 .home-nav__home-btn i {
   font-size: 17px;
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 .home-nav__theme {
@@ -428,7 +428,7 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   height: 36px;
   min-width: 36px;
   padding: 0;
-  border: 1px solid rgba(51, 57, 191, 0.18);
+  border: 1px solid rgba(15, 131, 135, 0.18);
   border-radius: 50%;
   background: #ffffff;
   color: #ffd84d;
@@ -438,14 +438,14 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(51, 57, 191, 0.1);
+  box-shadow: 0 2px 8px rgba(15, 131, 135, 0.1);
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .home-nav__theme:hover {
-  background: #eef1ff;
-  border-color: rgba(51, 57, 191, 0.35);
-  box-shadow: 0 4px 12px rgba(51, 57, 191, 0.14);
+  background: var(--bg-tertiary);
+  border-color: rgba(15, 131, 135, 0.35);
+  box-shadow: 0 4px 12px rgba(15, 131, 135, 0.14);
 }
 
 .home-nav__theme i,
@@ -574,8 +574,8 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 /* Claude 텍스트 브랜딩 (로고 없음, 1줄 표기) */
 .tm-claude-card {
   border-radius: 10px;
-  background: linear-gradient(135deg, #fafbff, #f0f2ff);
-  border: 1px solid #e0e4ff;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+  border: 1px solid color-mix(in srgb, var(--accent-brand) 14%, var(--border));
   padding: 12px 14px;
 }
 
@@ -739,17 +739,17 @@ button.tm-nav-sheet__cell {
 
 .tm-nav-sheet__cell i {
   font-size: 18px;
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 .tm-nav-sheet__cell.is-active {
-  background: #eef1ff;
-  border-color: #3339bf;
-  box-shadow: 0 0 0 1px #3339bf;
+  background: var(--bg-tertiary);
+  border-color: var(--accent-brand);
+  box-shadow: 0 0 0 1px var(--accent-brand);
 }
 
 .tm-nav-sheet__cell.is-active i {
-  color: #3339bf;
+  color: var(--accent-brand);
 }
 
 body.tm-nav-sheet-open {
@@ -760,8 +760,8 @@ body.tm-nav-sheet-open {
   display: none;
   margin-left: auto;
   border: none;
-  background: rgba(51, 57, 191, 0.1);
-  color: #3339bf;
+  background: rgba(15, 131, 135, 0.1);
+  color: var(--accent-brand);
   width: 36px;
   height: 36px;
   border-radius: 8px;
@@ -1059,7 +1059,7 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.2;
-  color: var(--accent, #2962ff);
+  color: var(--accent-brand);
 }
 
 .page-tm-v2 .section-kicker {
@@ -1071,7 +1071,7 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 .page-tm-v2 .crypto-section__title {
   margin: 0 0 10px;
   font-weight: 600;
-  color: var(--accent-bright, var(--accent, #2962ff));
+  color: var(--accent-bright, var(--accent-brand));
 }
 
 [data-theme="dark"] .page-tm-v2 .masthead.masthead--title-only .masthead__kicker {
@@ -1081,12 +1081,12 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 [data-theme="dark"] .page-tm-v2 .section-kicker,
 [data-theme="dark"] .page-tm-v2 .us-section__title,
 [data-theme="dark"] .page-tm-v2 .crypto-section__title {
-  color: var(--accent, #5560e8);
+  color: var(--accent, var(--accent-brand));
 }
 
 [data-theme="dark"] .page-tm-v2 .us-section__title,
 [data-theme="dark"] .page-tm-v2 .crypto-section__title {
-  color: var(--accent-bright, #7788cc);
+  color: var(--accent-bright, var(--accent-brand));
 }
 
 /* 헤더(.home-nav) 하단선과 동일한 좌우 끝 — 타이틀·메타 등 텍스트만 안쪽 여백 */
@@ -1485,7 +1485,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   background: var(--bg-primary, #fff);
   border-radius: 20px;
   padding: 18px 16px;
-  box-shadow: 0 4px 16px rgba(51, 57, 191, 0.08), inset 0 1px 1px rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 16px rgba(15, 131, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 1);
   border: 0.5px solid rgba(200, 210, 255, 0.5);
 }
 
@@ -1521,8 +1521,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
   height: 20px;
   padding: 0 8px;
   border-radius: 999px;
-  background: rgba(74, 58, 255, 0.1);
-  color: #4a3aff;
+  background: rgba(15, 131, 135, 0.1);
+  color: var(--accent-brand);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.06em;
@@ -1590,7 +1590,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   margin-top: 12px;
   padding: 12px;
   border-radius: 14px;
-  background: #f6f7ff;
+  background: var(--bg-tertiary);
   border: 0.5px solid rgba(200, 210, 255, 0.6);
   color: var(--text-primary, #131722);
   font-size: 13px;
@@ -1645,8 +1645,8 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 .ai-search-popular__chip:hover {
-  border-color: var(--accent, #3339bf);
-  color: var(--accent, #3339bf);
+  border-color: var(--accent, var(--accent-brand));
+  color: var(--accent, var(--accent-brand));
 }
 
 [data-theme="dark"] .ai-search-popular__chip {
@@ -2066,7 +2066,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .tm-bottom-nav__item.is-active {
-    color: var(--accent, #3339bf);
+    color: var(--accent, var(--accent-brand));
   }
 
   .tm-bottom-nav--v2 {
@@ -2107,7 +2107,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item.is-active {
-    color: #3339bf;
+    color: var(--accent-brand);
     font-weight: 700;
   }
 
@@ -2131,7 +2131,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item.is-active .tm-bottom-nav__icon {
-    color: #3339bf;
+    color: var(--accent-brand);
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item > i {
@@ -2227,18 +2227,18 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
   html[data-theme="light"] body.page-tm-v2,
   html[data-theme="light"] body.page-home-v2 {
-    background: #f4f6ff;
+    background: var(--bg-secondary);
     background-image: none;
   }
 
   html[data-theme="light"] .tm-wrap,
   html[data-theme="light"] .home-wrap {
-    background: #f4f6ff;
+    background: var(--bg-secondary);
     box-shadow: none;
   }
 
   html[data-theme="light"] .home-main {
-    background: #f4f6ff;
+    background: var(--bg-secondary);
   }
 }
 

@@ -655,7 +655,7 @@
 
     const specs = [
       [chartData.ma20, "#ef4444"],
-      [chartData.ma60, "#3b82f6"],
+      [chartData.ma60, "#0f8387"],
       [chartData.ma120, "#22c55e"],
       [chartData.ma200, "#f97316"],
     ];
@@ -713,7 +713,7 @@
       `</div>` +
       `<div class="ai-chart-legend">` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#ef4444"></i>20일</span>` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#3b82f6"></i>60일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#0f8387"></i>60일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#22c55e"></i>120일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#f97316"></i>200일</span>` +
       `</div>` +

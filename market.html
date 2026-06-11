@@ -231,8 +231,8 @@
         function fearGreedMeta(score) {
           const n = Number(score);
           if (!Number.isFinite(n)) return { label: "—", color: "#9ca3af" };
-          if (n <= 25) return { label: "극단적 공포", color: "#3b82f6" };
-          if (n <= 45) return { label: "공포", color: "#3b82f6" };
+          if (n <= 25) return { label: "극단적 공포", color: "#07264b" };
+          if (n <= 45) return { label: "공포", color: "#0f8387" };
           if (n <= 55) return { label: "중립", color: "#9ca3af" };
           if (n <= 75) return { label: "탐욕", color: "#e24b4a" };
           return { label: "극단적 탐욕", color: "#e24b4a" };

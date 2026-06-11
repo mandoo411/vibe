@@ -171,8 +171,8 @@
 }
 
 .market-card__change--down {
-  color: #3b82f6;
-  background: #e8eeff;
+  color: var(--down-color);
+  background: color-mix(in srgb, var(--down-color) 12%, transparent);
 }
 
 .market-card__change--flat {
@@ -348,7 +348,7 @@
 }
 
 [data-theme="dark"] .market-card__change--down {
-  background: color-mix(in srgb, #3b82f6 18%, transparent);
+  background: color-mix(in srgb, var(--down-color) 18%, transparent);
 }
 
 [data-theme="dark"] .market-section__en {

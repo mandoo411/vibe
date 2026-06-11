@@ -898,6 +898,7 @@
           currentPage: 1,
           sortKey: "marketCap",
           sortDir: "desc",
+          sparksLoaded: false,
         };
 
         function $(id) {
@@ -1217,11 +1218,12 @@
           });
         }
 
-        async function fetchJson(action) {
+        async function fetchJson(action, params = {}) {
           const ctrl = new AbortController();
           const tid = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+          const qs = new URLSearchParams({ action, ...params });
           try {
-            const res = await fetch(`${API}?action=${encodeURIComponent(action)}`, {
+            const res = await fetch(`${API}?${qs.toString()}`, {
               cache: "no-store",
               signal: ctrl.signal,
             });
@@ -1474,7 +1476,7 @@
           try {
             const [globalPack, listingsPack, fearGreedPack] = await Promise.all([
               fetchJson("global"),
-              fetchJson("listings"),
+              fetchJson("listings", { sparks: "0" }),
               fetchJson("fear-greed"),
             ]);
             state.global = globalPack || {};
@@ -1509,6 +1511,28 @@
           }, POLL_MS);
         }
 
+        function deferIdle(fn) {
+          if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(fn, { timeout: 5000 });
+          } else {
+            window.setTimeout(fn, 2000);
+          }
+        }
+
+        async function loadListingsSparks() {
+          if (state.sparksLoaded) return;
+          try {
+            const pack = await fetchJson("listings", { sparks: "1" });
+            if (!pack || !Array.isArray(pack.coins) || !pack.coins.length) return;
+            state.coins = pack.coins;
+            sortCoinsByRank();
+            state.sparksLoaded = true;
+            renderTable();
+          } catch (e) {
+            console.warn("[crypto] sparklines", e);
+          }
+        }
+
         async function init() {
           wireCryptoTabs();
           wireTable();
@@ -1517,8 +1541,11 @@
           wirePagination();
           wireThemeChartRefresh();
           await refreshAll();
-          await refreshCryptoNews();
           startPolling();
+          deferIdle(() => {
+            loadListingsSparks().catch((e) => console.warn("[crypto] sparks", e));
+            refreshCryptoNews().catch((e) => console.warn("[crypto] news", e));
+          });
           setInterval(refreshCryptoNews, 30 * 60 * 1000);
         }
 

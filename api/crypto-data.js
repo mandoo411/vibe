@@ -184,8 +184,9 @@ async function fetchCoinGeckoSparklineMap() {
   return map;
 }
 
-async function fetchListings() {
-  return cached("listings:v2", async () => {
+async function fetchListings(includeSparks = true) {
+  const cacheKey = `listings:v3:${includeSparks ? "sparks" : "fast"}`;
+  return cached(cacheKey, async () => {
     const params = {
       limit: 400,
       start: 1,
@@ -194,7 +195,7 @@ async function fetchListings() {
     const [krwData, usdData, sparkMap] = await Promise.all([
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "KRW" }),
       cmcFetch("/v1/cryptocurrency/listings/latest", { ...params, convert: "USD" }),
-      fetchCoinGeckoSparklineMap(),
+      includeSparks ? fetchCoinGeckoSparklineMap() : Promise.resolve(new Map()),
     ]);
     const rows = Array.isArray(krwData.data) ? krwData.data : [];
     const usdById = new Map(
@@ -297,7 +298,8 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "listings") {
-      json(res, 200, await fetchListings());
+      const includeSparks = req.query && req.query.sparks !== "0";
+      json(res, 200, await fetchListings(includeSparks));
       return;
     }
     if (action === "fear-greed") {

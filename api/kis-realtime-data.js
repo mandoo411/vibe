@@ -32,6 +32,8 @@ const candleMemoryCache = new Map();
 /** market-cap / gainers 페이지별 응답 캐시 (KIS 연속조회 비용 절감) */
 const RANK_PAGE_CACHE_MS = Math.max(30_000, Number(process.env.KIS_RANK_PAGE_CACHE_MS) || 120_000);
 const rankPageCache = new Map();
+const META_CACHE_MS = 60_000;
+const metaCache = { index: null, indexAt: 0, session: null, sessionAt: 0 };
 
 function rankPageCacheGet(key) {
   const hit = rankPageCache.get(key);
@@ -739,18 +741,29 @@ async function buildNxtIntegratedTvTop100(candidateByCode) {
     .map((item, i) => finalizeRowQuoteFields({ ...item.row, rank: i + 1, volumeNxtIntegrated: true }));
 }
 
+function quoteOverlayNeeded(row) {
+  const base = finalizeRowQuoteFields(row);
+  const price = String(base.price || "").trim();
+  const vol = String(base.volume || "").trim();
+  const tv = Number(String(base.tradingValue || "").replace(/,/g, ""));
+  if (!price || !vol) return true;
+  return !Number.isFinite(tv) || tv <= 0;
+}
+
 /** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 */
 async function overlayNaverPriceLive(rows) {
   if (!rows || !rows.length) return [];
   return Promise.all(
     rows.map(async (r) => {
+      const base = finalizeRowQuoteFields(r);
+      if (!quoteOverlayNeeded(base)) return base;
       const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-      if (!/^\d{6}$/.test(code)) return finalizeRowQuoteFields(r);
+      if (!/^\d{6}$/.test(code)) return base;
       try {
-        return await rowWithNxtIntegratedVolume(code, r, null);
+        return await rowWithNxtIntegratedVolume(code, base, null);
       } catch (e) {
         console.warn("[kis-realtime-data] naver price overlay", code, e && e.message);
-        return finalizeRowQuoteFields(r);
+        return base;
       }
     })
   );
@@ -931,7 +944,7 @@ async function fetchTradingValuePage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   const all = await fetchNaverTradingValueTop100();
   const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
+  return slice.map((r) => finalizeRowQuoteFields(r));
 }
 
 /**
@@ -1524,18 +1537,32 @@ module.exports = async function handler(req, res) {
 
     /** NXT 전용 순위 API는 fid_cond_mrkt_div_code 1자 제한 등으로 미지원 — 클라이언트는 준비중 UI */
     if (action === "index") {
+      if (metaCache.index && Date.now() - metaCache.indexAt < META_CACHE_MS) {
+        json(res, 200, metaCache.index);
+        return;
+      }
       const [kospi, kosdaq] = await Promise.all([
         fetchIndexPrice("0001", "코스피"),
         fetchIndexPrice("1001", "코스닥"),
       ]);
-      json(res, 200, { indexes: [kospi, kosdaq] });
+      const payload = { indexes: [kospi, kosdaq] };
+      metaCache.index = payload;
+      metaCache.indexAt = Date.now();
+      json(res, 200, payload);
       return;
     }
 
     if (action === "session") {
+      if (metaCache.session && Date.now() - metaCache.sessionAt < META_CACHE_MS) {
+        json(res, 200, metaCache.session);
+        return;
+      }
       const marketTime = await fetchMarketTime();
       const clock = sessionLabelFromKst();
-      json(res, 200, { clock, marketTime });
+      const payload = { clock, marketTime };
+      metaCache.session = payload;
+      metaCache.sessionAt = Date.now();
+      json(res, 200, payload);
       return;
     }
 

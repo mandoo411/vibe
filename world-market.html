@@ -572,7 +572,7 @@
 
     <script>
       (() => {
-        const state = { type: "marketCap", openKey: null, rows: [] };
+        const state = { type: "marketCap", openKey: null, rows: [], allRows: null, sparksLoaded: false };
         const STORAGE_KEY_PREFIX = "tm-world-market:";
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
         const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
@@ -634,6 +634,40 @@
           if (state.type === "marketCap") return row.marketCap;
           if (state.type === "netIncome") return row.netIncome;
           return row.revenue;
+        }
+        function sortFieldFor(type) {
+          if (type === "netIncome") return "netIncome";
+          if (type === "revenue") return "revenue";
+          return "marketCap";
+        }
+        function metricSortValue(row, field) {
+          const primary = row[field];
+          if (primary != null && primary > 0) return primary;
+          return null;
+        }
+        function sortRowsClient(rows, type) {
+          const field = sortFieldFor(type);
+          return [...rows]
+            .sort((a, b) => {
+              const av = metricSortValue(a, field);
+              const bv = metricSortValue(b, field);
+              if (av == null && bv == null) return (a.name || "").localeCompare(b.name || "");
+              if (av == null) return 1;
+              if (bv == null) return -1;
+              if (bv !== av) return bv - av;
+              return (a.name || "").localeCompare(b.name || "");
+            })
+            .map((row, index) => {
+              const metric = metricSortValue(row, field);
+              return { ...row, rank: index + 1, value: metric };
+            });
+        }
+        function applyTabRows() {
+          if (state.allRows && state.allRows.length) {
+            state.rows = sortRowsClient(state.allRows, state.type);
+            return true;
+          }
+          return false;
         }
         function sparklineSvg(points, up) {
           if (!Array.isArray(points) || points.length < 2) return "";
@@ -793,28 +827,60 @@
             renderBody();
           });
         }
-        async function load() {
+        async function loadSparksBackground() {
+          if (state.sparksLoaded || isMobile()) return;
+          try {
+            const res = await fetch("/api/world-market?type=marketCap&sparks=1");
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !Array.isArray(data.rows) || !data.rows.length) return;
+            state.allRows = data.rows;
+            state.sparksLoaded = true;
+            const keepOpen = state.openKey;
+            applyTabRows();
+            state.openKey = keepOpen;
+            renderBody();
+          } catch (e) {
+            console.warn("[world-market] sparks", e);
+          }
+        }
+        function deferIdle(fn) {
+          if (typeof window.requestIdleCallback === "function") {
+            window.requestIdleCallback(fn, { timeout: 5000 });
+          } else {
+            window.setTimeout(fn, 2000);
+          }
+        }
+        async function load({ forceNetwork = false } = {}) {
           syncTabs();
           syncMobileTableLayout();
-          const cachedRows = readCachedRows(state.type);
-          if (cachedRows.length) {
-            state.rows = cachedRows;
+          if (!forceNetwork && applyTabRows()) {
             renderBody();
-          } else {
+            return;
+          }
+          const cachedRows = readCachedRows("marketCap");
+          if (cachedRows.length && !state.allRows) {
+            state.allRows = cachedRows;
+            applyTabRows();
+            renderBody();
+          } else if (!state.allRows || !state.allRows.length) {
             $("world-body").innerHTML = `<tr><td colspan="${colSpan()}" class="world-empty">불러오는 중…</td></tr>`;
           }
           try {
-            const res = await fetch(`/api/world-market?type=${encodeURIComponent(state.type)}`);
+            const res = await fetch("/api/world-market?type=marketCap&sparks=0");
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
             const keepOpen = state.openKey;
-            state.rows = Array.isArray(data.rows) ? data.rows : [];
+            state.allRows = Array.isArray(data.rows) ? data.rows : [];
             state.openKey = keepOpen;
-            writeCachedRows(state.type, state.rows);
+            applyTabRows();
+            writeCachedRows("marketCap", state.allRows);
             renderBody();
+            deferIdle(() => {
+              loadSparksBackground().catch((e) => console.warn("[world-market] sparks", e));
+            });
           } catch (error) {
-            if (cachedRows.length) {
-              state.rows = cachedRows;
+            if (state.allRows && state.allRows.length) {
+              applyTabRows();
               renderBody();
               return;
             }
@@ -826,12 +892,17 @@
           btn.addEventListener("click", () => {
             state.type = btn.dataset.type;
             state.openKey = null;
-            load();
+            syncTabs();
+            if (applyTabRows()) {
+              renderBody();
+              return;
+            }
+            load({ forceNetwork: true });
           });
         });
         wireTable();
         load();
-        setInterval(load, 5 * 60 * 1000);
+        setInterval(() => load({ forceNetwork: true }), 5 * 60 * 1000);
         window.matchMedia("(max-width: 768px)").addEventListener("change", () => {
           state.openKey = null;
           syncTabs();

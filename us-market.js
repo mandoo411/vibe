@@ -610,17 +610,27 @@
     renderRankTable();
   }
 
+  function deferIdle(fn) {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(() => fn(), { timeout: 4000 });
+    } else {
+      window.setTimeout(fn, 2500);
+    }
+  }
+
   async function prefetchOtherTabs() {
     const order = ["market-cap", "gainers", "volume"].filter((t) => t !== state.activeTab);
-    for (const tab of order) {
-      if (state.rowsByTab[tab]) continue;
-      try {
-        const pack = await fetchJson(TAB_CONFIG[tab].action);
-        state.rowsByTab[tab] = pack.stocks || [];
-      } catch (e) {
-        console.warn("[us-market] prefetch", tab, e);
-      }
-    }
+    await Promise.all(
+      order.map(async (tab) => {
+        if (state.rowsByTab[tab]) return;
+        try {
+          const pack = await fetchJson(TAB_CONFIG[tab].action);
+          state.rowsByTab[tab] = pack.stocks || [];
+        } catch (e) {
+          console.warn("[us-market] prefetch", tab, e);
+        }
+      })
+    );
   }
 
   async function refreshAll(force) {
@@ -632,7 +642,9 @@
         state.rowsByTab = {};
       }
       await loadActiveTab(force);
-      void prefetchOtherTabs();
+      deferIdle(() => {
+        prefetchOtherTabs().catch((e) => console.warn("[us-market] prefetch", e));
+      });
     } catch (e) {
       console.error("[us-market]", e);
       if (errEl) {

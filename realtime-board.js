@@ -2733,7 +2733,11 @@
     } finally {
       renderAll();
       startPolling();
-      prefetchOtherRankTabs();
+      const deferPrefetch =
+        typeof window.requestIdleCallback === "function"
+          ? (fn) => window.requestIdleCallback(fn, { timeout: 4000 })
+          : (fn) => window.setTimeout(fn, 2500);
+      deferPrefetch(() => prefetchOtherRankTabs());
       await tryConnectWs();
     }
   }

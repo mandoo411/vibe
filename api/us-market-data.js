@@ -659,21 +659,22 @@ async function fetchSectors() {
 
 async function fetchMarketCapLookup() {
   return cached("ranking:market-cap:lookup:v3", async () => {
-    const all = [];
-    for (const exchange of EXCHANGES) {
-      const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
-        AUTH: "",
-        CURR_GB: US_RANKING_CURRENCY,
-        EXCD: exchange,
-        KEYB: "",
-        VOL_RANG: "0",
-      });
-      const rows = outputRows(body, "output2").map((row, i) => ({
-        ...mapRankRow(row, all.length + i + 1),
-        exchange,
-      }));
-      all.push(...rows);
-    }
+    const batches = await Promise.all(
+      EXCHANGES.map(async (exchange) => {
+        const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
+          AUTH: "",
+          CURR_GB: US_RANKING_CURRENCY,
+          EXCD: exchange,
+          KEYB: "",
+          VOL_RANG: "0",
+        });
+        return outputRows(body, "output2").map((row, i) => ({
+          ...mapRankRow(row, i + 1),
+          exchange,
+        }));
+      })
+    );
+    const all = batches.flat();
     return all
       .filter((row) => row.ticker && row.price != null && row.marketCap != null)
       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
@@ -774,6 +775,17 @@ function isSuspiciouslyLowTradingValue(row) {
   return false;
 }
 
+/** 목록 응답용 — KIS 종목별 상세 조회 없이 랭킹 필드만 정리 */
+function liteEnrichRankRows(rows) {
+  return (rows || []).map((row) => ({
+    ...row,
+    name: resolveUsDisplayName(row.ticker, row.name),
+    tradingValue: resolveRowTradingValue(row),
+    changePoints:
+      row.changePoints != null ? row.changePoints : resolveChangePoints(row, row.price, row.changePct),
+  }));
+}
+
 async function enrichRankRows(rows) {
   let capByTicker = new Map();
   try {
@@ -817,20 +829,21 @@ async function fetchMergedRanking(
   { enrich = true, resort = false, pickCount = 50 } = {}
 ) {
   return cached(cacheKey, async () => {
-    const all = [];
-    for (const exchange of EXCHANGES) {
-      const body = await kisGet(path, trId, params(exchange));
-      const rows = outputRows(body, "output2").map((row, i) => ({
-        ...mapRankRow(row, all.length + i + 1),
-        exchange,
-      }));
-      all.push(...rows);
-    }
+    const batches = await Promise.all(
+      EXCHANGES.map(async (exchange) => {
+        const body = await kisGet(path, trId, params(exchange));
+        return outputRows(body, "output2").map((row, i) => ({
+          ...mapRankRow(row, i + 1),
+          exchange,
+        }));
+      })
+    );
+    const all = batches.flat();
     let ranked = all
       .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, pickCount);
-    if (enrich) ranked = await enrichRankRows(ranked);
+    if (enrich) ranked = liteEnrichRankRows(ranked);
     if (resort) {
       ranked = ranked.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0)).slice(0, 50);
     } else if (ranked.length > 50) {
@@ -841,9 +854,9 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v11", async () => {
+  return cached("ranking:market-cap:v12", async () => {
     const ranked = await fetchMarketCapLookup();
-    return enrichRankRows(ranked);
+    return liteEnrichRankRows(ranked);
   });
 }
 
@@ -888,6 +901,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v12",
     "ranking:market-cap:v11",
     "ranking:gainers:v5",
     "ranking:trade-value:v5",

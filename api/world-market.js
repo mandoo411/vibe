@@ -9,7 +9,7 @@ const CACHE_PATH = path.join(__dirname, "..", "data", "world-market-cache.json")
 let fileCache = { at: 0, data: null };
 
 const FMP_TIMEOUT_MS = Math.max(3000, Number(process.env.FMP_TIMEOUT_MS) || 10000);
-const QUOTE_CONCURRENCY = 5;
+const QUOTE_CONCURRENCY = 8;
 const QUOTE_CACHE_MS = 10 * 60 * 1000;
 let quoteCache = { at: 0, map: null };
 let usdKrwCache = { at: 0, rate: null };
@@ -465,9 +465,10 @@ async function fetchQuoteOne(symbol) {
   }
 }
 
-async function fetchQuotes(symbols) {
+async function fetchQuotes(symbols, { includeSparks = true } = {}) {
   const unique = [...new Set(symbols.map((s) => String(s || "").trim().toUpperCase()).filter(Boolean))];
-  if (quoteCache.map && Date.now() - quoteCache.at < QUOTE_CACHE_MS) {
+  const cacheKey = includeSparks ? "full" : "fast";
+  if (quoteCache.map && quoteCache.mode === cacheKey && Date.now() - quoteCache.at < QUOTE_CACHE_MS) {
     return quoteCache.map;
   }
   const out = new Map();
@@ -494,8 +495,10 @@ async function fetchQuotes(symbols) {
       }
     }
   } catch {}
-  await attachSparklinesForCompanies(out, RANKED_COMPANIES);
-  quoteCache = { at: Date.now(), map: out };
+  if (includeSparks) {
+    await attachSparklinesForCompanies(out, RANKED_COMPANIES);
+  }
+  quoteCache = { at: Date.now(), map: out, mode: cacheKey };
   return out;
 }
 
@@ -573,7 +576,7 @@ function buildRow(meta, quote, type, rank, usdKrwRate) {
   };
 }
 
-async function rowsFor(type) {
+async function rowsFor(type, { includeSparks = true } = {}) {
   if (!Array.isArray(RANKED_COMPANIES) || RANKED_COMPANIES.length < 1) {
     throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
   }
@@ -583,7 +586,7 @@ async function rowsFor(type) {
     ),
   ];
   const [quoteMap, usdKrwRate] = await Promise.all([
-    fetchQuotes(fetchSymbols),
+    fetchQuotes(fetchSymbols, { includeSparks }),
     fetchUsdKrwRate(),
   ]);
 
@@ -630,8 +633,9 @@ module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") return send(res, 204, {});
   if (req.method !== "GET") return send(res, 405, { error: "Method not allowed" });
   const type = ["marketCap", "netIncome", "revenue"].includes(req.query?.type) ? req.query.type : "marketCap";
+  const includeSparks = req.query?.sparks !== "0";
   try {
-    const rows = await rowsFor(type);
+    const rows = await rowsFor(type, { includeSparks });
     const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
     const withQuote = rows.filter((row) => row.hasQuote).length;
     const withData = rows.filter((row) => row.hasQuote && row.value != null && row.value > 0).length;

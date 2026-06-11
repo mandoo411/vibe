@@ -90,6 +90,12 @@
       <main class="schedule-page">
         <div class="schedule-layout">
         <div class="schedule-main">
+        <div class="schedule-filters" id="schedule-filters" role="group" aria-label="일정 필터">
+          <button type="button" class="schedule-filter is-active" data-filter="all">전체</button>
+          <button type="button" class="schedule-filter" data-filter="key">핵심만</button>
+          <button type="button" class="schedule-filter" data-filter="us">미국(US)</button>
+          <button type="button" class="schedule-filter" data-filter="kr">한국(KR)</button>
+        </div>
         <section class="schedule-card schedule-card--today" aria-labelledby="today-title">
           <div class="section-head">
             <div>
@@ -137,17 +143,22 @@
               <h2 class="section-title" id="ai-title">Claude AI 주간 분석</h2>
             </div>
           </div>
-          <div class="analysis-grid" id="analysis-grid"></div>
+          <div class="analysis-grid" id="analysis-grid" hidden></div>
+          <p class="analysis-placeholder" id="analysis-placeholder">매주 월요일 오전 업데이트</p>
         </section>
 
-        <section class="schedule-card" aria-labelledby="news-title">
+        <section class="schedule-card schedule-card--earnings" aria-labelledby="earnings-title">
           <div class="section-head">
             <div>
-              <p class="section-kicker">Market News</p>
-              <h2 class="section-title" id="news-title">주요 뉴스</h2>
+              <p class="section-kicker">Earnings</p>
+              <h2 class="section-title" id="earnings-title">실적 발표</h2>
             </div>
           </div>
-          <div class="news-list" id="news-list"></div>
+          <div class="earnings-market-tabs" id="earnings-market-tabs" role="tablist" aria-label="실적 시장">
+            <button type="button" class="earnings-market-tab is-active" role="tab" aria-selected="true" data-market="us">미국</button>
+            <button type="button" class="earnings-market-tab" role="tab" aria-selected="false" data-market="kr">한국</button>
+          </div>
+          <div class="earnings-section-body" id="earnings-section-body"></div>
         </section>
         </div>
 
@@ -215,24 +226,8 @@
 
     <script>
       (() => {
-        const DATA_URL = tmDataUrl("data/weekly-schedule.json");
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
         const WEEKDAYS = ["월", "화", "수", "목", "금"];
-        const SP500_WATCHLIST = [
-          "AAPL","MSFT","NVDA","GOOGL","GOOG","AMZN","META","TSLA",
-          "AMD","INTC","QCOM","AVGO","MU","AMAT","LRCX","KLAC","TXN","MRVL","ARM","SMCI",
-          "JPM","BAC","WFC","GS","MS","BLK","C","AXP","V","MA","PYPL",
-          "JNJ","UNH","LLY","PFE","ABBV","MRK","TMO","ABT","DHR",
-          "XOM","CVX","COP","SLB","EOG",
-          "WMT","HD","MCD","SBUX","NKE","TGT","COST","LOW",
-          "NFLX","DIS","CMCSA","T","VZ",
-          "CAT","BA","GE","HON","RTX","LMT","UPS","FDX",
-          "SPY","QQQ","IWM","DIA","GLD","SLV","TLT",
-          "PLTR","SNOW","CRM","NOW","UBER","ABNB","COIN","HOOD",
-          "SOFI","RIVN","NIO","BIDU","BABA","JD","PDD",
-          "RBLX","SNAP","ROKU","SPOT","ZM"
-        ];
-        const SP500_WATCHLIST_SET = new Set(SP500_WATCHLIST);
         const COMPANY_NAMES = {
           "AAPL":"애플","MSFT":"마이크로소프트","NVDA":"엔비디아",
           "GOOGL":"구글","AMZN":"아마존","META":"메타","TSLA":"테슬라",
@@ -392,7 +387,33 @@
           "Victoria Day": "빅토리아 데이",
           "Battle of Las Piedras": "라스 피에드라스 전투 기념일",
         };
-        const state = { data: null, month: null, selectedDate: null };
+        const INDICATOR_TOOLTIPS = {
+          CPI: "소비자물가지수. 인플레이션 핵심 지표",
+          "Core CPI": "식품·에너지 제외 근원 물가. 연준이 중시",
+          FOMC: "미국 연방공개시장위원회 금리 결정",
+          NFP: "비농업 고용. 미국 고용시장 건전성",
+          PCE: "개인소비지출. 연준이 선호하는 물가지표",
+          GDP: "국내총생산. 경제성장률",
+          PPI: "생산자물가지수. CPI 선행지표",
+          PMI: "구매관리자지수. 경기 확장/수축 신호",
+          VIX: "공포지수. 시장 변동성 척도",
+          금통위: "한국은행 금융통화위원회 기준금리 결정",
+        };
+        const US_EARNINGS_NAMES = {
+          NVDA: "엔비디아", AAPL: "애플", MSFT: "마이크로소프트", GOOGL: "구글", AMZN: "아마존",
+          META: "메타", TSLA: "테슬라", TSM: "TSMC", AVGO: "브로드컴", AMD: "AMD", MU: "마이크론",
+          INTC: "인텔", QCOM: "퀄컴", ARM: "ARM", JPM: "JP모건", GS: "골드만삭스", BAC: "뱅크오브아메리카",
+          WMT: "월마트", COST: "코스트코", LLY: "일라이릴리", UNH: "유나이티드헬스", ORCL: "오라클", ADBE: "어도비",
+        };
+        const state = {
+          data: null,
+          earningsData: null,
+          earningsMarket: "us",
+          scheduleFilter: "all",
+          month: null,
+          selectedDate: null,
+        };
+        let countdownTimer = null;
         const $ = (id) => document.getElementById(id);
 
         function seoulYmd(date = new Date()) {
@@ -463,10 +484,6 @@
         function itemsForDate(type, ymd) {
           const rows = state.data?.[type] || [];
           return rows.filter((row) => row.date === ymd);
-        }
-
-        function filterWatchlistEarnings(rows) {
-          return (rows || []).filter((row) => SP500_WATCHLIST_SET.has(String(row.symbol || "").trim().toUpperCase()));
         }
 
         function naverFinanceUrl(code, name) {
@@ -611,6 +628,22 @@
           return label;
         }
 
+        function indicatorTooltipKey(row) {
+          const formal = resolveFormalIndicator(row);
+          const t = eventSearchText(row);
+          if (formal.abbr && INDICATOR_TOOLTIPS[formal.abbr]) return formal.abbr;
+          if (/금통위|한국은행/i.test(t)) return "금통위";
+          if (/VIX|공포지수/i.test(t)) return "VIX";
+          return formal.abbr || "";
+        }
+
+        function indicatorTooltipHtml(row) {
+          const key = indicatorTooltipKey(row);
+          const tip = INDICATOR_TOOLTIPS[key];
+          if (!tip) return "";
+          return `<button type="button" class="indicator-tip" aria-label="지표 설명" data-tip="${escapeHtml(tip)}">?</button>`;
+        }
+
         function indicatorDisplayHtml(row) {
           const formal = resolveFormalIndicator(row);
           const translated = translateIndicator(row?.event || "");
@@ -620,7 +653,85 @@
           const parts = [`<strong class="indicator-name-ko">${escapeHtml(nameKo)}</strong>`];
           if (abbr) parts.push(`<span class="indicator-abbr">(${escapeHtml(abbr)})</span>`);
           if (period) parts.push(`<span class="indicator-period">· ${escapeHtml(period)}</span>`);
+          parts.push(indicatorTooltipHtml(row));
           return parts.join(" ");
+        }
+
+        function filterEconomicRows(rows) {
+          return (rows || []).filter((row) => {
+            const cc = normalizeCountryCode(row?.country);
+            if (state.scheduleFilter === "key") return isKeyIndicator(row);
+            if (state.scheduleFilter === "us") return cc === "US";
+            if (state.scheduleFilter === "kr") return cc === "KR";
+            return true;
+          });
+        }
+
+        function parseEconNumber(value) {
+          if (value === null || value === undefined || value === "") return null;
+          const text = String(value).replace(/,/g, "").replace(/%/g, "").trim();
+          const n = Number(text);
+          return Number.isFinite(n) ? n : null;
+        }
+
+        function surpriseClass(actual, estimate) {
+          const a = parseEconNumber(actual);
+          const e = parseEconNumber(estimate);
+          if (a == null || e == null) return "surprise-flat";
+          if (a > e) return "surprise-up";
+          if (a < e) return "surprise-down";
+          return "surprise-flat";
+        }
+
+        function eventDateTime(row) {
+          const date = String(row?.date || "");
+          const time = String(row?.time || "00:00").match(/(\d{2}:\d{2})/);
+          const hm = time ? time[1] : "00:00";
+          return new Date(`${date}T${hm}:00+09:00`);
+        }
+
+        function countdownLabel(row) {
+          const target = eventDateTime(row);
+          if (Number.isNaN(target.getTime())) return { text: "", done: false };
+          const now = new Date();
+          if (now >= target) return { text: "발표완료", done: true };
+          const diffMs = target - now;
+          const diffMin = Math.floor(diffMs / 60000);
+          if (diffMin < 60) return { text: `${Math.max(1, diffMin)}분 후`, done: false };
+          const diffHr = Math.floor(diffMin / 60);
+          if (diffHr < 24) return { text: `${diffHr}시간 후`, done: false };
+          const today = seoulYmd();
+          const d0 = new Date(`${today}T12:00:00+09:00`).getTime();
+          const d1 = new Date(`${String(row.date).slice(0, 10)}T12:00:00+09:00`).getTime();
+          const dayDiff = Math.round((d1 - d0) / (24 * 3600 * 1000));
+          if (dayDiff > 0) return { text: `D-${dayDiff}`, done: false };
+          return { text: `${diffHr}시간 후`, done: false };
+        }
+
+        function timeCellHtml(row) {
+          const cd = countdownLabel(row);
+          const time = escapeHtml(row.time || "—");
+          if (!cd.text) return time;
+          const cls = cd.done ? "countdown countdown--done" : "countdown";
+          return `<div class="time-cell"><span>${time}</span><span class="${cls}">${escapeHtml(cd.text)}</span></div>`;
+        }
+
+        function earningsForDate(ymd) {
+          const us = state.earningsData?.us || [];
+          const kr = state.earningsData?.kr || [];
+          return [...us, ...kr].filter((row) => row.date === ymd);
+        }
+
+        function fmtEarningsValue(v) {
+          if (v === null || v === undefined || v === "") return "—";
+          if (typeof v === "number") return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
+          return escapeHtml(v);
+        }
+
+        function hourBadge(hour) {
+          const map = { bmo: "장전", amc: "장후", dmh: "장중" };
+          const label = map[String(hour || "").toLowerCase()];
+          return label ? `<span class="earnings-hour-badge">${label}</span>` : "";
         }
 
         function eventSearchText(row) {
@@ -775,13 +886,13 @@
         }
 
         function renderEconomic(rows) {
-          const list = [...(rows || [])].sort((a, b) => {
+          const list = filterEconomicRows(rows).sort((a, b) => {
             const d = impactRank(resolveImpactKey(b)) - impactRank(resolveImpactKey(a));
             return d !== 0 ? d : String(a.time || "").localeCompare(String(b.time || ""));
           });
           if (!list.length) return '<p class="empty-text">경제지표 일정 없음</p>';
           return `<div class="schedule-table-wrap"><table class="schedule-table">
-            <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>중요도</th></tr></thead>
+            <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>실제값</th><th>중요도</th></tr></thead>
             <tbody>${list
               .map((r) => {
                 const impactKey = resolveImpactKey(r);
@@ -789,11 +900,14 @@
                 const rowClass = [`impact-${impactKey}`, isKey ? "schedule-row--key" : ""].filter(Boolean).join(" ");
                 const keyBadge = isKey ? '<span class="key-indicator-badge">핵심</span>' : "";
                 const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
+                const actualText = fmtEconValue(r.actual, r.unit);
+                const sClass = surpriseClass(r.actual, r.estimate);
                 return `<tr class="${rowClass}">
-                  <td data-label="시간">${escapeHtml(r.time || "—")}</td>
+                  <td data-label="시간">${timeCellHtml(r)}</td>
                   <td data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
                   <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous, r.unit))}</td>
                   <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate, r.unit))}</td>
+                  <td data-label="실제값"><span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span></td>
                   <td data-label="중요도">${impactBadgeHtml(impactKey)}</td>
                 </tr>`;
               })
@@ -801,19 +915,72 @@
           </table></div>`;
         }
 
-        function renderEarnings(rows) {
-          const filtered = filterWatchlistEarnings(rows);
-          if (!filtered.length) return "";
-          return `<div class="earnings-grid">${filtered
+        function renderEarningsPills(rows) {
+          if (!rows?.length) return "";
+          return `<div class="earnings-grid">${rows
             .map((r) => {
               const symbol = String(r.symbol || "").trim().toUpperCase();
-              const company = COMPANY_NAMES[symbol] || r.company || symbol;
+              const company = US_EARNINGS_NAMES[symbol] || COMPANY_NAMES[symbol] || r.name || r.company || symbol;
               return `<button type="button" class="earnings-pill" data-symbol="${escapeHtml(symbol)}" title="${escapeHtml(symbol)} ${escapeHtml(company)}">
                 <span class="earnings-pill__symbol">${escapeHtml(symbol)}</span>
                 <span class="earnings-pill__name">${escapeHtml(company)}</span>
               </button>`;
             })
             .join("")}</div>`;
+        }
+
+        function renderEarningsCard(row) {
+          const isUs = row.market === "US" || row.symbol;
+          const symbol = row.symbol || row.code || "";
+          const name = isUs
+            ? US_EARNINGS_NAMES[symbol] || row.name || symbol
+            : row.name || symbol;
+          const epsEst = fmtEarningsValue(row.epsEstimate);
+          const epsAct = fmtEarningsValue(row.epsActual);
+          const revEst = fmtEarningsValue(row.revenueEstimate);
+          const revAct = fmtEarningsValue(row.revenueActual);
+          const epsSurprise = surpriseClass(row.epsActual, row.epsEstimate);
+          const revSurprise = surpriseClass(row.revenueActual, row.revenueEstimate);
+          const coreBadge = row.core ? '<span class="key-indicator-badge">핵심</span>' : "";
+          const titleRight = isUs ? escapeHtml(symbol) : escapeHtml(symbol);
+          return `<article class="earnings-card">
+            <div class="earnings-card__head">
+              <div>
+                <strong class="earnings-card__name">${escapeHtml(name)}</strong>
+                <span class="earnings-card__symbol">${titleRight}</span>
+              </div>
+              ${coreBadge}${hourBadge(row.hour)}
+            </div>
+            <dl class="earnings-card__metrics">
+              <div><dt>EPS 예상</dt><dd>${epsEst}</dd></div>
+              <div><dt>EPS 실제</dt><dd><span class="surprise-value ${epsSurprise}">${epsAct}</span></dd></div>
+              <div><dt>매출 예상</dt><dd>${revEst}</dd></div>
+              <div><dt>매출 실제</dt><dd><span class="surprise-value ${revSurprise}">${revAct}</span></dd></div>
+            </dl>
+            ${row.reportName ? `<p class="earnings-card__report">${escapeHtml(row.reportName)}</p>` : ""}
+          </article>`;
+        }
+
+        function renderEarningsSection() {
+          const body = $("earnings-section-body");
+          if (!body) return;
+          const market = state.earningsMarket;
+          const rows = (market === "kr" ? state.earningsData?.kr : state.earningsData?.us) || [];
+          if (!rows.length) {
+            body.innerHTML = '<p class="empty-text">이번 주 주요 실적 발표 없음</p>';
+            return;
+          }
+          const grouped = rows.reduce((acc, row) => {
+            (acc[row.date] ||= []).push(row);
+            return acc;
+          }, {});
+          body.innerHTML = Object.keys(grouped)
+            .sort()
+            .map((date) => `<section class="earnings-date-group">
+              <h3 class="earnings-date-group__title">${escapeHtml(fmtDate(date))}</h3>
+              <div class="earnings-card-grid">${grouped[date].map(renderEarningsCard).join("")}</div>
+            </section>`)
+            .join("");
         }
 
         function renderKRIPO(rows, showTitle = true) {
@@ -851,13 +1018,21 @@
             .join("")}</div></div>`;
         }
 
+        function economicCountForDate(ymd) {
+          return filterEconomicRows(itemsForDate("economicCalendar", ymd)).length;
+        }
+
+        function hasKeyIndicatorOnDate(ymd) {
+          return itemsForDate("economicCalendar", ymd).some((row) => isKeyIndicator(row));
+        }
+
         function renderSelectedDay(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
+          const earnings = earningsForDate(ymd).filter((r) => r.symbol);
           const krIPO = itemsForDate("krIPO", ymd);
           const krEarnings = itemsForDate("krEarnings", ymd);
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${economic.length || krIPO.length || krEarnings.length || earnings.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}${renderKREarnings(krEarnings)}${renderEarnings(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+            ${economic.length || krIPO.length || krEarnings.length || earnings.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}${renderKREarnings(krEarnings)}${renderEarningsPills(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
 
         function renderCalendar() {
@@ -872,7 +1047,7 @@
             const day = i + 1;
             const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
             const hasEconomic = itemsForDate("economicCalendar", ymd).length > 0;
-            const hasEarnings = itemsForDate("earningsCalendar", ymd).length > 0;
+            const hasEarnings = earningsForDate(ymd).length > 0;
             const hasKRIPO = itemsForDate("krIPO", ymd).length > 0;
             const hasKREarnings = itemsForDate("krEarnings", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
@@ -896,14 +1071,17 @@
         function renderToday() {
           const ymd = seoulYmd();
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = filterWatchlistEarnings(itemsForDate("earningsCalendar", ymd));
+          const earnings = earningsForDate(ymd).filter((r) => r.symbol);
           const krIPO = itemsForDate("krIPO", ymd);
           const krEarnings = itemsForDate("krEarnings", ymd);
           const earningsWrap = $("today-earnings");
           const krIpoWrap = $("today-kr-ipo");
           const krEarningsWrap = $("today-kr-earnings");
           $("today-date").textContent = fmtDate(ymd);
-          $("today-economic").innerHTML = economic.length || krIPO.length || krEarnings.length || earnings.length ? renderEconomic(economic) : '<p class="empty-text">오늘 주요 일정 없음</p>';
+          $("today-economic").innerHTML =
+            filterEconomicRows(economic).length || krIPO.length || krEarnings.length || earnings.length
+              ? renderEconomic(economic)
+              : '<p class="empty-text">오늘 주요 일정 없음</p>';
           if (krIpoWrap) {
             const article = krIpoWrap.closest("article");
             if (article) article.hidden = !krIPO.length;
@@ -917,8 +1095,15 @@
           if (earningsWrap) {
             const article = earningsWrap.closest("article");
             if (article) article.hidden = !earnings.length;
-            earningsWrap.innerHTML = renderEarnings(earnings);
+            earningsWrap.innerHTML = renderEarningsPills(earnings);
           }
+        }
+
+        function refreshScheduleViews() {
+          const today = seoulYmd();
+          renderToday();
+          renderWeek();
+          if (state.selectedDate) renderSelectedDay(state.selectedDate);
         }
 
         function startOfWeek(ymd) {
@@ -938,7 +1123,10 @@
           $("week-tabs").innerHTML = days
             .map((ymd, i) => {
               const past = ymd < today;
-              return `<button type="button" class="week-tab${past ? " week-tab--past" : ""}" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span></button>`;
+              const count = economicCountForDate(ymd);
+              const keyDot = hasKeyIndicatorOnDate(ymd) ? '<i class="week-tab__dot" aria-hidden="true"></i>' : "";
+              const countLabel = count ? `<em class="week-tab__count">(${count}개)</em>` : "";
+              return `<button type="button" class="week-tab${past ? " week-tab--past" : ""}" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${keyDot}${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span>${countLabel}</button>`;
             })
             .join("");
           $("week-panels").innerHTML = days
@@ -947,7 +1135,7 @@
               ${renderEconomic(itemsForDate("economicCalendar", ymd))}
               ${renderKRIPO(itemsForDate("krIPO", ymd))}
               ${renderKREarnings(itemsForDate("krEarnings", ymd))}
-              ${renderEarnings(itemsForDate("earningsCalendar", ymd))}
+              ${renderEarningsPills(earningsForDate(ymd).filter((r) => r.symbol))}
             </section>`)
             .join("");
           $("week-tabs").querySelectorAll(".week-tab").forEach((btn) => {
@@ -971,54 +1159,86 @@
 
         function renderAnalysis() {
           const ai = state.data?.analysis || {};
-          const top = ai.topEvents || [];
-          const impacts = ai.marketImpacts || [];
-          const earnings = ai.watchEarnings || [];
-          $("analysis-grid").innerHTML = `
-            <article><h3>이번주 핵심 이벤트 TOP5</h3>${top.length ? `<ol>${top.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}</article>
-            <article><h3>국내 시장 영향 분석</h3>${impacts.length ? `<ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}</article>
-            <article><h3>주목 실적 발표 종목</h3>${earnings.length ? `<ul>${earnings.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}</article>`;
+          const top = (ai.topEvents || []).filter(Boolean);
+          const impacts = (ai.marketImpacts || []).filter(Boolean);
+          const earnings = (ai.watchEarnings || []).filter(Boolean);
+          const hasContent = top.length || impacts.length || earnings.length;
+          const grid = $("analysis-grid");
+          const placeholder = $("analysis-placeholder");
+          if (!hasContent) {
+            if (grid) grid.hidden = true;
+            if (placeholder) placeholder.hidden = false;
+            return;
+          }
+          if (placeholder) placeholder.hidden = true;
+          if (grid) {
+            grid.hidden = false;
+            grid.innerHTML = `
+            <article><h3>이번주 핵심 이벤트 TOP5</h3><ol>${top.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol></article>
+            <article><h3>국내 시장 영향 분석</h3><ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>
+            <article><h3>주목 실적 발표 종목</h3><ul>${earnings.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>`;
+          }
         }
 
-        function isRecentNews(n) {
-          const raw = n?.publishedAt || n?.pubDate || n?.datetime || n?.date;
-          if (!raw) return false;
-          const pubDate = new Date(raw);
-          if (Number.isNaN(pubDate.getTime())) return false;
-          const fortyEightHoursAgo = new Date();
-          fortyEightHoursAgo.setHours(fortyEightHoursAgo.getHours() - 48);
-          return pubDate >= fortyEightHoursAgo;
+        function wireScheduleFilters() {
+          $("schedule-filters")?.querySelectorAll(".schedule-filter").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              state.scheduleFilter = btn.dataset.filter || "all";
+              $("schedule-filters").querySelectorAll(".schedule-filter").forEach((b) => {
+                b.classList.toggle("is-active", b === btn);
+              });
+              refreshScheduleViews();
+            });
+          });
         }
 
-        function renderNews() {
-          const rows = (state.data?.news || []).filter(isRecentNews);
-          $("news-list").innerHTML = rows.length
-            ? rows
-                .slice(0, 20)
-                .map((n) => {
-                  const summary = n.summary || n.note || "";
-                  if (n.telegram || summary) {
-                    return `<details class="news-card news-card--telegram" title="${escapeHtml(n.headline || "")}">
-                      <summary><span>${escapeHtml(n.source || "Telegram")} · ${escapeHtml(n.timeLabel || "")}</span><strong>${escapeHtml(n.headline || "제목 없음")}</strong></summary>
-                      <p>${escapeHtml(summary || n.headline || "")}</p>
-                    </details>`;
-                  }
-                  if (n.url) {
-                    return `<a class="news-card" href="${escapeHtml(n.url)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(n.headline || "")}">
-                      <span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span>
-                      <strong>${escapeHtml(n.headline || "제목 없음")}</strong>
-                      <i aria-hidden="true">→</i>
-                    </a>`;
-                  }
-                  return `<div class="news-card"><span>${escapeHtml(n.source || "News")} · ${escapeHtml(n.timeLabel || "")}</span><strong>${escapeHtml(n.headline || "제목 없음")}</strong></div>`;
-                })
-                .join("")
-            : '<p class="empty-text">뉴스를 불러올 수 없습니다</p>';
+        function wireEarningsMarketTabs() {
+          $("earnings-market-tabs")?.querySelectorAll(".earnings-market-tab").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              state.earningsMarket = btn.dataset.market || "us";
+              $("earnings-market-tabs").querySelectorAll(".earnings-market-tab").forEach((b) => {
+                const active = b === btn;
+                b.classList.toggle("is-active", active);
+                b.setAttribute("aria-selected", active ? "true" : "false");
+              });
+              renderEarningsSection();
+            });
+          });
+        }
+
+        function wireIndicatorTips() {
+          document.addEventListener("click", (event) => {
+            const btn = event.target.closest(".indicator-tip");
+            if (!btn) return;
+            const tip = btn.getAttribute("data-tip") || "";
+            if (!tip) return;
+            const open = btn.getAttribute("aria-expanded") === "true";
+            document.querySelectorAll(".indicator-tip[aria-expanded='true']").forEach((el) => {
+              el.setAttribute("aria-expanded", "false");
+              el.nextElementSibling?.remove();
+            });
+            if (open) return;
+            btn.setAttribute("aria-expanded", "true");
+            const pop = document.createElement("span");
+            pop.className = "indicator-tip-pop";
+            pop.textContent = tip;
+            btn.insertAdjacentElement("afterend", pop);
+          });
+        }
+
+        function startCountdownTimer() {
+          if (countdownTimer) clearInterval(countdownTimer);
+          countdownTimer = setInterval(() => refreshScheduleViews(), 60000);
         }
 
         async function load() {
           try {
-            state.data = normalizeScheduleData(await tmFetchJson("data/weekly-schedule.json"));
+            const [schedule, earnings] = await Promise.all([
+              tmFetchJson("data/weekly-schedule.json"),
+              tmFetchJson("data/earnings-calendar.json").catch(() => ({ us: [], kr: [] })),
+            ]);
+            state.data = normalizeScheduleData(schedule);
+            state.earningsData = earnings;
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;
@@ -1028,8 +1248,12 @@
             renderToday();
             renderWeek();
             renderAnalysis();
-            renderNews();
+            renderEarningsSection();
             wireEarningsLinks();
+            wireScheduleFilters();
+            wireEarningsMarketTabs();
+            wireIndicatorTips();
+            startCountdownTimer();
           } catch (e) {
             $("masthead-notice").hidden = false;
             $("masthead-notice").textContent = `데이터를 불러오지 못했습니다: ${e instanceof Error ? e.message : e}`;

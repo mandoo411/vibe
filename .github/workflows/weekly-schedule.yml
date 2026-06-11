@@ -33,10 +33,8 @@ jobs:
       - name: Collect weekly schedule
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-          TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
         run: node scripts/weekly-schedule.mjs
 
       - name: Commit and push updated schedule
@@ -44,12 +42,12 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/weekly-schedule.json; then
+          if git diff --quiet -- data/weekly-schedule.json data/earnings-calendar.json; then
             echo "::notice::No weekly schedule changes to commit"
             exit 0
           fi
           STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
-          git add data/weekly-schedule.json
+          git add data/weekly-schedule.json data/earnings-calendar.json
           git commit -m "chore(data): sync weekly schedule ${STAMP}"
           git pull --rebase origin main
           git push

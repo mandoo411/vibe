@@ -926,9 +926,242 @@ a:hover {
 .selected-day,
 .today-grid,
 .week-panel,
-.analysis-grid,
-.news-list {
+.analysis-grid {
   padding: 16px;
+}
+
+.schedule-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.schedule-filter {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.schedule-filter.is-active {
+  border-color: transparent;
+  background: linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%);
+  color: #fff;
+}
+
+[data-theme="dark"] .schedule-filter {
+  border-color: color-mix(in srgb, var(--border) 80%, #fff 8%);
+}
+
+.time-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.countdown {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+.countdown--done {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.surprise-value.surprise-up {
+  color: #e24b4a;
+  font-weight: 700;
+}
+
+.surprise-value.surprise-down {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.surprise-value.surprise-flat {
+  color: var(--text-dim);
+}
+
+.indicator-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.indicator-tip-pop {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 280px;
+}
+
+.week-tab {
+  position: relative;
+}
+
+.week-tab__dot {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e24b4a;
+}
+
+.week-tab__count {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.analysis-placeholder {
+  margin: 0;
+  padding: 20px 16px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.earnings-market-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.earnings-market-tab {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.earnings-market-tab.is-active {
+  border-color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #0f8387);
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent);
+}
+
+.earnings-section-body {
+  padding: 0 16px 16px;
+}
+
+.earnings-date-group + .earnings-date-group {
+  margin-top: 18px;
+}
+
+.earnings-date-group__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--accent-bright);
+  font-family: var(--font-mono);
+}
+
+.earnings-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.earnings-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+.earnings-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.earnings-card__name {
+  display: block;
+  font-size: 15px;
+}
+
+.earnings-card__symbol {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.earnings-hour-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: color-mix(in srgb, #7c3aed 14%, transparent);
+  color: #7c3aed;
+}
+
+.earnings-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.earnings-card__metrics div {
+  min-width: 0;
+}
+
+.earnings-card__metrics dt {
+  margin: 0 0 2px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.earnings-card__metrics dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.earnings-card__report {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
 }
 
 .selected-day h3,
@@ -1387,68 +1620,6 @@ a:hover {
   margin-top: 0;
 }
 
-.news-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.news-card {
-  position: relative;
-  display: block;
-  min-width: 0;
-  padding: 12px 34px 12px 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-  color: var(--text);
-}
-
-.news-card span {
-  display: block;
-  margin-bottom: 5px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
-}
-
-.news-card strong {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-}
-
-.news-card i {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--accent-bright);
-  font-style: normal;
-}
-
-.news-card--telegram {
-  border-color: var(--accent-ring);
-  background: var(--accent-dim);
-}
-
-.news-card summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.news-card summary::-webkit-details-marker {
-  display: none;
-}
-
-.news-card p {
-  margin: 9px 0 0;
-  color: var(--text-muted);
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
 .empty-text {
   margin: 0;
   color: var(--text-dim);
@@ -1642,8 +1813,7 @@ a:hover {
   }
 
   .today-grid,
-  .analysis-grid,
-  .news-list {
+  .analysis-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1718,7 +1888,12 @@ a:hover {
   .schedule-table td:nth-child(1),
   .schedule-table td:nth-child(3),
   .schedule-table td:nth-child(4),
-  .schedule-table td:nth-child(5) {
+  .schedule-table td:nth-child(5),
+  .schedule-table td:nth-child(6) {
     font-size: 12px;
+  }
+
+  .earnings-card-grid {
+    grid-template-columns: 1fr;
   }
 }

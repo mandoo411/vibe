@@ -424,3 +424,45 @@
     height: 36px;
   }
 }
+
+/* 모바일 라이트 — 공포탐욕 게이지·수치 웹 라이트모드와 동일 (다크 미변경) */
+@media (max-width: 768px) {
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__fill {
+    stroke: #07264b !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__fill {
+    stroke: #0f8387 !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__fill {
+    stroke: #9ca3af !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__fill,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__fill {
+    stroke: #e24b4a !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__value,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__label {
+    color: #07264b !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__value,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__label {
+    color: #0f8387 !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__value,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__label {
+    color: #6b7280 !important;
+  }
+
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__value,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__value,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__label,
+  [data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__label {
+    color: #e24b4a !important;
+  }
+}

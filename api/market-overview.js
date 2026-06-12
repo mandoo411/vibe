@@ -5,8 +5,8 @@
 
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
-const { resolveIndicatorLive } = require("./lib/market-live");
-const { fetchFearGreedIndex } = require("./lib/fear-greed");
+const { resolveIndicatorLive } = require("../lib/market-live");
+const { fetchFearGreedIndex } = require("../lib/fear-greed");
 
 const MEMORY_TTL_MS = 2 * 60 * 1000;
 let memoryCache = { at: 0, data: null, promise: null };

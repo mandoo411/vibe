@@ -1,5 +1,5 @@
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
-const { resolveIndicatorLive } = require("./lib/market-live");
+const { resolveIndicatorLive } = require("../lib/market-live");
 
 function json(res, status, body) {
   res.statusCode = status;

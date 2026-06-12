@@ -14,11 +14,20 @@ const outputs = [
   { size: 180, file: "assets/icon-t-180.png" },
   { size: 192, file: "assets/icon-t-192.png" },
   { size: 512, file: "assets/icon-t-512.png" },
+  /* iOS·Safari 루트 자동 탐색 경로 (assets만 갱신하면 모바일에 구 아이콘 남음) */
+  { size: 180, file: "icon-t-180.png" },
+  { size: 180, file: "apple-touch-icon.png" },
+  { size: 180, file: "apple-touch-icon-precomposed.png" },
+  { size: 180, file: "assets/apple-touch-icon.png" },
 ];
 
 const input = await fs.readFile(master);
+const written = new Set();
 for (const { size, file } of outputs) {
   const out = path.join(root, file);
+  const key = `${file}@${size}`;
+  if (written.has(key)) continue;
+  written.add(key);
   await sharp(input, { density: 320 }).resize(size, size).png().toFile(out);
   console.log(`Wrote ${file} (${size}px)`);
 }

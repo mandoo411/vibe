@@ -123,8 +123,20 @@
           { key: "global", en: "GLOBAL", ko: "글로벌 증시", sub: "아시아·유럽 주요 지수" },
           { key: "ratesFx", en: "RATES & FX", ko: "금리 · 환율", sub: "미국채·달러·원달러" },
           { key: "commodities", en: "COMMODITIES", ko: "원자재", sub: "에너지·귀금속·농산물" },
+          { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "비트코인·이더리움" },
           { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
         ];
+
+        function liveDotHtml(item) {
+          const live = item && item.live === true;
+          const cls = live ? "tm-live-dot--live" : "tm-live-dot--closed";
+          const title = live ? "실시간" : "장 마감";
+          return `<span class="tm-live-dot ${cls}" aria-hidden="true" title="${title}"></span>`;
+        }
+
+        function liveNameHtml(item) {
+          return `<span class="tm-indicator-name">${liveDotHtml(item)}<span>${item.name}</span></span>`;
+        }
 
         function fmtPct(n) {
           if (n == null || !Number.isFinite(n)) return "—";
@@ -137,6 +149,9 @@
           const v = item.value;
           const digits = item.id === "gold" || item.id === "platinum" ? 1 : item.id === "natgas" || item.id === "copper" ? 3 : 2;
           if (item.id === "usdkrw") return v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+          if (item.id === "btc" || item.id === "eth") {
+            return `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+          }
           if (item.unit === "%") return `${v.toFixed(2)}%`;
           if (item.currency === "USD") {
             return `$${v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })}`;
@@ -200,7 +215,7 @@
           const sub = subText ? `<div class="market-card__sub">${subText}</div>` : "";
           const spark = sparklineSvg(item.sparkline, sparkTrend(pct), item.id, featured);
           return `<article class="market-card${featured ? " market-card--featured" : ""}" data-id="${item.id}">
-            <div class="market-card__name">${item.name}</div>
+            <div class="market-card__name">${liveNameHtml(item)}</div>
             <div class="market-card__body">
               <div class="market-card__quote">
                 <div class="market-card__value">${fmtValue(item)}</div>
@@ -288,7 +303,7 @@
           if (item.id === "fear-greed") {
             const meta = fearGreedMeta(item.value);
             return `<article class="market-gauge-card" data-id="fear-greed">
-              <div class="market-gauge-card__name">${item.name}</div>
+              <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
               ${semiGaugeSvg(item.value, 100, meta.color, "fng")}
               <div class="market-gauge__value" style="color:${meta.color}">${item.value ?? "—"}</div>
               <div class="market-gauge__label" style="color:${meta.color}">${meta.label}</div>
@@ -297,7 +312,7 @@
           if (item.id === "btc-dominance") {
             const color = "#f59e0b";
             return `<article class="market-gauge-card" data-id="btc-dominance">
-              <div class="market-gauge-card__name">${item.name}</div>
+              <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
               ${donutGaugeSvg(item.value, 100, color, "btc")}
               <div class="market-gauge__value" style="color:${color}">${item.value != null ? item.value.toFixed(1) : "—"}%</div>
               <div class="market-gauge__hint">비트코인 시총 비중</div>
@@ -305,7 +320,7 @@
           }
           const vm = vixMeta(item.value);
           return `<article class="market-gauge-card" data-id="vix">
-            <div class="market-gauge-card__name">${item.name}</div>
+            <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
             <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
             <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
           </article>`;
@@ -377,6 +392,7 @@
             globalSectionHtml(s.global),
             simpleSectionHtml("ratesFx", s.ratesFx),
             commoditiesSectionHtml(s.commodities),
+            simpleSectionHtml("crypto", s.crypto),
             sentimentSectionHtml(s.sentiment),
           ]
             .filter(Boolean)

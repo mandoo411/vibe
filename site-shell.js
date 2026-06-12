@@ -180,6 +180,13 @@
     return `${sign}${n.toFixed(2)}%`;
   }
 
+  function liveDotHtml(live) {
+    const on = live === true;
+    const cls = on ? "tm-live-dot--live" : "tm-live-dot--closed";
+    const title = on ? "실시간" : "장 마감";
+    return `<span class="tm-live-dot ${cls}" aria-hidden="true" title="${title}"></span>`;
+  }
+
   function tickerPctHtml(item) {
     const label = item?.label || "";
     const pct = Number(item?.changePct);
@@ -219,7 +226,7 @@
         el.innerHTML = items
           .map((item) => {
             const pctHtml = tickerPctHtml(item);
-            return `<div class="home-ticker__item"><span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
+            return `<div class="home-ticker__item">${liveDotHtml(item.live)}<span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
           })
           .join("");
       })

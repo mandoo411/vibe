@@ -5,7 +5,7 @@
 
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
-const FEAR_GREED_URL = "https://api.alternative.me/fng/?limit=1";
+const { resolveIndicatorLive } = require("./lib/market-live");
 
 const MEMORY_TTL_MS = 2 * 60 * 1000;
 let memoryCache = { at: 0, data: null, promise: null };
@@ -68,6 +68,7 @@ const ORDER = {
   ratesFx: ["us10y", "us2y", "dxy", "usdkrw"],
   commodities: ["wti", "brent", "natgas", "gold", "silver", "platinum", "copper", "wheat", "corn", "soy"],
   sentiment: ["vix", "fear-greed", "btc-dominance"],
+  crypto: ["btc", "eth"],
 };
 
 function json(res, status, body) {
@@ -185,7 +186,16 @@ async function fetchKoreaIndex({ code, sparkSymbol, id, name }) {
     console.warn("[market-overview] korea index empty", id, code);
     return null;
   }
-  return { id, symbol: code, name, value, changePct, sparkline, unit: "pt" };
+  return {
+    id,
+    symbol: code,
+    name,
+    value,
+    changePct,
+    sparkline,
+    unit: "pt",
+    live: resolveIndicatorLive(id, { session: "korea" }),
+  };
 }
 
 /** 전일 종가 대비 — market-ticker 와 동일 (range=2d, previousClose 우선) */
@@ -204,7 +214,8 @@ async function fetchYahooQuote(symbol) {
     if (rmChgPct != null && Number.isFinite(rmChgPct)) changePct = roundN(rmChgPct, 2);
   }
   if (symbol === "KRW=X" && changePct != null && Math.abs(changePct) < 0.0001) changePct = null;
-  return { value: price != null ? roundN(price, 4) : null, changePct };
+  const marketState = meta.marketState || meta.regularMarketState || null;
+  return { value: price != null ? roundN(price, 4) : null, changePct, marketState };
 }
 
 async function fetchYahooSparkline(symbol) {
@@ -243,6 +254,7 @@ function yahooToItem(def, chart) {
     changePct: chart.changePct,
     sparkline: chart.sparkline,
     unit: def.unit || null,
+    live: resolveIndicatorLive(def.id, { marketState: chart.marketState }),
   };
 }
 
@@ -278,6 +290,7 @@ async function fetchFearGreed() {
     rating: row?.value_classification ? String(row.value_classification) : null,
     sparkline: [],
     unit: "gauge",
+    live: false,
   };
 }
 
@@ -303,6 +316,55 @@ async function fetchBtcDominance() {
     changePct: null,
     sparkline: [],
     unit: "gauge",
+    live: false,
+  };
+}
+
+async function geckoQuote(geckoId) {
+  const res = await fetch(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(geckoId)}&vs_currencies=usd&include_24hr_change=true`
+  );
+  if (!res.ok) throw new Error(`Gecko HTTP ${res.status}`);
+  const body = await res.json();
+  const row = body?.[geckoId] || {};
+  return { value: toNum(row.usd), changePct: roundN(toNum(row.usd_24h_change), 2) };
+}
+
+async function fetchCryptoItem(id, geckoId, yahooSymbol, name) {
+  let value = null;
+  let changePct = null;
+  let marketState = null;
+  try {
+    const chart = await fetchYahooFull(yahooSymbol);
+    value = chart.value != null ? roundN(chart.value, 2) : null;
+    changePct = chart.changePct;
+    marketState = chart.marketState;
+  } catch (e) {
+    console.warn("[market-overview] crypto yahoo", id, e?.message || e);
+  }
+  if (value == null) {
+    try {
+      const g = await geckoQuote(geckoId);
+      value = g.value != null ? roundN(g.value, 2) : null;
+      changePct = g.changePct;
+    } catch (e) {
+      console.warn("[market-overview] crypto gecko", id, e?.message || e);
+    }
+  }
+  if (value == null) return null;
+  let sparkline = [];
+  try {
+    sparkline = await fetchYahooSparkline(yahooSymbol);
+  } catch (_) {}
+  return {
+    id,
+    symbol: yahooSymbol,
+    name,
+    value,
+    changePct,
+    sparkline,
+    currency: "USD",
+    live: resolveIndicatorLive(id, { session: "crypto", marketState }),
   };
 }
 
@@ -310,7 +372,7 @@ async function buildOverview() {
   const yahooResults = await Promise.all(YAHOO_DEFS.map(fetchYahooDef));
   const yahooById = new Map(yahooResults.filter(Boolean).map((item) => [item.id, item]));
 
-  const [koreaKis, fearGreed, btcDominance] = await Promise.all([
+  const [koreaKis, fearGreed, btcDominance, cryptoBtc, cryptoEth] = await Promise.all([
     Promise.all(KOREA_SPARK.map(fetchKoreaIndex)),
     fetchFearGreed().catch((e) => {
       console.warn("[market-overview] fear-greed failed", e?.message || e);
@@ -320,6 +382,8 @@ async function buildOverview() {
       console.warn("[market-overview] btc dominance failed", e?.message || e);
       return null;
     }),
+    fetchCryptoItem("btc", "bitcoin", "BTC-USD", "비트코인"),
+    fetchCryptoItem("eth", "ethereum", "ETH-USD", "이더리움"),
   ]);
 
   const korea = compact([...koreaKis, yahooById.get("kospi200"), yahooById.get("ewy")]).sort(sortBy(ORDER.korea));
@@ -328,11 +392,12 @@ async function buildOverview() {
   const europe = compact(ORDER.europe.map((id) => yahooById.get(id))).sort(sortBy(ORDER.europe));
   const ratesFx = compact(ORDER.ratesFx.map((id) => yahooById.get(id))).sort(sortBy(ORDER.ratesFx));
   const commodities = compact(ORDER.commodities.map((id) => yahooById.get(id))).sort(sortBy(ORDER.commodities));
+  const crypto = compact([cryptoBtc, cryptoEth]).sort(sortBy(ORDER.crypto));
   const sentiment = compact([yahooById.get("vix"), fearGreed, btcDominance]).sort(sortBy(ORDER.sentiment));
 
   return {
     updatedAt: new Date().toISOString(),
-    sections: { korea, us, global: { asia, europe }, ratesFx, commodities, sentiment },
+    sections: { korea, us, global: { asia, europe }, ratesFx, commodities, crypto, sentiment },
   };
 }
 

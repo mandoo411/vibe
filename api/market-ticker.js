@@ -1,4 +1,5 @@
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
+const { resolveIndicatorLive } = require("./lib/market-live");
 
 function json(res, status, body) {
   res.statusCode = status;
@@ -75,6 +76,7 @@ async function domesticIndex(code, label) {
           label,
           value,
           changePct: firstNumeric(out, ["bstp_nmix_prdy_ctrt", "BSTP_NMIX_PRDY_CTRT", "prdy_ctrt", "nmix_prdy_ctrt"]),
+          live: resolveIndicatorLive(code === "0001" ? "kospi" : "kosdaq", { session: "korea" }),
         };
       }
     } catch (error) {
@@ -82,7 +84,7 @@ async function domesticIndex(code, label) {
     }
   }
   if (lastError) throw lastError;
-  return { id: code, label, value: null, changePct: null };
+  return { id: code, label, value: null, changePct: null, live: resolveIndicatorLive(code === "0001" ? "kospi" : "kosdaq", { session: "korea" }) };
 }
 
 async function usdKrwQuote() {
@@ -94,7 +96,7 @@ async function usdKrwQuote() {
           ? q.changePct
           : null;
       console.log("[market-ticker] USD/KRW Yahoo", { value: q.value, changePct });
-      return { id: "usdkrw", label: "원/달러", value: q.value, changePct };
+      return { id: "usdkrw", label: "원/달러", value: q.value, changePct, live: resolveIndicatorLive("usdkrw", { marketState: q.marketState, session: "forex" }) };
     }
   } catch (error) {
     console.warn("[market-ticker] USD/KRW Yahoo failed", error?.message || error);
@@ -104,10 +106,10 @@ async function usdKrwQuote() {
     const body = await res.json();
     const value = toNum(body?.rates?.KRW);
     console.log("[market-ticker] USD/KRW ER-API (no changePct)", { value });
-    return { id: "usdkrw", label: "원/달러", value, changePct: null };
+    return { id: "usdkrw", label: "원/달러", value, changePct: null, live: resolveIndicatorLive("usdkrw", { session: "forex" }) };
   } catch (error) {
     console.warn("[market-ticker] USD/KRW ER-API failed", error?.message || error);
-    return { id: "usdkrw", label: "원/달러", value: null, changePct: null };
+    return { id: "usdkrw", label: "원/달러", value: null, changePct: null, live: false };
   }
 }
 
@@ -137,15 +139,21 @@ async function yahooQuote(symbol, label, { range = "2d" } = {}) {
   if (price != null && previous) changePct = ((price - previous) / previous) * 100;
   const rmChgPct = toNum(meta.regularMarketChangePercent);
   if (rmChgPct != null && Number.isFinite(rmChgPct)) changePct = rmChgPct;
-  return { id: symbol, label, value: price, changePct };
+  const marketState = meta.marketState || meta.regularMarketState || null;
+  return { id: symbol, label, value: price, changePct, marketState };
 }
 
 async function commodityQuote(finnhubSymbol, yahooSymbol, label) {
   try {
     const quote = await finnhubQuote(finnhubSymbol, label);
-    if (quote.value != null && quote.value !== 0) return quote;
+    if (quote.value != null && quote.value !== 0) {
+      const id = yahooSymbol === "CL=F" ? "wti" : yahooSymbol === "GC=F" ? "gold" : yahooSymbol;
+      return { ...quote, live: resolveIndicatorLive(id, { session: "futures" }) };
+    }
   } catch {}
-  return yahooQuote(yahooSymbol, label);
+  const q = await yahooQuote(yahooSymbol, label);
+  const id = yahooSymbol === "CL=F" ? "wti" : yahooSymbol === "GC=F" ? "gold" : yahooSymbol;
+  return { ...q, live: resolveIndicatorLive(id, { marketState: q.marketState, session: "futures" }) };
 }
 
 async function geckoQuote(geckoId, label) {
@@ -170,15 +178,15 @@ async function cryptoUsdQuote(geckoId, yahooSymbol, label) {
 }
 
 async function btc() {
-  // 티커: 전일대비 % (Yahoo 2d). CoinGecko 24h 롤링·Yahoo 5d는 기준가가 어긋나 -3%대로 부풀어짐.
   try {
     const q = await yahooQuote("BTC-USD", "비트코인", { range: "2d" });
-    if (q.value != null) return q;
+    if (q.value != null) return { ...q, live: resolveIndicatorLive("btc", { session: "crypto", marketState: q.marketState }) };
   } catch (_) {}
   try {
-    return await geckoQuote("bitcoin", "비트코인");
+    const q = await geckoQuote("bitcoin", "비트코인");
+    return { ...q, live: true };
   } catch (_) {}
-  return { label: "비트코인", value: null, changePct: null };
+  return { label: "비트코인", value: null, changePct: null, live: true };
 }
 
 async function naverStockBasic(code6, label) {
@@ -232,9 +240,14 @@ module.exports = async function handler(req, res) {
 
   const settled = await Promise.allSettled(tasks);
   const tickerLabels = ["코스피", "코스닥", "나스닥선물", "원/달러", "WTI유가", "금시세", "비트코인"];
+  const tickerLiveIds = ["kospi", "kosdaq", "nasdaq-futures", "usdkrw", "wti", "gold", "btc"];
   const items = settled.slice(0, 7).map((result, index) => {
     const row = quoteItem(result, tickerLabels[index]);
-    return { ...row, label: tickerLabels[index] };
+    const live =
+      row.live != null
+        ? row.live
+        : resolveIndicatorLive(tickerLiveIds[index], { marketState: row.marketState, session: index === 2 ? "futures" : undefined });
+    return { ...row, label: tickerLabels[index], live };
   });
 
   const kospi = settledValue(settled[0]);

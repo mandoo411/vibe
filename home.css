@@ -1572,6 +1572,8 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     box-shadow: none;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   .page-home-v2 .home-m-only[hidden] {
@@ -2525,6 +2527,9 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   .page-home-v2 .home-footer {
     display: block;
     flex-shrink: 0;
+    order: 5;
+    margin-top: auto;
+    width: 100%;
   }
 
   .page-home-v2 .home-footer__bottom {
@@ -2533,6 +2538,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
 
   /* 諛뷀? ?ㅻ퉬 */
   .page-home-v2 .home-m-bottom-nav {
+    order: 6;
     display: flex;
     left: 0;
     right: 0;

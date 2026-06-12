@@ -424,3 +424,57 @@
     height: 36px;
   }
 }
+
+/* 모바일 다크 — 공포탐욕 지수 가독성 (웹은 기존 스타일 유지) */
+@media (max-width: 768px) {
+  [data-theme="dark"] .page-market .market-gauge-card--fng .market-gauge-card__body {
+    background: rgba(8, 14, 28, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 10px 8px 8px;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng .market-gauge__track {
+    stroke: rgba(255, 255, 255, 0.28) !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng .market-gauge__value,
+  [data-theme="dark"] .page-market .market-gauge-card--fng .market-gauge__label {
+    color: #f9fafb !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__fill {
+    stroke: #93c5fd !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__fill {
+    stroke: #5eead4 !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__fill {
+    stroke: #cbd5e1 !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__fill,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__fill {
+    stroke: #fca5a5 !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__value,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear-extreme"] .market-gauge__label {
+    color: #dbeafe !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__value,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__label {
+    color: #ccfbf1 !important;
+  }
+
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__value,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__value,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed"] .market-gauge__label,
+  [data-theme="dark"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__label {
+    color: #fecaca !important;
+  }
+}

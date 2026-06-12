@@ -69,50 +69,7 @@ const ORDER = {
   ratesFx: ["us10y", "us2y", "dxy", "usdkrw"],
   commodities: ["wti", "brent", "natgas", "gold", "silver", "platinum", "copper", "wheat", "corn", "soy"],
   sentiment: ["vix", "fear-greed", "btc-dominance"],
-  crypto: ["btc", "eth", "sol"],
-};
-
-const STABLECOIN_SYMBOLS = new Set([
-  "USDT",
-  "USDC",
-  "DAI",
-  "USDE",
-  "FDUSD",
-  "TUSD",
-  "USDD",
-  "PYUSD",
-  "USDS",
-  "BUSD",
-  "EURC",
-  "FRAX",
-  "USD1",
-  "USDF",
-]);
-
-const CRYPTO_KO_NAMES = {
-  BTC: "비트코인",
-  ETH: "이더리움",
-  SOL: "솔라나",
-  XRP: "리플",
-  BNB: "BNB",
-  ADA: "에이다",
-  DOGE: "도지코인",
-  TRX: "트론",
-  AVAX: "AVAX",
-  LINK: "체인링크",
-};
-
-const CRYPTO_GECKO_IDS = {
-  BTC: "bitcoin",
-  ETH: "ethereum",
-  SOL: "solana",
-  XRP: "ripple",
-  BNB: "binancecoin",
-  ADA: "cardano",
-  DOGE: "dogecoin",
-  TRX: "tron",
-  AVAX: "avalanche-2",
-  LINK: "chainlink",
+  crypto: ["btc", "eth", "xrp"],
 };
 
 function json(res, status, body) {
@@ -406,39 +363,11 @@ async function fetchCryptoItem(id, geckoId, yahooSymbol, name) {
 }
 
 async function fetchCryptoTop3() {
-  const key = String(process.env.CMC_API_KEY || "").trim();
-  if (key) {
-    try {
-      const res = await fetch(`${CMC_BASE_URL}/v1/cryptocurrency/listings/latest?limit=40&convert=USD`, {
-        headers: { Accept: "application/json", "X-CMC_PRO_API_KEY": key },
-      });
-      const text = await res.text();
-      if (!res.ok) throw new Error(`CMC HTTP ${res.status}`);
-      const body = JSON.parse(text);
-      const picks = (body?.data || [])
-        .filter((coin) => !STABLECOIN_SYMBOLS.has(String(coin.symbol || "").toUpperCase()))
-        .slice(0, 3);
-      if (picks.length >= 3) {
-        const items = await Promise.all(
-          picks.map((coin) => {
-            const sym = String(coin.symbol || "").toUpperCase();
-            const id = sym.toLowerCase();
-            const name = CRYPTO_KO_NAMES[sym] || String(coin.name || sym);
-            const geckoId = CRYPTO_GECKO_IDS[sym] || null;
-            return fetchCryptoItem(id, geckoId, `${sym}-USD`, name);
-          })
-        );
-        if (items.filter(Boolean).length >= 3) return items.filter(Boolean);
-      }
-    } catch (e) {
-      console.warn("[market-overview] crypto top3 cmc", e?.message || e);
-    }
-  }
   return compact(
     await Promise.all([
       fetchCryptoItem("btc", "bitcoin", "BTC-USD", "비트코인"),
       fetchCryptoItem("eth", "ethereum", "ETH-USD", "이더리움"),
-      fetchCryptoItem("sol", "solana", "SOL-USD", "솔라나"),
+      fetchCryptoItem("xrp", "ripple", "XRP-USD", "리플"),
     ])
   );
 }
@@ -463,15 +392,7 @@ async function buildOverview() {
   const europe = compact(ORDER.europe.map((id) => yahooById.get(id))).sort(sortBy(ORDER.europe));
   const ratesFx = compact(ORDER.ratesFx.map((id) => yahooById.get(id))).sort(sortBy(ORDER.ratesFx));
   const commodities = compact(ORDER.commodities.map((id) => yahooById.get(id))).sort(sortBy(ORDER.commodities));
-  const crypto = (cryptoTop3 || []).sort((a, b) => {
-    const order = ["btc", "eth"];
-    const ai = order.indexOf(a.id);
-    const bi = order.indexOf(b.id);
-    if (ai >= 0 && bi >= 0) return ai - bi;
-    if (ai >= 0) return -1;
-    if (bi >= 0) return 1;
-    return 0;
-  });
+  const crypto = (cryptoTop3 || []).sort(sortBy(ORDER.crypto));
   const sentiment = compactSentiment([yahooById.get("vix"), fearGreed, btcDominance]).sort(sortBy(ORDER.sentiment));
 
   return {

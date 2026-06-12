@@ -123,7 +123,7 @@
           { key: "global", en: "GLOBAL", ko: "글로벌 증시", sub: "아시아·유럽 주요 지수" },
           { key: "ratesFx", en: "RATES & FX", ko: "금리 · 환율", sub: "미국채·달러·원달러" },
           { key: "commodities", en: "COMMODITIES", ko: "원자재", sub: "에너지·귀금속·농산물" },
-          { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "시총 상위 3종목 (스테이블 제외)" },
+          { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "비트코인 · 이더리움 · 리플" },
           { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
         ];
 
@@ -311,8 +311,8 @@
           const bg = arcPath(60, 58, 44, 180, 0);
           const fg = pct > 0 ? arcPath(60, 58, 44, 180, endDeg) : "";
           return `<svg class="market-gauge" viewBox="0 0 120 72" width="80" height="44" aria-hidden="true">
-            <path d="${bg}" fill="none" stroke="var(--border)" stroke-width="8" stroke-linecap="round"/>
-            ${fg ? `<path d="${fg}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>` : ""}
+            <path class="market-gauge__track" d="${bg}" fill="none" stroke="var(--border)" stroke-width="8" stroke-linecap="round"/>
+            ${fg ? `<path class="market-gauge__fill" d="${fg}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>` : ""}
           </svg>`;
         }
 
@@ -352,7 +352,7 @@
                       : item.rating === "Extreme Greed"
                         ? "극단적 탐욕"
                         : meta.label;
-            return `<article class="market-gauge-card market-gauge-card--fng" data-id="fear-greed">
+            return `<article class="market-gauge-card market-gauge-card--fng" data-id="fear-greed" data-fng-tone="${meta.tone}">
               <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
               <div class="market-gauge-card__body">
                 ${semiGaugeSvg(item.value, 100, meta.gauge, "fng")}

@@ -2523,7 +2523,12 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   }
 
   .page-home-v2 .home-footer {
-    display: none;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .page-home-v2 .home-footer__bottom {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   /* 諛뷀? ?ㅻ퉬 */

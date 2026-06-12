@@ -302,11 +302,23 @@
         function sentimentCardHtml(item) {
           if (item.id === "fear-greed") {
             const meta = fearGreedMeta(item.value);
+            const ratingKo =
+              item.rating === "Extreme Fear"
+                ? "극단적 공포"
+                : item.rating === "Fear"
+                  ? "공포"
+                  : item.rating === "Neutral"
+                    ? "중립"
+                    : item.rating === "Greed"
+                      ? "탐욕"
+                      : item.rating === "Extreme Greed"
+                        ? "극단적 탐욕"
+                        : meta.label;
             return `<article class="market-gauge-card" data-id="fear-greed">
               <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
               ${semiGaugeSvg(item.value, 100, meta.color, "fng")}
               <div class="market-gauge__value" style="color:${meta.color}">${item.value ?? "—"}</div>
-              <div class="market-gauge__label" style="color:${meta.color}">${meta.label}</div>
+              <div class="market-gauge__label" style="color:${meta.color}">${item.value != null ? ratingKo : "데이터 준비 중"}</div>
             </article>`;
           }
           if (item.id === "btc-dominance") {

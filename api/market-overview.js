@@ -6,6 +6,7 @@
 const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
 const { resolveIndicatorLive } = require("./lib/market-live");
+const { fetchFearGreedIndex } = require("./lib/fear-greed");
 
 const MEMORY_TTL_MS = 2 * 60 * 1000;
 let memoryCache = { at: 0, data: null, promise: null };
@@ -97,6 +98,15 @@ function sortBy(order) {
 
 function compact(items) {
   return (items || []).filter((item) => item && item.value != null);
+}
+
+/** 게이지형 지표는 값 없어도 카드 슬롯 유지 */
+function compactSentiment(items) {
+  return (items || []).filter((item) => {
+    if (!item) return false;
+    if (item.unit === "gauge") return true;
+    return item.value != null;
+  });
 }
 
 async function kisGet(path, trId, params) {
@@ -274,24 +284,7 @@ async function fetchYahooDef(def) {
 }
 
 async function fetchFearGreed() {
-  const res = await fetch(FEAR_GREED_URL, { headers: { Accept: "application/json" } });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`FearGreed HTTP ${res.status}`);
-  const body = JSON.parse(text);
-  const row = body?.data?.[0];
-  const value = row?.value != null ? Math.round(toNum(row.value)) : null;
-  if (value == null) return null;
-  return {
-    id: "fear-greed",
-    symbol: "FNG",
-    name: "공포·탐욕 지수",
-    value,
-    changePct: null,
-    rating: row?.value_classification ? String(row.value_classification) : null,
-    sparkline: [],
-    unit: "gauge",
-    live: false,
-  };
+  return fetchFearGreedIndex();
 }
 
 async function fetchBtcDominance() {
@@ -374,10 +367,7 @@ async function buildOverview() {
 
   const [koreaKis, fearGreed, btcDominance, cryptoBtc, cryptoEth] = await Promise.all([
     Promise.all(KOREA_SPARK.map(fetchKoreaIndex)),
-    fetchFearGreed().catch((e) => {
-      console.warn("[market-overview] fear-greed failed", e?.message || e);
-      return null;
-    }),
+    fetchFearGreed(),
     fetchBtcDominance().catch((e) => {
       console.warn("[market-overview] btc dominance failed", e?.message || e);
       return null;
@@ -393,7 +383,7 @@ async function buildOverview() {
   const ratesFx = compact(ORDER.ratesFx.map((id) => yahooById.get(id))).sort(sortBy(ORDER.ratesFx));
   const commodities = compact(ORDER.commodities.map((id) => yahooById.get(id))).sort(sortBy(ORDER.commodities));
   const crypto = compact([cryptoBtc, cryptoEth]).sort(sortBy(ORDER.crypto));
-  const sentiment = compact([yahooById.get("vix"), fearGreed, btcDominance]).sort(sortBy(ORDER.sentiment));
+  const sentiment = compactSentiment([yahooById.get("vix"), fearGreed, btcDominance]).sort(sortBy(ORDER.sentiment));
 
   return {
     updatedAt: new Date().toISOString(),

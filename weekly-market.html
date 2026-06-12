@@ -891,8 +891,8 @@
             return d !== 0 ? d : String(a.time || "").localeCompare(String(b.time || ""));
           });
           if (!list.length) return '<p class="empty-text">경제지표 일정 없음</p>';
-          return `<div class="schedule-table-wrap"><table class="schedule-table">
-            <thead><tr><th>시간</th><th>지표명</th><th>이전값</th><th>예측값</th><th>실제값</th><th>중요도</th></tr></thead>
+          return `<div class="schedule-table-wrap"><table class="schedule-table schedule-table--economic">
+            <thead><tr><th>시간</th><th>지표명</th><th>이전 · 예측 · 실제</th><th>중요도</th></tr></thead>
             <tbody>${list
               .map((r) => {
                 const impactKey = resolveImpactKey(r);
@@ -902,13 +902,20 @@
                 const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
                 const actualText = fmtEconValue(r.actual, r.unit);
                 const sClass = surpriseClass(r.actual, r.estimate);
+                const prev = escapeHtml(fmtEconValue(r.previous, r.unit));
+                const est = escapeHtml(fmtEconValue(r.estimate, r.unit));
+                const act = `<span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span>`;
                 return `<tr class="${rowClass}">
-                  <td data-label="시간">${timeCellHtml(r)}</td>
-                  <td data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
-                  <td data-label="이전값">${escapeHtml(fmtEconValue(r.previous, r.unit))}</td>
-                  <td data-label="예측값">${escapeHtml(fmtEconValue(r.estimate, r.unit))}</td>
-                  <td data-label="실제값"><span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span></td>
-                  <td data-label="중요도">${impactBadgeHtml(impactKey)}</td>
+                  <td class="schedule-td-time" data-label="시간">${timeCellHtml(r)}</td>
+                  <td class="schedule-td-event" data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
+                  <td class="schedule-td-metrics">
+                    <div class="schedule-metrics-inline">
+                      <span class="schedule-metric"><span class="schedule-metric__lbl">이전</span>${prev}</span>
+                      <span class="schedule-metric"><span class="schedule-metric__lbl">예측</span>${est}</span>
+                      <span class="schedule-metric"><span class="schedule-metric__lbl">실제</span>${act}</span>
+                    </div>
+                  </td>
+                  <td class="schedule-td-impact" data-label="중요도">${impactBadgeHtml(impactKey)}</td>
                 </tr>`;
               })
               .join("")}</tbody>
@@ -952,10 +959,14 @@
               ${coreBadge}${hourBadge(row.hour)}
             </div>
             <dl class="earnings-card__metrics">
-              <div><dt>EPS 예상</dt><dd>${epsEst}</dd></div>
-              <div><dt>EPS 실제</dt><dd><span class="surprise-value ${epsSurprise}">${epsAct}</span></dd></div>
-              <div><dt>매출 예상</dt><dd>${revEst}</dd></div>
-              <div><dt>매출 실제</dt><dd><span class="surprise-value ${revSurprise}">${revAct}</span></dd></div>
+              <div class="earnings-metric-line">
+                <dt class="u-visually-hidden">EPS</dt>
+                <dd><span class="earnings-metric-pair"><em>EPS</em> 예상 ${epsEst} · 실제 <span class="surprise-value ${epsSurprise}">${epsAct}</span></span></dd>
+              </div>
+              <div class="earnings-metric-line">
+                <dt class="u-visually-hidden">매출</dt>
+                <dd><span class="earnings-metric-pair"><em>매출</em> 예상 ${revEst} · 실제 <span class="surprise-value ${revSurprise}">${revAct}</span></span></dd>
+              </div>
             </dl>
             ${row.reportName ? `<p class="earnings-card__report">${escapeHtml(row.reportName)}</p>` : ""}
           </article>`;

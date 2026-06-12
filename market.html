@@ -123,7 +123,7 @@
           { key: "global", en: "GLOBAL", ko: "글로벌 증시", sub: "아시아·유럽 주요 지수" },
           { key: "ratesFx", en: "RATES & FX", ko: "금리 · 환율", sub: "미국채·달러·원달러" },
           { key: "commodities", en: "COMMODITIES", ko: "원자재", sub: "에너지·귀금속·농산물" },
-          { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "비트코인·이더리움" },
+          { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "시총 상위 3종목 (스테이블 제외)" },
           { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
         ];
 
@@ -149,12 +149,10 @@
           const v = item.value;
           const digits = item.id === "gold" || item.id === "platinum" ? 1 : item.id === "natgas" || item.id === "copper" ? 3 : 2;
           if (item.id === "usdkrw") return v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
-          if (item.id === "btc" || item.id === "eth") {
-            return `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
-          }
           if (item.unit === "%") return `${v.toFixed(2)}%`;
           if (item.currency === "USD") {
-            return `$${v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })}`;
+            const usdDigits = v >= 1000 ? 0 : 2;
+            return `$${v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: usdDigits })}`;
           }
           if (item.currency === "cents") {
             if (v < 50 || v > 3000) console.warn("[market] unusual agri quote", item.id, v);
@@ -243,14 +241,54 @@
           </header>`;
         }
 
+        function isDarkTheme() {
+          return document.documentElement.getAttribute("data-theme") === "dark";
+        }
+
         function fearGreedMeta(score) {
           const n = Number(score);
-          if (!Number.isFinite(n)) return { label: "—", color: "#9ca3af" };
-          if (n <= 25) return { label: "극단적 공포", color: "#07264b" };
-          if (n <= 45) return { label: "공포", color: "#0f8387" };
-          if (n <= 55) return { label: "중립", color: "#9ca3af" };
-          if (n <= 75) return { label: "탐욕", color: "#e24b4a" };
-          return { label: "극단적 탐욕", color: "#e24b4a" };
+          const dark = isDarkTheme();
+          if (!Number.isFinite(n)) {
+            return { label: "—", tone: "neutral", color: "var(--text-dim)", gauge: "var(--text-dim)" };
+          }
+          if (n <= 25) {
+            return {
+              label: "극단적 공포",
+              tone: "fear-extreme",
+              color: dark ? "#7dd3fc" : "#07264b",
+              gauge: dark ? "#60a5fa" : "#07264b",
+            };
+          }
+          if (n <= 45) {
+            return {
+              label: "공포",
+              tone: "fear",
+              color: dark ? "#5eead4" : "#0f8387",
+              gauge: dark ? "#2dd4bf" : "#0f8387",
+            };
+          }
+          if (n <= 55) {
+            return {
+              label: "중립",
+              tone: "neutral",
+              color: dark ? "#d1d5db" : "#6b7280",
+              gauge: dark ? "#9ca3af" : "#9ca3af",
+            };
+          }
+          if (n <= 75) {
+            return {
+              label: "탐욕",
+              tone: "greed",
+              color: dark ? "#fca5a5" : "#e24b4a",
+              gauge: dark ? "#f87171" : "#e24b4a",
+            };
+          }
+          return {
+            label: "극단적 탐욕",
+            tone: "greed-extreme",
+            color: dark ? "#fca5a5" : "#e24b4a",
+            gauge: dark ? "#f87171" : "#e24b4a",
+          };
         }
 
         function polar(cx, cy, r, deg) {
@@ -314,27 +352,33 @@
                       : item.rating === "Extreme Greed"
                         ? "극단적 탐욕"
                         : meta.label;
-            return `<article class="market-gauge-card" data-id="fear-greed">
+            return `<article class="market-gauge-card market-gauge-card--fng" data-id="fear-greed">
               <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
-              ${semiGaugeSvg(item.value, 100, meta.color, "fng")}
-              <div class="market-gauge__value" style="color:${meta.color}">${item.value ?? "—"}</div>
-              <div class="market-gauge__label" style="color:${meta.color}">${item.value != null ? ratingKo : "데이터 준비 중"}</div>
+              <div class="market-gauge-card__body">
+                ${semiGaugeSvg(item.value, 100, meta.gauge, "fng")}
+                <div class="market-gauge__value market-fng market-fng--${meta.tone}" style="color:${meta.color}">${item.value ?? "—"}</div>
+                <div class="market-gauge__label market-fng market-fng--${meta.tone}" style="color:${meta.color}">${item.value != null ? ratingKo : "데이터 준비 중"}</div>
+              </div>
             </article>`;
           }
           if (item.id === "btc-dominance") {
             const color = "#f59e0b";
             return `<article class="market-gauge-card" data-id="btc-dominance">
               <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
-              ${donutGaugeSvg(item.value, 100, color, "btc")}
-              <div class="market-gauge__value" style="color:${color}">${item.value != null ? item.value.toFixed(1) : "—"}%</div>
-              <div class="market-gauge__hint">비트코인 시총 비중</div>
+              <div class="market-gauge-card__body">
+                ${donutGaugeSvg(item.value, 100, color, "btc")}
+                <div class="market-gauge__value" style="color:${color}">${item.value != null ? item.value.toFixed(1) : "—"}%</div>
+                <div class="market-gauge__hint">비트코인 시총 비중</div>
+              </div>
             </article>`;
           }
           const vm = vixMeta(item.value);
-          return `<article class="market-gauge-card" data-id="vix">
+          return `<article class="market-gauge-card market-gauge-card--vix" data-id="vix">
             <div class="market-gauge-card__name">${liveNameHtml(item)}</div>
-            <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
-            <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
+            <div class="market-gauge-card__body">
+              <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
+              <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
+            </div>
           </article>`;
         }
 
@@ -433,6 +477,17 @@
         }
 
         load();
+
+        document.querySelectorAll(".tm-theme-toggle, #theme-toggle").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            setTimeout(() => {
+              fetch("/api/market-overview?t=" + Date.now(), { cache: "no-store" })
+                .then((res) => res.ok ? res.json() : null)
+                .then((data) => { if (data && !data.error) render(data); })
+                .catch(() => {});
+            }, 0);
+          });
+        });
       })();
     </script>
   </body>

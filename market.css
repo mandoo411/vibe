@@ -227,9 +227,9 @@
 .market-gauge-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 6px;
   min-height: 124px;
   padding: 16px;
   border: 1px solid var(--border);
@@ -254,8 +254,24 @@
   color: var(--text-dim);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.market-gauge-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+}
+
+.market-gauge-card__body .market-gauge {
+  margin: 0 auto;
 }
 
 .market-gauge {
@@ -348,6 +364,19 @@
 
 [data-theme="dark"] .market-section__en {
   color: #2dd4bf;
+}
+
+[data-theme="dark"] .market-fng--fear-extreme,
+[data-theme="dark"] .market-fng--fear {
+  color: #7dd3fc;
+}
+
+[data-theme="dark"] .market-fng--neutral {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .market-vix--calm {
+  color: #d1d5db;
 }
 
 [data-theme="dark"] .market-section__bar {

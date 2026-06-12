@@ -2016,6 +2016,18 @@ body[data-theme="dark"] .home-ticker-bar__label {
     gap: 6px;
   }
 
+  /* 홈 모바일: flex order 제거 후 DOM 순서로 푸터를 맨 아래 고정 */
+  body.page-home-v2 .home-wrap > .home-footer {
+    order: 0;
+    margin-top: auto;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  body.page-home-v2 .home-wrap > .home-main {
+    flex: 1 0 auto;
+  }
+
   .page-tm-v2 .tm-bottom-nav {
     display: flex;
     position: fixed;

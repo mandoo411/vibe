@@ -8,6 +8,8 @@
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5H13.5C14.6 8.5 15.5 9.4 15.5 10.5C15.5 11.6 14.6 12.5 13.5 12.5H9V8.5Z" stroke="currentColor" stroke-width="1.5"/><path d="M9 12.5H14C15.1 12.5 16 13.4 16 14.5C16 15.6 15.1 16.5 14 16.5H9V12.5Z" stroke="currentColor" stroke-width="1.5"/></svg>',
     us:
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="1.5" stroke="currentColor" stroke-width="1.8"/><path d="M8 8H8.01M12 8H12.01M16 8H16.01M8 12H8.01M12 12H12.01M16 12H16.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10 16H14V21H10V16Z" stroke="currentColor" stroke-width="1.5"/></svg>',
+    market:
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 4V20H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7,15 11,10 14,13 19,6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     schedule:
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     analysis:
@@ -16,6 +18,7 @@
 
   const BOTTOM_NAV_LABELS = {
     home: "홈",
+    market: "지표",
     realtime: "시세",
     us: "미국주식",
     crypto: "암호화폐",
@@ -31,7 +34,7 @@
     '<rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
     '<rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>';
 
-  const BOTTOM_NAV_PRIMARY = ["home", "realtime", "us", "crypto"];
+  const BOTTOM_NAV_PRIMARY = ["home", "market", "realtime", "us"];
 
   /** AI 종목분석 접근 제한 (베타) */
   const ANALYSIS_PAGE_LOCKED = true;

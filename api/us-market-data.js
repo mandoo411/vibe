@@ -9,8 +9,7 @@ const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestme
 );
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-// IPO 직후(상장 30일 미만) 종목은 KIS 발행주식수 반영 지연으로 시총이 과소 계산됨 → Yahoo 시총 우선
-const IPO_RECENT_MS = 30 * 24 * 60 * 60 * 1000;
+// KIS는 IPO 공모 물량만 인식해 시총이 과소 계산됨(예: SPCX) → Yahoo marketCap을 우선 사용
 const YAHOO_QUOTE_BATCH = 50;
 const YAHOO_CRUMB_TTL_MS = 30 * 60 * 1000;
 const YAHOO_UA =
@@ -632,13 +631,10 @@ async function fetchYahooMarketCapMap(tickers) {
         if (!sym) continue;
         const marketCap = toNum(q.marketCap);
         const shares = toNum(q.sharesOutstanding);
-        const firstTradeMs = toNum(q.firstTradeDateMilliseconds);
         map.set(sym, {
           marketCap: marketCap != null && marketCap > 0 ? Math.round(marketCap) : null,
           shares: shares != null && shares > 0 ? shares : null,
           price: round2(toNum(q.regularMarketPrice)),
-          firstTradeMs,
-          isRecentIpo: firstTradeMs != null ? Date.now() - firstTradeMs < IPO_RECENT_MS : false,
         });
       }
     } catch (e) {
@@ -650,17 +646,15 @@ async function fetchYahooMarketCapMap(tickers) {
 
 /**
  * 시총 우선순위:
- * 1) KIS 시총(hts_avls/tomv) 우선
- * 2) 없거나 0이면 Yahoo Finance marketCap 폴백
- * 3) 그래도 없으면 현재가 × 발행주식수
- * 단, 상장 30일 미만 IPO 종목은 Yahoo marketCap을 우선 사용.
+ * 1) Yahoo Finance marketCap 우선 (전체 발행주식수 반영 → IPO 직후 종목도 정확)
+ * 2) 없거나 0이면 KIS 시총(hts_avls/tomv)으로 폴백
+ * 3) 둘 다 없으면 현재가 × 발행주식수
  */
 function resolveMarketCap(row, yh) {
-  const kisCap = row && row.marketCap != null && row.marketCap > 0 ? row.marketCap : null;
   const yahooCap = yh && yh.marketCap != null && yh.marketCap > 0 ? yh.marketCap : null;
-  if (yh && yh.isRecentIpo && yahooCap != null) return yahooCap;
-  if (kisCap != null) return kisCap;
   if (yahooCap != null) return yahooCap;
+  const kisCap = row && row.marketCap != null && row.marketCap > 0 ? row.marketCap : null;
+  if (kisCap != null) return kisCap;
   const price = (row && row.price != null ? row.price : null) ?? (yh ? yh.price : null);
   const shares = yh ? yh.shares : null;
   if (price != null && shares != null) return Math.round(price * shares);
@@ -991,7 +985,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v14", async () => {
+  return cached("ranking:market-cap:v15", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1042,6 +1036,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v15",
     "ranking:market-cap:v14",
     "ranking:market-cap:v13",
     "ranking:market-cap:v12",
@@ -1319,7 +1314,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v12", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v13", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

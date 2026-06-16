@@ -651,7 +651,7 @@ async function fetchYahooMarketCapMap(tickers) {
 // IPO 직후라 Yahoo/KIS가 전체 발행주식수를 반영하지 못하는 종목의 발행주식수 하드코딩(공시 기준).
 // 해당 종목은 현재가 × 공시주식수로 시총을 강제 계산(Yahoo/KIS 값 무시).
 const KNOWN_SHARES_OUTSTANDING = new Map([
-  ["SPCX", 13076000000], // SpaceX — S-1 공시 기준 전체 발행주식수(13.076B)
+  ["SPCX", 13111111111], // SpaceX — 전체 발행주식수 (현재가 × 이 값으로 시총 강제 계산)
 ]);
 
 /**
@@ -668,7 +668,7 @@ function resolveMarketCap(row, yh) {
   const ticker = row && row.ticker ? normalizeTicker(row.ticker) : "";
   const knownShares = KNOWN_SHARES_OUTSTANDING.get(ticker);
   if (knownShares != null && price != null) {
-    // SPCX 등: 공시 발행주식수로 무조건 덮어쓰기 (현재가 $212 → 약 $2.77T)
+    // SPCX 등: 발행주식수로 무조건 덮어쓰기 (현재가 $212 → 약 $2.78T)
     return Math.round(price * knownShares);
   }
 
@@ -1004,7 +1004,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v18", async () => {
+  return cached("ranking:market-cap:v19", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1055,6 +1055,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v19",
     "ranking:market-cap:v18",
     "ranking:market-cap:v16",
     "ranking:market-cap:v15",
@@ -1335,7 +1336,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v16", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v17", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

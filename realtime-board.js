@@ -107,9 +107,67 @@
     chartBarsLimit: 200,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
+    /** 탭별 정적 JSON(TOP100) 메모리 캐시 { [tab]: { stocks, updatedAt, loadedAt } } */
+    krStatic: {},
+    /** 데이터 기준 시각(updatedAt) */
+    dataUpdatedAt: null,
     /** 종목 상세 fetch 중단용 */
     detailFetchAbort: null,
   };
+
+  const KR_TAB_JSON = { cap: "kr-realtime-cap.json", gainers: "kr-realtime-gainers.json", tv: "kr-realtime-tv.json" };
+  const KR_STATIC_TTL_MS = 60 * 1000;
+
+  function rtIsLocalHost() {
+    const h = typeof location !== "undefined" ? location.hostname : "";
+    return h === "localhost" || h === "127.0.0.1" || h === "";
+  }
+
+  // 미리 생성된 data/*.json 읽기: 운영=/api/repo-data, 로컬=./data 직접
+  async function fetchStaticJson(file) {
+    const bust = Date.now();
+    const urls = [];
+    if (!rtIsLocalHost()) urls.push(`/api/repo-data?path=${encodeURIComponent(`data/${file}`)}&t=${bust}`);
+    urls.push(`./data/${file}?t=${bust}`);
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return await res.json();
+        lastErr = new Error(`${url} → ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error(`static json unavailable: ${file}`);
+  }
+
+  async function loadKrTabAll(tab) {
+    const hit = state.krStatic[tab];
+    if (hit && Date.now() - hit.loadedAt < KR_STATIC_TTL_MS) return hit;
+    const data = await fetchStaticJson(KR_TAB_JSON[tab]);
+    if (!data || !Array.isArray(data.stocks) || !data.stocks.length) throw new Error("empty static json");
+    const entry = { stocks: data.stocks, updatedAt: data.updatedAt || null, loadedAt: Date.now() };
+    state.krStatic[tab] = entry;
+    return entry;
+  }
+
+  function formatFreshness(iso) {
+    if (!iso) return "";
+    const t = new Date(iso);
+    if (isNaN(t.getTime())) return "";
+    const mins = Math.max(0, Math.round((Date.now() - t.getTime()) / 60000));
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const rel = mins < 1 ? "방금 전" : mins < 60 ? `${mins}분 전` : `${Math.floor(mins / 60)}시간 ${mins % 60}분 전`;
+    return `데이터 기준: ${hh}:${mm} (${rel})`;
+  }
+
+  function setDataUpdatedAt(iso) {
+    if (iso) state.dataUpdatedAt = iso;
+    const el = $("rt-data-freshness");
+    if (el) el.textContent = state.dataUpdatedAt ? formatFreshness(state.dataUpdatedAt) : "";
+  }
 
   /** 전체 종목 리스트(자동완성용) */
   let stockList = [];
@@ -1196,16 +1254,26 @@
 
   async function fetchStocksJsonForTab(tab) {
     const ps = 25;
-    if (tab === "cap") {
-      const p = Math.max(1, Number(state.capPage) || 1);
-      return fetchJson("market-cap", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    const p = currentPageForTab(tab);
+    // 1) 미리 생성된 정적 JSON(TOP100)에서 해당 페이지 슬라이스
+    try {
+      const all = await loadKrTabAll(tab);
+      setDataUpdatedAt(all.updatedAt);
+      const start = (p - 1) * ps;
+      return {
+        stocks: all.stocks.slice(start, start + ps),
+        total: all.stocks.length,
+        page: p,
+        pageSize: ps,
+        updatedAt: all.updatedAt,
+        cached: true,
+      };
+    } catch (e) {
+      console.warn("[realtime-board] static json fallback→api", tab, e && e.message);
     }
-    if (tab === "tv") {
-      const p = Math.max(1, Number(state.tvPage) || 1);
-      return fetchJson("trading-value", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
-    }
-    const p = Math.max(1, Number(state.gainerPage) || 1);
-    return fetchJson("gainers", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    // 2) 폴백: 기존 API 직접 호출
+    const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+    return fetchJson(action, FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
   }
 
   function renderTablePager() {
@@ -2743,6 +2811,8 @@
           ? (fn) => window.requestIdleCallback(fn, { timeout: 4000 })
           : (fn) => window.setTimeout(fn, 2500);
       deferPrefetch(() => prefetchOtherRankTabs());
+      // 상대 시간("N분 전") 1분마다 갱신
+      setInterval(() => setDataUpdatedAt(), 60000);
       await tryConnectWs();
     }
   }

@@ -30,11 +30,17 @@ body.page-tm-v2 {
   --home-ai-input-border: rgba(15, 131, 135, 0.35);
   --home-ai-shadow: 0 4px 16px rgba(15, 131, 135, 0.12);
   --accent-icon: #ffd84d;
+  /* 스켈레톤 로딩 shimmer (라이트 기본) */
+  --skeleton-1: #f0f0f0;
+  --skeleton-2: #e0e0e0;
 }
 
 [data-theme="dark"] {
   /* Premium finance palette */
   --header-bg: #0a1324;
+  /* 스켈레톤 로딩 shimmer (다크) */
+  --skeleton-1: #1a1f35;
+  --skeleton-2: #252b45;
   --body-bg: #0d172a;
   --card-bg: #111d35;
   --accent-gold: #d4af37;

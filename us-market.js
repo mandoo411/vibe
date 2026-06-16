@@ -12,6 +12,7 @@
     "market-cap": {
       rtTab: "cap",
       action: "market-cap",
+      jsonFile: "us-market-cap.json",
       valueKey: "marketCap",
       valueLabel: "시가총액",
       valueFormat: fmtUsdCompact,
@@ -19,6 +20,7 @@
     gainers: {
       rtTab: "gainers",
       action: "gainers",
+      jsonFile: "us-market-gainers.json",
       valueKey: "marketCap",
       valueLabel: "시가총액",
       valueFormat: fmtUsdCompact,
@@ -26,6 +28,7 @@
     volume: {
       rtTab: "tv",
       action: "volume",
+      jsonFile: "us-market-volume.json",
       valueKey: "marketCap",
       valueLabel: "시가총액",
       valueFormat: fmtUsdCompact,
@@ -39,6 +42,7 @@
     activeTab: "market-cap",
     rowsByTab: {},
     tabLoadedAt: {},
+    dataUpdatedAt: null,
     detailPrefetch: new Set(),
     clientCache: new Map(),
     quoteCache: new Map(),
@@ -150,6 +154,62 @@
     } finally {
       clearTimeout(tid);
     }
+  }
+
+  function isLocalHost() {
+    const h = typeof location !== "undefined" ? location.hostname : "";
+    return h === "localhost" || h === "127.0.0.1" || h === "";
+  }
+
+  // 미리 생성된 data/*.json 읽기: 운영=/api/repo-data, 로컬=./data 직접
+  async function fetchStaticJson(file) {
+    const bust = Date.now();
+    const urls = [];
+    if (!isLocalHost()) urls.push(`/api/repo-data?path=${encodeURIComponent(`data/${file}`)}&t=${bust}`);
+    urls.push(`./data/${file}?t=${bust}`);
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return await res.json();
+        lastErr = new Error(`${url} → ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error(`static json unavailable: ${file}`);
+  }
+
+  // 정적 JSON 우선, 실패 시 기존 API(/api/us-market-data)로 폴백
+  async function loadTabPack(tab) {
+    const cfg = TAB_CONFIG[tab];
+    try {
+      const data = await fetchStaticJson(cfg.jsonFile);
+      if (data && Array.isArray(data.stocks) && data.stocks.length) {
+        return { stocks: data.stocks, updatedAt: data.updatedAt || null };
+      }
+    } catch (e) {
+      console.warn("[us-market] static json fallback→api", cfg.jsonFile, e && e.message);
+    }
+    const pack = await fetchJson(cfg.action);
+    return { stocks: pack.stocks || [], updatedAt: pack.updatedAt || null };
+  }
+
+  function formatFreshness(iso) {
+    if (!iso) return "";
+    const t = new Date(iso);
+    if (isNaN(t.getTime())) return "";
+    const mins = Math.max(0, Math.round((Date.now() - t.getTime()) / 60000));
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const rel = mins < 1 ? "방금 전" : mins < 60 ? `${mins}분 전` : `${Math.floor(mins / 60)}시간 ${mins % 60}분 전`;
+    return `데이터 기준: ${hh}:${mm} (${rel})`;
+  }
+
+  function setDataUpdatedAt(iso) {
+    if (iso) state.dataUpdatedAt = iso;
+    const el = $("us-data-freshness");
+    if (el) el.textContent = state.dataUpdatedAt ? formatFreshness(state.dataUpdatedAt) : "";
   }
 
   function allKnownRows() {
@@ -636,7 +696,6 @@
   }
 
   async function loadActiveTab(force) {
-    const cfg = TAB_CONFIG[state.activeTab];
     const tab = state.activeTab;
     const hasRows = !!state.rowsByTab[tab];
     if (!force && hasRows) {
@@ -644,68 +703,61 @@
       renderRankTable();
       if (tabIsFresh(tab)) return;
       try {
-        const pack = await fetchJson(cfg.action);
-        state.rowsByTab[tab] = pack.stocks || [];
+        const pack = await loadTabPack(tab);
+        state.rowsByTab[tab] = pack.stocks;
         state.tabLoadedAt[tab] = Date.now();
-        if (state.activeTab === tab) renderRankTable();
+        if (state.activeTab === tab) {
+          setDataUpdatedAt(pack.updatedAt);
+          renderRankTable();
+        }
       } catch (e) {
         console.warn("[us-market] background refresh", tab, e);
       }
       return;
     }
     showTableLoading();
-    const pack = await fetchJson(cfg.action);
-    state.rowsByTab[tab] = pack.stocks || [];
+    const pack = await loadTabPack(tab);
+    state.rowsByTab[tab] = pack.stocks;
     state.tabLoadedAt[tab] = Date.now();
-    if (state.activeTab === tab) renderRankTable();
-  }
-
-  function deferIdle(fn) {
-    if (typeof window.requestIdleCallback === "function") {
-      window.requestIdleCallback(() => fn(), { timeout: 4000 });
-    } else {
-      window.setTimeout(fn, 2500);
+    if (state.activeTab === tab) {
+      setDataUpdatedAt(pack.updatedAt);
+      renderRankTable();
     }
   }
 
-  async function prefetchOtherTabs() {
-    const order = ["market-cap", "gainers", "volume"].filter((t) => t !== state.activeTab);
-    await Promise.all(
-      order.map(async (tab) => {
-        if (state.rowsByTab[tab] && tabIsFresh(tab)) return;
-        try {
-          const pack = await fetchJson(TAB_CONFIG[tab].action);
-          state.rowsByTab[tab] = pack.stocks || [];
-          state.tabLoadedAt[tab] = Date.now();
-        } catch (e) {
-          console.warn("[us-market] prefetch", tab, e);
-        }
-      })
-    );
-  }
-
+  // 페이지 진입 시 3개 탭 JSON을 Promise.all 로 동시 프리패치 → 탭 전환 즉시
   async function refreshAll(force) {
     const errEl = $("us-error");
     if (errEl) errEl.hidden = true;
-    try {
-      if (force) {
-        state.clientCache.clear();
-        state.rowsByTab = {};
-      }
-      await loadActiveTab(force);
-      deferIdle(() => {
-        prefetchOtherTabs().catch((e) => console.warn("[us-market] prefetch", e));
-      });
-    } catch (e) {
-      console.error("[us-market]", e);
+    if (force) {
+      state.clientCache.clear();
+      state.rowsByTab = {};
+      state.tabLoadedAt = {};
+    }
+    const tabs = ["market-cap", "gainers", "volume"];
+    if (!state.rowsByTab[state.activeTab]) showTableLoading();
+    let activeErr = null;
+    await Promise.all(
+      tabs.map(async (tab) => {
+        try {
+          const pack = await loadTabPack(tab);
+          state.rowsByTab[tab] = pack.stocks;
+          state.tabLoadedAt[tab] = Date.now();
+          if (tab === state.activeTab) {
+            setDataUpdatedAt(pack.updatedAt);
+            renderRankTable();
+          }
+        } catch (e) {
+          if (tab === state.activeTab) activeErr = e;
+          else console.warn("[us-market] prefetch", tab, e);
+        }
+      })
+    );
+    if (activeErr) {
+      console.error("[us-market]", activeErr);
       if (errEl) {
         errEl.hidden = false;
-        errEl.textContent =
-          e && e.name === "AbortError"
-            ? "데이터를 불러오지 못했습니다. 새로고침 해주세요."
-            : e && e.message
-              ? e.message
-              : String(e);
+        errEl.textContent = activeErr && activeErr.message ? activeErr.message : String(activeErr);
       }
     }
   }
@@ -974,6 +1026,8 @@
     await refreshAll(false);
     syncUsPriceColumnAlign();
     startPolling();
+    // 상대 시간("N분 전") 1분마다 갱신
+    setInterval(() => setDataUpdatedAt(), 60000);
   }
 
   if (document.readyState === "loading") {

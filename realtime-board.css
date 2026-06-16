@@ -282,7 +282,12 @@
       .rt-skel-box {
         height: 14px;
         border-radius: 6px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background: linear-gradient(
+          90deg,
+          var(--skeleton-1, #f0f0f0) 25%,
+          var(--skeleton-2, #e0e0e0) 50%,
+          var(--skeleton-1, #f0f0f0) 75%
+        );
         background-size: 200% 100%;
         animation: rt-skel-shimmer 1.2s ease-in-out infinite;
       }
@@ -302,10 +307,17 @@
       .rt-skel-box--num ~ .rt-skel-box--num {
         margin-left: 0;
       }
-      [data-theme="dark"] .rt-skel-box,
-      .dark-mode .rt-skel-box {
-        background: linear-gradient(90deg, #1a1f35 25%, #252b45 50%, #1a1f35 75%);
-        background-size: 200% 100%;
+      /* 데이터 최신성 표시 (우상단 정렬) */
+      .rt-data-freshness {
+        display: block;
+        text-align: right;
+        font-size: 12px;
+        color: var(--text-muted, var(--text-secondary, #8a95a8));
+        margin: 2px 2px 8px;
+        min-height: 14px;
+      }
+      .rt-data-freshness:empty {
+        display: none;
       }
       @keyframes rt-skel-shimmer {
         0% {

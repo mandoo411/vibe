@@ -999,6 +999,8 @@ async function fetchMergedRanking(
     } else if (ranked.length > 50) {
       ranked = ranked.slice(0, 50);
     }
+    // 시총 보정(SPCX 하드코딩 등) — 정렬 키(changePct/tradingValue)엔 영향 없음, marketCap 값만 보정
+    ranked = await applyYahooMarketCap(ranked);
     return ranked.map((row, i) => ({ ...row, rank: i + 1 }));
   });
 }
@@ -1016,7 +1018,7 @@ function fetchMarketCapTop50() {
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v6",
+    "ranking:gainers:v7",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -1035,7 +1037,7 @@ function fetchGainersTop50() {
 
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
-    "ranking:trade-value:v6",
+    "ranking:trade-value:v7",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
     (exchange) => ({
@@ -1063,8 +1065,10 @@ function findCachedRankRow(ticker) {
     "ranking:market-cap:v13",
     "ranking:market-cap:v12",
     "ranking:market-cap:v11",
+    "ranking:gainers:v7",
     "ranking:gainers:v6",
     "ranking:gainers:v5",
+    "ranking:trade-value:v7",
     "ranking:trade-value:v6",
     "ranking:trade-value:v5",
     "ranking:market-cap",
@@ -1341,12 +1345,12 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers:v5", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v6", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v5", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v6", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

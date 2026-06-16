@@ -262,6 +262,64 @@
       .rt-table-loading-inner p {
         margin: 0;
       }
+      /* 스켈레톤 로딩 — 행 높이 유지 + shimmer */
+      .rt-skel-row > td {
+        padding: 0 !important;
+        background: var(--bg-panel, var(--card-bg, #fff));
+        border-bottom: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.05));
+      }
+      [data-theme="dark"] .rt-skel-row > td,
+      .dark-mode .rt-skel-row > td {
+        background: var(--card-bg, #111d35) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+      }
+      .rt-skel-line {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+      }
+      .rt-skel-box {
+        height: 14px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: rt-skel-shimmer 1.2s ease-in-out infinite;
+      }
+      .rt-skel-box--rank {
+        flex: 0 0 20px;
+        width: 20px;
+      }
+      .rt-skel-box--name {
+        flex: 1 1 auto;
+        max-width: 180px;
+      }
+      .rt-skel-box--num {
+        flex: 0 0 56px;
+        width: 56px;
+        margin-left: auto;
+      }
+      .rt-skel-box--num ~ .rt-skel-box--num {
+        margin-left: 0;
+      }
+      [data-theme="dark"] .rt-skel-box,
+      .dark-mode .rt-skel-box {
+        background: linear-gradient(90deg, #1a1f35 25%, #252b45 50%, #1a1f35 75%);
+        background-size: 200% 100%;
+      }
+      @keyframes rt-skel-shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .rt-skel-box {
+          animation: none;
+        }
+      }
       [data-theme="dark"] .pagination button:not([aria-current="page"]),
       .dark-mode .pagination button:not([aria-current="page"]),
       [data-theme="dark"] .pagination .page-btn:not(.active),
@@ -1216,12 +1274,14 @@
           line-height: 1.35;
         }
         .rt-table tr.rt-detail-row,
-        .rt-table tr.rt-table-loading {
+        .rt-table tr.rt-table-loading,
+        .rt-table tr.rt-skel-row {
           display: block;
           width: 100%;
         }
         .rt-table tr.rt-detail-row > td,
-        .rt-table tr.rt-table-loading > td {
+        .rt-table tr.rt-table-loading > td,
+        .rt-table tr.rt-skel-row > td {
           display: block;
           width: 100%;
         }

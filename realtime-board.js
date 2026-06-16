@@ -4,7 +4,7 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  const TAB_CACHE_MS = 5 * 60 * 1000;
+  const TAB_CACHE_MS = 3 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
@@ -1119,21 +1119,25 @@
     });
   }
 
+  function skeletonRowsHtml(count) {
+    const cs = tableColSpan();
+    const row =
+      `<tr class="rt-skel-row" aria-hidden="true"><td colspan="${cs}">` +
+      `<div class="rt-skel-line">` +
+      `<span class="rt-skel-box rt-skel-box--rank"></span>` +
+      `<span class="rt-skel-box rt-skel-box--name"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `</div></td></tr>`;
+    return row.repeat(Math.max(1, count || 10));
+  }
+
   function showTableLoading() {
     const body = $("rt-tbody");
     if (!body) return;
     body.dataset.rtLoading = "1";
-    const cs = tableColSpan();
-    body.innerHTML = [
-      `<tr class="rt-table-loading">`,
-      `  <td colspan="${cs}" class="rt-table-loading-cell">`,
-      `    <div class="rt-table-loading-inner">`,
-      `      <span class="rt-spinner" aria-hidden="true"></span>`,
-      `      <p>데이터 불러오는 중...</p>`,
-      `    </div>`,
-      `  </td>`,
-      `</tr>`,
-    ].join("");
+    body.innerHTML = skeletonRowsHtml(10);
   }
 
   function hideTableLoading() {

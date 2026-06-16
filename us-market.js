@@ -5,7 +5,8 @@
   const API = "/api/us-market-data";
   const FETCH_TIMEOUT_MS = 20000;
   const POLL_MS = 5 * 60 * 1000;
-  const CLIENT_CACHE_MS = 5 * 60 * 1000;
+  const CLIENT_CACHE_MS = 3 * 60 * 1000;
+  const TAB_TTL_MS = 3 * 60 * 1000;
 
   const TAB_CONFIG = {
     "market-cap": {
@@ -37,6 +38,8 @@
   const state = {
     activeTab: "market-cap",
     rowsByTab: {},
+    tabLoadedAt: {},
+    detailPrefetch: new Set(),
     clientCache: new Map(),
     quoteCache: new Map(),
     openTicker: null,
@@ -400,6 +403,34 @@
     return data;
   }
 
+  async function fetchUsDetailData(ticker, nameHint, signal) {
+    const sym = String(ticker || "").toUpperCase();
+    const key = `detail:${sym}`;
+    const cached = state.quoteCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    const qs = new URLSearchParams({ code: sym, market: "US" });
+    if (nameHint) qs.set("name", nameHint);
+    const res = await fetch(`${KIS_QUOTE_API}?${qs.toString()}`, { cache: "no-store", signal });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+    state.quoteCache.set(key, { value: data, expiresAt: Date.now() + CLIENT_CACHE_MS });
+    return data;
+  }
+
+  // 종목 행 호버 시 상세(시세) 데이터를 미리 받아 둠 → 클릭 시 즉시 표시
+  function prefetchUsDetail(ticker) {
+    const sym = String(ticker || "").toUpperCase();
+    if (!sym || state.detailPrefetch.has(sym)) return;
+    const cached = state.quoteCache.get(`detail:${sym}`);
+    if (cached && cached.expiresAt > Date.now()) return;
+    state.detailPrefetch.add(sym);
+    const listRow = findRowByTicker(sym);
+    const nameHint = listRow && listRow.name ? listRow.name : "";
+    fetchUsDetailData(sym, nameHint)
+      .catch(() => {})
+      .finally(() => state.detailPrefetch.delete(sym));
+  }
+
   function syncNameChartButtonsAria(body) {
     if (!body) return;
     body.querySelectorAll(".rt-name-chart-btn").forEach((btn) => {
@@ -444,19 +475,15 @@
     const ctrl = new AbortController();
     state.detailFetchAbort = ctrl;
 
-    host.innerHTML = buildDetailSkeleton();
+    const listRow = findRowByTicker(ticker);
+    const nameHint = listRow && listRow.name ? listRow.name : "";
+    const prefetched = state.quoteCache.get(`detail:${String(ticker).toUpperCase()}`);
+    const hasFresh = prefetched && prefetched.expiresAt > Date.now();
+    // 호버 프리패치로 이미 받아둔 데이터가 있으면 스켈레톤 없이 즉시 표시
+    if (!hasFresh) host.innerHTML = buildDetailSkeleton();
     try {
-      const listRow = findRowByTicker(ticker);
-      const nameHint = listRow && listRow.name ? listRow.name : "";
-      const qs = new URLSearchParams({ code: ticker, market: "US" });
-      if (nameHint) qs.set("name", nameHint);
-      const res = await fetch(`${KIS_QUOTE_API}?${qs.toString()}`, {
-        cache: "no-store",
-        signal: ctrl.signal,
-      });
-      const data = await res.json().catch(() => ({}));
+      const data = await fetchUsDetailData(ticker, nameHint, ctrl.signal);
       if (ctrl.signal.aborted) return;
-      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
       if (state.openTicker !== ticker) return;
       if (listRow && listRow.name && (!data.stockName || data.stockName === ticker || /^D(NYS|NAS|AMS)/i.test(data.stockName))) {
         data.stockName = listRow.name;
@@ -548,7 +575,7 @@
     if (!body) return;
     const rows = state.rowsByTab[state.activeTab] || [];
     if (!rows.length) {
-      body.innerHTML = `<tr class="rt-table-loading"><td colspan="8" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
+      body.innerHTML = skeletonRowsHtml(10);
       return;
     }
     const parts = [];
@@ -569,10 +596,15 @@
     });
   }
 
+  function skeletonRowsHtml(count) {
+    const row = `<tr class="rt-skel-row" aria-hidden="true"><td colspan="${TABLE_COLSPAN}"><div class="rt-skel-line"><span class="rt-skel-box rt-skel-box--rank"></span><span class="rt-skel-box rt-skel-box--name"></span><span class="rt-skel-box rt-skel-box--num"></span><span class="rt-skel-box rt-skel-box--num"></span><span class="rt-skel-box rt-skel-box--num"></span></div></td></tr>`;
+    return row.repeat(Math.max(1, count || 10));
+  }
+
   function showTableLoading() {
     const body = $("us-rank-tbody");
     if (!body) return;
-    body.innerHTML = `<tr class="rt-table-loading"><td colspan="8" class="rt-table-loading-cell"><div class="rt-table-loading-inner"><span class="rt-spinner" aria-hidden="true"></span><p>데이터 불러오는 중...</p></div></td></tr>`;
+    body.innerHTML = skeletonRowsHtml(10);
   }
 
   function syncUsPriceColumnAlign() {
@@ -598,16 +630,34 @@
     }
   }
 
+  function tabIsFresh(tab) {
+    const at = state.tabLoadedAt[tab];
+    return at != null && Date.now() - at < TAB_TTL_MS;
+  }
+
   async function loadActiveTab(force) {
     const cfg = TAB_CONFIG[state.activeTab];
-    if (!force && state.rowsByTab[state.activeTab]) {
+    const tab = state.activeTab;
+    const hasRows = !!state.rowsByTab[tab];
+    if (!force && hasRows) {
+      // 캐시 즉시 렌더 — 3분 이내면 그대로, 만료면 백그라운드 갱신
       renderRankTable();
+      if (tabIsFresh(tab)) return;
+      try {
+        const pack = await fetchJson(cfg.action);
+        state.rowsByTab[tab] = pack.stocks || [];
+        state.tabLoadedAt[tab] = Date.now();
+        if (state.activeTab === tab) renderRankTable();
+      } catch (e) {
+        console.warn("[us-market] background refresh", tab, e);
+      }
       return;
     }
     showTableLoading();
     const pack = await fetchJson(cfg.action);
-    state.rowsByTab[state.activeTab] = pack.stocks || [];
-    renderRankTable();
+    state.rowsByTab[tab] = pack.stocks || [];
+    state.tabLoadedAt[tab] = Date.now();
+    if (state.activeTab === tab) renderRankTable();
   }
 
   function deferIdle(fn) {
@@ -622,10 +672,11 @@
     const order = ["market-cap", "gainers", "volume"].filter((t) => t !== state.activeTab);
     await Promise.all(
       order.map(async (tab) => {
-        if (state.rowsByTab[tab]) return;
+        if (state.rowsByTab[tab] && tabIsFresh(tab)) return;
         try {
           const pack = await fetchJson(TAB_CONFIG[tab].action);
           state.rowsByTab[tab] = pack.stocks || [];
+          state.tabLoadedAt[tab] = Date.now();
         } catch (e) {
           console.warn("[us-market] prefetch", tab, e);
         }
@@ -819,6 +870,12 @@
     const body = $("us-rank-tbody");
     if (!body || body.dataset.usWire === "1") return;
     body.dataset.usWire = "1";
+    body.addEventListener("mouseover", (ev) => {
+      const stockRow = ev.target.closest("tr.us-stock-row");
+      if (!stockRow || !body.contains(stockRow)) return;
+      const ticker = stockRow.getAttribute("data-ticker");
+      if (ticker) prefetchUsDetail(ticker);
+    });
     body.addEventListener("click", (ev) => {
       if (ev.target.closest(".rt-acc-close")) return;
       const stockRow = ev.target.closest("tr.us-stock-row");

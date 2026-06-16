@@ -99,7 +99,11 @@ function round2(n) {
 function json(res, status, body) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
-  res.setHeader("cache-control", "no-store");
+  // 성공 응답은 Vercel Edge Cache 활용(2분) — 클라이언트 cache:no-store여도 CDN단 캐시는 유효
+  res.setHeader(
+    "cache-control",
+    status === 200 ? "public, s-maxage=120, stale-while-revalidate=60" : "no-store"
+  );
   res.end(JSON.stringify(body));
 }
 

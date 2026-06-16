@@ -649,15 +649,14 @@ async function fetchYahooMarketCapMap(tickers) {
 }
 
 // IPO 직후라 Yahoo/KIS가 전체 발행주식수를 반영하지 못하는 종목의 발행주식수 하드코딩(공시 기준).
-// Yahoo 시총이 (현재가 × 공시주식수)의 80% 이상으로 정상화되면 자동으로 Yahoo값을 사용.
+// 해당 종목은 현재가 × 공시주식수로 시총을 강제 계산(Yahoo/KIS 값 무시).
 const KNOWN_SHARES_OUTSTANDING = new Map([
   ["SPCX", 13076000000], // SpaceX — S-1 공시 기준 전체 발행주식수(13.076B)
 ]);
 
 /**
  * 시총 우선순위:
- * 0) 발행주식수 하드코딩 종목(SPCX 등): 현재가 × 공시주식수로 직접 계산.
- *    단 Yahoo 시총이 직접계산값의 80% 이상이면(정상화) Yahoo값 사용.
+ * 0) 발행주식수 하드코딩 종목(SPCX 등): 현재가 × 공시주식수로 강제 계산(무조건 덮어쓰기).
  * 1) Yahoo Finance marketCap 우선 (전체 발행주식수 반영 → IPO 직후 종목도 정확)
  * 2) 없거나 0이면 KIS 시총(hts_avls/tomv)으로 폴백
  * 3) 둘 다 없으면 현재가 × 발행주식수
@@ -669,8 +668,8 @@ function resolveMarketCap(row, yh) {
   const ticker = row && row.ticker ? normalizeTicker(row.ticker) : "";
   const knownShares = KNOWN_SHARES_OUTSTANDING.get(ticker);
   if (knownShares != null && price != null) {
-    const directCap = Math.round(price * knownShares);
-    return yahooCap != null && yahooCap >= directCap * 0.8 ? yahooCap : directCap;
+    // SPCX 등: 공시 발행주식수로 무조건 덮어쓰기 (현재가 $212 → 약 $2.77T)
+    return Math.round(price * knownShares);
   }
 
   if (yahooCap != null) return yahooCap;
@@ -681,11 +680,11 @@ function resolveMarketCap(row, yh) {
   return row && row.marketCap != null ? row.marketCap : null;
 }
 
-/** 랭킹/목록 행들의 시총을 Yahoo 폴백으로 보정. */
+/** 랭킹/목록 행들의 시총을 Yahoo 폴백/하드코딩으로 보정. */
 async function applyYahooMarketCap(rows) {
   if (!Array.isArray(rows) || !rows.length) return rows || [];
+  // Yahoo 조회 실패(빈 맵)여도 SPCX 등 하드코딩 보정은 항상 적용되도록 resolveMarketCap을 그대로 실행
   const yMap = await fetchYahooMarketCapMap(rows.map((r) => r && r.ticker));
-  if (!yMap.size) return rows;
   return rows.map((row) => {
     if (!row || !row.ticker) return row;
     const yh = yMap.get(normalizeTicker(row.ticker));
@@ -1005,7 +1004,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v16", async () => {
+  return cached("ranking:market-cap:v18", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1056,6 +1055,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v18",
     "ranking:market-cap:v16",
     "ranking:market-cap:v15",
     "ranking:market-cap:v14",
@@ -1335,7 +1335,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v14", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v16", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

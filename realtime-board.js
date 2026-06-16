@@ -107,16 +107,16 @@
     chartBarsLimit: 200,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
-    /** 탭별 정적 JSON(TOP100) 메모리 캐시 { [tab]: { stocks, updatedAt, loadedAt } } */
-    krStatic: {},
     /** 데이터 기준 시각(updatedAt) */
     dataUpdatedAt: null,
     /** 종목 상세 fetch 중단용 */
     detailFetchAbort: null,
   };
 
-  const KR_TAB_JSON = { cap: "kr-realtime-cap.json", gainers: "kr-realtime-gainers.json", tv: "kr-realtime-tv.json" };
+  const KR_JSON_FILE = "kr-realtime.json";
   const KR_STATIC_TTL_MS = 60 * 1000;
+  // 단일 kr-realtime.json({ tabs: { cap, gainers, tv } }) 메모리 캐시
+  let krAllCache = null;
 
   function rtIsLocalHost() {
     const h = typeof location !== "undefined" ? location.hostname : "";
@@ -142,14 +142,20 @@
     throw lastErr || new Error(`static json unavailable: ${file}`);
   }
 
+  async function loadKrAll() {
+    if (krAllCache && Date.now() - krAllCache.loadedAt < KR_STATIC_TTL_MS) return krAllCache;
+    const data = await fetchStaticJson(KR_JSON_FILE);
+    const tabs = data && data.tabs && typeof data.tabs === "object" ? data.tabs : null;
+    if (!tabs) throw new Error("kr-realtime.json: missing tabs");
+    krAllCache = { tabs, updatedAt: data.updatedAt || null, loadedAt: Date.now() };
+    return krAllCache;
+  }
+
   async function loadKrTabAll(tab) {
-    const hit = state.krStatic[tab];
-    if (hit && Date.now() - hit.loadedAt < KR_STATIC_TTL_MS) return hit;
-    const data = await fetchStaticJson(KR_TAB_JSON[tab]);
-    if (!data || !Array.isArray(data.stocks) || !data.stocks.length) throw new Error("empty static json");
-    const entry = { stocks: data.stocks, updatedAt: data.updatedAt || null, loadedAt: Date.now() };
-    state.krStatic[tab] = entry;
-    return entry;
+    const all = await loadKrAll();
+    const stocks = Array.isArray(all.tabs[tab]) ? all.tabs[tab] : [];
+    if (!stocks.length) throw new Error(`kr-realtime.json: empty tab ${tab}`);
+    return { stocks, updatedAt: all.updatedAt };
   }
 
   function formatFreshness(iso) {

@@ -33,16 +33,14 @@ jobs:
 
       - run: npm ci
 
-      - name: Build market data JSON
-        run: node scripts/market-data-sync.mjs
+      - name: Sync market data
+        run: node scripts/sync-market-data.mjs
         env:
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
-          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
           KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
-          CMC_API_KEY: ${{ secrets.CMC_API_KEY }}
-          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
 
       - name: Commit data/*.json
         run: |
@@ -50,7 +48,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/us-market-cap.json data/us-market-gainers.json data/us-market-volume.json \
-                  data/kr-realtime-cap.json data/kr-realtime-gainers.json data/kr-realtime-tv.json
+                  data/kr-realtime.json
           if git diff --staged --quiet; then
             echo "::notice::No market data changes to commit"
           else

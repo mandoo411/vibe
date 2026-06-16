@@ -644,18 +644,34 @@ async function fetchYahooMarketCapMap(tickers) {
   return map;
 }
 
+// IPO 직후라 Yahoo/KIS가 전체 발행주식수를 반영하지 못하는 종목의 발행주식수 하드코딩(공시 기준).
+// Yahoo 시총이 (현재가 × 공시주식수)의 80% 이상으로 정상화되면 자동으로 Yahoo값을 사용.
+const KNOWN_SHARES_OUTSTANDING = new Map([
+  ["SPCX", 13076000000], // SpaceX — S-1 공시 기준 전체 발행주식수(13.076B)
+]);
+
 /**
  * 시총 우선순위:
+ * 0) 발행주식수 하드코딩 종목(SPCX 등): 현재가 × 공시주식수로 직접 계산.
+ *    단 Yahoo 시총이 직접계산값의 80% 이상이면(정상화) Yahoo값 사용.
  * 1) Yahoo Finance marketCap 우선 (전체 발행주식수 반영 → IPO 직후 종목도 정확)
  * 2) 없거나 0이면 KIS 시총(hts_avls/tomv)으로 폴백
  * 3) 둘 다 없으면 현재가 × 발행주식수
  */
 function resolveMarketCap(row, yh) {
   const yahooCap = yh && yh.marketCap != null && yh.marketCap > 0 ? yh.marketCap : null;
+  const price = (row && row.price != null ? row.price : null) ?? (yh ? yh.price : null);
+
+  const ticker = row && row.ticker ? normalizeTicker(row.ticker) : "";
+  const knownShares = KNOWN_SHARES_OUTSTANDING.get(ticker);
+  if (knownShares != null && price != null) {
+    const directCap = Math.round(price * knownShares);
+    return yahooCap != null && yahooCap >= directCap * 0.8 ? yahooCap : directCap;
+  }
+
   if (yahooCap != null) return yahooCap;
   const kisCap = row && row.marketCap != null && row.marketCap > 0 ? row.marketCap : null;
   if (kisCap != null) return kisCap;
-  const price = (row && row.price != null ? row.price : null) ?? (yh ? yh.price : null);
   const shares = yh ? yh.shares : null;
   if (price != null && shares != null) return Math.round(price * shares);
   return row && row.marketCap != null ? row.marketCap : null;
@@ -985,7 +1001,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v15", async () => {
+  return cached("ranking:market-cap:v16", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1036,6 +1052,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v16",
     "ranking:market-cap:v15",
     "ranking:market-cap:v14",
     "ranking:market-cap:v13",
@@ -1314,7 +1331,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v13", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v14", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

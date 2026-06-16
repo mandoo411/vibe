@@ -9,6 +9,12 @@ const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestme
 );
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
+// KIS는 IPO 공모 물량만 인식해 시총이 과소 계산됨(예: SPCX) → Yahoo marketCap을 우선 사용
+const YAHOO_QUOTE_BATCH = 50;
+const YAHOO_CRUMB_TTL_MS = 30 * 60 * 1000;
+const YAHOO_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
 const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
 const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
 const OVERSEAS_INDEX_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price-detail";
@@ -567,6 +573,107 @@ async function fetchYahooIndexQuote(yahooSymbol) {
   return { price, changePct, changePoints };
 }
 
+let yahooCrumbCache = null; // { crumb, cookie, expiresAt }
+
+/** Yahoo v7 quote는 쿠키+crumb 인증 필요 (없으면 401). 30분 캐시. */
+async function getYahooCrumb() {
+  const now = Date.now();
+  if (yahooCrumbCache && yahooCrumbCache.expiresAt > now) return yahooCrumbCache;
+  let cookie = "";
+  for (const url of ["https://fc.yahoo.com/", "https://finance.yahoo.com/"]) {
+    try {
+      const r = await fetch(url, { headers: { "user-agent": YAHOO_UA, accept: "text/html" } });
+      cookie = (r.headers.get("set-cookie") || "").split(";")[0];
+      if (cookie) break;
+    } catch (e) {
+      console.warn("[us-market-data] yahoo cookie", e && e.message);
+    }
+  }
+  if (!cookie) throw new Error("Yahoo cookie unavailable");
+  const res = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+    headers: { "user-agent": YAHOO_UA, accept: "text/plain", cookie },
+  });
+  const crumb = (await res.text()).trim();
+  if (!res.ok || !crumb || crumb.length > 64) throw new Error(`Yahoo crumb HTTP ${res.status}`);
+  yahooCrumbCache = { crumb, cookie, expiresAt: now + YAHOO_CRUMB_TTL_MS };
+  return yahooCrumbCache;
+}
+
+/** 티커 목록 → Yahoo 시총/발행주식수/상장일 맵 (배치 조회, 실패 시 빈 맵). */
+async function fetchYahooMarketCapMap(tickers) {
+  const symbols = [...new Set((tickers || []).map((t) => normalizeTicker(t)).filter(Boolean))];
+  const map = new Map();
+  if (!symbols.length) return map;
+  let auth;
+  try {
+    auth = await getYahooCrumb();
+  } catch (e) {
+    console.warn("[us-market-data] yahoo crumb", e && e.message);
+    return map;
+  }
+  for (let i = 0; i < symbols.length; i += YAHOO_QUOTE_BATCH) {
+    const chunk = symbols.slice(i, i + YAHOO_QUOTE_BATCH);
+    const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
+      chunk.join(",")
+    )}&crumb=${encodeURIComponent(auth.crumb)}`;
+    try {
+      const res = await fetch(url, {
+        headers: { "user-agent": YAHOO_UA, accept: "application/json", cookie: auth.cookie },
+      });
+      if (!res.ok) {
+        if (res.status === 401) yahooCrumbCache = null; // 만료된 crumb 폐기
+        console.warn("[us-market-data] yahoo quote HTTP", res.status);
+        continue;
+      }
+      const body = await res.json();
+      for (const q of body?.quoteResponse?.result || []) {
+        const sym = normalizeTicker(q.symbol);
+        if (!sym) continue;
+        const marketCap = toNum(q.marketCap);
+        const shares = toNum(q.sharesOutstanding);
+        map.set(sym, {
+          marketCap: marketCap != null && marketCap > 0 ? Math.round(marketCap) : null,
+          shares: shares != null && shares > 0 ? shares : null,
+          price: round2(toNum(q.regularMarketPrice)),
+        });
+      }
+    } catch (e) {
+      console.warn("[us-market-data] yahoo quote", e && e.message);
+    }
+  }
+  return map;
+}
+
+/**
+ * 시총 우선순위:
+ * 1) Yahoo Finance marketCap 우선 (전체 발행주식수 반영 → IPO 직후 종목도 정확)
+ * 2) 없거나 0이면 KIS 시총(hts_avls/tomv)으로 폴백
+ * 3) 둘 다 없으면 현재가 × 발행주식수
+ */
+function resolveMarketCap(row, yh) {
+  const yahooCap = yh && yh.marketCap != null && yh.marketCap > 0 ? yh.marketCap : null;
+  if (yahooCap != null) return yahooCap;
+  const kisCap = row && row.marketCap != null && row.marketCap > 0 ? row.marketCap : null;
+  if (kisCap != null) return kisCap;
+  const price = (row && row.price != null ? row.price : null) ?? (yh ? yh.price : null);
+  const shares = yh ? yh.shares : null;
+  if (price != null && shares != null) return Math.round(price * shares);
+  return row && row.marketCap != null ? row.marketCap : null;
+}
+
+/** 랭킹/목록 행들의 시총을 Yahoo 폴백으로 보정. */
+async function applyYahooMarketCap(rows) {
+  if (!Array.isArray(rows) || !rows.length) return rows || [];
+  const yMap = await fetchYahooMarketCapMap(rows.map((r) => r && r.ticker));
+  if (!yMap.size) return rows;
+  return rows.map((row) => {
+    if (!row || !row.ticker) return row;
+    const yh = yMap.get(normalizeTicker(row.ticker));
+    const marketCap = resolveMarketCap(row, yh);
+    return marketCap != null && marketCap !== row.marketCap ? { ...row, marketCap } : row;
+  });
+}
+
 async function fetchCnbcIndexQuote(symbol) {
   const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${symbol}&output=json`;
   const res = await fetch(url, {
@@ -878,9 +985,13 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v13", async () => {
+  return cached("ranking:market-cap:v15", async () => {
     const ranked = await fetchMarketCapLookup();
-    return enrichRankListRows(ranked);
+    const enriched = await enrichRankListRows(ranked);
+    const corrected = await applyYahooMarketCap(enriched);
+    return corrected
+      .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
+      .map((row, i) => ({ ...row, rank: i + 1 }));
   });
 }
 
@@ -925,6 +1036,8 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v15",
+    "ranking:market-cap:v14",
     "ranking:market-cap:v13",
     "ranking:market-cap:v12",
     "ranking:market-cap:v11",
@@ -957,14 +1070,21 @@ function yahooExchangeToKis(exch) {
 async function fetchYahooEquityQuote(symbol) {
   const sym = normalizeTicker(symbol);
   if (!sym) return null;
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(sym)}`;
+  const auth = await getYahooCrumb();
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
+    sym
+  )}&crumb=${encodeURIComponent(auth.crumb)}`;
   const res = await fetch(url, {
     headers: {
-      "user-agent": "Mozilla/5.0",
+      "user-agent": YAHOO_UA,
       accept: "application/json",
+      cookie: auth.cookie,
     },
   });
-  if (!res.ok) throw new Error(`Yahoo quote HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 401) yahooCrumbCache = null;
+    throw new Error(`Yahoo quote HTTP ${res.status}`);
+  }
   const body = await res.json();
   const q = body?.quoteResponse?.result?.[0];
   if (!q || q.regularMarketPrice == null) return null;
@@ -1061,6 +1181,12 @@ async function fetchStockQuote(ticker) {
         if (hit) marketCap = hit.marketCap;
       } catch (e) {
         /* optional */
+      }
+      try {
+        const yMap = await fetchYahooMarketCapMap([sym]);
+        marketCap = resolveMarketCap({ ticker: sym, price, marketCap }, yMap.get(sym));
+      } catch (e) {
+        /* Yahoo 폴백 실패 시 KIS 값 유지 */
       }
       return {
         ticker: sym,
@@ -1188,7 +1314,7 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v11", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v13", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }

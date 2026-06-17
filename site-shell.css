@@ -15,30 +15,16 @@ body.page-home-v2 {
   --rt-hero-pad-top: 14px;
   --rt-hero-pad-bottom: 12px;
   --rt-tabs-gap: 8px;
-  --rt-tabs-pad-block: 0;
-  --rt-tab-pad-block: 12px;
-  --rt-tab-pad-inline: 16px;
-  --rt-tab-font-size: 13px;
-  --rt-tab-font-weight: 400;
-  --rt-tab-active-weight: 500;
-  --rt-tab-active-color: #0d9488;
-  --rt-tab-ctrl-height: 44px;
-  --rt-tab-radius: 0;
+  --rt-tabs-pad-block: 8px;
+  --rt-tab-height: 44px;
+  --rt-tab-pad-inline: 6px;
+  --rt-tab-font-size: 14px;
+  --rt-tab-font-weight: 600;
+  --rt-tab-radius: 8px;
   --rt-search-width: 200px;
   --rt-search-pad-inline: 16px;
   --rt-search-font-size: 16px;
-  --rt-search-btn-font-size: 13px;
-  --color-text-secondary: #6b7280;
-  --color-border-tertiary: rgba(0, 0, 0, 0.12);
-  --border-radius-md: 8px;
-}
-
-[data-theme="dark"] body.page-tm-v2,
-[data-theme="dark"] body.page-home-v2,
-.dark-mode body.page-tm-v2,
-.dark-mode body.page-home-v2 {
-  --color-text-secondary: #9ca3af;
-  --color-border-tertiary: rgba(255, 255, 255, 0.12);
+  --rt-search-btn-font-size: 14px;
 }
 
 .page-tm-v2 *,

@@ -1277,16 +1277,6 @@ async function main() {
   await fs.writeFile(outputPath, JSON.stringify(data, null, 2) + "\n", "utf8");
   console.log(`Wrote ${outputPath} (key=${targetYmd})`);
 
-  const archiveDir = path.join(path.dirname(outputPath), "daily");
-  const archivePath = path.join(archiveDir, `${targetYmd}.json`);
-  await fs.mkdir(archiveDir, { recursive: true });
-  await fs.writeFile(
-    archivePath,
-    JSON.stringify({ date: targetYmd, ...data.days[targetYmd] }, null, 2) + "\n",
-    "utf8"
-  );
-  console.log(`Wrote ${archivePath}`);
-
   // 결과 미리보기
   console.log("\n=== 미리보기 ===");
   console.log("지수:");

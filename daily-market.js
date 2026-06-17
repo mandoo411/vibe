@@ -12,21 +12,6 @@
     throw new Error("HTTP");
   }
 
-  async function fetchArchiveDayJson(ymd) {
-    const path = `data/daily/${ymd}.json`;
-    const t = Date.now();
-    const urls = [`/api/repo-data?path=${encodeURIComponent(path)}&t=${t}`, `./${path}?t=${t}`, `${RAW_BASE}/${path}?t=${t}`];
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (res.ok) return res.json();
-      } catch (_) {
-        /* try next */
-      }
-    }
-    return null;
-  }
-
   const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
   const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -48,8 +33,6 @@
     meta: { title: "마감시황", timezoneNote: "" },
     days: {},
     selected: null,
-    todayYmd: null,
-    dataMissing: false,
     mainTab: "dashboard",
     stockSubTab: "gainers",
     krTv: null,
@@ -62,11 +45,6 @@
     dayPrepTitle: $("day-prep-title"),
     dayPrepHint: $("day-prep-hint"),
     dmAiContent: $("dm-ai-content"),
-    dmMissing: $("dm-missing"),
-    dmTabPanels: $("dm-tab-panels"),
-    dmDateLabel: $("dm-date-label"),
-    dmDatePrev: $("dm-date-prev"),
-    dmDateNext: $("dm-date-next"),
     dmIndexes: $("dm-indexes"),
     dmMarketExtras: $("dm-market-extras"),
     dmAnalysis: $("dm-analysis"),
@@ -110,95 +88,15 @@
     return WD_KO[ymdWeekday(ymd)] || "—";
   }
 
-  function isWeekendYmd(ymd) {
-    const w = ymdWeekday(ymd);
-    return w === 0 || w === 6;
-  }
-
-  function skipWeekendPrev(ymd) {
-    let d = addDaysYmd(ymd, -1);
-    while (isWeekendYmd(d)) d = addDaysYmd(d, -1);
-    return d;
-  }
-
-  function skipWeekendNext(ymd) {
-    let d = addDaysYmd(ymd, 1);
-    while (isWeekendYmd(d)) d = addDaysYmd(d, 1);
-    return d;
-  }
-
-  function shortDateLabel(ymd) {
-    const { m, d } = ymdParts(ymd);
-    return `${m}월 ${d}일`;
-  }
-
-  function normalizeArchiveDay(raw, ymd) {
-    if (!raw || typeof raw !== "object") return null;
-    if (raw.days && typeof raw.days === "object" && raw.days[ymd]) return raw.days[ymd];
-    const copy = { ...raw };
-    delete copy.meta;
-    if (copy.date && Object.keys(copy).length <= 1) return null;
-    return copy;
-  }
-
   function resolveSelectedYmd() {
     const h = (location.hash || "").replace("#", "");
-    if (YMD_RE.test(h)) return h;
-    return state.todayYmd || seoulYmd();
-  }
-
-  function syncHash(ymd) {
-    const today = state.todayYmd || seoulYmd();
-    const nextHash = ymd && ymd !== today ? `#${ymd}` : "";
-    const cur = location.hash || "";
-    if (cur !== nextHash) {
-      const base = location.pathname.split("/").pop() || "daily-market.html";
-      history.replaceState(null, "", nextHash ? `${base}${nextHash}` : base);
+    if (YMD_RE.test(h) && state.days[h]) return h;
+    const keys = Object.keys(state.days || {}).sort();
+    if (!keys.length) return seoulYmd();
+    for (let i = keys.length - 1; i >= 0; i--) {
+      if (!isDayEmpty(state.days[keys[i]])) return keys[i];
     }
-  }
-
-  function updateDateNav() {
-    const today = state.todayYmd || seoulYmd();
-    const ymd = state.selected;
-    if (els.dmDateLabel) els.dmDateLabel.textContent = shortDateLabel(ymd);
-    if (els.dmDateNext) {
-      const next = skipWeekendNext(ymd);
-      els.dmDateNext.disabled = ymd >= today || next > today;
-    }
-  }
-
-  async function ensureDayLoaded(ymd) {
-    if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
-      state.dataMissing = false;
-      return true;
-    }
-    const archive = await fetchArchiveDayJson(ymd);
-    const normalized = normalizeArchiveDay(archive, ymd);
-    if (normalized && !isDayEmpty(normalized)) {
-      state.days[ymd] = normalized;
-      state.dataMissing = false;
-      return true;
-    }
-    if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
-      state.dataMissing = false;
-      return true;
-    }
-    state.dataMissing = true;
-    return false;
-  }
-
-  async function navigateDate(direction) {
-    const today = state.todayYmd || seoulYmd();
-    const ymd =
-      direction === "prev"
-        ? skipWeekendPrev(state.selected)
-        : skipWeekendNext(state.selected);
-    if (direction === "next" && (state.selected >= today || ymd > today)) return;
-    state.selected = ymd;
-    syncHash(ymd);
-    await ensureDayLoaded(ymd);
-    updateDateNav();
-    render();
+    return keys[keys.length - 1];
   }
   function sanitizeUserCopy(v, fallback = "") {
     let t = sanitizeStr(v);
@@ -582,26 +480,16 @@
 
   function render() {
     const ymd = state.selected;
-    const day = state.dataMissing ? null : getDay(ymd);
-    const empty = state.dataMissing || isDayEmpty(day);
+    const day = getDay(ymd);
+    const empty = isDayEmpty(day);
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
-    updateDateNav();
-
-    if (els.dmMissing) els.dmMissing.hidden = !state.dataMissing;
-    if (els.dmTabPanels) els.dmTabPanels.hidden = state.dataMissing;
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;
     } catch (_) {
       /* ignore */
-    }
-
-    if (state.dataMissing) {
-      if (els.dayPrep) els.dayPrep.hidden = true;
-      if (els.dmAiContent) els.dmAiContent.hidden = true;
-      return;
     }
 
     if (els.dayPrep) {
@@ -657,26 +545,10 @@
       });
     });
 
-    if (els.dmDatePrev) {
-      els.dmDatePrev.addEventListener("click", () => navigateDate("prev"));
-    }
-    if (els.dmDateNext) {
-      els.dmDateNext.addEventListener("click", () => navigateDate("next"));
-    }
-
-    window.addEventListener("hashchange", async () => {
+    window.addEventListener("hashchange", () => {
       const h = (location.hash || "").replace("#", "");
-      if (!YMD_RE.test(h)) {
-        if (state.selected !== state.todayYmd) {
-          state.selected = state.todayYmd;
-          await ensureDayLoaded(state.selected);
-          render();
-        }
-        return;
-      }
-      if (h !== state.selected) {
+      if (YMD_RE.test(h) && h !== state.selected && state.days[h]) {
         state.selected = h;
-        await ensureDayLoaded(h);
         render();
       }
     });
@@ -713,11 +585,8 @@
   }
 
   async function main() {
-    state.todayYmd = seoulYmd();
     await Promise.all([loadData(), loadKrTv()]);
     state.selected = resolveSelectedYmd();
-    syncHash(state.selected);
-    await ensureDayLoaded(state.selected);
     bindEvents();
     setMainTab(state.mainTab);
     render();

@@ -86,8 +86,8 @@
             <section class="daily-detail" id="daily-detail" aria-live="polite">
               <div class="rt-wrap dm-wrap" id="dm-main">
                 <div class="rt-panel dm-panel" role="tabpanel">
-                  <div class="rt-tabs rt-tabs--with-date-nav" role="tablist" aria-label="마감시황 보기">
-                    <div class="rt-tabs-row-tabs">
+                  <div class="rt-tabs" role="tablist" aria-label="마감시황 보기">
+                    <div class="rt-tabs-row-tabs rt-tabs-row-tabs--full">
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
                         <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
                       </button>
@@ -104,18 +104,9 @@
                         <span class="rt-tab-label--full">거래대금 TOP 30</span><span class="rt-tab-label--short">거래대금</span>
                       </button>
                     </div>
-                    <div class="dm-date-nav" id="dm-date-nav" aria-label="날짜 선택">
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-prev" aria-label="이전 날짜">‹</button>
-                      <span class="dm-date-nav__label" id="dm-date-label" aria-live="polite">—</span>
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-next" aria-label="다음 날짜">›</button>
-                    </div>
                   </div>
 
-                  <div class="dm-missing" id="dm-missing" hidden role="status">
-                    <p class="dm-missing__text">해당 날짜 데이터가 없습니다</p>
-                  </div>
-
-                  <div class="dm-tab-panels" id="dm-tab-panels">
+                  <div class="dm-tab-panels">
                       <!-- 대시보드 -->
                       <div class="dm-tab-panel" data-dm-panel="dashboard" role="tabpanel" aria-labelledby="dm-tab-dashboard">
                         <section class="dm-section">

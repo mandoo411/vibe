@@ -81,84 +81,29 @@
               <h1 class="masthead__title" id="masthead-title">마감시황</h1>
             </div>
           </header>
-          <div class="page-meta-bar" aria-live="polite">
-            <p class="masthead__notice" id="masthead-notice" hidden></p>
-            <div class="page-meta-bar__row masthead__meta">
-              <span id="masthead-range"></span>
-              <span id="masthead-updated"></span>
-            </div>
-          </div>
 
-          <div class="daily-shell">
-            <div class="daily-nav-calendar">
-              <nav class="day-nav" aria-label="날짜 이동">
-                <button type="button" class="day-nav__btn" id="nav-prev" aria-label="이전 영업일">◀</button>
-                <label class="day-nav__date">
-                  <span class="u-visually-hidden">날짜 선택</span>
-                  <input type="date" id="nav-date" class="day-nav__date-input" />
-                  <span class="day-nav__date-label" id="nav-date-label" aria-hidden="true"></span>
-                </label>
-                <button type="button" class="day-nav__btn" id="nav-next" aria-label="다음 영업일">▶</button>
-                <button type="button" class="day-nav__today" id="nav-today">오늘</button>
-                <span class="day-nav__spacer"></span>
-                <button
-                  type="button"
-                  id="calendar-toggle"
-                  aria-expanded="false"
-                  aria-controls="calendar-panel"
-                >
-                  📅 달력
-                </button>
-              </nav>
-
-              <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브">
-                <header class="archive-head">
-                  <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
-                  <h2 class="archive-title" id="archive-title">—</h2>
-                  <button type="button" class="archive-nav" id="archive-next" aria-label="다음 달">▶</button>
-                </header>
-                <div class="archive-dow">
-                  <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-                </div>
-                <div class="archive-grid" id="archive-grid" role="grid"></div>
-                <p class="archive-legend"><span class="archive-legend__dot"></span>기록 있음 · <span class="archive-legend__today">오늘</span></p>
-              </aside>
-            </div>
-
-            <div id="report-content">
-              <section class="daily-detail" id="daily-detail" aria-live="polite">
-                <div class="day-prep" id="day-prep" hidden>
-                  <div class="day-prep__inner">
-                    <div class="day-prep__copy">
-                      <p class="loading-title" id="day-prep-title">오늘의 시황을 준비하고 있어요</p>
-                      <p class="day-prep__hint" id="day-prep-hint">장 마감 후 자동으로 업데이트됩니다</p>
-                      <div class="loading-bar-track">
-                        <div class="loading-bar-inner"></div>
-                      </div>
+          <div id="report-content">
+            <section class="daily-detail" id="daily-detail" aria-live="polite">
+              <div class="rt-wrap dm-wrap" id="dm-main">
+                <div class="rt-panel dm-panel" role="tabpanel">
+                  <div class="rt-tabs" role="tablist" aria-label="마감시황 보기">
+                    <div class="rt-tabs-row-tabs">
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
+                        <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
+                      </button>
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="false" id="dm-tab-ai">
+                        <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
+                      </button>
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="stocks" aria-selected="false" id="dm-tab-stocks">
+                        <span class="rt-tab-label--full">종목시세</span><span class="rt-tab-label--short">종목시세</span>
+                      </button>
+                    </div>
+                    <div class="rt-tab-search">
+                      <p class="dm-date-subtitle" id="dm-date-subtitle" aria-live="polite">—</p>
                     </div>
                   </div>
-                </div>
 
-                <div class="rt-wrap dm-wrap" id="dm-main" hidden>
-                  <div class="rt-panel dm-panel" role="tabpanel">
-                    <div class="rt-tabs" role="tablist" aria-label="마감시황 보기">
-                      <div class="rt-tabs-row-tabs">
-                        <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
-                          <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
-                        </button>
-                        <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="false" id="dm-tab-ai">
-                          <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
-                        </button>
-                        <button type="button" class="rt-tab" role="tab" data-dm-tab="stocks" aria-selected="false" id="dm-tab-stocks">
-                          <span class="rt-tab-label--full">종목시세</span><span class="rt-tab-label--short">종목시세</span>
-                        </button>
-                      </div>
-                      <div class="rt-tab-search">
-                        <p class="dm-date-subtitle" id="dm-date-subtitle" aria-live="polite">—</p>
-                      </div>
-                    </div>
-
-                    <div class="dm-tab-panels">
+                  <div class="dm-tab-panels">
                       <!-- 대시보드 -->
                       <div class="dm-tab-panel" data-dm-panel="dashboard" role="tabpanel" aria-labelledby="dm-tab-dashboard">
                         <section class="dm-section">
@@ -202,6 +147,19 @@
 
                       <!-- AI 시황분석 -->
                       <div class="dm-tab-panel" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai" hidden>
+                        <div class="day-prep" id="day-prep" hidden>
+                          <div class="day-prep__inner">
+                            <div class="day-prep__copy">
+                              <p class="loading-title" id="day-prep-title">오늘의 시황을 준비하고 있어요</p>
+                              <p class="day-prep__hint" id="day-prep-hint">장 마감 후 자동으로 업데이트됩니다</p>
+                              <div class="loading-bar-track">
+                                <div class="loading-bar-inner"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div id="dm-ai-content">
                         <section class="dm-section">
                           <h3 class="dm-section__title">종합분석</h3>
                           <div id="dm-analysis" class="dm-analysis"></div>
@@ -216,6 +174,7 @@
                           <h3 class="dm-section__title">내일 주목할 변수</h3>
                           <ol id="dm-watchlist" class="dm-watchlist"></ol>
                         </section>
+                        </div>
                       </div>
 
                       <!-- 종목시세 -->
@@ -263,7 +222,6 @@
                 </div>
               </section>
             </div>
-          </div>
         </div>
       </main>
 
@@ -301,55 +259,6 @@
       </nav>
     </div>
 
-    <script>
-      function setDailyCalendarOpen(open) {
-        const panel = document.getElementById("calendar-panel");
-        const btn = document.getElementById("calendar-toggle");
-        const shell = document.querySelector(".daily-shell");
-        if (!panel || !btn) return;
-        const mobile = window.innerWidth <= 768;
-        panel.classList.toggle("visible", open);
-        if (shell) shell.classList.toggle("has-calendar", open && !mobile);
-        document.body.classList.toggle("tm-mobile-calendar-open", open && mobile);
-        btn.setAttribute("aria-expanded", open ? "true" : "false");
-        btn.textContent = open ? "닫기" : "📅 달력";
-      }
-
-      function toggleCalendar() {
-        const panel = document.getElementById("calendar-panel");
-        if (!panel) return;
-        setDailyCalendarOpen(!panel.classList.contains("visible"));
-      }
-
-      window.closeDailyCalendar = function () {
-        setDailyCalendarOpen(false);
-      };
-
-      (function bindDailyCalendar() {
-        const btn = document.getElementById("calendar-toggle");
-        const anchor = document.querySelector(".daily-nav-calendar");
-        if (!btn || !anchor) return;
-
-        btn.addEventListener("click", toggleCalendar);
-
-        document.addEventListener("click", (event) => {
-          if (window.innerWidth > 768) return;
-          const panel = document.getElementById("calendar-panel");
-          if (!panel || !panel.classList.contains("visible")) return;
-          if (anchor.contains(event.target)) return;
-          setDailyCalendarOpen(false);
-        });
-
-        window.addEventListener("resize", () => {
-          const panel = document.getElementById("calendar-panel");
-          if (!panel || !panel.classList.contains("visible")) return;
-          const mobile = window.innerWidth <= 768;
-          const shell = document.querySelector(".daily-shell");
-          if (shell) shell.classList.toggle("has-calendar", !mobile);
-          document.body.classList.toggle("tm-mobile-calendar-open", mobile);
-        });
-      })();
-    </script>
     <script src="./daily-market.js"></script>
   </body>
 </html>

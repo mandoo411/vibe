@@ -30,7 +30,6 @@
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
     days: {},
-    archiveAnchor: null,
     selected: null,
     mainTab: "dashboard",
     stockSubTab: "gainers",
@@ -40,18 +39,10 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     title: $("masthead-title"),
-    range: $("masthead-range"),
-    updated: $("masthead-updated"),
-    notice: $("masthead-notice"),
-    navPrev: $("nav-prev"),
-    navNext: $("nav-next"),
-    navDate: $("nav-date"),
-    navDateLabel: $("nav-date-label"),
-    navToday: $("nav-today"),
     dayPrep: $("day-prep"),
     dayPrepTitle: $("day-prep-title"),
     dayPrepHint: $("day-prep-hint"),
-    dmMain: $("dm-main"),
+    dmAiContent: $("dm-ai-content"),
     dmDateSubtitle: $("dm-date-subtitle"),
     dmIndexes: $("dm-indexes"),
     dmMarketExtras: $("dm-market-extras"),
@@ -59,10 +50,6 @@
     dmFeatured: $("dm-featured"),
     dmWatchlist: $("dm-watchlist"),
     dmStockTbody: $("dm-stock-tbody"),
-    archivePrev: $("archive-prev"),
-    archiveNext: $("archive-next"),
-    archiveTitle: $("archive-title"),
-    archiveGrid: $("archive-grid"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -100,11 +87,16 @@
     return WD_KO[ymdWeekday(ymd)] || "—";
   }
 
-  function formatNavDate(ymd) {
-    if (!YMD_RE.test(ymd)) return "—";
-    return `${ymd} (${weekdayKo(ymd)})`;
+  function resolveSelectedYmd() {
+    const h = (location.hash || "").replace("#", "");
+    if (YMD_RE.test(h) && state.days[h]) return h;
+    const keys = Object.keys(state.days || {}).sort();
+    if (!keys.length) return seoulYmd();
+    for (let i = keys.length - 1; i >= 0; i--) {
+      if (!isDayEmpty(state.days[keys[i]])) return keys[i];
+    }
+    return keys[keys.length - 1];
   }
-
   function formatClosingSubtitle(ymd) {
     if (!YMD_RE.test(ymd)) return "—";
     const { m, d } = ymdParts(ymd);
@@ -500,13 +492,10 @@
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
-    if (els.navDateLabel) els.navDateLabel.textContent = formatNavDate(ymd);
-    if (els.range) els.range.innerHTML = `<strong>${escapeHtml(headlineKo(ymd))}</strong>`;
-    if (els.updated) els.updated.textContent = !empty && day && day.updatedAt ? `업데이트: ${day.updatedAt}` : "";
     if (els.dmDateSubtitle) els.dmDateSubtitle.textContent = formatClosingSubtitle(displayYmd);
 
     try {
-      document.title = `${state.meta.title || "마감시황"} · ${headlineKo(ymd)}`;
+      document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;
     } catch (_) {
       /* ignore */
     }
@@ -525,8 +514,7 @@
         }
       }
     }
-
-    if (els.dmMain) els.dmMain.hidden = empty;
+    if (els.dmAiContent) els.dmAiContent.hidden = empty;
 
     if (empty) {
       if (els.dmIndexes) els.dmIndexes.innerHTML = "";
@@ -548,99 +536,9 @@
       if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
       renderStockTable();
     }
-
-    renderArchive();
-  }
-
-  function renderArchive() {
-    const anchor = state.archiveAnchor;
-    const first = firstOfMonth(anchor);
-    const total = daysInMonth(anchor);
-    const firstWd = ymdWeekday(first);
-    const todayYmd = seoulYmd();
-    const days = state.days || {};
-
-    els.archiveTitle.textContent = monthLabel(anchor);
-
-    const cells = [];
-    for (let i = 0; i < firstWd; i++) {
-      cells.push(`<div class="cell cell--blank" role="presentation"></div>`);
-    }
-    for (let d = 1; d <= total; d++) {
-      const { y, m } = ymdParts(anchor);
-      const ymd = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const wd = ymdWeekday(ymd);
-      const hasData = !isDayEmpty(days[ymd]);
-      const isToday = ymd === todayYmd;
-      const isSelected = ymd === state.selected;
-      const cls = [
-        "cell",
-        wd === 0 ? "cell--sun" : "",
-        hasData ? "cell--has" : "",
-        isToday ? "cell--today" : "",
-        isSelected ? "cell--selected" : "",
-      ]
-        .filter(Boolean)
-        .join(" ");
-      cells.push(
-        `<button type="button" class="${cls}" role="gridcell" data-ymd="${ymd}" aria-label="${escapeHtml(headlineKo(ymd))}${hasData ? ", 기록 있음" : ""}">${d}</button>`
-      );
-    }
-    const totalCells = firstWd + total;
-    const trailing = (7 - (totalCells % 7)) % 7;
-    for (let i = 0; i < trailing; i++) {
-      cells.push(`<div class="cell cell--blank" role="presentation"></div>`);
-    }
-    els.archiveGrid.innerHTML = cells.join("");
-
-    els.archiveGrid.querySelectorAll(".cell[data-ymd]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        select(btn.dataset.ymd, { syncArchive: false });
-        if (window.innerWidth <= 768 && typeof window.closeDailyCalendar === "function") {
-          window.closeDailyCalendar();
-        }
-      });
-    });
-  }
-
-  function select(ymd, opts = {}) {
-    if (!YMD_RE.test(ymd)) return;
-    state.selected = ymd;
-    if (opts.syncArchive !== false) {
-      state.archiveAnchor = firstOfMonth(ymd);
-    } else {
-      const cur = ymdParts(state.archiveAnchor);
-      const sel = ymdParts(ymd);
-      if (cur.y !== sel.y || cur.m !== sel.m) {
-        state.archiveAnchor = firstOfMonth(ymd);
-      }
-    }
-    els.navDate.value = ymd;
-    try {
-      history.replaceState(null, "", `#${ymd}`);
-    } catch (_) {
-      /* ignore */
-    }
-    render();
   }
 
   function bindEvents() {
-    els.navPrev.addEventListener("click", () => select(addDaysYmd(state.selected, -1)));
-    els.navNext.addEventListener("click", () => select(addDaysYmd(state.selected, 1)));
-    els.navToday.addEventListener("click", () => select(seoulYmd()));
-    els.navDate.addEventListener("change", () => {
-      if (YMD_RE.test(els.navDate.value)) select(els.navDate.value);
-    });
-
-    els.archivePrev.addEventListener("click", () => {
-      state.archiveAnchor = addMonths(state.archiveAnchor, -1);
-      renderArchive();
-    });
-    els.archiveNext.addEventListener("click", () => {
-      state.archiveAnchor = addMonths(state.archiveAnchor, 1);
-      renderArchive();
-    });
-
     document.querySelectorAll("[data-dm-tab]").forEach((btn) => {
       btn.addEventListener("click", () => setMainTab(btn.dataset.dmTab));
     });
@@ -661,14 +559,11 @@
 
     window.addEventListener("hashchange", () => {
       const h = (location.hash || "").replace("#", "");
-      if (YMD_RE.test(h) && h !== state.selected) select(h);
+      if (YMD_RE.test(h) && h !== state.selected && state.days[h]) {
+        state.selected = h;
+        render();
+      }
     });
-  }
-
-  function initialYmd() {
-    const h = (location.hash || "").replace("#", "");
-    if (YMD_RE.test(h)) return h;
-    return seoulYmd();
   }
 
   async function loadKrTv() {
@@ -703,9 +598,7 @@
 
   async function main() {
     await Promise.all([loadData(), loadKrTv()]);
-    state.selected = initialYmd();
-    state.archiveAnchor = firstOfMonth(state.selected);
-    els.navDate.value = state.selected;
+    state.selected = resolveSelectedYmd();
     bindEvents();
     setMainTab(state.mainTab);
     setStockSubTab(state.stockSubTab);

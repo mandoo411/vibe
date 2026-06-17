@@ -103,7 +103,7 @@ You must respond with ONLY valid JSON. No markdown, no code blocks, no explanati
   "headlineIssue": "핵심 이슈 한 줄",
   "supplyComment": "수급 해석 2~3문장",
   "issueStocks": [
-    { "name": "종목명", "change": 14.41, "entryReason": "진입 이유", "background": "배경 설명" }
+    { "name": "종목명", "code": "005930", "price": 15340, "change": 30.00, "type": "급등", "reason": "상승/하락 재료", "point": "투자 포인트" }
   ],
   "sectorFlow": {
     "strong": [{ "name": "섹터명", "changePct": 10.5, "reason": "이유" }],
@@ -120,9 +120,16 @@ You must respond with ONLY valid JSON. No markdown, no code blocks, no explanati
 }
 
 규칙:
-- issueStocks는 급등·급락 이슈 종목 5개 내외
+- issueStocks(특징주)는 아래 기준으로 선정하고 Pool 구분 없이 하나의 배열로 통합 출력:
+  1) +20% 이상 급등한 종목 중 재료(상승 이유)가 확인된 종목만 (최대 10개)
+  2) 시가총액 100위 이내에서 +10% 이상 급등한 종목
+  3) 시가총액 100위 이내에서 -5% 이하 급락한 종목 (최소 3개 — 거래량 상위/뉴스에서 하락 종목을 우선 탐색)
+  - 상승/하락 재료가 불명확한 종목은 제외한다.
+  - 각 항목 필드: name(종목명), code(6자리 종목코드), price(현재가 숫자), change(등락률 숫자),
+    type("급등" 또는 "급락"), reason(상승/하락 재료 한 줄), point(투자 포인트 한 줄).
+  - change·price는 입력 데이터(상승률 TOP·거래량 상위)의 숫자와 일치시키고, 모르면 change는 null·price는 0.
 - sectorFlow strong/weak 각 3개 내외, changePct는 숫자
-- tomorrowCheckpoints 정확히 3개
+- tomorrowCheckpoints 정확히 3개 (내일 주목할 변수)
 - stocks 배열 길이는 입력 상승률 TOP 종목 수와 동일, 순서 유지
 - 추측·투자권유 금지`;
 
@@ -188,7 +195,17 @@ export async function analyzeDailyClosingReport({
   return {
     headlineIssue: sanitizeStr(parsed.headlineIssue),
     supplyComment: sanitizeStr(parsed.supplyComment),
-    issueStocks: Array.isArray(parsed.issueStocks) ? parsed.issueStocks : [],
+    issueStocks: Array.isArray(parsed.issueStocks)
+      ? parsed.issueStocks.map((s) => ({
+          ...s,
+          // 신규 필드(reason/point/type) ↔ 기존 소비자(entryReason/background) 양방향 호환
+          entryReason: sanitizeStr(s.entryReason || s.reason),
+          background: sanitizeStr(s.background || s.point),
+          reason: sanitizeStr(s.reason || s.entryReason),
+          point: sanitizeStr(s.point || s.background),
+          type: sanitizeStr(s.type) || (Number(s.change) < 0 ? "급락" : "급등"),
+        }))
+      : [],
     sectorFlow: parsed.sectorFlow && typeof parsed.sectorFlow === "object" ? parsed.sectorFlow : {},
     tomorrowCheckpoints: Array.isArray(parsed.tomorrowCheckpoints) ? parsed.tomorrowCheckpoints.slice(0, 3) : [],
     oneLineVerdict: sanitizeStr(parsed.oneLineVerdict),

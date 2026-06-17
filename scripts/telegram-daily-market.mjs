@@ -68,66 +68,76 @@ function formatSectorBlock(sectorFlow) {
   return parts.length ? parts.join("\n") : "섹터 데이터 준비 중";
 }
 
-function formatIssueStocks(issueStocks, topGainers) {
-  const rows = Array.isArray(issueStocks) && issueStocks.length ? issueStocks : [];
-  if (rows.length) {
-    return rows
-      .slice(0, 5)
-      .map((row) => {
-        const reason = row.entryReason || row.background || row.reason || "";
-        return `${mdText(row.name)} ${fmtPct(row.change, 2)} - ${mdText(reason)}`;
-      })
-      .join("\n");
+const CIRCLED = ["①", "②", "③", "④", "⑤"];
+
+function stockChange(row) {
+  return toNum(row?.change ?? row?.change_pct ?? row?.changePct);
+}
+
+function stockType(row) {
+  const t = String(row?.type || "").trim();
+  if (t) return t;
+  const c = stockChange(row);
+  return c != null && c < 0 ? "급락" : "급등";
+}
+
+function stockReason(row) {
+  return row?.reason || row?.entryReason || row?.background || row?.note || "";
+}
+
+// 특징주: 급등 상위 3개 (issueStocks → 없으면 topGainers 폴백)
+function formatFeatured(day) {
+  const issues = Array.isArray(day.issueStocks) ? day.issueStocks : [];
+  let pool = issues.filter((r) => r && r.name && stockType(r) === "급등");
+  if (!pool.length) {
+    pool = (Array.isArray(day.topGainers) ? day.topGainers : []).filter((r) => r && r.name);
   }
-  const gainers = (Array.isArray(topGainers) ? topGainers : [])
-    .filter((r) => r && r.name)
-    .sort((a, b) => (toNum(b.change) ?? 0) - (toNum(a.change) ?? 0))
-    .slice(0, 5);
-  return gainers.length
-    ? gainers.map((r) => `${mdText(r.name)} ${fmtPct(r.change, 2)}`).join("\n")
-    : "이슈 종목 데이터 준비 중";
+  const top = pool
+    .slice()
+    .sort((a, b) => (stockChange(b) ?? 0) - (stockChange(a) ?? 0))
+    .slice(0, 3);
+  if (!top.length) return "특징주 데이터 준비 중";
+  return top
+    .map((r, i) => {
+      const reason = stockReason(r);
+      return `${CIRCLED[i]} ${mdText(r.name)} ${fmtPct(stockChange(r), 2)}${reason ? ` (${mdText(reason)})` : ""}`;
+    })
+    .join("\n");
+}
+
+// 급락: 시총 100위 이내 급락 종목 최대 2개 (type=급락 우선)
+function formatDecliners(day) {
+  const issues = Array.isArray(day.issueStocks) ? day.issueStocks : [];
+  const losers = issues
+    .filter((r) => r && r.name && stockType(r) === "급락")
+    .sort((a, b) => (stockChange(a) ?? 0) - (stockChange(b) ?? 0))
+    .slice(0, 2);
+  if (!losers.length) return "";
+  return losers.map((r) => `${mdText(r.name)} ${fmtPct(stockChange(r), 2)}`).join(" | ");
 }
 
 function buildMessage(data) {
   const { ymd, day } = pickTargetDay(data);
-  const indexes = Array.isArray(day.indexes) ? day.indexes.slice(0, 2) : [];
-  const headline = day.headlineIssue || day.summary || "시장 요약 준비 중";
-  const supplyLine = formatSupplyLine(day.supply);
-  const sectorBlock = formatSectorBlock(day.sectorFlow);
-  const checkpoints = Array.isArray(day.tomorrowCheckpoints) ? day.tomorrowCheckpoints.slice(0, 3) : [];
+  const indexes = Array.isArray(day.indexes) ? day.indexes : [];
+  const kospi = indexes.find((r) => r && r.name === "코스피") || indexes[0];
+  const kosdaq = indexes.find((r) => r && r.name === "코스닥") || indexes[1];
+  const idxLine =
+    [kospi, kosdaq].filter(Boolean).map(formatIndexLine).join(" | ") || "지수 데이터 준비 중";
 
   const lines = [
-    "📊 *TotalMoney AI - 장마감 리포트*",
-    `📅 ${formatDateKo(ymd)}`,
+    `[${mdText(formatDateKo(ymd))} 마감시황]`,
+    idxLine,
     "",
-    "💡 *핵심 이슈*",
-    mdText(headline),
-    "",
-    "📈 " + (indexes.length ? indexes.map(formatIndexLine).join(" | ") : "지수 데이터 준비 중"),
-    "",
-    "💰 *수급*",
-    supplyLine,
-    "",
-    "🔥 *이슈 종목*",
-    formatIssueStocks(day.issueStocks, day.topGainers),
-    "",
-    "📊 *섹터*",
-    sectorBlock,
-    "",
-    "🎯 *내일 체크포인트*",
+    "🔥 *특징주*",
+    formatFeatured(day),
   ];
 
-  if (checkpoints.length) {
-    checkpoints.forEach((p, i) => lines.push(`${i + 1}. ${mdText(p)}`));
-  } else {
-    lines.push("1. 수급 흐름", "2. 미국 증시 영향", "3. 주요 이벤트·지표");
+  const decliners = formatDecliners(day);
+  if (decliners) {
+    lines.push("", "⚠️ *급락*", decliners);
   }
 
-  if (day.oneLineVerdict) {
-    lines.push("", `📝 ${mdText(day.oneLineVerdict)}`);
-  }
-
-  lines.push("", `🔗 ${SITE_URL}/daily-market.html`);
+  lines.push("", "👉 *전체 분석*", "totalmoney.kr/daily-market.html");
   return lines.join("\n");
 }
 

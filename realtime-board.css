@@ -105,7 +105,7 @@
       .rt-tabs {
         display: flex;
         gap: 8px;
-        align-items: center;
+        align-items: stretch;
         flex-wrap: nowrap;
         padding: 8px;
         border-bottom: 1px solid var(--border);
@@ -120,14 +120,14 @@
       .rt-tabs-row-tabs {
         display: flex;
         gap: 8px;
-        align-items: center;
+        align-items: stretch;
         flex: 1 1 auto;
         min-width: 0;
       }
       .rt-tab-search {
         display: flex;
         gap: 8px;
-        align-items: center;
+        align-items: stretch;
         margin-left: auto;
         flex: 0 0 auto;
       }
@@ -135,7 +135,7 @@
         position: relative;
         display: flex;
         gap: 8px;
-        align-items: center;
+        align-items: stretch;
       }
       .rt-ac {
         position: absolute;
@@ -351,13 +351,20 @@
       .rt-tabs-row-tabs {
         width: 100%;
       }
+      .rt-tab,
+      .rt-tab-search input,
+      .rt-tab-search button {
+        box-sizing: border-box;
+        height: 44px;
+        min-height: 44px;
+        max-height: 44px;
+        margin: 0;
+        line-height: 1.25;
+      }
       .rt-tab {
         appearance: none;
         flex: 1 1 0;
         min-width: 0;
-        box-sizing: border-box;
-        height: 44px;
-        margin: 0;
         width: auto;
         padding: 0 6px;
         text-align: center;
@@ -373,7 +380,6 @@
         font-size: 14px;
         font-weight: 600;
         letter-spacing: 0;
-        line-height: 1.25;
         white-space: nowrap;
         color: var(--text-primary, #131722);
         background: #ffffff;
@@ -381,16 +387,12 @@
         border-radius: 8px;
       }
       .rt-tab-search input {
-        box-sizing: border-box;
-        height: 44px;
-        min-height: 44px;
-        max-height: 44px;
+        appearance: none;
+        -webkit-appearance: none;
         flex: none;
         width: 200px;
-        margin: 0;
         padding: 0 16px;
         font-size: 16px;
-        line-height: 1;
         border: 1px solid var(--color-border, var(--border, rgba(0, 0, 0, 0.08)));
         border-radius: 8px;
         background: var(--bg-primary, #fff);
@@ -412,17 +414,16 @@
         box-shadow: 0 0 0 3px rgba(15, 131, 135, 0.18);
       }
       .rt-tab-search button {
+        appearance: none;
+        -webkit-appearance: none;
         box-sizing: border-box;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        height: 44px;
-        margin: 0;
         padding: 0 16px;
-        line-height: 1;
         background: var(--gradient-primary);
         color: #ffffff;
-        border: none;
+        border: 1px solid transparent;
         border-radius: 8px;
         font-size: 14px;
         font-family: inherit;
@@ -1131,7 +1132,9 @@
           flex: 1 1 0;
           width: auto;
           min-width: 0;
+          height: 44px;
           min-height: 44px;
+          max-height: 44px;
         }
         .rt-tab-search {
           display: flex;
@@ -1139,6 +1142,13 @@
           margin-top: 8px;
           margin-left: 0;
           width: 100%;
+          align-items: stretch;
+        }
+        .rt-tab-search input,
+        .rt-tab-search button {
+          height: 44px;
+          min-height: 44px;
+          max-height: 44px;
         }
         .rt-tab-search input {
           flex: 1;

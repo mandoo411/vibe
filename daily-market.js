@@ -45,8 +45,6 @@
     dayPrepTitle: $("day-prep-title"),
     dayPrepHint: $("day-prep-hint"),
     dmAiContent: $("dm-ai-content"),
-    dmHeaderDate: $("dm-header-date"),
-    dmHeaderDateText: $("dm-header-date-text"),
     dmIndexes: $("dm-indexes"),
     dmMarketExtras: $("dm-market-extras"),
     dmAnalysis: $("dm-analysis"),
@@ -100,21 +98,6 @@
     }
     return keys[keys.length - 1];
   }
-  function setDateSubtitle(ymd) {
-    const text = formatClosingSubtitle(ymd);
-    if (els.dmHeaderDateText) {
-      els.dmHeaderDateText.textContent = text;
-      els.dmHeaderDateText.classList.add("is-ready");
-    }
-    if (els.dmHeaderDate) els.dmHeaderDate.dataset.date = ymd;
-  }
-
-  function formatClosingSubtitle(ymd) {
-    if (!YMD_RE.test(ymd)) return "—";
-    const { m, d } = ymdParts(ymd);
-    return `${m}월 ${d}일 마감시황`;
-  }
-
   function sanitizeUserCopy(v, fallback = "") {
     let t = sanitizeStr(v);
     if (!t) return fallback;
@@ -502,7 +485,6 @@
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
-    setDateSubtitle(displayYmd);
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;

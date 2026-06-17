@@ -1438,46 +1438,6 @@ details[open] .admin__summary {
   overflow: hidden;
 }
 
-.dm-header-date {
-  position: relative;
-  box-sizing: border-box;
-  margin: 4px 0 0;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  font-family: "Noto Sans KR", -apple-system, sans-serif;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-.dm-header-date__ghost {
-  visibility: hidden;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.25;
-}
-
-.dm-header-date__text {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 12px;
-  font-weight: 500;
-  color: #0d9488;
-  line-height: 1.25;
-  visibility: hidden;
-}
-
-.dm-header-date__text.is-ready {
-  visibility: visible;
-}
-
-[data-theme="dark"] .dm-header-date__text,
-.dark-mode .dm-header-date__text {
-  color: #0d9488;
-}
-
 .page--daily-market .rt-tabs-row-tabs--full {
   width: 100%;
   flex: 1 1 auto;

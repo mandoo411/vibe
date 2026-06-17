@@ -10,6 +10,21 @@ body.page-home-v2 {
   /* 헤더(.home-nav)와 본문 좌우 라인 통일 */
   --shell-pad-inline: 24px;
   --shell-pad-inline-end: 32px;
+  /* realtime.html 기준 — 히어로·탭·검색 공통 치수 */
+  --rt-hero-min-height: 72px;
+  --rt-hero-pad-top: 14px;
+  --rt-hero-pad-bottom: 12px;
+  --rt-tabs-gap: 8px;
+  --rt-tabs-pad-block: 8px;
+  --rt-tab-height: 44px;
+  --rt-tab-pad-inline: 6px;
+  --rt-tab-font-size: 14px;
+  --rt-tab-font-weight: 600;
+  --rt-tab-radius: 8px;
+  --rt-search-width: 200px;
+  --rt-search-pad-inline: 16px;
+  --rt-search-font-size: 16px;
+  --rt-search-btn-font-size: 14px;
 }
 
 .page-tm-v2 *,
@@ -961,10 +976,10 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 /* 서브페이지 히어로 — 라이트/다크 동일 높이·타이포 (테마 전환 시 점프 방지) */
 .page-tm-v2 .masthead.masthead--title-only {
   box-sizing: border-box;
-  min-height: 72px;
+  min-height: var(--rt-hero-min-height, 72px);
   height: auto;
   overflow: visible;
-  padding: 14px 0 12px;
+  padding: var(--rt-hero-pad-top, 14px) 0 var(--rt-hero-pad-bottom, 12px);
   margin-bottom: 0;
 }
 
@@ -1104,8 +1119,9 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 }
 
 .page-tm-v2 .rt-tabs {
-  padding-top: 8px;
-  padding-bottom: 8px;
+  gap: var(--rt-tabs-gap, 8px);
+  padding-top: var(--rt-tabs-pad-block, 8px);
+  padding-bottom: var(--rt-tabs-pad-block, 8px);
   padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
   padding-right: max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
 }
@@ -1919,17 +1935,19 @@ body[data-theme="dark"] .home-ticker-bar__label {
     padding-right: 0;
   }
 
-  /* 서브페이지 제목 블록 — 전 페이지 동일 규격(실시간시세 포함) */
+  /* 서브페이지 제목 블록 — 전 페이지 동일 규격(실시간시세·마감시황 포함) */
   .page-tm-v2 .masthead.masthead--title-only,
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only {
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only,
+  .page-tm-v2 .page--daily-market .masthead.masthead--title-only {
     height: auto;
-    min-height: 72px;
+    min-height: var(--rt-hero-min-height, 72px);
     overflow: visible;
     padding: 16px 0;
     margin-bottom: 0;
   }
 
-  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__copy {
+  .page-tm-v2 .page--realtime .masthead.masthead--title-only .masthead__copy,
+  .page-tm-v2 .page--daily-market .masthead.masthead--title-only .masthead__copy {
     padding-top: 0;
     padding-bottom: 0;
   }

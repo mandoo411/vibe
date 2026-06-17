@@ -1438,9 +1438,15 @@ details[open] .admin__summary {
   overflow: hidden;
 }
 
+.page--daily-market .rt-panel.dm-panel {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+
 .page--daily-market .rt-tabs-row-tabs--full {
   width: 100%;
-  flex: 1 1 auto;
+  flex: 1 1 100%;
+  max-width: 100%;
 }
 
 .page--daily-market .rt-tabs-row-tabs--full .rt-tab {
@@ -1453,7 +1459,8 @@ details[open] .admin__summary {
 }
 
 .dm-tab-panels {
-  padding: 16px;
+  padding: 16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
+    24px max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
 }
 
 .dm-tab-panel {
@@ -1696,8 +1703,9 @@ details[open] .admin__summary {
 }
 
 @media (max-width: 768px) {
-  .dm-tab-panels {
-    padding: 12px;
+  .page--daily-market .dm-tab-panels {
+    padding: 12px max(var(--shell-pad-inline, 16px), env(safe-area-inset-left))
+      16px max(var(--shell-pad-inline, 16px), env(safe-area-inset-right));
   }
 }
 
@@ -1831,7 +1839,7 @@ details[open] .admin__summary {
   color: #fff;
 }
 
-.dm-panel {
+.dm-panel:not(.rt-panel) {
   padding-inline: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
     max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
   padding-bottom: 18px;

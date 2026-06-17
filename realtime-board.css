@@ -1,5 +1,6 @@
 /* Bloomberg-style dense board — .page 폭은 weekly-market.css(1100px)와 동일 */
       .page--realtime,
+      .page--daily-market,
       .rt-wrap {
         font-family: "Noto Sans KR", -apple-system, sans-serif;
         line-height: 1.6;
@@ -10,7 +11,8 @@
         margin: 0;
         padding: 0;
       }
-      .page--realtime {
+      .page--realtime,
+      .page--daily-market {
         overflow-x: hidden;
         width: 100%;
         max-width: none;
@@ -104,10 +106,13 @@
       }
       .rt-tabs {
         display: flex;
-        gap: 8px;
+        gap: var(--rt-tabs-gap, 8px);
         align-items: stretch;
         flex-wrap: nowrap;
-        padding: 8px;
+        padding-top: var(--rt-tabs-pad-block, 8px);
+        padding-bottom: var(--rt-tabs-pad-block, 8px);
+        padding-left: 0;
+        padding-right: 0;
         border-bottom: 1px solid var(--border);
         background: var(--surface-bar);
       }
@@ -355,9 +360,9 @@
       .rt-tab-search input,
       .rt-tab-search button {
         box-sizing: border-box;
-        height: 44px;
-        min-height: 44px;
-        max-height: 44px;
+        height: var(--rt-tab-height, 44px);
+        min-height: var(--rt-tab-height, 44px);
+        max-height: var(--rt-tab-height, 44px);
         margin: 0;
         line-height: 1.25;
       }
@@ -366,7 +371,7 @@
         flex: 1 1 0;
         min-width: 0;
         width: auto;
-        padding: 0 6px;
+        padding: 0 var(--rt-tab-pad-inline, 6px);
         text-align: center;
         cursor: pointer;
         display: flex;
@@ -377,24 +382,24 @@
           border-color 0.15s ease,
           box-shadow 0.15s ease,
           filter 0.15s ease;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: var(--rt-tab-font-size, 14px);
+        font-weight: var(--rt-tab-font-weight, 600);
         letter-spacing: 0;
         white-space: nowrap;
         color: var(--text-primary, #131722);
         background: #ffffff;
         border: 1px solid var(--color-border, var(--border, rgba(0, 0, 0, 0.08)));
-        border-radius: 8px;
+        border-radius: var(--rt-tab-radius, 8px);
       }
       .rt-tab-search input {
         appearance: none;
         -webkit-appearance: none;
         flex: none;
-        width: 200px;
-        padding: 0 16px;
-        font-size: 16px;
+        width: var(--rt-search-width, 200px);
+        padding: 0 var(--rt-search-pad-inline, 16px);
+        font-size: var(--rt-search-font-size, 16px);
         border: 1px solid var(--color-border, var(--border, rgba(0, 0, 0, 0.08)));
-        border-radius: 8px;
+        border-radius: var(--rt-tab-radius, 8px);
         background: var(--bg-primary, #fff);
         color: var(--text-primary, #131722);
         font-family: inherit;
@@ -420,12 +425,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0 16px;
+        padding: 0 var(--rt-search-pad-inline, 16px);
         background: var(--gradient-primary);
         color: #ffffff;
         border: 1px solid transparent;
-        border-radius: 8px;
-        font-size: 14px;
+        border-radius: var(--rt-tab-radius, 8px);
+        font-size: var(--rt-search-btn-font-size, 14px);
         font-family: inherit;
         font-weight: 700;
         cursor: pointer;
@@ -1119,7 +1124,8 @@
           flex-wrap: nowrap;
           align-items: stretch;
           gap: 0;
-          padding: 8px;
+          padding-top: var(--rt-tabs-pad-block, 8px);
+          padding-bottom: var(--rt-tabs-pad-block, 8px);
         }
         .rt-tabs-row-tabs {
           display: flex;
@@ -1132,9 +1138,9 @@
           flex: 1 1 0;
           width: auto;
           min-width: 0;
-          height: 44px;
-          min-height: 44px;
-          max-height: 44px;
+          height: var(--rt-tab-height, 44px);
+          min-height: var(--rt-tab-height, 44px);
+          max-height: var(--rt-tab-height, 44px);
         }
         .rt-tab-search {
           display: flex;
@@ -1146,9 +1152,9 @@
         }
         .rt-tab-search input,
         .rt-tab-search button {
-          height: 44px;
-          min-height: 44px;
-          max-height: 44px;
+          height: var(--rt-tab-height, 44px);
+          min-height: var(--rt-tab-height, 44px);
+          max-height: var(--rt-tab-height, 44px);
         }
         .rt-tab-search input {
           flex: 1;

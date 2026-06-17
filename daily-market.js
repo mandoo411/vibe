@@ -35,7 +35,6 @@
     selected: null,
     mainTab: "dashboard",
     stockSubTab: "gainers",
-    krTv: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -51,6 +50,8 @@
     dmFeatured: $("dm-featured"),
     dmWatchlist: $("dm-watchlist"),
     dmStockTbody: $("dm-stock-tbody"),
+    dmStockThead: $("dm-stock-thead-row"),
+    dmStockTable: $("dm-stock-table"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -228,11 +229,135 @@
     return `${eok}억`;
   }
 
+  function numFromMoneyish(v) {
+    const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** 거래량: 만 단위 (realtime-board.js formatVolumeMan 동일) */
+  function formatVolumeMan(raw) {
+    const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    if (!Number.isFinite(n) || n < 0) return "—";
+    if (n < 10000) return n.toLocaleString("ko-KR");
+    const man = Math.round(n / 1000) / 10;
+    return `${man.toFixed(1)}만`;
+  }
+
+  /** 원 단위 → X.X조 / XXX.X억 (realtime formatWonJoEok 동일) */
+  function formatWonJoEok(n) {
+    if (!Number.isFinite(n) || n <= 0) return "—";
+    if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
+    const eok = n / 1e8;
+    if (eok >= 10000) return `${(eok / 10000).toFixed(1)}조`;
+    if (eok >= 100) return `${eok.toFixed(1)}억`;
+    const eokR = Math.round(eok);
+    if (eokR <= 0) return "—";
+    return `${eokR}억`;
+  }
+
+  function readStckAvlsRaw(r) {
+    if (!r) return null;
+    const keys = ["stck_avls", "mcap", "mcapEok", "marketCap"];
+    for (const k of keys) {
+      const v = r[k];
+      if (v != null && String(v).trim() !== "") return v;
+    }
+    return null;
+  }
+
+  function formatStckAvls(raw) {
+    const n = numFromMoneyish(raw);
+    return formatWonJoEok(n);
+  }
+
+  function calcTradeValFromPriceVol(priceRaw, volRaw) {
+    const p = numFromMoneyish(priceRaw);
+    const v = numFromMoneyish(volRaw);
+    if (p == null || v == null || p <= 0 || v <= 0) return null;
+    const x = p * v;
+    if (!Number.isFinite(x) || x <= 0) return null;
+    return Math.round(x);
+  }
+
+  function formatRowTradeVal(r) {
+    const tvRaw = r && r.tradingValueRaw != null ? numFromMoneyish(r.tradingValueRaw) : null;
+    if (tvRaw != null && tvRaw > 0) return formatTradeVal(String(tvRaw));
+    const calc = calcTradeValFromPriceVol(r && (r.currentPrice || r.price), r && r.volume);
+    if (calc != null) return formatTradeVal(String(calc));
+    return formatStockTv(r && r.tradingValue);
+  }
+
+  function formatVsCell(r) {
+    const n =
+      r && r.prevDelta != null
+        ? Number(r.prevDelta)
+        : calcChangeAmt(r && (r.currentPrice || r.price), parseChange(r && (r.change != null ? r.change : r.changePct)));
+    if (n == null || !Number.isFinite(n)) return { html: "—", cls: "" };
+    return { html: escapeHtml(fmtChangeAmt(n)), cls: vsClass(n) };
+  }
+
+  function stockTheadHtml(subTab) {
+    const base = [
+      '<th class="rt-td-rank">순위</th>',
+      '<th class="rt-td-name">종목명</th>',
+      '<th class="num rt-td-price">가격</th>',
+      '<th class="num rt-td-vs">대비</th>',
+      '<th class="num rt-td-chg">등락률</th>',
+      '<th class="num rt-td-vol">거래량</th>',
+    ];
+    if (subTab === "tv") {
+      base.push('<th class="num rt-td-mcap">시가총액</th>');
+      base.push('<th class="num rt-td-tv">거래대금</th>');
+    } else {
+      base.push('<th class="num rt-td-tv">거래대금</th>');
+      base.push('<th class="num rt-td-mcap">시가총액</th>');
+    }
+    return base.join("");
+  }
+
+  function syncStockThead(subTab) {
+    if (els.dmStockTable) els.dmStockTable.setAttribute("data-dm-stock-tab", subTab || "gainers");
+    if (els.dmStockThead) els.dmStockThead.innerHTML = stockTheadHtml(subTab);
+  }
+
+  function normalizeDailyStockRow(r, i) {
+    const price = r.currentPrice != null ? r.currentPrice : r.price;
+    const tvRaw =
+      r.tradingValueRaw != null
+        ? r.tradingValueRaw
+        : numFromMoneyish(r.tradingValue) != null && !/[억조]/.test(String(r.tradingValue || ""))
+          ? r.tradingValue
+          : null;
+    return {
+      rank: r.rank != null ? r.rank : i + 1,
+      code: r.code,
+      name: r.name || r.code || "—",
+      currentPrice: price,
+      change: r.change != null ? r.change : r.changePct,
+      prevDelta: r.prevDelta != null ? r.prevDelta : r.changeAmt,
+      volume: r.volume,
+      tradingValue: r.tradingValue,
+      tradingValueRaw: tvRaw,
+      stck_avls: readStckAvlsRaw(r),
+      market: r.market,
+    };
+  }
+
   function formatStockTv(raw) {
     if (raw == null || raw === "") return "—";
     const s = String(raw).trim();
     if (/[억조]/.test(s)) return s;
     return formatTradeVal(s);
+  }
+
+  function tvSortValue(r) {
+    if (r.tradingValueRaw != null) {
+      const n = numFromMoneyish(r.tradingValueRaw);
+      if (n != null) return n;
+    }
+    const calc = calcTradeValFromPriceVol(r.currentPrice, r.volume);
+    if (calc != null) return calc;
+    return parseTvSortValue(r.tradingValue);
   }
 
   function parseTvSortValue(raw) {
@@ -286,7 +411,8 @@
       hasMeaningfulTopGainers ||
       hasArr("topDecliners") ||
       hasArr("topLosers") ||
-      hasArr("topTradingValue")
+      hasArr("topTradingValue") ||
+      hasArr("volumeLeaders")
     );
   }
 
@@ -304,18 +430,6 @@
     return [];
   }
 
-  function normalizeKrTvRow(r, i) {
-    return {
-      rank: r.rank != null ? r.rank : i + 1,
-      name: r.name || r.code || "—",
-      currentPrice: r.price != null ? r.price : r.currentPrice,
-      change: r.changePct != null ? r.changePct : r.change,
-      prevDelta: r.changeAmt != null ? r.changeAmt : r.prevDelta,
-      tradingValue: r.tradingValue,
-      code: r.code,
-    };
-  }
-
   function getStockRows(day, subTab) {
     if (!day) return [];
     let rows = [];
@@ -330,23 +444,25 @@
           : [];
       rows.sort((a, b) => (parseChange(a.change) || 0) - (parseChange(b.change) || 0));
     } else if (subTab === "tv") {
-      if (state.krTv && state.krTv.length) {
-        rows = state.krTv.map(normalizeKrTvRow);
-      } else if (Array.isArray(day.topTradingValue) && day.topTradingValue.length) {
+      if (Array.isArray(day.topTradingValue) && day.topTradingValue.length) {
         rows = [...day.topTradingValue];
       } else if (Array.isArray(day.volumeLeaders) && day.volumeLeaders.length) {
         rows = day.volumeLeaders.map((r, i) => ({
-          rank: i + 1,
+          rank: r.rank != null ? r.rank : i + 1,
           name: r.name,
+          code: r.code,
           currentPrice: r.currentPrice || r.price,
           change: r.change,
           prevDelta: r.prevDelta,
+          volume: r.volume,
           tradingValue: r.tradingValue,
+          tradingValueRaw: r.tradingValueRaw,
+          stck_avls: readStckAvlsRaw(r),
         }));
       }
-      rows.sort((a, b) => parseTvSortValue(b.tradingValue) - parseTvSortValue(a.tradingValue));
+      rows.sort((a, b) => tvSortValue(b) - tvSortValue(a));
     }
-    return rows.slice(0, 30).map((r, i) => ({ ...r, rank: r.rank != null ? r.rank : i + 1 }));
+    return rows.slice(0, 30).map(normalizeDailyStockRow);
   }
 
   function setMainTab(tabId) {
@@ -365,6 +481,7 @@
       panel.classList.toggle("is-active", on);
     });
     if (STOCK_TABS.includes(tabId)) {
+      syncStockThead(state.stockSubTab);
       renderStockTable();
     }
   }
@@ -445,35 +562,48 @@
   }
 
   function renderStockTable() {
+    const subTab = state.stockSubTab;
+    syncStockThead(subTab);
     const day = getDay(state.selected);
-    const rows = getStockRows(day, state.stockSubTab);
+    const rows = getStockRows(day, subTab);
     const tbody = els.dmStockTbody;
     if (!tbody) return;
+    const colSpan = 8;
 
     if (!rows.length) {
       const label =
-        state.stockSubTab === "gainers"
-          ? "상승률"
-          : state.stockSubTab === "losers"
-            ? "하락률"
-            : "거래대금";
-      tbody.innerHTML = `<tr><td colspan="6" class="dm-stock-empty">${label} TOP30 데이터 준비중</td></tr>`;
+        subTab === "gainers" ? "상승률" : subTab === "losers" ? "하락률" : "거래대금";
+      tbody.innerHTML = `<tr><td colspan="${colSpan}" class="dm-stock-empty">${label} TOP30 데이터 준비중</td></tr>`;
       return;
     }
 
     tbody.innerHTML = rows
       .map((r) => {
-        const chg = parseChange(r.change != null ? r.change : r.changePct);
-        const vsAmt = r.prevDelta != null ? Number(r.prevDelta) : calcChangeAmt(r.currentPrice, chg);
-        const vsCls = vsClass(vsAmt);
-        return `<tr>
-          <td class="num rt-td-rank">${escapeHtml(r.rank != null ? String(r.rank) : "—")}</td>
-          <td class="rt-td-name"><span class="rt-name-text">${escapeHtml(r.name)}</span></td>
-          <td class="num rt-td-price">${escapeHtml(fmtNum(r.currentPrice))}</td>
-          <td class="num rt-td-vs"><span class="${escapeHtml(vsCls)}">${escapeHtml(fmtChangeAmt(vsAmt))}</span></td>
-          <td class="num rt-td-chg"><span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span></td>
-          <td class="num rt-td-tv">${escapeHtml(formatStockTv(r.tradingValue))}</td>
-        </tr>`;
+        const chg = parseChange(r.change);
+        const cls = deltaClass(chg);
+        const vs = formatVsCell(r);
+        const vol = escapeHtml(formatVolumeMan(r.volume));
+        const tv = escapeHtml(formatRowTradeVal(r));
+        const mcap = escapeHtml(formatStckAvls(r.stck_avls));
+        const common = [
+          `<td class="num rt-td-rank">${escapeHtml(r.rank != null ? String(r.rank) : "—")}</td>`,
+          `<td class="rt-td-name"><span class="rt-name-text">${escapeHtml(r.name)}</span></td>`,
+          `<td class="num rt-td-price">${escapeHtml(fmtNum(r.currentPrice))}</td>`,
+          `<td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>`,
+          `<td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(formatChange(chg))}</span></td>`,
+          `<td class="num rt-td-vol">${vol}</td>`,
+        ];
+        const tail =
+          subTab === "tv"
+            ? [
+                `<td class="num rt-td-mcap">${mcap}</td>`,
+                `<td class="num rt-td-tv">${tv}</td>`,
+              ]
+            : [
+                `<td class="num rt-td-tv">${tv}</td>`,
+                `<td class="num rt-td-mcap">${mcap}</td>`,
+              ];
+        return `<tr>${common.join("")}${tail.join("")}</tr>`;
       })
       .join("");
   }
@@ -554,23 +684,6 @@
     });
   }
 
-  async function loadKrTv() {
-    try {
-      const kr = typeof tmFetchJson === "function"
-        ? await tmFetchJson("data/kr-realtime.json")
-        : await (async () => {
-            const res = await fetch(`./data/kr-realtime.json?t=${Date.now()}`, { cache: "no-store" });
-            if (!res.ok) throw new Error("kr-realtime");
-            return res.json();
-          })();
-      if (kr && kr.tabs && Array.isArray(kr.tabs.tv)) {
-        state.krTv = kr.tabs.tv;
-      }
-    } catch (e) {
-      console.warn("kr-realtime 거래대금 데이터 불러오기 실패:", e);
-    }
-  }
-
   async function loadData() {
     try {
       const raw = await fetchDataJson();
@@ -585,7 +698,7 @@
   }
 
   async function main() {
-    await Promise.all([loadData(), loadKrTv()]);
+    await loadData();
     state.selected = resolveSelectedYmd();
     bindEvents();
     setMainTab(state.mainTab);

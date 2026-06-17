@@ -183,24 +183,28 @@
                       <!-- 종목순위 (상승률 / 하락률 / 거래대금) -->
                       <div class="dm-tab-panel" data-dm-panel="stocks" role="tabpanel" aria-labelledby="dm-tab-gainers dm-tab-losers dm-tab-tv" hidden>
                         <div class="table-box">
-                          <div class="rt-scroll">
-                            <table class="rt-table dm-stock-table" aria-label="마감 종목시세">
+                          <div class="rt-scroll dm-stock-scroll">
+                            <table class="rt-table dm-stock-table" id="dm-stock-table" data-dm-stock-tab="gainers" aria-label="마감 종목시세">
                               <colgroup>
                                 <col class="rt-col-rank" />
                                 <col class="rt-col-name" />
                                 <col class="rt-col-price" />
                                 <col class="rt-col-vs" />
                                 <col class="rt-col-chg" />
+                                <col class="rt-col-vol" />
                                 <col class="rt-col-tv" />
+                                <col class="rt-col-mcap" />
                               </colgroup>
                               <thead>
-                                <tr>
+                                <tr id="dm-stock-thead-row">
                                   <th class="rt-td-rank">순위</th>
                                   <th class="rt-td-name">종목명</th>
-                                  <th class="num rt-td-price">현재가</th>
+                                  <th class="num rt-td-price">가격</th>
                                   <th class="num rt-td-vs">대비</th>
                                   <th class="num rt-td-chg">등락률</th>
+                                  <th class="num rt-td-vol">거래량</th>
                                   <th class="num rt-td-tv">거래대금</th>
+                                  <th class="num rt-td-mcap">시가총액</th>
                                 </tr>
                               </thead>
                               <tbody id="dm-stock-tbody"></tbody>

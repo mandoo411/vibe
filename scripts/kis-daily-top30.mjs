@@ -281,6 +281,39 @@ function kisRowPctChange(row) {
   return null;
 }
 
+function pickAcmlTrPbmn(row) {
+  if (!row || typeof row !== "object") return "";
+  const keys = [
+    "acml_tr_pbmn",
+    "ACML_TR_PBMN",
+    "hts_acml_tr_pbmn",
+    "hts_deal_tr_pbmn",
+    "deal_tr_pbmn",
+  ];
+  for (const k of keys) {
+    const n = toNumberOrNull(row[k]);
+    if (n != null && n > 0) return String(Math.round(n));
+  }
+  return "";
+}
+
+function pickStckAvls(row) {
+  if (!row || typeof row !== "object") return "";
+  const keys = ["stck_avls", "STCK_AVLS", "hts_avls", "HTS_AVLS"];
+  for (const k of keys) {
+    const s = sanitizeStr(row[k]);
+    if (s) return s;
+  }
+  return "";
+}
+
+function calcTradingValueWon(priceRaw, volRaw) {
+  const p = toNumberOrNull(priceRaw);
+  const v = toNumberOrNull(volRaw);
+  if (p == null || v == null || p <= 0 || v <= 0) return "";
+  return String(Math.round(p * v));
+}
+
 // ─── KIS 등락률 순위 조회 ─────────────────────────────────
 // 시장 코드: 0000(전체) | 0001(코스피) | 1001(코스닥)
 async function fetchFluctuationRanking({
@@ -342,7 +375,9 @@ async function fetchFluctuationRanking({
     prevDelta: toNumberOrNull(row.prdy_vrss),
     change: kisRowPctChange(row),
     volume: sanitizeStr(row.acml_vol),
-    tradingValue: sanitizeStr(row.acml_tr_pbmn), // 원 단위 누적 거래대금
+    tradingValue: sanitizeStr(row.acml_tr_pbmn),
+    tradingValueRaw: pickAcmlTrPbmn(row) || calcTradingValueWon(row.stck_prpr, row.acml_vol),
+    stck_avls: pickStckAvls(row),
     rank: toNumberOrNull(row.data_rank),
   })).filter((r) => r.code && r.name);
 }
@@ -533,7 +568,8 @@ async function collectFluctuationTopN({
   return { rows, source };
 }
 
-function mapTopDeclinersJsonRow(s) {
+function mapStockJsonRow(s, extra = {}) {
+  const tvRaw = sanitizeStr(s.tradingValueRaw) || pickAcmlTrPbmn(s) || calcTradingValueWon(s.currentPrice, s.volume);
   return {
     rank: s.rank,
     code: s.code,
@@ -541,11 +577,94 @@ function mapTopDeclinersJsonRow(s) {
     market: s.market,
     change: s.change,
     currentPrice: s.currentPrice,
-    tradingValue: formatTradingValue(s.tradingValue),
+    prevDelta: s.prevDelta,
+    volume: sanitizeStr(s.volume),
+    tradingValueRaw: tvRaw,
+    tradingValue: formatTradingValue(tvRaw || s.tradingValue),
+    stck_avls: sanitizeStr(s.stck_avls),
+    ...extra,
+  };
+}
+
+function mapTopDeclinersJsonRow(s) {
+  return mapStockJsonRow(s, {
     reason: "",
     theme: "",
     newsTitles: [],
+  });
+}
+
+async function fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode, marketLabel, limit = 50 }) {
+  const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/volume-rank`);
+  const params = {
+    fid_cond_mrkt_div_code: "J",
+    fid_cond_scr_div_code: "20171",
+    fid_input_iscd: marketCode,
+    fid_div_cls_code: "0",
+    fid_blng_cls_code: "0",
+    fid_trgt_cls_code: "111111111",
+    fid_trgt_exls_cls_code: "0000000000",
+    fid_input_price_1: "",
+    fid_input_price_2: "",
+    fid_vol_cnt: String(limit),
+    fid_input_date_1: "",
   };
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey: appKey,
+      appsecret: appSecret,
+      tr_id: "FHPST01710000",
+      custtype: "P",
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`KIS volume-rank HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
+  }
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch (_) {
+    throw new Error(`KIS volume-rank: invalid JSON (${marketLabel}): ${text.slice(0, 300)}`);
+  }
+  if (json.rt_cd && json.rt_cd !== "0") {
+    throw new Error(`KIS volume-rank error (${marketLabel}) rt_cd=${json.rt_cd} msg=${json.msg1 || ""}`);
+  }
+  const list = Array.isArray(json.output) ? json.output : [];
+  return list
+    .map((row) => ({
+      code: sanitizeStr(row.stck_shrn_iscd),
+      name: sanitizeStr(row.hts_kor_isnm),
+      market: marketLabel,
+      currentPrice: sanitizeStr(row.stck_prpr),
+      prevDelta: toNumberOrNull(row.prdy_vrss),
+      change: kisRowPctChange(row),
+      volume: sanitizeStr(row.acml_vol),
+      tradingValueRaw: pickAcmlTrPbmn(row) || calcTradingValueWon(row.stck_prpr, row.acml_vol),
+      stck_avls: pickStckAvls(row),
+    }))
+    .filter((r) => r.code && r.name);
+}
+
+async function collectTradingValueTopN({ baseUrl, token, appKey, appSecret, topN }) {
+  const [kospi, kosdaq] = await Promise.all([
+    fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode: "0001", marketLabel: "KOSPI", limit: 50 }),
+    fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode: "1001", marketLabel: "KOSDAQ", limit: 50 }),
+  ]);
+  console.log(`  거래대금 후보 KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
+  const byCode = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    if (!byCode.has(r.code)) byCode.set(r.code, r);
+  }
+  const all = [...byCode.values()].sort(
+    (a, b) => (toNumberOrNull(b.tradingValueRaw) || 0) - (toNumberOrNull(a.tradingValueRaw) || 0)
+  );
+  return all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 async function fetchNaverFinanceIndex(code, label) {
@@ -1099,7 +1218,7 @@ async function main() {
 
   console.log("[5/7] KIS 수급·업종·거래량 + 언론사 RSS...");
   const kisCtx = { baseUrl, token: kisOAuthToken, appKey, appSecret };
-  const [supply, sectors, volumeLeaders, pressNewsAll] = await Promise.all([
+  const [supply, sectors, volumeLeaders, pressNewsAll, topTradingValueRaw] = await Promise.all([
     fetchSupplyBothMarkets(kisCtx, targetYmd).catch((e) => {
       console.warn(`  수급 조회 실패: ${e.message || e}`);
       return [];
@@ -1116,8 +1235,14 @@ async function main() {
       console.warn(`  RSS 실패: ${e.message || e}`);
       return [];
     }),
+    collectTradingValueTopN({ baseUrl, token: kisOAuthToken, appKey, appSecret, topN }).catch((e) => {
+      console.warn(`  거래대금 TOP${topN} 실패: ${e.message || e}`);
+      return [];
+    }),
   ]);
-  console.log(`  수급 ${supply.length}건 · 업종 ${sectors.length}건 · 거래량 ${volumeLeaders.length}건 · RSS ${pressNewsAll.length}건`);
+  console.log(
+    `  수급 ${supply.length}건 · 업종 ${sectors.length}건 · 거래량 ${volumeLeaders.length}건 · RSS ${pressNewsAll.length}건 · 거래대금 ${topTradingValueRaw.length}건`
+  );
 
   console.log("[6/7] Telegram 거시경제 메시지 + Claude 장마감 분석...");
   const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
@@ -1149,21 +1274,15 @@ async function main() {
 
   const topGainers = top.map((s) => {
     const extra = byCode.get(s.code) || { reason: "", theme: "기타" };
-    return {
-      rank: s.rank,
-      code: s.code,
-      name: s.name,
-      market: s.market,
-      change: s.change,
-      currentPrice: s.currentPrice,
-      tradingValue: formatTradingValue(s.tradingValue),
+    return mapStockJsonRow(s, {
       reason: extra.reason,
       theme: extra.theme,
       newsTitles: (newsMap.get(s.code) || []).slice(0, perStock),
-    };
+    });
   });
 
   const topDecliners = bottom.map(mapTopDeclinersJsonRow);
+  const topTradingValue = topTradingValueRaw.map(mapTopDeclinersJsonRow);
 
   // 테마별 그룹화 (인기 테마부터)
   const themeMap = new Map();
@@ -1261,8 +1380,23 @@ async function main() {
       date: msg.date.toISOString(),
     })),
     volumeLeaders: volumeLeaders.length
-      ? volumeLeaders.map((r) => ({ ...r, sector: r.sector || lookupSector(r.name) }))
+      ? volumeLeaders.map((r, i) => ({
+          ...mapStockJsonRow({
+            rank: i + 1,
+            code: r.code,
+            name: r.name,
+            market: r.market,
+            currentPrice: r.currentPrice,
+            change: r.change,
+            volume: r.volume,
+            prevDelta: r.prevDelta,
+            tradingValueRaw: calcTradingValueWon(r.currentPrice, r.volume),
+            stck_avls: "",
+          }),
+          sector: r.sector || lookupSector(r.name),
+        }))
       : existing.volumeLeaders || [],
+    topTradingValue: topTradingValue.length ? topTradingValue : existing.topTradingValue || [],
     topGainers,
     topGainersUpdatedAt: seoulYmd(new Date()),
     topGainersSource: `${rankingSource}+KIS+Naver+Telegram+Claude`,
@@ -1276,6 +1410,16 @@ async function main() {
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, JSON.stringify(data, null, 2) + "\n", "utf8");
   console.log(`Wrote ${outputPath} (key=${targetYmd})`);
+
+  const archiveDir = path.join(path.dirname(outputPath), "daily");
+  const archivePath = path.join(archiveDir, `${targetYmd}.json`);
+  await fs.mkdir(archiveDir, { recursive: true });
+  await fs.writeFile(
+    archivePath,
+    JSON.stringify({ date: targetYmd, ...data.days[targetYmd] }, null, 2) + "\n",
+    "utf8"
+  );
+  console.log(`Wrote ${archivePath}`);
 
   // 결과 미리보기
   console.log("\n=== 미리보기 ===");

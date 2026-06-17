@@ -77,16 +77,16 @@ jobs:
       - name: Sync KIS top 30 + Naver news + Claude
         run: npm run sync:kis
 
-      - name: Commit updated data/daily-market.json
+      - name: Commit updated daily market data
         run: |
           set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/daily-market.json; then
+          if git diff --quiet -- data/daily-market.json data/daily; then
             echo "::notice::No data changes to commit"
           else
             STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
-            git add data/daily-market.json
+            git add data/daily-market.json data/daily
             git commit -m "chore(data): sync daily market ${STAMP}"
             git pull --rebase origin main
             git push

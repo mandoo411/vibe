@@ -49,8 +49,9 @@ const US_SECTORS = [
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
 
-// GOOG(알파벳 C클래스) 중복 제거 — GOOGL(A클래스)만 표시. 소스(KIS/Yahoo/FMP) 무관하게 랭킹에서 제외.
-const EXCLUDED_US_TICKERS = new Set(["GOOG"]);
+// 랭킹에서 제외할 티커(현재 없음). GOOGL/GOOG는 둘 다 표시하되 클래스별 발행주식수로 시총을 각각 계산함
+// (아래 KNOWN_SHARES_OUTSTANDING). Yahoo/KIS는 양쪽에 회사 전체 시총(~$4.5T)을 주므로 그대로 쓰면 중복으로 보임.
+const EXCLUDED_US_TICKERS = new Set();
 function isExcludedUsTicker(t) {
   return EXCLUDED_US_TICKERS.has(String(t || "").toUpperCase());
 }
@@ -658,6 +659,9 @@ async function fetchYahooMarketCapMap(tickers) {
 // 해당 종목은 현재가 × 공시주식수로 시총을 강제 계산(Yahoo/KIS 값 무시).
 const KNOWN_SHARES_OUTSTANDING = new Map([
   ["SPCX", 13111111111], // SpaceX — 전체 발행주식수 (현재가 × 이 값으로 시총 강제 계산)
+  // 알파벳: 클래스별 발행주식수로 각각 시총 계산(2026-03-31 SEC 공시). 회사 전체 시총 중복 표시 방지.
+  ["GOOGL", 5824000000], // 알파벳 A (Class A)
+  ["GOOG", 5456000000], // 알파벳 C (Class C)
 ]);
 
 /**
@@ -790,7 +794,7 @@ async function fetchSectors() {
 }
 
 async function fetchMarketCapLookup() {
-  return cached("ranking:market-cap:lookup:v4", async () => {
+  return cached("ranking:market-cap:lookup:v5", async () => {
     const batches = await Promise.all(
       EXCHANGES.map(async (exchange) => {
         const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
@@ -1012,7 +1016,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v20", async () => {
+  return cached("ranking:market-cap:v21", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1024,7 +1028,7 @@ function fetchMarketCapTop50() {
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v8",
+    "ranking:gainers:v9",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -1043,7 +1047,7 @@ function fetchGainersTop50() {
 
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
-    "ranking:trade-value:v8",
+    "ranking:trade-value:v9",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
     (exchange) => ({
@@ -1063,6 +1067,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v21",
     "ranking:market-cap:v20",
     "ranking:market-cap:v19",
     "ranking:market-cap:v18",
@@ -1072,10 +1077,12 @@ function findCachedRankRow(ticker) {
     "ranking:market-cap:v13",
     "ranking:market-cap:v12",
     "ranking:market-cap:v11",
+    "ranking:gainers:v9",
     "ranking:gainers:v8",
     "ranking:gainers:v7",
     "ranking:gainers:v6",
     "ranking:gainers:v5",
+    "ranking:trade-value:v9",
     "ranking:trade-value:v8",
     "ranking:trade-value:v7",
     "ranking:trade-value:v6",
@@ -1349,17 +1356,17 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v18", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v19", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers:v7", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v8", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v7", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v8", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

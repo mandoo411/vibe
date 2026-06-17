@@ -79,6 +79,10 @@
             <div class="masthead__copy">
               <p class="masthead__kicker">Market Daily</p>
               <h1 class="masthead__title" id="masthead-title">마감시황</h1>
+              <p class="dm-header-date" id="dm-header-date" aria-live="polite">
+                <span class="dm-header-date__text" id="dm-header-date-text"></span>
+                <span class="dm-header-date__ghost" aria-hidden="true">12월 31일 마감시황</span>
+              </p>
             </div>
           </header>
 
@@ -87,24 +91,22 @@
               <div class="rt-wrap dm-wrap" id="dm-main">
                 <div class="rt-panel dm-panel" role="tabpanel">
                   <div class="rt-tabs" role="tablist" aria-label="마감시황 보기">
-                    <div class="rt-tabs-row-tabs">
+                    <div class="rt-tabs-row-tabs rt-tabs-row-tabs--full">
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
                         <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
                       </button>
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="false" id="dm-tab-ai">
                         <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
                       </button>
-                      <button type="button" class="rt-tab" role="tab" data-dm-tab="stocks" aria-selected="false" id="dm-tab-stocks">
-                        <span class="rt-tab-label--full">종목시세</span><span class="rt-tab-label--short">종목시세</span>
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="gainers" aria-selected="false" id="dm-tab-gainers">
+                        <span class="rt-tab-label--full">상승률 TOP 30</span><span class="rt-tab-label--short">상승률</span>
                       </button>
-                    </div>
-                    <div class="rt-tab-search">
-                      <div class="rt-tab-search-wrap dm-date-search-slot">
-                        <p class="dm-date-subtitle" id="dm-date-subtitle" aria-live="polite">
-                          <span class="dm-date-subtitle__text" id="dm-date-subtitle-text"></span>
-                          <span class="dm-date-subtitle__ghost" aria-hidden="true">12월 31일 마감시황</span>
-                        </p>
-                      </div>
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="losers" aria-selected="false" id="dm-tab-losers">
+                        <span class="rt-tab-label--full">하락률 TOP 30</span><span class="rt-tab-label--short">하락률</span>
+                      </button>
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="tv" aria-selected="false" id="dm-tab-tv">
+                        <span class="rt-tab-label--full">거래대금 TOP 30</span><span class="rt-tab-label--short">거래대금</span>
+                      </button>
                     </div>
                   </div>
 
@@ -182,20 +184,8 @@
                         </div>
                       </div>
 
-                      <!-- 종목시세 -->
-                      <div class="dm-tab-panel" data-dm-panel="stocks" role="tabpanel" aria-labelledby="dm-tab-stocks" hidden>
-                        <div class="dm-stock-tabs" role="tablist" aria-label="종목시세 구분">
-                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="gainers" aria-selected="true">
-                            <span class="rt-tab-label--full">상승률 TOP30</span><span class="rt-tab-label--short">상승률</span>
-                          </button>
-                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="losers" aria-selected="false">
-                            <span class="rt-tab-label--full">하락률 TOP30</span><span class="rt-tab-label--short">하락률</span>
-                          </button>
-                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="tv" aria-selected="false">
-                            <span class="rt-tab-label--full">거래대금 TOP30</span><span class="rt-tab-label--short">거래대금</span>
-                          </button>
-                        </div>
-
+                      <!-- 종목순위 (상승률 / 하락률 / 거래대금) -->
+                      <div class="dm-tab-panel" data-dm-panel="stocks" role="tabpanel" aria-labelledby="dm-tab-gainers dm-tab-losers dm-tab-tv" hidden>
                         <div class="table-box">
                           <div class="rt-scroll">
                             <table class="rt-table dm-stock-table" aria-label="마감 종목시세">

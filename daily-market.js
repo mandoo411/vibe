@@ -27,6 +27,8 @@
   const TECHNICAL_MSG_RE =
     /(?:Claude|Anthropic|OpenAI|API\s*(?:key|error|크레딧)|billing|HTTP\s*\d{3}|rt_cd|stack\s*trace|Error:|ECONNREFUSED|timeout|unavailable)/i;
 
+  const STOCK_TABS = ["gainers", "losers", "tv"];
+
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
     days: {},
@@ -43,8 +45,8 @@
     dayPrepTitle: $("day-prep-title"),
     dayPrepHint: $("day-prep-hint"),
     dmAiContent: $("dm-ai-content"),
-    dmDateSubtitle: $("dm-date-subtitle"),
-    dmDateSubtitleText: $("dm-date-subtitle-text"),
+    dmHeaderDate: $("dm-header-date"),
+    dmHeaderDateText: $("dm-header-date-text"),
     dmIndexes: $("dm-indexes"),
     dmMarketExtras: $("dm-market-extras"),
     dmAnalysis: $("dm-analysis"),
@@ -100,11 +102,11 @@
   }
   function setDateSubtitle(ymd) {
     const text = formatClosingSubtitle(ymd);
-    if (els.dmDateSubtitleText) {
-      els.dmDateSubtitleText.textContent = text;
-      els.dmDateSubtitleText.classList.add("is-ready");
+    if (els.dmHeaderDateText) {
+      els.dmHeaderDateText.textContent = text;
+      els.dmHeaderDateText.classList.add("is-ready");
     }
-    if (els.dmDateSubtitle) els.dmDateSubtitle.dataset.date = ymd;
+    if (els.dmHeaderDate) els.dmHeaderDate.dataset.date = ymd;
   }
 
   function formatClosingSubtitle(ymd) {
@@ -366,24 +368,22 @@
 
   function setMainTab(tabId) {
     state.mainTab = tabId;
+    if (STOCK_TABS.includes(tabId)) {
+      state.stockSubTab = tabId;
+    }
     document.querySelectorAll("[data-dm-tab]").forEach((btn) => {
       const on = btn.dataset.dmTab === tabId;
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
     document.querySelectorAll("[data-dm-panel]").forEach((panel) => {
-      const on = panel.dataset.dmPanel === tabId;
+      const panelId = panel.dataset.dmPanel;
+      const on = panelId === tabId || (STOCK_TABS.includes(tabId) && panelId === "stocks");
       panel.hidden = !on;
       panel.classList.toggle("is-active", on);
     });
-  }
-
-  function setStockSubTab(subTab) {
-    state.stockSubTab = subTab;
-    document.querySelectorAll("[data-dm-stock]").forEach((btn) => {
-      const on = btn.dataset.dmStock === subTab;
-      btn.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    renderStockTable();
+    if (STOCK_TABS.includes(tabId)) {
+      renderStockTable();
+    }
   }
 
   function renderIndexes(arr) {
@@ -553,10 +553,6 @@
       btn.addEventListener("click", () => setMainTab(btn.dataset.dmTab));
     });
 
-    document.querySelectorAll("[data-dm-stock]").forEach((btn) => {
-      btn.addEventListener("click", () => setStockSubTab(btn.dataset.dmStock));
-    });
-
     document.querySelectorAll("[data-dm-supply]").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll("[data-dm-supply]").forEach((b) => {
@@ -611,7 +607,6 @@
     state.selected = resolveSelectedYmd();
     bindEvents();
     setMainTab(state.mainTab);
-    setStockSubTab(state.stockSubTab);
     render();
   }
 

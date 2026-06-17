@@ -1105,7 +1105,7 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
 
 .page-tm-v2 .rt-tabs {
   padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
-  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  padding-right: max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
 }
 
 .page-tm-v2 .us-section__title {

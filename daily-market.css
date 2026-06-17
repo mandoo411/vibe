@@ -1438,60 +1438,54 @@ details[open] .admin__summary {
   overflow: hidden;
 }
 
-.dm-date-subtitle {
+.dm-header-date {
   position: relative;
   box-sizing: border-box;
-  margin: 0;
+  margin: 4px 0 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  height: 44px;
-  min-width: 100%;
   font-family: "Noto Sans KR", -apple-system, sans-serif;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
-.dm-date-subtitle__ghost {
+.dm-header-date__ghost {
   visibility: hidden;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.25;
 }
 
-.dm-date-subtitle__text {
+.dm-header-date__text {
   position: absolute;
-  right: 0;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #0d9488;
   line-height: 1.25;
   visibility: hidden;
 }
 
-.dm-date-subtitle__text.is-ready {
+.dm-header-date__text.is-ready {
   visibility: visible;
 }
 
-[data-theme="dark"] .dm-date-subtitle__text,
-.dark-mode .dm-date-subtitle__text {
+[data-theme="dark"] .dm-header-date__text,
+.dark-mode .dm-header-date__text {
   color: #0d9488;
 }
 
-.page--daily-market .rt-tab-search {
-  flex: 0 0 auto;
-  margin-left: auto;
-  align-items: center;
+.page--daily-market .rt-tabs-row-tabs--full {
+  width: 100%;
+  flex: 1 1 auto;
 }
 
-.page--daily-market .dm-date-search-slot {
-  flex: 0 0 auto;
-  width: 200px;
-  height: 44px;
-  justify-content: flex-end;
+.page--daily-market .rt-tabs-row-tabs--full .rt-tab {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .page--daily-market .day-prep {
@@ -1719,18 +1713,6 @@ details[open] .admin__summary {
   line-height: 1.65;
 }
 
-.dm-stock-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: nowrap;
-}
-
-.dm-stock-tabs .dm-stock-tab {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
 .dm-stock-table .rt-td-name {
   font-size: 15px;
   font-weight: 500;
@@ -1754,30 +1736,8 @@ details[open] .admin__summary {
 }
 
 @media (max-width: 768px) {
-  .page--daily-market .dm-date-search-slot {
-    width: 100%;
-    min-width: 0;
-    justify-content: flex-end;
-  }
-
-  .dm-date-subtitle {
-    width: 100%;
-  }
-
   .dm-tab-panels {
     padding: 12px;
-  }
-
-  .dm-stock-tabs {
-    gap: 6px;
-  }
-
-  .dm-stock-tabs .dm-stock-tab .rt-tab-label--full {
-    display: none;
-  }
-
-  .dm-stock-tabs .dm-stock-tab .rt-tab-label--short {
-    display: inline;
   }
 }
 

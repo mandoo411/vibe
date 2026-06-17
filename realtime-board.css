@@ -383,11 +383,13 @@
       .rt-tab-search input {
         box-sizing: border-box;
         height: 44px;
+        min-height: 44px;
+        max-height: 44px;
         flex: none;
         width: 200px;
         margin: 0;
         padding: 0 16px;
-        font-size: 14px;
+        font-size: 16px;
         line-height: 1;
         border: 1px solid var(--color-border, var(--border, rgba(0, 0, 0, 0.08)));
         border-radius: 8px;
@@ -396,10 +398,6 @@
         font-family: inherit;
         outline: none;
         text-align: center;
-      }
-      /* us-market.html #us-stock-search-input 과 동일 (iOS 줌 방지) */
-      #stock-search-input {
-        font-size: 16px;
       }
       .rt-tab-search input::placeholder {
         color: var(--text-dim);

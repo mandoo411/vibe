@@ -1439,26 +1439,59 @@ details[open] .admin__summary {
 }
 
 .dm-date-subtitle {
+  position: relative;
+  box-sizing: border-box;
   margin: 0;
-  padding: 0 4px 0 12px;
-  display: flex;
+  padding: 0;
+  display: inline-flex;
   align-items: center;
   justify-content: flex-end;
+  height: 44px;
+  min-width: 100%;
+  font-family: "Noto Sans KR", -apple-system, sans-serif;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.dm-date-subtitle__ghost {
+  visibility: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.dm-date-subtitle__text {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 13px;
   font-weight: 500;
   color: #0d9488;
-  white-space: nowrap;
-  font-family: "Noto Sans KR", -apple-system, sans-serif;
-  letter-spacing: -0.01em;
+  line-height: 1.25;
+  visibility: hidden;
 }
 
-[data-theme="dark"] .dm-date-subtitle,
-.dark-mode .dm-date-subtitle {
+.dm-date-subtitle__text.is-ready {
+  visibility: visible;
+}
+
+[data-theme="dark"] .dm-date-subtitle__text,
+.dark-mode .dm-date-subtitle__text {
   color: #0d9488;
 }
 
 .page--daily-market .rt-tab-search {
+  flex: 0 0 auto;
+  margin-left: auto;
   align-items: center;
+}
+
+.page--daily-market .dm-date-search-slot {
+  flex: 0 0 auto;
+  width: 200px;
+  height: 44px;
+  justify-content: flex-end;
 }
 
 .page--daily-market .day-prep {
@@ -1721,12 +1754,14 @@ details[open] .admin__summary {
 }
 
 @media (max-width: 768px) {
-  .dm-date-subtitle {
-    width: auto;
+  .page--daily-market .dm-date-search-slot {
+    width: 100%;
     min-width: 0;
-    margin-top: 0;
-    padding: 0 2px 0 8px;
-    font-size: 12px;
+    justify-content: flex-end;
+  }
+
+  .dm-date-subtitle {
+    width: 100%;
   }
 
   .dm-tab-panels {

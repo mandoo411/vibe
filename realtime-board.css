@@ -397,6 +397,10 @@
         outline: none;
         text-align: center;
       }
+      /* us-market.html #us-stock-search-input 과 동일 (iOS 줌 방지) */
+      #stock-search-input {
+        font-size: 16px;
+      }
       .rt-tab-search input::placeholder {
         color: var(--text-dim);
         text-align: center;

@@ -44,6 +44,7 @@
     dayPrepHint: $("day-prep-hint"),
     dmAiContent: $("dm-ai-content"),
     dmDateSubtitle: $("dm-date-subtitle"),
+    dmDateSubtitleText: $("dm-date-subtitle-text"),
     dmIndexes: $("dm-indexes"),
     dmMarketExtras: $("dm-market-extras"),
     dmAnalysis: $("dm-analysis"),
@@ -97,6 +98,15 @@
     }
     return keys[keys.length - 1];
   }
+  function setDateSubtitle(ymd) {
+    const text = formatClosingSubtitle(ymd);
+    if (els.dmDateSubtitleText) {
+      els.dmDateSubtitleText.textContent = text;
+      els.dmDateSubtitleText.classList.add("is-ready");
+    }
+    if (els.dmDateSubtitle) els.dmDateSubtitle.dataset.date = ymd;
+  }
+
   function formatClosingSubtitle(ymd) {
     if (!YMD_RE.test(ymd)) return "—";
     const { m, d } = ymdParts(ymd);
@@ -492,7 +502,7 @@
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
-    if (els.dmDateSubtitle) els.dmDateSubtitle.textContent = formatClosingSubtitle(displayYmd);
+    setDateSubtitle(displayYmd);
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;

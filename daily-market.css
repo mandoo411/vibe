@@ -1509,3 +1509,174 @@ details[open] .admin__summary {
     padding: 8px 6px;
   }
 }
+
+/* ==================================================================
+   마감시황 리디자인 (대시보드 / AI 시황분석 / 종목시세) — dm- 네임스페이스
+   기존 사이트 CSS 변수/그라데이션/카드 스타일을 그대로 사용
+   ================================================================== */
+.dm-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 14px 0 6px;
+  padding-inline: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
+    max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.dm-tabs::-webkit-scrollbar { display: none; }
+.dm-tab {
+  flex: 0 0 auto;
+  height: 44px;
+  min-width: 104px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #131722);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.dm-tab[aria-selected="true"] {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+}
+[data-theme="dark"] .dm-tab {
+  background: var(--card-bg, #111d35);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #fff);
+}
+[data-theme="dark"] .dm-tab[aria-selected="true"] {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: #fff;
+}
+
+.dm-panel {
+  padding-inline: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
+    max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+  padding-bottom: 18px;
+}
+#dm-panel-ai { display: grid; gap: 14px; }
+
+.dm-section__title {
+  margin: 22px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+  letter-spacing: -0.01em;
+}
+#dm-panel-ai .dm-section__title { margin-top: 0; }
+
+.dm-grid { display: grid; gap: 12px; }
+.dm-grid--2 { grid-template-columns: repeat(2, 1fr); }
+.dm-grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+.dm-card {
+  background: var(--bg-secondary, #f0f3fa);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+[data-theme="dark"] .dm-card {
+  background: var(--card-bg, #111d35);
+  border-color: var(--border-color, rgba(212, 175, 55, 0.15));
+  box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.28));
+}
+.dm-card__label { font-size: 13px; color: var(--text-secondary, #5d606b); font-weight: 600; }
+.dm-card__value { font-size: 22px; font-weight: 800; color: var(--text-primary, #131722); font-variant-numeric: tabular-nums; }
+.dm-card__delta { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary, #5d606b); }
+.dm-card__sub { font-size: 12px; color: var(--text-secondary, #5d606b); }
+
+.dm-up { color: var(--up-color, #e24b4a) !important; }
+.dm-down { color: var(--down-color, #3b82f6) !important; }
+
+.dm-card--empty {
+  grid-column: 1 / -1;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  color: var(--text-secondary, #5d606b);
+  min-height: 84px;
+}
+.dm-card--empty i { font-size: 22px; opacity: 0.5; }
+.dm-empty { color: var(--text-secondary, #5d606b); font-size: 14px; padding: 14px; text-align: center; margin: 0; }
+
+.dm-subtabs { display: flex; gap: 8px; margin: 4px 0 12px; flex-wrap: wrap; }
+.dm-subtab {
+  height: 40px;
+  min-width: 88px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #131722);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.dm-subtab[aria-selected="true"] {
+  background: var(--gradient-primary);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+}
+[data-theme="dark"] .dm-subtab { background: var(--card-bg, #111d35); border-color: rgba(255, 255, 255, 0.1); color: var(--text-primary, #fff); }
+[data-theme="dark"] .dm-subtab[aria-selected="true"] { background: var(--gradient-primary); border-color: transparent; }
+
+.dm-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: 12px;
+  background: var(--bg-secondary, #f0f3fa);
+}
+[data-theme="dark"] .dm-table-wrap { background: var(--card-bg, #111d35); border-color: var(--border-color, rgba(212, 175, 55, 0.15)); }
+.dm-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 460px; }
+.dm-table th, .dm-table td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); white-space: nowrap; }
+.dm-table th { font-size: 12px; font-weight: 700; color: var(--text-secondary, #5d606b); }
+.dm-table td { color: var(--text-primary, #131722); font-variant-numeric: tabular-nums; }
+.dm-table tr:last-child td { border-bottom: none; }
+.dm-table .num { text-align: right; }
+.dm-rank { color: var(--text-secondary, #5d606b); font-weight: 700; }
+.dm-qname { font-weight: 600; }
+
+.dm-card--ai { gap: 10px; }
+.dm-headline { font-size: 16px; font-weight: 700; color: var(--text-primary, #131722); margin: 0; }
+.dm-summary p { font-size: 14px; line-height: 1.7; color: var(--text-primary, #131722); margin: 0 0 10px; }
+.dm-summary p:last-child { margin-bottom: 0; }
+.dm-verdict { font-size: 14px; font-weight: 700; color: var(--accent-brand, #0f8387); margin: 6px 0 0; }
+.dm-claude-note { font-size: 12px; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
+
+.dm-issue { padding: 12px 0; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); }
+.dm-issue:last-child { border-bottom: none; padding-bottom: 0; }
+.dm-issue__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dm-issue__name { font-size: 15px; font-weight: 700; color: var(--text-primary, #131722); }
+.dm-issue__chg { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dm-issue__tag { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--accent-brand, #0f8387); background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
+.dm-issue__desc { font-size: 13px; line-height: 1.6; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
+
+.dm-error { margin: 16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)); color: var(--up-color, #e24b4a); font-size: 14px; }
+
+@media (max-width: 768px) {
+  .dm-grid--2, .dm-grid--3 { grid-template-columns: 1fr; }
+  .dm-tab { font-size: 14px; min-width: 92px; padding: 0 14px; }
+  .dm-card__value { font-size: 20px; }
+  .dm-panel input { font-size: 16px; }
+}

@@ -3,7 +3,7 @@
  * 한국투자증권 Open API → 코스피+코스닥 상승률 TOP 30
  *  → 각 종목 네이버 뉴스 헤드라인 수집
  *  → Claude로 "상승 이유 한 줄 + 테마 + 시황 요약(summary) + 특징주" 자동 분류
- *  → data/daily-market.json 의 days[targetYmd] (topGainers, summary, notableStocks 등) 에 저장
+ *  → data/daily-market.json 의 days[targetYmd] (topGainers, topDecliners, summary, notableStocks 등) 에 저장
  *
  * 필수: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, ANTHROPIC_API_KEY
  * 선택: TARGET_DATE=YYYY-MM-DD (기본: 오늘 KST)
@@ -283,13 +283,21 @@ function kisRowPctChange(row) {
 
 // ─── KIS 등락률 순위 조회 ─────────────────────────────────
 // 시장 코드: 0000(전체) | 0001(코스피) | 1001(코스닥)
-async function fetchFluctuationRanking({ baseUrl, token, appKey, appSecret, marketCode, marketLabel }) {
+async function fetchFluctuationRanking({
+  baseUrl,
+  token,
+  appKey,
+  appSecret,
+  marketCode,
+  marketLabel,
+  rankSortClsCode = "0",
+}) {
   const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/ranking/fluctuation`);
   const params = {
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20170",
     fid_input_iscd: marketCode,
-    fid_rank_sort_cls_code: "0", // 0:상승률
+    fid_rank_sort_cls_code: rankSortClsCode, // 0:상승률 1:하락률
     fid_input_cnt_1: "0",
     fid_prc_cls_code: "1", // 종가 기준
     fid_input_price_1: "",
@@ -430,6 +438,114 @@ async function fetchNaverFinanceRanking({ marketCode, marketLabel, maxPages = 2 
     if (rows.length === 0) break;
   }
   return all;
+}
+
+async function fetchNaverFinanceDeclineRanking({ marketCode, marketLabel, maxPages = 2 }) {
+  const all = [];
+  const seen = new Set();
+  for (let page = 1; page <= maxPages; page++) {
+    const url = `https://finance.naver.com/sise/sise_fall.naver?sosok=${marketCode}&page=${page}`;
+    const html = await fetchNaverFinanceHtml(url);
+    const rows = parseNaverRankingRows(html, marketLabel);
+    for (const r of rows) {
+      if (seen.has(r.code)) continue;
+      seen.add(r.code);
+      all.push(r);
+    }
+    if (rows.length === 0) break;
+  }
+  return all;
+}
+
+function mergeFluctuationByCode(rows) {
+  const merged = new Map();
+  for (const r of rows) {
+    if (!merged.has(r.code)) merged.set(r.code, r);
+  }
+  return [...merged.values()].filter((r) => r.change != null);
+}
+
+function rankFluctuationRows(all, topN, sortAscending) {
+  all.sort((a, b) =>
+    sortAscending ? (a.change || 0) - (b.change || 0) : (b.change || 0) - (a.change || 0)
+  );
+  return all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+async function collectFluctuationTopN({
+  baseUrl,
+  token,
+  appKey,
+  appSecret,
+  topN,
+  rankSortClsCode,
+  sortAscending,
+  forceNaver,
+  logLabel,
+}) {
+  let rows = [];
+  let source = "";
+
+  if (!forceNaver && token) {
+    const [kospi, kosdaq] = await Promise.all([
+      fetchFluctuationRanking({
+        baseUrl,
+        token,
+        appKey,
+        appSecret,
+        marketCode: "0001",
+        marketLabel: "KOSPI",
+        rankSortClsCode,
+      }),
+      fetchFluctuationRanking({
+        baseUrl,
+        token,
+        appKey,
+        appSecret,
+        marketCode: "1001",
+        marketLabel: "KOSDAQ",
+        rankSortClsCode,
+      }),
+    ]);
+    console.log(`  ${logLabel} KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
+    const all = mergeFluctuationByCode([...kospi, ...kosdaq]);
+    const allZero = all.length > 0 && all.every((s) => Number(s.change) === 0);
+    if (allZero) {
+      console.warn(`  ⚠ KIS ${logLabel} 응답이 모두 0%. 네이버 fallback 시도.`);
+    } else {
+      rows = rankFluctuationRows(all, topN, sortAscending);
+      source = "KIS";
+    }
+  }
+
+  if (rows.length === 0) {
+    const fetchNaver = sortAscending ? fetchNaverFinanceDeclineRanking : fetchNaverFinanceRanking;
+    const [kospi, kosdaq] = await Promise.all([
+      fetchNaver({ marketCode: 0, marketLabel: "KOSPI", maxPages: 2 }),
+      fetchNaver({ marketCode: 1, marketLabel: "KOSDAQ", maxPages: 2 }),
+    ]);
+    console.log(`  ${logLabel} Naver KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
+    const all = mergeFluctuationByCode([...kospi, ...kosdaq]);
+    rows = rankFluctuationRows(all, topN, sortAscending);
+    source = "NaverFinance";
+  }
+
+  return { rows, source };
+}
+
+function mapTopDeclinersJsonRow(s) {
+  return {
+    rank: s.rank,
+    code: s.code,
+    name: s.name,
+    market: s.market,
+    change: s.change,
+    currentPrice: s.currentPrice,
+    tradingValue: formatTradingValue(s.tradingValue),
+    reason: "",
+    theme: "",
+    newsTitles: [],
+  };
 }
 
 async function fetchNaverFinanceIndex(code, label) {
@@ -904,69 +1020,24 @@ async function main() {
     `Target date: ${targetYmd} | TOP ${topN} | news/stock: ${perStock} | concurrency: ${concurrency} | delay: ${perDelay}ms`
   );
 
-  let top = [];
-  let rankingSource = "";
   let kisOAuthToken = null;
-
   if (!forceNaver) {
     console.log("[1/6] KIS access token from env...");
     kisOAuthToken = getKisToken();
-
-    console.log("[2/6] KIS 상승률 랭킹 (KOSPI/KOSDAQ)...");
-    const [kospi, kosdaq] = await Promise.all([
-      fetchFluctuationRanking({
-        baseUrl,
-        token: kisOAuthToken,
-        appKey,
-        appSecret,
-        marketCode: "0001",
-        marketLabel: "KOSPI",
-      }),
-      fetchFluctuationRanking({
-        baseUrl,
-        token: kisOAuthToken,
-        appKey,
-        appSecret,
-        marketCode: "1001",
-        marketLabel: "KOSDAQ",
-      }),
-    ]);
-    console.log(`  KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
-
-    const merged = new Map();
-    for (const r of [...kospi, ...kosdaq]) {
-      if (!merged.has(r.code)) merged.set(r.code, r);
-    }
-    const all = [...merged.values()].filter((r) => r.change != null);
-    const allZero = all.length > 0 && all.every((s) => Number(s.change) === 0);
-    if (allZero) {
-      console.warn(
-        "  ⚠ KIS 응답이 모두 0% (장 시작 전·후 휴장 시간). 네이버 금융 fallback으로 전환합니다."
-      );
-    } else {
-      all.sort((a, b) => (b.change || 0) - (a.change || 0));
-      top = all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
-      rankingSource = "KIS";
-    }
   }
 
-  if (top.length === 0) {
-    console.log("[2/6] 네이버 금융 상승률 랭킹 (KOSPI/KOSDAQ)...");
-    const [kospi, kosdaq] = await Promise.all([
-      fetchNaverFinanceRanking({ marketCode: 0, marketLabel: "KOSPI", maxPages: 2 }),
-      fetchNaverFinanceRanking({ marketCode: 1, marketLabel: "KOSDAQ", maxPages: 2 }),
-    ]);
-    console.log(`  KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
-    const merged = new Map();
-    for (const r of [...kospi, ...kosdaq]) {
-      if (!merged.has(r.code)) merged.set(r.code, r);
-    }
-    const all = [...merged.values()]
-      .filter((r) => r.change != null)
-      .sort((a, b) => (b.change || 0) - (a.change || 0));
-    top = all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
-    rankingSource = "NaverFinance";
-  }
+  console.log("[2/6] KIS 상승률 랭킹 (KOSPI/KOSDAQ)...");
+  const { rows: top, source: rankingSource } = await collectFluctuationTopN({
+    baseUrl,
+    token: kisOAuthToken,
+    appKey,
+    appSecret,
+    topN,
+    rankSortClsCode: "0",
+    sortAscending: false,
+    forceNaver,
+    logLabel: "상승률",
+  });
 
   if (!top.length) {
     console.error("상승률 데이터가 비어 있습니다.");
@@ -974,13 +1045,34 @@ async function main() {
   }
 
   if (!kisOAuthToken) {
-    console.log("[2b/6] KIS access token from env (특징주 개별 시세 보강용)...");
+    console.log("[2b/6] KIS access token from env (하락률·특징주 개별 시세 보강용)...");
     kisOAuthToken = getKisToken();
   }
 
   console.log(
-    `  Source=${rankingSource} | Top ${top.length}: ${top.slice(0, 3).map((s) => `${s.name}(${s.change}%)`).join(", ")} ...`
+    `  상승 Source=${rankingSource} | Top ${top.length}: ${top.slice(0, 3).map((s) => `${s.name}(${s.change}%)`).join(", ")} ...`
   );
+
+  console.log("[2c/6] KIS 하락률 랭킹 (KOSPI/KOSDAQ)...");
+  const { rows: bottom, source: declinersSource } = await collectFluctuationTopN({
+    baseUrl,
+    token: kisOAuthToken,
+    appKey,
+    appSecret,
+    topN,
+    rankSortClsCode: "1",
+    sortAscending: true,
+    forceNaver,
+    logLabel: "하락률",
+  });
+
+  if (!bottom.length) {
+    console.warn("  하락률 데이터가 비어 있습니다.");
+  } else {
+    console.log(
+      `  하락 Source=${declinersSource} | Top ${bottom.length}: ${bottom.slice(0, 3).map((s) => `${s.name}(${s.change}%)`).join(", ")} ...`
+    );
+  }
 
   console.log("[3/6] 코스피·코스닥 지수 (네이버 금융)...");
   let indexes = [];
@@ -1037,6 +1129,7 @@ async function main() {
     supply,
     sectors,
     topGainers: top,
+    topDecliners: bottom,
     volumeLeaders,
     telegramMessages,
     pressNews: pressNewsAll.slice(0, 25),
@@ -1069,6 +1162,8 @@ async function main() {
       newsTitles: (newsMap.get(s.code) || []).slice(0, perStock),
     };
   });
+
+  const topDecliners = bottom.map(mapTopDeclinersJsonRow);
 
   // 테마별 그룹화 (인기 테마부터)
   const themeMap = new Map();
@@ -1171,6 +1266,11 @@ async function main() {
     topGainers,
     topGainersUpdatedAt: seoulYmd(new Date()),
     topGainersSource: `${rankingSource}+KIS+Naver+Telegram+Claude`,
+    topDecliners: topDecliners.length ? topDecliners : existing.topDecliners || [],
+    topDeclinersUpdatedAt: seoulYmd(new Date()),
+    topDeclinersSource: bottom.length
+      ? `${declinersSource}+KIS+Naver+Telegram+Claude`
+      : existing.topDeclinersSource || "",
   };
 
   await fs.mkdir(path.dirname(outputPath), { recursive: true });

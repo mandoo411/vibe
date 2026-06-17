@@ -35,6 +35,7 @@ function buildUserPrompt({
   supply,
   sectors,
   topGainers,
+  topDecliners,
   volumeLeaders,
   telegramMessages,
   pressNews,
@@ -62,6 +63,11 @@ function buildUserPrompt({
   lines.push("");
   lines.push("=== 상승률 TOP10 ===");
   for (const s of (topGainers || []).slice(0, 10)) {
+    lines.push(`${s.name} ${fmtPct(s.change)} ${s.currentPrice || ""}원`);
+  }
+  lines.push("");
+  lines.push("=== 하락률 TOP10 ===");
+  for (const s of (topDecliners || []).slice(0, 10)) {
     lines.push(`${s.name} ${fmtPct(s.change)} ${s.currentPrice || ""}원`);
   }
   lines.push("");
@@ -132,6 +138,7 @@ export async function analyzeDailyClosingReport({
   supply,
   sectors,
   topGainers,
+  topDecliners,
   volumeLeaders,
   telegramMessages,
   pressNews,
@@ -145,6 +152,7 @@ export async function analyzeDailyClosingReport({
       supply,
       sectors,
       topGainers,
+      topDecliners,
       volumeLeaders,
       telegramMessages,
       pressNews,

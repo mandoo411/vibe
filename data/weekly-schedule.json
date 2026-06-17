@@ -1,83 +1,23 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-17 07:52 KST",
-    "from": "2026-06-17",
-    "to": "2026-07-01",
-    "historyFrom": "2026-03-19",
+    "lastUpdatedKst": "2026-06-18 07:45 KST",
+    "from": "2026-06-18",
+    "to": "2026-07-02",
+    "historyFrom": "2026-03-20",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
     {
-      "date": "2026-06-17",
-      "event": "CPI (YoY)",
-      "country": "GB",
-      "time": "15:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "2.8%",
-      "estimate": "3.0%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-17",
-      "event": "CPI (YoY)",
-      "country": "EU",
-      "time": "18:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "3.0%",
-      "estimate": "3.2%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-17",
-      "event": "Core Retail Sales (MoM)",
+      "date": "2026-06-18",
+      "event": "Federal Funds Rate",
       "country": "US",
-      "time": "21:30",
+      "time": "03:00",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "0.7%",
-      "estimate": "0.6%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-17",
-      "event": "Retail Sales (MoM)",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.5%",
-      "estimate": "0.5%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-17",
-      "event": "U.S. President Trump Speaks",
-      "country": "US",
-      "time": "22:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-17",
-      "event": "Crude Oil Inventories",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-7.227M",
-      "estimate": "-4.500M",
+      "previous": "3.75%",
+      "estimate": "3.75%",
       "unit": ""
     },
     {
@@ -106,18 +46,6 @@
     },
     {
       "date": "2026-06-18",
-      "event": "Fed Interest Rate Decision",
-      "country": "US",
-      "time": "03:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "3.75%",
-      "estimate": "3.75%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-18",
       "event": "FOMC Press Conference",
       "country": "US",
       "time": "03:30",
@@ -130,7 +58,43 @@
     },
     {
       "date": "2026-06-18",
-      "event": "SNB Interest Rate Decision",
+      "event": "GDP q/q",
+      "country": "NZ",
+      "time": "07:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.2%",
+      "estimate": "0.8%",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "Claimant Count Change",
+      "country": "GB",
+      "time": "15:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "26.5K",
+      "estimate": "25.8K",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "SNB Monetary Policy Assessment",
+      "country": "CH",
+      "time": "16:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "SNB Policy Rate",
       "country": "CH",
       "time": "16:30",
       "impact": "high",
@@ -142,7 +106,43 @@
     },
     {
       "date": "2026-06-18",
-      "event": "BoE Interest Rate Decision",
+      "event": "SNB Press Conference",
+      "country": "CH",
+      "time": "17:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "Monetary Policy Summary",
+      "country": "GB",
+      "time": "20:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "MPC Official Bank Rate Votes",
+      "country": "GB",
+      "time": "20:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "1-0-8",
+      "estimate": "1-0-8",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-18",
+      "event": "Official Bank Rate",
       "country": "GB",
       "time": "20:00",
       "impact": "high",
@@ -150,30 +150,6 @@
       "actual": "",
       "previous": "3.75%",
       "estimate": "3.75%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-18",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "229K",
-      "estimate": "225K",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-18",
-      "event": "Philadelphia Fed Manufacturing Index",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-0.4",
-      "estimate": "11.4",
       "unit": ""
     }
   ],
@@ -217,8 +193,20 @@
   ],
   "krEarnings": [],
   "analysis": {
-    "topEvents": [],
-    "marketImpacts": [],
+    "topEvents": [
+      "6월 18일 미국 FOMC 연방기금금리 결정 및 경제전망 발표 (한국시간 새벽 3시)",
+      "6월 18일 파월 의장 FOMC 기자회견으로 향후 통화정책 방향성 제시 (한국시간 새벽 3시 30분)",
+      "6월 18일 영국 중앙은행(BOE) 기준금리 결정 및 통화정책 요약 발표 (한국시간 밤 8시)",
+      "6월 18일 스위스 중앙은행(SNB) 통화정책 평가 및 정책금리 결정",
+      "6월 19일~7월 1일 메리츠스팩2호, 져스텍, 스트라드비젼, 매드업 등 코스닥 신규상장"
+    ],
+    "marketImpacts": [
+      "미국 FOMC 금리 동결 시 안정적 흐름 예상되나, 매파적 발언 시 코스피·코스닥 변동성 확대 가능",
+      "영국·스위스 중앙은행 금리 결정이 글로벌 통화정책 방향성에 영향을 주며 원화 환율 변동 요인",
+      "FOMC 경제전망 상향 조정 시 국내 수출주 및 반도체 업종에 긍정적 영향",
+      "신규 IPO 4건 예정으로 코스닥 시장 유동성 분산 및 단기 수급 부담 가능성",
+      "주요국 중앙은행 동시 이벤트로 외국인 투자심리 변화에 따른 코스피 방향성 결정"
+    ],
     "watchEarnings": []
   }
 }

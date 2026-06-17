@@ -1,0 +1,59 @@
+name: Market Data Sync
+
+# 미국시장/국내 실시간 랭킹을 30분마다 미리 생성 → data/*.json 커밋
+# 프런트는 /api/repo-data 로 이 파일을 읽어 API 직접 호출 없이 즉시 렌더
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: market-data-sync
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Sync market data
+        run: node scripts/sync-market-data.mjs
+        env:
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+
+      - name: Commit data/*.json
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/us-market-cap.json data/us-market-gainers.json data/us-market-volume.json \
+                  data/kr-realtime.json
+          if git diff --staged --quiet; then
+            echo "::notice::No market data changes to commit"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git commit -m "chore(data): market data sync ${STAMP}"
+            git pull --rebase origin main
+            git push
+          fi

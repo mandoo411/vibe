@@ -1424,10 +1424,15 @@ async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
   return bars.slice(-target);
 }
 
-function json(res, status, body) {
+function json(res, status, body, opts) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
-  res.setHeader("cache-control", "no-store");
+  // 실시간 데이터지만 30초 Edge Cache는 허용범위 — KIS 호출 부하/지연 완화. approval 등은 noStore로 제외.
+  const noStore = (opts && opts.noStore) || status !== 200;
+  res.setHeader(
+    "cache-control",
+    noStore ? "no-store" : "public, s-maxage=30, stale-while-revalidate=30"
+  );
   res.end(JSON.stringify(body));
 }
 
@@ -1448,11 +1453,16 @@ module.exports = async function handler(req, res) {
   try {
     if (action === "approval") {
       const approval_key = await getApprovalKey();
-      json(res, 200, {
-        approval_key,
-        wsUrl: "ws://ops.koreainvestment.com:21000",
-        note: "HTTPS 페이지에서는 브라우저가 ws:// WebSocket을 차단할 수 있습니다. 이 경우 자동으로 REST 갱신 모드로 동작합니다.",
-      });
+      json(
+        res,
+        200,
+        {
+          approval_key,
+          wsUrl: "ws://ops.koreainvestment.com:21000",
+          note: "HTTPS 페이지에서는 브라우저가 ws:// WebSocket을 차단할 수 있습니다. 이 경우 자동으로 REST 갱신 모드로 동작합니다.",
+        },
+        { noStore: true }
+      );
       return;
     }
 

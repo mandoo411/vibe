@@ -125,6 +125,10 @@
           min-width: 0;
         }
       }
+      /* iOS 모바일에서 input focus 시 줌인 방지 — font-size 16px 이상 필요 */
+      #us-stock-search-input {
+        font-size: 16px;
+      }
     </style>
   </head>
   <body class="page-tm-v2" data-tm-tab="us">
@@ -199,6 +203,8 @@
                 </div>
               </div>
 
+              <div class="rt-data-freshness" id="us-data-freshness" aria-live="polite"></div>
+
               <div id="us-stock-result-panel" class="rt-stock-panel" hidden aria-live="polite"></div>
 
               <div class="table-box">
@@ -253,7 +259,7 @@
           <div class="home-footer__divider" aria-hidden="true"></div>
           <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
           <div class="home-footer__sns">
-            <a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="https://www.instagram.com/totalmoney_ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
             <a href="https://t.me/totalmoney_ai" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><i class="ti ti-brand-telegram"></i></a>
             <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
           </div>

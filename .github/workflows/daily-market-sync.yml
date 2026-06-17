@@ -12,6 +12,9 @@ on:
   schedule:
     - cron: "0 7 * * 1-5"
   workflow_dispatch:
+  # 외부 트리거(cron-job.org 등)용 — POST /repos/mandoo411/vibe/dispatches { "event_type": "trigger-daily-market" }
+  repository_dispatch:
+    types: [trigger-daily-market]
 
 # data/daily-market.json 자동 커밋을 위해 쓰기 권한 필요
 permissions:

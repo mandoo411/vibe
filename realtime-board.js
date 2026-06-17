@@ -4,7 +4,7 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
-  const TAB_CACHE_MS = 5 * 60 * 1000;
+  const TAB_CACHE_MS = 3 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
   const CHART_SCRIPT_TIMEOUT_MS = 8000;
@@ -107,9 +107,73 @@
     chartBarsLimit: 200,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
+    /** 데이터 기준 시각(updatedAt) */
+    dataUpdatedAt: null,
     /** 종목 상세 fetch 중단용 */
     detailFetchAbort: null,
   };
+
+  const KR_JSON_FILE = "kr-realtime.json";
+  const KR_STATIC_TTL_MS = 60 * 1000;
+  // 단일 kr-realtime.json({ tabs: { cap, gainers, tv } }) 메모리 캐시
+  let krAllCache = null;
+
+  function rtIsLocalHost() {
+    const h = typeof location !== "undefined" ? location.hostname : "";
+    return h === "localhost" || h === "127.0.0.1" || h === "";
+  }
+
+  // 미리 생성된 data/*.json 읽기: 운영=/api/repo-data, 로컬=./data 직접
+  async function fetchStaticJson(file) {
+    const bust = Date.now();
+    const urls = [];
+    if (!rtIsLocalHost()) urls.push(`/api/repo-data?path=${encodeURIComponent(`data/${file}`)}&t=${bust}`);
+    urls.push(`./data/${file}?t=${bust}`);
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return await res.json();
+        lastErr = new Error(`${url} → ${res.status}`);
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error(`static json unavailable: ${file}`);
+  }
+
+  async function loadKrAll() {
+    if (krAllCache && Date.now() - krAllCache.loadedAt < KR_STATIC_TTL_MS) return krAllCache;
+    const data = await fetchStaticJson(KR_JSON_FILE);
+    const tabs = data && data.tabs && typeof data.tabs === "object" ? data.tabs : null;
+    if (!tabs) throw new Error("kr-realtime.json: missing tabs");
+    krAllCache = { tabs, updatedAt: data.updatedAt || null, loadedAt: Date.now() };
+    return krAllCache;
+  }
+
+  async function loadKrTabAll(tab) {
+    const all = await loadKrAll();
+    const stocks = Array.isArray(all.tabs[tab]) ? all.tabs[tab] : [];
+    if (!stocks.length) throw new Error(`kr-realtime.json: empty tab ${tab}`);
+    return { stocks, updatedAt: all.updatedAt };
+  }
+
+  function formatFreshness(iso) {
+    if (!iso) return "";
+    const t = new Date(iso);
+    if (isNaN(t.getTime())) return "";
+    const mins = Math.max(0, Math.round((Date.now() - t.getTime()) / 60000));
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const rel = mins < 1 ? "방금 전" : mins < 60 ? `${mins}분 전` : `${Math.floor(mins / 60)}시간 ${mins % 60}분 전`;
+    return `데이터 기준: ${hh}:${mm} (${rel})`;
+  }
+
+  function setDataUpdatedAt(iso) {
+    if (iso) state.dataUpdatedAt = iso;
+    const el = $("rt-data-freshness");
+    if (el) el.textContent = state.dataUpdatedAt ? formatFreshness(state.dataUpdatedAt) : "";
+  }
 
   /** 전체 종목 리스트(자동완성용) */
   let stockList = [];
@@ -1119,21 +1183,25 @@
     });
   }
 
+  function skeletonRowsHtml(count) {
+    const cs = tableColSpan();
+    const row =
+      `<tr class="rt-skel-row" aria-hidden="true"><td colspan="${cs}">` +
+      `<div class="rt-skel-line">` +
+      `<span class="rt-skel-box rt-skel-box--rank"></span>` +
+      `<span class="rt-skel-box rt-skel-box--name"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `<span class="rt-skel-box rt-skel-box--num"></span>` +
+      `</div></td></tr>`;
+    return row.repeat(Math.max(1, count || 10));
+  }
+
   function showTableLoading() {
     const body = $("rt-tbody");
     if (!body) return;
     body.dataset.rtLoading = "1";
-    const cs = tableColSpan();
-    body.innerHTML = [
-      `<tr class="rt-table-loading">`,
-      `  <td colspan="${cs}" class="rt-table-loading-cell">`,
-      `    <div class="rt-table-loading-inner">`,
-      `      <span class="rt-spinner" aria-hidden="true"></span>`,
-      `      <p>데이터 불러오는 중...</p>`,
-      `    </div>`,
-      `  </td>`,
-      `</tr>`,
-    ].join("");
+    body.innerHTML = skeletonRowsHtml(10);
   }
 
   function hideTableLoading() {
@@ -1192,16 +1260,26 @@
 
   async function fetchStocksJsonForTab(tab) {
     const ps = 25;
-    if (tab === "cap") {
-      const p = Math.max(1, Number(state.capPage) || 1);
-      return fetchJson("market-cap", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    const p = currentPageForTab(tab);
+    // 1) 미리 생성된 정적 JSON(TOP100)에서 해당 페이지 슬라이스
+    try {
+      const all = await loadKrTabAll(tab);
+      setDataUpdatedAt(all.updatedAt);
+      const start = (p - 1) * ps;
+      return {
+        stocks: all.stocks.slice(start, start + ps),
+        total: all.stocks.length,
+        page: p,
+        pageSize: ps,
+        updatedAt: all.updatedAt,
+        cached: true,
+      };
+    } catch (e) {
+      console.warn("[realtime-board] static json fallback→api", tab, e && e.message);
     }
-    if (tab === "tv") {
-      const p = Math.max(1, Number(state.tvPage) || 1);
-      return fetchJson("trading-value", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
-    }
-    const p = Math.max(1, Number(state.gainerPage) || 1);
-    return fetchJson("gainers", FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    // 2) 폴백: 기존 API 직접 호출
+    const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+    return fetchJson(action, FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
   }
 
   function renderTablePager() {
@@ -2739,6 +2817,8 @@
           ? (fn) => window.requestIdleCallback(fn, { timeout: 4000 })
           : (fn) => window.setTimeout(fn, 2500);
       deferPrefetch(() => prefetchOtherRankTabs());
+      // 상대 시간("N분 전") 1분마다 갱신
+      setInterval(() => setDataUpdatedAt(), 60000);
       await tryConnectWs();
     }
   }

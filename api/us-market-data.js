@@ -48,6 +48,12 @@ const US_SECTORS = [
 
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
+
+// GOOG(알파벳 C클래스) 중복 제거 — GOOGL(A클래스)만 표시. 소스(KIS/Yahoo/FMP) 무관하게 랭킹에서 제외.
+const EXCLUDED_US_TICKERS = new Set(["GOOG"]);
+function isExcludedUsTicker(t) {
+  return EXCLUDED_US_TICKERS.has(String(t || "").toUpperCase());
+}
 const { isKisRsymToken, resolveUsDisplayName } = require("../lib/us-stock-display-name");
 
 const KO_SEARCH_ALIASES = new Map([
@@ -784,7 +790,7 @@ async function fetchSectors() {
 }
 
 async function fetchMarketCapLookup() {
-  return cached("ranking:market-cap:lookup:v3", async () => {
+  return cached("ranking:market-cap:lookup:v4", async () => {
     const batches = await Promise.all(
       EXCHANGES.map(async (exchange) => {
         const body = await kisGet(MARKET_CAP_PATH, MARKET_CAP_TR_ID, {
@@ -802,7 +808,7 @@ async function fetchMarketCapLookup() {
     );
     const all = batches.flat();
     return all
-      .filter((row) => row.ticker && row.price != null && row.marketCap != null)
+      .filter((row) => row.ticker && row.price != null && row.marketCap != null && !isExcludedUsTicker(row.ticker))
       .sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0))
       .slice(0, 50)
       .map((row, i) => ({ ...row, rank: i + 1 }));
@@ -990,7 +996,7 @@ async function fetchMergedRanking(
     );
     const all = batches.flat();
     let ranked = all
-      .filter((row) => row.ticker && row.price != null && row[sortKey] != null)
+      .filter((row) => row.ticker && row.price != null && row[sortKey] != null && !isExcludedUsTicker(row.ticker))
       .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
       .slice(0, pickCount);
     if (enrich) ranked = await enrichRankListRows(ranked);
@@ -1006,7 +1012,7 @@ async function fetchMergedRanking(
 }
 
 function fetchMarketCapTop50() {
-  return cached("ranking:market-cap:v19", async () => {
+  return cached("ranking:market-cap:v20", async () => {
     const ranked = await fetchMarketCapLookup();
     const enriched = await enrichRankListRows(ranked);
     const corrected = await applyYahooMarketCap(enriched);
@@ -1018,7 +1024,7 @@ function fetchMarketCapTop50() {
 
 function fetchGainersTop50() {
   return fetchMergedRanking(
-    "ranking:gainers:v7",
+    "ranking:gainers:v8",
     UPDOWN_RATE_PATH,
     UPDOWN_RATE_TR_ID,
     (exchange) => ({
@@ -1037,7 +1043,7 @@ function fetchGainersTop50() {
 
 function fetchTradeValueTop50() {
   return fetchMergedRanking(
-    "ranking:trade-value:v7",
+    "ranking:trade-value:v8",
     TRADE_PBMN_PATH,
     TRADE_PBMN_TR_ID,
     (exchange) => ({
@@ -1057,6 +1063,7 @@ function fetchTradeValueTop50() {
 
 function findCachedRankRow(ticker) {
   const keys = [
+    "ranking:market-cap:v20",
     "ranking:market-cap:v19",
     "ranking:market-cap:v18",
     "ranking:market-cap:v16",
@@ -1065,9 +1072,11 @@ function findCachedRankRow(ticker) {
     "ranking:market-cap:v13",
     "ranking:market-cap:v12",
     "ranking:market-cap:v11",
+    "ranking:gainers:v8",
     "ranking:gainers:v7",
     "ranking:gainers:v6",
     "ranking:gainers:v5",
+    "ranking:trade-value:v8",
     "ranking:trade-value:v7",
     "ranking:trade-value:v6",
     "ranking:trade-value:v5",
@@ -1340,17 +1349,17 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v17", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v18", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers:v6", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v7", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v6", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v7", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

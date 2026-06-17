@@ -67,12 +67,16 @@ async function syncUs() {
       if (status !== 200 || !Array.isArray(data.stocks)) {
         throw new Error(`status=${status} ${String(body).slice(0, 200)}`);
       }
+      // GOOG(알파벳 C클래스) 중복 제거 — GOOGL(A클래스)만 표시. 방어적 필터(소스에 GOOG가 섞여 와도 제외) 후 순위 재부여.
+      const stocks = (data.stocks || [])
+        .filter((item) => String(item && item.ticker).toUpperCase() !== "GOOG")
+        .map((item, i) => ({ ...item, rank: i + 1 }));
       await writeJson(file, {
         updatedAt: data.updatedAt || new Date().toISOString(),
         source: "kis+yahoo",
         action,
-        count: data.stocks.length,
-        stocks: data.stocks,
+        count: stocks.length,
+        stocks,
       });
     } catch (e) {
       console.error(`US sync failed (${action}): ${e.message}`);

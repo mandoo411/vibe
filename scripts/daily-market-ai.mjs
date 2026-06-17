@@ -90,41 +90,39 @@ function buildUserPrompt({
   return lines.join("\n");
 }
 
-const SYSTEM_PROMPT = `당신은 전문 주식 애널리스트입니다.
-데이터를 바탕으로 정확하고 통찰력 있게 분석하되
-일반 투자자도 이해하기 쉽게 설명해주세요.
-텔레그램 채널 메시지와 뉴스를 근거로 활용하세요.
-
-You must respond with ONLY valid JSON. No markdown, no code blocks, no explanation. Just raw JSON starting with { and ending with }
-
-출력은 아래 JSON 객체 하나만 (마크다운·코드펜스 금지):
-
-{
-  "headlineIssue": "핵심 이슈 한 줄",
-  "supplyComment": "수급 해석 2~3문장",
-  "issueStocks": [
-    { "name": "종목명", "change": 14.41, "entryReason": "진입 이유", "background": "배경 설명" }
-  ],
-  "sectorFlow": {
-    "strong": [{ "name": "섹터명", "changePct": 10.5, "reason": "이유" }],
-    "weak": [{ "name": "섹터명", "changePct": -3.2, "reason": "이유" }],
-    "summary": "오늘 시장 특징 한 줄"
+const WEB_SEARCH_TOOLS = [
+  {
+    type: "web_search_20250305",
+    name: "web_search",
+    max_uses: 10,
   },
-  "tomorrowCheckpoints": ["포인트1", "포인트2", "포인트3"],
-  "oneLineVerdict": "오늘 시장 한 줄 평가",
-  "marketSummary": "시황 요약 3~5문장",
-  "notableStocks": [{ "name": "종목", "code": "005930", "change": null, "tradingValue": "", "note": "한 줄" }],
-  "stocks": [{ "code": "005930", "reason": "상승 이유", "theme": "테마" }],
-  "topNews": [{ "title": "뉴스", "note": "", "source": "", "url": "" }],
-  "marketExtraComments": {}
-}
+];
 
-규칙:
-- issueStocks는 급등·급락 이슈 종목 5개 내외
-- sectorFlow strong/weak 각 3개 내외, changePct는 숫자
-- tomorrowCheckpoints 정확히 3개
-- stocks 배열 길이는 입력 상승률 TOP 종목 수와 동일, 순서 유지
-- 추측·투자권유 금지`;
+const SYSTEM_PROMPT = `당신은 TotalMoney AI의 한국 주식시장 수석 애널리스트입니다.
+매일 장 마감 후 시황 분석 리포트를 작성합니다.
+
+[특징주 선정 규칙]
+1. 반드시 web_search로 각 급등/급락 종목의 당일 뉴스/공시를 검색해서 정확한 재료 확인
+2. 재료 확인 없이 섹터 동반, 테마 수혜 같은 추측성 재료 절대 금지
+3. 재료 확인 불가 시 해당 종목 제외
+4. 선정 기준:
+   - 전 종목 +20% 이상 급등 (재료 확인된 것만, 최대 10개)
+   - 시총 100위 이내 +10% 이상 급등
+   - 시총 100위 이내 -5% 이하 급락 (최소 3개)
+5. 각 종목 필드:
+   - reason: 구체적 뉴스/공시 내용 (예: 윌테크놀러지 지분 83% 인수 공시)
+   - point: 투자 포인트 1줄 (예: 거래대금 890억 폭증, 수혜 지속 여부 확인 필요)
+
+[종합분석 규칙]
+- 핵심 한 줄 요약 (굵게 표시용 ** 마크다운)
+- 시장 흐름 3~4문장 (수급/매크로/섹터 포함)
+- 외국인/기관/개인 수급 방향 반드시 언급
+- 내일 주목할 변수 3개 (watchlist 배열)
+
+[출력 규칙]
+- 반드시 순수 JSON만 출력
+- 마크다운 코드블록 없이
+- 추측이나 일반론 금지, 데이터 기반으로만 작성`;
 
 export async function analyzeDailyClosingReport({
   apiKey,
@@ -158,9 +156,10 @@ export async function analyzeDailyClosingReport({
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({
       model,
-      max_tokens: 8192,
+      max_tokens: 12000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: user }],
+      tools: WEB_SEARCH_TOOLS,
     });
 
     const rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
@@ -188,11 +187,25 @@ export async function analyzeDailyClosingReport({
   return {
     headlineIssue: sanitizeStr(parsed.headlineIssue),
     supplyComment: sanitizeStr(parsed.supplyComment),
-    issueStocks: Array.isArray(parsed.issueStocks) ? parsed.issueStocks : [],
+    analysis: sanitizeStr(parsed.analysis || parsed.marketSummary),
+    issueStocks: Array.isArray(parsed.issueStocks)
+      ? parsed.issueStocks.map((s) => ({
+          ...s,
+          entryReason: sanitizeStr(s.entryReason || s.reason),
+          background: sanitizeStr(s.background || s.point),
+          reason: sanitizeStr(s.reason || s.entryReason),
+          point: sanitizeStr(s.point || s.background),
+          type: sanitizeStr(s.type) || (Number(s.change) < 0 ? "급락" : "급등"),
+        }))
+      : Array.isArray(parsed.featured_stocks)
+        ? parsed.featured_stocks
+        : [],
+    featured_stocks: Array.isArray(parsed.featured_stocks) ? parsed.featured_stocks : [],
     sectorFlow: parsed.sectorFlow && typeof parsed.sectorFlow === "object" ? parsed.sectorFlow : {},
     tomorrowCheckpoints: Array.isArray(parsed.tomorrowCheckpoints) ? parsed.tomorrowCheckpoints.slice(0, 3) : [],
+    watchlist: Array.isArray(parsed.watchlist) ? parsed.watchlist.slice(0, 3) : [],
     oneLineVerdict: sanitizeStr(parsed.oneLineVerdict),
-    marketSummary: sanitizeStr(parsed.marketSummary),
+    marketSummary: sanitizeStr(parsed.marketSummary || parsed.analysis),
     notableStocks: Array.isArray(parsed.notableStocks) ? parsed.notableStocks : [],
     stocks,
     topNews: Array.isArray(parsed.topNews) ? parsed.topNews : [],

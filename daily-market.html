@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
@@ -30,8 +30,9 @@
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
+    <link rel="stylesheet" href="./realtime-board.css" />
     <script src="./assets/data-url.js"></script>
-    </head>
+  </head>
   <body class="page-tm-v2">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -73,133 +74,197 @@
       </div>
 
       <main class="tm-main">
-<div class="page">
-      <header class="masthead masthead--title-only">
-        <div class="masthead__copy">
-          <p class="masthead__kicker">Market Daily</p>
-          <h1 class="masthead__title" id="masthead-title">마감시황</h1>
-        </div>
-      </header>
-      <div class="page-meta-bar" aria-live="polite">
-        <p class="masthead__notice" id="masthead-notice" hidden></p>
-        <div class="page-meta-bar__row masthead__meta">
-          <span id="masthead-range"></span>
-          <span id="masthead-updated"></span>
-        </div>
-      </div>
-
-      <div class="daily-shell">
-        <div class="daily-nav-calendar">
-          <nav class="day-nav" aria-label="날짜 이동">
-            <button type="button" class="day-nav__btn" id="nav-prev" aria-label="이전 영업일">◀</button>
-            <label class="day-nav__date">
-              <span class="u-visually-hidden">날짜 선택</span>
-              <input type="date" id="nav-date" class="day-nav__date-input" />
-              <span class="day-nav__date-label" id="nav-date-label" aria-hidden="true"></span>
-            </label>
-            <button type="button" class="day-nav__btn" id="nav-next" aria-label="다음 영업일">▶</button>
-            <button type="button" class="day-nav__today" id="nav-today">오늘</button>
-            <span class="day-nav__spacer"></span>
-            <button
-              type="button"
-              id="calendar-toggle"
-              aria-expanded="false"
-              aria-controls="calendar-panel"
-            >
-              📅 달력
-            </button>
-          </nav>
-
-          <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브">
-            <header class="archive-head">
-              <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
-              <h2 class="archive-title" id="archive-title">—</h2>
-              <button type="button" class="archive-nav" id="archive-next" aria-label="다음 달">▶</button>
-            </header>
-            <div class="archive-dow">
-              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        <div class="page page--daily-market">
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">Market Daily</p>
+              <h1 class="masthead__title" id="masthead-title">마감시황</h1>
             </div>
-            <div class="archive-grid" id="archive-grid" role="grid"></div>
-            <p class="archive-legend"><span class="archive-legend__dot"></span>기록 있음 · <span class="archive-legend__today">오늘</span></p>
-          </aside>
-        </div>
+          </header>
+          <div class="page-meta-bar" aria-live="polite">
+            <p class="masthead__notice" id="masthead-notice" hidden></p>
+            <div class="page-meta-bar__row masthead__meta">
+              <span id="masthead-range"></span>
+              <span id="masthead-updated"></span>
+            </div>
+          </div>
 
-        <div id="report-content">
-        <section class="daily-detail" id="daily-detail" aria-live="polite">
-          <article class="day-sheet" id="day-sheet">
-            <aside class="day-rail" aria-hidden="true">
-              <span class="day-rail__md" id="rail-md">—</span>
-              <span class="day-rail__dow" id="rail-dow"></span>
-            </aside>
-            <div class="day-body" id="day-body">
-              <div class="day-prep" id="day-prep" hidden>
-                <div class="day-prep__inner">
-                  <div class="day-prep__copy">
-                    <p class="loading-title" id="day-prep-title">오늘의 시황을 준비하고 있어요</p>
-                    <p class="day-prep__hint" id="day-prep-hint">장 마감 후 자동으로 업데이트됩니다</p>
-                    <div class="loading-bar-track">
-                      <div class="loading-bar-inner"></div>
+          <div class="daily-shell">
+            <div class="daily-nav-calendar">
+              <nav class="day-nav" aria-label="날짜 이동">
+                <button type="button" class="day-nav__btn" id="nav-prev" aria-label="이전 영업일">◀</button>
+                <label class="day-nav__date">
+                  <span class="u-visually-hidden">날짜 선택</span>
+                  <input type="date" id="nav-date" class="day-nav__date-input" />
+                  <span class="day-nav__date-label" id="nav-date-label" aria-hidden="true"></span>
+                </label>
+                <button type="button" class="day-nav__btn" id="nav-next" aria-label="다음 영업일">▶</button>
+                <button type="button" class="day-nav__today" id="nav-today">오늘</button>
+                <span class="day-nav__spacer"></span>
+                <button
+                  type="button"
+                  id="calendar-toggle"
+                  aria-expanded="false"
+                  aria-controls="calendar-panel"
+                >
+                  📅 달력
+                </button>
+              </nav>
+
+              <aside class="daily-archive" id="calendar-panel" aria-label="날짜별 아카이브">
+                <header class="archive-head">
+                  <button type="button" class="archive-nav" id="archive-prev" aria-label="이전 달">◀</button>
+                  <h2 class="archive-title" id="archive-title">—</h2>
+                  <button type="button" class="archive-nav" id="archive-next" aria-label="다음 달">▶</button>
+                </header>
+                <div class="archive-dow">
+                  <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+                </div>
+                <div class="archive-grid" id="archive-grid" role="grid"></div>
+                <p class="archive-legend"><span class="archive-legend__dot"></span>기록 있음 · <span class="archive-legend__today">오늘</span></p>
+              </aside>
+            </div>
+
+            <div id="report-content">
+              <section class="daily-detail" id="daily-detail" aria-live="polite">
+                <div class="day-prep" id="day-prep" hidden>
+                  <div class="day-prep__inner">
+                    <div class="day-prep__copy">
+                      <p class="loading-title" id="day-prep-title">오늘의 시황을 준비하고 있어요</p>
+                      <p class="day-prep__hint" id="day-prep-hint">장 마감 후 자동으로 업데이트됩니다</p>
+                      <div class="loading-bar-track">
+                        <div class="loading-bar-inner"></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <section class="day-block">
-                <h3 class="day-block__label">① 핵심 이슈 한 줄</h3>
-                <div id="day-headline" class="daily-headline"></div>
-              </section>
+                <div class="rt-wrap dm-wrap" id="dm-main" hidden>
+                  <div class="rt-panel dm-panel" role="tabpanel">
+                    <div class="rt-tabs" role="tablist" aria-label="마감시황 보기">
+                      <div class="rt-tabs-row-tabs">
+                        <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
+                          <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
+                        </button>
+                        <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="false" id="dm-tab-ai">
+                          <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
+                        </button>
+                        <button type="button" class="rt-tab" role="tab" data-dm-tab="stocks" aria-selected="false" id="dm-tab-stocks">
+                          <span class="rt-tab-label--full">종목시세</span><span class="rt-tab-label--short">종목시세</span>
+                        </button>
+                      </div>
+                      <div class="rt-tab-search">
+                        <p class="dm-date-subtitle" id="dm-date-subtitle" aria-live="polite">—</p>
+                      </div>
+                    </div>
 
-              <section class="day-block">
-                <h3 class="day-block__label">② 지수 마감</h3>
-                <div id="day-indexes" class="index-row"></div>
-              </section>
+                    <div class="dm-tab-panels">
+                      <!-- 대시보드 -->
+                      <div class="dm-tab-panel" data-dm-panel="dashboard" role="tabpanel" aria-labelledby="dm-tab-dashboard">
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">지수 마감</h3>
+                          <div id="dm-indexes" class="dm-index-grid"></div>
+                        </section>
 
-              <section class="day-block">
-                <h3 class="day-block__label">③ 수급 현황</h3>
-                <div id="day-supply" class="supply-grid"></div>
-                <p id="day-supply-comment" class="daily-supply-comment"></p>
-              </section>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">증시자금</h3>
+                          <div class="dm-fund-grid">
+                            <div class="dm-fund-card">
+                              <span class="dm-fund-card__label">고객예탁금</span>
+                              <p class="dm-prep-msg">데이터 준비중</p>
+                            </div>
+                            <div class="dm-fund-card">
+                              <span class="dm-fund-card__label">신용융자잔고</span>
+                              <p class="dm-prep-msg">데이터 준비중</p>
+                            </div>
+                          </div>
+                        </section>
 
-              <section class="day-block">
-                <h3 class="day-block__label">④ Claude AI 분석</h3>
-                <div id="day-summary" class="daily-summary"></div>
-                <h4 class="day-block__subhead">이슈 종목 분석</h4>
-                <div id="day-issue-stocks"></div>
-                <h4 class="day-block__subhead">섹터 흐름</h4>
-                <div id="day-sector-flow"></div>
-                <h4 class="day-block__subhead">내일 체크포인트</h4>
-                <ol id="day-checkpoints" class="daily-checkpoints"></ol>
-                <p id="day-verdict" class="daily-verdict"></p>
-              </section>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">매매주체별 순매수</h3>
+                          <div class="dm-subtabs dm-subtabs--supply" role="tablist" aria-label="시장 구분">
+                            <button type="button" class="dm-subtab is-active" role="tab" data-dm-supply="KOSPI" aria-selected="true">코스피</button>
+                            <button type="button" class="dm-subtab" role="tab" data-dm-supply="KOSDAQ" aria-selected="false">코스닥</button>
+                          </div>
+                          <p class="dm-prep-msg dm-prep-msg--block">데이터 준비중</p>
+                        </section>
 
-              <section class="day-block day-block--extras">
-                <h3 class="day-block__label">원자재/환율</h3>
-                <div id="day-market-extras" class="index-row"></div>
-              </section>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">기관+외국인 동시 매매 TOP5</h3>
+                          <p class="dm-prep-msg dm-prep-msg--block">데이터 준비중</p>
+                        </section>
 
-              <section class="day-block day-block--extras">
-                <h3 class="day-block__label">특징주</h3>
-                <div id="day-notable"></div>
-              </section>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">원자재·환율</h3>
+                          <div id="dm-market-extras" class="dm-index-grid"></div>
+                        </section>
+                      </div>
 
-              <section class="day-block">
-                <h3 class="day-block__label">
-                  ⑤ 상승률 TOP
-                  <span class="day-block__sub" id="day-topgainers-meta"></span>
-                </h3>
-                <div id="day-topgainers"></div>
-              </section>
+                      <!-- AI 시황분석 -->
+                      <div class="dm-tab-panel" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai" hidden>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">종합분석</h3>
+                          <div id="dm-analysis" class="dm-analysis"></div>
+                        </section>
 
-              <section class="day-block day-block--extras">
-                <h3 class="day-block__label">테마별 강세</h3>
-                <div id="day-themes" class="theme-list"></div>
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">특징주 분석</h3>
+                          <div id="dm-featured" class="dm-featured-list"></div>
+                        </section>
+
+                        <section class="dm-section">
+                          <h3 class="dm-section__title">내일 주목할 변수</h3>
+                          <ol id="dm-watchlist" class="dm-watchlist"></ol>
+                        </section>
+                      </div>
+
+                      <!-- 종목시세 -->
+                      <div class="dm-tab-panel" data-dm-panel="stocks" role="tabpanel" aria-labelledby="dm-tab-stocks" hidden>
+                        <div class="dm-stock-tabs" role="tablist" aria-label="종목시세 구분">
+                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="gainers" aria-selected="true">
+                            <span class="rt-tab-label--full">상승률 TOP30</span><span class="rt-tab-label--short">상승률</span>
+                          </button>
+                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="losers" aria-selected="false">
+                            <span class="rt-tab-label--full">하락률 TOP30</span><span class="rt-tab-label--short">하락률</span>
+                          </button>
+                          <button type="button" class="rt-tab dm-stock-tab" role="tab" data-dm-stock="tv" aria-selected="false">
+                            <span class="rt-tab-label--full">거래대금 TOP30</span><span class="rt-tab-label--short">거래대금</span>
+                          </button>
+                        </div>
+
+                        <div class="table-box">
+                          <div class="rt-scroll">
+                            <table class="rt-table dm-stock-table" aria-label="마감 종목시세">
+                              <colgroup>
+                                <col class="rt-col-rank" />
+                                <col class="rt-col-name" />
+                                <col class="rt-col-price" />
+                                <col class="rt-col-vs" />
+                                <col class="rt-col-chg" />
+                                <col class="rt-col-tv" />
+                              </colgroup>
+                              <thead>
+                                <tr>
+                                  <th class="rt-td-rank">순위</th>
+                                  <th class="rt-td-name">종목명</th>
+                                  <th class="num rt-td-price">현재가</th>
+                                  <th class="num rt-td-vs">대비</th>
+                                  <th class="num rt-td-chg">등락률</th>
+                                  <th class="num rt-td-tv">거래대금</th>
+                                </tr>
+                              </thead>
+                              <tbody id="dm-stock-tbody"></tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </section>
             </div>
-          </article>
-        </section>
+          </div>
         </div>
-      </div>
-    </div>
       </main>
 
       <footer class="home-footer">
@@ -285,7 +350,6 @@
         });
       })();
     </script>
-    <script src="./assets/data-url.js"></script>
     <script src="./daily-market.js"></script>
   </body>
 </html>

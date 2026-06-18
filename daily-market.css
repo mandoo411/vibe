@@ -1695,6 +1695,122 @@ details[open] .admin__summary {
   margin-bottom: 6px;
 }
 
+.dm-fund-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 44px;
+}
+
+.dm-fund-card__value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.dm-fund-card__delta {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.dm-investor-panel,
+.dm-joint-panel {
+  min-height: 72px;
+}
+
+.dm-investor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dm-investor-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dm-investor-item__label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dm-investor-item__value {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.dm-dash-err {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.dm-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-skeleton__line {
+  display: block;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-1, #f0f0f0) 25%,
+    var(--skeleton-2, #e0e0e0) 50%,
+    var(--skeleton-1, #f0f0f0) 75%
+  );
+  background-size: 200% 100%;
+  animation: dm-skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+.dm-skeleton__line--lg {
+  height: 22px;
+  width: 72%;
+}
+
+.dm-skeleton__line--sm {
+  width: 48%;
+}
+
+.dm-skeleton__line--row {
+  height: 36px;
+  width: 100%;
+}
+
+@keyframes dm-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dm-investor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dm-prep-msg {
   margin: 0;
   font-size: 13px;

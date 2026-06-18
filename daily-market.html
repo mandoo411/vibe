@@ -126,14 +126,14 @@
 
                         <section class="dm-section">
                           <h3 class="dm-section__title">증시자금</h3>
-                          <div class="dm-fund-grid">
-                            <div class="dm-fund-card">
+                          <div class="dm-fund-grid" id="dm-fund-grid">
+                            <div class="dm-fund-card" id="dm-fund-deposit">
                               <span class="dm-fund-card__label">고객예탁금</span>
-                              <p class="dm-prep-msg">데이터 준비중</p>
+                              <div class="dm-fund-card__body" id="dm-fund-deposit-body" aria-live="polite"></div>
                             </div>
-                            <div class="dm-fund-card">
+                            <div class="dm-fund-card" id="dm-fund-credit">
                               <span class="dm-fund-card__label">신용융자잔고</span>
-                              <p class="dm-prep-msg">데이터 준비중</p>
+                              <div class="dm-fund-card__body" id="dm-fund-credit-body" aria-live="polite"></div>
                             </div>
                           </div>
                         </section>
@@ -144,12 +144,16 @@
                             <button type="button" class="dm-subtab is-active" role="tab" data-dm-supply="KOSPI" aria-selected="true">코스피</button>
                             <button type="button" class="dm-subtab" role="tab" data-dm-supply="KOSDAQ" aria-selected="false">코스닥</button>
                           </div>
-                          <p class="dm-prep-msg dm-prep-msg--block">데이터 준비중</p>
+                          <div id="dm-investor-panel" class="dm-investor-panel" aria-live="polite"></div>
                         </section>
 
                         <section class="dm-section">
                           <h3 class="dm-section__title">기관+외국인 동시 매매 TOP5</h3>
-                          <p class="dm-prep-msg dm-prep-msg--block">데이터 준비중</p>
+                          <div class="dm-subtabs dm-subtabs--joint" role="tablist" aria-label="동시 매매 구분">
+                            <button type="button" class="dm-subtab is-active" role="tab" data-dm-joint="buy" aria-selected="true">동시순매수</button>
+                            <button type="button" class="dm-subtab" role="tab" data-dm-joint="sell" aria-selected="false">동시순매도</button>
+                          </div>
+                          <div id="dm-joint-panel" class="dm-joint-panel" aria-live="polite"></div>
                         </section>
 
                         <section class="dm-section">

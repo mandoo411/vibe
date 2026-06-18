@@ -42,7 +42,8 @@
     "api/repo-data.js": { "maxDuration": 15 },
     "api/stock-analysis.js": { "maxDuration": 60 },
     "api/market-ticker.js": { "maxDuration": 15 },
-    "api/market-overview.js": { "maxDuration": 60 }
+    "api/market-overview.js": { "maxDuration": 60 },
+    "api/dashboard-data.js": { "maxDuration": 60 }
   },
   "routes": [
     { "handle": "filesystem" },

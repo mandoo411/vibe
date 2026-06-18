@@ -49,6 +49,8 @@
   const LIVE_TOP_N = 30;
 
   let liveLoadPromise = null;
+  const mcapCacheByCode = new Map();
+  let mcapEnrichGen = 0;
   let dashboardLoadGen = 0;
   const dashboardState = {
     supplyMarket: "KOSPI",
@@ -582,6 +584,46 @@
     return liveLoadPromise;
   }
 
+  async function fetchMcapLookup(codes) {
+    const missing = [...new Set((codes || []).filter((c) => c && !mcapCacheByCode.has(c)))];
+    if (!missing.length) return;
+    const qs = new URLSearchParams({ action: "mcap-lookup", codes: missing.join(",") });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), LIVE_FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(`${KIS_RT_API}?${qs.toString()}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return;
+      const items = Array.isArray(data.items) ? data.items : [];
+      for (const it of items) {
+        if (it && it.code && it.stck_avls) mcapCacheByCode.set(String(it.code), it.stck_avls);
+      }
+    } catch (e) {
+      console.warn("[daily-market] mcap lookup failed", e && e.message);
+    } finally {
+      clearTimeout(tid);
+    }
+  }
+
+  function applyMcapCache(rows) {
+    return (rows || []).map((r) => {
+      const m = readStckAvlsRaw(r) || mcapCacheByCode.get(r.code);
+      return m ? { ...r, stck_avls: m } : r;
+    });
+  }
+
+  async function enrichRowsMcapIfNeeded(rows) {
+    const need = (rows || []).filter((r) => r && r.code && !readStckAvlsRaw(r)).map((r) => r.code);
+    if (!need.length) return rows;
+    const gen = ++mcapEnrichGen;
+    await fetchMcapLookup(need);
+    if (gen !== mcapEnrichGen) return rows;
+    return applyMcapCache(rows);
+  }
+
   function updateLiveBadge() {
     if (!els.dmLiveBadge) return;
     const show =
@@ -955,11 +997,7 @@
     return arr.map((p) => `<li>${escapeHtml(sanitizeUserCopy(p))}</li>`).join("");
   }
 
-  function renderStockTable() {
-    const subTab = state.stockSubTab;
-    syncStockThead(subTab);
-    const day = getDay(state.selected);
-    const rows = getStockRows(day, subTab);
+  function paintStockTableBody(rows, subTab) {
     const tbody = els.dmStockTbody;
     if (!tbody) return;
     const colSpan = 8;
@@ -1000,6 +1038,21 @@
         return `<tr>${common.join("")}${tail.join("")}</tr>`;
       })
       .join("");
+  }
+
+  function renderStockTable() {
+    const subTab = state.stockSubTab;
+    syncStockThead(subTab);
+    const day = getDay(state.selected);
+    const ymd = state.selected;
+    let rows = applyMcapCache(getStockRows(day, subTab));
+    paintStockTableBody(rows, subTab);
+    if (rows.some((r) => r && r.code && !readStckAvlsRaw(r))) {
+      void enrichRowsMcapIfNeeded(rows).then((enriched) => {
+        if (state.stockSubTab !== subTab || state.selected !== ymd) return;
+        paintStockTableBody(enriched, subTab);
+      });
+    }
   }
 
   function formatEokJoEok(n0) {

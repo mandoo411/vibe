@@ -593,6 +593,161 @@ function finalizeRowQuoteFields(row) {
   return out;
 }
 
+function naverStockMcapWonFromListJson(s) {
+  if (!s || typeof s !== "object") return "";
+  if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
+    const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return String(Math.round(n));
+  }
+  const mv = toNum(s.marketValue);
+  if (mv != null && mv > 0) return String(Math.round(mv * 1e8));
+  return "";
+}
+
+/** NAVER integration totalInfos 시총 표기 — "1조 9,761억", "2837억" 등 */
+function parseNaverMarketValueKorean(raw) {
+  const s = sanitizeStr(raw);
+  if (!s) return "";
+  let won = 0;
+  const jo = s.match(/([\d,]+)\s*조/);
+  const eok = s.match(/([\d,]+)\s*억/);
+  if (jo) {
+    const n = Number(jo[1].replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) won += Math.round(n * 1e12);
+  }
+  if (eok) {
+    const n = Number(eok[1].replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) won += Math.round(n * 1e8);
+  }
+  if (!jo && !eok) {
+    const n = Number(s.replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) {
+      won = n >= 1e11 ? Math.round(n) : Math.round(n * 1e8);
+    }
+  }
+  return won >= 5e10 ? String(won) : "";
+}
+
+async function fetchNaverStockMcapWonFromIntegration(code6) {
+  const code = String(code6 || "")
+    .replace(/\D/g, "")
+    .padStart(6, "0")
+    .slice(-6);
+  if (!/^\d{6}$/.test(code)) return "";
+  const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/integration`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !Array.isArray(json.totalInfos)) return "";
+  const item = json.totalInfos.find((x) => x && x.code === "marketValue");
+  return parseNaverMarketValueKorean(item && item.value);
+}
+
+let naverMcapBulkMapCache = null;
+let naverMcapBulkMapAt = 0;
+const NAVER_MCAP_BULK_TTL_MS = 10 * 60 * 1000;
+const NAVER_MCAP_ENRICH_CONCURRENCY = 8;
+
+async function getNaverMcapBulkMap() {
+  if (naverMcapBulkMapCache && Date.now() - naverMcapBulkMapAt < NAVER_MCAP_BULK_TTL_MS) {
+    return naverMcapBulkMapCache;
+  }
+  const [k1, k2, k3, q1, q2, q3] = await Promise.all([
+    fetchNaverMarketCapPageJson(1, "KOSPI"),
+    fetchNaverMarketCapPageJson(2, "KOSPI"),
+    fetchNaverMarketCapPageJson(3, "KOSPI"),
+    fetchNaverMarketCapPageJson(1, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(2, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(3, "KOSDAQ"),
+  ]);
+  const map = new Map();
+  for (const s of [...k1, ...k2, ...k3, ...q1, ...q2, ...q3].filter(isCommonStockRow)) {
+    const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
+    const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
+    const mcapWon = naverStockMcapWonFromListJson(s);
+    if (code && mcapWon && !map.has(code)) map.set(code, mcapWon);
+  }
+  naverMcapBulkMapCache = map;
+  naverMcapBulkMapAt = Date.now();
+  return map;
+}
+
+async function lookupMcapForCodes(codes) {
+  const uniq = [...new Set((codes || []).map((c) => String(c || "").replace(/\D/g, "").padStart(6, "0").slice(-6)).filter((c) => /^\d{6}$/.test(c)))].slice(
+    0,
+    30
+  );
+  if (!uniq.length) return [];
+  const bulk = await getNaverMcapBulkMap();
+  const items = [];
+  const stillMissing = [];
+  for (const code of uniq) {
+    const fromBulk = bulk.get(code);
+    if (fromBulk) items.push({ code, stck_avls: fromBulk });
+    else stillMissing.push(code);
+  }
+  for (let i = 0; i < stillMissing.length; i += NAVER_MCAP_ENRICH_CONCURRENCY) {
+    const chunk = stillMissing.slice(i, i + NAVER_MCAP_ENRICH_CONCURRENCY);
+    const part = await Promise.all(
+      chunk.map(async (code) => {
+        try {
+          const stck_avls = await fetchNaverStockMcapWonFromIntegration(code);
+          return stck_avls ? { code, stck_avls } : null;
+        } catch (_) {
+          return null;
+        }
+      })
+    );
+    for (const hit of part) {
+      if (hit) items.push(hit);
+    }
+  }
+  return items;
+}
+
+async function enrichRowsWithNaverMcap(rows) {
+  if (!rows || !rows.length) return rows || [];
+  let bulk;
+  try {
+    bulk = await getNaverMcapBulkMap();
+  } catch (e) {
+    console.warn("[kis-realtime-data][mcap] bulk lookup failed", e && e.message);
+    bulk = new Map();
+  }
+  const merged = rows.map((r) => {
+    const existing = marketCapWonStringForStockRow(r);
+    if (existing) return finalizeRowQuoteFields({ ...r, stck_avls: existing, mcapEok: existing });
+    const fromBulk = bulk.get(r.code);
+    if (fromBulk) return finalizeRowQuoteFields({ ...r, stck_avls: fromBulk, mcapEok: fromBulk });
+    return finalizeRowQuoteFields(r);
+  });
+  const missing = merged.filter((r) => r.code && !marketCapWonStringForStockRow(r));
+  if (!missing.length) return merged;
+  const byCode = new Map();
+  for (let i = 0; i < missing.length; i += NAVER_MCAP_ENRICH_CONCURRENCY) {
+    const chunk = missing.slice(i, i + NAVER_MCAP_ENRICH_CONCURRENCY);
+    await Promise.all(
+      chunk.map(async (r) => {
+        try {
+          const mcap = await fetchNaverStockMcapWonFromIntegration(r.code);
+          if (mcap) byCode.set(r.code, mcap);
+        } catch (_) {
+          /* skip */
+        }
+      })
+    );
+  }
+  return merged.map((r) => {
+    const mcap = marketCapWonStringForStockRow(r) || byCode.get(r.code);
+    return mcap ? finalizeRowQuoteFields({ ...r, stck_avls: mcap, mcapEok: mcap }) : r;
+  });
+}
+
 function mapNaverMarketCapRow(s, rank) {
   const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
   const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
@@ -601,14 +756,7 @@ function mapNaverMarketCapRow(s, rank) {
   const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
   const volume = naverVolumeFromStock(s);
   const tradingValue = calcTradingValueWon(price, volume) || "";
-  let mcapWon = "";
-  if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
-    const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
-    if (Number.isFinite(n) && n > 0) mcapWon = String(Math.round(n));
-  } else {
-    const mv = toNum(s.marketValue);
-    if (mv != null && mv > 0) mcapWon = String(Math.round(mv * 1e8));
-  }
+  const mcapWon = naverStockMcapWonFromListJson(s);
   return {
     rank,
     code,
@@ -908,7 +1056,8 @@ async function fetchGainersPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   const all = await fetchNaverGainersTop100();
   const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
+  const priced = await overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
+  return enrichRowsWithNaverMcap(priced);
 }
 
 async function fetchGainersMerged100() {
@@ -949,7 +1098,8 @@ async function fetchLosersPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   const all = await fetchNaverLosersTop100();
   const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
+  const priced = await overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
+  return enrichRowsWithNaverMcap(priced);
 }
 
 function naverStockTradingValueRaw(s) {
@@ -999,7 +1149,7 @@ async function fetchTradingValuePage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
   const all = await fetchNaverTradingValueTop100();
   const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return slice.map((r) => finalizeRowQuoteFields(r));
+  return enrichRowsWithNaverMcap(slice.map((r) => finalizeRowQuoteFields(r)));
 }
 
 /**
@@ -1518,6 +1668,19 @@ module.exports = async function handler(req, res) {
         },
         { noStore: true }
       );
+      return;
+    }
+
+    if (action === "mcap-lookup") {
+      try {
+        const raw = sanitizeStr(req.query && req.query.codes);
+        const codes = raw.split(/[,|\s]+/);
+        const items = await lookupMcapForCodes(codes);
+        json(res, 200, { items, cached: false });
+      } catch (e) {
+        console.error("[kis-realtime-data] action=mcap-lookup", e && e.message, e);
+        json(res, 200, { items: [], cached: false });
+      }
       return;
     }
 

@@ -775,20 +775,31 @@ function enrichRowsWithMcap(rows, mcapByCode) {
   });
 }
 
-/** 시총 누락 종목 — 네이버 basic API marketValue 보강 */
-async function fetchNaverStockMcapWon(code6) {
-  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-  if (!/^\d{6}$/.test(code)) return "";
-  const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/basic`;
-  const res = await fetch(url, {
-    headers: {
-      accept: "application/json",
-      "user-agent": USER_AGENT,
-    },
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) return "";
-  const s = json && typeof json === "object" ? json : {};
+function parseNaverMarketValueKorean(raw) {
+  const s = sanitizeStr(raw);
+  if (!s) return "";
+  let won = 0;
+  const jo = s.match(/([\d,]+)\s*조/);
+  const eok = s.match(/([\d,]+)\s*억/);
+  if (jo) {
+    const n = Number(jo[1].replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) won += Math.round(n * 1e12);
+  }
+  if (eok) {
+    const n = Number(eok[1].replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) won += Math.round(n * 1e8);
+  }
+  if (!jo && !eok) {
+    const n = Number(s.replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) {
+      won = n >= 1e11 ? Math.round(n) : Math.round(n * 1e8);
+    }
+  }
+  return won >= 5e10 ? String(won) : "";
+}
+
+function naverStockMcapWonFromListJson(s) {
+  if (!s || typeof s !== "object") return "";
   if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
     const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
     if (Number.isFinite(n) && n > 0) return String(Math.round(n));
@@ -798,12 +809,74 @@ async function fetchNaverStockMcapWon(code6) {
   return "";
 }
 
+async function fetchNaverMarketCapPageJson(page, market = "KOSPI") {
+  const pg = Math.max(1, Number(page) || 1);
+  const mkt = sanitizeStr(market).toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI";
+  const url = `https://m.stock.naver.com/api/stocks/marketValue/${mkt}?pageSize=100&page=${pg}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": USER_AGENT,
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`NAVER market-cap JSON HTTP ${res.status}`);
+  }
+  return Array.isArray(json.stocks) ? json.stocks : [];
+}
+
+async function fetchNaverMarketCapBulkMap() {
+  const [k1, k2, k3, q1, q2, q3] = await Promise.all([
+    fetchNaverMarketCapPageJson(1, "KOSPI"),
+    fetchNaverMarketCapPageJson(2, "KOSPI"),
+    fetchNaverMarketCapPageJson(3, "KOSPI"),
+    fetchNaverMarketCapPageJson(1, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(2, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(3, "KOSDAQ"),
+  ]);
+  const map = new Map();
+  for (const s of [...k1, ...k2, ...k3, ...q1, ...q2, ...q3]) {
+    const code = sanitizeStr(s.itemCode || s.reutersCode).replace(/\D/g, "").padStart(6, "0").slice(-6);
+    const mcap = naverStockMcapWonFromListJson(s);
+    if (code && mcap && !map.has(code)) map.set(code, mcap);
+  }
+  return map;
+}
+
+/** 시총 누락 종목 — 네이버 integration API + 시총순위 bulk 보강 */
+async function fetchNaverStockMcapWon(code6) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  if (!/^\d{6}$/.test(code)) return "";
+  const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/integration`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": USER_AGENT,
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !Array.isArray(json.totalInfos)) return "";
+  const item = json.totalInfos.find((x) => x && x.code === "marketValue");
+  return parseNaverMarketValueKorean(item && item.value);
+}
+
 async function enrichRowsWithNaverMcap(rows) {
   const missing = rows.filter((r) => r && r.code && !normalizeStckAvlsWon(r.stck_avls));
   if (!missing.length) return rows;
   const byCode = new Map();
-  for (let i = 0; i < missing.length; i += 6) {
-    const chunk = missing.slice(i, i + 6);
+  try {
+    const bulk = await fetchNaverMarketCapBulkMap();
+    for (const r of missing) {
+      const mcap = bulk.get(r.code);
+      if (mcap) byCode.set(r.code, mcap);
+    }
+  } catch (e) {
+    console.warn("  네이버 시총 bulk lookup 실패:", e.message || e);
+  }
+  const stillMissing = missing.filter((r) => !byCode.has(r.code));
+  for (let i = 0; i < stillMissing.length; i += 6) {
+    const chunk = stillMissing.slice(i, i + 6);
     await Promise.all(
       chunk.map(async (r) => {
         try {
@@ -814,14 +887,14 @@ async function enrichRowsWithNaverMcap(rows) {
         }
       })
     );
-    if (i + 6 < missing.length) await delay(80);
+    if (i + 6 < stillMissing.length) await delay(80);
   }
   console.log(`  네이버 시총 보강: ${byCode.size}/${missing.length}종목`);
   if (missing.length > 0 && byCode.size === 0) {
     console.error("[시총API] 네이버 보강 0건:", missing.length, "종목 시총 미수집");
   }
   return rows.map((r) => {
-    const mcap = byCode.get(r.code);
+    const mcap = normalizeStckAvlsWon(r.stck_avls) || byCode.get(r.code);
     return mcap ? { ...r, stck_avls: mcap, hts_avls: mcap } : r;
   });
 }

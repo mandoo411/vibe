@@ -187,7 +187,8 @@
   /** AI 리포트 본문·특징주 데이터가 있으면 준비중 해제 */
   function hasAiReportContent(day) {
     if (!day || typeof day !== "object") return false;
-    if (sanitizeStr(day.analysis || day.summary || day.marketSummary).length > 0) return true;
+    if (sanitizeStr(day.analysis).length > 10) return true;
+    if (sanitizeStr(day.summary).length > 10) return true;
     if (Array.isArray(day.issueStocks) && day.issueStocks.length > 0) return true;
     if (Array.isArray(day.notableStocks) && day.notableStocks.length > 0) return true;
     return false;
@@ -739,9 +740,46 @@
 
   function getFeaturedStocks(day) {
     if (!day) return [];
+    const issue = Array.isArray(day.issueStocks) ? day.issueStocks : [];
+    const notable = Array.isArray(day.notableStocks) ? day.notableStocks : [];
+    if (issue.length || notable.length) {
+      const seen = new Set();
+      const merged = [];
+      for (const row of [...issue, ...notable]) {
+        if (!row || !row.name) continue;
+        const key = sanitizeStr(row.code) || sanitizeStr(row.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(row);
+      }
+      return merged;
+    }
     if (Array.isArray(day.featured_stocks) && day.featured_stocks.length) return day.featured_stocks;
-    if (Array.isArray(day.issueStocks) && day.issueStocks.length) return day.issueStocks;
     return [];
+  }
+
+  /** analysis 본문에서 특징주·총평 섹션 제거 (하단 카드와 중복 방지) */
+  function stripFeaturedFromAnalysis(text) {
+    const raw = sanitizeStr(text);
+    if (!raw) return "";
+    const cutPatterns = [
+      /\n(?:#{1,3}\s*)?오늘의?\s*특징주\b/i,
+      /\n(?:#{1,3}\s*)?특징주\s*분석\b/i,
+      /\n(?:#{1,3}\s*)?향후\s*전략\b/i,
+      /\n(?:#{1,3}\s*)?내일\s*주목(?:할)?\s*변수\b/i,
+    ];
+    let cutAt = raw.length;
+    for (const re of cutPatterns) {
+      const m = re.exec(raw);
+      if (m && m.index < cutAt) cutAt = m.index;
+    }
+    return raw.slice(0, cutAt).trim();
+  }
+
+  function getAnalysisDisplayText(day) {
+    if (!day) return "";
+    const raw = sanitizeStr(day.analysis) || sanitizeStr(day.summary) || "";
+    return stripFeaturedFromAnalysis(raw);
   }
 
   function getWatchlist(day) {
@@ -1254,7 +1292,7 @@
       if (els.dmWatchlist) els.dmWatchlist.innerHTML = "";
     } else {
       if (els.dmAnalysis) {
-        const analysisText = sanitizeUserCopy(day && (day.analysis || day.summary), "AI 분석을 준비 중입니다");
+        const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
         els.dmAnalysis.innerHTML = analysisText
           ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
           : '<p class="empty-line">종합분석 없음</p>';

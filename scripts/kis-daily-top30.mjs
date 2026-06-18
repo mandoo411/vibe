@@ -1431,7 +1431,7 @@ async function main() {
     `  수급 ${supply.length}건 · 업종 ${sectors.length}건 · 거래량 ${volumeLeaders.length}건 · RSS ${pressNewsAll.length}건 · 거래대금 ${topTradingValueRaw.length}건`
   );
 
-  console.log("[6/7] Telegram 거시경제 메시지 + Claude 장마감 분석...");
+  console.log("[6/7] 웹서치 사전수집 + Claude 장마감 분석...");
   const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
   const ai = await analyzeDailyClosingReport({
     apiKey: anthropicKey,

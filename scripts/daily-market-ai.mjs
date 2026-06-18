@@ -1,5 +1,5 @@
 /**
- * 장마감 리포트 Claude 분석 (구조화 JSON + web_search)
+ * 장마감 리포트 Claude 분석 (Node.js 웹서치 사전수집 + JSON)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -11,8 +11,36 @@ import {
   sanitizeUnicode,
 } from "./claude-utils.mjs";
 
+const WEB_SEARCH_DELAY_MS = 350;
+
 function sanitizeStr(v) {
   return v == null ? "" : sanitizeUnicode(String(v).trim());
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** DuckDuckGo Instant Answer API (키 불필요) */
+export async function fetchWebSearch(query) {
+  try {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&kl=kr-kr`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "TotalMoney-AI/1.0 (daily-market)" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return "";
+    const data = await res.json();
+    const topics = (data.RelatedTopics || [])
+      .flatMap((t) => (Array.isArray(t.Topics) ? t.Topics : [t]))
+      .map((t) => sanitizeStr(t.Text))
+      .filter(Boolean)
+      .slice(0, 3);
+    return sanitizeStr(data.AbstractText) || topics.join("\n") || "";
+  } catch (e) {
+    console.warn(`[web-search] ${query}:`, e instanceof Error ? e.message : e);
+    return "";
+  }
 }
 
 function fmtPct(n) {
@@ -29,29 +57,11 @@ function fmtEok(n) {
   return `${sign}${Math.round(v).toLocaleString("ko-KR")}억`;
 }
 
-function fmtPrice(v) {
+function fmtPricePlain(v) {
   if (v == null || v === "") return "—";
   const n = Number(String(v).replace(/,/g, ""));
-  if (Number.isFinite(n)) return `${n.toLocaleString("ko-KR")}원`;
-  return `${sanitizeStr(v)}원`;
-}
-
-function fmtMcap(raw) {
-  const s = sanitizeStr(raw);
-  if (!s) return "—";
-  const n = Number(String(s).replace(/,/g, ""));
-  if (!Number.isFinite(n) || n <= 0) return s;
-  if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
-  const eok = n / 1e8;
-  if (eok >= 10000) return `${(eok / 10000).toFixed(1)}조`;
-  if (eok >= 100) return `${eok.toFixed(0)}억`;
-  return `${Math.round(eok)}억`;
-}
-
-function fmtStockRow(s) {
-  const code = s.code ? `(${s.code})` : "";
-  const tv = s.tradingValue || s.tradingValueRaw || "—";
-  return `${s.name || "—"}${code} ${fmtPct(s.change)} ${fmtPrice(s.currentPrice || s.price)} 거래대금 ${tv} 시총 ${fmtMcap(s.stck_avls || s.hts_avls)}`;
+  if (Number.isFinite(n)) return n.toLocaleString("ko-KR");
+  return sanitizeStr(v);
 }
 
 function findUsdKrw(marketExtras) {
@@ -82,13 +92,75 @@ function buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode, limit =
   return { up, down };
 }
 
-function buildMacroSearchQueries(targetYmd) {
-  return [
-    `${targetYmd} 코스피 코스닥 마감 시황 수급`,
-    `${targetYmd} 외국인 기관 순매수 순매도`,
-    `FOMC 금리 ${targetYmd} 한국 증시 영향`,
-    `오늘 증시 특징주 급등 이유 ${targetYmd}`,
-  ];
+function newsFromMap(newsMap, code) {
+  if (!newsMap || !code) return "";
+  const list = newsMap instanceof Map ? newsMap.get(code) : newsMap[code];
+  if (!Array.isArray(list) || !list.length) return "";
+  return list.slice(0, 3).map((t) => sanitizeStr(t)).filter(Boolean).join(" / ");
+}
+
+function mergeNewsText(primary, fallback) {
+  const a = sanitizeStr(primary);
+  const b = sanitizeStr(fallback);
+  if (a && b) return `${a}\n${b}`;
+  return a || b || "(수집된 뉴스 없음)";
+}
+
+/** Claude 호출 전 매크로·특징주 뉴스 사전 수집 */
+export async function collectSearchContext({
+  targetYmd,
+  topGainers,
+  topDecliners,
+  mcapRankByCode,
+  newsMap,
+}) {
+  console.log("[daily-market-ai] 웹서치 사전 수집 시작...");
+
+  const macro1 = await fetchWebSearch(`코스피 ${targetYmd} 마감 시황 외국인 수급 FOMC`);
+  await delay(WEB_SEARCH_DELAY_MS);
+  const macro2 = await fetchWebSearch(`${targetYmd} 코스피 코스닥 마감 시황 수급`);
+  const macroNews = mergeNewsText(macro1, macro2);
+  await delay(WEB_SEARCH_DELAY_MS);
+
+  const fomcNews = await fetchWebSearch(`FOMC 금리 결정 ${targetYmd} 한국 증시`);
+  await delay(WEB_SEARCH_DELAY_MS);
+
+  const foreignFlowNews = await fetchWebSearch(`${targetYmd} 외국인 기관 순매수 순매도`);
+
+  const stockNews = {};
+  for (const stock of (topGainers || []).slice(0, 10)) {
+    await delay(WEB_SEARCH_DELAY_MS);
+    const ddg = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`);
+    stockNews[stock.code] = mergeNewsText(ddg, newsFromMap(newsMap, stock.code));
+  }
+
+  const { down: mcapDown } = buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode);
+  const declineNews = {};
+  for (const stock of mcapDown.slice(0, 5)) {
+    await delay(WEB_SEARCH_DELAY_MS);
+    const ddg = await fetchWebSearch(`${stock.name} 급락 이유 ${targetYmd}`);
+    declineNews[stock.code] = mergeNewsText(ddg, newsFromMap(newsMap, stock.code));
+  }
+
+  console.log(
+    `[daily-market-ai] 웹서치 완료 — 매크로 ${macroNews.length > 0 ? "OK" : "없음"}, 특징주 ${Object.keys(stockNews).length}건`
+  );
+
+  return { macroNews, fomcNews, foreignFlowNews, stockNews, declineNews, mcapDown };
+}
+
+function buildSupplyLines(supply) {
+  if (!Array.isArray(supply) || !supply.length) {
+    return ["(수급 데이터 없음)"];
+  }
+  const lines = [];
+  for (const row of supply) {
+    lines.push(`[${row.market}]`);
+    lines.push(`  외국인: ${fmtEok(row.foreign)}`);
+    lines.push(`  기관: ${fmtEok(row.institution)}`);
+    lines.push(`  개인: ${fmtEok(row.retail ?? row.individual)}`);
+  }
+  return lines;
 }
 
 function buildUserPrompt({
@@ -99,70 +171,72 @@ function buildUserPrompt({
   topGainers,
   topDecliners,
   mcapRankByCode,
+  searchContext,
 }) {
   const lines = [];
   const fx = findUsdKrw(marketExtras);
-  const { up: mcapUp, down: mcapDown } = buildMcapTop100Movers(
-    topGainers,
-    topDecliners,
-    mcapRankByCode
-  );
+  const ctx = searchContext || {};
+  const mcapDown = ctx.mcapDown || buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode).down;
 
   lines.push(`오늘 장마감 데이터 (${targetYmd} KST)`);
   lines.push("");
-  lines.push("=== 1-1. 지수 (KIS/수집 데이터) ===");
-  for (const idx of indexes || []) {
-    lines.push(
-      `${idx.name}: 현재가 ${idx.value || "—"} / 등락률 ${fmtPct(idx.change)}${idx.tradingValue ? ` / 거래대금 ${idx.tradingValue}` : ""}`
-    );
-  }
-  if (fx) {
-    const fxVal = fx.valueFormatted || fx.value || "—";
-    const fxChg = fx.changePct != null ? ` / 등락률 ${fmtPct(fx.changePct)}` : "";
-    lines.push(`원/달러: ${fxVal}${fxChg}`);
-  } else {
-    lines.push("원/달러: (수집 데이터 없음)");
+
+  lines.push("=== 오늘 매크로 뉴스 ===");
+  lines.push(sanitizeStr(ctx.macroNews) || "(없음)");
+  lines.push("");
+  lines.push("[FOMC·금리]");
+  lines.push(sanitizeStr(ctx.fomcNews) || "(없음)");
+  if (ctx.foreignFlowNews) {
+    lines.push("");
+    lines.push("[외국인·기관 수급 뉴스]");
+    lines.push(sanitizeStr(ctx.foreignFlowNews));
   }
 
   lines.push("");
-  lines.push("=== 1-2. 수급 (KIS, 억원 순매수) ===");
-  if (!supply?.length) lines.push("(수급 데이터 없음)");
-  else {
-    for (const row of supply) {
-      lines.push(
-        `${row.market}: 외국인 ${fmtEok(row.foreign)}, 기관 ${fmtEok(row.institution)}, 개인 ${fmtEok(row.retail ?? row.individual)}`
-      );
+  lines.push("=== 특징주 뉴스 ===");
+  const stockNews = ctx.stockNews || {};
+  for (const stock of (topGainers || []).slice(0, 10)) {
+    lines.push(`${stock.name}: ${stockNews[stock.code] || "(수집된 뉴스 없음)"}`);
+  }
+  if (Object.keys(ctx.declineNews || {}).length) {
+    lines.push("");
+    lines.push("[시총 100위 내 하락 종목 뉴스]");
+    for (const stock of mcapDown.slice(0, 5)) {
+      lines.push(`${stock.name}: ${ctx.declineNews[stock.code] || "(수집된 뉴스 없음)"}`);
     }
   }
 
   lines.push("");
-  lines.push("=== 1-3. 종목 (KIS 수집) ===");
-  lines.push("[상승률 TOP30]");
-  for (const s of (topGainers || []).slice(0, 30)) {
-    lines.push(`- ${fmtStockRow(s)}`);
+  lines.push("=== 지수 마감 ===");
+  for (const idx of indexes || []) {
+    lines.push(`${idx.name}: ${idx.value || "—"} / 등락률 ${fmtPct(idx.change)}`);
   }
-  lines.push("");
-  lines.push("[하락률 TOP30]");
-  for (const s of (topDecliners || []).slice(0, 30)) {
-    lines.push(`- ${fmtStockRow(s)}`);
-  }
-  lines.push("");
-  lines.push("[시총 TOP100 중 등락률 상위 (대형주 특징주 Pool)]");
-  if (!mcapUp.length) lines.push("(해당 없음 또는 시총 순위 미수집)");
-  else for (const s of mcapUp) lines.push(`- ${fmtStockRow(s)}`);
-  lines.push("");
-  lines.push("[시총 TOP100 중 등락률 하위 (대형주 급락 Pool)]");
-  if (!mcapDown.length) lines.push("(해당 없음 또는 시총 순위 미수집)");
-  else for (const s of mcapDown) lines.push(`- ${fmtStockRow(s)}`);
-
-  lines.push("");
-  lines.push("=== 1-4. 매크로 뉴스 (web_search 필수 — STEP 1에서 반드시 검색) ===");
-  for (const q of buildMacroSearchQueries(targetYmd)) {
-    lines.push(`- "${q}"`);
+  if (fx) {
+    const fxVal = fx.valueFormatted || fx.value || "—";
+    lines.push(`원/달러: ${fxVal}`);
   }
 
   lines.push("");
-  lines.push("=== 출력 JSON 스키마 (순수 JSON만, 코드블록 없이) ===");
+  lines.push("=== 상승률 TOP10 ===");
+  (topGainers || []).slice(0, 10).forEach((s, i) => {
+    lines.push(`${i + 1}. ${s.name} ${fmtPct(s.change)} 현재가:${fmtPricePlain(s.currentPrice || s.price)}원`);
+  });
+
+  lines.push("");
+  lines.push("=== 시총 100위 내 하락 상위 ===");
+  if (!mcapDown.length) lines.push("(해당 없음)");
+  else {
+    mcapDown.slice(0, 10).forEach((s, i) => {
+      lines.push(`${i + 1}. ${s.name} ${fmtPct(s.change)} 현재가:${fmtPricePlain(s.currentPrice || s.price)}원`);
+    });
+  }
+
+  lines.push("");
+  lines.push("=== 수급 현황 (억원, 순매수) ===");
+  lines.push(...buildSupplyLines(supply));
+
+  lines.push("");
+  lines.push("=== 출력 JSON 스키마 (순수 JSON만) ===");
   lines.push(`{
   "date": "${targetYmd}",
   "summary": "핵심 한 줄 요약",
@@ -183,111 +257,28 @@ function buildUserPrompt({
 
   lines.push("");
   lines.push(
-    "위 수집 데이터와 web_search 결과만 근거로 JSON을 작성하세요. 재료 미확인 종목은 featured_stocks에서 제외하세요."
+    "위 제공 데이터(지수/수급/종목/뉴스)만 근거로 JSON을 작성하세요. 뉴스에 재료가 없는 종목은 featured_stocks에서 제외하세요."
   );
   return lines.join("\n");
 }
 
-const WEB_SEARCH_TOOLS = [
-  {
-    type: "web_search_20250305",
-    name: "web_search",
-    max_uses: 15,
-  },
-];
+function buildSystemPrompt() {
+  return `당신은 TotalMoney AI 수석 애널리스트입니다.
+제공된 데이터(지수/수급/종목/뉴스)를 기반으로
+마감시황 리포트를 JSON으로 작성합니다.
 
-function buildSystemPrompt(targetYmd) {
-  return `당신은 TotalMoney AI의 한국 주식시장 수석 애널리스트입니다.
-매일 장 마감 후 마감시황 리포트를 작성합니다.
+[분석 원칙]
+1. 지수 등락 원인은 수급 데이터 기반으로 설명
+   - 외국인/기관/개인 수급 금액과 방향 반드시 언급
+   - 소형 테마주를 지수 원인으로 쓰지 말 것
+2. 특징주 재료는 제공된 뉴스에서만 추출
+   - 뉴스에 없으면 '재료 미확인'으로 표기 후 제외
+3. 핵심 한 줄: 오늘 장 전체를 관통하는 원인 1문장
+4. 총평: 코스피/코스닥 각각 전략 + 내일 변수 3개
 
-## 작업 순서 (반드시 이 순서대로)
-
-### STEP 1. 매크로 뉴스 검색
-다음을 반드시 웹서치로 확인:
-- "${targetYmd} 코스피 마감 시황 수급 외국인 기관"
-- "FOMC 금리 결정 한국 증시 영향 ${targetYmd}"
-- 기타 오늘 시장에 영향을 준 매크로 이슈
-
-### STEP 2. 특징주 재료 검색
-상승률 TOP10 각 종목에 대해 반드시 웹서치:
-- "{종목명} 급등 이유 ${targetYmd}"
-- "{종목명} 상한가 재료 공시 ${targetYmd}"
-검색 결과에서 구체적 재료(공시/뉴스/수주) 확인
-재료 미확인 종목은 리포트에서 제외
-
-하락률 TOP5 (시총 100위 이내) 각 종목도 웹서치:
-- "{종목명} 급락 이유 ${targetYmd}"
-
-### STEP 3. 리포트 작성
-
-아래 구조로 작성:
-
-**[분석 원칙]**
-
-1. 인과관계 정확히 기술
-   - 지수 등락 원인은 시총 상위 대형주 또는 수급으로 설명
-   - 소형 테마주 급등을 지수 흐름의 원인으로 절대 금지
-   - 올바른 예: "외국인 X조원 순매수 + SK하이닉스 신고가가 코스피를 견인"
-   - 금지 예: "삼화전기가 올라서 코스피가 버텼다"
-
-2. 수급 원인 설명 필수
-   - "외국인 -1조원" 같은 숫자만 나열 금지
-   - 왜 샀는지/팔았는지 맥락 포함
-   - 예: "외국인은 FOMC 매파 충격에도 HBM 수요 확신으로 SK하이닉스 집중 매수"
-
-3. 핵심 한 줄 작성 규칙
-   - 오늘 장 전체를 관통하는 가장 큰 원인 1개로 요약
-   - 코스피/코스닥 방향 다르면 둘 다 포함
-   - 구체적이고 임팩트 있게
-
-4. 특징주 선정 기준
-   - Pool A: 전 종목 +20% 이상 급등 (재료 확인된 것만)
-   - Pool B: 시총 100위 이내 +10% 이상 급등
-   - Pool C: 시총 100위 이내 -5% 이하 급락 (최소 3개)
-   - Pool 구분 없이 통합 표시, 최대 10종목
-   - 재료 미확인 종목 절대 포함 금지
-
-**[리포트 구조]**
-
-### 1. 핵심 한 줄
-오늘 장 전체를 관통하는 한 문장
-
-### 2. 지수 마감
-코스피 / 코스닥 / 원달러 테이블
-(현재가 / 등락 / 등락률)
-
-### 3. 시장 흐름 분석
-- 장 흐름 서술 (시가→종가 과정)
-- 매크로 원인 (금리/환율/해외증시)
-- 코스피/코스닥 차별화 원인 설명
-
-### 4. 투자자별 매매 동향
-- 외국인/기관/개인 각각 수급 방향 + 원인
-- 코스피/코스닥 각각 테이블로 표시
-
-### 5. 오늘의 특징주 (최대 10종목)
-각 종목:
-- 종목명 / 등락률 / 현재가
-- 재료: 웹서치로 확인된 구체적 뉴스/공시 내용
-- 포인트: 투자 관점 1줄 (과열 경고 포함 시 명시)
-
-### 6. 향후 전략 및 총평
-- 오늘 장세 성격 규정
-- 코스피/코스닥 각각 단기 전략
-- 내일 주목할 변수 3개 (시간/내용 구체적으로)
-
-**[출력 규칙]**
-- 반드시 순수 JSON만 출력 (마크다운 코드블록 없이)
-- 추측이나 일반론 금지, 데이터+웹서치 기반으로만
-- 재료 미확인 종목은 featured_stocks에서 제외
-- 웹서치 없이 재료 작성 절대 금지
-
-**[절대 규칙]**
-- 웹서치 결과 확인 후 최종 출력은 반드시 순수 JSON만
-- JSON 앞뒤에 어떤 텍스트도 절대 금지
-- '웹서치 결과를 분석합니다' 같은 설명 텍스트 절대 금지
-- 코드블록(\`\`\`json\`\`\`)도 금지
-- { 로 시작해서 } 로 끝나는 순수 JSON만 출력`;
+[출력 규칙]
+순수 JSON만 출력. 텍스트 설명 절대 금지.
+JSON 앞뒤 설명·코드블록(\`\`\`) 금지. { 로 시작해 } 로 끝날 것.`;
 }
 
 function normalizeFeaturedStock(s) {
@@ -299,6 +290,7 @@ function normalizeFeaturedStock(s) {
   if (!name) return null;
   const reason = sanitizeStr(s.reason || s.entryReason);
   const point = sanitizeStr(s.point || s.background);
+  if (/재료\s*미확인/i.test(reason)) return null;
   return {
     name,
     code: sanitizeStr(s.code),
@@ -341,7 +333,6 @@ function buildHeadlineIssue(summary, strategy) {
   return sanitizeStr(strategy?.market_type);
 }
 
-/** Claude messages.content → JSON (web_search 후 서두 텍스트·코드펜스 허용) */
 function parseClaudeMessageContent(content) {
   const fullText = (Array.isArray(content) ? content : [])
     .filter((item) => item && item.type === "text")
@@ -377,6 +368,14 @@ export async function analyzeDailyClosingReport({
   marketExtras,
   mcapRankByCode,
 }) {
+  const searchContext = await collectSearchContext({
+    targetYmd,
+    topGainers,
+    topDecliners,
+    mcapRankByCode,
+    newsMap,
+  });
+
   const user = ensureJsonSafe(
     buildUserPrompt({
       targetYmd,
@@ -386,6 +385,7 @@ export async function analyzeDailyClosingReport({
       topGainers,
       topDecliners,
       mcapRankByCode,
+      searchContext,
     })
   );
 
@@ -395,9 +395,8 @@ export async function analyzeDailyClosingReport({
     const response = await client.messages.create({
       model,
       max_tokens: 14000,
-      system: buildSystemPrompt(targetYmd),
+      system: buildSystemPrompt(),
       messages: [{ role: "user", content: user }],
-      tools: WEB_SEARCH_TOOLS,
     });
 
     parsed = parseClaudeMessageContent(response?.content);

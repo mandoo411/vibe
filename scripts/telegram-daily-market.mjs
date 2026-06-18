@@ -124,13 +124,19 @@ function buildMessage(data) {
   const idxLine =
     [kospi, kosdaq].filter(Boolean).map(formatIndexLine).join(" | ") || "지수 데이터 준비 중";
 
-  const lines = [
-    `[${mdText(formatDateKo(ymd))} 마감시황]`,
-    idxLine,
-    "",
-    "🔥 *특징주*",
-    formatFeatured(day),
-  ];
+  const lines = [`[${mdText(formatDateKo(ymd))} 마감시황]`, idxLine];
+
+  const analysis = day.analysis || day.summary || day.marketSummary || "";
+  if (analysis) {
+    lines.push("", "📊 *종합분석*", mdText(analysis));
+  }
+
+  const supplyLine = formatSupplyLine(day.supply || []);
+  if (supplyLine && supplyLine !== "수급 데이터 준비 중") {
+    lines.push("", "💰 *수급 (코스피)*", supplyLine);
+  }
+
+  lines.push("", "🔥 *특징주*", formatFeatured(day));
 
   const decliners = formatDecliners(day);
   if (decliners) {

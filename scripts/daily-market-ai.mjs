@@ -115,9 +115,43 @@ function mcapRankOf(code, mcapRankByCode) {
   return null;
 }
 
+const MCAP_TOP100_FALLBACK = new Set([
+  "005930", "000660", "005935", "402340", "207940",
+  "005380", "000270", "068270", "035420", "012330",
+  "055550", "105560", "316140", "032830", "003550",
+  "028260", "066570", "034730", "035720", "086790",
+  "009540", "010130", "011170", "003490", "017670",
+  "030200", "015760", "034020", "096770", "010950",
+  "011200", "000810", "033780", "009150", "018260",
+  "051910", "006400", "247540", "373220", "352820",
+  "161390", "003670", "000720", "042700", "036570",
+  "009830", "011790", "004020", "010140", "005490",
+  "000100", "002380", "021240", "008770", "009770",
+  "024110", "001040", "047050", "139480", "004170",
+  "326030", "180640", "088350", "138040", "007070",
+  "000990", "002790", "004990", "097950", "001680",
+  "006280", "090430", "271560", "010060", "302440",
+  "377300", "012450", "003830", "005940", "029780",
+  "000080", "006360", "011780", "001270", "025840",
+  "002240", "004800", "016360", "011420", "000120",
+  "007310", "001800", "004140", "001450", "006120",
+  "023530", "000210", "004370", "002870", "005830",
+]);
+
+function isMcapRankLookupEmpty(mcapRankByCode) {
+  if (!mcapRankByCode) return true;
+  if (mcapRankByCode instanceof Map) return mcapRankByCode.size === 0;
+  if (typeof mcapRankByCode === "object") return Object.keys(mcapRankByCode).length === 0;
+  return true;
+}
+
 function buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode, limit = 15) {
+  const useFallback = isMcapRankLookupEmpty(mcapRankByCode);
   const inTop100 = (s) => {
-    const rank = mcapRankOf(s?.code, mcapRankByCode);
+    const code = sanitizeStr(s?.code);
+    if (!code) return false;
+    if (useFallback) return MCAP_TOP100_FALLBACK.has(code);
+    const rank = mcapRankOf(code, mcapRankByCode);
     return rank != null && rank <= 100;
   };
   const up = [...(topGainers || [])]

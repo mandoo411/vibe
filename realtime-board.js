@@ -1289,28 +1289,34 @@
     };
   }
 
-  async function fetchStocksJsonForTab(tab) {
+  async function fetchStocksFromStaticForTab(tab) {
     const ps = 25;
     const p = currentPageForTab(tab);
-    // 1) 미리 생성된 정적 JSON(TOP100)에서 해당 페이지 슬라이스
+    const all = await loadKrTabAll(tab);
+    setDataUpdatedAt(all.updatedAt);
+    const start = (p - 1) * ps;
+    return {
+      stocks: all.stocks.slice(start, start + ps).map((r) => ({ ...r, code: rowStockCode(r) })).filter((r) => /^\d{6}$/.test(r.code)),
+      total: all.stocks.length,
+      page: p,
+      pageSize: ps,
+      updatedAt: all.updatedAt,
+      cached: true,
+    };
+  }
+
+  /** 페이지 종목 — API 우선, 실패 시 kr-realtime.json 폴백 */
+  async function fetchStocksJsonForTab(tab) {
     try {
-      const all = await loadKrTabAll(tab);
-      setDataUpdatedAt(all.updatedAt);
-      const start = (p - 1) * ps;
-      return {
-        stocks: all.stocks.slice(start, start + ps),
-        total: all.stocks.length,
-        page: p,
-        pageSize: ps,
-        updatedAt: all.updatedAt,
-        cached: true,
-      };
+      const pack = await fetchStocksFromApiForTab(tab);
+      const stocks = pack.stocks || [];
+      if (!stocks.length) throw new Error("api returned no stocks");
+      setDataUpdatedAt(new Date().toISOString());
+      return pack;
     } catch (e) {
-      console.warn("[realtime-board] static json fallback→api", tab, e && e.message);
+      console.warn("[realtime-board] api→static json fallback", tab, e && e.message);
     }
-    // 2) 폴백: 기존 API 직접 호출
-    const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
-    return fetchJson(action, FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    return fetchStocksFromStaticForTab(tab);
   }
 
   function renderTablePager() {
@@ -1424,7 +1430,7 @@
     const [sess, idx, stockPack] = await Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
       fetchJson("index", FETCH_TIMEOUT_MS),
-      fetchStocksFromApiForTab(tab),
+      fetchStocksJsonForTab(tab),
     ]);
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
@@ -1463,7 +1469,8 @@
     pageCacheForTab(tab)[page] = { stocks: stockPack.stocks || [], loadedAt: Date.now() };
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
-    setDataUpdatedAt(new Date().toISOString());
+    if (stockPack.updatedAt) setDataUpdatedAt(stockPack.updatedAt);
+    else if (!stockPack.cached) setDataUpdatedAt(new Date().toISOString());
   }
 
   function rtErrorTimeoutMessage(err) {
@@ -2865,15 +2872,6 @@
     syncTableChromeForTab();
     showTableLoading();
     try {
-      try {
-        const quick = await fetchStocksJsonForTab(state.tab);
-        applyStocksArrayToTab(state.tab, quick.stocks || []);
-        if (quick.updatedAt) setDataUpdatedAt(quick.updatedAt);
-        hideTableLoading();
-        renderAll();
-      } catch (e) {
-        console.warn("[realtime-board] init static preview", e && e.message);
-      }
       await loadBootstrapForTab(state.tab);
       if (err) err.hidden = true;
     } catch (e) {

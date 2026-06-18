@@ -96,9 +96,86 @@ function kisRowPctChange(row) {
 function pickAmtEok(row, keys) {
   for (const k of keys) {
     const n = toNumberOrNull(row[k]);
-    if (n != null) return Math.round(n / 1e8);
+    if (n == null) continue;
+    if (/tr_pbmn|pbmn|amt/i.test(k)) {
+      if (Math.abs(n) >= 1000) return Math.round(n / 100);
+      return Math.round(n);
+    }
+    return Math.round(n / 1e8);
   }
   return null;
+}
+
+function seoulYmdFromDate(d = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d);
+}
+
+function prevYmdStr(ymd) {
+  const t = new Date(`${ymd}T12:00:00+09:00`).getTime() - 86400000;
+  return seoulYmdFromDate(new Date(t));
+}
+
+function isBeforeKstMarketClose() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Seoul",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const h = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+  const m = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+  return h < 15 || (h === 15 && m < 30);
+}
+
+function parseInvestorFlowRow(row, marketLabel) {
+  if (!row) return { market: marketLabel, foreign: null, institution: null, retail: null };
+  return {
+    market: marketLabel,
+    foreign: pickAmtEok(row, ["frgn_ntby_tr_pbmn", "frgn_ntby_amt", "frgn_ntby_tr_pbmn_amt"]),
+    institution: pickAmtEok(row, ["orgn_ntby_tr_pbmn", "orgn_ntby_amt", "orgn_ntby_tr_pbmn_amt"]),
+    retail: pickAmtEok(row, ["prsn_ntby_tr_pbmn", "prsn_ntby_amt", "prsn_ntby_tr_pbmn_amt"]),
+  };
+}
+
+function hasInvestorAmounts(result) {
+  return [result.foreign, result.institution, result.retail].some((v) => v != null);
+}
+
+async function requestInvestorFlowDay({ baseUrl, token, appKey, appSecret, ymd, marketCode, marketLabel }) {
+  const ymdCompact = String(ymd).replace(/-/g, "");
+  const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-investor-daily-by-market`);
+  url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
+  url.searchParams.set("FID_INPUT_ISCD", "0001");
+  url.searchParams.set("FID_INPUT_DATE_1", ymdCompact);
+  url.searchParams.set("FID_INPUT_DATE_2", ymdCompact);
+  url.searchParams.set("FID_INPUT_ISCD_1", marketCode);
+  url.searchParams.set("FID_INPUT_ISCD_2", "");
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${token}`,
+      appkey: appKey,
+      appsecret: appSecret,
+      tr_id: "FHPTJ04040000",
+      custtype: "P",
+    },
+  });
+  const text = await res.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    console.error("[수급API] 실패:", marketLabel, res.status, "invalid JSON");
+    throw new Error(`KIS invalid JSON (FHPTJ04040000)`);
+  }
+  if (!res.ok || (json.rt_cd && json.rt_cd !== "0")) {
+    console.error("[수급API] 실패:", marketLabel, res.status, json?.msg1 || json?.msg_cd || "");
+    throw new Error(`KIS rt_cd=${json.rt_cd} (${marketLabel}) ${json.msg1 || ""}`);
+  }
+  const row = Array.isArray(json.output) ? json.output[0] : json.output;
+  return parseInvestorFlowRow(row, marketLabel);
 }
 
 async function kisGet(url, trId, token, appKey, appSecret) {
@@ -129,24 +206,35 @@ async function kisGet(url, trId, token, appKey, appSecret) {
 
 /** 시장별 투자자 순매수 (억원) — FHPTJ04040000 */
 export async function fetchInvestorFlowByMarket({ baseUrl, token, appKey, appSecret, ymd, marketCode, marketLabel }) {
-  const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-investor-daily-by-market`);
-  url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
-  url.searchParams.set("FID_INPUT_ISCD", "0001");
-  url.searchParams.set("FID_INPUT_DATE_1", ymd.replace(/-/g, ""));
-  url.searchParams.set("FID_INPUT_DATE_2", ymd.replace(/-/g, ""));
-  url.searchParams.set("FID_INPUT_ISCD_1", marketCode);
-  url.searchParams.set("FID_INPUT_ISCD_2", "");
+  const dates = [ymd];
+  if (isBeforeKstMarketClose()) dates.push(prevYmdStr(ymd));
 
-  const json = await kisGet(url, "FHPTJ04040000", token, appKey, appSecret);
-  const row = Array.isArray(json.output) ? json.output[0] : json.output;
-  if (!row) return { market: marketLabel, foreign: null, institution: null, retail: null };
-
-  return {
-    market: marketLabel,
-    foreign: pickAmtEok(row, ["frgn_ntby_tr_pbmn", "frgn_ntby_amt", "frgn_ntby_tr_pbmn_amt"]),
-    institution: pickAmtEok(row, ["orgn_ntby_tr_pbmn", "orgn_ntby_amt", "orgn_ntby_tr_pbmn_amt"]),
-    retail: pickAmtEok(row, ["prsn_ntby_tr_pbmn", "prsn_ntby_amt", "prsn_ntby_tr_pbmn_amt"]),
-  };
+  let lastErr;
+  for (let i = 0; i < dates.length; i++) {
+    try {
+      const result = await requestInvestorFlowDay({
+        baseUrl,
+        token,
+        appKey,
+        appSecret,
+        ymd: dates[i],
+        marketCode,
+        marketLabel,
+      });
+      if (hasInvestorAmounts(result)) {
+        if (i > 0) {
+          console.log(`[수급API] ${marketLabel}: ${dates[i]} 일자 폴백 사용`);
+        }
+        return result;
+      }
+      if (i < dates.length - 1) continue;
+      return result;
+    } catch (e) {
+      lastErr = e;
+      if (i < dates.length - 1) continue;
+    }
+  }
+  throw lastErr || new Error(`[수급API] ${marketLabel} 데이터 없음`);
 }
 
 export async function fetchSupplyBothMarkets(ctx, ymd) {
@@ -154,6 +242,11 @@ export async function fetchSupplyBothMarkets(ctx, ymd) {
     fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "KSP", marketLabel: "코스피" }),
     fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "KSQ", marketLabel: "코스닥" }),
   ]);
+  for (const r of settled) {
+    if (r.status === "rejected") {
+      console.error("[수급API] rejected:", r.reason?.message || r.reason);
+    }
+  }
   return settled
     .filter((r) => r.status === "fulfilled")
     .map((r) => r.value)

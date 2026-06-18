@@ -176,9 +176,6 @@ export async function collectSearchContext({
 }
 
 function buildSupplyLines(supply) {
-  if (!Array.isArray(supply) || !supply.length) {
-    return ["(수급 데이터 없음)"];
-  }
   const lines = [];
   for (const row of supply) {
     lines.push(`[${row.market}]`);
@@ -187,6 +184,31 @@ function buildSupplyLines(supply) {
     lines.push(`  개인: ${fmtEok(row.retail ?? row.individual)}`);
   }
   return lines;
+}
+
+function supplyHasData(supply) {
+  if (!Array.isArray(supply) || !supply.length) return false;
+  return supply.some(
+    (r) => r.foreign != null || r.institution != null || r.retail != null || r.individual != null
+  );
+}
+
+function buildSupplySection(supply, searchContext) {
+  if (supplyHasData(supply)) {
+    return ["=== 수급 현황 (억원, 순매수) ===", ...buildSupplyLines(supply)];
+  }
+  const macro = [
+    sanitizeStr(searchContext?.macroNews),
+    sanitizeStr(searchContext?.foreignFlowNews),
+    sanitizeStr(searchContext?.fomcNews),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return [
+    "=== 수급 현황 ===",
+    "(KIS API 수급 데이터 없음 - 웹서치 뉴스 기반 추정)",
+    macro || "(수급 관련 뉴스 없음)",
+  ];
 }
 
 function buildUserPrompt({
@@ -258,8 +280,7 @@ function buildUserPrompt({
   }
 
   lines.push("");
-  lines.push("=== 수급 현황 (억원, 순매수) ===");
-  lines.push(...buildSupplyLines(supply));
+  lines.push(...buildSupplySection(supply, ctx));
 
   lines.push("");
   lines.push("=== 출력 JSON 스키마 (순수 JSON만) ===");
@@ -277,13 +298,16 @@ function buildUserPrompt({
   "featured_stocks": [
     { "name": "", "code": "", "price": 0, "change_pct": 0, "type": "급등|급락", "reason": "", "point": "" }
   ],
+  "stocks": [
+    { "code": "009470", "name": "삼화전기", "theme": "전력·페라이트", "reason": "재료 요약", "change_pct": 30.0 }
+  ],
   "watchlist": ["...", "...", "..."],
   "strategy": { "kospi": "", "kosdaq": "", "market_type": "" }
 }`);
 
   lines.push("");
   lines.push(
-    "위 제공 데이터(지수/수급/종목/뉴스)만 근거로 JSON을 작성하세요. 뉴스에 재료가 없는 종목은 featured_stocks에서 제외하세요."
+    "위 제공 데이터(지수/수급/종목/뉴스)만 근거로 JSON을 작성하세요. featured_stocks에 포함된 종목은 stocks에도 반드시 포함하고, 상승률 TOP30 전 종목을 stocks에 theme(전력인프라/반도체/바이오/원전/광통신/금융/기타 등)으로 분류하세요. 뉴스에 재료가 없는 종목은 featured_stocks에서 제외하세요."
   );
   return lines.join("\n");
 }
@@ -301,6 +325,8 @@ function buildSystemPrompt() {
    - 뉴스에 없으면 '재료 미확인'으로 표기 후 제외
 3. 핵심 한 줄: 오늘 장 전체를 관통하는 원인 1문장
 4. 총평: 코스피/코스닥 각각 전략 + 내일 변수 3개
+5. stocks 배열: 상승률 TOP30 전 종목 theme 분류 (featured_stocks 종목은 반드시 포함)
+   - theme 예: 전력인프라, 반도체, 바이오, 원전, 광통신, 금융, 기타
 
 [출력 규칙]
 순수 JSON만 출력. 텍스트 설명 절대 금지.
@@ -334,6 +360,27 @@ function normalizeFeaturedStock(s) {
 function normalizeFeaturedList(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map(normalizeFeaturedStock).filter(Boolean).slice(0, 10);
+}
+
+function normalizeStockThemeRow(s) {
+  if (!s || typeof s !== "object") return null;
+  const code = sanitizeStr(s.code);
+  const name = sanitizeStr(s.name);
+  if (!code && !name) return null;
+  const changeRaw = s.change_pct ?? s.change ?? s.changePct;
+  const changeNum = Number(changeRaw);
+  return {
+    code,
+    name,
+    theme: sanitizeStr(s.theme) || "기타",
+    reason: sanitizeStr(s.reason || s.entryReason),
+    change_pct: Number.isFinite(changeNum) ? changeNum : null,
+  };
+}
+
+function normalizeStocksList(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(normalizeStockThemeRow).filter(Boolean);
 }
 
 function buildSupplyComment(investorTrend) {
@@ -451,9 +498,11 @@ export async function analyzeDailyClosingReport({
     parsed.investor_trend && typeof parsed.investor_trend === "object" ? parsed.investor_trend : {};
   const strategy = parsed.strategy && typeof parsed.strategy === "object" ? parsed.strategy : {};
 
-  const stocks = Array.isArray(parsed.stocks) ? parsed.stocks : [];
-  if (stocksForThemes?.length && stocks.length !== stocksForThemes.length) {
-    console.warn(`Claude stocks length ${stocks.length} != ${stocksForThemes.length}, padding`);
+  const stocks = normalizeStocksList(parsed.stocks);
+  if (stocksForThemes?.length && !stocks.length) {
+    console.warn(`Claude stocks missing (expected ~${stocksForThemes.length} theme rows)`);
+  } else if (stocksForThemes?.length && stocks.length !== stocksForThemes.length) {
+    console.warn(`Claude stocks length ${stocks.length} != ${stocksForThemes.length}`);
   }
 
   return {

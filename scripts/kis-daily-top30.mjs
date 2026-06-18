@@ -663,16 +663,19 @@ async function fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, mar
     },
   });
   const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`KIS volume-rank HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
-  }
   let json;
   try {
     json = JSON.parse(text);
   } catch (_) {
+    console.error("[거래대금API] 실패:", marketLabel, res.status, "invalid JSON");
     throw new Error(`KIS volume-rank: invalid JSON (${marketLabel}): ${text.slice(0, 300)}`);
   }
+  if (!res.ok) {
+    console.error("[거래대금API] 실패:", marketLabel, res.status, json?.msg1 || json?.msg_cd || "");
+    throw new Error(`KIS volume-rank HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
+  }
   if (json.rt_cd && json.rt_cd !== "0") {
+    console.error("[거래대금API] 실패:", marketLabel, res.status, json?.msg1 || json?.msg_cd || "");
     throw new Error(`KIS volume-rank error (${marketLabel}) rt_cd=${json.rt_cd} msg=${json.msg1 || ""}`);
   }
   const list = Array.isArray(json.output) ? json.output : [];
@@ -718,16 +721,19 @@ async function fetchMarketCapLookup({ baseUrl, token, appKey, appSecret }) {
       },
     });
     const text = await res.text();
-    if (!res.ok) {
-      throw new Error(`KIS market-cap HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
-    }
     let json;
     try {
       json = JSON.parse(text);
     } catch (_) {
+      console.error("[시총API] 실패:", marketLabel, res.status, "invalid JSON");
       throw new Error(`KIS market-cap: invalid JSON (${marketLabel})`);
     }
+    if (!res.ok) {
+      console.error("[시총API] 실패:", marketLabel, res.status, json?.msg1 || json?.msg_cd || "");
+      throw new Error(`KIS market-cap HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
+    }
     if (json.rt_cd && json.rt_cd !== "0") {
+      console.error("[시총API] 실패:", marketLabel, res.status, json?.msg1 || json?.msg_cd || "");
       throw new Error(`KIS market-cap error (${marketLabel}) rt_cd=${json.rt_cd} msg=${json.msg1 || ""}`);
     }
     const list = Array.isArray(json.output) ? json.output : [];
@@ -757,6 +763,9 @@ async function fetchMarketCapLookup({ baseUrl, token, appKey, appSecret }) {
     }
   }
   console.log(`  시가총액 lookup: ${map.size}종목`);
+  if (map.size === 0) {
+    console.error("[시총API] KIS 시총 lookup 0종목");
+  }
   return { map, rankByCode };
 }
 
@@ -811,6 +820,9 @@ async function enrichRowsWithNaverMcap(rows) {
     if (i + 6 < missing.length) await delay(80);
   }
   console.log(`  네이버 시총 보강: ${byCode.size}/${missing.length}종목`);
+  if (missing.length > 0 && byCode.size === 0) {
+    console.error("[시총API] 네이버 보강 0건:", missing.length, "종목 시총 미수집");
+  }
   return rows.map((r) => {
     const mcap = byCode.get(r.code);
     return mcap ? { ...r, stck_avls: mcap, hts_avls: mcap } : r;
@@ -831,6 +843,35 @@ async function collectTradingValueTopN({ baseUrl, token, appKey, appSecret, topN
     (a, b) => (toNumberOrNull(b.tradingValueRaw) || 0) - (toNumberOrNull(a.tradingValueRaw) || 0)
   );
   return all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+/** KIS 거래대금 API 실패 시 상승률 TOP 종목의 acml_tr_pbmn으로 대체 */
+function buildTradingValueFallbackFromGainers(gainers, topN) {
+  const rows = (gainers || [])
+    .map((s) => {
+      const tradingValueRaw =
+        sanitizeStr(s.tradingValueRaw) ||
+        pickAcmlTrPbmn(s) ||
+        calcTradingValueWon(s.currentPrice, s.volume);
+      if (!tradingValueRaw) return null;
+      return {
+        code: s.code,
+        name: s.name,
+        market: s.market,
+        currentPrice: s.currentPrice,
+        prevDelta: s.prevDelta,
+        change: s.change,
+        volume: sanitizeStr(s.volume),
+        tradingValueRaw,
+        stck_avls: normalizeStckAvlsWon(s.stck_avls),
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) =>
+        (toNumberOrNull(b.tradingValueRaw) || 0) - (toNumberOrNull(a.tradingValueRaw) || 0)
+    );
+  return rows.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
 }
 
 async function fetchNaverFinanceIndex(code, label) {
@@ -1405,7 +1446,28 @@ async function main() {
 
   console.log("[5/7] KIS 수급·업종·거래량 + 언론사 RSS...");
   const kisCtx = { baseUrl, token: kisOAuthToken, appKey, appSecret };
-  const [supply, sectors, volumeLeaders, pressNewsAll, topTradingValueRaw] = await Promise.all([
+  let topTradingValueRaw = [];
+  try {
+    topTradingValueRaw = await collectTradingValueTopN({
+      baseUrl,
+      token: kisOAuthToken,
+      appKey,
+      appSecret,
+      topN,
+    });
+  } catch (e) {
+    console.warn(`  거래대금 TOP${topN} 실패: ${e.message || e}`);
+  }
+  if (!topTradingValueRaw.length) {
+    topTradingValueRaw = buildTradingValueFallbackFromGainers(top, topN);
+    if (topTradingValueRaw.length) {
+      console.log(`  거래대금 폴백: topGainers acml_tr_pbmn ${topTradingValueRaw.length}건`);
+    } else {
+      console.error("[거래대금API] KIS·폴백 모두 0건");
+    }
+  }
+
+  const [supply, sectors, volumeLeaders, pressNewsAll] = await Promise.all([
     fetchSupplyBothMarkets(kisCtx, targetYmd).catch((e) => {
       console.warn(`  수급 조회 실패: ${e.message || e}`);
       return [];
@@ -1420,10 +1482,6 @@ async function main() {
     }),
     fetchPressNewsAll(targetYmd).catch((e) => {
       console.warn(`  RSS 실패: ${e.message || e}`);
-      return [];
-    }),
-    collectTradingValueTopN({ baseUrl, token: kisOAuthToken, appKey, appSecret, topN }).catch((e) => {
-      console.warn(`  거래대금 TOP${topN} 실패: ${e.message || e}`);
       return [];
     }),
   ]);

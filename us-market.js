@@ -180,19 +180,35 @@
     throw lastErr || new Error(`static json unavailable: ${file}`);
   }
 
-  // 정적 JSON 우선, 실패 시 기존 API(/api/us-market-data)로 폴백
-  async function loadTabPack(tab) {
+  async function fetchTabFromApi(tab) {
     const cfg = TAB_CONFIG[tab];
-    try {
-      const data = await fetchStaticJson(cfg.jsonFile);
-      if (data && Array.isArray(data.stocks) && data.stocks.length) {
-        return { stocks: data.stocks, updatedAt: data.updatedAt || null };
-      }
-    } catch (e) {
-      console.warn("[us-market] static json fallback→api", cfg.jsonFile, e && e.message);
-    }
     const pack = await fetchJson(cfg.action);
-    return { stocks: pack.stocks || [], updatedAt: pack.updatedAt || null };
+    const stocks = pack.stocks || [];
+    if (!stocks.length) throw new Error("api returned no stocks");
+    return {
+      stocks,
+      updatedAt: pack.updatedAt || new Date().toISOString(),
+      cached: false,
+    };
+  }
+
+  async function fetchTabFromStatic(tab) {
+    const cfg = TAB_CONFIG[tab];
+    const data = await fetchStaticJson(cfg.jsonFile);
+    if (!data || !Array.isArray(data.stocks) || !data.stocks.length) {
+      throw new Error(`static json empty: ${cfg.jsonFile}`);
+    }
+    return { stocks: data.stocks, updatedAt: data.updatedAt || null, cached: true };
+  }
+
+  /** 탭 종목 — API 우선(/api/us-market-data), 실패 시 data/*.json 폴백 */
+  async function loadTabPack(tab) {
+    try {
+      return await fetchTabFromApi(tab);
+    } catch (e) {
+      console.warn("[us-market] api→static json fallback", tab, e && e.message);
+    }
+    return fetchTabFromStatic(tab);
   }
 
   function formatFreshness(iso) {

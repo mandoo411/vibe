@@ -114,7 +114,7 @@
   };
 
   const KR_JSON_FILE = "kr-realtime.json";
-  const KR_STATIC_TTL_MS = 60 * 1000;
+  const KR_STATIC_TTL_MS = 30 * 1000;
   // 단일 kr-realtime.json({ tabs: { cap, gainers, tv } }) 메모리 캐시
   let krAllCache = null;
 
@@ -193,6 +193,12 @@
     if (digits.length === 6) return digits;
     if (digits.length < 6) return digits.padStart(6, "0");
     return digits.slice(-6);
+  }
+
+  /** 종목 행/API 공통 코드 키 (code · stck_shrn_iscd) */
+  function rowStockCode(r) {
+    if (!r) return "";
+    return code6Maybe(r.code || r.stck_shrn_iscd);
   }
 
   async function loadStockListOnce() {
@@ -288,7 +294,7 @@
   function enrichPanelFromTableRow(panel, code6) {
     if (!panel || panel.stockName) return panel;
     const rows = getCurrentRows() || [];
-    const hit = rows.find((r) => r && r.code === code6);
+    const hit = rows.find((r) => r && rowStockCode(r) === code6);
     if (hit && hit.name) panel.stockName = hit.name;
     return panel;
   }
@@ -461,41 +467,37 @@
     return vb >= va ? b : a;
   }
 
-  /** 폴링 시 행 순서 유지하며 시세만 병합 (열린 종목 패널 깜빡임 방지) */
+  /** 폴링 시 행 순서·순위 유지, 시세 필드만 병합 (정적 JSON ↔ API 순서 섞임 방지) */
   function mergeStocksInPlaceForTab(tab, incoming) {
     const list =
       tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
-    const inc = (incoming || []).filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0);
+    const inc = (incoming || [])
+      .map((r) => ({ ...r, code: rowStockCode(r) }))
+      .filter((r) => /^\d{6}$/.test(r.code));
     if (!list.length) {
       applyStocksArrayToTab(tab, inc);
-      return { reordered: true };
-    }
-    const pageCodes = new Set(inc.map((r) => r.code));
-    const curCodes = new Set(list.map((r) => r.code));
-    const samePage =
-      pageCodes.size === curCodes.size && [...pageCodes].every((c) => curCodes.has(c));
-    if (!samePage) {
-      applyStocksArrayToTab(tab, inc);
-      return { reordered: true };
+      return { reordered: inc.length > 0 };
     }
     const byCode = new Map(inc.map((r) => [r.code, r]));
     const merged = list.map((r) => {
-      const n = byCode.get(r.code);
-      if (!n) return r;
+      const code = rowStockCode(r);
+      const n = byCode.get(code);
+      if (!n) return { ...r, code };
       const price = n.price || r.price;
       const volume = pickLargerVolumeStr(r.volume, n.volume);
       const tvCalc = calcTradeValFromPriceVol(price, volume);
       return {
         ...r,
-        ...n,
+        code,
+        name: n.name || r.name,
         price,
         volume,
-        rank: n.rank != null ? n.rank : r.rank,
         changePct: n.changePct != null ? n.changePct : r.changePct,
         changeAmt: n.changeAmt != null ? n.changeAmt : r.changeAmt,
-        tradingValue: tvCalc != null ? String(tvCalc) : "",
+        tradingValue: tvCalc != null ? String(tvCalc) : r.tradingValue || "",
         stck_avls: n.stck_avls || n.mcapEok || r.stck_avls || r.mcapEok,
         mcapEok: n.mcapEok || n.stck_avls || r.mcapEok || r.stck_avls,
+        rank: r.rank,
       };
     });
     applyStocksArrayToTab(tab, merged);
@@ -1046,9 +1048,10 @@
   }
 
   function syncNameChartButtonsAria(body) {
+    const open = code6Maybe(state.openChartCode || "");
     body.querySelectorAll(".rt-name-chart-btn").forEach((btn) => {
-      const c = btn.getAttribute("data-code");
-      btn.setAttribute("aria-expanded", c === state.openChartCode ? "true" : "false");
+      const c = code6Maybe(btn.getAttribute("data-code") || "");
+      btn.setAttribute("aria-expanded", c && c === open ? "true" : "false");
     });
   }
 
@@ -1233,13 +1236,25 @@
       if (tab === "cap") state.capPage = pg;
       else if (tab === "gainers") state.gainerPage = pg;
       else state.tvPage = pg;
-      const pack = await fetchStocksJsonForTab(tab);
+      const replaceOrder = !!(opts && opts.replaceOrder);
+      const useLiveApi = force || replaceOrder;
+      const pack = useLiveApi ? await fetchStocksFromApiForTab(tab) : await fetchStocksJsonForTab(tab);
       const stocks = pack.stocks || [];
-      cache[pg] = { stocks, loadedAt: Date.now() };
+      if (force && replaceOrder) {
+        cache[pg] = { stocks, loadedAt: Date.now() };
+        applyStocksArrayToTab(tab, stocks);
+      } else if (force && rowsLoadedForTab(tab)) {
+        mergeStocksInPlaceForTab(tab, stocks);
+        const merged =
+          tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
+        cache[pg] = { stocks: merged, loadedAt: Date.now() };
+      } else {
+        cache[pg] = { stocks, loadedAt: Date.now() };
+        applyStocksArrayToTab(tab, stocks);
+      }
       if (tab === "cap") state.capTotal = Number(pack.total || 100) || 100;
       else if (tab === "gainers") state.gainerTotal = Number(pack.total || 100) || 100;
       else state.tvTotal = Number(pack.total || 100) || 100;
-      applyStocksArrayToTab(tab, stocks);
       state.tabLoadedAt[tab] = Date.now();
       return { fromCache: false, cached: !!pack.cached };
     } finally {
@@ -1251,11 +1266,27 @@
 
   function applyStocksArrayToTab(tab, stocks) {
     const rows = (stocks || [])
-      .filter((r) => r && String(r.code || "").replace(/\D/g, "").length > 0)
-      .map((r) => ({ ...r, tab: r.tab || tab }));
+      .map((r) => {
+        const code = rowStockCode(r);
+        if (!/^\d{6}$/.test(code)) return null;
+        return { ...r, code, tab: r.tab || tab };
+      })
+      .filter(Boolean);
     if (tab === "cap") state.capRows = rows;
     else if (tab === "gainers") state.gainerRows = rows;
     else if (tab === "tv") state.tvRows = rows;
+  }
+
+  async function fetchStocksFromApiForTab(tab) {
+    const ps = 25;
+    const p = currentPageForTab(tab);
+    const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+    const pack = await fetchJson(action, FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    return {
+      ...pack,
+      stocks: (pack.stocks || []).map((r) => ({ ...r, code: rowStockCode(r) })).filter((r) => /^\d{6}$/.test(r.code)),
+      cached: false,
+    };
   }
 
   async function fetchStocksJsonForTab(tab) {
@@ -1349,7 +1380,7 @@
   /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
   async function refreshTabStocksOnly(tab) {
     const page = currentPageForTab(tab);
-    await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true });
+    await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true, replaceOrder: true });
   }
 
   /** 다른 탭 1페이지 미리 받아 두기 — 탭 전환 시 잔상·대기 완화 */
@@ -1393,7 +1424,7 @@
     const [sess, idx, stockPack] = await Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
       fetchJson("index", FETCH_TIMEOUT_MS),
-      fetchStocksJsonForTab(tab),
+      fetchStocksFromApiForTab(tab),
     ]);
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
@@ -1432,6 +1463,7 @@
     pageCacheForTab(tab)[page] = { stocks: stockPack.stocks || [], loadedAt: Date.now() };
     applyStocksArrayToTab(tab, stockPack.stocks);
     state.tabLoadedAt[tab] = Date.now();
+    setDataUpdatedAt(new Date().toISOString());
   }
 
   function rtErrorTimeoutMessage(err) {
@@ -1735,7 +1767,7 @@
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
-    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${state.openChartCode === r.code ? "true" : "false"}">${nm}</button>`;
+    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${code6Maybe(state.openChartCode) === rowStockCode(r) ? "true" : "false"}">${nm}</button>`;
 
     const ch = r.changePct;
     const cls = deltaClass(ch);
@@ -1747,10 +1779,14 @@
 
   function syncDetailDomAfterRows(body, rows) {
     if (!state.openChartCode) return;
-    const code = state.openChartCode;
+    const code = code6Maybe(state.openChartCode);
+    if (!/^\d{6}$/.test(code)) {
+      state.openChartCode = null;
+      return;
+    }
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${code}"]`);
     if (!anchor) {
-      const onPage = (rows || []).some((r) => r.code === code);
+      const onPage = (rows || []).some((r) => rowStockCode(r) === code);
       if (!onPage) {
         state.openChartCode = null;
         renderThead();
@@ -1758,23 +1794,16 @@
       }
       return;
     }
-    let detailTr = body.querySelector("tr.rt-detail-row");
+    body.querySelectorAll("tr.rt-detail-row").forEach((tr) => {
+      if (tr.getAttribute("data-detail-for") !== code) tr.remove();
+    });
+    let detailTr = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
     if (!detailTr) {
       anchor.insertAdjacentHTML("afterend", detailRowHtml(code));
-      detailTr = body.querySelector("tr.rt-detail-row");
-    } else {
-      if (detailTr.getAttribute("data-detail-for") !== code) {
-        detailTr.setAttribute("data-detail-for", code);
-        const host = detailTr.querySelector(".rt-detail-acc");
-        if (host) {
-          host.setAttribute("data-detail-code", code);
-          delete host.dataset.loadedFor;
-          host.innerHTML = buildStockResultSkeleton();
-        }
-      }
-      if (detailTr.previousElementSibling !== anchor) anchor.after(detailTr);
+      detailTr = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
+    } else if (detailTr.previousElementSibling !== anchor) {
+      anchor.after(detailTr);
     }
-    if (detailTr) detailTr.setAttribute("data-detail-for", code);
     syncNameChartButtonsAria(body);
     const host = detailTr && detailTr.querySelector(".rt-detail-acc");
     const needsLoad = !host || host.dataset.loadedFor !== code || !host.querySelector(".rt-acc");
@@ -1814,7 +1843,7 @@
         const parts = [];
         for (const r of rows) {
           parts.push(stockRowHtml(r));
-          if (state.openChartCode === r.code) parts.push(detailRowHtml(r.code));
+          if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
         }
         body.innerHTML = parts.join("");
       }
@@ -1832,7 +1861,9 @@
     const canPatch =
       stockRows.length === rows.length &&
       Array.from(stockRows).every(
-        (tr, i) => tr.getAttribute("data-code") === rows[i]?.code && tr.cells.length === colN
+        (tr, i) =>
+          rowStockCode({ code: tr.getAttribute("data-code") }) === rowStockCode(rows[i]) &&
+          tr.cells.length === colN
       );
 
     if (canPatch) {
@@ -1843,7 +1874,7 @@
       const parts = [];
       for (const r of rows) {
         parts.push(stockRowHtml(r));
-        if (state.openChartCode === r.code) parts.push(detailRowHtml(r.code));
+        if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
       }
       body.innerHTML = parts.join("");
     }
@@ -1989,8 +2020,8 @@
   }
 
   async function mountTableDetailAccordion(body) {
-    if (!state.openChartCode) return;
-    const code = state.openChartCode;
+    const code = code6Maybe(state.openChartCode || "");
+    if (!/^\d{6}$/.test(code)) return;
     const row = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
     if (!row) return;
     const host = row.querySelector(".rt-detail-acc");
@@ -2485,12 +2516,14 @@
       const page = currentPageForTab(tab);
       const detailOpen = !!state.openChartCode;
 
-      if (detailOpen && isRankListTab(tab)) {
+      if (isRankListTab(tab)) {
         try {
-          const pack = await fetchStocksJsonForTab(tab);
+          const pack = await fetchStocksFromApiForTab(tab);
           mergeStocksInPlaceForTab(tab, pack.stocks || []);
           const cache = pageCacheForTab(tab);
-          if (cache[page]) cache[page].loadedAt = Date.now();
+          const merged =
+            tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
+          cache[page] = { stocks: merged, loadedAt: Date.now() };
         } catch (e) {
           console.warn("[realtime-board] refreshPartial stocks merge", e && e.message);
         }
@@ -2662,6 +2695,34 @@
     });
   }
 
+  function stockCodeFromChartBtn(btn) {
+    if (!btn) return "";
+    const row = btn.closest("tr.rt-stock-row");
+    const raw =
+      (row && row.getAttribute("data-code")) ||
+      btn.getAttribute("data-code") ||
+      btn.getAttribute("data-stck-code") ||
+      "";
+    return code6Maybe(raw);
+  }
+
+  function abortDetailFetch() {
+    if (!state.detailFetchAbort) return;
+    try {
+      state.detailFetchAbort.abort();
+    } catch (_) {
+      /* noop */
+    }
+  }
+
+  function removeStaleDetailRows(body, keepCode) {
+    if (!body) return;
+    body.querySelectorAll("tr.rt-detail-row").forEach((tr) => {
+      const c = code6Maybe(tr.getAttribute("data-detail-for") || "");
+      if (!keepCode || c !== keepCode) tr.remove();
+    });
+  }
+
   function wireTableChartAccordion() {
     const body = $("rt-tbody");
     if (!body || body.dataset.rtChartWire === "1") return;
@@ -2669,16 +2730,19 @@
     body.addEventListener("click", (ev) => {
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
-      const code = btn.getAttribute("data-code");
-      if (!code) return;
-      if (state.openChartCode === code) {
+      const code = stockCodeFromChartBtn(btn);
+      if (!/^\d{6}$/.test(code)) return;
+      if (code6Maybe(state.openChartCode) === code) {
+        abortDetailFetch();
         state.openChartCode = null;
         renderTable();
         return;
       }
+      abortDetailFetch();
       state.openChartCode = code;
+      removeStaleDetailRows(body, code);
       renderTable();
-      if (state.openChartCode === code) void mountTableDetailAccordion(body);
+      if (code6Maybe(state.openChartCode) === code) void mountTableDetailAccordion(body);
     });
   }
 
@@ -2801,6 +2865,15 @@
     syncTableChromeForTab();
     showTableLoading();
     try {
+      try {
+        const quick = await fetchStocksJsonForTab(state.tab);
+        applyStocksArrayToTab(state.tab, quick.stocks || []);
+        if (quick.updatedAt) setDataUpdatedAt(quick.updatedAt);
+        hideTableLoading();
+        renderAll();
+      } catch (e) {
+        console.warn("[realtime-board] init static preview", e && e.message);
+      }
       await loadBootstrapForTab(state.tab);
       if (err) err.hidden = true;
     } catch (e) {

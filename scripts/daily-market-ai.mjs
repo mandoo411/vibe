@@ -280,7 +280,14 @@ function buildSystemPrompt(targetYmd) {
 - 반드시 순수 JSON만 출력 (마크다운 코드블록 없이)
 - 추측이나 일반론 금지, 데이터+웹서치 기반으로만
 - 재료 미확인 종목은 featured_stocks에서 제외
-- 웹서치 없이 재료 작성 절대 금지`;
+- 웹서치 없이 재료 작성 절대 금지
+
+**[절대 규칙]**
+- 웹서치 결과 확인 후 최종 출력은 반드시 순수 JSON만
+- JSON 앞뒤에 어떤 텍스트도 절대 금지
+- '웹서치 결과를 분석합니다' 같은 설명 텍스트 절대 금지
+- 코드블록(\`\`\`json\`\`\`)도 금지
+- { 로 시작해서 } 로 끝나는 순수 JSON만 출력`;
 }
 
 function normalizeFeaturedStock(s) {
@@ -334,6 +341,25 @@ function buildHeadlineIssue(summary, strategy) {
   return sanitizeStr(strategy?.market_type);
 }
 
+/** Claude messages.content → JSON (web_search 후 서두 텍스트·코드펜스 허용) */
+function parseClaudeMessageContent(content) {
+  const fullText = (Array.isArray(content) ? content : [])
+    .filter((item) => item && item.type === "text")
+    .map((item) => item.text || "")
+    .join("\n")
+    .trim();
+
+  if (!fullText) throw new Error("Claude output empty");
+
+  const jsonMatch =
+    fullText.match(/```json\s*([\s\S]*?)\s*```/i) || fullText.match(/(\{[\s\S]*\})/);
+  const jsonStr = jsonMatch ? jsonMatch[1] : fullText;
+
+  const parsed = parseJsonFromAssistant(jsonStr.trim());
+  if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
+  return parsed;
+}
+
 export async function analyzeDailyClosingReport({
   apiKey,
   model,
@@ -374,9 +400,7 @@ export async function analyzeDailyClosingReport({
       tools: WEB_SEARCH_TOOLS,
     });
 
-    const rawText = response?.content?.find((b) => b.type === "text")?.text ?? "";
-    parsed = parseJsonFromAssistant(rawText);
-    if (!parsed || typeof parsed !== "object") throw new Error("Claude output invalid");
+    parsed = parseClaudeMessageContent(response?.content);
   } catch (error) {
     console.warn(
       `[daily-market-ai] Claude failed (${isClaudeUnavailableError(error) ? "billing/unavailable" : "error"}), using fallback:`,

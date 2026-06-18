@@ -1,5 +1,5 @@
 /**
- * 장마감 리포트 Claude 분석 (Node.js 웹서치 사전수집 + JSON)
+ * 장마감 리포트 Claude 분석 (Haiku web_search 사전수집 + Sonnet JSON)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -12,6 +12,7 @@ import {
 } from "./claude-utils.mjs";
 
 const WEB_SEARCH_DELAY_MS = 350;
+const WEB_SEARCH_MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
 
 function sanitizeStr(v) {
   return v == null ? "" : sanitizeUnicode(String(v).trim());
@@ -21,22 +22,46 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** DuckDuckGo Instant Answer API (키 불필요) */
-export async function fetchWebSearch(query) {
+/** Anthropic Messages API web_search (Haiku, Node.js 직접 호출) */
+export async function fetchWebSearch(query, apiKey = process.env.ANTHROPIC_API_KEY) {
+  const key = sanitizeStr(apiKey);
+  if (!key) {
+    console.warn("[web-search] ANTHROPIC_API_KEY missing");
+    return "";
+  }
   try {
-    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&kl=kr-kr`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "TotalMoney-AI/1.0 (daily-market)" },
-      signal: AbortSignal.timeout(12_000),
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-beta": "interleaved-thinking-2025-05-14",
+      },
+      body: JSON.stringify({
+        model: WEB_SEARCH_MODEL,
+        max_tokens: 1000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [
+          {
+            role: "user",
+            content: `다음을 웹서치해서 핵심 내용만 2-3문장으로 요약해줘: ${query}`,
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) return "";
-    const data = await res.json();
-    const topics = (data.RelatedTopics || [])
-      .flatMap((t) => (Array.isArray(t.Topics) ? t.Topics : [t]))
-      .map((t) => sanitizeStr(t.Text))
-      .filter(Boolean)
-      .slice(0, 3);
-    return sanitizeStr(data.AbstractText) || topics.join("\n") || "";
+    const data = await response.json();
+    if (!response.ok || data?.error) {
+      const msg = data?.error?.message || `HTTP ${response.status}`;
+      console.warn(`[web-search] ${query}: ${msg}`);
+      return "";
+    }
+    const text = (Array.isArray(data.content) ? data.content : [])
+      .filter((b) => b && b.type === "text")
+      .map((b) => b.text || "")
+      .join("");
+    return sanitizeStr(text);
   } catch (e) {
     console.warn(`[web-search] ${query}:`, e instanceof Error ? e.message : e);
     return "";
@@ -113,33 +138,34 @@ export async function collectSearchContext({
   topDecliners,
   mcapRankByCode,
   newsMap,
+  apiKey,
 }) {
-  console.log("[daily-market-ai] 웹서치 사전 수집 시작...");
+  console.log("[daily-market-ai] Anthropic Haiku web_search 사전 수집 시작...");
 
-  const macro1 = await fetchWebSearch(`코스피 ${targetYmd} 마감 시황 외국인 수급 FOMC`);
+  const macro1 = await fetchWebSearch(`코스피 ${targetYmd} 마감 시황 외국인 수급 FOMC`, apiKey);
   await delay(WEB_SEARCH_DELAY_MS);
-  const macro2 = await fetchWebSearch(`${targetYmd} 코스피 코스닥 마감 시황 수급`);
+  const macro2 = await fetchWebSearch(`${targetYmd} 코스피 코스닥 마감 시황 수급`, apiKey);
   const macroNews = mergeNewsText(macro1, macro2);
   await delay(WEB_SEARCH_DELAY_MS);
 
-  const fomcNews = await fetchWebSearch(`FOMC 금리 결정 ${targetYmd} 한국 증시`);
+  const fomcNews = await fetchWebSearch(`FOMC 금리 결정 ${targetYmd} 한국 증시`, apiKey);
   await delay(WEB_SEARCH_DELAY_MS);
 
-  const foreignFlowNews = await fetchWebSearch(`${targetYmd} 외국인 기관 순매수 순매도`);
+  const foreignFlowNews = await fetchWebSearch(`${targetYmd} 외국인 기관 순매수 순매도`, apiKey);
 
   const stockNews = {};
   for (const stock of (topGainers || []).slice(0, 10)) {
     await delay(WEB_SEARCH_DELAY_MS);
-    const ddg = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`);
-    stockNews[stock.code] = mergeNewsText(ddg, newsFromMap(newsMap, stock.code));
+    const searched = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`, apiKey);
+    stockNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
   }
 
   const { down: mcapDown } = buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode);
   const declineNews = {};
   for (const stock of mcapDown.slice(0, 5)) {
     await delay(WEB_SEARCH_DELAY_MS);
-    const ddg = await fetchWebSearch(`${stock.name} 급락 이유 ${targetYmd}`);
-    declineNews[stock.code] = mergeNewsText(ddg, newsFromMap(newsMap, stock.code));
+    const searched = await fetchWebSearch(`${stock.name} 급락 이유 ${targetYmd}`, apiKey);
+    declineNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
   }
 
   console.log(
@@ -374,6 +400,7 @@ export async function analyzeDailyClosingReport({
     topDecliners,
     mcapRankByCode,
     newsMap,
+    apiKey,
   });
 
   const user = ensureJsonSafe(

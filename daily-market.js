@@ -184,10 +184,21 @@
     return false;
   }
 
+  /** AI 리포트 본문·특징주 데이터가 있으면 준비중 해제 */
+  function hasAiReportContent(day) {
+    if (!day || typeof day !== "object") return false;
+    if (sanitizeStr(day.analysis || day.summary || day.marketSummary).length > 0) return true;
+    if (Array.isArray(day.issueStocks) && day.issueStocks.length > 0) return true;
+    if (Array.isArray(day.notableStocks) && day.notableStocks.length > 0) return true;
+    return false;
+  }
+
   /** AI 시황분석 탭: 오늘만 준비중; 과거 날짜는 아카이브 데이터 그대로 표시 */
   function isAiTabPreparing(ymd) {
     const today = state.todayYmd;
     if (!today || ymd !== today) return false;
+    const day = getDay(ymd);
+    if (hasAiReportContent(day)) return false;
     return !isTodayReportPublished();
   }
 

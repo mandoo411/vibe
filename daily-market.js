@@ -58,6 +58,7 @@
 
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
+    jsonDate: null,
     days: {},
     selected: null,
     todayYmd: null,
@@ -151,13 +152,43 @@
   }
 
   function resolveDefaultYmd() {
-    const today = state.todayYmd || seoulYmd();
-    if (state.days[today] && !isDayEmpty(state.days[today])) return today;
-    const keys = Object.keys(state.days || {}).sort();
-    for (let i = keys.length - 1; i >= 0; i--) {
-      if (!isDayEmpty(state.days[keys[i]])) return keys[i];
+    return state.todayYmd || seoulYmd();
+  }
+
+  function getJsonReportDate() {
+    const root = sanitizeStr(state.jsonDate);
+    if (YMD_RE.test(root)) return root;
+    const metaDate = sanitizeStr(state.meta && state.meta.date);
+    if (YMD_RE.test(metaDate)) return metaDate;
+    return null;
+  }
+
+  function getTodayDayEntry() {
+    const today = state.todayYmd;
+    if (!today) return null;
+    return state.days[today] || null;
+  }
+
+  /** daily-market.json date(또는 days[오늘].date)가 KST 오늘과 같으면 AI 리포트 반영 완료 */
+  function isTodayReportPublished() {
+    const today = state.todayYmd;
+    if (!today) return false;
+    const todayDay = getTodayDayEntry();
+    if (todayDay) {
+      const dayDate = getDayDateYmd(todayDay, "");
+      if (dayDate === today) return true;
+      if (dayDate && dayDate !== today) return false;
     }
-    return keys.length ? keys[keys.length - 1] : today;
+    const jsonDate = getJsonReportDate();
+    if (jsonDate) return jsonDate === today;
+    return false;
+  }
+
+  /** AI 시황분석 탭: 오늘만 준비중; 과거 날짜는 아카이브 데이터 그대로 표시 */
+  function isAiTabPreparing(ymd) {
+    const today = state.todayYmd;
+    if (!today || ymd !== today) return false;
+    return !isTodayReportPublished();
   }
 
   function normalizeArchiveDay(raw, ymd) {
@@ -1163,7 +1194,7 @@
   function render() {
     const ymd = state.selected;
     const day = state.dataMissing ? null : getDay(ymd);
-    const empty = state.dataMissing || isDayEmpty(day);
+    const aiPreparing = !state.dataMissing && isAiTabPreparing(ymd);
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
@@ -1186,41 +1217,41 @@
     }
 
     if (els.dayPrep) {
-      els.dayPrep.hidden = !empty;
-      if (empty && els.dayPrepTitle) {
+      els.dayPrep.hidden = !aiPreparing;
+      if (aiPreparing) {
         const closedReason = marketClosedReason(ymd);
-        els.dayPrepTitle.textContent = closedReason
-          ? `${closedReason} 휴장입니다`
-          : "오늘의 시황을 준비하고 있어요";
+        if (els.dayPrepTitle) {
+          els.dayPrepTitle.textContent = closedReason
+            ? `${closedReason} 휴장입니다`
+            : "오늘의 시황을 준비하고 있어요";
+        }
         if (els.dayPrepHint) {
           els.dayPrepHint.textContent = closedReason
             ? "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다."
-            : "장 마감 후 자동으로 업데이트됩니다";
+            : "장 마감 후(약 17:00) 자동으로 업데이트됩니다";
         }
       }
     }
-    if (els.dmAiContent) els.dmAiContent.hidden = empty;
+    if (els.dmAiContent) els.dmAiContent.hidden = aiPreparing;
 
-    if (empty) {
-      if (els.dmIndexes) els.dmIndexes.innerHTML = "";
-      if (els.dmMarketExtras) els.dmMarketExtras.innerHTML = "";
+    if (els.dmIndexes) els.dmIndexes.innerHTML = renderIndexes(day && day.indexes);
+    if (els.dmMarketExtras) els.dmMarketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
+
+    if (aiPreparing) {
       if (els.dmAnalysis) els.dmAnalysis.innerHTML = "";
       if (els.dmFeatured) els.dmFeatured.innerHTML = "";
       if (els.dmWatchlist) els.dmWatchlist.innerHTML = "";
-      if (els.dmStockTbody) els.dmStockTbody.innerHTML = "";
     } else {
-      if (els.dmIndexes) els.dmIndexes.innerHTML = renderIndexes(day && day.indexes);
-      if (els.dmMarketExtras) els.dmMarketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
       if (els.dmAnalysis) {
-        const analysisText = sanitizeUserCopy(day.analysis || day.summary, "AI 분석을 준비 중입니다");
+        const analysisText = sanitizeUserCopy(day && (day.analysis || day.summary), "AI 분석을 준비 중입니다");
         els.dmAnalysis.innerHTML = analysisText
           ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
           : '<p class="empty-line">종합분석 없음</p>';
       }
       if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
       if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
-      renderStockTable();
     }
+    renderStockTable();
     if (state.mainTab === "dashboard") refreshDashboardLive();
   }
 
@@ -1306,6 +1337,9 @@
       if (raw && raw.meta) {
         state.meta = { ...state.meta, ...raw.meta };
         if (state.meta.title === "장마감 리포트") state.meta.title = "마감시황";
+      }
+      if (raw && typeof raw.date === "string") {
+        state.jsonDate = raw.date.slice(0, 10);
       }
       if (raw && raw.days && typeof raw.days === "object") state.days = raw.days;
     } catch (e) {

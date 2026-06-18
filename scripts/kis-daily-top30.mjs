@@ -734,7 +734,11 @@ async function fetchMarketCapLookup({ baseUrl, token, appKey, appSecret }) {
     return list
       .map((row) => ({
         code: sanitizeStr(row.stck_shrn_iscd),
+        name: sanitizeStr(row.hts_kor_isnm),
         stck_avls: normalizeStckAvlsWon(pickStckAvls(row)),
+        stck_avlsNum: Number(String(normalizeStckAvlsWon(pickStckAvls(row))).replace(/,/g, "")) || 0,
+        change: kisRowPctChange(row),
+        currentPrice: sanitizeStr(row.stck_prpr),
       }))
       .filter((r) => r.code && r.stck_avls);
   }
@@ -743,12 +747,17 @@ async function fetchMarketCapLookup({ baseUrl, token, appKey, appSecret }) {
     fetchOnce("0001", "KOSPI"),
     fetchOnce("1001", "KOSDAQ"),
   ]);
+  const combined = [...kospi, ...kosdaq].sort((a, b) => (b.stck_avlsNum || 0) - (a.stck_avlsNum || 0));
   const map = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    if (!map.has(r.code)) map.set(r.code, r.stck_avls);
+  const rankByCode = new Map();
+  for (const r of combined) {
+    if (!map.has(r.code)) {
+      map.set(r.code, r.stck_avls);
+      rankByCode.set(r.code, rankByCode.size + 1);
+    }
   }
   console.log(`  시가총액 lookup: ${map.size}종목`);
-  return map;
+  return { map, rankByCode };
 }
 
 function enrichRowsWithMcap(rows, mcapByCode) {
@@ -1351,14 +1360,17 @@ async function main() {
   }
 
   let mcapByCode = new Map();
+  let mcapRankByCode = new Map();
   if (kisOAuthToken) {
     try {
-      mcapByCode = await fetchMarketCapLookup({
+      const mcapLookup = await fetchMarketCapLookup({
         baseUrl,
         token: kisOAuthToken,
         appKey,
         appSecret,
       });
+      mcapByCode = mcapLookup.map;
+      mcapRankByCode = mcapLookup.rankByCode;
     } catch (e) {
       console.warn(`  시가총액 lookup 실패(스킵): ${e.message || e}`);
     }
@@ -1435,6 +1447,8 @@ async function main() {
     pressNews: pressNewsAll.slice(0, 25),
     stocksForThemes: top,
     newsMap,
+    marketExtras,
+    mcapRankByCode,
   });
 
   const byCode = new Map();
@@ -1533,6 +1547,12 @@ async function main() {
     sectorFlow: ai.sectorFlow && Object.keys(ai.sectorFlow).length ? ai.sectorFlow : existing.sectorFlow || {},
     sectors: sectors.length ? sectors : existing.sectors || [],
     issueStocks: Array.isArray(ai.issueStocks) && ai.issueStocks.length ? ai.issueStocks : existing.issueStocks || [],
+    featured_stocks:
+      Array.isArray(ai.featured_stocks) && ai.featured_stocks.length
+        ? ai.featured_stocks
+        : existing.featured_stocks || [],
+    watchlist:
+      Array.isArray(ai.watchlist) && ai.watchlist.length ? ai.watchlist : existing.watchlist || [],
     tomorrowCheckpoints:
       Array.isArray(ai.tomorrowCheckpoints) && ai.tomorrowCheckpoints.length
         ? ai.tomorrowCheckpoints

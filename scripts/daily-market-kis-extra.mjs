@@ -239,8 +239,8 @@ export async function fetchInvestorFlowByMarket({ baseUrl, token, appKey, appSec
 
 export async function fetchSupplyBothMarkets(ctx, ymd) {
   const settled = await Promise.allSettled([
-    fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "KSP", marketLabel: "코스피" }),
-    fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "KSQ", marketLabel: "코스닥" }),
+    fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "0001", marketLabel: "코스피" }),
+    fetchInvestorFlowByMarket({ ...ctx, ymd, marketCode: "1001", marketLabel: "코스닥" }),
   ]);
   for (const r of settled) {
     if (r.status === "rejected") {

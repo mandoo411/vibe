@@ -35,7 +35,7 @@ function delay(ms) {
 }
 
 /** Anthropic Messages API web_search (Haiku, Node.js 직접 호출) */
-export async function fetchWebSearch(query, apiKey = process.env.ANTHROPIC_API_KEY) {
+export async function fetchWebSearch(query, apiKey = process.env.ANTHROPIC_API_KEY, targetYmd = "") {
   const key = sanitizeStr(apiKey);
   if (!key) {
     console.warn("[web-search] ANTHROPIC_API_KEY missing");
@@ -57,7 +57,9 @@ export async function fetchWebSearch(query, apiKey = process.env.ANTHROPIC_API_K
         messages: [
           {
             role: "user",
-            content: `다음을 웹서치해서 핵심 내용만 2-3문장으로 요약해줘: ${query}`,
+            content: targetYmd
+              ? `오늘 날짜는 ${targetYmd}입니다. ${targetYmd} 당일 기준 최신 뉴스만 검색해서 핵심 내용 2-3문장으로 요약해줘. 오늘 날짜와 무관한 오래된 정보는 제외해줘. 검색어: ${query}`
+              : `다음을 웹서치해서 핵심 내용만 2-3문장으로 요약해줘: ${query}`,
           },
         ],
       }),
@@ -154,21 +156,21 @@ export async function collectSearchContext({
 }) {
   console.log("[daily-market-ai] Anthropic Haiku web_search 사전 수집 시작...");
 
-  const macro1 = await fetchWebSearch(`코스피 ${targetYmd} 마감 시황 외국인 수급 FOMC`, apiKey);
+  const macro1 = await fetchWebSearch(`코스피 ${targetYmd} 마감 시황 외국인 수급 FOMC`, apiKey, targetYmd);
   await delay(WEB_SEARCH_DELAY_MS);
-  const macro2 = await fetchWebSearch(`${targetYmd} 코스피 코스닥 마감 시황 수급`, apiKey);
+  const macro2 = await fetchWebSearch(`${targetYmd} 코스피 코스닥 마감 시황 수급`, apiKey, targetYmd);
   const macroNews = mergeNewsText(macro1, macro2);
   await delay(WEB_SEARCH_DELAY_MS);
 
-  const fomcNews = await fetchWebSearch(`FOMC 금리 결정 ${targetYmd} 한국 증시`, apiKey);
+  const fomcNews = await fetchWebSearch(`FOMC 금리 결정 ${targetYmd} 한국 증시`, apiKey, targetYmd);
   await delay(WEB_SEARCH_DELAY_MS);
 
-  const foreignFlowNews = await fetchWebSearch(`${targetYmd} 외국인 기관 순매수 순매도`, apiKey);
+  const foreignFlowNews = await fetchWebSearch(`${targetYmd} 외국인 기관 순매수 순매도`, apiKey, targetYmd);
 
   const stockNews = {};
   for (const stock of (topGainers || []).slice(0, 10)) {
     await delay(WEB_SEARCH_DELAY_MS);
-    const searched = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`, apiKey);
+    const searched = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`, apiKey, targetYmd);
     stockNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
   }
 
@@ -176,7 +178,7 @@ export async function collectSearchContext({
   const declineNews = {};
   for (const stock of mcapDown.slice(0, 5)) {
     await delay(WEB_SEARCH_DELAY_MS);
-    const searched = await fetchWebSearch(`${stock.name} 급락 이유 ${targetYmd}`, apiKey);
+    const searched = await fetchWebSearch(`${stock.name} 급락 이유 ${targetYmd}`, apiKey, targetYmd);
     declineNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
   }
 
@@ -351,7 +353,13 @@ function buildSystemPrompt() {
 [절대 규칙 — 할루시네이션 금지]
 - 입력 데이터에 없는 수치/종목은 절대 지어내지 마라
 - 데이터가 부족하면 그 섹션은 짧게 쓰되, 거짓 숫자는 넣지 마라
-- 상승=빨강(#e24b4a), 하락=파랑(#3b82f6), 초록 절대 금지 (HTML 출력 시)`;
+- 상승=빨강(#e24b4a), 하락=파랑(#3b82f6), 초록 절대 금지 (HTML 출력 시)
+
+[JSON 출력 절대 규칙]
+- 최종 출력은 반드시 { 로 시작하고 } 로 끝나는 순수 JSON만
+- JSON 앞뒤 어떤 텍스트도 절대 금지
+- 마크다운 코드블록 절대 금지
+- 분석 과정 설명 텍스트 절대 금지`;
 
   const example = loadReportExample();
   if (!example) return base;

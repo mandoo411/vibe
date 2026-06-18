@@ -1443,15 +1443,138 @@ details[open] .admin__summary {
   padding-bottom: 0;
 }
 
-.page--daily-market .rt-tabs-row-tabs--full {
-  width: 100%;
-  flex: 1 1 100%;
-  max-width: 100%;
+/* 마감시황 탭 — 하단 라인 활성화 (realtime과 동일 치수) */
+.page--daily-market .rt-tabs {
+  align-items: flex-end;
+  border-bottom: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+  background: transparent;
 }
 
-.page--daily-market .rt-tabs-row-tabs--full .rt-tab {
+.page--daily-market .rt-tabs-row-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+.page--daily-market .rt-tabs-row-tabs .rt-tab {
   flex: 1 1 0;
   min-width: 0;
+  height: var(--rt-tab-height, 44px);
+  min-height: var(--rt-tab-height, 44px);
+  max-height: var(--rt-tab-height, 44px);
+  padding: 0 var(--rt-tab-pad-inline, 6px);
+  font-size: var(--rt-tab-font-size, 14px);
+  font-weight: var(--rt-tab-font-weight, 600);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+}
+
+.page--daily-market .rt-tab[aria-selected="false"] {
+  color: var(--color-text-secondary, #6b7280);
+  font-weight: var(--rt-tab-font-weight, 600);
+}
+
+.page--daily-market .rt-tab[aria-selected="true"] {
+  color: var(--rt-tab-active-color, #0d9488);
+  border-bottom-color: var(--rt-tab-active-color, #0d9488);
+  font-weight: 500;
+}
+
+.page--daily-market .rt-tab[aria-selected="false"]:hover {
+  color: color-mix(in srgb, var(--rt-tab-active-color, #0d9488) 70%, var(--color-text-secondary, #6b7280));
+}
+
+[data-theme="dark"] .page--daily-market .rt-tabs,
+.dark-mode .page--daily-market .rt-tabs {
+  border-bottom-color: var(--color-border-tertiary, rgba(255, 255, 255, 0.12));
+}
+
+[data-theme="dark"] .page--daily-market .rt-tab[aria-selected="false"],
+.dark-mode .page--daily-market .rt-tab[aria-selected="false"] {
+  color: var(--color-text-secondary, #9ca3af);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .page--daily-market .rt-tab[aria-selected="true"],
+.dark-mode .page--daily-market .rt-tab[aria-selected="true"] {
+  color: var(--rt-tab-active-color, #0d9488);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--rt-tab-active-color, #0d9488);
+  box-shadow: none;
+}
+
+.page--daily-market .rt-tabs--with-date-nav {
+  align-items: flex-end;
+}
+
+.dm-date-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-bottom: 10px;
+}
+
+.dm-date-nav__btn {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
+  border-radius: var(--border-radius-md, 8px);
+  background: transparent;
+  color: var(--text-primary, #131722);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dm-date-nav__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.dm-date-nav__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #131722);
+  white-space: nowrap;
+  min-width: 4.5em;
+  text-align: center;
+}
+
+[data-theme="dark"] .dm-date-nav__btn,
+.dark-mode .dm-date-nav__btn {
+  color: var(--text-primary, #fff);
+  border-color: var(--color-border-tertiary, rgba(255, 255, 255, 0.12));
+}
+
+[data-theme="dark"] .dm-date-nav__label,
+.dark-mode .dm-date-nav__label {
+  color: var(--text-primary, #fff);
+}
+
+.dm-missing {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.dm-missing__text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-secondary, #6b7280);
 }
 
 .page--daily-market .day-prep {
@@ -1739,6 +1862,28 @@ details[open] .admin__summary {
 
   .page--daily-market .dm-stock-table th.rt-td-name {
     z-index: 3;
+  }
+
+  .page--daily-market .rt-tabs--with-date-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page--daily-market .rt-tabs-row-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .page--daily-market .rt-tabs-row-tabs .rt-tab {
+    flex: 0 0 auto;
+  }
+
+  .dm-date-nav {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    padding: 8px 0 10px;
+    border-top: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
   }
 
   .page--daily-market .dm-tab-panels {

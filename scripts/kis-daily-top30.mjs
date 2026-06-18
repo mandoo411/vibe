@@ -299,12 +299,48 @@ function pickAcmlTrPbmn(row) {
 
 function pickStckAvls(row) {
   if (!row || typeof row !== "object") return "";
-  const keys = ["stck_avls", "STCK_AVLS", "hts_avls", "HTS_AVLS"];
+  const keys = [
+    "stck_avls",
+    "STCK_AVLS",
+    "hts_avls",
+    "HTS_AVLS",
+    "hts_avls_unt",
+    "HTS_AVLS_UNT",
+    "lstn_stcn",
+  ];
   for (const k of keys) {
     const s = sanitizeStr(row[k]);
     if (s) return s;
   }
   return "";
+}
+
+/** FHPST01740000 시가총액 필드 → 원 단위 문자열 (kis-realtime-data.js와 동일 규칙) */
+function mcapRankingStckAvlsToWonString(raw) {
+  const s = sanitizeStr(raw).replace(/,/g, "");
+  if (!s) return "";
+  const n = Number(s);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const WON_MIN = 5e11;
+  const WON_MAX = 3e15;
+  if (n >= 1e13) return String(Math.round(n));
+  if (n >= 1e8) {
+    const wM = Math.round(n * 1e6);
+    if (wM >= WON_MIN && wM <= WON_MAX) return String(wM);
+    return "";
+  }
+  const wE = Math.round(n * 1e8);
+  if (wE >= WON_MIN && wE <= WON_MAX) return String(wE);
+  const wM = Math.round(n * 1e6);
+  if (wM >= WON_MIN && wM <= WON_MAX) return String(wM);
+  return "";
+}
+
+function normalizeStckAvlsWon(raw) {
+  const s = sanitizeStr(raw);
+  if (!s) return "";
+  if (/^\d{12,}$/.test(s.replace(/,/g, ""))) return s.replace(/,/g, "");
+  return mcapRankingStckAvlsToWonString(s) || s.replace(/,/g, "");
 }
 
 function calcTradingValueWon(priceRaw, volRaw) {
@@ -377,7 +413,7 @@ async function fetchFluctuationRanking({
     volume: sanitizeStr(row.acml_vol),
     tradingValue: sanitizeStr(row.acml_tr_pbmn),
     tradingValueRaw: pickAcmlTrPbmn(row) || calcTradingValueWon(row.stck_prpr, row.acml_vol),
-    stck_avls: pickStckAvls(row),
+    stck_avls: normalizeStckAvlsWon(pickStckAvls(row)),
     rank: toNumberOrNull(row.data_rank),
   })).filter((r) => r.code && r.name);
 }
@@ -570,6 +606,7 @@ async function collectFluctuationTopN({
 
 function mapStockJsonRow(s, extra = {}) {
   const tvRaw = sanitizeStr(s.tradingValueRaw) || pickAcmlTrPbmn(s) || calcTradingValueWon(s.currentPrice, s.volume);
+  const mcapWon = normalizeStckAvlsWon(s.stck_avls);
   return {
     rank: s.rank,
     code: s.code,
@@ -581,7 +618,8 @@ function mapStockJsonRow(s, extra = {}) {
     volume: sanitizeStr(s.volume),
     tradingValueRaw: tvRaw,
     tradingValue: formatTradingValue(tvRaw || s.tradingValue),
-    stck_avls: sanitizeStr(s.stck_avls),
+    stck_avls: mcapWon,
+    hts_avls: mcapWon,
     ...extra,
   };
 }
@@ -646,9 +684,78 @@ async function fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, mar
       change: kisRowPctChange(row),
       volume: sanitizeStr(row.acml_vol),
       tradingValueRaw: pickAcmlTrPbmn(row) || calcTradingValueWon(row.stck_prpr, row.acml_vol),
-      stck_avls: pickStckAvls(row),
+      stck_avls: normalizeStckAvlsWon(pickStckAvls(row)),
     }))
     .filter((r) => r.code && r.name);
+}
+
+async function fetchMarketCapLookup({ baseUrl, token, appKey, appSecret }) {
+  async function fetchOnce(marketCode, marketLabel) {
+    const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/ranking/market-cap`);
+    const params = {
+      fid_cond_mrkt_div_code: "J",
+      fid_cond_scr_div_code: "20174",
+      fid_div_cls_code: "0",
+      fid_input_iscd: marketCode,
+      fid_trgt_cls_code: "0",
+      fid_trgt_exls_cls_code: "0000000000",
+      fid_input_price_1: "",
+      fid_input_price_2: "",
+      fid_vol_cnt: "",
+    };
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${token}`,
+        appkey: appKey,
+        appsecret: appSecret,
+        tr_id: "FHPST01740000",
+        custtype: "P",
+      },
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`KIS market-cap HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
+    }
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (_) {
+      throw new Error(`KIS market-cap: invalid JSON (${marketLabel})`);
+    }
+    if (json.rt_cd && json.rt_cd !== "0") {
+      throw new Error(`KIS market-cap error (${marketLabel}) rt_cd=${json.rt_cd} msg=${json.msg1 || ""}`);
+    }
+    const list = Array.isArray(json.output) ? json.output : [];
+    return list
+      .map((row) => ({
+        code: sanitizeStr(row.stck_shrn_iscd),
+        stck_avls: normalizeStckAvlsWon(pickStckAvls(row)),
+      }))
+      .filter((r) => r.code && r.stck_avls);
+  }
+
+  const [kospi, kosdaq] = await Promise.all([
+    fetchOnce("0001", "KOSPI"),
+    fetchOnce("1001", "KOSDAQ"),
+  ]);
+  const map = new Map();
+  for (const r of [...kospi, ...kosdaq]) {
+    if (!map.has(r.code)) map.set(r.code, r.stck_avls);
+  }
+  console.log(`  시가총액 lookup: ${map.size}종목`);
+  return map;
+}
+
+function enrichRowsWithMcap(rows, mcapByCode) {
+  if (!mcapByCode || !mcapByCode.size) return rows;
+  return rows.map((r) => {
+    const fromLookup = mcapByCode.get(r.code);
+    const stckAvls = normalizeStckAvlsWon(r.stck_avls) || fromLookup || "";
+    return stckAvls ? { ...r, stck_avls: stckAvls } : r;
+  });
 }
 
 async function collectTradingValueTopN({ baseUrl, token, appKey, appSecret, topN }) {
@@ -1146,7 +1253,7 @@ async function main() {
   }
 
   console.log("[2/6] KIS 상승률 랭킹 (KOSPI/KOSDAQ)...");
-  const { rows: top, source: rankingSource } = await collectFluctuationTopN({
+  let { rows: top, source: rankingSource } = await collectFluctuationTopN({
     baseUrl,
     token: kisOAuthToken,
     appKey,
@@ -1173,7 +1280,7 @@ async function main() {
   );
 
   console.log("[2c/6] KIS 하락률 랭킹 (KOSPI/KOSDAQ)...");
-  const { rows: bottom, source: declinersSource } = await collectFluctuationTopN({
+  let { rows: bottom, source: declinersSource } = await collectFluctuationTopN({
     baseUrl,
     token: kisOAuthToken,
     appKey,
@@ -1192,6 +1299,22 @@ async function main() {
       `  하락 Source=${declinersSource} | Top ${bottom.length}: ${bottom.slice(0, 3).map((s) => `${s.name}(${s.change}%)`).join(", ")} ...`
     );
   }
+
+  let mcapByCode = new Map();
+  if (kisOAuthToken) {
+    try {
+      mcapByCode = await fetchMarketCapLookup({
+        baseUrl,
+        token: kisOAuthToken,
+        appKey,
+        appSecret,
+      });
+    } catch (e) {
+      console.warn(`  시가총액 lookup 실패(스킵): ${e.message || e}`);
+    }
+  }
+  top = enrichRowsWithMcap(top, mcapByCode);
+  bottom = enrichRowsWithMcap(bottom, mcapByCode);
 
   console.log("[3/6] 코스피·코스닥 지수 (네이버 금융)...");
   let indexes = [];
@@ -1272,6 +1395,7 @@ async function main() {
     }
   }
 
+  const topTradingValueEnriched = enrichRowsWithMcap(topTradingValueRaw, mcapByCode);
   const topGainers = top.map((s) => {
     const extra = byCode.get(s.code) || { reason: "", theme: "기타" };
     return mapStockJsonRow(s, {
@@ -1282,7 +1406,7 @@ async function main() {
   });
 
   const topDecliners = bottom.map(mapTopDeclinersJsonRow);
-  const topTradingValue = topTradingValueRaw.map(mapTopDeclinersJsonRow);
+  const topTradingValue = topTradingValueEnriched.map(mapTopDeclinersJsonRow);
 
   // 테마별 그룹화 (인기 테마부터)
   const themeMap = new Map();
@@ -1346,6 +1470,7 @@ async function main() {
   ].filter((n) => n.title);
 
   data.days[targetYmd] = {
+    date: targetYmd,
     ...existing,
     summary: summary || sanitizeStr(existing.summary),
     headlineIssue: sanitizeStr(ai.headlineIssue) || sanitizeStr(existing.headlineIssue),

@@ -12,6 +12,21 @@
     throw new Error("HTTP");
   }
 
+  async function fetchArchiveDayJson(ymd) {
+    const path = `data/daily/${ymd}.json`;
+    const t = Date.now();
+    const urls = [`/api/repo-data?path=${encodeURIComponent(path)}&t=${t}`, `./${path}?t=${t}`, `${RAW_BASE}/${path}?t=${t}`];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return res.json();
+      } catch (_) {
+        /* try next */
+      }
+    }
+    return null;
+  }
+
   const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
   const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -33,8 +48,12 @@
     meta: { title: "마감시황", timezoneNote: "" },
     days: {},
     selected: null,
+    todayYmd: null,
+    defaultYmd: null,
+    dataMissing: false,
     mainTab: "dashboard",
     stockSubTab: "gainers",
+    krTv: null,
   };
 
   const $ = (id) => document.getElementById(id);
@@ -52,6 +71,11 @@
     dmStockTbody: $("dm-stock-tbody"),
     dmStockThead: $("dm-stock-thead-row"),
     dmStockTable: $("dm-stock-table"),
+    dmMissing: $("dm-missing"),
+    dmTabPanels: $("dm-tab-panels"),
+    dmDateLabel: $("dm-date-label"),
+    dmDatePrev: $("dm-date-prev"),
+    dmDateNext: $("dm-date-next"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -89,15 +113,108 @@
     return WD_KO[ymdWeekday(ymd)] || "—";
   }
 
-  function resolveSelectedYmd() {
-    const h = (location.hash || "").replace("#", "");
-    if (YMD_RE.test(h) && state.days[h]) return h;
+  function isWeekendYmd(ymd) {
+    const w = ymdWeekday(ymd);
+    return w === 0 || w === 6;
+  }
+
+  function skipWeekendPrev(ymd) {
+    let d = addDaysYmd(ymd, -1);
+    while (isWeekendYmd(d)) d = addDaysYmd(d, -1);
+    return d;
+  }
+
+  function skipWeekendNext(ymd) {
+    let d = addDaysYmd(ymd, 1);
+    while (isWeekendYmd(d)) d = addDaysYmd(d, 1);
+    return d;
+  }
+
+  function shortDateLabel(ymd) {
+    const { m, d } = ymdParts(ymd);
+    return `${m}월 ${d}일`;
+  }
+
+  function resolveDefaultYmd() {
+    const today = state.todayYmd || seoulYmd();
+    if (state.days[today] && !isDayEmpty(state.days[today])) return today;
     const keys = Object.keys(state.days || {}).sort();
-    if (!keys.length) return seoulYmd();
     for (let i = keys.length - 1; i >= 0; i--) {
       if (!isDayEmpty(state.days[keys[i]])) return keys[i];
     }
-    return keys[keys.length - 1];
+    return keys.length ? keys[keys.length - 1] : today;
+  }
+
+  function normalizeArchiveDay(raw, ymd) {
+    if (!raw || typeof raw !== "object") return null;
+    if (raw.days && typeof raw.days === "object" && raw.days[ymd]) return raw.days[ymd];
+    const copy = { ...raw };
+    delete copy.meta;
+    if (Object.keys(copy).length <= 0) return null;
+    if (!copy.date) copy.date = ymd;
+    return copy;
+  }
+
+  function resolveSelectedYmd() {
+    const h = (location.hash || "").replace("#", "");
+    if (YMD_RE.test(h)) return h;
+    return state.defaultYmd || resolveDefaultYmd();
+  }
+
+  function syncHash(ymd) {
+    const base = state.defaultYmd || state.todayYmd || seoulYmd();
+    const nextHash = ymd && ymd !== base ? `#${ymd}` : "";
+    const cur = location.hash || "";
+    if (cur !== nextHash) {
+      const page = location.pathname.split("/").pop() || "daily-market.html";
+      history.replaceState(null, "", nextHash ? `${page}${nextHash}` : page);
+    }
+  }
+
+  function updateDateNav() {
+    const today = state.todayYmd || seoulYmd();
+    const ymd = state.selected;
+    const day = state.dataMissing ? null : getDay(ymd);
+    const displayYmd = getDayDateYmd(day, ymd);
+    if (els.dmDateLabel) els.dmDateLabel.textContent = shortDateLabel(displayYmd);
+    if (els.dmDateNext) {
+      const next = skipWeekendNext(ymd);
+      els.dmDateNext.disabled = ymd >= today || next > today;
+    }
+  }
+
+  async function ensureDayLoaded(ymd) {
+    if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
+      state.dataMissing = false;
+      return true;
+    }
+    const archive = await fetchArchiveDayJson(ymd);
+    const normalized = normalizeArchiveDay(archive, ymd);
+    if (normalized && !isDayEmpty(normalized)) {
+      state.days[ymd] = normalized;
+      state.dataMissing = false;
+      return true;
+    }
+    if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
+      state.dataMissing = false;
+      return true;
+    }
+    state.dataMissing = true;
+    return false;
+  }
+
+  async function navigateDate(direction) {
+    const today = state.todayYmd || seoulYmd();
+    const ymd =
+      direction === "prev"
+        ? skipWeekendPrev(state.selected)
+        : skipWeekendNext(state.selected);
+    if (direction === "next" && (state.selected >= today || ymd > today)) return;
+    state.selected = ymd;
+    syncHash(ymd);
+    await ensureDayLoaded(ymd);
+    updateDateNav();
+    render();
   }
   function sanitizeUserCopy(v, fallback = "") {
     let t = sanitizeStr(v);
@@ -257,7 +374,7 @@
 
   function readStckAvlsRaw(r) {
     if (!r) return null;
-    const keys = ["stck_avls", "mcap", "mcapEok", "marketCap"];
+    const keys = ["stck_avls", "hts_avls", "mcap", "mcapEok", "marketCap"];
     for (const k of keys) {
       const v = r[k];
       if (v != null && String(v).trim() !== "") return v;
@@ -430,6 +547,22 @@
     return [];
   }
 
+  function normalizeKrTvRow(r, i) {
+    return {
+      rank: r.rank != null ? r.rank : i + 1,
+      code: r.code,
+      name: r.name || r.code || "—",
+      currentPrice: r.price != null ? r.price : r.currentPrice,
+      change: r.changePct != null ? r.changePct : r.change,
+      prevDelta: r.changeAmt != null ? r.changeAmt : r.prevDelta,
+      volume: r.volume,
+      tradingValue: r.tradingValue,
+      tradingValueRaw: r.tradingValue,
+      stck_avls: r.stck_avls || r.mcapEok,
+      market: r.tvBoard || r.market,
+    };
+  }
+
   function getStockRows(day, subTab) {
     if (!day) return [];
     let rows = [];
@@ -459,6 +592,8 @@
           tradingValueRaw: r.tradingValueRaw,
           stck_avls: readStckAvlsRaw(r),
         }));
+      } else if (state.krTv && state.krTv.length) {
+        rows = state.krTv.map(normalizeKrTvRow);
       }
       rows.sort((a, b) => tvSortValue(b) - tvSortValue(a));
     }
@@ -610,16 +745,26 @@
 
   function render() {
     const ymd = state.selected;
-    const day = getDay(ymd);
-    const empty = isDayEmpty(day);
+    const day = state.dataMissing ? null : getDay(ymd);
+    const empty = state.dataMissing || isDayEmpty(day);
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
+    updateDateNav();
+
+    if (els.dmMissing) els.dmMissing.hidden = !state.dataMissing;
+    if (els.dmTabPanels) els.dmTabPanels.hidden = state.dataMissing;
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;
     } catch (_) {
       /* ignore */
+    }
+
+    if (state.dataMissing) {
+      if (els.dayPrep) els.dayPrep.hidden = true;
+      if (els.dmAiContent) els.dmAiContent.hidden = true;
+      return;
     }
 
     if (els.dayPrep) {
@@ -675,13 +820,47 @@
       });
     });
 
-    window.addEventListener("hashchange", () => {
+    if (els.dmDatePrev) {
+      els.dmDatePrev.addEventListener("click", () => navigateDate("prev"));
+    }
+    if (els.dmDateNext) {
+      els.dmDateNext.addEventListener("click", () => navigateDate("next"));
+    }
+
+    window.addEventListener("hashchange", async () => {
       const h = (location.hash || "").replace("#", "");
-      if (YMD_RE.test(h) && h !== state.selected && state.days[h]) {
+      if (!YMD_RE.test(h)) {
+        const base = state.defaultYmd || state.todayYmd;
+        if (state.selected !== base) {
+          state.selected = base;
+          await ensureDayLoaded(state.selected);
+          render();
+        }
+        return;
+      }
+      if (h !== state.selected) {
         state.selected = h;
+        await ensureDayLoaded(h);
         render();
       }
     });
+  }
+
+  async function loadKrTv() {
+    try {
+      const kr = typeof tmFetchJson === "function"
+        ? await tmFetchJson("data/kr-realtime.json")
+        : await (async () => {
+            const res = await fetch(`./data/kr-realtime.json?t=${Date.now()}`, { cache: "no-store" });
+            if (!res.ok) throw new Error("kr-realtime");
+            return res.json();
+          })();
+      if (kr && kr.tabs && Array.isArray(kr.tabs.tv)) {
+        state.krTv = kr.tabs.tv;
+      }
+    } catch (e) {
+      console.warn("kr-realtime 거래대금 데이터 불러오기 실패:", e);
+    }
   }
 
   async function loadData() {
@@ -698,8 +877,12 @@
   }
 
   async function main() {
-    await loadData();
+    state.todayYmd = seoulYmd();
+    await Promise.all([loadData(), loadKrTv()]);
+    state.defaultYmd = resolveDefaultYmd();
     state.selected = resolveSelectedYmd();
+    syncHash(state.selected);
+    await ensureDayLoaded(state.selected);
     bindEvents();
     setMainTab(state.mainTab);
     render();

@@ -1443,84 +1443,10 @@ details[open] .admin__summary {
   padding-bottom: 0;
 }
 
-/* 마감시황 탭 — 실시간시세와 동일 치수·틸 pill 스타일 */
-.page--daily-market .rt-tabs {
-  align-items: stretch;
-  gap: var(--rt-tabs-gap, 8px);
-  padding-top: var(--rt-tabs-pad-block, 8px);
-  padding-bottom: var(--rt-tabs-pad-block, 8px);
-  padding-left: 0;
-  padding-right: 0;
-  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-  background: var(--surface-bar, transparent);
-}
-
-.page--daily-market .rt-tabs-row-tabs {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: auto;
-  display: flex;
-  gap: var(--rt-tabs-gap, 8px);
-  align-items: stretch;
-}
-
-.page--daily-market .rt-tabs-row-tabs .rt-tab {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 44px;
-  min-height: 44px;
-  max-height: 44px;
-  padding: 0 var(--rt-tab-pad-inline, 6px);
-  font-size: var(--rt-tab-font-size, 14px);
-  font-weight: var(--rt-tab-font-weight, 600);
-  border-radius: 8px;
-  box-shadow: none;
-  background: transparent;
-  border: none;
-}
-
-.page--daily-market .rt-tab[aria-selected="false"] {
-  color: var(--color-text-secondary, #6b7280);
-  font-weight: var(--rt-tab-font-weight, 600);
-  background: transparent;
-}
-
-.page--daily-market .rt-tab[aria-selected="true"] {
-  color: #ffffff;
-  background: #0d9488;
-  border: none;
-  font-weight: 700;
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
-}
-
-.page--daily-market .rt-tab[aria-selected="false"]:hover {
-  color: color-mix(in srgb, #0d9488 70%, var(--color-text-secondary, #6b7280));
-}
-
-[data-theme="dark"] .page--daily-market .rt-tabs,
-.dark-mode .page--daily-market .rt-tabs {
-  border-bottom-color: rgba(255, 255, 255, 0.1);
-  background: var(--panel-surface, #1a1f35);
-}
-
-[data-theme="dark"] .page--daily-market .rt-tab[aria-selected="false"],
-.dark-mode .page--daily-market .rt-tab[aria-selected="false"] {
-  color: var(--color-text-secondary, #9ca3af);
-  background: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-[data-theme="dark"] .page--daily-market .rt-tab[aria-selected="true"],
-.dark-mode .page--daily-market .rt-tab[aria-selected="true"] {
-  color: #ffffff;
-  background: #0d9488;
-  border: none;
-  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
-}
+/* 탭 색·치수·좌우 여백: site-shell.css + realtime-board.css 공통 규칙 그대로 사용 */
 
 .page--daily-market .rt-tabs--with-date-nav {
-  align-items: flex-end;
+  align-items: stretch;
 }
 
 .dm-date-nav {
@@ -1529,7 +1455,6 @@ details[open] .admin__summary {
   gap: 8px;
   flex: 0 0 auto;
   margin-left: auto;
-  padding-bottom: 10px;
 }
 
 .dm-date-nav__btn {
@@ -2034,8 +1959,8 @@ details[open] .admin__summary {
   }
 
   .page--daily-market .dm-tab-panels {
-    padding: 12px max(var(--shell-pad-inline, 16px), env(safe-area-inset-left))
-      16px max(var(--shell-pad-inline, 16px), env(safe-area-inset-right));
+    padding: 12px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
+      16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
   }
 }
 

@@ -2,6 +2,9 @@
  * 장마감 리포트 Claude 분석 (Haiku web_search 사전수집 + Sonnet JSON)
  */
 
+import { readFileSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   buildFallbackDailyClosingReport,
@@ -13,6 +16,15 @@ import {
 
 const WEB_SEARCH_DELAY_MS = 350;
 const WEB_SEARCH_MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
+const REPORT_EXAMPLE_PATH = join(dirname(fileURLToPath(import.meta.url)), "report-example.md");
+
+function loadReportExample() {
+  try {
+    return readFileSync(REPORT_EXAMPLE_PATH, "utf8").trim();
+  } catch {
+    return "";
+  }
+}
 
 function sanitizeStr(v) {
   return v == null ? "" : sanitizeUnicode(String(v).trim());
@@ -313,24 +325,37 @@ function buildUserPrompt({
 }
 
 function buildSystemPrompt() {
-  return `당신은 TotalMoney AI 수석 애널리스트입니다.
-제공된 데이터(지수/수급/종목/뉴스)를 기반으로
-마감시황 리포트를 JSON으로 작성합니다.
+  const base = `[역할]
+너는 한국 증시 전문 애널리스트다. 수집된 시장 데이터만을 근거로
+기승전결이 있는 마감시황 리포트를 작성한다.
 
-[분석 원칙]
-1. 지수 등락 원인은 수급 데이터 기반으로 설명
-   - 외국인/기관/개인 수급 금액과 방향 반드시 언급
-   - 소형 테마주를 지수 원인으로 쓰지 말 것
-2. 특징주 재료는 제공된 뉴스에서만 추출
-   - 뉴스에 없으면 '재료 미확인'으로 표기 후 제외
-3. 핵심 한 줄: 오늘 장 전체를 관통하는 원인 1문장
-4. 총평: 코스피/코스닥 각각 전략 + 내일 변수 3개
-5. stocks 배열: 상승률 TOP30 전 종목 theme 분류 (featured_stocks 종목은 반드시 포함)
-   - theme 예: 전력인프라, 반도체, 바이오, 원전, 광통신, 금융, 기타
+[반드시 지킬 출력 구조] (이 6개 섹션 순서 고정)
+1. 핵심 한 줄 — 오늘 장 전체를 한 문장으로 압축
+2. 지수 — 코스피/코스닥/원달러 현재가·등락·등락률 (표)
+3. 시장 흐름 분석 — 4~5문단, 기승전결로 서술
+   · 기: 간밤 해외 이슈가 시초가에 미친 영향
+   · 승: 장 초반 어떤 세력/섹터가 주도했는지
+   · 전: 반전·디커플링·변곡점
+   · 결: 순환매/마무리 흐름
+4. 투자자별 매매 동향 — 외국인/기관/개인 × 코스피/코스닥, 마지막에 "핵심:" 한 줄
+5. 오늘의 특징주 — 주요 상승/하락 종목, 각 종목마다 반드시 두 줄 세트:
+   · 재료: 왜 움직였는지 (재료/수급)
+   · 포인트: 주의사항 또는 향후 전망
+6. 향후 전략 및 총평 — 코스피/코스닥 각각 전략 + "내일 주목 변수" 3가지
 
-[출력 규칙]
-순수 JSON만 출력. 텍스트 설명 절대 금지.
-JSON 앞뒤 설명·코드블록(\`\`\`) 금지. { 로 시작해 } 로 끝날 것.`;
+[톤 규칙]
+- "주식 고수 친구가 장 끝나고 카톡으로 정리해주는" 느낌, 오늘 장을 영화처럼 서술
+- 모든 수치는 반드시 [숫자 + 왜 + 의미] 세트로
+- 딱딱한 보고서 톤 금지, 추측성 단정 금지
+
+[절대 규칙 — 할루시네이션 금지]
+- 입력 데이터에 없는 수치/종목은 절대 지어내지 마라
+- 데이터가 부족하면 그 섹션은 짧게 쓰되, 거짓 숫자는 넣지 마라
+- 상승=빨강(#e24b4a), 하락=파랑(#3b82f6), 초록 절대 금지 (HTML 출력 시)`;
+
+  const example = loadReportExample();
+  if (!example) return base;
+  return `${base}\n\n[이런 수준과 구조로 작성하라는 예시]:\n${example}`;
 }
 
 function normalizeFeaturedStock(s) {

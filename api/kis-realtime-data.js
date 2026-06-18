@@ -838,6 +838,24 @@ async function fetchNaverQuantTopPageJson(market, page) {
   return Array.isArray(json.stocks) ? json.stocks : [];
 }
 
+async function fetchNaverDownPageJson(market, page) {
+  const mkt = sanitizeStr(market).toUpperCase() || "KOSPI";
+  const pg = Math.max(1, Number(page) || 1);
+  const url = `https://m.stock.naver.com/api/stocks/down/${encodeURIComponent(mkt)}?pageSize=100&page=${pg}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`NAVER losers JSON HTTP ${res.status}: ${JSON.stringify(json).slice(0, 120)}`);
+  }
+  return Array.isArray(json.stocks) ? json.stocks : [];
+}
+
 async function fetchNaverUpPageJson(market, page) {
   const mkt = sanitizeStr(market).toUpperCase() || "KOSPI";
   const pg = Math.max(1, Number(page) || 1);
@@ -895,6 +913,43 @@ async function fetchGainersPage(page, pageSize = 25) {
 
 async function fetchGainersMerged100() {
   return fetchNaverGainersTop100();
+}
+
+/** NAVER 하락률 — 코스피·코스닥 합산 TOP100 (등락률 오름차순) */
+async function fetchNaverLosersTop100() {
+  const cacheKey = "naver-losers-json:100:stocks-only";
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const [k1, k2, q1, q2] = await Promise.all([
+    fetchNaverDownPageJson("KOSPI", 1),
+    fetchNaverDownPageJson("KOSPI", 2),
+    fetchNaverDownPageJson("KOSDAQ", 1),
+    fetchNaverDownPageJson("KOSDAQ", 2),
+  ]);
+  const merged = [...k1, ...k2, ...q1, ...q2].filter(isCommonStockRow);
+  merged.sort(
+    (a, b) =>
+      (toNum(a.fluctuationsRatio) ?? Infinity) - (toNum(b.fluctuationsRatio) ?? -Infinity)
+  );
+  const result = merged.slice(0, 100).map((s, i) => {
+    const row = mapNaverMarketCapRow(s, i + 1);
+    const board = sanitizeStr(s.sosok) === "1" ? "KOSDAQ" : "KOSPI";
+    return { ...row, tvBoard: board };
+  });
+  if (result.length < 50) {
+    console.warn("[kis-realtime-data][losers] stocks-only list short", result.length);
+  }
+  rankPageCacheSet(cacheKey, result);
+  return result;
+}
+
+/** 하락률 TOP100 — 페이지당 25건 */
+async function fetchLosersPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const all = await fetchNaverLosersTop100();
+  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
+  return overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
 }
 
 function naverStockTradingValueRaw(s) {
@@ -1512,6 +1567,34 @@ module.exports = async function handler(req, res) {
         json(res, 200, payload);
       } catch (e) {
         console.error("[kis-realtime-data] action=gainers", e && e.message, e);
+        json(res, 200, { total: 0, page: 1, pageSize: 25, rankStart: 1, rankEnd: 25, stocks: [], cached: false });
+      }
+      return;
+    }
+
+    if (action === "losers") {
+      try {
+        const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+        const cacheKey = `losers:nxt-v3:${range.page}:${range.pageSize}`;
+        const cached = rankPageCacheGet(cacheKey);
+        if (cached) {
+          json(res, 200, { ...cached, cached: true });
+          return;
+        }
+        const stocks = await fetchLosersPage(range.page, range.pageSize);
+        const payload = {
+          total: range.total,
+          page: range.page,
+          pageSize: range.pageSize,
+          rankStart: range.startRank,
+          rankEnd: range.endRank,
+          stocks,
+          cached: false,
+        };
+        rankPageCacheSet(cacheKey, payload);
+        json(res, 200, payload);
+      } catch (e) {
+        console.error("[kis-realtime-data] action=losers", e && e.message, e);
         json(res, 200, { total: 0, page: 1, pageSize: 25, rankStart: 1, rankEnd: 25, stocks: [], cached: false });
       }
       return;

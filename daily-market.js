@@ -43,6 +43,11 @@
     /(?:Claude|Anthropic|OpenAI|API\s*(?:key|error|크레딧)|billing|HTTP\s*\d{3}|rt_cd|stack\s*trace|Error:|ECONNREFUSED|timeout|unavailable)/i;
 
   const STOCK_TABS = ["gainers", "losers", "tv"];
+  const KIS_RT_API = "/api/kis-realtime-data";
+  const LIVE_FETCH_TIMEOUT_MS = 15000;
+  const LIVE_TOP_N = 30;
+
+  let liveLoadPromise = null;
 
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
@@ -51,6 +56,8 @@
     todayYmd: null,
     defaultYmd: null,
     dataMissing: false,
+    liveMode: false,
+    liveRowsByTab: { gainers: [], losers: [], tv: [] },
     mainTab: "dashboard",
     stockSubTab: "gainers",
     krTv: null,
@@ -76,6 +83,7 @@
     dmDateLabel: $("dm-date-label"),
     dmDatePrev: $("dm-date-prev"),
     dmDateNext: $("dm-date-next"),
+    dmLiveBadge: $("dm-live-badge"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -186,6 +194,8 @@
   async function ensureDayLoaded(ymd) {
     if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
       state.dataMissing = false;
+      if (needsLiveRealtime(ymd)) await loadLiveStockData();
+      else state.liveMode = false;
       return true;
     }
     const archive = await fetchArchiveDayJson(ymd);
@@ -193,13 +203,19 @@
     if (normalized && !isDayEmpty(normalized)) {
       state.days[ymd] = normalized;
       state.dataMissing = false;
+      if (needsLiveRealtime(ymd)) await loadLiveStockData();
+      else state.liveMode = false;
       return true;
     }
-    if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
+    if (ymd === state.todayYmd) {
       state.dataMissing = false;
-      return true;
+      if (needsLiveRealtime(ymd)) {
+        await loadLiveStockData();
+        return true;
+      }
     }
     state.dataMissing = true;
+    state.liveMode = false;
     return false;
   }
 
@@ -374,7 +390,7 @@
 
   function readStckAvlsRaw(r) {
     if (!r) return null;
-    const keys = ["stck_avls", "hts_avls", "mcap", "mcapEok", "marketCap"];
+    const keys = ["stck_avls", "hts_avls", "mcap", "mcapEok", "marketCap", "marcap"];
     for (const k of keys) {
       const v = r[k];
       if (v != null && String(v).trim() !== "") return v;
@@ -384,7 +400,146 @@
 
   function formatStckAvls(raw) {
     const n = numFromMoneyish(raw);
-    return formatWonJoEok(n);
+    if (n == null || n <= 0) return "—";
+    if (n >= 1e8) return formatWonJoEok(n);
+    const eok = Math.round(n);
+    if (eok >= 10000) return `${Math.round(eok / 10000)}조`;
+    if (eok >= 100) return `${eok.toLocaleString("ko-KR")}억`;
+    return `${eok}억`;
+  }
+
+  function hasClosingStockData(day, ymd) {
+    if (!day || typeof day !== "object") return false;
+    if (getDayDateYmd(day, ymd) !== ymd) return false;
+    const hasG = Array.isArray(day.topGainers) && day.topGainers.length > 0;
+    const hasD =
+      (Array.isArray(day.topDecliners) && day.topDecliners.length > 0) ||
+      (Array.isArray(day.topLosers) && day.topLosers.length > 0);
+    const hasTv = Array.isArray(day.topTradingValue) && day.topTradingValue.length > 0;
+    return hasG && hasD && hasTv;
+  }
+
+  function needsLiveRealtime(ymd) {
+    if (ymd !== state.todayYmd) return false;
+    const day = getDay(ymd);
+    if (hasClosingStockData(day, ymd)) return false;
+    if (!day) return true;
+    const dayDate = getDayDateYmd(day, ymd);
+    if (dayDate !== state.todayYmd) return true;
+    const hasG = Array.isArray(day.topGainers) && day.topGainers.length > 0;
+    const hasD =
+      (Array.isArray(day.topDecliners) && day.topDecliners.length > 0) ||
+      (Array.isArray(day.topLosers) && day.topLosers.length > 0);
+    const hasTv = Array.isArray(day.topTradingValue) && day.topTradingValue.length > 0;
+    return !(hasG && hasD && hasTv);
+  }
+
+  function mapKisRtRowToDaily(r, i) {
+    return normalizeDailyStockRow(
+      {
+        rank: r.rank != null ? r.rank : i + 1,
+        code: r.code,
+        name: r.name,
+        currentPrice: r.price != null ? r.price : r.currentPrice,
+        change: r.changePct != null ? r.changePct : r.change,
+        prevDelta: r.changeAmt != null ? r.changeAmt : r.prevDelta,
+        volume: r.volume,
+        tradingValue: r.tradingValue,
+        tradingValueRaw: r.tradingValue,
+        stck_avls: readStckAvlsRaw(r),
+        hts_avls: r.hts_avls || r.stck_avls || r.mcapEok,
+        market: r.tvBoard || r.market,
+      },
+      i
+    );
+  }
+
+  async function fetchKisRealtimePage(action, page, pageSize = 25) {
+    const qs = new URLSearchParams({
+      action,
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), LIVE_FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(`${KIS_RT_API}?${qs.toString()}`, {
+        cache: "no-store",
+        signal: ctrl.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+      return Array.isArray(data.stocks) ? data.stocks : [];
+    } finally {
+      clearTimeout(tid);
+    }
+  }
+
+  async function fetchKisRealtimeTop(action, limit = LIVE_TOP_N) {
+    const pageSize = 25;
+    const pages = limit <= pageSize ? [1] : [1, 2];
+    const merged = [];
+    for (const page of pages) {
+      const part = await fetchKisRealtimePage(action, page, pageSize);
+      merged.push(...part);
+    }
+    return merged.slice(0, limit).map(mapKisRtRowToDaily);
+  }
+
+  async function fetchKisRealtimeLosers(limit = LIVE_TOP_N) {
+    try {
+      return await fetchKisRealtimeTop("losers", limit);
+    } catch (e) {
+      console.warn("[daily-market] losers API fallback", e && e.message);
+    }
+    try {
+      const gainers = await fetchKisRealtimeTop("gainers", 100);
+      return gainers
+        .filter((r) => {
+          const ch = parseChange(r.change);
+          return ch != null && ch < 0;
+        })
+        .sort((a, b) => (parseChange(a.change) || 0) - (parseChange(b.change) || 0))
+        .slice(0, limit)
+        .map((r, i) => ({ ...r, rank: i + 1 }));
+    } catch (e2) {
+      console.warn("[daily-market] losers gainers-filter fallback", e2 && e2.message);
+      return [];
+    }
+  }
+
+  async function loadLiveStockData() {
+    if (!needsLiveRealtime(state.selected)) {
+      state.liveMode = false;
+      return;
+    }
+    if (liveLoadPromise) return liveLoadPromise;
+    liveLoadPromise = (async () => {
+      try {
+        state.liveMode = true;
+        const [gainers, losers, tv] = await Promise.all([
+          fetchKisRealtimeTop("gainers", LIVE_TOP_N),
+          fetchKisRealtimeLosers(LIVE_TOP_N),
+          fetchKisRealtimeTop("trading-value", LIVE_TOP_N),
+        ]);
+        state.liveRowsByTab = { gainers, losers, tv };
+      } catch (e) {
+        console.warn("[daily-market] live stock load failed", e && e.message);
+      } finally {
+        liveLoadPromise = null;
+      }
+    })();
+    return liveLoadPromise;
+  }
+
+  function updateLiveBadge() {
+    if (!els.dmLiveBadge) return;
+    const show =
+      state.liveMode &&
+      state.selected === state.todayYmd &&
+      !state.dataMissing &&
+      (STOCK_TABS.includes(state.mainTab) || STOCK_TABS.some((t) => (state.liveRowsByTab[t] || []).length));
+    els.dmLiveBadge.hidden = !show;
   }
 
   function calcTradeValFromPriceVol(priceRaw, volRaw) {
@@ -564,6 +719,15 @@
   }
 
   function getStockRows(day, subTab) {
+    if (
+      state.liveMode &&
+      state.selected === state.todayYmd &&
+      STOCK_TABS.includes(subTab) &&
+      Array.isArray(state.liveRowsByTab[subTab]) &&
+      state.liveRowsByTab[subTab].length
+    ) {
+      return state.liveRowsByTab[subTab].slice(0, LIVE_TOP_N);
+    }
     if (!day) return [];
     let rows = [];
     if (subTab === "gainers") {
@@ -617,7 +781,14 @@
     });
     if (STOCK_TABS.includes(tabId)) {
       syncStockThead(state.stockSubTab);
-      renderStockTable();
+      if (needsLiveRealtime(state.selected)) {
+        void loadLiveStockData().then(() => {
+          renderStockTable();
+          updateLiveBadge();
+        });
+      } else {
+        renderStockTable();
+      }
     }
   }
 
@@ -751,6 +922,7 @@
 
     if (els.title) els.title.textContent = "마감시황";
     updateDateNav();
+    updateLiveBadge();
 
     if (els.dmMissing) els.dmMissing.hidden = !state.dataMissing;
     if (els.dmTabPanels) els.dmTabPanels.hidden = state.dataMissing;

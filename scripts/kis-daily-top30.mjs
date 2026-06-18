@@ -306,6 +306,8 @@ function pickStckAvls(row) {
     "HTS_AVLS",
     "hts_avls_unt",
     "HTS_AVLS_UNT",
+    "marcap",
+    "MARCAP",
     "lstn_stcn",
   ];
   for (const k of keys) {
@@ -755,6 +757,54 @@ function enrichRowsWithMcap(rows, mcapByCode) {
     const fromLookup = mcapByCode.get(r.code);
     const stckAvls = normalizeStckAvlsWon(r.stck_avls) || fromLookup || "";
     return stckAvls ? { ...r, stck_avls: stckAvls } : r;
+  });
+}
+
+/** 시총 누락 종목 — 네이버 basic API marketValue 보강 */
+async function fetchNaverStockMcapWon(code6) {
+  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  if (!/^\d{6}$/.test(code)) return "";
+  const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/basic`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": USER_AGENT,
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return "";
+  const s = json && typeof json === "object" ? json : {};
+  if (s.marketValueRaw != null && String(s.marketValueRaw).trim() !== "") {
+    const n = Number(String(s.marketValueRaw).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return String(Math.round(n));
+  }
+  const mv = toNumberOrNull(s.marketValue);
+  if (mv != null && mv > 0) return String(Math.round(mv * 1e8));
+  return "";
+}
+
+async function enrichRowsWithNaverMcap(rows) {
+  const missing = rows.filter((r) => r && r.code && !normalizeStckAvlsWon(r.stck_avls));
+  if (!missing.length) return rows;
+  const byCode = new Map();
+  for (let i = 0; i < missing.length; i += 6) {
+    const chunk = missing.slice(i, i + 6);
+    await Promise.all(
+      chunk.map(async (r) => {
+        try {
+          const mcap = await fetchNaverStockMcapWon(r.code);
+          if (mcap) byCode.set(r.code, mcap);
+        } catch (_) {
+          /* skip */
+        }
+      })
+    );
+    if (i + 6 < missing.length) await delay(80);
+  }
+  console.log(`  네이버 시총 보강: ${byCode.size}/${missing.length}종목`);
+  return rows.map((r) => {
+    const mcap = byCode.get(r.code);
+    return mcap ? { ...r, stck_avls: mcap, hts_avls: mcap } : r;
   });
 }
 
@@ -1315,6 +1365,8 @@ async function main() {
   }
   top = enrichRowsWithMcap(top, mcapByCode);
   bottom = enrichRowsWithMcap(bottom, mcapByCode);
+  top = await enrichRowsWithNaverMcap(top);
+  bottom = await enrichRowsWithNaverMcap(bottom);
 
   console.log("[3/6] 코스피·코스닥 지수 (네이버 금융)...");
   let indexes = [];
@@ -1396,6 +1448,7 @@ async function main() {
   }
 
   const topTradingValueEnriched = enrichRowsWithMcap(topTradingValueRaw, mcapByCode);
+  const topTradingValueWithMcap = await enrichRowsWithNaverMcap(topTradingValueEnriched);
   const topGainers = top.map((s) => {
     const extra = byCode.get(s.code) || { reason: "", theme: "기타" };
     return mapStockJsonRow(s, {
@@ -1406,7 +1459,7 @@ async function main() {
   });
 
   const topDecliners = bottom.map(mapTopDeclinersJsonRow);
-  const topTradingValue = topTradingValueEnriched.map(mapTopDeclinersJsonRow);
+  const topTradingValue = topTradingValueWithMcap.map(mapTopDeclinersJsonRow);
 
   // 테마별 그룹화 (인기 테마부터)
   const themeMap = new Map();
@@ -1472,6 +1525,7 @@ async function main() {
   data.days[targetYmd] = {
     date: targetYmd,
     ...existing,
+    analysis: summary || sanitizeStr(existing.analysis) || sanitizeStr(existing.summary),
     summary: summary || sanitizeStr(existing.summary),
     headlineIssue: sanitizeStr(ai.headlineIssue) || sanitizeStr(existing.headlineIssue),
     supplyComment: sanitizeStr(ai.supplyComment) || sanitizeStr(existing.supplyComment),
@@ -1539,12 +1593,9 @@ async function main() {
   const archiveDir = path.join(path.dirname(outputPath), "daily");
   const archivePath = path.join(archiveDir, `${targetYmd}.json`);
   await fs.mkdir(archiveDir, { recursive: true });
-  await fs.writeFile(
-    archivePath,
-    JSON.stringify({ date: targetYmd, ...data.days[targetYmd] }, null, 2) + "\n",
-    "utf8"
-  );
-  console.log(`Wrote ${archivePath}`);
+  const archivePayload = { date: targetYmd, ...data.days[targetYmd] };
+  await fs.writeFile(archivePath, JSON.stringify(archivePayload, null, 2) + "\n", "utf8");
+  console.log(`Wrote ${archivePath} (topGainers/topDecliners/topTradingValue/analysis)`);
 
   // 결과 미리보기
   console.log("\n=== 미리보기 ===");

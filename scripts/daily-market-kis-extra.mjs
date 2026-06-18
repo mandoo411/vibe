@@ -145,10 +145,9 @@ async function requestInvestorFlowDay({ baseUrl, token, appKey, appSecret, ymd, 
   const ymdCompact = String(ymd).replace(/-/g, "");
   const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/inquire-investor-daily-by-market`);
   url.searchParams.set("FID_COND_MRKT_DIV_CODE", "J");
-  url.searchParams.set("FID_INPUT_ISCD", "0001");
+  url.searchParams.set("FID_INPUT_ISCD", marketCode);
   url.searchParams.set("FID_INPUT_DATE_1", ymdCompact);
   url.searchParams.set("FID_INPUT_DATE_2", ymdCompact);
-  url.searchParams.set("FID_INPUT_ISCD_1", marketCode);
   url.searchParams.set("FID_INPUT_ISCD_2", "");
 
   const res = await fetch(url.toString(), {

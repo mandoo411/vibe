@@ -2,16 +2,15 @@
 /**
  * 한국투자증권 Open API → 코스피+코스닥 상승률 TOP 30
  *  → 각 종목 네이버 뉴스 헤드라인 수집
- *  → Claude로 "상승 이유 한 줄 + 테마 + 시황 요약(summary) + 특징주" 자동 분류
- *  → data/daily-market.json 의 days[targetYmd] (topGainers, topDecliners, summary, notableStocks 등) 에 저장
+ *  → data/daily-market.json 의 days[targetYmd] (topGainers, topDecliners, supply 등) 에 저장
+ *  → Claude AI 분석은 Cowork에서 별도 실행 (이 스크립트에서는 KIS·뉴스 수집만)
  *
- * 필수: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, ANTHROPIC_API_KEY
+ * 필수: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET
  * 선택: TARGET_DATE=YYYY-MM-DD (기본: 오늘 KST)
  *       TOP_N (기본 30, 1~50)
  *       NEWS_PER_STOCK (기본 5, 1~10)
  *       NEWS_CONCURRENCY (기본 5, 1~10)
  *       KIS_BASE_URL (기본 https://openapi.koreainvestment.com:9443)
- *       ANTHROPIC_MODEL (기본 claude-sonnet-4-5)
  *       OUTPUT_PATH (기본 ./data/daily-market.json)
  *       KIS_NOTABLE_QUOTE_DELAY_MS (기본 150, 특징주 KIS 개별시세 호출 간격 ms)
  */
@@ -19,10 +18,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import Anthropic from "@anthropic-ai/sdk";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
-import { analyzeDailyClosingReport } from "./daily-market-ai.mjs";
 import { parseJsonFromAssistant } from "./claude-utils.mjs";
 import {
   fetchSectorMoves,
@@ -1327,7 +1324,6 @@ async function classifyWithClaude({ apiKey, model, targetYmd, stocks, newsMap, i
 async function main() {
   const appKey = requireEnv("KIS_APP_KEY");
   const appSecret = requireEnv("KIS_APP_SECRET");
-  const anthropicKey = requireEnv("ANTHROPIC_API_KEY");
 
   const baseUrl = (process.env.KIS_BASE_URL || "https://openapi.koreainvestment.com:9443").replace(/\/+$/, "");
   const outputPath = path.resolve(process.env.OUTPUT_PATH || path.join("data", "daily-market.json"));
@@ -1335,7 +1331,6 @@ async function main() {
   const perStock = Math.max(1, Math.min(10, Number(process.env.NEWS_PER_STOCK) || 5));
   const concurrency = Math.max(1, Math.min(10, Number(process.env.NEWS_CONCURRENCY) || 2));
   const perDelay = Math.max(0, Math.min(5000, Number(process.env.NEWS_DELAY_MS) || 500));
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
   const forceNaver = process.env.SOURCE === "naver";
   const targetYmd =
     process.env.TARGET_DATE && YMD_RE.test(process.env.TARGET_DATE)
@@ -1489,25 +1484,23 @@ async function main() {
     `  수급 ${supply.length}건 · 업종 ${sectors.length}건 · 거래량 ${volumeLeaders.length}건 · RSS ${pressNewsAll.length}건 · 거래대금 ${topTradingValueRaw.length}건`
   );
 
-  console.log("[6/7] 웹서치 사전수집 + Claude 장마감 분석...");
+  console.log("[6/7] 매크로·환율 수집 (Claude 분석은 Cowork에서 별도 실행)...");
   const [telegramMessages, marketExtras] = await Promise.all([collectTelegramMacroMessages(), fetchMarketExtras()]);
-  const ai = await analyzeDailyClosingReport({
-    apiKey: anthropicKey,
-    model,
-    targetYmd,
-    indexes,
-    supply,
-    sectors,
-    topGainers: top,
-    topDecliners: bottom,
-    volumeLeaders,
-    telegramMessages,
-    pressNews: pressNewsAll.slice(0, 25),
-    stocksForThemes: top,
-    newsMap,
-    marketExtras,
-    mcapRankByCode,
-  });
+  const ai = {
+    stocks: [],
+    topNews: [],
+    notableStocks: [],
+    marketSummary: "",
+    headlineIssue: "",
+    supplyComment: "",
+    sectorFlow: {},
+    issueStocks: [],
+    featured_stocks: [],
+    watchlist: [],
+    tomorrowCheckpoints: [],
+    oneLineVerdict: "",
+    marketExtraComments: {},
+  };
 
   const byCode = new Map();
   for (const r of ai.stocks) {
@@ -1656,11 +1649,11 @@ async function main() {
     topTradingValue: topTradingValue.length ? topTradingValue : existing.topTradingValue || [],
     topGainers,
     topGainersUpdatedAt: seoulYmd(new Date()),
-    topGainersSource: `${rankingSource}+KIS+Naver+Telegram+Claude`,
+    topGainersSource: `${rankingSource}+KIS+Naver+Telegram`,
     topDecliners: topDecliners.length ? topDecliners : existing.topDecliners || [],
     topDeclinersUpdatedAt: seoulYmd(new Date()),
     topDeclinersSource: bottom.length
-      ? `${declinersSource}+KIS+Naver+Telegram+Claude`
+      ? `${declinersSource}+KIS+Naver+Telegram`
       : existing.topDeclinersSource || "",
   };
 

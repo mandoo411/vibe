@@ -2,7 +2,7 @@ name: Daily Market Sync
 
 # 평일 16:00 KST (= 07:00 UTC) 자동 실행 — 18:00 KST 전 웹 반영 목표
 # (15:30 장마감·save-prev-top50 15:40 KST 이후 데이터 확보, 여유 2시간)
-# 한국 증시 마감 이후 KIS API + Naver 뉴스 + Telegram + Claude 분류 실행
+# 한국 증시 마감 이후 KIS API + Naver 뉴스 수집 (Claude·텔레그램 발송은 Cowork)
 # 한국 공휴일에도 동작하지만 sync:kis가 더미(0%) 데이터를 받으면
 # 프런트엔드의 isDayEmpty()가 빈 상태로 처리합니다.
 #
@@ -52,29 +52,23 @@ jobs:
 
       - name: Create .env from secrets
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           {
-            printf 'ANTHROPIC_API_KEY=%s\n' "$ANTHROPIC_API_KEY"
             printf 'KIS_APP_KEY=%s\n'        "$KIS_APP_KEY"
             printf 'KIS_APP_SECRET=%s\n'     "$KIS_APP_SECRET"
             printf 'KIS_ACCESS_TOKEN=%s\n'   "$KIS_ACCESS_TOKEN"
-            printf 'TELEGRAM_TOKEN=%s\n'     "$TELEGRAM_TOKEN"
-            printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
             printf 'TELEGRAM_SESSION=%s\n' "$TELEGRAM_SESSION"
             printf 'TELEGRAM_API_ID=%s\n' "$TELEGRAM_API_ID"
             printf 'TELEGRAM_API_HASH=%s\n' "$TELEGRAM_API_HASH"
           } > .env
 
-      - name: Sync KIS top 30 + Naver news + Claude
+      - name: Sync KIS top 30 + Naver news
         run: npm run sync:kis
 
       - name: Commit updated daily market data
@@ -92,10 +86,7 @@ jobs:
             git push
           fi
 
-      - name: Send Telegram daily market report
-        run: node --env-file=.env scripts/telegram-daily-market.mjs
-
-      # push 직후 /api/repo-data로 즉시 반영; 정적 폴백용 prod 배포는 텔레그램 이후
+      # push 직후 /api/repo-data로 즉시 반영; 정적 폴백용 prod 배포
       - name: Deploy to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

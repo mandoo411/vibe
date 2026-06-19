@@ -208,7 +208,15 @@ export async function collectSearchContext({
     stockNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
   }
 
-  const { down: mcapDown } = buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode);
+  const { up: mcapUpAll, down: mcapDown } = buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode);
+  // 그룹A 후보: 시총 100위 이내 + 5% 이상 상승 대형주
+  const mcapUp = (mcapUpAll || []).filter((s) => (Number(s.change) || 0) >= 5);
+  const riseNews = {};
+  for (const stock of mcapUp.slice(0, 8)) {
+    await delay(WEB_SEARCH_DELAY_MS);
+    const searched = await fetchWebSearch(`${stock.name} 급등 이유 ${targetYmd}`, apiKey, targetYmd);
+    riseNews[stock.code] = mergeNewsText(searched, newsFromMap(newsMap, stock.code));
+  }
   const declineNews = {};
   for (const stock of mcapDown.slice(0, 5)) {
     await delay(WEB_SEARCH_DELAY_MS);
@@ -217,10 +225,10 @@ export async function collectSearchContext({
   }
 
   console.log(
-    `[daily-market-ai] 웹서치 완료 — 매크로 ${macroNews.length > 0 ? "OK" : "없음"}, 특징주 ${Object.keys(stockNews).length}건`
+    `[daily-market-ai] 웹서치 완료 — 매크로 ${macroNews.length > 0 ? "OK" : "없음"}, 특징주 ${Object.keys(stockNews).length}건, 시총상위상승 ${mcapUp.length}건`
   );
 
-  return { macroNews, fomcNews, foreignFlowNews, stockNews, declineNews, mcapDown };
+  return { macroNews, fomcNews, foreignFlowNews, stockNews, declineNews, riseNews, mcapUp, mcapDown };
 }
 
 function buildSupplyLines(supply) {
@@ -272,7 +280,9 @@ function buildUserPrompt({
   const lines = [];
   const fx = findUsdKrw(marketExtras);
   const ctx = searchContext || {};
-  const mcapDown = ctx.mcapDown || buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode).down;
+  const movers = buildMcapTop100Movers(topGainers, topDecliners, mcapRankByCode);
+  const mcapDown = ctx.mcapDown || movers.down;
+  const mcapUp = ctx.mcapUp || (movers.up || []).filter((s) => (Number(s.change) || 0) >= 5);
 
   lines.push(`오늘 장마감 데이터 (${targetYmd} KST)`);
   lines.push("");
@@ -294,6 +304,14 @@ function buildUserPrompt({
   for (const stock of (topGainers || []).slice(0, 10)) {
     lines.push(`${stock.name}: ${stockNews[stock.code] || "(수집된 뉴스 없음)"}`);
   }
+  if (mcapUp.length) {
+    lines.push("");
+    lines.push("[시총 100위 내 +5% 이상 상승 대형주 뉴스]");
+    const riseNews = ctx.riseNews || {};
+    for (const stock of mcapUp.slice(0, 8)) {
+      lines.push(`${stock.name} ${fmtPct(stock.change)}: ${riseNews[stock.code] || "(수집된 뉴스 없음)"}`);
+    }
+  }
   if (Object.keys(ctx.declineNews || {}).length) {
     lines.push("");
     lines.push("[시총 100위 내 하락 종목 뉴스]");
@@ -313,8 +331,17 @@ function buildUserPrompt({
   }
 
   lines.push("");
-  lines.push("=== 상승률 TOP10 ===");
-  (topGainers || []).slice(0, 10).forEach((s, i) => {
+  lines.push("=== 시총 100위 내 +5% 이상 상승 대형주 (그룹A 특징주 후보) ===");
+  if (!mcapUp.length) lines.push("(해당 없음 — +5% 이상 상승한 시총 100위 종목 없음)");
+  else {
+    mcapUp.slice(0, 10).forEach((s, i) => {
+      lines.push(`${i + 1}. ${s.name} ${fmtPct(s.change)} 현재가:${fmtPricePlain(s.currentPrice || s.price)}원`);
+    });
+  }
+
+  lines.push("");
+  lines.push("=== 상승률 TOP30 (그룹B 특징주 후보) ===");
+  (topGainers || []).slice(0, 30).forEach((s, i) => {
     lines.push(`${i + 1}. ${s.name} ${fmtPct(s.change)} 현재가:${fmtPricePlain(s.currentPrice || s.price)}원`);
   });
 
@@ -355,7 +382,7 @@ function buildUserPrompt({
 
   lines.push("");
   lines.push(
-    "위 제공 데이터(지수/수급/종목/뉴스)만 근거로 JSON을 작성하세요. featured_stocks에 포함된 종목은 stocks에도 반드시 포함하고, 상승률 TOP30 전 종목을 stocks에 theme(전력인프라/반도체/바이오/원전/광통신/금융/기타 등)으로 분류하세요. 뉴스에 재료가 없는 종목은 featured_stocks에서 제외하세요."
+    "위 제공 데이터(지수/수급/종목/뉴스)만 근거로 JSON을 작성하세요.\n\n[featured_stocks 선정 규칙 — 최대 10종목]\n- 그룹A (최대 5종목): '시총 100위 내 +5% 이상 상승 대형주' 목록에서 상승 재료가 뉴스로 확인되는 종목을 시총 상위 우선으로 선정. 재료가 불명확하면 같은 목록의 다른 +5% 종목으로 대체.\n- 그룹B (최대 5종목): '상승률 TOP30' 목록에서 등락률 +15% 이상이면서 상승 재료가 뉴스로 확실히 확인되는 종목을 선정. 재료가 불명확하면 제외하고 다른 종목으로 대체.\n- 기준을 충족하는 종목이 부족하면 충족하는 종목만 넣고 억지로 채우지 마세요(예: 그룹A가 3개뿐이면 3개만).\n- 배열 순서는 그룹A 먼저, 그룹B 다음. 각 종목은 reason(재료)·point(투자포인트)를 반드시 채우고, 뉴스에 재료가 없는 종목은 절대 넣지 마세요.\n\nfeatured_stocks에 포함된 종목은 stocks에도 반드시 포함하고, 상승률 TOP30 전 종목을 stocks에 theme(전력인프라/반도체/바이오/원전/광통신/금융/기타 등)으로 분류하세요."
   );
   return lines.join("\n");
 }
@@ -374,15 +401,21 @@ function buildSystemPrompt() {
    · 전: 반전·디커플링·변곡점
    · 결: 순환매/마무리 흐름
 4. 투자자별 매매 동향 — 외국인/기관/개인 × 코스피/코스닥, 마지막에 "핵심:" 한 줄
-5. 오늘의 특징주 — 주요 상승/하락 종목, 각 종목마다 반드시 두 줄 세트:
+5. 오늘의 특징주 — 최대 10종목 (그룹A: 시총 100위 내 +5% 이상 상승 대형주 최대 5개, 시총 상위·재료 확실 우선 / 그룹B: 상승률 TOP30 중 +15% 이상·재료 확실 최대 5개). 기준 충족 종목이 부족하면 그 수만큼만 넣는다. 각 종목마다 반드시 두 줄 세트:
    · 재료: 왜 움직였는지 (재료/수급)
    · 포인트: 주의사항 또는 향후 전망
+   ※ 소형 테마주를 지수 흐름의 원인으로 쓰지 말 것. 재료가 확인되지 않은 종목은 제외.
 6. 향후 전략 및 총평 — 코스피/코스닥 각각 전략 + "내일 주목 변수" 3가지
 
 [톤 규칙]
-- "주식 고수 친구가 장 끝나고 카톡으로 정리해주는" 느낌, 오늘 장을 영화처럼 서술
+- 차분하고 전문적인 애널리스트 톤. 핵심을 명료하고 군더더기 없이 서술
 - 모든 수치는 반드시 [숫자 + 왜 + 의미] 세트로
-- 딱딱한 보고서 톤 금지, 추측성 단정 금지
+- 추측성 단정 금지
+
+[표기 규칙]
+- 장식용 이모지(📊 🔑 💰 ⭐ 🧭 🚀 🔥 등) 사용 절대 금지
+- 섹션 구분이 필요하면 절제된 기호만 사용: 대제목 ■, 항목 ▶, 보조 ◆, 구분선 ────
+- 화려한 수식어보다 사실·수치 중심으로 작성
 
 [절대 규칙 — 할루시네이션 금지]
 - 입력 데이터에 없는 수치/종목은 절대 지어내지 마라

@@ -1638,7 +1638,7 @@ details[open] .admin__summary {
 
 .dm-section__title {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
@@ -1859,8 +1859,8 @@ details[open] .admin__summary {
 }
 
 .dm-analysis__body {
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.75;
   color: var(--text);
   white-space: pre-wrap;
 }
@@ -1899,14 +1899,14 @@ details[open] .admin__summary {
 }
 
 .dm-featured-card__name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .dm-badge {
   display: inline-block;
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   border-radius: 999px;
   letter-spacing: 0.02em;
@@ -1928,8 +1928,8 @@ details[open] .admin__summary {
 .dm-featured-card__reason,
 .dm-featured-card__point {
   margin: 6px 0 0;
-  font-size: 13px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--text-muted);
 }
 
@@ -1944,8 +1944,8 @@ details[open] .admin__summary {
 .dm-watchlist {
   margin: 0;
   padding-left: 1.2em;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 15px;
+  line-height: 1.7;
 }
 
 .dm-stock-table .rt-td-name {
@@ -2183,7 +2183,7 @@ details[open] .admin__summary {
 
 .dm-section__title {
   margin: 22px 0 10px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--text-primary, #131722);
   letter-spacing: -0.01em;
@@ -2273,19 +2273,19 @@ details[open] .admin__summary {
 .dm-qname { font-weight: 600; }
 
 .dm-card--ai { gap: 10px; }
-.dm-headline { font-size: 16px; font-weight: 700; color: var(--text-primary, #131722); margin: 0; }
-.dm-summary p { font-size: 14px; line-height: 1.7; color: var(--text-primary, #131722); margin: 0 0 10px; }
+.dm-headline { font-size: 18px; font-weight: 700; color: var(--text-primary, #131722); margin: 0; }
+.dm-summary p { font-size: 16px; line-height: 1.75; color: var(--text-primary, #131722); margin: 0 0 10px; }
 .dm-summary p:last-child { margin-bottom: 0; }
-.dm-verdict { font-size: 14px; font-weight: 700; color: var(--accent-brand, #0f8387); margin: 6px 0 0; }
+.dm-verdict { font-size: 16px; font-weight: 700; color: var(--accent-brand, #0f8387); margin: 6px 0 0; }
 .dm-claude-note { font-size: 12px; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
 
 .dm-issue { padding: 12px 0; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); }
 .dm-issue:last-child { border-bottom: none; padding-bottom: 0; }
 .dm-issue__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.dm-issue__name { font-size: 15px; font-weight: 700; color: var(--text-primary, #131722); }
+.dm-issue__name { font-size: 16px; font-weight: 700; color: var(--text-primary, #131722); }
 .dm-issue__chg { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .dm-issue__tag { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--accent-brand, #0f8387); background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
-.dm-issue__desc { font-size: 13px; line-height: 1.6; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
+.dm-issue__desc { font-size: 15px; line-height: 1.65; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
 
 .dm-error { margin: 16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)); color: var(--up-color, #e24b4a); font-size: 14px; }
 

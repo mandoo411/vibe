@@ -44,19 +44,12 @@
 
   const STOCK_TABS = ["gainers", "losers", "tv"];
   const KIS_RT_API = "/api/kis-realtime-data";
-  const DASHBOARD_API = "/api/dashboard-data";
   const LIVE_FETCH_TIMEOUT_MS = 15000;
   const LIVE_TOP_N = 30;
 
   let liveLoadPromise = null;
   const mcapCacheByCode = new Map();
   let mcapEnrichGen = 0;
-  let dashboardLoadGen = 0;
-  const dashboardState = {
-    supplyMarket: "KOSPI",
-    jointTab: "buy",
-    jointData: null,
-  };
 
   const state = {
     meta: { title: "마감시황", timezoneNote: "" },
@@ -68,7 +61,7 @@
     dataMissing: false,
     liveMode: false,
     liveRowsByTab: { gainers: [], losers: [], tv: [] },
-    mainTab: "dashboard",
+    mainTab: "ai",
     stockSubTab: "gainers",
     krTv: null,
   };
@@ -76,19 +69,18 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     title: $("masthead-title"),
-    dayPrep: $("day-prep"),
-    dayPrepTitle: $("day-prep-title"),
-    dayPrepHint: $("day-prep-hint"),
     dmAiContent: $("dm-ai-content"),
-    dmIndexes: $("dm-indexes"),
-    dmMarketExtras: $("dm-market-extras"),
     dmAnalysis: $("dm-analysis"),
     dmFeatured: $("dm-featured"),
     dmWatchlist: $("dm-watchlist"),
     dmStockTbody: $("dm-stock-tbody"),
     dmStockThead: $("dm-stock-thead-row"),
     dmStockTable: $("dm-stock-table"),
-    dmMissing: $("dm-missing"),
+    dmPreparing: $("dm-preparing"),
+    dmPreparingTitle: $("dm-preparing-title"),
+    dmPreparingHint: $("dm-preparing-hint"),
+    dmTabBar: $("dm-tab-bar"),
+    dmTabsRow: $("dm-tabs-row"),
     dmTabPanels: $("dm-tab-panels"),
     dmDateLabel: $("dm-date-label"),
     dmDatePrev: $("dm-date-prev"),
@@ -203,6 +195,33 @@
     const day = getDay(ymd);
     if (hasAiReportContent(day)) return false;
     return !isTodayReportPublished();
+  }
+
+  /** 휴장·업로드 전 — 탭/본문 숨기고 준비중 메시지만 표시 */
+  function isPageContentReady(ymd) {
+    if (state.dataMissing) return false;
+    if (isAiTabPreparing(ymd)) return false;
+    return true;
+  }
+
+  function getPreparingCopy(ymd) {
+    const closedReason = marketClosedReason(ymd);
+    if (closedReason) {
+      return {
+        title: `${closedReason} 휴장입니다`,
+        hint: "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다.",
+      };
+    }
+    if (state.dataMissing) {
+      return {
+        title: "데이터 준비중",
+        hint: "해당 날짜의 마감시황 데이터가 아직 업로드되지 않았습니다.",
+      };
+    }
+    return {
+      title: "데이터 준비중",
+      hint: "장 마감 후(약 17:00) 자동으로 업데이트됩니다",
+    };
   }
 
   function normalizeArchiveDay(raw, ymd) {
@@ -627,6 +646,7 @@
   function updateLiveBadge() {
     if (!els.dmLiveBadge) return;
     const show =
+      isPageContentReady(state.selected) &&
       state.liveMode &&
       state.selected === state.todayYmd &&
       !state.dataMissing &&
@@ -919,48 +939,6 @@
         renderStockTable();
       }
     }
-    if (tabId === "dashboard") refreshDashboardLive();
-  }
-
-  function renderIndexes(arr) {
-    if (!Array.isArray(arr) || !arr.length) {
-      return '<p class="empty-line">데이터 없음</p>';
-    }
-    return arr
-      .map((row) => {
-        const name = escapeHtml(row && row.name);
-        const value = escapeHtml(row && row.value != null ? row.value : "");
-        const chg = parseChange(row && row.change);
-        const chgHtml = chg == null
-          ? ""
-          : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`;
-        const tv = row && row.tradingValue ? `<small class="dm-index-card__tv">거래대금 ${escapeHtml(row.tradingValue)}</small>` : "";
-        return `<div class="dm-index-card">
-          <span class="dm-index-card__name">${name}</span>
-          <span class="dm-index-card__value">${value || "—"}</span>
-          ${chgHtml}
-          ${tv}
-        </div>`;
-      })
-      .join("");
-  }
-
-  function renderMarketExtras(arr) {
-    if (!Array.isArray(arr) || !arr.length) {
-      return '<p class="empty-line">데이터 없음</p>';
-    }
-    return arr
-      .map((row) => {
-        const chg = parseChange(row && row.changePct);
-        const comment = sanitizeStr(row && row.comment);
-        return `<div class="dm-index-card dm-index-card--extra">
-          <span class="dm-index-card__name">${escapeHtml(row && row.label)}</span>
-          <span class="dm-index-card__value">${escapeHtml((row && row.valueFormatted) || (row && row.value) || "—")}</span>
-          ${chg == null ? "" : `<span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>`}
-          ${comment ? `<small class="dm-index-card__note">${escapeHtml(comment)}</small>` : ""}
-        </div>`;
-      })
-      .join("");
   }
 
   function renderFeatured(arr) {
@@ -1055,256 +1033,26 @@
     }
   }
 
-  function formatEokJoEok(n0) {
-    const n = Math.abs(Number(String(n0).replace(/,/g, "")));
-    if (!Number.isFinite(n) || n === 0) return "0억";
-    if (n >= 10000) return `${(n / 10000).toFixed(1)}조`;
-    if (n >= 100) return `${n.toFixed(1)}억`;
-    return `${Math.round(n)}억`;
-  }
-
-  function formatSignedEok(n) {
-    if (n == null || !Number.isFinite(n)) return { text: "—", cls: "" };
-    if (n === 0) return { text: "0억", cls: "" };
-    const sign = n > 0 ? "+" : "-";
-    return {
-      text: `${sign}${formatEokJoEok(Math.abs(n))}`,
-      cls: n > 0 ? "dm-up" : "dm-down",
-    };
-  }
-
-  function signedEokClass(n) {
-    if (n == null || !Number.isFinite(n) || n === 0) return "";
-    return n > 0 ? "dm-up" : "dm-down";
-  }
-
-  function formatSignedEokPlain(n) {
-    if (n == null || !Number.isFinite(n)) return "—";
-    if (n === 0) return "0억";
-    const sign = n > 0 ? "+" : "-";
-    return `${sign}${formatEokJoEok(Math.abs(n))}`;
-  }
-
-  function isDashboardLiveDay() {
-    return state.selected === state.todayYmd;
-  }
-
-  function dashboardErrHtml() {
-    return '<p class="dm-dash-err">데이터를 불러올 수 없습니다</p>';
-  }
-
-  function dashboardPastDayHtml() {
-    return '<p class="dm-dash-err">오늘 날짜에서만 실시간 조회됩니다</p>';
-  }
-
-  function fundSkeletonHtml() {
-    return `<div class="dm-skeleton" aria-hidden="true">
-      <span class="dm-skeleton__line dm-skeleton__line--lg"></span>
-      <span class="dm-skeleton__line dm-skeleton__line--sm"></span>
-    </div>`;
-  }
-
-  function investorSkeletonHtml() {
-    return `<div class="dm-investor-grid">${[0, 1, 2]
-      .map(
-        () =>
-          `<div class="dm-investor-item"><span class="dm-skeleton__line dm-skeleton__line--sm"></span><span class="dm-skeleton__line dm-skeleton__line--lg"></span></div>`
-      )
-      .join("")}</div>`;
-  }
-
-  function jointSkeletonHtml() {
-    return `<div class="dm-skeleton" aria-hidden="true">${[0, 1, 2, 3, 4]
-      .map(() => `<span class="dm-skeleton__line dm-skeleton__line--row"></span>`)
-      .join("")}</div>`;
-  }
-
-  async function fetchDashboard(action, extra = {}) {
-    const params = new URLSearchParams({ action });
-    Object.entries(extra).forEach(([k, v]) => {
-      if (v != null && v !== "") params.set(k, String(v));
-    });
-    const res = await fetch(`${DASHBOARD_API}?${params.toString()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error("HTTP");
-    const data = await res.json();
-    if (data && data.error) throw new Error(data.error);
-    return data;
-  }
-
-  function renderFundPanel(mode, data) {
-    const deposit = $("dm-fund-deposit-body");
-    const credit = $("dm-fund-credit-body");
-    if (!deposit || !credit) return;
-    if (!isDashboardLiveDay()) {
-      deposit.innerHTML = dashboardPastDayHtml();
-      credit.innerHTML = dashboardPastDayHtml();
-      return;
-    }
-    if (mode === "loading") {
-      deposit.innerHTML = fundSkeletonHtml();
-      credit.innerHTML = fundSkeletonHtml();
-      return;
-    }
-    if (mode === "error" || !data) {
-      deposit.innerHTML = dashboardErrHtml();
-      credit.innerHTML = dashboardErrHtml();
-      return;
-    }
-    const depVal = formatEokJoEok(data.custDepositEok);
-    const depChg = formatSignedEok(data.custDepositChangeEok);
-    deposit.innerHTML = `<span class="dm-fund-card__value">${escapeHtml(depVal)}</span>
-      <span class="dm-fund-card__delta ${escapeHtml(depChg.cls)}">전일대비 ${escapeHtml(depChg.text)}</span>`;
-
-    const crVal = formatEokJoEok(data.creditLoanEok);
-    const crChg = formatSignedEok(data.creditLoanChangeEok);
-    credit.innerHTML = `<span class="dm-fund-card__value">${escapeHtml(crVal)}</span>
-      <span class="dm-fund-card__delta ${escapeHtml(crChg.cls)}">전일대비 ${escapeHtml(crChg.text)}</span>`;
-  }
-
-  function renderInvestorPanel(mode, data) {
-    const panel = $("dm-investor-panel");
-    if (!panel) return;
-    if (!isDashboardLiveDay()) {
-      panel.innerHTML = dashboardPastDayHtml();
-      return;
-    }
-    if (mode === "loading") {
-      panel.innerHTML = investorSkeletonHtml();
-      return;
-    }
-    if (mode === "error" || !data) {
-      panel.innerHTML = dashboardErrHtml();
-      return;
-    }
-    const items = [
-      { label: "외국인", val: data.foreign },
-      { label: "기관", val: data.institution },
-      { label: "개인", val: data.individual },
-    ];
-    panel.innerHTML = `<div class="dm-investor-grid">${items
-      .map((item) => {
-        const cls = signedEokClass(item.val);
-        return `<div class="dm-investor-item">
-          <span class="dm-investor-item__label">${escapeHtml(item.label)}</span>
-          <span class="dm-investor-item__value ${escapeHtml(cls)}">${escapeHtml(formatSignedEokPlain(item.val))}</span>
-        </div>`;
-      })
-      .join("")}</div>`;
-  }
-
-  function renderJointPanel(mode, data) {
-    const panel = $("dm-joint-panel");
-    if (!panel) return;
-    if (!isDashboardLiveDay()) {
-      panel.innerHTML = dashboardPastDayHtml();
-      return;
-    }
-    if (mode === "loading") {
-      panel.innerHTML = jointSkeletonHtml();
-      return;
-    }
-    if (mode === "error" || !data) {
-      panel.innerHTML = dashboardErrHtml();
-      return;
-    }
-    const tab = dashboardState.jointTab;
-    const rows = Array.isArray(tab === "buy" ? data.buy : data.sell) ? (tab === "buy" ? data.buy : data.sell) : [];
-    if (!rows.length) {
-      panel.innerHTML = '<p class="dm-dash-err">표시할 종목이 없습니다</p>';
-      return;
-    }
-    panel.innerHTML = `<div class="dm-table-wrap"><table class="dm-table">
-      <thead><tr>
-        <th>종목</th>
-        <th class="num">외국인</th>
-        <th class="num">기관</th>
-        <th class="num">합계</th>
-      </tr></thead>
-      <tbody>${rows
-        .map((row, i) => {
-          const fCls = signedEokClass(row.foreignEok);
-          const iCls = signedEokClass(row.institutionEok);
-          const tCls = signedEokClass(row.totalEok);
-          return `<tr>
-            <td><span class="dm-rank">${i + 1}</span> <span class="dm-qname">${escapeHtml(row.name || "—")}</span></td>
-            <td class="num ${escapeHtml(fCls)}">${escapeHtml(formatSignedEokPlain(row.foreignEok))}</td>
-            <td class="num ${escapeHtml(iCls)}">${escapeHtml(formatSignedEokPlain(row.institutionEok))}</td>
-            <td class="num ${escapeHtml(tCls)}">${escapeHtml(formatSignedEokPlain(row.totalEok))}</td>
-          </tr>`;
-        })
-        .join("")}</tbody>
-    </table></div>`;
-  }
-
-  async function loadDashboardFunds(gen) {
-    renderFundPanel("loading");
-    try {
-      const data = await fetchDashboard("mktfunds");
-      if (gen !== dashboardLoadGen) return;
-      renderFundPanel("ok", data);
-    } catch (e) {
-      console.warn("dashboard mktfunds:", e);
-      if (gen !== dashboardLoadGen) return;
-      renderFundPanel("error");
-    }
-  }
-
-  async function loadDashboardInvestor(market, gen) {
-    renderInvestorPanel("loading");
-    try {
-      const data = await fetchDashboard("investor", { market });
-      if (gen !== dashboardLoadGen) return;
-      renderInvestorPanel("ok", data);
-    } catch (e) {
-      console.warn("dashboard investor:", e);
-      if (gen !== dashboardLoadGen) return;
-      renderInvestorPanel("error");
-    }
-  }
-
-  async function loadDashboardJoint(gen) {
-    renderJointPanel("loading");
-    try {
-      const data = await fetchDashboard("joint-trading");
-      if (gen !== dashboardLoadGen) return;
-      dashboardState.jointData = data;
-      renderJointPanel("ok", data);
-    } catch (e) {
-      console.warn("dashboard joint-trading:", e);
-      if (gen !== dashboardLoadGen) return;
-      dashboardState.jointData = null;
-      renderJointPanel("error");
-    }
-  }
-
-  function refreshDashboardLive() {
-    if (state.mainTab !== "dashboard") return;
-    const gen = ++dashboardLoadGen;
-    if (!isDashboardLiveDay()) {
-      renderFundPanel("ok");
-      renderInvestorPanel("ok");
-      renderJointPanel("ok");
-      return;
-    }
-    void Promise.all([
-      loadDashboardFunds(gen),
-      loadDashboardInvestor(dashboardState.supplyMarket, gen),
-      loadDashboardJoint(gen),
-    ]);
-  }
-
   function render() {
     const ymd = state.selected;
     const day = state.dataMissing ? null : getDay(ymd);
-    const aiPreparing = !state.dataMissing && isAiTabPreparing(ymd);
+    const ready = isPageContentReady(ymd);
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
     updateDateNav();
     updateLiveBadge();
 
-    if (els.dmMissing) els.dmMissing.hidden = !state.dataMissing;
-    if (els.dmTabPanels) els.dmTabPanels.hidden = state.dataMissing;
+    if (els.dmTabsRow) els.dmTabsRow.hidden = !ready;
+    if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;
+    if (els.dmPreparing) {
+      els.dmPreparing.hidden = ready;
+      if (!ready) {
+        const copy = getPreparingCopy(ymd);
+        if (els.dmPreparingTitle) els.dmPreparingTitle.textContent = copy.title;
+        if (els.dmPreparingHint) els.dmPreparingHint.textContent = copy.hint;
+      }
+    }
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;
@@ -1312,82 +1060,22 @@
       /* ignore */
     }
 
-    if (state.dataMissing) {
-      if (els.dayPrep) els.dayPrep.hidden = true;
-      if (els.dmAiContent) els.dmAiContent.hidden = true;
-      return;
-    }
+    if (!ready) return;
 
-    if (els.dayPrep) {
-      els.dayPrep.hidden = !aiPreparing;
-      if (aiPreparing) {
-        const closedReason = marketClosedReason(ymd);
-        if (els.dayPrepTitle) {
-          els.dayPrepTitle.textContent = closedReason
-            ? `${closedReason} 휴장입니다`
-            : "오늘의 시황을 준비하고 있어요";
-        }
-        if (els.dayPrepHint) {
-          els.dayPrepHint.textContent = closedReason
-            ? "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다."
-            : "장 마감 후(약 17:00) 자동으로 업데이트됩니다";
-        }
-      }
+    if (els.dmAnalysis) {
+      const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
+      els.dmAnalysis.innerHTML = analysisText
+        ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
+        : '<p class="empty-line">종합분석 없음</p>';
     }
-    if (els.dmAiContent) els.dmAiContent.hidden = aiPreparing;
-
-    if (els.dmIndexes) els.dmIndexes.innerHTML = renderIndexes(day && day.indexes);
-    if (els.dmMarketExtras) els.dmMarketExtras.innerHTML = renderMarketExtras(day && day.marketExtras);
-
-    if (aiPreparing) {
-      if (els.dmAnalysis) els.dmAnalysis.innerHTML = "";
-      if (els.dmFeatured) els.dmFeatured.innerHTML = "";
-      if (els.dmWatchlist) els.dmWatchlist.innerHTML = "";
-    } else {
-      if (els.dmAnalysis) {
-        const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
-        els.dmAnalysis.innerHTML = analysisText
-          ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
-          : '<p class="empty-line">종합분석 없음</p>';
-      }
-      if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
-      if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
-    }
+    if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
+    if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
     renderStockTable();
-    if (state.mainTab === "dashboard") refreshDashboardLive();
   }
 
   function bindEvents() {
     document.querySelectorAll("[data-dm-tab]").forEach((btn) => {
       btn.addEventListener("click", () => setMainTab(btn.dataset.dmTab));
-    });
-
-    document.querySelectorAll("[data-dm-supply]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-dm-supply]").forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle("is-active", on);
-          b.setAttribute("aria-selected", on ? "true" : "false");
-        });
-        dashboardState.supplyMarket = btn.dataset.dmSupply || "KOSPI";
-        if (state.mainTab === "dashboard" && isDashboardLiveDay()) {
-          const gen = ++dashboardLoadGen;
-          void loadDashboardInvestor(dashboardState.supplyMarket, gen);
-        }
-      });
-    });
-
-    document.querySelectorAll("[data-dm-joint]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll("[data-dm-joint]").forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle("is-active", on);
-          b.setAttribute("aria-selected", on ? "true" : "false");
-        });
-        dashboardState.jointTab = btn.dataset.dmJoint === "sell" ? "sell" : "buy";
-        if (dashboardState.jointData) renderJointPanel("ok", dashboardState.jointData);
-        else if (state.mainTab === "dashboard" && isDashboardLiveDay()) refreshDashboardLive();
-      });
     });
 
     if (els.dmDatePrev) {

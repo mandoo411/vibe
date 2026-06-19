@@ -86,12 +86,9 @@
             <section class="daily-detail" id="daily-detail" aria-live="polite">
               <div class="rt-wrap dm-wrap" id="dm-main">
                 <div class="rt-panel dm-panel" role="tabpanel">
-                  <div class="rt-tabs rt-tabs--with-date-nav" role="tablist" aria-label="마감시황 보기">
-                    <div class="rt-tabs-row-tabs">
-                      <button type="button" class="rt-tab" role="tab" data-dm-tab="dashboard" aria-selected="true" id="dm-tab-dashboard">
-                        <span class="rt-tab-label--full">대시보드</span><span class="rt-tab-label--short">대시보드</span>
-                      </button>
-                      <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="false" id="dm-tab-ai">
+                  <div class="rt-tabs rt-tabs--with-date-nav" id="dm-tab-bar" role="tablist" aria-label="마감시황 보기">
+                    <div class="rt-tabs-row-tabs" id="dm-tabs-row">
+                      <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="true" id="dm-tab-ai">
                         <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
                       </button>
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="gainers" aria-selected="false" id="dm-tab-gainers">
@@ -112,70 +109,19 @@
                     </div>
                   </div>
 
-                  <div class="dm-missing" id="dm-missing" hidden role="status">
-                    <p class="dm-missing__text">데이터 없음</p>
+                  <div class="dm-preparing" id="dm-preparing" hidden role="status">
+                    <div class="dm-preparing__inner">
+                      <p class="dm-preparing__title" id="dm-preparing-title">데이터 준비중</p>
+                      <p class="dm-preparing__hint" id="dm-preparing-hint">장 마감 후(약 17:00) 자동으로 업데이트됩니다</p>
+                      <div class="loading-bar-track" aria-hidden="true">
+                        <div class="loading-bar-inner"></div>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="dm-tab-panels" id="dm-tab-panels">
-                      <!-- 대시보드 -->
-                      <div class="dm-tab-panel" data-dm-panel="dashboard" role="tabpanel" aria-labelledby="dm-tab-dashboard">
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">지수 마감</h3>
-                          <div id="dm-indexes" class="dm-index-grid"></div>
-                        </section>
-
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">증시자금</h3>
-                          <div class="dm-fund-grid" id="dm-fund-grid">
-                            <div class="dm-fund-card" id="dm-fund-deposit">
-                              <span class="dm-fund-card__label">고객예탁금</span>
-                              <div class="dm-fund-card__body" id="dm-fund-deposit-body" aria-live="polite"></div>
-                            </div>
-                            <div class="dm-fund-card" id="dm-fund-credit">
-                              <span class="dm-fund-card__label">신용융자잔고</span>
-                              <div class="dm-fund-card__body" id="dm-fund-credit-body" aria-live="polite"></div>
-                            </div>
-                          </div>
-                        </section>
-
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">매매주체별 순매수</h3>
-                          <div class="dm-subtabs dm-subtabs--supply" role="tablist" aria-label="시장 구분">
-                            <button type="button" class="dm-subtab is-active" role="tab" data-dm-supply="KOSPI" aria-selected="true">코스피</button>
-                            <button type="button" class="dm-subtab" role="tab" data-dm-supply="KOSDAQ" aria-selected="false">코스닥</button>
-                          </div>
-                          <div id="dm-investor-panel" class="dm-investor-panel" aria-live="polite"></div>
-                        </section>
-
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">기관+외국인 동시 매매 TOP5</h3>
-                          <div class="dm-subtabs dm-subtabs--joint" role="tablist" aria-label="동시 매매 구분">
-                            <button type="button" class="dm-subtab is-active" role="tab" data-dm-joint="buy" aria-selected="true">동시순매수</button>
-                            <button type="button" class="dm-subtab" role="tab" data-dm-joint="sell" aria-selected="false">동시순매도</button>
-                          </div>
-                          <div id="dm-joint-panel" class="dm-joint-panel" aria-live="polite"></div>
-                        </section>
-
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">원자재·환율</h3>
-                          <div id="dm-market-extras" class="dm-index-grid"></div>
-                        </section>
-                      </div>
-
                       <!-- AI 시황분석 -->
-                      <div class="dm-tab-panel" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai" hidden>
-                        <div class="day-prep" id="day-prep" hidden>
-                          <div class="day-prep__inner">
-                            <div class="day-prep__copy">
-                              <p class="loading-title" id="day-prep-title">오늘의 시황을 준비하고 있어요</p>
-                              <p class="day-prep__hint" id="day-prep-hint">장 마감 후(약 17:00) 자동으로 업데이트됩니다</p>
-                              <div class="loading-bar-track">
-                                <div class="loading-bar-inner"></div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
+                      <div class="dm-tab-panel is-active" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai">
                         <div id="dm-ai-content">
                         <section class="dm-section">
                           <h3 class="dm-section__title">종합분석</h3>

@@ -145,8 +145,21 @@
     return `${m}월 ${d}일`;
   }
 
+  function latestDayWithStockData() {
+    const keys = Object.keys(state.days || {})
+      .filter((k) => YMD_RE.test(k))
+      .sort();
+    for (let i = keys.length - 1; i >= 0; i--) {
+      const d = state.days[keys[i]];
+      if (!isDayEmpty(d) && hasPartialStockLists(d)) return keys[i];
+    }
+    return null;
+  }
+
   function resolveDefaultYmd() {
-    return state.todayYmd || seoulYmd();
+    const today = state.todayYmd || seoulYmd();
+    if (isPageContentReady(today)) return today;
+    return latestDayWithStockData() || today;
   }
 
   function getJsonReportDate() {
@@ -163,18 +176,37 @@
     return state.days[today] || null;
   }
 
-  /** daily-market.json date(또는 days[오늘].date)가 KST 오늘과 같으면 AI 리포트 반영 완료 */
+  function hasPartialStockLists(day) {
+    if (!day || typeof day !== "object") return false;
+    return (
+      (Array.isArray(day.topGainers) && day.topGainers.length > 0) ||
+      (Array.isArray(day.topDecliners) && day.topDecliners.length > 0) ||
+      (Array.isArray(day.topLosers) && day.topLosers.length > 0) ||
+      (Array.isArray(day.topTradingValue) && day.topTradingValue.length > 0)
+    );
+  }
+
+  function hasLiveStockRows() {
+    return STOCK_TABS.some((t) => Array.isArray(state.liveRowsByTab[t]) && state.liveRowsByTab[t].length > 0);
+  }
+
+  /** 오늘 리포트 + TOP30 종목 데이터까지 반영된 경우만 true */
   function isTodayReportPublished() {
     const today = state.todayYmd;
     if (!today) return false;
     const todayDay = getTodayDayEntry();
     if (todayDay) {
       const dayDate = getDayDateYmd(todayDay, "");
-      if (dayDate === today) return true;
+      if (dayDate === today) {
+        return hasClosingStockData(todayDay, today) && hasAiReportContent(todayDay);
+      }
       if (dayDate && dayDate !== today) return false;
     }
     const jsonDate = getJsonReportDate();
-    if (jsonDate) return jsonDate === today;
+    if (jsonDate && jsonDate === today) {
+      const day = getDay(today);
+      return hasClosingStockData(day, today) && hasAiReportContent(day);
+    }
     return false;
   }
 
@@ -200,8 +232,16 @@
   /** 휴장·업로드 전 — 탭/본문 숨기고 준비중 메시지만 표시 */
   function isPageContentReady(ymd) {
     if (state.dataMissing) return false;
-    if (isAiTabPreparing(ymd)) return false;
-    return true;
+    if (marketClosedReason(ymd)) return false;
+    const day = getDay(ymd);
+    const today = state.todayYmd;
+    if (ymd === today) {
+      const stocksOk = hasClosingStockData(day, ymd) || hasLiveStockRows();
+      const aiOk = hasAiReportContent(day) || isTodayReportPublished();
+      return stocksOk && aiOk;
+    }
+    if (!day || isDayEmpty(day)) return false;
+    return hasPartialStockLists(day);
   }
 
   function getPreparingCopy(ymd) {
@@ -594,6 +634,7 @@
           fetchKisRealtimeTop("trading-value", LIVE_TOP_N),
         ]);
         state.liveRowsByTab = { gainers, losers, tv };
+        if (isPageContentReady(state.selected)) render();
       } catch (e) {
         console.warn("[daily-market] live stock load failed", e && e.message);
       } finally {
@@ -938,6 +979,8 @@
       } else {
         renderStockTable();
       }
+    } else {
+      render();
     }
   }
 

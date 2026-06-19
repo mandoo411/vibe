@@ -672,24 +672,27 @@
   async function fetchMcapLookup(codes) {
     const missing = [...new Set((codes || []).filter((c) => c && !mcapCacheByCode.has(c)))];
     if (!missing.length) return;
-    const qs = new URLSearchParams({ action: "mcap-lookup", codes: missing.join(",") });
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), LIVE_FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(`${KIS_RT_API}?${qs.toString()}`, {
-        cache: "no-store",
-        signal: ctrl.signal,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) return;
-      const items = Array.isArray(data.items) ? data.items : [];
-      for (const it of items) {
-        if (it && it.code && it.stck_avls) mcapCacheByCode.set(String(it.code), it.stck_avls);
+    for (let i = 0; i < missing.length; i += 30) {
+      const chunk = missing.slice(i, i + 30);
+      const qs = new URLSearchParams({ action: "mcap-lookup", codes: chunk.join(",") });
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), LIVE_FETCH_TIMEOUT_MS);
+      try {
+        const res = await fetch(`${KIS_RT_API}?${qs.toString()}`, {
+          cache: "no-store",
+          signal: ctrl.signal,
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) continue;
+        const items = Array.isArray(data.items) ? data.items : [];
+        for (const it of items) {
+          if (it && it.code && it.stck_avls) mcapCacheByCode.set(String(it.code), it.stck_avls);
+        }
+      } catch (e) {
+        console.warn("[daily-market] mcap lookup failed", e && e.message);
+      } finally {
+        clearTimeout(tid);
       }
-    } catch (e) {
-      console.warn("[daily-market] mcap lookup failed", e && e.message);
-    } finally {
-      clearTimeout(tid);
     }
   }
 

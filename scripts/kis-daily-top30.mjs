@@ -819,7 +819,7 @@ function parseNaverMarketValueKorean(raw) {
       won = n >= 1e11 ? Math.round(n) : Math.round(n * 1e8);
     }
   }
-  return won >= 5e10 ? String(won) : "";
+  return won >= 1e8 ? String(won) : "";
 }
 
 function naverStockMcapWonFromListJson(s) {

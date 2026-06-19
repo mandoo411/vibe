@@ -85,7 +85,6 @@
     dmDateLabel: $("dm-date-label"),
     dmDatePrev: $("dm-date-prev"),
     dmDateNext: $("dm-date-next"),
-    dmLiveBadge: $("dm-live-badge"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -141,8 +140,9 @@
   }
 
   function shortDateLabel(ymd) {
+    if (!YMD_RE.test(ymd)) return "—";
     const { m, d } = ymdParts(ymd);
-    return `${m}월 ${d}일`;
+    return `${m}월 ${d}일 (${weekdayKo(ymd)})`;
   }
 
   function latestDayWithStockData() {
@@ -684,17 +684,6 @@
     return applyMcapCache(rows);
   }
 
-  function updateLiveBadge() {
-    if (!els.dmLiveBadge) return;
-    const show =
-      isPageContentReady(state.selected) &&
-      state.liveMode &&
-      state.selected === state.todayYmd &&
-      !state.dataMissing &&
-      (STOCK_TABS.includes(state.mainTab) || STOCK_TABS.some((t) => (state.liveRowsByTab[t] || []).length));
-    els.dmLiveBadge.hidden = !show;
-  }
-
   function calcTradeValFromPriceVol(priceRaw, volRaw) {
     const p = numFromMoneyish(priceRaw);
     const v = numFromMoneyish(volRaw);
@@ -974,7 +963,6 @@
       if (needsLiveRealtime(state.selected)) {
         void loadLiveStockData().then(() => {
           renderStockTable();
-          updateLiveBadge();
         });
       } else {
         renderStockTable();
@@ -1084,7 +1072,6 @@
 
     if (els.title) els.title.textContent = "마감시황";
     updateDateNav();
-    updateLiveBadge();
 
     if (els.dmTabsRow) els.dmTabsRow.hidden = !ready;
     if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;

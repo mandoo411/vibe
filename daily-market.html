@@ -29,7 +29,7 @@
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./daily-market.css?v=2" />
+    <link rel="stylesheet" href="./daily-market.css?v=3" />
     <link rel="stylesheet" href="./realtime-board.css?v=2" />
     <script src="./assets/data-url.js"></script>
   </head>
@@ -102,10 +102,13 @@
                       </button>
                     </div>
                     <div class="dm-date-nav" id="dm-date-nav" aria-label="날짜 선택">
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-prev" aria-label="이전 날짜">‹</button>
+                      <button type="button" class="dm-date-nav__btn" id="dm-date-prev" aria-label="이전 날짜">
+                        <span aria-hidden="true">‹</span>
+                      </button>
                       <span class="dm-date-nav__label" id="dm-date-label" aria-live="polite">—</span>
-                      <span class="dm-live-badge" id="dm-live-badge" hidden>실시간 데이터</span>
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-next" aria-label="다음 날짜">›</button>
+                      <button type="button" class="dm-date-nav__btn" id="dm-date-next" aria-label="다음 날짜">
+                        <span aria-hidden="true">›</span>
+                      </button>
                     </div>
                   </div>
 

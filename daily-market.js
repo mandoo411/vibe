@@ -75,6 +75,7 @@
     dmWatchlist: $("dm-watchlist"),
     dmStockTbody: $("dm-stock-tbody"),
     dmStockThead: $("dm-stock-thead-row"),
+    dmStockHeaderRow: $("dm-stock-header-row"),
     dmStockTable: $("dm-stock-table"),
     dmPreparing: $("dm-preparing"),
     dmPreparingTitle: $("dm-preparing-title"),
@@ -757,9 +758,27 @@
     return base.join("");
   }
 
+  function isMobileLayout() {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 768px)").matches
+    );
+  }
+
+  function mobileLastColumnLabel(subTab) {
+    return subTab === "tv" ? "거래대금" : "시가총액";
+  }
+
+  function syncMobileHeaderRow(subTab) {
+    const last = els.dmStockHeaderRow && els.dmStockHeaderRow.querySelector(".rt-col-last");
+    if (last) last.textContent = mobileLastColumnLabel(subTab);
+  }
+
   function syncStockThead(subTab) {
     if (els.dmStockTable) els.dmStockTable.setAttribute("data-dm-stock-tab", subTab || "gainers");
     if (els.dmStockThead) els.dmStockThead.innerHTML = stockTheadHtml(subTab);
+    syncMobileHeaderRow(subTab);
   }
 
   function normalizeDailyStockRow(r, i) {
@@ -1048,6 +1067,30 @@
       return;
     }
 
+    if (isMobileLayout()) {
+      tbody.innerHTML = rows
+        .map((r) => {
+          const chg = parseChange(r.change);
+          const cls = deltaClass(chg);
+          const lastVal =
+            subTab === "tv"
+              ? escapeHtml(formatRowTradeVal(r))
+              : escapeHtml(formatStckAvls(r.stck_avls));
+          const row = [
+            `<div class="rt-mobile-row dm-mobile-row">`,
+            `  <span class="rt-col-rank">${escapeHtml(r.rank != null ? String(r.rank) : "—")}</span>`,
+            `  <span class="rt-col-name"><span class="rt-name-text">${escapeHtml(r.name)}</span></span>`,
+            `  <span class="rt-col-price">${escapeHtml(fmtNum(r.currentPrice))}</span>`,
+            `  <span class="rt-col-change"><span class="delta ${cls}">${escapeHtml(formatChange(chg))}</span></span>`,
+            `  <span class="rt-col-last">${lastVal}</span>`,
+            `</div>`,
+          ].join("");
+          return `<tr class="dm-stock-row"><td colspan="${colSpan}">${row}</td></tr>`;
+        })
+        .join("");
+      return;
+    }
+
     tbody.innerHTML = rows
       .map((r) => {
         const chg = parseChange(r.change);
@@ -1161,6 +1204,14 @@
         await ensureDayLoaded(h);
         render();
       }
+    });
+
+    let resizeTid;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTid);
+      resizeTid = setTimeout(() => {
+        if (STOCK_TABS.includes(state.mainTab)) renderStockTable();
+      }, 150);
     });
   }
 

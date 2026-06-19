@@ -1037,19 +1037,19 @@ a.hub-card:hover .hub-card__chev {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
-    padding: 2px 4px;
-    color: #bbbbbb;
+    padding: 4px 4px;
+    color: var(--text-secondary, #5d606b);
     text-decoration: none;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.2;
     -webkit-tap-highlight-color: transparent;
   }
 
   .tm-bottom-nav__item i {
-    font-size: 20px;
+    font-size: 22px;
     line-height: 1;
   }
 

@@ -2543,10 +2543,10 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item {
     position: relative;
     padding: 10px 2px 8px;
-    gap: 3px;
-    color: #aaa;
-    font-size: 10px;
-    font-weight: 400;
+    gap: 4px;
+    color: var(--text-secondary, #5d606b);
+    font-size: 12px;
+    font-weight: 500;
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item > span:last-child {
@@ -2578,7 +2578,7 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #bbb;
+    color: var(--text-secondary, #5d606b);
   }
 
   .page-home-v2 .home-m-bottom-nav .tm-bottom-nav__item.is-active .tm-bottom-nav__icon {

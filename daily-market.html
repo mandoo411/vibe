@@ -22,14 +22,14 @@
     <script src="./theme.js"></script>
     <script src="./site-shell.js" defer></script>
     <link rel="stylesheet" href="./theme.css" />
-    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="./site-shell.css?v=nav-mobile" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./daily-market.css?v=3" />
+    <link rel="stylesheet" href="./daily-market.css?v=4" />
     <link rel="stylesheet" href="./realtime-board.css?v=2" />
     <script src="./assets/data-url.js"></script>
   </head>
@@ -147,6 +147,13 @@
                       <div class="dm-tab-panel" data-dm-panel="stocks" role="tabpanel" aria-labelledby="dm-tab-gainers dm-tab-losers dm-tab-tv" hidden>
                         <div class="table-box">
                           <div class="rt-scroll dm-stock-scroll">
+                            <div class="rt-header-row dm-stock-header-row" id="dm-stock-header-row" aria-hidden="true">
+                              <span class="rt-col-rank">순위</span>
+                              <span class="rt-col-name">종목명</span>
+                              <span class="rt-col-price">가격</span>
+                              <span class="rt-col-change">등락률</span>
+                              <span class="rt-col-last">시가총액</span>
+                            </div>
                             <table class="rt-table dm-stock-table" id="dm-stock-table" data-dm-stock-tab="gainers" aria-label="마감 종목시세">
                               <colgroup>
                                 <col class="rt-col-rank" />

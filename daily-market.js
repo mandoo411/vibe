@@ -832,6 +832,9 @@
 
   function getFeaturedStocks(day) {
     if (!day) return [];
+    // featured_stocks(그룹A/B 선정 기준으로 큐레이션된 최신 데이터)가 있으면 그것만 사용.
+    // issueStocks/notableStocks는 구버전 파이프라인의 잔존 필드라 섞으면 옛 종목이 중복 노출됨.
+    if (Array.isArray(day.featured_stocks) && day.featured_stocks.length) return day.featured_stocks;
     const issue = Array.isArray(day.issueStocks) ? day.issueStocks : [];
     const notable = Array.isArray(day.notableStocks) ? day.notableStocks : [];
     if (issue.length || notable.length) {
@@ -846,7 +849,6 @@
       }
       return merged;
     }
-    if (Array.isArray(day.featured_stocks) && day.featured_stocks.length) return day.featured_stocks;
     return [];
   }
 

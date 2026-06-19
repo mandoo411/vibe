@@ -138,6 +138,26 @@ function delay(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+async function fetchWithRetry(label, fetchFn, { retries = 3, delayMs = 2500 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fetchFn();
+    } catch (err) {
+      lastErr = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      const transient = /fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|network/i.test(msg);
+      if (attempt < retries && transient) {
+        console.warn(`  [${label}] 네트워크 오류, ${delayMs}ms 후 재시도 (${attempt + 1}/${retries}): ${msg}`);
+        await delay(delayMs);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 function compactText(value, limit = 180) {
   const clean = stripHtml(value).replace(/\s+/g, " ").trim();
   if (clean.length <= limit) return clean;
@@ -379,17 +399,19 @@ async function fetchFluctuationRanking({
   };
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      authorization: `Bearer ${token}`,
-      appkey: appKey,
-      appsecret: appSecret,
-      tr_id: "FHPST01700000",
-      custtype: "P",
-    },
-  });
+  const res = await fetchWithRetry(`${marketLabel} fluctuation`, () =>
+    fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${token}`,
+        appkey: appKey,
+        appsecret: appSecret,
+        tr_id: "FHPST01700000",
+        custtype: "P",
+      },
+    })
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`KIS ranking HTTP ${res.status} (${marketLabel}): ${text.slice(0, 300)}`);
@@ -648,17 +670,19 @@ async function fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, mar
   };
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      authorization: `Bearer ${token}`,
-      appkey: appKey,
-      appsecret: appSecret,
-      tr_id: "FHPST01710000",
-      custtype: "P",
-    },
-  });
+  const res = await fetchWithRetry(`${marketLabel} trading-value`, () =>
+    fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${token}`,
+        appkey: appKey,
+        appsecret: appSecret,
+        tr_id: "FHPST01710000",
+        custtype: "P",
+      },
+    })
+  );
   const text = await res.text();
   let json;
   try {

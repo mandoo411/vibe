@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-export const SITE_URL = "https://vibe-mu-nine.vercel.app";
+export const SITE_URL = String(process.env.SITE_URL || "https://www.totalmoney.kr").replace(/\/+$/, "");
 export const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function requireEnv(name) {

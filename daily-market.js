@@ -159,6 +159,7 @@
   function resolveDefaultYmd() {
     const today = state.todayYmd || seoulYmd();
     if (isPageContentReady(today)) return today;
+    if (isDomesticTradingDay(today) && isAfterMarketCloseKst()) return today;
     return latestDayWithStockData() || today;
   }
 
@@ -231,15 +232,11 @@
 
   /** 휴장·업로드 전 — 탭/본문 숨기고 준비중 메시지만 표시 */
   function isPageContentReady(ymd) {
-    if (state.dataMissing) return false;
-    if (marketClosedReason(ymd)) return false;
+    if (state.dataMissing && ymd !== state.todayYmd) return false;
+    const closed = marketClosedReason(ymd);
+    if (closed) return false;
     const day = getDay(ymd);
-    const today = state.todayYmd;
-    if (ymd === today) {
-      const stocksOk = hasClosingStockData(day, ymd) || hasLiveStockRows();
-      const aiOk = hasAiReportContent(day) || isTodayReportPublished();
-      return stocksOk && aiOk;
-    }
+    if (ymd === state.todayYmd) return hasAnyStockTabData(day, ymd);
     if (!day || isDayEmpty(day)) return false;
     return hasPartialStockLists(day);
   }
@@ -260,7 +257,7 @@
     }
     return {
       title: "데이터 준비중",
-      hint: "장 마감 후(약 17:00) 자동으로 업데이트됩니다",
+      hint: "장 마감 후(약 16:00) TOP30이 자동 업데이트됩니다",
     };
   }
 
@@ -382,6 +379,34 @@
     if (day === 0) return "주말(일요일)";
     if (day === 6) return "주말(토요일)";
     return holidayName(ymd);
+  }
+
+  function isDomesticTradingDay(ymd) {
+    return !marketClosedReason(ymd);
+  }
+
+  function seoulHourMinute(now = new Date()) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Seoul",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    }).formatToParts(now);
+    const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
+    const minute = Number(parts.find((p) => p.type === "minute")?.value ?? 0);
+    return { hour, minute };
+  }
+
+  function isAfterMarketCloseKst(now = new Date()) {
+    const { hour, minute } = seoulHourMinute(now);
+    return hour > 15 || (hour === 15 && minute >= 30);
+  }
+
+  function hasAnyStockTabData(day, ymd) {
+    if (hasLiveStockRows()) return true;
+    if (hasClosingStockData(day, ymd)) return true;
+    if (day && getDayDateYmd(day, ymd) === ymd && hasPartialStockLists(day)) return true;
+    return false;
   }
 
   function monthLabel(ymd) {
@@ -634,7 +659,7 @@
           fetchKisRealtimeTop("trading-value", LIVE_TOP_N),
         ]);
         state.liveRowsByTab = { gainers, losers, tv };
-        if (isPageContentReady(state.selected)) render();
+        render();
       } catch (e) {
         console.warn("[daily-market] live stock load failed", e && e.message);
       } finally {

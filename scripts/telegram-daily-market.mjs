@@ -143,7 +143,7 @@ function buildMessage(data) {
     lines.push("", "⚠️ *급락*", decliners);
   }
 
-  lines.push("", "👉 *전체 분석*", "totalmoney.kr/daily-market.html");
+  lines.push("", "👉 *전체 분석*", `${SITE_URL}/daily-market.html`);
   return lines.join("\n");
 }
 

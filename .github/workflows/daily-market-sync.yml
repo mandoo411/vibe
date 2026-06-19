@@ -69,7 +69,16 @@ jobs:
           } > .env
 
       - name: Sync KIS top 30 + Naver news
-        run: npm run sync:kis
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if npm run sync:kis; then
+              exit 0
+            fi
+            echo "::warning::sync:kis failed (attempt ${attempt}/3), retrying in 30s..."
+            sleep 30
+          done
+          exit 1
 
       - name: Commit updated daily market data
         run: |

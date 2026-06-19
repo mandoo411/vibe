@@ -1,23 +1,63 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-19 07:56 KST",
-    "from": "2026-06-19",
-    "to": "2026-07-03",
-    "historyFrom": "2026-03-21",
+    "lastUpdatedKst": "2026-06-20 07:02 KST",
+    "from": "2026-06-20",
+    "to": "2026-07-04",
+    "historyFrom": "2026-03-22",
     "source": "investing+forexfactory+38-detail+claude"
   },
-  "economicCalendar": [],
-  "krIPO": [
+  "economicCalendar": [
     {
-      "date": "2026-06-19",
-      "name": "메리츠스팩2호",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2295",
-      "code": ""
+      "date": "2026-06-23",
+      "event": "S&P Global Manufacturing PMI",
+      "country": "US",
+      "time": "22:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "55.1",
+      "estimate": "",
+      "unit": ""
     },
+    {
+      "date": "2026-06-23",
+      "event": "S&P Global Services PMI",
+      "country": "US",
+      "time": "22:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "50.7",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-24",
+      "event": "New Home Sales",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "622K",
+      "estimate": "640K",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-24",
+      "event": "Crude Oil Inventories",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-8.263M",
+      "estimate": "",
+      "unit": ""
+    }
+  ],
+  "krIPO": [
     {
       "date": "2026-06-29",
       "name": "져스텍",
@@ -58,18 +98,23 @@
   "krEarnings": [],
   "analysis": {
     "topEvents": [
-      "6월 19일 메리츠스팩2호 코스닥 신규 상장 예정",
-      "6월 29일 져스텍 코스닥 시장 데뷔",
-      "6월 30일 자율주행 비전 AI 기업 스트라드비젼 동시 상장",
-      "6월 30일 한국스팩16호 코스닥 입성",
-      "7월 1일 마케팅 플랫폼 매드업 코스닥 상장"
+      "6월 23일 미국 S&P Global 제조업·서비스업 PMI 발표로 글로벌 경기 흐름 확인",
+      "6월 24일 미국 신규주택판매 64만호 예상, 부동산 시장 회복세 점검",
+      "6월 24일 미국 원유재고 발표로 유가 및 에너지 섹터 변동성 예상",
+      "6월 29~30일 져스텍, 스트라드비젼 등 코스닥 신규상장으로 IPO 시장 활기",
+      "7월 1일 매드업 상장으로 디지털 마케팅 섹터 투자 관심 집중"
     ],
     "marketImpacts": [
-      "스트라드비젼 상장으로 자율주행 및 AI 관련 테마주 동반 상승 가능성",
-      "스팩(SPAC) 2개 동시 상장으로 코스닥 유동성 일시적 분산 우려",
-      "매드업 상장으로 디지털 마케팅·광고 섹터 관심도 증가 전망",
-      "연속된 신규 상장으로 코스닥 시장 변동성 확대 예상"
+      "미국 제조업 PMI 55.1 유지 여부에 따라 국내 수출주 및 제조업 관련주 영향 전망",
+      "서비스업 PMI 개선 시 글로벌 경기 회복 기대감으로 코스피 상승 모멘텀 가능",
+      "신규주택판매 증가 예상으로 건설·철강·화학 등 관련 업종 수혜 기대",
+      "원유재고 감소 지속 시 정유·화학주 수혜, 증가 시 유가 하락 압력",
+      "코스닥 IPO 집중으로 기술주 및 중소형주 거래대금 분산 가능성"
     ],
-    "watchEarnings": []
+    "watchEarnings": [
+      "져스텍 - 6월 29일 코스닥 상장, 공모가 및 초기 수급 주목",
+      "스트라드비젼 - 6월 30일 상장, 자율주행 관련 기술주로 투자자 관심 집중",
+      "매드업 - 7월 1일 상장, 디지털 마케팅 플랫폼 성장성 평가 필요"
+    ]
   }
 }

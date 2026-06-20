@@ -68,6 +68,22 @@ function formatSectorBlock(sectorFlow) {
   return parts.length ? parts.join("\n") : "섹터 데이터 준비 중";
 }
 
+// 분석 텍스트 맨 앞 "제목 블록"(구분선 ──── 이전 줄들)과 본문을 분리.
+// 구분선이 없으면 첫 줄만 제목으로 취급.
+function splitAnalysisTitle(analysis) {
+  const text = String(analysis || "").trim();
+  if (!text) return { title: "", body: "" };
+  const lines = text.split("\n");
+  const sepIdx = lines.findIndex((l) => /^[─━_=]{4,}$/.test(l.trim()));
+  if (sepIdx > 0) {
+    return {
+      title: lines.slice(0, sepIdx).join("\n").trim(),
+      body: lines.slice(sepIdx + 1).join("\n").trim(),
+    };
+  }
+  return { title: lines[0] || "", body: lines.slice(1).join("\n").trim() };
+}
+
 const CIRCLED = ["①", "②", "③", "④", "⑤"];
 
 function stockChange(row) {
@@ -128,7 +144,18 @@ function buildMessage(data) {
 
   const analysis = day.analysis || day.summary || day.marketSummary || "";
   if (analysis) {
-    lines.push("", "📊 *종합분석*", mdText(analysis));
+    const { title, body } = splitAnalysisTitle(analysis);
+    lines.push("", "━━━━━━━━━━━━━━━━━━", "📊 *종합분석*");
+    if (title) {
+      const boldTitle = title
+        .split("\n")
+        .filter((l) => l.trim())
+        .map((l) => `*${mdText(l)}*`)
+        .join("\n");
+      lines.push(boldTitle);
+    }
+    lines.push("━━━━━━━━━━━━━━━━━━");
+    lines.push(mdText(body || analysis));
   }
 
   const supplyLine = formatSupplyLine(day.supply || []);

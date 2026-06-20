@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-19T22:57:42.826Z",
+  "updatedAt": "2026-06-20T00:07:06.707Z",
   "source": "kis+yahoo",
   "action": "volume",
   "count": 50,
@@ -22,7 +22,7 @@
       "name": "마이크론 테크놀로지",
       "price": 1133.99,
       "changePct": 8.7,
-      "changePoints": 90.76,
+      "changePoints": 90.8,
       "volume": 64642538,
       "marketCap": 1278839095296,
       "tradingValue": 73303991667,
@@ -82,7 +82,7 @@
       "name": "샌디스크",
       "price": 2184.75,
       "changePct": 11.54,
-      "changePoints": 225.95,
+      "changePoints": 226.04,
       "volume": 12178323,
       "marketCap": 323539107840,
       "tradingValue": 26606591174,
@@ -94,10 +94,10 @@
       "name": "애플",
       "price": 298.01,
       "changePct": 0.7,
-      "changePoints": 2.06,
+      "changePoints": 2.07,
       "volume": 85962201,
       "marketCap": 4376979046400,
-      "tradingValue": 26075479156,
+      "tradingValue": 25617595520,
       "exchange": "NAS"
     },
     {
@@ -118,7 +118,7 @@
       "name": "테슬라",
       "price": 400.49,
       "changePct": 1.04,
-      "changePoints": 4.12,
+      "changePoints": 4.11,
       "volume": 58384713,
       "marketCap": 1504129843200,
       "tradingValue": 23382493709,
@@ -142,7 +142,7 @@
       "name": "브로드컴",
       "price": 411.35,
       "changePct": 4.7,
-      "changePoints": 18.45,
+      "changePoints": 18.47,
       "volume": 45076052,
       "marketCap": 1957030658048,
       "tradingValue": 18542033990,
@@ -157,7 +157,7 @@
       "changePoints": 6.89,
       "volume": 75624415,
       "marketCap": 2628929978368,
-      "tradingValue": 18493666317,
+      "tradingValue": 18481850782,
       "exchange": "NAS"
     },
     {
@@ -226,7 +226,7 @@
       "name": "TSMC(ADR)",
       "price": 462.12,
       "changePct": 6.94,
-      "changePoints": 29.97,
+      "changePoints": 29.99,
       "volume": 25817106,
       "marketCap": 2396773416960,
       "tradingValue": 11930601025,
@@ -378,18 +378,6 @@
     },
     {
       "rank": 32,
-      "ticker": "LITE",
-      "name": "루멘텀 홀딩스",
-      "price": 850,
-      "changePct": -2.3,
-      "changePoints": -19.98,
-      "volume": 8360832,
-      "marketCap": 66130001920,
-      "tradingValue": 7165672840,
-      "exchange": "NAS"
-    },
-    {
-      "rank": 33,
       "ticker": "NFLX",
       "name": "넷플릭스",
       "price": 77.38,
@@ -401,7 +389,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 34,
+      "rank": 33,
       "ticker": "PLTR",
       "name": "팔란티어 테크",
       "price": 128.47,
@@ -410,6 +398,18 @@
       "volume": 55337987,
       "marketCap": 307982663680,
       "tradingValue": 7109271190,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 34,
+      "ticker": "LITE",
+      "name": "루멘텀 홀딩스",
+      "price": 850,
+      "changePct": -2.3,
+      "changePoints": -20.01,
+      "volume": 8360832,
+      "marketCap": 66130001920,
+      "tradingValue": 7106707200,
       "exchange": "NAS"
     },
     {
@@ -430,7 +430,7 @@
       "name": "KLA",
       "price": 259.56,
       "changePct": 8.73,
-      "changePoints": 20.83,
+      "changePoints": 20.84,
       "volume": 26167269,
       "marketCap": 339056787456,
       "tradingValue": 6791976342,
@@ -457,7 +457,7 @@
       "changePoints": -8.24,
       "volume": 20111030,
       "marketCap": 871430684672,
-      "tradingValue": 6604822971,
+      "tradingValue": 6540509177,
       "exchange": "NYS"
     },
     {
@@ -502,7 +502,7 @@
       "name": "ISHARES SEMICONDUCTOR",
       "price": 639.45,
       "changePct": 6.62,
-      "changePoints": 39.7,
+      "changePoints": 39.72,
       "volume": 9666034,
       "marketCap": 4891792500,
       "tradingValue": 6180945441,
@@ -514,10 +514,10 @@
       "name": "캐터필러",
       "price": 985.82,
       "changePct": 3.13,
-      "changePoints": 29.92,
+      "changePoints": 29.9,
       "volume": 6175042,
       "marketCap": 454060769280,
-      "tradingValue": 6087479904,
+      "tradingValue": 6089712988,
       "exchange": "NYS"
     },
     {
@@ -538,10 +538,10 @@
       "name": "액센추어",
       "price": 127.98,
       "changePct": -17.97,
-      "changePoints": -28.03,
+      "changePoints": -28.04,
       "volume": 41744292,
       "marketCap": 78763393024,
-      "tradingValue": 5397115277,
+      "tradingValue": 5342434490,
       "exchange": "NYS"
     },
     {
@@ -574,10 +574,10 @@
       "name": "골드만삭스",
       "price": 1096.56,
       "changePct": -0.23,
-      "changePoints": -2.58,
+      "changePoints": -2.53,
       "volume": 4499162,
       "marketCap": 323493363712,
-      "tradingValue": 4967295772,
+      "tradingValue": 4933601083,
       "exchange": "NYS"
     },
     {
@@ -594,14 +594,14 @@
     },
     {
       "rank": 50,
-      "ticker": "GEV",
-      "name": "GE베르노바",
-      "price": 1109.73,
-      "changePct": 5.8,
-      "changePoints": 60.84,
-      "volume": 4344726,
-      "marketCap": 298206625792,
-      "tradingValue": 4821472784,
+      "ticker": "V",
+      "name": "비자",
+      "price": 327.24,
+      "changePct": -0.95,
+      "changePoints": -3.14,
+      "volume": 14716741,
+      "marketCap": 622326579200,
+      "tradingValue": 4836632902,
       "exchange": "NYS"
     }
   ]

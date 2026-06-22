@@ -7,7 +7,8 @@ const KIS_BASE_URL = (process.env.KIS_BASE_URL || "https://openapi.koreainvestme
   /\/+$/,
   ""
 );
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const US_FETCH_TIMEOUT_MS = 5000; // 5초
 
 // KIS는 IPO 공모 물량만 인식해 시총이 과소 계산됨(예: SPCX) → Yahoo marketCap을 우선 사용
 const YAHOO_QUOTE_BATCH = 50;
@@ -164,6 +165,16 @@ function outputObject(body, preferred) {
   return {};
 }
 
+async function fetchWithTimeout(url, options = {}) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), US_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
 async function kisGet(path, trId, params) {
   const { token, appkey, appsecret } = requireKisAuth();
   const url = new URL(path, KIS_BASE_URL);
@@ -171,7 +182,7 @@ async function kisGet(path, trId, params) {
     url.searchParams.set(key, value == null ? "" : String(value));
   }
 
-  const res = await fetch(url.toString(), {
+  const res = await fetchWithTimeout(url.toString(), {
     method: "GET",
     headers: {
       "content-type": "application/json; charset=utf-8",
@@ -540,7 +551,7 @@ async function fetchOverseasIndexQuote({ symbol, exchange }) {
 async function fetchCnbcIndexQuotes() {
   const symbols = US_INDICES.map((idx) => idx.cnbcSymbol).filter(Boolean).join("|");
   const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${encodeURIComponent(symbols)}&output=json`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       "user-agent": "Mozilla/5.0",
       accept: "application/json",
@@ -566,7 +577,7 @@ async function fetchCnbcIndexQuotes() {
 
 async function fetchYahooIndexQuote(yahooSymbol) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1d&range=5d`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       "user-agent": "Mozilla/5.0",
       accept: "application/json",
@@ -593,7 +604,7 @@ async function getYahooCrumb() {
   let cookie = "";
   for (const url of ["https://fc.yahoo.com/", "https://finance.yahoo.com/"]) {
     try {
-      const r = await fetch(url, { headers: { "user-agent": YAHOO_UA, accept: "text/html" } });
+      const r = await fetchWithTimeout(url, { headers: { "user-agent": YAHOO_UA, accept: "text/html" } });
       cookie = (r.headers.get("set-cookie") || "").split(";")[0];
       if (cookie) break;
     } catch (e) {
@@ -601,7 +612,7 @@ async function getYahooCrumb() {
     }
   }
   if (!cookie) throw new Error("Yahoo cookie unavailable");
-  const res = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+  const res = await fetchWithTimeout("https://query1.finance.yahoo.com/v1/test/getcrumb", {
     headers: { "user-agent": YAHOO_UA, accept: "text/plain", cookie },
   });
   const crumb = (await res.text()).trim();
@@ -628,7 +639,7 @@ async function fetchYahooMarketCapMap(tickers) {
       chunk.join(",")
     )}&crumb=${encodeURIComponent(auth.crumb)}`;
     try {
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         headers: { "user-agent": YAHOO_UA, accept: "application/json", cookie: auth.cookie },
       });
       if (!res.ok) {
@@ -705,7 +716,7 @@ async function applyYahooMarketCap(rows) {
 
 async function fetchCnbcIndexQuote(symbol) {
   const url = `https://quote.cnbc.com/quote-html-webservice/quote.htm?symbols=${symbol}&output=json`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       "user-agent": "Mozilla/5.0",
       accept: "application/json",
@@ -1116,7 +1127,7 @@ async function fetchYahooEquityQuote(symbol) {
   const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(
     sym
   )}&crumb=${encodeURIComponent(auth.crumb)}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       "user-agent": YAHOO_UA,
       accept: "application/json",
@@ -1157,7 +1168,7 @@ async function fetchYahooSymbolSearch(query) {
   const q = sanitizeStr(query);
   if (!q || q.length < 1) return [];
   const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=12&newsCount=0&listsCount=0`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     headers: {
       "user-agent": "Mozilla/5.0",
       accept: "application/json",

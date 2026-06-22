@@ -111,6 +111,8 @@
     dataUpdatedAt: null,
     /** 종목 상세 fetch 중단용 */
     detailFetchAbort: null,
+    /** loadTablePage 요청 순번 — 늦게 끝난 stale 응답 무시 */
+    tablePageReqId: 0,
   };
 
   const KR_JSON_FILE = "kr-realtime.json";
@@ -1181,8 +1183,8 @@
     el.querySelectorAll("[data-rt-table-page]").forEach((b) => {
       const n = Number(b.getAttribute("data-rt-table-page") || "1") || 1;
       const active = n === pg;
-      b.setAttribute("aria-current", active ? "page" : "false");
       b.classList.toggle("active", active);
+      b.setAttribute("aria-current", active ? "page" : "false");
     });
   }
 
@@ -1345,11 +1347,13 @@
     const pg = Math.max(1, Math.min(4, Number(page) || 1));
     const prevPage = currentPageForTab(tab);
     const cache = pageCacheForTab(tab);
+    const reqId = ++state.tablePageReqId;
 
     updatePaginationUI(pg);
     if (pg !== prevPage) state.openChartCode = null;
 
     if (pg === prevPage && cache[pg] && cache[pg].stocks && cache[pg].stocks.length) {
+      updatePaginationUI(pg);
       renderAll();
       return;
     }
@@ -1358,17 +1362,28 @@
     const errEl = $("rt-error");
     try {
       await ensureTabPageLoaded(tab, pg, { skipTableUi: true });
+      if (reqId !== state.tablePageReqId || state.tab !== tab || currentPageForTab(tab) !== pg) return;
       if (errEl) errEl.hidden = true;
+      updatePaginationUI(pg);
       renderAll();
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
         subscribeStocks(getCurrentRows().map((r) => r.code));
       }
     } catch (e) {
+      if (reqId !== state.tablePageReqId || state.tab !== tab) return;
+      setCurrentPageForTab(tab, prevPage);
+      updatePaginationUI(prevPage);
+      if (cache[prevPage] && cache[prevPage].stocks && cache[prevPage].stocks.length) {
+        applyStocksArrayToTab(tab, cache[prevPage].stocks);
+      }
+      renderAll();
       if (errEl) {
         errEl.hidden = false;
         errEl.textContent = rtErrorTimeoutMessage(e);
       }
+    } finally {
+      if (reqId === state.tablePageReqId && state.tab === tab) hideTableLoading();
     }
   }
 
@@ -2587,6 +2602,7 @@
   }
 
   async function switchToTab(tk) {
+    state.tablePageReqId += 1;
     if (tk === "gainers") state.tab = "gainers";
     else if (tk === "tv") state.tab = "tv";
     else state.tab = "cap";

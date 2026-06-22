@@ -1,59 +1,95 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-22 07:11 KST",
-    "from": "2026-06-22",
-    "to": "2026-07-06",
-    "historyFrom": "2026-03-24",
+    "lastUpdatedKst": "2026-06-23 07:45 KST",
+    "from": "2026-06-23",
+    "to": "2026-07-07",
+    "historyFrom": "2026-03-25",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
     {
-      "date": "2026-06-23",
-      "event": "S&P Global Manufacturing PMI",
-      "country": "US",
-      "time": "22:45",
+      "date": "2026-06-24",
+      "event": "CPI m/m",
+      "country": "AU",
+      "time": "10:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "55.1",
-      "estimate": "54.6",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-23",
-      "event": "S&P Global Services PMI",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "50.7",
-      "estimate": "51.0",
+      "previous": "0.4%",
+      "estimate": "-0.4%",
       "unit": ""
     },
     {
       "date": "2026-06-24",
-      "event": "New Home Sales",
-      "country": "US",
-      "time": "23:00",
+      "event": "CPI y/y",
+      "country": "AU",
+      "time": "10:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "622K",
-      "estimate": "637K",
+      "previous": "4.2%",
+      "estimate": "4.3%",
       "unit": ""
     },
     {
       "date": "2026-06-24",
-      "event": "Crude Oil Inventories",
-      "country": "US",
-      "time": "23:30",
+      "event": "Trimmed Mean CPI m/m",
+      "country": "AU",
+      "time": "10:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-8.263M",
-      "estimate": "",
+      "previous": "0.3%",
+      "estimate": "0.3%",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-25",
+      "event": "Employment Change",
+      "country": "AU",
+      "time": "10:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-18.6K",
+      "estimate": "31.2K",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-25",
+      "event": "Unemployment Rate",
+      "country": "AU",
+      "time": "10:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "4.5%",
+      "estimate": "4.4%",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-25",
+      "event": "Core PCE Price Index m/m",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.2%",
+      "estimate": "0.3%",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-25",
+      "event": "Final GDP q/q",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "1.6%",
+      "estimate": "1.6%",
       "unit": ""
     }
   ],
@@ -107,19 +143,20 @@
   "krEarnings": [],
   "analysis": {
     "topEvents": [
-      "6월 23일 미국 S&P Global 제조업·서비스업 PMI 발표로 경기 모멘텀 확인",
-      "6월 24일 미국 신규주택판매 발표로 부동산 시장 회복세 점검",
-      "6월 24일 미국 원유재고 발표로 유가 변동성 예상",
-      "6월 29일~7월 1일 져스텍, 스트라드비젼, 매드업 등 코스닥 신규상장 집중",
-      "7월 6일 레몬헬스케어 상장으로 헬스케어 섹터 관심 고조"
+      "6월 24일 호주 CPI 발표로 인플레이션 추세 확인 및 중앙은행 통화정책 방향 점검",
+      "6월 25일 미국 근원 PCE 물가지수 발표로 연준의 금리 정책 향방 가늠",
+      "6월 25일 미국 최종 GDP 확정치 발표로 경제 성장률 재확인",
+      "6월 25일 호주 고용지표 발표로 노동시장 회복세 및 경기 모멘텀 점검",
+      "6월 29일~7월 6일 져스텍, 스트라드비젼, 매드업, 레몬헬스케어 등 코스닥 신규 상장"
     ],
     "marketImpacts": [
-      "미국 제조업 PMI 하락 시 글로벌 경기둔화 우려로 국내 수출주 약세 가능성",
-      "서비스업 PMI 개선 시 미국 소비 회복 기대감으로 코스피 상승 모멘텀 제공",
-      "신규주택판매 증가 시 미국 경기 연착륙 기대감으로 국내 증시 긍정적 영향",
-      "원유재고 감소 시 유가 상승으로 정유·화학주 수혜, 항공·운송주 부담",
-      "코스닥 신규상장 집중으로 개인투자자 유동성 분산 및 기술주 변동성 확대"
+      "미국 근원 PCE 상승 시 연준의 매파적 스탠스 강화 우려로 국내 증시 변동성 확대 가능",
+      "호주 인플레이션 둔화 시 글로벌 긴축 완화 기대감으로 국내 수출주 및 성장주에 긍정적 영향",
+      "미국 GDP 확정치가 예상치 하회 시 글로벌 경기 둔화 우려로 국내 증시 하방 압력",
+      "코스닥 신규 상장 기업들의 공모 흥행 여부가 국내 IPO 시장 분위기 및 중소형주 투자심리에 영향"
     ],
-    "watchEarnings": []
+    "watchEarnings": [
+      "실적 발표 예정 기업 데이터 없음"
+    ]
   }
 }

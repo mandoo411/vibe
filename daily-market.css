@@ -2068,14 +2068,18 @@ details[open] .admin__summary {
     width: 100%;
   }
 
+  .page--daily-market .dm-stock-table tbody > tr,
   .page--daily-market .dm-stock-table tbody tr.dm-stock-row,
+  .page--daily-market .dm-stock-table tbody tr.rt-stock-row,
   .page--daily-market .dm-stock-table tbody tr:has(.dm-stock-empty) {
     display: block;
     width: 100%;
     box-sizing: border-box;
   }
 
+  .page--daily-market .dm-stock-table tbody > tr > td,
   .page--daily-market .dm-stock-table tbody tr.dm-stock-row > td,
+  .page--daily-market .dm-stock-table tbody tr.rt-stock-row > td,
   .page--daily-market .dm-stock-table tbody tr:has(.dm-stock-empty) > td {
     display: block;
     width: 100%;
@@ -2083,6 +2087,14 @@ details[open] .admin__summary {
     padding: 0 !important;
     border-bottom: none;
     box-sizing: border-box;
+  }
+
+  .page--daily-market .dm-stock-empty {
+    display: block;
+    padding: 24px 12px !important;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary, #6b7280);
   }
 
   .page--daily-market .dm-mobile-row {
@@ -2147,6 +2159,32 @@ details[open] .admin__summary {
     align-items: stretch;
   }
 
+  .page-tm-v2 .page--daily-market .rt-tabs.rt-tabs--with-date-nav {
+    flex-direction: column !important;
+    align-items: stretch;
+    flex-wrap: nowrap;
+  }
+
+  .page--daily-market .rt-panel.dm-panel {
+    overflow: visible;
+  }
+
+  .page--daily-market .dm-tab-panels {
+    display: block;
+    width: 100%;
+    min-height: 0;
+    padding: 12px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
+      16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
+  }
+
+  .page--daily-market .dm-tab-panel[hidden] {
+    display: none !important;
+  }
+
+  .page--daily-market .dm-tab-panel:not([hidden]) {
+    display: block;
+  }
+
   .page--daily-market .rt-tabs-row-tabs {
     width: 100%;
     overflow-x: auto;
@@ -2169,11 +2207,6 @@ details[open] .admin__summary {
     min-width: 0;
     flex: 1 1 auto;
     max-width: 12em;
-  }
-
-  .page--daily-market .dm-tab-panels {
-    padding: 12px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left))
-      16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-right));
   }
 }
 

@@ -992,6 +992,22 @@
     return rows.slice(0, 30).map(normalizeDailyStockRow);
   }
 
+  function syncTabChromeVisibility(ymd) {
+    const y = ymd || state.selected;
+    const ready = isPageContentReady(y);
+    if (els.dmTabsRow) els.dmTabsRow.hidden = !ready;
+    if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;
+    if (els.dmPreparing) {
+      els.dmPreparing.hidden = ready;
+      if (!ready) {
+        const copy = getPreparingCopy(y);
+        if (els.dmPreparingTitle) els.dmPreparingTitle.textContent = copy.title;
+        if (els.dmPreparingHint) els.dmPreparingHint.textContent = copy.hint;
+      }
+    }
+    return ready;
+  }
+
   function setMainTab(tabId) {
     state.mainTab = tabId;
     if (STOCK_TABS.includes(tabId)) {
@@ -1001,12 +1017,16 @@
       const on = btn.dataset.dmTab === tabId;
       btn.setAttribute("aria-selected", on ? "true" : "false");
     });
+    const ready = syncTabChromeVisibility();
     document.querySelectorAll("[data-dm-panel]").forEach((panel) => {
       const panelId = panel.dataset.dmPanel;
-      const on = panelId === tabId || (STOCK_TABS.includes(tabId) && panelId === "stocks");
+      const on =
+        ready &&
+        (panelId === tabId || (STOCK_TABS.includes(tabId) && panelId === "stocks"));
       panel.hidden = !on;
       panel.classList.toggle("is-active", on);
     });
+    if (!ready) return;
     if (STOCK_TABS.includes(tabId)) {
       syncStockThead(state.stockSubTab);
       if (needsLiveRealtime(state.selected)) {
@@ -1017,7 +1037,7 @@
         renderStockTable();
       }
     } else {
-      render();
+      renderAiPanels();
     }
   }
 
@@ -1063,7 +1083,7 @@
     if (!rows.length) {
       const label =
         subTab === "gainers" ? "상승률" : subTab === "losers" ? "하락률" : "거래대금";
-      tbody.innerHTML = `<tr><td colspan="${colSpan}" class="dm-stock-empty">${label} TOP30 데이터 준비중</td></tr>`;
+      tbody.innerHTML = `<tr class="dm-stock-row rt-stock-row"><td colspan="${colSpan}" class="dm-stock-empty">${label} TOP30 데이터 준비중</td></tr>`;
       return;
     }
 
@@ -1085,7 +1105,7 @@
             `  <span class="rt-col-last">${lastVal}</span>`,
             `</div>`,
           ].join("");
-          return `<tr class="dm-stock-row"><td colspan="${colSpan}">${row}</td></tr>`;
+          return `<tr class="dm-stock-row rt-stock-row"><td colspan="${colSpan}">${row}</td></tr>`;
         })
         .join("");
       return;
@@ -1137,25 +1157,40 @@
     }
   }
 
+  function renderAiPanels() {
+    const ymd = state.selected;
+    const day = state.dataMissing ? null : getDay(ymd);
+    if (els.dmAnalysis) {
+      const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
+      els.dmAnalysis.innerHTML = analysisText
+        ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
+        : '<p class="empty-line">종합분석 없음</p>';
+    }
+    if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
+    if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
+  }
+
+  function syncTabPanelsForMainTab() {
+    const ready = isPageContentReady(state.selected);
+    const tabId = state.mainTab;
+    document.querySelectorAll("[data-dm-panel]").forEach((panel) => {
+      const panelId = panel.dataset.dmPanel;
+      const on =
+        ready &&
+        (panelId === tabId || (STOCK_TABS.includes(tabId) && panelId === "stocks"));
+      panel.hidden = !on;
+      panel.classList.toggle("is-active", on);
+    });
+  }
+
   function render() {
     const ymd = state.selected;
     const day = state.dataMissing ? null : getDay(ymd);
-    const ready = isPageContentReady(ymd);
+    const ready = syncTabChromeVisibility(ymd);
     const displayYmd = getDayDateYmd(day, ymd);
 
     if (els.title) els.title.textContent = "마감시황";
     updateDateNav();
-
-    if (els.dmTabsRow) els.dmTabsRow.hidden = !ready;
-    if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;
-    if (els.dmPreparing) {
-      els.dmPreparing.hidden = ready;
-      if (!ready) {
-        const copy = getPreparingCopy(ymd);
-        if (els.dmPreparingTitle) els.dmPreparingTitle.textContent = copy.title;
-        if (els.dmPreparingHint) els.dmPreparingHint.textContent = copy.hint;
-      }
-    }
 
     try {
       document.title = `${state.meta.title || "마감시황"} · ${headlineKo(displayYmd)}`;
@@ -1165,14 +1200,8 @@
 
     if (!ready) return;
 
-    if (els.dmAnalysis) {
-      const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
-      els.dmAnalysis.innerHTML = analysisText
-        ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
-        : '<p class="empty-line">종합분석 없음</p>';
-    }
-    if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
-    if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
+    syncTabPanelsForMainTab();
+    renderAiPanels();
     renderStockTable();
   }
 
@@ -1206,13 +1235,27 @@
       }
     });
 
+    function onLayoutModeChange() {
+      if (!isPageContentReady(state.selected)) return;
+      if (STOCK_TABS.includes(state.mainTab)) renderStockTable();
+      else renderAiPanels();
+    }
+
     let resizeTid;
     window.addEventListener("resize", () => {
       clearTimeout(resizeTid);
-      resizeTid = setTimeout(() => {
-        if (STOCK_TABS.includes(state.mainTab)) renderStockTable();
-      }, 150);
+      resizeTid = setTimeout(onLayoutModeChange, 150);
     });
+
+    if (typeof window.matchMedia === "function") {
+      const mobileMq = window.matchMedia("(max-width: 768px)");
+      const onMq = () => onLayoutModeChange();
+      if (typeof mobileMq.addEventListener === "function") {
+        mobileMq.addEventListener("change", onMq);
+      } else if (typeof mobileMq.addListener === "function") {
+        mobileMq.addListener(onMq);
+      }
+    }
   }
 
   async function loadKrTv() {

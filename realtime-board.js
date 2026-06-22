@@ -113,6 +113,10 @@
     detailFetchAbort: null,
     /** loadTablePage 요청 순번 — 늦게 끝난 stale 응답 무시 */
     tablePageReqId: 0,
+    /** 탭별 TOP100 전체 (page=all) — 클라이언트 페이지네이션용 */
+    capTop100: null,
+    gainerTop100: null,
+    tvTop100: null,
   };
 
   const KR_JSON_FILE = "kr-realtime.json";
@@ -1173,6 +1177,97 @@
     return tab === "cap" || tab === "gainers" || tab === "tv";
   }
 
+  const RANK_PAGE_SIZE = 25;
+
+  function top100KeyForTab(tab) {
+    if (tab === "gainers") return "gainerTop100";
+    if (tab === "tv") return "tvTop100";
+    return "capTop100";
+  }
+
+  function normalizeStockRows(tab, stocks) {
+    return (stocks || [])
+      .map((r) => ({ ...r, code: rowStockCode(r), tab: r.tab || tab }))
+      .filter((r) => /^\d{6}$/.test(r.code));
+  }
+
+  function getTop100ForTab(tab) {
+    return state[top100KeyForTab(tab)];
+  }
+
+  function hasTop100ForTab(tab) {
+    const all = getTop100ForTab(tab);
+    return !!(all && all.length >= 10);
+  }
+
+  function sliceTop100Page(stocks, page) {
+    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const start = (pg - 1) * RANK_PAGE_SIZE;
+    return (stocks || []).slice(start, start + RANK_PAGE_SIZE);
+  }
+
+  function populatePageCachesFromTop100(tab, stocks) {
+    const cache = pageCacheForTab(tab);
+    const all = stocks || getTop100ForTab(tab) || [];
+    const loadedAt = Date.now();
+    for (let p = 1; p <= 4; p++) {
+      const slice = sliceTop100Page(all, p);
+      if (slice.length) cache[p] = { stocks: slice, loadedAt };
+    }
+  }
+
+  function setTop100ForTab(tab, stocks) {
+    const rows = normalizeStockRows(tab, stocks);
+    state[top100KeyForTab(tab)] = rows;
+    populatePageCachesFromTop100(tab, rows);
+    return rows;
+  }
+
+  function applyTop100Page(tab, page) {
+    const all = getTop100ForTab(tab);
+    if (!all || !all.length) return false;
+    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    setCurrentPageForTab(tab, pg);
+    applyStocksArrayToTab(tab, sliceTop100Page(all, pg));
+    return true;
+  }
+
+  /** 폴링 시 TOP100 전체 시세 병합 후 현재 페이지만 다시 슬라이스 */
+  function mergeTop100InPlaceForTab(tab, incoming) {
+    const all = getTop100ForTab(tab);
+    const inc = normalizeStockRows(tab, incoming);
+    if (!all || !all.length) {
+      setTop100ForTab(tab, inc);
+      applyTop100Page(tab, currentPageForTab(tab));
+      return { reordered: inc.length > 0 };
+    }
+    const byCode = new Map(inc.map((r) => [r.code, r]));
+    const merged = all.map((r) => {
+      const code = rowStockCode(r);
+      const n = byCode.get(code);
+      if (!n) return { ...r, code };
+      const price = n.price || r.price;
+      const volume = pickLargerVolumeStr(r.volume, n.volume);
+      const tvCalc = calcTradeValFromPriceVol(price, volume);
+      return {
+        ...r,
+        code,
+        name: n.name || r.name,
+        price,
+        volume,
+        changePct: n.changePct != null ? n.changePct : r.changePct,
+        changeAmt: n.changeAmt != null ? n.changeAmt : r.changeAmt,
+        tradingValue: tvCalc != null ? String(tvCalc) : r.tradingValue || "",
+        stck_avls: n.stck_avls || n.mcapEok || r.stck_avls || r.mcapEok,
+        mcapEok: n.mcapEok || n.stck_avls || r.mcapEok || r.stck_avls,
+        rank: r.rank,
+      };
+    });
+    setTop100ForTab(tab, merged);
+    applyTop100Page(tab, currentPageForTab(tab));
+    return { reordered: false };
+  }
+
   function updatePaginationUI(page) {
     const tab = state.tab;
     if (!isRankListTab(tab)) return;
@@ -1221,6 +1316,12 @@
     setCurrentPageForTab(tab, pg);
     if (pg !== prevPage) state.openChartCode = null;
 
+    if (!force && hasTop100ForTab(tab)) {
+      applyTop100Page(tab, pg);
+      state.tabLoadedAt[tab] = Date.now();
+      return { fromCache: true };
+    }
+
     const cache = pageCacheForTab(tab);
     const hit = cache[pg];
     if (!force && hit && hit.stocks && hit.stocks.length) {
@@ -1235,16 +1336,11 @@
       showTableLoading();
     }
     try {
-      if (tab === "cap") state.capPage = pg;
-      else if (tab === "gainers") state.gainerPage = pg;
-      else state.tvPage = pg;
-      const replaceOrder = !!(opts && opts.replaceOrder);
-      const useLiveApi = force || replaceOrder;
-      const pack = useLiveApi ? await fetchStocksFromApiForTab(tab) : await fetchStocksJsonForTab(tab);
+      const pack = await fetchStocksAllFromApiForTab(tab);
       const stocks = pack.stocks || [];
-      if (force && replaceOrder) {
-        cache[pg] = { stocks, loadedAt: Date.now() };
-        applyStocksArrayToTab(tab, stocks);
+      if (stocks.length) {
+        setTop100ForTab(tab, stocks);
+        applyTop100Page(tab, pg);
       } else if (force && rowsLoadedForTab(tab)) {
         mergeStocksInPlaceForTab(tab, stocks);
         const merged =
@@ -1279,16 +1375,18 @@
     else if (tab === "tv") state.tvRows = rows;
   }
 
-  async function fetchStocksFromApiForTab(tab) {
-    const ps = 25;
-    const p = currentPageForTab(tab);
+  async function fetchStocksAllFromApiForTab(tab) {
     const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
-    const pack = await fetchJson(action, FETCH_TIMEOUT_MS, { page: p, pageSize: ps });
+    const pack = await fetchJson(action, FETCH_TIMEOUT_MS, { page: "all" });
     return {
       ...pack,
-      stocks: (pack.stocks || []).map((r) => ({ ...r, code: rowStockCode(r) })).filter((r) => /^\d{6}$/.test(r.code)),
+      stocks: normalizeStockRows(tab, pack.stocks),
       cached: false,
     };
+  }
+
+  async function fetchStocksFromApiForTab(tab) {
+    return fetchStocksAllFromApiForTab(tab);
   }
 
   async function fetchStocksFromStaticForTab(tab) {
@@ -1307,9 +1405,9 @@
     };
   }
 
-  /** 페이지 종목 — API 직접 호출 */
+  /** 페이지 종목 — API page=all 로 TOP100 한 번에 로드 */
   async function fetchStocksJsonForTab(tab) {
-    return fetchStocksFromApiForTab(tab);
+    return fetchStocksAllFromApiForTab(tab);
   }
 
   function renderTablePager() {
@@ -1346,11 +1444,22 @@
     if (!isRankListTab(tab)) return;
     const pg = Math.max(1, Math.min(4, Number(page) || 1));
     const prevPage = currentPageForTab(tab);
-    const cache = pageCacheForTab(tab);
-    const reqId = ++state.tablePageReqId;
 
     updatePaginationUI(pg);
     if (pg !== prevPage) state.openChartCode = null;
+
+    if (hasTop100ForTab(tab)) {
+      applyTop100Page(tab, pg);
+      renderAll();
+      if (state.ws && state.ws.readyState === 1) {
+        unsubscribeAll();
+        subscribeStocks(getCurrentRows().map((r) => r.code));
+      }
+      return;
+    }
+
+    const cache = pageCacheForTab(tab);
+    const reqId = ++state.tablePageReqId;
 
     if (pg === prevPage && cache[pg] && cache[pg].stocks && cache[pg].stocks.length) {
       updatePaginationUI(pg);
@@ -1389,38 +1498,25 @@
 
   window.loadTablePage = loadTablePage;
 
-  /** 탭별 종목 목록만 갱신 (세션·지수는 유지) — 캐시 만료 시 백그라운드용 */
+  /** 탭별 TOP100 갱신 — page=all */
   async function refreshTabStocksOnly(tab) {
-    const page = currentPageForTab(tab);
-    await ensureTabPageLoaded(tab, page, { force: true, skipTableUi: true, replaceOrder: true });
+    const pack = await fetchStocksAllFromApiForTab(tab);
+    if ((pack.stocks || []).length) {
+      setTop100ForTab(tab, pack.stocks);
+      applyTop100Page(tab, currentPageForTab(tab));
+    }
+    state.tabLoadedAt[tab] = Date.now();
   }
 
-  /** 다른 탭 1페이지 미리 받아 두기 — 탭 전환 시 잔상·대기 완화 */
-  async function prefetchRankTabPage1(tab) {
+  /** 다른 탭 TOP100 미리 받아 두기 — 탭 전환·페이지 전환 즉시 */
+  async function prefetchRankTabAll(tab) {
     if (!isRankListTab(tab)) return;
-    const cache = pageCacheForTab(tab);
-    if (cache[1] && cache[1].stocks && cache[1].stocks.length) return;
-    const prevTab = state.tab;
-    const prevCapPage = state.capPage;
-    const prevGainerPage = state.gainerPage;
-    const prevTvPage = state.tvPage;
+    if (hasTop100ForTab(tab)) return;
     try {
-      if (tab === "cap") state.capPage = 1;
-      else if (tab === "gainers") state.gainerPage = 1;
-      else state.tvPage = 1;
-      const pack = await fetchStocksJsonForTab(tab);
-      const stocks = pack.stocks || [];
-      if (stocks.length) {
-        cache[1] = { stocks, loadedAt: Date.now() };
-        applyStocksArrayToTab(tab, stocks);
-      }
+      const pack = await fetchStocksAllFromApiForTab(tab);
+      if ((pack.stocks || []).length) setTop100ForTab(tab, pack.stocks);
     } catch (e) {
-      console.warn("[realtime-board] prefetchRankTabPage1", tab, e && e.message);
-    } finally {
-      state.tab = prevTab;
-      state.capPage = prevCapPage;
-      state.gainerPage = prevGainerPage;
-      state.tvPage = prevTvPage;
+      console.warn("[realtime-board] prefetchRankTabAll", tab, e && e.message);
     }
   }
 
@@ -1428,7 +1524,7 @@
     const cur = state.tab;
     for (const tab of ["cap", "gainers", "tv"]) {
       if (tab === cur) continue;
-      void prefetchRankTabPage1(tab);
+      void prefetchRankTabAll(tab);
     }
   }
 
@@ -1471,9 +1567,11 @@
     } else if (tab === "cap") {
       state.capTotal = 100;
     }
-    const page = currentPageForTab(tab);
-    pageCacheForTab(tab)[page] = { stocks: stockPack.stocks || [], loadedAt: Date.now() };
-    applyStocksArrayToTab(tab, stockPack.stocks);
+    const stocks = stockPack.stocks || [];
+    if (stocks.length) {
+      setTop100ForTab(tab, stocks);
+      applyTop100Page(tab, currentPageForTab(tab));
+    }
     state.tabLoadedAt[tab] = Date.now();
     if (stockPack.updatedAt) setDataUpdatedAt(stockPack.updatedAt);
     else if (!stockPack.cached) setDataUpdatedAt(new Date().toISOString());
@@ -2526,17 +2624,12 @@
   async function refreshPartial() {
     try {
       const tab = state.tab;
-      const page = currentPageForTab(tab);
       const detailOpen = !!state.openChartCode;
 
       if (isRankListTab(tab)) {
         try {
-          const pack = await fetchStocksFromApiForTab(tab);
-          mergeStocksInPlaceForTab(tab, pack.stocks || []);
-          const cache = pageCacheForTab(tab);
-          const merged =
-            tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
-          cache[page] = { stocks: merged, loadedAt: Date.now() };
+          const pack = await fetchStocksAllFromApiForTab(tab);
+          mergeTop100InPlaceForTab(tab, pack.stocks || []);
         } catch (e) {
           console.warn("[realtime-board] refreshPartial stocks merge", e && e.message);
         }
@@ -2644,6 +2737,36 @@
     };
 
     const errEl = $("rt-error");
+
+    if (hasTop100ForTab(tk)) {
+      setCurrentPageForTab(tk, 1);
+      applyTop100Page(tk, 1);
+      state.tabLoadedAt[tk] = Date.now();
+      if (errEl) errEl.hidden = true;
+      hideTableLoading();
+      renderAll();
+      finish();
+      const cacheFresh = state.tabLoadedAt[tk] && Date.now() - state.tabLoadedAt[tk] < TAB_CACHE_MS;
+      if (!cacheFresh) {
+        refreshTabStocksOnly(tk)
+          .then(() => {
+            if (state.tab !== tk) return;
+            if (errEl) errEl.hidden = true;
+            renderAll();
+          })
+          .catch((e) => {
+            console.error("[realtime-board] refreshTabStocksOnly (tab cache)", tk, e && e.message, e);
+            if (state.tab !== tk) return;
+            if (errEl) {
+              errEl.hidden = false;
+              errEl.textContent = rtErrorTimeoutMessage(e);
+            }
+          });
+      }
+      prefetchOtherRankTabs();
+      return;
+    }
+
     const page1Hit = pageCacheForTab(tk)[1];
 
     if (page1Hit && page1Hit.stocks && page1Hit.stocks.length) {

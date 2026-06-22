@@ -53,6 +53,10 @@ function rankRangeForPage(page, pageSize) {
   return { page: pg, pageSize: ps, startRank, endRank, total: 100 };
 }
 
+function isRankPageAll(page) {
+  return String(page ?? "").trim().toLowerCase() === "all";
+}
+
 /** KIS 순위 API 1회 ~30건 — endRank까지 필요한 연속조회 횟수 */
 function kisBatchCountForEndRank(endRank) {
   const n = Math.max(1, Math.min(100, Number(endRank) || 25));
@@ -943,13 +947,18 @@ async function overlayKisMarketCapLive(rows) {
   }
 }
 
-/** 시가총액 TOP100 — NAVER 1~100위 + KIS TOP30 시세 보강, 페이지당 25건 */
-async function fetchMarketCapPage(page, pageSize = 25) {
-  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+/** 시가총액 TOP100 — NAVER 1~100위 + KIS TOP30 시세 보강 */
+async function fetchMarketCapAll() {
   let all = await fetchNaverMarketCapTop100();
   all = await overlayKisMarketCapLive(all);
-  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return overlayNaverPriceLive(slice);
+  return overlayNaverPriceLive(all);
+}
+
+/** 시가총액 TOP100 — 페이지당 25건 */
+async function fetchMarketCapPage(page, pageSize = 25) {
+  const { startRank, endRank } = rankRangeForPage(page, pageSize);
+  const all = await fetchMarketCapAll();
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }
 
 async function fetchMarketCapRows(fidInputIscd, maxRows, fallbackBoard, opts = {}) {
@@ -1051,13 +1060,18 @@ async function fetchNaverGainersTop100() {
   return result;
 }
 
-/** 상승률 TOP100 — NAVER 코스피·코스닥 합산, 페이지당 25건 */
+/** 상승률 TOP100 — NAVER 코스피·코스닥 합산 */
+async function fetchGainersAll() {
+  const all = await fetchNaverGainersTop100();
+  const priced = await overlayNaverPriceLive(all.map((r) => finalizeRowQuoteFields(r)));
+  return enrichRowsWithNaverMcap(priced);
+}
+
+/** 상승률 TOP100 — 페이지당 25건 */
 async function fetchGainersPage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
-  const all = await fetchNaverGainersTop100();
-  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  const priced = await overlayNaverPriceLive(slice.map((r) => finalizeRowQuoteFields(r)));
-  return enrichRowsWithNaverMcap(priced);
+  const all = await fetchGainersAll();
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }
 
 async function fetchGainersMerged100() {
@@ -1144,12 +1158,17 @@ async function fetchNaverTradingValueTop100() {
   return result;
 }
 
+/** 거래대금 TOP100 — KIS 시세 보강 */
+async function fetchTradingValueAll() {
+  const all = await fetchNaverTradingValueTop100();
+  return enrichRowsWithNaverMcap(all.map((r) => finalizeRowQuoteFields(r)));
+}
+
 /** 거래대금 TOP100 — 페이지당 25건 (KIS 시세 보강) */
 async function fetchTradingValuePage(page, pageSize = 25) {
   const { startRank, endRank } = rankRangeForPage(page, pageSize);
-  const all = await fetchNaverTradingValueTop100();
-  const slice = all.filter((r) => r.rank >= startRank && r.rank <= endRank);
-  return enrichRowsWithNaverMcap(slice.map((r) => finalizeRowQuoteFields(r)));
+  const all = await fetchTradingValueAll();
+  return all.filter((r) => r.rank >= startRank && r.rank <= endRank);
 }
 
 /**
@@ -1685,7 +1704,29 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === "market-cap") {
-      const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+      const pageRaw = req.query && req.query.page;
+      if (isRankPageAll(pageRaw)) {
+        const cacheKey = "market-cap:nxt-v3:all";
+        const cached = rankPageCacheGet(cacheKey);
+        if (cached) {
+          json(res, 200, { ...cached, cached: true });
+          return;
+        }
+        const stocks = await fetchMarketCapAll();
+        const payload = {
+          total: 100,
+          page: "all",
+          pageSize: 100,
+          rankStart: 1,
+          rankEnd: 100,
+          stocks,
+          cached: false,
+        };
+        rankPageCacheSet(cacheKey, payload);
+        json(res, 200, payload);
+        return;
+      }
+      const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
       const cacheKey = `market-cap:nxt-v3:${range.page}:${range.pageSize}`;
       const cached = rankPageCacheGet(cacheKey);
       if (cached) {
@@ -1709,7 +1750,29 @@ module.exports = async function handler(req, res) {
 
     if (action === "gainers") {
       try {
-        const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+        const pageRaw = req.query && req.query.page;
+        if (isRankPageAll(pageRaw)) {
+          const cacheKey = "gainers:nxt-v3:all";
+          const cached = rankPageCacheGet(cacheKey);
+          if (cached) {
+            json(res, 200, { ...cached, cached: true });
+            return;
+          }
+          const stocks = await fetchGainersAll();
+          const payload = {
+            total: 100,
+            page: "all",
+            pageSize: 100,
+            rankStart: 1,
+            rankEnd: 100,
+            stocks,
+            cached: false,
+          };
+          rankPageCacheSet(cacheKey, payload);
+          json(res, 200, payload);
+          return;
+        }
+        const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
         const cacheKey = `gainers:nxt-v3:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
@@ -1765,7 +1828,29 @@ module.exports = async function handler(req, res) {
 
     if (action === "trading-value") {
       try {
-        const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
+        const pageRaw = req.query && req.query.page;
+        if (isRankPageAll(pageRaw)) {
+          const cacheKey = "trading-value:nxt-v3:all";
+          const cached = rankPageCacheGet(cacheKey);
+          if (cached) {
+            json(res, 200, { ...cached, cached: true });
+            return;
+          }
+          const stocks = await fetchTradingValueAll();
+          const payload = {
+            total: 100,
+            page: "all",
+            pageSize: 100,
+            rankStart: 1,
+            rankEnd: 100,
+            stocks,
+            cached: false,
+          };
+          rankPageCacheSet(cacheKey, payload);
+          json(res, 200, payload);
+          return;
+        }
+        const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
         const cacheKey = `trading-value:nxt-v3:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {

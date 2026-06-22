@@ -741,7 +741,7 @@
     }
   }
 
-  // 페이지 진입 시 3개 탭 JSON을 Promise.all 로 동시 프리패치 → 탭 전환 즉시
+  // 활성 탭 우선 로드 후 렌더, 나머지 탭은 백그라운드 프리패치
   async function refreshAll(force) {
     const errEl = $("us-error");
     if (errEl) errEl.hidden = true;
@@ -751,24 +751,35 @@
       state.tabLoadedAt = {};
     }
     const tabs = ["market-cap", "gainers", "volume"];
-    if (!state.rowsByTab[state.activeTab]) showTableLoading();
+    const currentTab = state.activeTab;
+    if (!state.rowsByTab[currentTab]) showTableLoading();
+
     let activeErr = null;
-    await Promise.all(
-      tabs.map(async (tab) => {
+    try {
+      const pack = await loadTabPack(currentTab);
+      state.rowsByTab[currentTab] = pack.stocks;
+      state.tabLoadedAt[currentTab] = Date.now();
+      if (state.activeTab === currentTab) {
+        setDataUpdatedAt(pack.updatedAt);
+        renderRankTable();
+      }
+    } catch (e) {
+      activeErr = e;
+    }
+
+    const otherTabs = tabs.filter((tab) => tab !== currentTab);
+    Promise.all(
+      otherTabs.map(async (tab) => {
         try {
           const pack = await loadTabPack(tab);
           state.rowsByTab[tab] = pack.stocks;
           state.tabLoadedAt[tab] = Date.now();
-          if (tab === state.activeTab) {
-            setDataUpdatedAt(pack.updatedAt);
-            renderRankTable();
-          }
         } catch (e) {
-          if (tab === state.activeTab) activeErr = e;
-          else console.warn("[us-market] prefetch", tab, e);
+          console.warn("[us-market] prefetch", tab, e);
         }
       })
     );
+
     if (activeErr) {
       console.error("[us-market]", activeErr);
       if (errEl) {

@@ -1305,17 +1305,9 @@
     };
   }
 
-  /** 페이지 종목 — 정적 JSON 우선, 실패 시 API 폴백 */
+  /** 페이지 종목 — API 직접 호출 */
   async function fetchStocksJsonForTab(tab) {
-    try {
-      const pack = await fetchStocksFromStaticForTab(tab);
-      const stocks = pack.stocks || [];
-      if (!stocks.length) throw new Error("static json empty");
-      return pack;
-    } catch (e) {
-      console.warn("[realtime-board] static→api fallback", tab, e && e.message);
-      return fetchStocksFromApiForTab(tab);
-    }
+    return fetchStocksFromApiForTab(tab);
   }
 
   function renderTablePager() {

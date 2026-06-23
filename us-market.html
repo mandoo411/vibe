@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
-    <link rel="stylesheet" href="./realtime-board.css" />
+    <link rel="stylesheet" href="./realtime-board.css?v=5" />
     <style>
       .us-tv-widget {
         display: block;
@@ -126,8 +126,21 @@
         }
       }
     </style>
+    <link rel="preload" href="/api/repo-data?path=data/us-market-cap.json" as="fetch" crossorigin />
+    <link rel="preload" href="/api/repo-data?path=data/us-market-gainers.json" as="fetch" crossorigin />
+    <link rel="preload" href="/api/repo-data?path=data/us-market-volume.json" as="fetch" crossorigin />
   </head>
   <body class="page-tm-v2" data-tm-tab="us">
+    <div id="us-loading" class="rt-loading" aria-busy="true" aria-label="데이터 로딩 중">
+      <div class="rt-loading__inner">
+        <div class="rt-loading__brand">
+          <p class="rt-loading__logo">TotalMoney <span class="rt-loading__logo-ai">AI</span></p>
+          <p class="rt-loading__tagline">Smarter financial decisions</p>
+        </div>
+        <div class="rt-loading__spinner" aria-hidden="true"></div>
+        <p class="rt-loading__text">미국주식 시세를 불러오는 중...</p>
+      </div>
+    </div>
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -274,6 +287,6 @@
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
 
-    <script src="./us-market.js"></script>
+    <script src="./us-market.js?v=20260602a"></script>
   </body>
 </html>

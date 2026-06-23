@@ -935,6 +935,11 @@ function liteEnrichRankRows(rows) {
 
 /** 순위표 거래대금 — 프리마켓(pvol/pamt) 포함 상세 시세로 보강 (종목검색과 동일) */
 async function enrichRowTradingValueOnly(row) {
+  const baseTv = resolveRowTradingValue(row);
+  if (baseTv != null && baseTv > 0) {
+    const quick = { ...row, tradingValue: baseTv };
+    if (!isSuspiciouslyLowTradingValue(quick)) return quick;
+  }
   try {
     const hit = await enrichRowFromUsDetail(row);
     return {
@@ -954,7 +959,7 @@ async function enrichRowTradingValueOnly(row) {
 
 async function enrichRankListRows(rows) {
   const base = liteEnrichRankRows(rows);
-  return mapPool(base, 4, enrichRowTradingValueOnly);
+  return mapPool(base, 8, enrichRowTradingValueOnly);
 }
 
 async function enrichRankRows(rows) {
@@ -1367,17 +1372,17 @@ module.exports = async function handler(req, res) {
       return;
     }
     if (action === "market-cap") {
-      const payload = await cachedPayload("market-cap:v19", async () => ({ stocks: await fetchMarketCapTop50() }));
+      const payload = await cachedPayload("market-cap:v20", async () => ({ stocks: await fetchMarketCapTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "gainers") {
-      const payload = await cachedPayload("gainers:v8", async () => ({ stocks: await fetchGainersTop50() }));
+      const payload = await cachedPayload("gainers:v9", async () => ({ stocks: await fetchGainersTop50() }));
       json(res, 200, payload);
       return;
     }
     if (action === "volume") {
-      const payload = await cachedPayload("volume:v8", async () => ({ stocks: await fetchTradeValueTop50() }));
+      const payload = await cachedPayload("volume:v9", async () => ({ stocks: await fetchTradeValueTop50() }));
       json(res, 200, payload);
       return;
     }

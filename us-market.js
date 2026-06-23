@@ -198,17 +198,61 @@
     if (!data || !Array.isArray(data.stocks) || !data.stocks.length) {
       throw new Error(`static json empty: ${cfg.jsonFile}`);
     }
-    return { stocks: data.stocks, updatedAt: data.updatedAt || null, cached: true };
+    return { stocks: data.stocks, updatedAt: data.updatedAt || null, cached: true, stale: true };
   }
 
-  /** 탭 종목 — API 우선(/api/us-market-data), 실패 시 data/*.json 폴백 */
-  async function loadTabPack(tab) {
+  /** DOM 전 정적 JSON 선로드 — 첫 페인트 가속 */
+  const usStaticWarm = Object.fromEntries(
+    Object.entries(TAB_CONFIG).map(([tab, cfg]) => [
+      tab,
+      fetchStaticJson(cfg.jsonFile).catch(() => null),
+    ])
+  );
+
+  async function fetchTabFromStaticWarm(tab) {
+    const warmed = usStaticWarm[tab];
+    const data = warmed ? await warmed : await fetchStaticJson(TAB_CONFIG[tab].jsonFile);
+    if (!data || !Array.isArray(data.stocks) || !data.stocks.length) return null;
+    return { stocks: data.stocks, updatedAt: data.updatedAt || null, cached: true, stale: true };
+  }
+
+  function applyTabPack(tab, pack) {
+    if (!pack || !(pack.stocks || []).length) return;
+    state.rowsByTab[tab] = pack.stocks;
+    state.tabLoadedAt[tab] = Date.now();
+    if (state.activeTab === tab) {
+      if (pack.updatedAt) setDataUpdatedAt(pack.updatedAt);
+      else if (!pack.stale) setDataUpdatedAt(new Date().toISOString());
+    }
+  }
+
+  /**
+   * 정적 JSON 즉시 표시 + API 최신화.
+   * onInstant — 정적 데이터 도착 시 1회 호출.
+   */
+  async function loadTabPackProgressive(tab, onInstant) {
+    let instantDone = false;
+    const fireInstant = (pack) => {
+      if (instantDone || !pack || !(pack.stocks || []).length) return;
+      instantDone = true;
+      if (typeof onInstant === "function") onInstant(pack);
+    };
+
+    const staticP = fetchTabFromStaticWarm(tab);
+    staticP.then((pack) => fireInstant(pack));
+
     try {
       return await fetchTabFromApi(tab);
     } catch (e) {
-      console.warn("[us-market] api→static json fallback", tab, e && e.message);
+      const fallback = await staticP;
+      if (fallback && fallback.stocks && fallback.stocks.length) return fallback;
+      throw e;
     }
-    return fetchTabFromStatic(tab);
+  }
+
+  /** 탭 종목 — 정적 선표시 후 API 갱신 */
+  async function loadTabPack(tab, onInstant) {
+    return loadTabPackProgressive(tab, onInstant);
   }
 
   function formatFreshness(iso) {
@@ -651,7 +695,9 @@
     if (!body) return;
     const rows = state.rowsByTab[state.activeTab] || [];
     if (!rows.length) {
-      body.innerHTML = skeletonRowsHtml(10);
+      if (body.dataset.rtLoading === "1") {
+        body.innerHTML = skeletonRowsHtml(10);
+      }
       return;
     }
     const parts = [];
@@ -677,10 +723,46 @@
     return row.repeat(Math.max(1, count || 10));
   }
 
+  function hideLoadingOverlay() {
+    const el = $("us-loading");
+    if (el) {
+      el.hidden = true;
+      el.setAttribute("aria-busy", "false");
+    }
+  }
+
   function showTableLoading() {
     const body = $("us-rank-tbody");
     if (!body) return;
+    body.dataset.rtLoading = "1";
+    body.classList.remove("rt-tbody--fresh");
     body.innerHTML = skeletonRowsHtml(10);
+    setTableLoadingHint(true);
+  }
+
+  function hideTableLoading() {
+    const body = $("us-rank-tbody");
+    if (body) delete body.dataset.rtLoading;
+    setTableLoadingHint(false);
+  }
+
+  function setTableLoadingHint(on) {
+    const el = $("us-data-freshness");
+    if (!el) return;
+    el.classList.toggle("rt-data-freshness--loading", !!on);
+    if (on && !state.dataUpdatedAt) {
+      el.textContent = "미국주식 시세 불러오는 중";
+    } else if (!on && state.dataUpdatedAt) {
+      el.textContent = formatFreshness(state.dataUpdatedAt);
+    }
+  }
+
+  function markTableFresh() {
+    const body = $("us-rank-tbody");
+    if (!body || body.dataset.rtLoading === "1") return;
+    body.classList.remove("rt-tbody--fresh");
+    void body.offsetWidth;
+    body.classList.add("rt-tbody--fresh");
   }
 
   function syncUsPriceColumnAlign() {
@@ -715,29 +797,41 @@
     const tab = state.activeTab;
     const hasRows = !!state.rowsByTab[tab];
     if (!force && hasRows) {
-      // 캐시 즉시 렌더 — 3분 이내면 그대로, 만료면 백그라운드 갱신
       renderRankTable();
       if (tabIsFresh(tab)) return;
       try {
         const pack = await loadTabPack(tab);
-        state.rowsByTab[tab] = pack.stocks;
-        state.tabLoadedAt[tab] = Date.now();
-        if (state.activeTab === tab) {
-          setDataUpdatedAt(pack.updatedAt);
-          renderRankTable();
-        }
+        applyTabPack(tab, pack);
+        if (state.activeTab === tab) renderRankTable();
       } catch (e) {
         console.warn("[us-market] background refresh", tab, e);
       }
       return;
     }
     showTableLoading();
-    const pack = await loadTabPack(tab);
-    state.rowsByTab[tab] = pack.stocks;
-    state.tabLoadedAt[tab] = Date.now();
-    if (state.activeTab === tab) {
-      setDataUpdatedAt(pack.updatedAt);
+    let firstPaint = false;
+    const paint = () => {
+      if (!firstPaint) {
+        firstPaint = true;
+        hideLoadingOverlay();
+      }
+      hideTableLoading();
       renderRankTable();
+      markTableFresh();
+    };
+    try {
+      const pack = await loadTabPack(tab, (instantPack) => {
+        if (state.activeTab !== tab) return;
+        applyTabPack(tab, instantPack);
+        paint();
+      });
+      if (state.activeTab === tab) {
+        applyTabPack(tab, pack);
+        paint();
+      }
+    } catch (e) {
+      hideTableLoading();
+      throw e;
     }
   }
 
@@ -754,26 +848,38 @@
     const currentTab = state.activeTab;
     if (!state.rowsByTab[currentTab]) showTableLoading();
 
+    let firstPaint = false;
+    const paintActive = () => {
+      if (!firstPaint) {
+        firstPaint = true;
+        hideLoadingOverlay();
+      }
+      hideTableLoading();
+      renderRankTable();
+      markTableFresh();
+    };
+
     let activeErr = null;
     try {
-      const pack = await loadTabPack(currentTab);
-      state.rowsByTab[currentTab] = pack.stocks;
-      state.tabLoadedAt[currentTab] = Date.now();
-      if (state.activeTab === currentTab) {
-        setDataUpdatedAt(pack.updatedAt);
-        renderRankTable();
-      }
+      const pack = await loadTabPack(currentTab, (instantPack) => {
+        applyTabPack(currentTab, instantPack);
+        if (state.activeTab === currentTab) paintActive();
+      });
+      applyTabPack(currentTab, pack);
+      if (state.activeTab === currentTab) paintActive();
     } catch (e) {
       activeErr = e;
+      hideTableLoading();
     }
 
     const otherTabs = tabs.filter((tab) => tab !== currentTab);
     Promise.all(
       otherTabs.map(async (tab) => {
         try {
-          const pack = await loadTabPack(tab);
-          state.rowsByTab[tab] = pack.stocks;
-          state.tabLoadedAt[tab] = Date.now();
+          const pack = await loadTabPack(tab, (instantPack) => {
+            applyTabPack(tab, instantPack);
+          });
+          applyTabPack(tab, pack);
         } catch (e) {
           console.warn("[us-market] prefetch", tab, e);
         }
@@ -940,7 +1046,17 @@
         state.openTicker = null;
         $("us-stock-result-panel").hidden = true;
         setTabs();
-        await loadActiveTab(false);
+        const errEl = $("us-error");
+        try {
+          await loadActiveTab(false);
+          if (errEl) errEl.hidden = true;
+        } catch (e) {
+          console.error("[us-market] tab switch", tab, e);
+          if (errEl) {
+            errEl.hidden = false;
+            errEl.textContent = e && e.message ? e.message : String(e);
+          }
+        }
       });
     });
   }
@@ -1050,10 +1166,15 @@
     wireSearch();
     wireLayoutSync();
     setTabs();
-    await refreshAll(false);
+    const overlayCap = window.setTimeout(() => hideLoadingOverlay(), 500);
+    try {
+      await refreshAll(false);
+    } finally {
+      window.clearTimeout(overlayCap);
+      hideLoadingOverlay();
+    }
     syncUsPriceColumnAlign();
     startPolling();
-    // 상대 시간("N분 전") 1분마다 갱신
     setInterval(() => setDataUpdatedAt(), 60000);
   }
 

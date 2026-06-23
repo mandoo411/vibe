@@ -262,8 +262,13 @@ function mcapAvlsRawToWonString(raw) {
   const WON_MIN = 5e11;
 
   if (n >= 1e8) {
-    const w = Math.round(n * 1e6);
-    if (w >= WON_MIN && w <= WON_MAX) return String(w);
+    const asWon = Math.round(n);
+    const asMillionWon = Math.round(n * 1e6);
+    const millionOk = asMillionWon >= WON_MIN && asMillionWon <= WON_MAX;
+    // NAVER marketValueRaw(원): 보통 1e9~1e12 — KIS 백만원(1e8대)과 구분
+    if (asWon >= 1e9 && asWon < 1e13) return String(asWon);
+    if (millionOk) return String(asMillionWon);
+    if (asWon >= 1e8 && asWon <= WON_MAX) return String(asWon);
     return "";
   }
 
@@ -1752,7 +1757,7 @@ module.exports = async function handler(req, res) {
       try {
         const pageRaw = req.query && req.query.page;
         if (isRankPageAll(pageRaw)) {
-          const cacheKey = "gainers:nxt-v3:all";
+          const cacheKey = "gainers:nxt-v4:all";
           const cached = rankPageCacheGet(cacheKey);
           if (cached) {
             json(res, 200, { ...cached, cached: true });
@@ -1773,7 +1778,7 @@ module.exports = async function handler(req, res) {
           return;
         }
         const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
-        const cacheKey = `gainers:nxt-v3:${range.page}:${range.pageSize}`;
+        const cacheKey = `gainers:nxt-v4:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });

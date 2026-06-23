@@ -2362,11 +2362,7 @@
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
     const isSearchPanel = !!(opts && opts.searchPanel);
     const showDismissFooter = isSearchPanel || (isMobile && opts && opts.accordion);
-    const closeBtn = isSearchPanel
-      ? ""
-      : isMobile
-        ? `<button type="button" class="rt-acc-close rt-acc-close--mobile" aria-label="닫기">닫기</button>`
-        : `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
+    const closeBtn = `<button type="button" class="rt-acc-close rt-acc-close--pill" aria-label="닫기">닫기</button>`;
     const dismissFooterBtn = showDismissFooter
       ? `<button type="button" class="rt-acc-btn rt-acc-btn--dismiss rt-panel-close-btn">종목 닫기</button>`
       : "";

@@ -562,21 +562,41 @@
       .rt-acc-close:hover {
         color: var(--text-primary);
       }
+      .rt-acc-close--pill,
       .rt-acc-close--mobile {
         min-height: 36px;
-        padding: 6px 12px;
+        padding: 6px 14px;
         border-radius: 8px;
         border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
         background: var(--bg-primary, #fff);
         font-size: 13px;
         font-weight: 600;
         line-height: 1.2;
+        color: var(--text-secondary);
+        flex-shrink: 0;
       }
+      .rt-acc-close--pill:hover,
+      .rt-acc-close--mobile:hover {
+        color: var(--text-primary);
+        border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 35%, var(--border, rgba(0, 0, 0, 0.12)));
+        background: color-mix(in srgb, var(--accent-brand, #0f8387) 6%, var(--bg-primary, #fff));
+      }
+      [data-theme="dark"] .rt-acc-close--pill,
       [data-theme="dark"] .rt-acc-close--mobile,
+      .dark-mode .rt-acc-close--pill,
       .dark-mode .rt-acc-close--mobile {
         background: var(--card-bg, #1a1f35);
         border-color: rgba(255, 255, 255, 0.12);
         color: var(--text-primary, #f3f4f6);
+      }
+      [data-theme="dark"] .rt-acc-close--pill:hover,
+      [data-theme="dark"] .rt-acc-close--mobile:hover,
+      .dark-mode .rt-acc-close--pill:hover,
+      .dark-mode .rt-acc-close--mobile:hover {
+        background: #2a3148;
+      }
+      .rt-stock-panel .rt-acc-header__right {
+        gap: 12px;
       }
       .rt-acc-btn--dismiss {
         flex: 1 1 100%;
@@ -599,6 +619,9 @@
       .rt-stock-panel .rt-acc-btn--dismiss {
         order: -1;
         margin-bottom: 4px;
+        min-height: 44px;
+        font-size: 14px;
+        font-weight: 600;
       }
       .rt-acc-grid {
         display: grid;

@@ -166,6 +166,50 @@
     return { stocks, updatedAt: all.updatedAt };
   }
 
+  /** DOM 전 초기화 — 정적 JSON 선로드로 첫 페인트 가속 */
+  const krAllWarmPromise = loadKrAll().catch(() => null);
+
+  function packFromKrTab(tab, all) {
+    const stocks = Array.isArray(all && all.tabs && all.tabs[tab]) ? all.tabs[tab] : [];
+    if (!stocks.length) return null;
+    return {
+      stocks: normalizeStockRows(tab, stocks),
+      updatedAt: all.updatedAt || null,
+      total: stocks.length,
+      cached: true,
+      stale: true,
+    };
+  }
+
+  async function fetchStaticTabPack(tab) {
+    const all = await (krAllWarmPromise || loadKrAll().catch(() => null));
+    return all ? packFromKrTab(tab, all) : null;
+  }
+
+  /**
+   * 정적 JSON 즉시 표시(stale-while-revalidate) + API 최신화.
+   * onInstant — 첫 데이터(정적) 도착 시 1회 호출.
+   */
+  async function fetchStocksProgressiveForTab(tab, onInstant) {
+    let instantDone = false;
+    const fireInstant = (pack) => {
+      if (instantDone || !pack || !(pack.stocks || []).length) return;
+      instantDone = true;
+      if (typeof onInstant === "function") onInstant(pack);
+    };
+
+    const staticP = fetchStaticTabPack(tab);
+    staticP.then((pack) => fireInstant(pack));
+
+    try {
+      return await fetchStocksAllFromApiForTab(tab);
+    } catch (e) {
+      const fallback = await staticP;
+      if (fallback && fallback.stocks && fallback.stocks.length) return fallback;
+      throw e;
+    }
+  }
+
   function formatFreshness(iso) {
     if (!iso) return "";
     const t = new Date(iso);
@@ -1345,12 +1389,34 @@
     const body = $("rt-tbody");
     if (!body) return;
     body.dataset.rtLoading = "1";
+    body.classList.remove("rt-tbody--fresh");
     body.innerHTML = skeletonRowsHtml(10);
+    setTableLoadingHint(true);
   }
 
   function hideTableLoading() {
     const body = $("rt-tbody");
     if (body) delete body.dataset.rtLoading;
+    setTableLoadingHint(false);
+  }
+
+  function setTableLoadingHint(on) {
+    const el = $("rt-data-freshness");
+    if (!el) return;
+    el.classList.toggle("rt-data-freshness--loading", !!on);
+    if (on && !state.dataUpdatedAt) {
+      el.textContent = "실시간 시세 불러오는 중";
+    } else if (!on && state.dataUpdatedAt) {
+      el.textContent = formatFreshness(state.dataUpdatedAt);
+    }
+  }
+
+  function markTableFresh() {
+    const body = $("rt-tbody");
+    if (!body || body.dataset.rtLoading === "1") return;
+    body.classList.remove("rt-tbody--fresh");
+    void body.offsetWidth;
+    body.classList.add("rt-tbody--fresh");
   }
 
   async function ensureTabPageLoaded(tab, page, opts) {
@@ -1449,9 +1515,9 @@
     };
   }
 
-  /** 페이지 종목 — API page=all 로 TOP100 한 번에 로드 */
-  async function fetchStocksJsonForTab(tab) {
-    return fetchStocksAllFromApiForTab(tab);
+  /** 페이지 종목 — API page=all 로 TOP100 한 번에 로드 (정적 JSON 선표시) */
+  async function fetchStocksJsonForTab(tab, onInstant) {
+    return fetchStocksProgressiveForTab(tab, onInstant);
   }
 
   function renderTablePager() {
@@ -1572,19 +1638,10 @@
     }
   }
 
-  async function loadBootstrapForTab(tab, onStocksReady) {
-    const metaP = Promise.all([
-      fetchJson("session", FETCH_TIMEOUT_MS),
-      fetchJson("index", FETCH_TIMEOUT_MS),
-    ]);
-    const stockPack = await fetchStocksJsonForTab(tab);
-    if (tab === "gainers") {
-      state.gainerTotal = 100;
-    } else if (tab === "tv") {
-      state.tvTotal = 100;
-    } else if (tab === "cap") {
-      state.capTotal = 100;
-    }
+  function applyStockPackToTab(tab, stockPack) {
+    if (tab === "gainers") state.gainerTotal = Number(stockPack.total || 100) || 100;
+    else if (tab === "tv") state.tvTotal = Number(stockPack.total || 100) || 100;
+    else state.capTotal = Number(stockPack.total || 100) || 100;
     const stocks = stockPack.stocks || [];
     if (stocks.length) {
       setTop100ForTab(tab, stocks);
@@ -1592,7 +1649,19 @@
     }
     state.tabLoadedAt[tab] = Date.now();
     if (stockPack.updatedAt) setDataUpdatedAt(stockPack.updatedAt);
-    else if (!stockPack.cached) setDataUpdatedAt(new Date().toISOString());
+    else if (!stockPack.cached && !stockPack.stale) setDataUpdatedAt(new Date().toISOString());
+  }
+
+  async function loadBootstrapForTab(tab, onStocksReady) {
+    const metaP = Promise.all([
+      fetchJson("session", FETCH_TIMEOUT_MS),
+      fetchJson("index", FETCH_TIMEOUT_MS),
+    ]);
+    const stockPack = await fetchStocksProgressiveForTab(tab, (instantPack) => {
+      applyStockPackToTab(tab, instantPack);
+      if (typeof onStocksReady === "function") onStocksReady();
+    });
+    applyStockPackToTab(tab, stockPack);
     if (typeof onStocksReady === "function") onStocksReady();
 
     const [sess, idx] = await metaP;
@@ -2917,11 +2986,17 @@
 
     if (errEl) errEl.hidden = true;
     try {
-      await loadBootstrapForTab(tk);
+      await loadBootstrapForTab(tk, () => {
+        if (state.tab !== tk) return;
+        hideTableLoading();
+        renderAll();
+        markTableFresh();
+      });
       if (state.tab !== tk) return;
       if (errEl) errEl.hidden = true;
       hideTableLoading();
       renderAll();
+      markTableFresh();
       prefetchOtherRankTabs();
     } catch (e) {
       console.error("[realtime-board] loadBootstrapForTab", tk, e && e.message, e);
@@ -3115,16 +3190,25 @@
     }
     const err = $("rt-error");
     if (err) err.hidden = true;
-    hideLoadingOverlay();
     syncTableChromeForTab();
     showTableLoading();
+    let firstPaint = false;
+    const paintBootstrap = () => {
+      if (!firstPaint) {
+        firstPaint = true;
+        hideLoadingOverlay();
+      }
+      hideTableLoading();
+      syncTableChromeForTab();
+      renderTable();
+      renderTablePager();
+      markTableFresh();
+    };
+    const overlayCap = window.setTimeout(() => {
+      if (!firstPaint) hideLoadingOverlay();
+    }, 500);
     try {
-      await loadBootstrapForTab(state.tab, () => {
-        hideTableLoading();
-        syncTableChromeForTab();
-        renderTable();
-        renderTablePager();
-      });
+      await loadBootstrapForTab(state.tab, paintBootstrap);
       if (err) err.hidden = true;
     } catch (e) {
       if (err) {
@@ -3133,6 +3217,7 @@
         err.textContent = rtErrorTimeoutMessage(e);
       }
     } finally {
+      window.clearTimeout(overlayCap);
       renderAll();
       startPolling();
       const deferPrefetch =

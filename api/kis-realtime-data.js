@@ -878,13 +878,17 @@ async function rowWithNxtIntegratedVolume(code6, baseRow, naverListStock) {
 }
 
 async function buildNxtIntegratedTvTop100(candidateByCode) {
-  const codes = [...candidateByCode.keys()];
+  /** 후보 풀 전체에 /price 호출 시 10초+ — 리스트 거래대금 상위만 NXT 통합 재산출 */
+  const TV_NXT_INTEGRATE_CANDIDATES = 150;
+  const preliminary = [...candidateByCode.entries()]
+    .map(([code, item]) => ({ code, tv: Number(item && item.tv) || 0, item }))
+    .sort((a, b) => b.tv - a.tv)
+    .slice(0, TV_NXT_INTEGRATE_CANDIDATES);
   const scored = [];
-  for (let i = 0; i < codes.length; i += NAVER_PRICE_OVERLAY_CONCURRENCY) {
-    const chunk = codes.slice(i, i + NAVER_PRICE_OVERLAY_CONCURRENCY);
+  for (let i = 0; i < preliminary.length; i += NAVER_PRICE_OVERLAY_CONCURRENCY) {
+    const chunk = preliminary.slice(i, i + NAVER_PRICE_OVERLAY_CONCURRENCY);
     const part = await Promise.all(
-      chunk.map(async (code) => {
-        const item = candidateByCode.get(code);
+      chunk.map(async ({ code, item }) => {
         const row = await rowWithNxtIntegratedVolume(code, item && item.row, item && item.s);
         const tv = Number(row.tradingValue) || 0;
         return { code, tv, row };
@@ -1835,7 +1839,7 @@ module.exports = async function handler(req, res) {
       try {
         const pageRaw = req.query && req.query.page;
         if (isRankPageAll(pageRaw)) {
-          const cacheKey = "trading-value:nxt-v3:all";
+          const cacheKey = "trading-value:nxt-v4:all";
           const cached = rankPageCacheGet(cacheKey);
           if (cached) {
             json(res, 200, { ...cached, cached: true });
@@ -1856,7 +1860,7 @@ module.exports = async function handler(req, res) {
           return;
         }
         const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
-        const cacheKey = `trading-value:nxt-v3:${range.page}:${range.pageSize}`;
+        const cacheKey = `trading-value:nxt-v4:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });

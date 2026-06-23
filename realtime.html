@@ -30,7 +30,8 @@
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
-    <link rel="stylesheet" href="./realtime-board.css?v=4" />
+    <link rel="preload" href="/api/repo-data?path=data/kr-realtime.json" as="fetch" crossorigin />
+    <link rel="stylesheet" href="./realtime-board.css?v=5" />
   </head>
   <body class="page-tm-v2" data-tm-tab="realtime">
     <div id="rt-loading" class="rt-loading" aria-busy="true" aria-label="데이터 로딩 중">
@@ -273,6 +274,6 @@
         }
       })();
     </script>
-    <script src="./realtime-board.js?v=20260602w"></script>
+    <script src="./realtime-board.js?v=20260602x"></script>
   </body>
 </html>

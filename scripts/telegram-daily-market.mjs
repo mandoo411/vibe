@@ -84,8 +84,6 @@ function splitAnalysisTitle(analysis) {
   return { title: lines[0] || "", body: lines.slice(1).join("\n").trim() };
 }
 
-const CIRCLED = ["①", "②", "③", "④", "⑤"];
-
 function stockChange(row) {
   return toNum(row?.change ?? row?.change_pct ?? row?.changePct);
 }
@@ -95,30 +93,6 @@ function stockType(row) {
   if (t) return t;
   const c = stockChange(row);
   return c != null && c < 0 ? "급락" : "급등";
-}
-
-function stockReason(row) {
-  return row?.reason || row?.entryReason || row?.background || row?.note || "";
-}
-
-// 특징주: 급등 상위 3개 (issueStocks → 없으면 topGainers 폴백)
-function formatFeatured(day) {
-  const issues = Array.isArray(day.issueStocks) ? day.issueStocks : [];
-  let pool = issues.filter((r) => r && r.name && stockType(r) === "급등");
-  if (!pool.length) {
-    pool = (Array.isArray(day.topGainers) ? day.topGainers : []).filter((r) => r && r.name);
-  }
-  const top = pool
-    .slice()
-    .sort((a, b) => (stockChange(b) ?? 0) - (stockChange(a) ?? 0))
-    .slice(0, 3);
-  if (!top.length) return "특징주 데이터 준비 중";
-  return top
-    .map((r, i) => {
-      const reason = stockReason(r);
-      return `${CIRCLED[i]} ${mdText(r.name)} ${fmtPct(stockChange(r), 2)}${reason ? ` (${mdText(reason)})` : ""}`;
-    })
-    .join("\n");
 }
 
 // 급락: 시총 100위 이내 급락 종목 최대 2개 (type=급락 우선)
@@ -162,8 +136,6 @@ function buildMessage(data) {
   if (supplyLine && supplyLine !== "수급 데이터 준비 중") {
     lines.push("", "💰 *수급 (코스피)*", supplyLine);
   }
-
-  lines.push("", "🔥 *특징주*", formatFeatured(day));
 
   const decliners = formatDecliners(day);
   if (decliners) {

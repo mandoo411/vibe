@@ -1,7 +1,7 @@
 # 외부 크론(cron-job.org)으로 Daily Market Sync 트리거하기
 
 GitHub Actions의 `schedule:` cron은 러너 부하에 따라 수 분~수십 분 지연될 수 있습니다.
-마감시황을 정시(매일 17:00 KST)에 안정적으로 돌리기 위해 **cron-job.org** 같은 외부 스케줄러로
+마감시황을 정시(매일 15:40 KST)에 안정적으로 돌리기 위해 **cron-job.org** 같은 외부 스케줄러로
 GitHub `repository_dispatch` API를 직접 호출합니다.
 
 대상 워크플로: `.github/workflows/daily-market-sync.yml`
@@ -30,8 +30,8 @@ GitHub `repository_dispatch` API를 직접 호출합니다.
    ```json
    {"event_type": "trigger-daily-market"}
    ```
-7. **실행 시간**: 매일 **17:00 KST (08:00 UTC)**
-   - cron-job.org 스케줄을 KST로 설정하거나, UTC 기준이면 `08:00`으로 설정.
+7. **실행 시간**: 매일 **15:40 KST (06:40 UTC)**
+   - cron-job.org 스케줄을 KST로 설정하거나, UTC 기준이면 `06:40`으로 설정.
 8. **GitHub Token 발급**
    - GitHub → Settings → Developer settings → Personal access tokens
    - **Classic 토큰**이면 `repo` scope 권한으로 발급.

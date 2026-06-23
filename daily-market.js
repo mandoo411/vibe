@@ -58,7 +58,7 @@
     selected: null,
     todayYmd: null,
     defaultYmd: null,
-    dataMissing: false,
+    missingYmd: null,
     liveMode: false,
     liveRowsByTab: { gainers: [], losers: [], tv: [] },
     mainTab: "ai",
@@ -146,22 +146,38 @@
     return `${m}월 ${d}일 (${weekdayKo(ymd)})`;
   }
 
-  function latestDayWithStockData() {
+  function latestPublishedYmd() {
+    const today = state.todayYmd || seoulYmd();
     const keys = Object.keys(state.days || {})
-      .filter((k) => YMD_RE.test(k))
+      .filter((k) => YMD_RE.test(k) && k <= today)
       .sort();
     for (let i = keys.length - 1; i >= 0; i--) {
       const d = state.days[keys[i]];
-      if (!isDayEmpty(d) && hasPartialStockLists(d)) return keys[i];
+      if (!d || isDayEmpty(d)) continue;
+      return keys[i];
     }
     return null;
   }
 
   function resolveDefaultYmd() {
     const today = state.todayYmd || seoulYmd();
-    if (isPageContentReady(today)) return today;
-    if (isDomesticTradingDay(today) && isAfterMarketCloseKst()) return today;
-    return latestDayWithStockData() || today;
+    if (isTodayReportPublished()) return today;
+    const latest = latestPublishedYmd();
+    if (latest) return latest;
+    return today;
+  }
+
+  function selectedYmd() {
+    const y = state.selected;
+    if (y && YMD_RE.test(y)) return y;
+    return state.defaultYmd || state.todayYmd || seoulYmd();
+  }
+
+  /** 오늘 리포트(AI+마감 TOP30)가 아직 발행되지 않은 거래일 */
+  function isTodayReportPending(ymd) {
+    if (ymd !== state.todayYmd) return false;
+    if (!isDomesticTradingDay(ymd)) return false;
+    return !isTodayReportPublished();
   }
 
   function getJsonReportDate() {
@@ -233,13 +249,16 @@
 
   /** 휴장·업로드 전 — 탭/본문 숨기고 준비중 메시지만 표시 */
   function isPageContentReady(ymd) {
-    if (state.dataMissing && ymd !== state.todayYmd) return false;
     const closed = marketClosedReason(ymd);
     if (closed) return false;
+    if (isTodayReportPending(ymd)) return false;
+    if (state.missingYmd === ymd) return false;
     const day = getDay(ymd);
-    if (ymd === state.todayYmd) return hasAnyStockTabData(day, ymd);
     if (!day || isDayEmpty(day)) return false;
-    return hasPartialStockLists(day);
+    if (ymd === state.todayYmd) {
+      return isTodayReportPublished() || (hasClosingStockData(day, ymd) && hasAiReportContent(day));
+    }
+    return hasPartialStockLists(day) || hasAiReportContent(day);
   }
 
   function getPreparingCopy(ymd) {
@@ -248,18 +267,36 @@
       return {
         title: `${closedReason} 휴장입니다`,
         hint: "국내 증시가 열리지 않아 장마감 리포트가 생성되지 않습니다.",
+        icon: "ti-calendar-off",
       };
     }
-    if (state.dataMissing) {
+    if (isTodayReportPending(ymd)) {
+      const afterClose = isAfterMarketCloseKst();
       return {
-        title: "데이터 준비중",
-        hint: "해당 날짜의 마감시황 데이터가 아직 업로드되지 않았습니다.",
+        title: "오늘 마감시황 준비 중",
+        hint: afterClose
+          ? "장 마감 데이터를 수집하고 AI 분석 중입니다 · 완료 예상 17:00 전후"
+          : "장 마감 후 자동으로 업데이트됩니다 · 완료 예상 17:00 전후",
+        icon: "ti-sparkles",
+      };
+    }
+    if (state.missingYmd === ymd) {
+      return {
+        title: "데이터 없음",
+        hint: "해당 날짜의 마감시황이 아직 없습니다. 이전 날짜를 선택해 보세요.",
+        icon: "ti-file-off",
       };
     }
     return {
       title: "데이터 준비중",
-      hint: "장 마감 후(약 16:00) TOP30이 자동 업데이트됩니다",
+      hint: "장 마감 후 TOP30·AI 분석이 자동 업데이트됩니다",
+      icon: "ti-clock-hour-4",
     };
+  }
+
+  function getRenderableDay(ymd) {
+    if (state.missingYmd === ymd) return null;
+    return getDay(ymd);
   }
 
   function normalizeArchiveDay(raw, ymd) {
@@ -290,10 +327,9 @@
 
   function updateDateNav() {
     const today = state.todayYmd || seoulYmd();
-    const ymd = state.selected;
-    const day = state.dataMissing ? null : getDay(ymd);
-    const displayYmd = getDayDateYmd(day, ymd);
-    if (els.dmDateLabel) els.dmDateLabel.textContent = shortDateLabel(displayYmd);
+    const ymd = selectedYmd();
+    if (els.dmDateLabel) els.dmDateLabel.textContent = shortDateLabel(ymd);
+    if (els.dmDatePrev) els.dmDatePrev.disabled = false;
     if (els.dmDateNext) {
       const next = skipWeekendNext(ymd);
       els.dmDateNext.disabled = ymd >= today || next > today;
@@ -301,8 +337,9 @@
   }
 
   async function ensureDayLoaded(ymd) {
+    if (!YMD_RE.test(ymd)) return false;
     if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
-      state.dataMissing = false;
+      state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
       if (needsLiveRealtime(ymd)) await loadLiveStockData();
       else state.liveMode = false;
       return true;
@@ -311,19 +348,20 @@
     const normalized = normalizeArchiveDay(archive, ymd);
     if (normalized && !isDayEmpty(normalized)) {
       state.days[ymd] = normalized;
-      state.dataMissing = false;
+      state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
       if (needsLiveRealtime(ymd)) await loadLiveStockData();
       else state.liveMode = false;
       return true;
     }
     if (ymd === state.todayYmd) {
-      state.dataMissing = false;
+      state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
       if (needsLiveRealtime(ymd)) {
         await loadLiveStockData();
         return true;
       }
+      return true;
     }
-    state.dataMissing = true;
+    state.missingYmd = ymd;
     state.liveMode = false;
     return false;
   }
@@ -999,10 +1037,15 @@
     if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;
     if (els.dmPreparing) {
       els.dmPreparing.hidden = ready;
+      els.dmPreparing.classList.toggle("dm-preparing--today", isTodayReportPending(y));
       if (!ready) {
         const copy = getPreparingCopy(y);
         if (els.dmPreparingTitle) els.dmPreparingTitle.textContent = copy.title;
         if (els.dmPreparingHint) els.dmPreparingHint.textContent = copy.hint;
+        const iconEl = els.dmPreparing.querySelector(".dm-preparing__icon i");
+        if (iconEl && copy.icon) {
+          iconEl.className = `ti ${copy.icon}`;
+        }
       }
     }
     return ready;
@@ -1158,8 +1201,8 @@
   }
 
   function renderAiPanels() {
-    const ymd = state.selected;
-    const day = state.dataMissing ? null : getDay(ymd);
+    const ymd = selectedYmd();
+    const day = getRenderableDay(ymd);
     if (els.dmAnalysis) {
       const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
       els.dmAnalysis.innerHTML = analysisText
@@ -1184,8 +1227,8 @@
   }
 
   function render() {
-    const ymd = state.selected;
-    const day = state.dataMissing ? null : getDay(ymd);
+    const ymd = selectedYmd();
+    const day = getRenderableDay(ymd);
     const ready = syncTabChromeVisibility(ymd);
     const displayYmd = getDayDateYmd(day, ymd);
 
@@ -1296,6 +1339,7 @@
     await Promise.all([loadData(), loadKrTv()]);
     state.defaultYmd = resolveDefaultYmd();
     state.selected = resolveSelectedYmd();
+    if (!YMD_RE.test(state.selected)) state.selected = state.defaultYmd;
     syncHash(state.selected);
     await ensureDayLoaded(state.selected);
     bindEvents();

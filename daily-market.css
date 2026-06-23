@@ -1562,10 +1562,45 @@ details[open] .admin__summary {
 .dm-preparing__inner {
   max-width: 420px;
   margin: 0 auto;
-  padding: 28px 24px;
-  border-radius: 14px;
+  padding: 32px 24px 28px;
+  border-radius: 16px;
   background: var(--color-surface-muted, rgba(7, 38, 75, 0.04));
   border: 1px solid var(--color-border-subtle, rgba(7, 38, 75, 0.08));
+  box-shadow: 0 8px 28px rgba(7, 38, 75, 0.06);
+}
+
+.dm-preparing__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(96, 165, 250, 0.18));
+  color: #2563eb;
+  font-size: 26px;
+}
+
+.dm-preparing--today .dm-preparing__inner {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06) 0%, var(--color-surface-muted, rgba(7, 38, 75, 0.04)) 100%);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.dm-preparing--today .dm-preparing__icon {
+  animation: dm-preparing-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes dm-preparing-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.88;
+  }
 }
 
 .dm-preparing__title {

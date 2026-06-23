@@ -29,7 +29,7 @@
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./daily-market.css?v=5" />
+    <link rel="stylesheet" href="./daily-market.css?v=6" />
     <link rel="stylesheet" href="./realtime-board.css?v=2" />
     <script src="./assets/data-url.js"></script>
   </head>
@@ -114,8 +114,9 @@
 
                   <div class="dm-preparing" id="dm-preparing" hidden role="status">
                     <div class="dm-preparing__inner">
+                      <div class="dm-preparing__icon" aria-hidden="true"><i class="ti ti-sparkles"></i></div>
                       <p class="dm-preparing__title" id="dm-preparing-title">데이터 준비중</p>
-                      <p class="dm-preparing__hint" id="dm-preparing-hint">장 마감 후(약 16:00) TOP30이 자동 업데이트됩니다</p>
+                      <p class="dm-preparing__hint" id="dm-preparing-hint">장 마감 후 TOP30·AI 분석이 자동 업데이트됩니다</p>
                       <div class="loading-bar-track" aria-hidden="true">
                         <div class="loading-bar-inner"></div>
                       </div>
@@ -224,6 +225,6 @@
       </nav>
     </div>
 
-    <script src="./daily-market.js?v=2"></script>
+    <script src="./daily-market.js?v=3"></script>
   </body>
 </html>

@@ -1591,6 +1591,17 @@ details[open] .admin__summary {
   animation: dm-preparing-pulse 2.2s ease-in-out infinite;
 }
 
+.dm-preparing--boot .dm-preparing__icon i.ti-loader {
+  display: inline-block;
+  animation: dm-preparing-spin 0.9s linear infinite;
+}
+
+@keyframes dm-preparing-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes dm-preparing-pulse {
   0%,
   100% {

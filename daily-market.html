@@ -29,7 +29,7 @@
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./daily-market.css?v=6" />
+    <link rel="stylesheet" href="./daily-market.css?v=7" />
     <link rel="stylesheet" href="./realtime-board.css?v=2" />
     <script src="./assets/data-url.js"></script>
   </head>
@@ -87,7 +87,7 @@
               <div class="rt-wrap dm-wrap" id="dm-main">
                 <div class="rt-panel dm-panel" role="tabpanel">
                   <div class="rt-tabs rt-tabs--with-date-nav" id="dm-tab-bar" role="tablist" aria-label="마감시황 보기">
-                    <div class="rt-tabs-row-tabs" id="dm-tabs-row">
+                    <div class="rt-tabs-row-tabs" id="dm-tabs-row" hidden>
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="ai" aria-selected="true" id="dm-tab-ai">
                         <span class="rt-tab-label--full">AI 시황분석</span><span class="rt-tab-label--short">AI분석</span>
                       </button>
@@ -105,25 +105,25 @@
                       <button type="button" class="dm-date-nav__btn" id="dm-date-prev" aria-label="이전 날짜">
                         <span aria-hidden="true">‹</span>
                       </button>
-                      <span class="dm-date-nav__label" id="dm-date-label" aria-live="polite">—</span>
+                      <span class="dm-date-nav__label" id="dm-date-label" aria-live="polite">불러오는 중…</span>
                       <button type="button" class="dm-date-nav__btn" id="dm-date-next" aria-label="다음 날짜">
                         <span aria-hidden="true">›</span>
                       </button>
                     </div>
                   </div>
 
-                  <div class="dm-preparing" id="dm-preparing" hidden role="status">
+                  <div class="dm-preparing" id="dm-preparing" role="status">
                     <div class="dm-preparing__inner">
-                      <div class="dm-preparing__icon" aria-hidden="true"><i class="ti ti-sparkles"></i></div>
-                      <p class="dm-preparing__title" id="dm-preparing-title">데이터 준비중</p>
-                      <p class="dm-preparing__hint" id="dm-preparing-hint">장 마감 후 TOP30·AI 분석이 자동 업데이트됩니다</p>
+                      <div class="dm-preparing__icon" aria-hidden="true"><i class="ti ti-loader"></i></div>
+                      <p class="dm-preparing__title" id="dm-preparing-title">불러오는 중</p>
+                      <p class="dm-preparing__hint" id="dm-preparing-hint">마감시황 데이터를 가져오고 있습니다</p>
                       <div class="loading-bar-track" aria-hidden="true">
                         <div class="loading-bar-inner"></div>
                       </div>
                     </div>
                   </div>
 
-                  <div class="dm-tab-panels" id="dm-tab-panels">
+                  <div class="dm-tab-panels" id="dm-tab-panels" hidden>
                       <!-- AI 시황분석 -->
                       <div class="dm-tab-panel is-active" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai">
                         <div id="dm-ai-content">
@@ -220,6 +220,6 @@
       </nav>
     </div>
 
-    <script src="./daily-market.js?v=4"></script>
+    <script src="./daily-market.js?v=5"></script>
   </body>
 </html>

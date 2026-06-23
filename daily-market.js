@@ -350,12 +350,32 @@
     }
   }
 
-  async function ensureDayLoaded(ymd) {
+  function renderBootState() {
+    if (els.dmTabsRow) els.dmTabsRow.hidden = true;
+    if (els.dmTabPanels) els.dmTabPanels.hidden = true;
+    if (els.dmPreparing) {
+      els.dmPreparing.hidden = false;
+      els.dmPreparing.classList.remove("dm-preparing--today");
+      els.dmPreparing.classList.add("dm-preparing--boot");
+      if (els.dmPreparingTitle) els.dmPreparingTitle.textContent = "불러오는 중";
+      if (els.dmPreparingHint) els.dmPreparingHint.textContent = "마감시황 데이터를 가져오고 있습니다";
+      const iconEl = els.dmPreparing.querySelector(".dm-preparing__icon i");
+      if (iconEl) iconEl.className = "ti ti-loader";
+    }
+    if (els.dmDateLabel) els.dmDateLabel.textContent = "불러오는 중…";
+    if (els.dmDatePrev) els.dmDatePrev.disabled = true;
+    if (els.dmDateNext) els.dmDateNext.disabled = true;
+  }
+
+  async function ensureDayLoaded(ymd, opts) {
+    const deferLive = !!(opts && opts.deferLive);
     if (!YMD_RE.test(ymd)) return false;
     if (state.days[ymd] && !isDayEmpty(state.days[ymd])) {
       state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
-      if (needsLiveRealtime(ymd)) await loadLiveStockData();
-      else state.liveMode = false;
+      if (needsLiveRealtime(ymd)) {
+        if (deferLive) void loadLiveStockData();
+        else await loadLiveStockData();
+      } else state.liveMode = false;
       return true;
     }
     const archive = await fetchArchiveDayJson(ymd);
@@ -363,14 +383,17 @@
     if (normalized && !isDayEmpty(normalized)) {
       state.days[ymd] = normalized;
       state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
-      if (needsLiveRealtime(ymd)) await loadLiveStockData();
-      else state.liveMode = false;
+      if (needsLiveRealtime(ymd)) {
+        if (deferLive) void loadLiveStockData();
+        else await loadLiveStockData();
+      } else state.liveMode = false;
       return true;
     }
     if (ymd === state.todayYmd) {
       state.missingYmd = state.missingYmd === ymd ? null : state.missingYmd;
       if (needsLiveRealtime(ymd)) {
-        await loadLiveStockData();
+        if (deferLive) void loadLiveStockData();
+        else await loadLiveStockData();
         return true;
       }
       return true;
@@ -1054,6 +1077,7 @@
     if (els.dmTabPanels) els.dmTabPanels.hidden = !ready;
     if (els.dmPreparing) {
       els.dmPreparing.hidden = ready;
+      els.dmPreparing.classList.remove("dm-preparing--boot");
       els.dmPreparing.classList.toggle("dm-preparing--today", isTodayReportPending(y));
       if (!ready) {
         const copy = getPreparingCopy(y);
@@ -1353,14 +1377,18 @@
 
   async function main() {
     state.todayYmd = seoulYmd();
-    await Promise.all([loadData(), loadKrTv()]);
-    state.defaultYmd = resolveDefaultYmd();
-    state.selected = resolveSelectedYmd();
-    if (!YMD_RE.test(state.selected)) state.selected = state.defaultYmd;
-    syncHash(state.selected);
-    await ensureDayLoaded(state.selected);
+    renderBootState();
     bindEvents();
-    setMainTab(state.mainTab);
+    try {
+      await Promise.all([loadData(), loadKrTv()]);
+      state.defaultYmd = resolveDefaultYmd();
+      state.selected = resolveSelectedYmd();
+      if (!YMD_RE.test(state.selected)) state.selected = state.defaultYmd;
+      syncHash(state.selected);
+      await ensureDayLoaded(state.selected, { deferLive: true });
+    } catch (e) {
+      console.warn("daily-market init failed", e && e.message);
+    }
     render();
   }
 

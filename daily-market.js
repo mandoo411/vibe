@@ -47,6 +47,20 @@
   const LIVE_FETCH_TIMEOUT_MS = 15000;
   const LIVE_TOP_N = 30;
 
+  /** 저장된 거래대금 TOP이 거래량순위 오염 등으로 대형주가 빠진 경우 */
+  function isTopTradingValueLikelyWrong(rows) {
+    if (!Array.isArray(rows) || rows.length < 8) return true;
+    const codes = new Set(
+      rows.slice(0, 15).map((r) => String((r && r.code) || "").replace(/\D/g, "").padStart(6, "0").slice(-6))
+    );
+    return !codes.has("005930") && !codes.has("000660");
+  }
+
+  function hasValidTopTradingValue(day) {
+    const rows = day && day.topTradingValue;
+    return Array.isArray(rows) && rows.length > 0 && !isTopTradingValueLikelyWrong(rows);
+  }
+
   let liveLoadPromise = null;
   const mcapCacheByCode = new Map();
   let mcapEnrichGen = 0;
@@ -590,7 +604,7 @@
     const hasD =
       (Array.isArray(day.topDecliners) && day.topDecliners.length > 0) ||
       (Array.isArray(day.topLosers) && day.topLosers.length > 0);
-    const hasTv = Array.isArray(day.topTradingValue) && day.topTradingValue.length > 0;
+    const hasTv = hasValidTopTradingValue(day);
     return hasG && hasD && hasTv;
   }
 
@@ -605,7 +619,7 @@
     const hasD =
       (Array.isArray(day.topDecliners) && day.topDecliners.length > 0) ||
       (Array.isArray(day.topLosers) && day.topLosers.length > 0);
-    const hasTv = Array.isArray(day.topTradingValue) && day.topTradingValue.length > 0;
+    const hasTv = hasValidTopTradingValue(day);
     return !(hasG && hasD && hasTv);
   }
 
@@ -1007,8 +1021,11 @@
           : [];
       rows.sort((a, b) => (parseChange(a.change) || 0) - (parseChange(b.change) || 0));
     } else if (subTab === "tv") {
-      if (Array.isArray(day.topTradingValue) && day.topTradingValue.length) {
+      const ymd = state.selected;
+      if (hasValidTopTradingValue(day)) {
         rows = [...day.topTradingValue];
+      } else if (ymd === state.todayYmd && state.krTv && state.krTv.length) {
+        rows = state.krTv.map(normalizeKrTvRow);
       } else if (Array.isArray(day.volumeLeaders) && day.volumeLeaders.length) {
         rows = day.volumeLeaders.map((r, i) => ({
           rank: r.rank != null ? r.rank : i + 1,
@@ -1022,8 +1039,8 @@
           tradingValueRaw: r.tradingValueRaw,
           stck_avls: readStckAvlsRaw(r),
         }));
-      } else if (state.krTv && state.krTv.length) {
-        rows = state.krTv.map(normalizeKrTvRow);
+      } else if (Array.isArray(day.topTradingValue) && day.topTradingValue.length) {
+        rows = [...day.topTradingValue];
       }
       rows.sort((a, b) => tvSortValue(b) - tvSortValue(a));
     }

@@ -654,6 +654,7 @@ function mapTopDeclinersJsonRow(s) {
 }
 
 async function fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode, marketLabel, limit = 50 }) {
+  // FHPST01710000 = 거래량순위 (거래대금 아님). 마감 거래대금은 collectTradingValueTopN(NAVER) 사용.
   const url = new URL(`${baseUrl}/uapi/domestic-stock/v1/quotations/volume-rank`);
   const params = {
     fid_cond_mrkt_div_code: "J",
@@ -923,20 +924,94 @@ async function enrichRowsWithNaverMcap(rows) {
   });
 }
 
-async function collectTradingValueTopN({ baseUrl, token, appKey, appSecret, topN }) {
-  const [kospi, kosdaq] = await Promise.all([
-    fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode: "0001", marketLabel: "KOSPI", limit: 50 }),
-    fetchTradingValueRanking({ baseUrl, token, appKey, appSecret, marketCode: "1001", marketLabel: "KOSDAQ", limit: 50 }),
-  ]);
-  console.log(`  거래대금 후보 KOSPI rows: ${kospi.length} | KOSDAQ rows: ${kosdaq.length}`);
-  const byCode = new Map();
-  for (const r of [...kospi, ...kosdaq]) {
-    if (!byCode.has(r.code)) byCode.set(r.code, r);
+async function fetchNaverQuantTopPageJson(market, page) {
+  const mkt = sanitizeStr(market).toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI";
+  const pg = Math.max(1, Number(page) || 1);
+  const url = `https://m.stock.naver.com/api/stocks/quantTop/${mkt}?pageSize=100&page=${pg}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent": USER_AGENT,
+    },
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`NAVER quantTop JSON HTTP ${res.status}`);
   }
-  const all = [...byCode.values()].sort(
-    (a, b) => (toNumberOrNull(b.tradingValueRaw) || 0) - (toNumberOrNull(a.tradingValueRaw) || 0)
-  );
-  return all.slice(0, topN).map((r, i) => ({ ...r, rank: i + 1 }));
+  return Array.isArray(json.stocks) ? json.stocks : [];
+}
+
+function isCommonStockRow(s) {
+  const end = sanitizeStr(s && s.stockEndType).toLowerCase();
+  if (end && end !== "stock") return false;
+  const name = sanitizeStr(s && s.stockName);
+  if (/\bETF\b|\bETN\b/i.test(name)) return false;
+  return true;
+}
+
+function naverVolumeFromStock(s) {
+  const raw = s && s.accumulatedTradingVolumeRaw;
+  if (raw != null && String(raw).trim() !== "") {
+    const n = Number(String(raw).replace(/,/g, ""));
+    if (Number.isFinite(n) && n > 0) return String(Math.round(n));
+  }
+  return sanitizeStr(s && s.accumulatedTradingVolume);
+}
+
+function naverStockTradingValueRaw(s) {
+  const raw = Number(s && s.accumulatedTradingValueRaw);
+  if (Number.isFinite(raw) && raw > 0) return raw;
+  const price = sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice));
+  const vol = naverVolumeFromStock(s);
+  const calc = calcTradingValueWon(price, vol);
+  return calc ? Number(calc) : 0;
+}
+
+function mapNaverTradingValueRow(s, rank, board) {
+  const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
+  const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
+  const tradingValueRaw = String(naverStockTradingValueRaw(s) || "");
+  const mcapWon = naverStockMcapWonFromListJson(s);
+  return {
+    rank,
+    code,
+    name: sanitizeStr(s.stockName),
+    market: board,
+    currentPrice: sanitizeStr(s.closePrice || (s.overMarketPriceInfo && s.overMarketPriceInfo.overPrice)),
+    prevDelta: toNumberOrNull(s.compareToPreviousClosePrice),
+    change: toNumberOrNull(s.fluctuationsRatio),
+    volume: naverVolumeFromStock(s),
+    tradingValueRaw,
+    tradingValue: formatTradingValue(tradingValueRaw),
+    stck_avls: mcapWon,
+  };
+}
+
+/** NAVER 시가총액·거래대금(quantTop) 풀 — 실시간시세 거래대금 탭과 동일 계열 */
+async function collectTradingValueTopN({ topN }) {
+  const [k1, k2, k3, q1, q2, q3, v1, v2] = await Promise.all([
+    fetchNaverMarketCapPageJson(1, "KOSPI"),
+    fetchNaverMarketCapPageJson(2, "KOSPI"),
+    fetchNaverMarketCapPageJson(3, "KOSPI"),
+    fetchNaverMarketCapPageJson(1, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(2, "KOSDAQ"),
+    fetchNaverMarketCapPageJson(3, "KOSDAQ"),
+    fetchNaverQuantTopPageJson("KOSPI", 1).catch(() => []),
+    fetchNaverQuantTopPageJson("KOSDAQ", 1).catch(() => []),
+  ]);
+  const byCode = new Map();
+  for (const s of [...k1, ...k2, ...k3, ...q1, ...q2, ...q3, ...v1, ...v2].filter(isCommonStockRow)) {
+    const codeRaw = String(s.itemCode || s.reutersCode || "").replace(/\D/g, "");
+    const code = codeRaw.length <= 6 ? codeRaw.padStart(6, "0") : codeRaw.slice(-6);
+    if (!/^\d{6}$/.test(code)) continue;
+    const tv = naverStockTradingValueRaw(s);
+    const board = sanitizeStr(s.sosok) === "1" ? "KOSDAQ" : "KOSPI";
+    const hit = byCode.get(code);
+    if (!hit || tv > hit.tv) byCode.set(code, { s, tv, board });
+  }
+  const sorted = [...byCode.values()].sort((a, b) => b.tv - a.tv).slice(0, topN);
+  console.log(`  거래대금 NAVER 후보 ${byCode.size}건 → TOP${sorted.length}`);
+  return sorted.map((item, i) => mapNaverTradingValueRow(item.s, i + 1, item.board));
 }
 
 /** KIS 거래대금 API 실패 시 상승률 TOP 종목의 acml_tr_pbmn으로 대체 */
@@ -1540,13 +1615,7 @@ async function main() {
   const kisCtx = { baseUrl, token: kisOAuthToken, appKey, appSecret };
   let topTradingValueRaw = [];
   try {
-    topTradingValueRaw = await collectTradingValueTopN({
-      baseUrl,
-      token: kisOAuthToken,
-      appKey,
-      appSecret,
-      topN,
-    });
+    topTradingValueRaw = await collectTradingValueTopN({ topN });
   } catch (e) {
     console.warn(`  거래대금 TOP${topN} 실패: ${e.message || e}`);
   }

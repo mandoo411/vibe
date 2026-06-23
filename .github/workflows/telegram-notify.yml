@@ -51,4 +51,13 @@ jobs:
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
         run: |
           {
-            printf 'TELEGRAM_TOKEN=
+            printf 'TELEGRAM_TOKEN=%s\n'      "$TELEGRAM_TOKEN"
+            printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
+          } > .env
+
+      - name: Send Telegram daily market report
+        run: npm run sync:daily
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f .env

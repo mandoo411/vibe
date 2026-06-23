@@ -4,6 +4,8 @@
 
   const API = "/api/kis-realtime-data";
   const FETCH_TIMEOUT_MS = 10000;
+  const RT_DEBUG =
+    typeof window !== "undefined" && /(?:\?|&)rtDebug=1\b/.test(window.location.search || "");
   const TAB_CACHE_MS = 3 * 60 * 1000;
   /** 차트 캔들 API·라이브러리 로드 상한 (TradingView 미사용, Lightweight Charts 지연 로드) */
   const CHART_FETCH_TIMEOUT_MS = 8000;
@@ -778,6 +780,15 @@
   const LW_CANDLE_H = 210;
   const LW_VOL_H = 90;
 
+  function lwChartHeights() {
+    if (isMobileLayout()) return { candle: 160, vol: 70 };
+    return { candle: LW_CANDLE_H, vol: LW_VOL_H };
+  }
+
+  function lwChartBarsLimit() {
+    return isMobileLayout() ? 120 : state.chartBarsLimit || 200;
+  }
+
   /** 아코디언 패널별 차트 인스턴스 */
   const panelLwCharts = new WeakMap();
 
@@ -954,15 +965,16 @@
    */
   function createLwDualPanelCharts(LC, mounts, opts) {
     const { width, localization } = opts;
+    const { candle: ch, vol: vh } = lwChartHeights();
     mounts.candleHost.innerHTML = "";
     mounts.volHost.innerHTML = "";
     const chartCandle = LC.createChart(
       mounts.candleHost,
-      lwChartLayoutOptions(width, LW_CANDLE_H, false, localization)
+      lwChartLayoutOptions(width, ch, false, localization)
     );
     const chartVol = LC.createChart(
       mounts.volHost,
-      lwChartLayoutOptions(width, LW_VOL_H, true, localization)
+      lwChartLayoutOptions(width, vh, true, localization)
     );
     const candle = addCandleSeries(LC, chartCandle);
     const vol = addVolSeries(LC, chartVol);
@@ -1041,6 +1053,36 @@
       }
     }
     panelLwCharts.delete(panelRoot);
+    const panes = panelRoot && panelRoot.querySelector ? panelRoot.querySelector(".rt-chart-panes") : null;
+    if (panes) delete panes.dataset.mountedKey;
+    if (panelRoot && panelRoot.dataset) delete panelRoot.dataset.mounted;
+  }
+
+  function disposePanelChartsInRoot(root) {
+    if (!root || !root.querySelectorAll) return;
+    root.querySelectorAll(".rt-chart-wrap").forEach((host) => disposePanelLwChart(host));
+  }
+
+  function clearStockResultPanel() {
+    const panel = $("stock-result-panel");
+    if (!panel) return;
+    disposePanelChartsInRoot(panel);
+    panel.hidden = true;
+    panel.innerHTML = "";
+  }
+
+  function isSearchPanelOpen() {
+    const p = $("stock-result-panel");
+    return !!(p && !p.hidden && String(p.innerHTML || "").trim());
+  }
+
+  let tableRenderRaf = 0;
+  function scheduleTableRender() {
+    if (tableRenderRaf) return;
+    tableRenderRaf = requestAnimationFrame(() => {
+      tableRenderRaf = 0;
+      renderTable();
+    });
   }
 
   function addHistogramSeriesCompat(chart, LC, opts) {
@@ -1100,19 +1142,21 @@
         url += `&${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`;
       }
     }
-    console.log("[realtime-board] fetch →", action, url);
+    if (RT_DEBUG) console.log("[realtime-board] fetch →", action, url);
     try {
       const res = await fetch(url, {
         cache: "no-store",
         signal: ctrl ? ctrl.signal : undefined,
       });
       const data = await res.json().catch(() => ({}));
-      console.log("[realtime-board] fetch ←", action, {
-        ok: res.ok,
-        status: res.status,
-        keys: data && typeof data === "object" ? Object.keys(data) : [],
-        stocksLen: Array.isArray(data.stocks) ? data.stocks.length : null,
-      });
+      if (RT_DEBUG) {
+        console.log("[realtime-board] fetch ←", action, {
+          ok: res.ok,
+          status: res.status,
+          keys: data && typeof data === "object" ? Object.keys(data) : [],
+          stocksLen: Array.isArray(data.stocks) ? data.stocks.length : null,
+        });
+      }
       if (!res.ok) {
         const msg =
           (data && typeof data.error === "string" && data.error) || `HTTP ${res.status}`;
@@ -1528,12 +1572,30 @@
     }
   }
 
-  async function loadBootstrapForTab(tab) {
-    const [sess, idx, stockPack] = await Promise.all([
+  async function loadBootstrapForTab(tab, onStocksReady) {
+    const metaP = Promise.all([
       fetchJson("session", FETCH_TIMEOUT_MS),
       fetchJson("index", FETCH_TIMEOUT_MS),
-      fetchStocksJsonForTab(tab),
     ]);
+    const stockPack = await fetchStocksJsonForTab(tab);
+    if (tab === "gainers") {
+      state.gainerTotal = 100;
+    } else if (tab === "tv") {
+      state.tvTotal = 100;
+    } else if (tab === "cap") {
+      state.capTotal = 100;
+    }
+    const stocks = stockPack.stocks || [];
+    if (stocks.length) {
+      setTop100ForTab(tab, stocks);
+      applyTop100Page(tab, currentPageForTab(tab));
+    }
+    state.tabLoadedAt[tab] = Date.now();
+    if (stockPack.updatedAt) setDataUpdatedAt(stockPack.updatedAt);
+    else if (!stockPack.cached) setDataUpdatedAt(new Date().toISOString());
+    if (typeof onStocksReady === "function") onStocksReady();
+
+    const [sess, idx] = await metaP;
     state.clockSession = sess.clock || null;
     state.marketTime = sess.marketTime || null;
     function normIndexId(x) {
@@ -1541,7 +1603,6 @@
       const label = x && x.label != null ? String(x.label).trim() : "";
       if (idRaw === "0001" || label.includes("코스피")) return "0001";
       if (idRaw === "1001" || label.includes("코스닥")) return "1001";
-      // 일부 응답에서 001/1 같은 값이 섞일 수 있어 정규화
       if (idRaw === "001" || idRaw === "1") return "0001";
       return idRaw;
     }
@@ -1560,21 +1621,6 @@
     if (!byId.has("0001")) byId.set("0001", { id: "0001", label: "코스피", value: "", changePct: null });
     if (!byId.has("1001")) byId.set("1001", { id: "1001", label: "코스닥", value: "", changePct: null });
     state.indexes = ["0001", "1001"].map((k) => byId.get(k));
-    if (tab === "gainers") {
-      state.gainerTotal = 100;
-    } else if (tab === "tv") {
-      state.tvTotal = 100;
-    } else if (tab === "cap") {
-      state.capTotal = 100;
-    }
-    const stocks = stockPack.stocks || [];
-    if (stocks.length) {
-      setTop100ForTab(tab, stocks);
-      applyTop100Page(tab, currentPageForTab(tab));
-    }
-    state.tabLoadedAt[tab] = Date.now();
-    if (stockPack.updatedAt) setDataUpdatedAt(stockPack.updatedAt);
-    else if (!stockPack.cached) setDataUpdatedAt(new Date().toISOString());
   }
 
   function rtErrorTimeoutMessage(err) {
@@ -1874,7 +1920,31 @@
   }
 
   function applyRowToTr(tr, r) {
-    if (isMobileLayout()) return;
+    if (isMobileLayout()) {
+      const row = tr.querySelector(".rt-mobile-row");
+      if (!row) return;
+      const rankEl = row.querySelector(".rt-col-rank");
+      if (rankEl) rankEl.textContent = r.rank != null ? String(r.rank) : "—";
+      const btn = row.querySelector(".rt-name-chart-btn");
+      if (btn) {
+        btn.textContent = r.name;
+        btn.setAttribute(
+          "aria-expanded",
+          code6Maybe(state.openChartCode) === rowStockCode(r) ? "true" : "false"
+        );
+      }
+      const priceEl = row.querySelector(".rt-col-price");
+      if (priceEl) priceEl.textContent = fmtNum(r.price);
+      const chg = row.querySelector(".rt-col-change .delta");
+      if (chg) {
+        const cls = deltaClass(r.changePct);
+        chg.className = `delta ${cls}`;
+        chg.textContent = fmtPct(r.changePct);
+      }
+      const lastEl = row.querySelector(".rt-col-last");
+      if (lastEl) lastEl.innerHTML = mobileLastColumnValue(r);
+      return;
+    }
     const nm = escapeHtml(r.name);
     tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
 
@@ -1924,12 +1994,16 @@
 
   function wireDetailAccordionClose(host) {
     if (!host) return;
-    const closeBtn = host.querySelector(".rt-acc-close");
-    if (!closeBtn || closeBtn.dataset.wired === "1") return;
-    closeBtn.dataset.wired = "1";
-    closeBtn.addEventListener("click", () => {
-      state.openChartCode = null;
-      renderTable();
+    host.querySelectorAll(".rt-acc-close, .rt-panel-close-btn").forEach((closeBtn) => {
+      if (closeBtn.dataset.wiredClose === "1" || closeBtn.dataset.wired === "1") return;
+      closeBtn.dataset.wired = "1";
+      closeBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        disposePanelChartsInRoot(host);
+        state.openChartCode = null;
+        renderTable();
+      });
     });
   }
 
@@ -1951,12 +2025,28 @@
       if (!state.openChartCode) {
         body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       } else {
-        const parts = [];
-        for (const r of rows) {
-          parts.push(stockRowHtml(r));
-          if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
+        const stockRows = body.querySelectorAll("tr.rt-stock-row");
+        const colN = tableColSpan();
+        const canPatch =
+          stockRows.length === rows.length &&
+          Array.from(stockRows).every(
+            (tr, i) =>
+              rowStockCode({ code: tr.getAttribute("data-code") }) === rowStockCode(rows[i]) &&
+              tr.querySelector(".rt-mobile-row")
+          );
+        if (canPatch) {
+          for (let i = 0; i < rows.length; i++) {
+            applyRowToTr(stockRows[i], rows[i]);
+          }
+        } else {
+          disposePanelChartsInRoot(body);
+          const parts = [];
+          for (const r of rows) {
+            parts.push(stockRowHtml(r));
+            if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
+          }
+          body.innerHTML = parts.join("");
         }
-        body.innerHTML = parts.join("");
       }
       syncNameChartButtonsAria(body);
       syncDetailDomAfterRows(body, rows);
@@ -2026,7 +2116,6 @@
   }
 
   function formatCreditLoanRmndRate(data) {
-    console.log("[신용융자잔고]", data && data.whol_loan_rmnd_rate);
     const raw =
       data.whol_loan_rmnd_rate ??
       data.wholLoanRmndRate ??
@@ -2078,6 +2167,8 @@
     const chartHost = findPanelElById(panelEl, targetId);
     const codeNorm = chartSymbolSixDigits(code6);
     if (!toggleBtn || !chartHost || !codeNorm) return;
+    if (toggleBtn.dataset.wiredChart === "1") return;
+    toggleBtn.dataset.wiredChart = "1";
 
     let chartOpen = false;
 
@@ -2090,6 +2181,7 @@
       if (!chartOpen) {
         const panes = chartHost.querySelector(".rt-chart-panes");
         if (panes) panes.style.display = "none";
+        disposePanelLwChart(chartHost);
       }
     }
 
@@ -2124,8 +2216,16 @@
 
   function wireStockPanel(panelEl, data, opts) {
     if (opts && typeof opts.onClose === "function") {
-      const closeBtn = panelEl.querySelector(".rt-acc-close");
-      if (closeBtn) closeBtn.addEventListener("click", opts.onClose);
+      panelEl.querySelectorAll(".rt-acc-close, .rt-panel-close-btn").forEach((closeBtn) => {
+        if (closeBtn.dataset.wiredClose === "1") return;
+        closeBtn.dataset.wiredClose = "1";
+        closeBtn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          disposePanelChartsInRoot(panelEl);
+          opts.onClose();
+        });
+      });
     }
     wireStockPanelChart(panelEl, chartSymbolSixDigits(data.stockCode));
   }
@@ -2157,6 +2257,7 @@
       const data = await fetchStockQuoteDetail(code, { signal: ctrl.signal });
       if (ctrl.signal.aborted) return;
       if (state.openChartCode !== code) return;
+      disposePanelChartsInRoot(host);
       host.innerHTML = stockPanelHtml(data, { accordion: true });
       host.dataset.loadedFor = code;
       wireStockPanel(host, data, {
@@ -2259,7 +2360,16 @@
     const pfDate = pf.baseDate ? escapeHtml(String(pf.baseDate)) : "—";
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
-    const closeBtn = `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
+    const isSearchPanel = !!(opts && opts.searchPanel);
+    const showDismissFooter = isSearchPanel || (isMobile && opts && opts.accordion);
+    const closeBtn = isSearchPanel
+      ? ""
+      : isMobile
+        ? `<button type="button" class="rt-acc-close rt-acc-close--mobile" aria-label="닫기">닫기</button>`
+        : `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
+    const dismissFooterBtn = showDismissFooter
+      ? `<button type="button" class="rt-acc-btn rt-acc-btn--dismiss rt-panel-close-btn">종목 닫기</button>`
+      : "";
 
     const basicGrid = [
       accGridCell("시가", open),
@@ -2321,6 +2431,7 @@
       `  </div>`,
       `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--profit">${profitGrid}</div>`,
       `  <footer class="rt-acc-footer">`,
+      dismissFooterBtn,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
       `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
@@ -2340,9 +2451,10 @@
     if (panes.dataset.mountedKey === mountKey && panelLwCharts.has(panelEl)) {
       const w = Math.max(panes.clientWidth, 200);
       const s = panelLwCharts.get(panelEl);
+      const { candle: ch, vol: vh } = lwChartHeights();
       if (s && w > 0) {
-        s.chartCandle.applyOptions({ width: w, height: LW_CANDLE_H });
-        s.chartVol.applyOptions({ width: w, height: LW_VOL_H });
+        s.chartCandle.applyOptions({ width: w, height: ch });
+        s.chartVol.applyOptions({ width: w, height: vh });
         syncLwDualChartAxes(s.chartCandle, s.chartVol);
       }
       return;
@@ -2352,6 +2464,8 @@
     panes.classList.add("rt-chart-panes--pending");
     disposePanelLwChart(panelEl);
     delete panes.dataset.mountedKey;
+
+    const cachedCandles = readChartCandleCache(code6, periodKey);
 
     try {
       await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
@@ -2375,34 +2489,41 @@
         () => bundle.fullCandles
       );
 
+      const { candle: ch, vol: vh } = lwChartHeights();
       const resizeObs = new ResizeObserver(() => {
         const s = panelLwCharts.get(panelEl);
         if (!s || !panes.isConnected) return;
         const w = panes.clientWidth;
         if (w <= 0) return;
-        s.chartCandle.applyOptions({ width: w, height: LW_CANDLE_H });
-        s.chartVol.applyOptions({ width: w, height: LW_VOL_H });
+        s.chartCandle.applyOptions({ width: w, height: ch });
+        s.chartVol.applyOptions({ width: w, height: vh });
         syncLwDualChartAxes(s.chartCandle, s.chartVol);
       });
       resizeObs.observe(panes);
       bundle.resizeObs = resizeObs;
 
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
-      try {
-        const res = await fetch(
-          `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodKey)}`,
-          { cache: "no-store", signal: ctrl.signal }
-        );
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-        const candles = Array.isArray(data.candles) ? data.candles : [];
-        if (!candles.length) throw new Error("차트 데이터가 없습니다.");
-        bundle.fullCandles = applyLwChartSeriesData(bundle, candles, state.chartBarsLimit || 200);
-        writeChartCandleCache(code6, periodKey, candles);
+      const barsLimit = lwChartBarsLimit();
+      if (cachedCandles && cachedCandles.length) {
+        bundle.fullCandles = applyLwChartSeriesData(bundle, cachedCandles, barsLimit);
         panes.dataset.mountedKey = mountKey;
-      } finally {
-        clearTimeout(tid);
+      } else {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
+        try {
+          const res = await fetch(
+            `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodKey)}`,
+            { cache: "no-store", signal: ctrl.signal }
+          );
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+          const candles = Array.isArray(data.candles) ? data.candles : [];
+          if (!candles.length) throw new Error("차트 데이터가 없습니다.");
+          bundle.fullCandles = applyLwChartSeriesData(bundle, candles, barsLimit);
+          writeChartCandleCache(code6, periodKey, candles);
+          panes.dataset.mountedKey = mountKey;
+        } finally {
+          clearTimeout(tid);
+        }
       }
     } catch (e) {
       disposePanelLwChart(panelEl);
@@ -2427,11 +2548,12 @@
     const q = input && input.value ? String(input.value).trim() : "";
     if (!panel) return;
     if (!q) {
-      panel.hidden = true;
+      clearStockResultPanel();
       if (input) input.focus();
       return;
     }
     panel.hidden = false;
+    disposePanelChartsInRoot(panel);
     panel.innerHTML = buildStockResultSkeleton();
     if (btn) btn.disabled = true;
     closeAutocomplete();
@@ -2451,11 +2573,10 @@
 
       // 기존 구현(시세 조회/결과 표시 로직)을 그대로 사용
       const data = await fetchStockQuoteDetail(code6);
-      panel.innerHTML = stockPanelHtml(data);
+      panel.innerHTML = stockPanelHtml(data, { searchPanel: true });
 
       const hidePanel = () => {
-        panel.hidden = true;
-        panel.innerHTML = "";
+        clearStockResultPanel();
         const input2 = $("stock-search-input");
         if (input2) input2.value = "";
         try {
@@ -2537,7 +2658,7 @@
       const row = rowFromCcnl(cells, trId);
       mergeStockRow(state.capRows, row);
       mergeStockRow(state.gainerRows, row);
-      if (isRankListTab(state.tab)) renderTable();
+      if (isRankListTab(state.tab) && !isSearchPanelOpen()) scheduleTableRender();
       return;
     }
   }
@@ -2668,9 +2789,12 @@
       if (detailOpen) {
         renderIndexes();
         renderMeta();
-        renderTable();
-      } else {
+        scheduleTableRender();
+      } else if (!isSearchPanelOpen()) {
         renderAll();
+      } else {
+        renderIndexes();
+        renderMeta();
       }
       if (state.ws && state.ws.readyState === 1) {
         unsubscribeAll();
@@ -2711,10 +2835,7 @@
     }
 
     const stockPanel = $("stock-result-panel");
-    if (stockPanel) {
-      stockPanel.hidden = true;
-      stockPanel.innerHTML = "";
-    }
+    if (stockPanel) clearStockResultPanel();
 
     if (state.tab === "cap") state.capPage = 1;
     else if (state.tab === "gainers") state.gainerPage = 1;
@@ -3002,7 +3123,12 @@
     syncTableChromeForTab();
     showTableLoading();
     try {
-      await loadBootstrapForTab(state.tab);
+      await loadBootstrapForTab(state.tab, () => {
+        hideTableLoading();
+        syncTableChromeForTab();
+        renderTable();
+        renderTablePager();
+      });
       if (err) err.hidden = true;
     } catch (e) {
       if (err) {

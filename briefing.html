@@ -138,7 +138,7 @@
       }
 
       .briefing-card--macro {
-        order: -3;
+        order: -2;
         display: flex;
         flex-direction: column;
         min-height: 100%;
@@ -159,7 +159,7 @@
       }
 
       .briefing-card--us {
-        order: -2;
+        order: -3;
         display: flex;
         flex-direction: column;
         min-height: 100%;
@@ -211,22 +211,18 @@
         vertical-align: middle;
       }
 
-      .briefing-us-sub {
+      .briefing-card--us #us-market-list {
+        flex: 1 1 auto;
+      }
+
+      .briefing-card--us::after {
+        content: "";
+        display: block;
+        flex: 1 1 auto;
+        min-height: 20px;
         margin-top: auto;
-        padding-top: 12px;
         border-top: 1px solid var(--border);
-      }
-
-      .briefing-us-sub h3 {
-        margin: 0 0 8px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-dim);
-        letter-spacing: 0.02em;
-      }
-
-      .briefing-us-sub .briefing-list {
-        gap: 6px;
+        background: var(--bg-elevated);
       }
 
       .briefing-card--crypto {
@@ -465,10 +461,11 @@
             <span class="briefing-us-updated" id="us-market-updated" hidden></span>
           </h2>
           <ul class="briefing-list" id="us-market-list"></ul>
-          <div class="briefing-us-sub" id="us-market-sub" hidden>
-            <h3>주요 종목 · 섹터</h3>
-            <ul class="briefing-list" id="us-market-sub-list"></ul>
-          </div>
+        </section>
+
+        <section class="briefing-card briefing-card--macro">
+          <h2>원자재/환율 현황</h2>
+          <ul class="briefing-list" id="forex-list"></ul>
         </section>
 
         <section class="briefing-card">
@@ -479,11 +476,6 @@
         <section class="briefing-card">
           <h2>섹터별 등락률</h2>
           <ul class="briefing-list" id="sectors-list"></ul>
-        </section>
-
-        <section class="briefing-card briefing-card--macro">
-          <h2>원자재/환율 현황</h2>
-          <ul class="briefing-list" id="forex-list"></ul>
         </section>
 
         <section class="briefing-card briefing-card--crypto" hidden aria-hidden="true">
@@ -701,45 +693,7 @@
         }
       }
 
-      function renderUsMarketSub(topStocks, sectors) {
-        const stocks = [...(topStocks || [])]
-          .filter((row) => Number.isFinite(Number(row.changePct)))
-          .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
-          .slice(0, 4);
-        const sectorRows = [...(sectors || [])]
-          .filter((row) => Number.isFinite(Number(row.changePct)))
-          .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
-          .slice(0, 3);
-        const rows = [
-          ...stocks.map((row) => ({
-            label: row.symbol,
-            value: fmtNumber(row.price, 2),
-            changePct: row.changePct,
-          })),
-          ...sectorRows.map((row) => ({
-            label: row.name || row.symbol,
-            value: "",
-            changePct: row.changePct,
-          })),
-        ];
-        const sub = $("us-market-sub");
-        const list = $("us-market-sub-list");
-        if (!rows.length) {
-          sub.hidden = true;
-          return;
-        }
-        sub.hidden = false;
-        list.innerHTML = rows
-          .map(
-            (row) => `<li class="briefing-row">
-              <strong>${escapeHtml(row.label)}</strong>
-              <span class="briefing-row__value"><span>${row.value ? escapeHtml(row.value) : "—"}</span>${fmtChange(row.changePct)}</span>
-            </li>`
-          )
-          .join("");
-      }
-
-      async function loadUsMarketLive(fallbackIndices, topStocks, sectors) {
+      async function loadUsMarketLive(fallbackIndices) {
         const fallback = sortUsIndices(
           (fallbackIndices || []).map((row) => ({
             ...row,
@@ -758,8 +712,6 @@
           console.warn("[briefing] live US indices fallback", error);
           if (fallback.length) renderUsMarketIndices(fallback, "정적 브리핑 데이터");
           return fallback;
-        } finally {
-          renderUsMarketSub(topStocks, sectors);
         }
       }
 
@@ -936,7 +888,7 @@
             ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
             : "미국 마감, 환율, 시장 지표";
           renderAnalysis(data.aiAnalysis || {});
-          await loadUsMarketLive(data.usMarket?.indices, data.topStocks, data.sectors);
+          await loadUsMarketLive(data.usMarket?.indices);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
           renderMacroList(data);

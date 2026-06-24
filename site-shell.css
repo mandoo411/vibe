@@ -1176,11 +1176,21 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   align-self: stretch;
 }
 
-.page-tm-v2 .briefing-card--macro #forex-list {
+.page-tm-v2 .briefing-card--us {
+  order: -3;
+}
+
+.page-tm-v2 .briefing-card--macro {
+  order: -2;
+}
+
+.page-tm-v2 .briefing-card--macro #forex-list,
+.page-tm-v2 .briefing-card--us #us-market-list {
   flex: 1 1 auto;
 }
 
-.page-tm-v2 .briefing-card--macro::after {
+.page-tm-v2 .briefing-card--macro::after,
+.page-tm-v2 .briefing-card--us::after {
   content: "";
   display: block;
   flex: 1 1 auto;

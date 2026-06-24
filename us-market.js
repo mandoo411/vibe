@@ -414,7 +414,7 @@
     const pct = escapeHtml(fmtPct(Number.isFinite(ch) ? ch : null));
     const chgAmt = escapeHtml(fmtUsdChange(data.changeAmt));
     const aiHref = `./stock-analysis.html?q=${encodeURIComponent(String(data.stockCode || ""))}`;
-    const closeBtn = `<button type="button" class="rt-acc-close" aria-label="닫기">×</button>`;
+    const closeBtn = `<button type="button" class="rt-acc-close rt-acc-close--pill" aria-label="닫기">닫기</button>`;
     const fin = data.financials || {};
     const chartId = `us-chart-${String(data.stockCode || "").replace(/[^A-Za-z0-9]/g, "")}`;
 

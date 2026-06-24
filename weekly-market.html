@@ -113,14 +113,6 @@
               <h3 class="subsection-title">📋 신규상장</h3>
               <div id="today-kr-ipo"></div>
             </article>
-            <article>
-              <h3 class="subsection-title">국내 실적발표</h3>
-              <div id="today-kr-earnings"></div>
-            </article>
-            <article>
-              <h3 class="subsection-title">오늘 실적 발표 종목</h3>
-              <div id="today-earnings"></div>
-            </article>
           </div>
         </section>
 
@@ -134,20 +126,6 @@
           </div>
           <div class="week-tabs" id="week-tabs" role="tablist" aria-label="요일별 일정"></div>
           <div class="week-panels" id="week-panels"></div>
-        </section>
-
-        <section class="schedule-card schedule-card--earnings" aria-labelledby="earnings-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Earnings</p>
-              <h2 class="section-title" id="earnings-title">실적 발표</h2>
-            </div>
-          </div>
-          <div class="earnings-market-tabs" id="earnings-market-tabs" role="tablist" aria-label="실적 시장">
-            <button type="button" class="earnings-market-tab is-active" role="tab" aria-selected="true" data-market="us">미국</button>
-            <button type="button" class="earnings-market-tab" role="tab" aria-selected="false" data-market="kr">한국</button>
-          </div>
-          <div class="earnings-section-body" id="earnings-section-body"></div>
         </section>
 
         <section class="schedule-card" aria-labelledby="ai-title">
@@ -177,9 +155,7 @@
           </div>
           <div class="calendar-legend calendar-legend--compact" aria-label="달력 표시 범례">
             <span><i class="dot dot--economic"></i>경제</span>
-            <span><i class="dot dot--earnings"></i>미실적</span>
             <span><i class="dot dot--kr-ipo"></i>신규상장</span>
-            <span><i class="dot dot--kr-earnings"></i>국내실적</span>
           </div>
           <div class="month-calendar month-calendar--compact" id="month-calendar" aria-label="월간 일정 달력"></div>
           <div class="selected-day selected-day--compact" id="selected-day"></div>
@@ -228,18 +204,6 @@
       (() => {
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
         const WEEKDAYS = ["월", "화", "수", "목", "금"];
-        const COMPANY_NAMES = {
-          "AAPL":"애플","MSFT":"마이크로소프트","NVDA":"엔비디아",
-          "GOOGL":"구글","AMZN":"아마존","META":"메타","TSLA":"테슬라",
-          "AMD":"AMD","INTC":"인텔","QCOM":"퀄컴","AVGO":"브로드컴",
-          "MU":"마이크론","JPM":"JP모건","BAC":"뱅크오브아메리카",
-          "GS":"골드만삭스","MS":"모건스탠리","V":"비자","MA":"마스터카드",
-          "NFLX":"넷플릭스","DIS":"디즈니","WMT":"월마트","HD":"홈디포",
-          "PLTR":"팔란티어","COIN":"코인베이스","UBER":"우버",
-          "ABNB":"에어비앤비","BABA":"알리바바","NIO":"니오",
-          "RIVN":"리비안","RBLX":"로블록스","SPOT":"스포티파이",
-          "SNOW":"스노우플레이크","SMCI":"슈퍼마이크로"
-        };
         const INDICATOR_KO = {
           "Fed Interest Rate Decision": "연준 금리 결정",
           "FOMC Meeting Minutes": "FOMC 의사록",
@@ -399,16 +363,8 @@
           VIX: "공포지수. 시장 변동성 척도",
           금통위: "한국은행 금융통화위원회 기준금리 결정",
         };
-        const US_EARNINGS_NAMES = {
-          NVDA: "엔비디아", AAPL: "애플", MSFT: "마이크로소프트", GOOGL: "구글", AMZN: "아마존",
-          META: "메타", TSLA: "테슬라", TSM: "TSMC", AVGO: "브로드컴", AMD: "AMD", MU: "마이크론",
-          INTC: "인텔", QCOM: "퀄컴", ARM: "ARM", JPM: "JP모건", GS: "골드만삭스", BAC: "뱅크오브아메리카",
-          WMT: "월마트", COST: "코스트코", LLY: "일라이릴리", UNH: "유나이티드헬스", ORCL: "오라클", ADBE: "어도비",
-        };
         const state = {
           data: null,
-          earningsData: null,
-          earningsMarket: "us",
           scheduleFilter: "all",
           month: null,
           selectedDate: null,
@@ -716,24 +672,6 @@
           return `<div class="time-cell"><span>${time}</span><span class="${cls}">${escapeHtml(cd.text)}</span></div>`;
         }
 
-        function earningsForDate(ymd) {
-          const us = state.earningsData?.us || [];
-          const kr = state.earningsData?.kr || [];
-          return [...us, ...kr].filter((row) => row.date === ymd);
-        }
-
-        function fmtEarningsValue(v) {
-          if (v === null || v === undefined || v === "") return "—";
-          if (typeof v === "number") return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
-          return escapeHtml(v);
-        }
-
-        function hourBadge(hour) {
-          const map = { bmo: "장전", amc: "장후", dmh: "장중" };
-          const label = map[String(hour || "").toLowerCase()];
-          return label ? `<span class="earnings-hour-badge">${label}</span>` : "";
-        }
-
         function eventSearchText(row) {
           const label = eventLabelText(row);
           return `${label} ${row?.event || ""}`.trim();
@@ -922,82 +860,6 @@
           </table></div>`;
         }
 
-        function renderEarningsPills(rows) {
-          if (!rows?.length) return "";
-          return `<div class="earnings-grid">${rows
-            .map((r) => {
-              const symbol = String(r.symbol || "").trim().toUpperCase();
-              const company = US_EARNINGS_NAMES[symbol] || COMPANY_NAMES[symbol] || r.name || r.company || symbol;
-              return `<button type="button" class="earnings-pill" data-symbol="${escapeHtml(symbol)}" title="${escapeHtml(symbol)} ${escapeHtml(company)}">
-                <span class="earnings-pill__symbol">${escapeHtml(symbol)}</span>
-                <span class="earnings-pill__name">${escapeHtml(company)}</span>
-              </button>`;
-            })
-            .join("")}</div>`;
-        }
-
-        function renderEarningsCard(row) {
-          const isUs = row.market === "US" || row.symbol;
-          const symbol = row.symbol || row.code || "";
-          const name = isUs
-            ? US_EARNINGS_NAMES[symbol] || row.name || symbol
-            : row.name || symbol;
-          const epsEst = fmtEarningsValue(row.epsEstimate);
-          const epsAct = fmtEarningsValue(row.epsActual);
-          const revEst = fmtEarningsValue(row.revenueEstimate);
-          const revAct = fmtEarningsValue(row.revenueActual);
-          const epsSurprise = surpriseClass(row.epsActual, row.epsEstimate);
-          const revSurprise = surpriseClass(row.revenueActual, row.revenueEstimate);
-          const coreBadge = row.core ? '<span class="key-indicator-badge">핵심</span>' : "";
-          const titleRight = isUs ? escapeHtml(symbol) : escapeHtml(symbol);
-          return `<article class="earnings-card">
-            <div class="earnings-card__head">
-              <div>
-                <strong class="earnings-card__name">${escapeHtml(name)}</strong>
-                <span class="earnings-card__symbol">${titleRight}</span>
-              </div>
-              ${coreBadge}${hourBadge(row.hour)}
-            </div>
-            <dl class="earnings-card__metrics">
-              <div class="earnings-metric-line">
-                <dt class="u-visually-hidden">EPS</dt>
-                <dd><span class="earnings-metric-pair"><em>EPS</em> 예상 ${epsEst} · 실제 <span class="surprise-value ${epsSurprise}">${epsAct}</span></span></dd>
-              </div>
-              <div class="earnings-metric-line">
-                <dt class="u-visually-hidden">매출</dt>
-                <dd><span class="earnings-metric-pair"><em>매출</em> 예상 ${revEst} · 실제 <span class="surprise-value ${revSurprise}">${revAct}</span></span></dd>
-              </div>
-            </dl>
-            ${row.reportName ? `<p class="earnings-card__report">${escapeHtml(row.reportName)}</p>` : ""}
-          </article>`;
-        }
-
-        function renderEarningsSection() {
-          const body = $("earnings-section-body");
-          if (!body) return;
-          const market = state.earningsMarket;
-          const rows = (market === "kr" ? state.earningsData?.kr : state.earningsData?.us) || [];
-          if (!rows.length) {
-            const msg =
-              market === "kr"
-                ? "이번 주 한국 실적·공시 일정 없음 (DART 동기화 후 표시)"
-                : "이번 주 미국 실적 발표 없음 (FMP 동기화 후 표시)";
-            body.innerHTML = `<p class="empty-text">${escapeHtml(msg)}</p>`;
-            return;
-          }
-          const grouped = rows.reduce((acc, row) => {
-            (acc[row.date] ||= []).push(row);
-            return acc;
-          }, {});
-          body.innerHTML = Object.keys(grouped)
-            .sort()
-            .map((date) => `<section class="earnings-date-group">
-              <h3 class="earnings-date-group__title">${escapeHtml(fmtDate(date))}</h3>
-              <div class="earnings-card-grid">${grouped[date].map(renderEarningsCard).join("")}</div>
-            </section>`)
-            .join("");
-        }
-
         function renderKRIPO(rows, showTitle = true) {
           if (!rows?.length) return "";
           return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
@@ -1014,25 +876,6 @@
             .join("")}</div></div>`;
         }
 
-        function renderKREarnings(rows, showTitle = true) {
-          if (!rows?.length) return "";
-          const grouped = rows.reduce((acc, row) => {
-            const sector = row.sector || "기타";
-            (acc[sector] ||= []).push(row);
-            return acc;
-          }, {});
-          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">국내 실적발표</h4>' : ""}<div class="kr-earnings-groups">${Object.entries(grouped)
-            .map(([sector, sectorRows]) => `<div class="kr-earnings-group">
-              <span class="kr-earnings-group__label">${escapeHtml(sector)}:</span>
-              <span class="earnings-grid">${sectorRows
-                .map((r) => `<a class="earnings-pill kr-pill kr-pill--earnings" href="${escapeHtml(naverFinanceUrl(r.code, r.name))}" target="_blank" rel="noopener noreferrer" title="${escapeHtml([r.name, r.sector].filter(Boolean).join(" · "))}">
-                  <span class="earnings-pill__symbol">${escapeHtml(r.name || "종목명")}</span>
-                </a>`)
-                .join("")}</span>
-            </div>`)
-            .join("")}</div></div>`;
-        }
-
         function economicCountForDate(ymd) {
           return filterEconomicRows(itemsForDate("economicCalendar", ymd)).length;
         }
@@ -1043,11 +886,9 @@
 
         function renderSelectedDay(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = earningsForDate(ymd).filter((r) => r.symbol);
           const krIPO = itemsForDate("krIPO", ymd);
-          const krEarnings = itemsForDate("krEarnings", ymd);
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${economic.length || krIPO.length || krEarnings.length || earnings.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}${renderKREarnings(krEarnings)}${renderEarningsPills(earnings)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+            ${economic.length || krIPO.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
 
         function renderCalendar() {
@@ -1062,15 +903,13 @@
             const day = i + 1;
             const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
             const hasEconomic = itemsForDate("economicCalendar", ymd).length > 0;
-            const hasEarnings = earningsForDate(ymd).length > 0;
             const hasKRIPO = itemsForDate("krIPO", ymd).length > 0;
-            const hasKREarnings = itemsForDate("krEarnings", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
             const isToday = ymd === today ? " calendar-cell--today" : "";
             const isSunday = new Date(year, month - 1, day).getDay() === 0 ? " calendar-cell--sun" : "";
             return `<button type="button" class="calendar-cell${active}${isToday}${isSunday}" data-date="${ymd}">
               <span>${day}</span>
-              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasEarnings ? '<b class="dot dot--earnings"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}${hasKREarnings ? '<b class="dot dot--kr-earnings"></b>' : ""}</i>
+              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}</i>
             </button>`;
           }).join("");
           $("month-calendar").innerHTML = heads + blanks + days;
@@ -1086,31 +925,17 @@
         function renderToday() {
           const ymd = seoulYmd();
           const economic = itemsForDate("economicCalendar", ymd);
-          const earnings = earningsForDate(ymd).filter((r) => r.symbol);
           const krIPO = itemsForDate("krIPO", ymd);
-          const krEarnings = itemsForDate("krEarnings", ymd);
-          const earningsWrap = $("today-earnings");
           const krIpoWrap = $("today-kr-ipo");
-          const krEarningsWrap = $("today-kr-earnings");
           $("today-date").textContent = fmtDate(ymd);
           $("today-economic").innerHTML =
-            filterEconomicRows(economic).length || krIPO.length || krEarnings.length || earnings.length
+            filterEconomicRows(economic).length || krIPO.length
               ? renderEconomic(economic)
               : '<p class="empty-text">오늘 주요 일정 없음</p>';
           if (krIpoWrap) {
             const article = krIpoWrap.closest("article");
             if (article) article.hidden = !krIPO.length;
             krIpoWrap.innerHTML = renderKRIPO(krIPO, false);
-          }
-          if (krEarningsWrap) {
-            const article = krEarningsWrap.closest("article");
-            if (article) article.hidden = !krEarnings.length;
-            krEarningsWrap.innerHTML = renderKREarnings(krEarnings, false);
-          }
-          if (earningsWrap) {
-            const article = earningsWrap.closest("article");
-            if (article) article.hidden = !earnings.length;
-            earningsWrap.innerHTML = renderEarningsPills(earnings);
           }
         }
 
@@ -1149,8 +974,6 @@
               <h3>${escapeHtml(fmtDate(ymd))}</h3>
               ${renderEconomic(itemsForDate("economicCalendar", ymd))}
               ${renderKRIPO(itemsForDate("krIPO", ymd))}
-              ${renderKREarnings(itemsForDate("krEarnings", ymd))}
-              ${renderEarningsPills(earningsForDate(ymd).filter((r) => r.symbol))}
             </section>`)
             .join("");
           $("week-tabs").querySelectorAll(".week-tab").forEach((btn) => {
@@ -1162,22 +985,11 @@
           });
         }
 
-        function wireEarningsLinks() {
-          document.addEventListener("click", (event) => {
-            const btn = event.target.closest(".earnings-pill");
-            if (!btn) return;
-            const symbol = btn.getAttribute("data-symbol");
-            if (!symbol) return;
-            window.open(`https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}`, "_blank", "noopener,noreferrer");
-          });
-        }
-
         function renderAnalysis() {
           const ai = state.data?.analysis || {};
           const top = (ai.topEvents || []).filter(Boolean);
           const impacts = (ai.marketImpacts || []).filter(Boolean);
-          const earnings = (ai.watchEarnings || []).filter(Boolean);
-          const hasContent = top.length || impacts.length || earnings.length;
+          const hasContent = top.length || impacts.length;
           const grid = $("analysis-grid");
           const placeholder = $("analysis-placeholder");
           if (!hasContent) {
@@ -1190,8 +1002,7 @@
             grid.hidden = false;
             grid.innerHTML = `
             <article><h3>이번주 핵심 이벤트 TOP5</h3><ol>${top.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol></article>
-            <article><h3>국내 시장 영향 분석</h3><ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>
-            <article><h3>주목 실적 발표 종목</h3><ul>${earnings.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>`;
+            <article><h3>국내 시장 영향 분석</h3><ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>`;
           }
         }
 
@@ -1203,20 +1014,6 @@
                 b.classList.toggle("is-active", b === btn);
               });
               refreshScheduleViews();
-            });
-          });
-        }
-
-        function wireEarningsMarketTabs() {
-          $("earnings-market-tabs")?.querySelectorAll(".earnings-market-tab").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              state.earningsMarket = btn.dataset.market || "us";
-              $("earnings-market-tabs").querySelectorAll(".earnings-market-tab").forEach((b) => {
-                const active = b === btn;
-                b.classList.toggle("is-active", active);
-                b.setAttribute("aria-selected", active ? "true" : "false");
-              });
-              renderEarningsSection();
             });
           });
         }
@@ -1248,24 +1045,8 @@
 
         async function load() {
           try {
-            const [schedule, earnings] = await Promise.all([
-              tmFetchJson("data/weekly-schedule.json"),
-              tmFetchJson("data/earnings-calendar.json").catch(() => ({ us: [], kr: [] })),
-            ]);
+            const schedule = await tmFetchJson("data/weekly-schedule.json");
             state.data = normalizeScheduleData(schedule);
-            state.earningsData = earnings;
-            const usCount = earnings?.us?.length || 0;
-            const krCount = earnings?.kr?.length || 0;
-            if (!usCount && krCount) state.earningsMarket = "kr";
-            else if (usCount && !krCount) state.earningsMarket = "us";
-            const krTab = $("earnings-market-tabs")?.querySelector('[data-market="kr"]');
-            const usTab = $("earnings-market-tabs")?.querySelector('[data-market="us"]');
-            if (krTab && usTab) {
-              krTab.classList.toggle("is-active", state.earningsMarket === "kr");
-              usTab.classList.toggle("is-active", state.earningsMarket === "us");
-              krTab.setAttribute("aria-selected", state.earningsMarket === "kr" ? "true" : "false");
-              usTab.setAttribute("aria-selected", state.earningsMarket === "us" ? "true" : "false");
-            }
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;
@@ -1275,10 +1056,7 @@
             renderToday();
             renderWeek();
             renderAnalysis();
-            renderEarningsSection();
-            wireEarningsLinks();
             wireScheduleFilters();
-            wireEarningsMarketTabs();
             wireIndicatorTips();
             startCountdownTimer();
           } catch (e) {

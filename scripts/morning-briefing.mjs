@@ -31,6 +31,7 @@ const US_INDICES = [
   { id: "nasdaq", name: "나스닥", yahoo: "^NDX", cnbc: ".NDX" },
   { id: "sp500", name: "S&P 500", yahoo: "^GSPC", cnbc: ".SPX" },
   { id: "nasdaq-futures", name: "나스닥 선물", yahoo: "NQ=F", cnbc: "@ND.1" },
+  { id: "korea-etf", name: "한국 ETF(EWY)", yahoo: "EWY", cnbc: null },
 ];
 
 const TOP_STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA", "GOOGL", "AMD", "PLTR", "COIN"];
@@ -350,6 +351,7 @@ async function fetchUsIndexQuote(index) {
       `[morning-briefing] Yahoo ${index.yahoo} failed: ${error instanceof Error ? error.message : error}`
     );
   }
+  if (!index.cnbc) throw new Error(`No quote source for ${index.id}`);
   const c = await fetchCnbcIndexQuote(index.cnbc);
   return {
     id: index.id,

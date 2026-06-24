@@ -34,6 +34,7 @@ const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "NDX", yahoo: "^NDX", cnbcSymbol: ".NDX", source: "cnbc" },
   { id: "sp500", name: "S&P 500", symbol: "SPX", exchange: "NYS", yahoo: "^GSPC", cnbcSymbol: ".SPX", source: "kis" },
   { id: "nasdaq-futures", name: "나스닥 선물", symbol: "NQ", yahoo: "NQ=F", cnbcSymbol: "@ND.1", source: "cnbc" },
+  { id: "korea-etf", name: "한국 ETF(EWY)", symbol: "EWY", yahoo: "EWY", source: "yahoo-equity" },
 ];
 
 const US_SECTORS = [
@@ -742,7 +743,20 @@ async function fetchIndices() {
     let cnbcQuotes = null;
     for (const idx of US_INDICES) {
       let quote = { price: null, changePct: null, changePoints: null };
-      if (idx.source !== "cnbc" && idx.exchange) {
+      if (idx.source === "yahoo-equity" && idx.yahoo) {
+        try {
+          const yahoo = await fetchYahooEquityQuote(idx.yahoo);
+          if (yahoo) {
+            quote = {
+              price: yahoo.price,
+              changePct: yahoo.changePct,
+              changePoints: yahoo.changePoints,
+            };
+          }
+        } catch (e) {
+          console.warn("[us-market-data] Yahoo equity", idx.yahoo, e && e.message);
+        }
+      } else if (idx.source !== "cnbc" && idx.exchange) {
         try {
           quote = await fetchOverseasIndexQuote(idx);
         } catch (e) {

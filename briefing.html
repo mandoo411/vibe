@@ -608,7 +608,7 @@
         return `${y}년 ${m}월 ${day}일 ${hour}:${minute} KST`;
       }
 
-      const US_INDEX_ORDER = ["nasdaq", "sp500", "nasdaq-futures"];
+      const US_INDEX_ORDER = ["nasdaq", "sp500", "nasdaq-futures", "korea-etf"];
 
       function renderRows(id, rows, getLabel, getValue) {
         $(id).innerHTML = rows && rows.length
@@ -643,10 +643,16 @@
               .map((row) => {
                 const price = row.price ?? row.close;
                 const points = row.changePoints;
+                const metaSuffix =
+                  row.id === "nasdaq-futures"
+                    ? "CME 나스닥100 선물"
+                    : row.id === "korea-etf"
+                      ? "EWY · iShares MSCI Korea ETF"
+                      : "나스닥100(NDX) 전일 마감";
                 const meta =
                   Number.isFinite(Number(points)) && points !== 0
-                    ? `<span class="briefing-row__meta">전일 대비 ${fmtPoints(points)}p · ${row.id === "nasdaq-futures" ? "CME 나스닥100 선물" : "나스닥100(NDX) 전일 마감"}</span>`
-                    : `<span class="briefing-row__meta">${row.id === "nasdaq-futures" ? "CME 나스닥100 선물 · 장전/야간" : "나스닥100(NDX) 전일 마감"}</span>`;
+                    ? `<span class="briefing-row__meta">전일 대비 ${fmtPoints(points)}p · ${metaSuffix}</span>`
+                    : `<span class="briefing-row__meta">${row.id === "nasdaq-futures" ? "CME 나스닥100 선물 · 장전/야간" : metaSuffix}</span>`;
                 return `<li class="briefing-row briefing-row--index">
                   <strong>${indexLabel(row)}</strong>
                   <span class="briefing-row__value"><span>${fmtNumber(price, 0)}</span>${fmtChange(row.changePct)}</span>

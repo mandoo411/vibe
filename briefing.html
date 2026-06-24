@@ -168,7 +168,8 @@
         color: var(--text);
       }
 
-      .briefing-card--wide {
+      .briefing-card--wide,
+      .briefing-card--orphan-span {
         grid-column: 1 / -1;
       }
 
@@ -990,9 +991,36 @@
           renderMacroList(data, soxLive);
         } catch (error) {
           console.warn("[briefing] load failed", error);
+        } finally {
+          layoutBriefingGrid();
         }
       }
 
+      /** 2열 그리드에서 마지막에 홀수로 남는 카드는 전폭 — 오른쪽 빈 회색 칸 방지 */
+      function layoutBriefingGrid() {
+        const grid = document.querySelector(".briefing-grid");
+        if (!grid) return;
+        const cards = [...grid.querySelectorAll(".briefing-card")]
+          .filter((el) => !el.hidden)
+          .map((el, index) => ({ el, index, order: Number(getComputedStyle(el).order) || 0 }))
+          .sort((a, b) => a.order - b.order || a.index - b.index)
+          .map((item) => item.el);
+        cards.forEach((card) => card.classList.remove("briefing-card--orphan-span"));
+        let col = 0;
+        for (const card of cards) {
+          if (card.classList.contains("briefing-card--wide")) {
+            col = 0;
+            continue;
+          }
+          col = col === 0 ? 1 : 0;
+        }
+        const last = cards[cards.length - 1];
+        if (last && col === 1 && !last.classList.contains("briefing-card--wide")) {
+          last.classList.add("briefing-card--orphan-span");
+        }
+      }
+
+      layoutBriefingGrid();
       loadBriefing();
     </script>
   </body>

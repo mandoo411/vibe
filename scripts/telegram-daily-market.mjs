@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import {
+  bold,
   fmtPct,
   formatDateKo,
-  mdText,
+  htmlText,
   readJson,
   sendTelegramMessage,
   seoulYmd,
@@ -36,7 +37,7 @@ function formatIndexLine(row) {
   const name = row?.name === "코스피" ? "코스피" : row?.name === "코스닥" ? "코스닥" : row?.name || "-";
   const value = row?.value != null ? String(row.value).replace(/,/g, "") : "—";
   const change = fmtPct(row?.change ?? row?.changePct, 2);
-  return `${name} *${mdText(value)}* ${change}`;
+  return `${htmlText(name)} ${bold(value)} ${htmlText(change)}`;
 }
 
 function formatSupplyLine(supply) {
@@ -50,22 +51,6 @@ function formatSupplyLine(supply) {
     return `${sign}${Math.round(v).toLocaleString("ko-KR")}억`;
   };
   return `외국인 ${fmt(kospi.foreign)} | 기관 ${fmt(kospi.institution)} | 개인 ${fmt(kospi.retail)}`;
-}
-
-function formatSectorBlock(sectorFlow) {
-  if (!sectorFlow || typeof sectorFlow !== "object") return "섹터 데이터 준비 중";
-  const strong = (sectorFlow.strong || [])
-    .slice(0, 3)
-    .map((s) => `${s.name}(${fmtPct(s.changePct, 2)})`)
-    .join(", ");
-  const weak = (sectorFlow.weak || [])
-    .slice(0, 3)
-    .map((s) => `${s.name}(${fmtPct(s.changePct, 2)})`)
-    .join(", ");
-  const parts = [];
-  if (strong) parts.push(`강세: ${strong}`);
-  if (weak) parts.push(`약세: ${weak}`);
-  return parts.length ? parts.join("\n") : "섹터 데이터 준비 중";
 }
 
 // 분석 텍스트 맨 앞 "제목 블록"(구분선 ──── 이전 줄들)과 본문을 분리.
@@ -103,7 +88,31 @@ function formatDecliners(day) {
     .sort((a, b) => (stockChange(a) ?? 0) - (stockChange(b) ?? 0))
     .slice(0, 2);
   if (!losers.length) return "";
-  return losers.map((r) => `${mdText(r.name)} ${fmtPct(stockChange(r), 2)}`).join(" | ");
+  return losers.map((r) => `${htmlText(r.name)} ${fmtPct(stockChange(r), 2)}`).join(" | ");
+}
+
+// Telegram은 임의의 글자색(빨강/파랑)을 지원하지 않는다(HTML/Markdown 모두 색상 태그 없음).
+// 대신 제목·종목 줄은 <b> 굵게 처리해 본문과 시각적 위계를 구분한다.
+const HEADER_LINE_RE = /^(📌|📈|🔄|💰|🎯|🔭|◆)/;
+const ITEM_LINE_RE = /^\d+\)\s/;
+const LABEL_LINE_RE = /^(재료|포인트)\s*-\s*(.*)$/;
+
+function formatAnalysisBodyHtml(body) {
+  const lines = String(body || "").split("\n");
+  return lines
+    .map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return "";
+      if (HEADER_LINE_RE.test(trimmed) || ITEM_LINE_RE.test(trimmed)) {
+        return bold(line);
+      }
+      const m = line.match(LABEL_LINE_RE);
+      if (m) {
+        return `${bold(m[1])} - ${htmlText(m[2])}`;
+      }
+      return htmlText(line);
+    })
+    .join("\n");
 }
 
 function buildMessage(data) {
@@ -114,42 +123,42 @@ function buildMessage(data) {
   const idxLine =
     [kospi, kosdaq].filter(Boolean).map(formatIndexLine).join(" | ") || "지수 데이터 준비 중";
 
-  const lines = [`[${mdText(formatDateKo(ymd))} 마감시황]`, idxLine];
+  const lines = [bold(`[${formatDateKo(ymd)} 마감시황]`), idxLine];
 
   const analysis = day.analysis || day.summary || day.marketSummary || "";
   if (analysis) {
     const { title, body } = splitAnalysisTitle(analysis);
-    lines.push("", "━━━━━━━━━━━━━━━━━━", "📊 *종합분석*");
+    lines.push("", "━━━━━━━━━━━━━━━━━━", bold("📊 종합분석"));
     if (title) {
       const boldTitle = title
         .split("\n")
         .filter((l) => l.trim())
-        .map((l) => `*${mdText(l)}*`)
+        .map((l) => bold(l))
         .join("\n");
       lines.push(boldTitle);
     }
     lines.push("━━━━━━━━━━━━━━━━━━");
-    lines.push(mdText(body || analysis));
+    lines.push(formatAnalysisBodyHtml(body || analysis));
   }
 
   const supplyLine = formatSupplyLine(day.supply || []);
   if (supplyLine && supplyLine !== "수급 데이터 준비 중") {
-    lines.push("", "💰 *수급 (코스피)*", supplyLine);
+    lines.push("", bold("💰 수급 (코스피)"), htmlText(supplyLine));
   }
 
   const decliners = formatDecliners(day);
   if (decliners) {
-    lines.push("", "⚠️ *급락*", decliners);
+    lines.push("", bold("⚠️ 급락"), decliners);
   }
 
-  lines.push("", "👉 *전체 분석*", `${SITE_URL}/daily-market.html`);
+  lines.push("", bold("👉 전체 분석"), `${SITE_URL}/daily-market.html`);
   return lines.join("\n");
 }
 
 async function main() {
   const data = await readJson(DATA_PATH);
   const message = buildMessage(data);
-  await sendTelegramMessage(message);
+  await sendTelegramMessage(message, { parseMode: "HTML" });
   console.log("Sent daily market Telegram message.");
 }
 

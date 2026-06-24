@@ -105,6 +105,19 @@ export function mdText(value) {
     .replace(/\]/g, "\\]");
 }
 
+// Telegram HTML parse_mode escaping — only &, <, > need escaping (much safer
+// for Korean report text full of punctuation than legacy Markdown mode).
+export function htmlText(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export function bold(value) {
+  return `<b>${htmlText(value)}</b>`;
+}
+
 export function isHighImpact(row) {
   const impact = String(row?.impact || "").toLowerCase();
   return impact === "high" || Number(row?.importance) >= 3;
@@ -133,7 +146,7 @@ export function companyName(row) {
   return firstNonEmpty(row?.company, row?.name, row?.symbol, "");
 }
 
-export async function sendTelegramMessage(text) {
+export async function sendTelegramMessage(text, { parseMode = "Markdown" } = {}) {
   const token = requireEnv("TELEGRAM_TOKEN");
   const chatId = requireEnv("TELEGRAM_CHANNEL_ID");
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -142,7 +155,7 @@ export async function sendTelegramMessage(text) {
     body: JSON.stringify({
       chat_id: chatId,
       text,
-      parse_mode: "Markdown",
+      parse_mode: parseMode,
       disable_web_page_preview: true,
     }),
   });

@@ -1966,6 +1966,16 @@ body[data-theme="dark"] .home-ticker-bar__label {
     margin-left: 0;
   }
 
+  .page-tm-v2 .briefing-grid {
+    min-width: 0;
+  }
+
+  .page-tm-v2 .page-meta-bar {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
   .page-tm-v2 .section-kicker,
   .page-tm-v2 .us-section__title,
   .page-tm-v2 .crypto-section__title {

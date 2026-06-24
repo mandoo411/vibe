@@ -35,10 +35,14 @@
       .briefing-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
       }
 
       .briefing-card {
         padding: 14px;
+        min-width: 0;
+        overflow-x: clip;
       }
 
       .briefing-card h2,
@@ -56,26 +60,29 @@
       }
 
       .briefing-row {
-        display: grid;
-        grid-template-columns: minmax(92px, 1fr) minmax(120px, auto);
-        align-items: baseline;
-        gap: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-width: 0;
         font-size: 13px;
         color: var(--text-muted);
       }
 
       .briefing-row strong {
+        flex: 1 1 auto;
         min-width: 0;
         color: var(--text);
         font-weight: 600;
+        line-height: 1.35;
       }
 
       .briefing-row__value {
-        display: inline-grid;
-        grid-template-columns: minmax(72px, auto) minmax(58px, auto);
-        gap: 10px;
-        justify-content: end;
+        display: flex;
+        flex: 0 0 auto;
         align-items: baseline;
+        justify-content: flex-end;
+        gap: 10px;
         font-family: var(--font-mono);
         color: var(--text);
         font-variant-numeric: tabular-nums;
@@ -257,6 +264,8 @@
 
       .briefing-table-wrap {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
       }
 
       .briefing-table {
@@ -342,22 +351,133 @@
         color: var(--text);
       }
 
-      @media (max-width: 768px) {
-        .briefing-twocol {
-          grid-template-columns: 1fr;
-        }
+      #ai-analysis {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text-muted);
+      }
+
+      #ai-analysis p,
+      #ai-analysis li,
+      #ai-analysis ol,
+      #ai-analysis ul {
+        max-width: 100%;
+      }
+
+      #ai-analysis ol,
+      #ai-analysis ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      #ai-analysis li {
+        margin-bottom: 4px;
+      }
 
       @media (max-width: 768px) {
         .briefing-grid {
           grid-template-columns: 1fr;
         }
-        .briefing-row {
-          grid-template-columns: minmax(80px, 1fr) minmax(108px, auto);
-          gap: 8px;
+
+        .briefing-twocol {
+          grid-template-columns: 1fr;
+          gap: 12px;
         }
+
+        .briefing-card {
+          padding: 12px max(var(--shell-pad-inline-end, 16px), env(safe-area-inset-right))
+            12px max(var(--shell-pad-inline, 16px), env(safe-area-inset-left));
+        }
+
+        .briefing-card h2,
+        .briefing-card h3 {
+          font-size: 14px;
+          line-height: 1.35;
+        }
+
+        .briefing-card--us h2 {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+
+        .briefing-us-updated {
+          font-size: 10px;
+        }
+
+        .briefing-list {
+          gap: 0;
+        }
+
+        .briefing-row {
+          gap: 8px;
+          font-size: 12px;
+        }
+
+        .briefing-row strong {
+          font-size: 12px;
+        }
+
         .briefing-row__value {
-          grid-template-columns: minmax(62px, auto) minmax(52px, auto);
           gap: 6px;
+          font-size: 12px;
+        }
+
+        .briefing-row--index {
+          padding: 10px 0;
+        }
+
+        .briefing-badge {
+          margin-left: 4px;
+          padding: 0 4px;
+          font-size: 9px;
+        }
+
+        .briefing-summary {
+          margin-bottom: 12px;
+          padding: 10px;
+          font-size: 13px;
+        }
+
+        .briefing-subhead {
+          margin: 14px 0 6px;
+          font-size: 12px;
+        }
+
+        .briefing-table {
+          font-size: 12px;
+        }
+
+        .briefing-table th,
+        .briefing-table td {
+          padding: 8px 6px;
+          vertical-align: top;
+        }
+
+        .briefing-table th {
+          font-size: 11px;
+        }
+
+        .briefing-table td:first-child {
+          white-space: normal;
+          min-width: 72px;
+          max-width: 108px;
+        }
+
+        .briefing-pillar ul,
+        .briefing-checklist {
+          font-size: 12.5px;
+        }
+
+        .briefing-conclusion,
+        .briefing-news-summary {
+          font-size: 12.5px;
+        }
+
+        .briefing-news-card strong {
+          font-size: 13px;
         }
       }
     </style>

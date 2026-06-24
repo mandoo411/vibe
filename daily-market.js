@@ -974,26 +974,32 @@
     return [];
   }
 
-  /** analysis 본문에서 특징주·총평 섹션 제거 (하단 카드와 중복 방지) */
+  /** analysis 본문에서 특징주(카드와 중복) · 내일 주목할 변수(리스트와 중복) 섹션만
+   *  골라서 제거한다. "향후 전략 및 총평"은 다른 곳에 표시되는 곳이 없으므로
+   *  본문에 그대로 남겨둔다(과거에는 이 섹션도 잘려서 어디에도 안 보이는 문제가 있었음).
+   *  주의: 한글은 JS 정규식의 \w(ASCII word char)에 포함되지 않으므로 한글 뒤에 붙는
+   *  \b(word boundary)는 절대 매칭되지 않는다(한글→비단어 전환은 "비단어→비단어"로
+   *  처리됨). 그래서 과거 \b 버전은 이모지 유무와 무관하게 단 한 번도 매칭된 적이
+   *  없었고, 그 결과 특징주 전체 목록과 내일 주목할 변수 목록이 카드/리스트와
+   *  중복으로 종합분석 본문에 그대로 노출되는 버그가 있었다. */
   function stripFeaturedFromAnalysis(text) {
     const raw = sanitizeStr(text);
     if (!raw) return "";
-    // 주의: 한글은 JS 정규식의 \w(ASCII word char)에 포함되지 않으므로
-    // 한글 뒤에 붙는 \b(word boundary)는 절대 매칭되지 않는다(한글→비단어 전환은
-    // "비단어→비단어"로 처리됨). 그래서 기존 \b 버전은 이모지 유무와 무관하게
-    // 4개 패턴 전부 한 번도 매칭된 적이 없었음 — \b 제거로 수정.
-    const cutPatterns = [
-      /\n[^\n]{0,24}오늘의?\s*특징주/i,
-      /\n[^\n]{0,24}특징주\s*분석/i,
-      /\n[^\n]{0,24}향후\s*전략/i,
-      /\n[^\n]{0,24}내일\s*주목(?:할)?\s*변수/i,
-    ];
-    let cutAt = raw.length;
-    for (const re of cutPatterns) {
-      const m = re.exec(raw);
-      if (m && m.index < cutAt) cutAt = m.index;
+    const headerRe = /\n[^\n]{0,24}(오늘의?\s*특징주|특징주\s*분석|향후\s*전략|내일\s*주목(?:할)?\s*변수)/gi;
+    const matches = [...raw.matchAll(headerRe)];
+    if (!matches.length) return raw.trim();
+    const bounds = matches.map((m, i) => ({
+      start: m.index,
+      end: i + 1 < matches.length ? matches[i + 1].index : raw.length,
+      label: m[1],
+    }));
+    let result = raw;
+    for (let i = bounds.length - 1; i >= 0; i--) {
+      const b = bounds[i];
+      const drop = /특징주/.test(b.label) || /내일\s*주목/.test(b.label);
+      if (drop) result = result.slice(0, b.start) + result.slice(b.end);
     }
-    return raw.slice(0, cutAt).trim();
+    return result.trim();
   }
 
   function getAnalysisDisplayText(day) {

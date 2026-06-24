@@ -176,14 +176,6 @@
         padding-bottom: 0;
       }
 
-      .briefing-row__meta {
-        grid-column: 1 / -1;
-        margin-top: 4px;
-        font-size: 12px;
-        line-height: 1.45;
-        color: var(--text-muted);
-      }
-
       .briefing-badge {
         display: inline-block;
         margin-left: 6px;
@@ -621,13 +613,6 @@
         return [...(rows || [])].sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
       }
 
-      function fmtPoints(value) {
-        const n = Number(value);
-        if (!Number.isFinite(n)) return "";
-        const sign = n > 0 ? "+" : "";
-        return `${sign}${n.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}`;
-      }
-
       function indexLabel(row) {
         const name = escapeHtml(row.name || row.symbol || "");
         if (row.id === "nasdaq-futures" || row.live) {
@@ -642,21 +627,9 @@
           ? sorted
               .map((row) => {
                 const price = row.price ?? row.close;
-                const points = row.changePoints;
-                const metaSuffix =
-                  row.id === "nasdaq-futures"
-                    ? "CME 나스닥100 선물"
-                    : row.id === "korea-etf"
-                      ? "EWY · iShares MSCI Korea ETF"
-                      : "나스닥100(NDX) 전일 마감";
-                const meta =
-                  Number.isFinite(Number(points)) && points !== 0
-                    ? `<span class="briefing-row__meta">전일 대비 ${fmtPoints(points)}p · ${metaSuffix}</span>`
-                    : `<span class="briefing-row__meta">${row.id === "nasdaq-futures" ? "CME 나스닥100 선물 · 장전/야간" : metaSuffix}</span>`;
                 return `<li class="briefing-row briefing-row--index">
                   <strong>${indexLabel(row)}</strong>
                   <span class="briefing-row__value"><span>${fmtNumber(price, 0)}</span>${fmtChange(row.changePct)}</span>
-                  ${meta}
                 </li>`;
               })
               .join("")

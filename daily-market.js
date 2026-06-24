@@ -978,11 +978,15 @@
   function stripFeaturedFromAnalysis(text) {
     const raw = sanitizeStr(text);
     if (!raw) return "";
+    // 주의: 한글은 JS 정규식의 \w(ASCII word char)에 포함되지 않으므로
+    // 한글 뒤에 붙는 \b(word boundary)는 절대 매칭되지 않는다(한글→비단어 전환은
+    // "비단어→비단어"로 처리됨). 그래서 기존 \b 버전은 이모지 유무와 무관하게
+    // 4개 패턴 전부 한 번도 매칭된 적이 없었음 — \b 제거로 수정.
     const cutPatterns = [
-      /\n[^\n]{0,24}오늘의?\s*특징주\b/i,
-      /\n[^\n]{0,24}특징주\s*분석\b/i,
-      /\n[^\n]{0,24}향후\s*전략\b/i,
-      /\n[^\n]{0,24}내일\s*주목(?:할)?\s*변수\b/i,
+      /\n[^\n]{0,24}오늘의?\s*특징주/i,
+      /\n[^\n]{0,24}특징주\s*분석/i,
+      /\n[^\n]{0,24}향후\s*전략/i,
+      /\n[^\n]{0,24}내일\s*주목(?:할)?\s*변수/i,
     ];
     let cutAt = raw.length;
     for (const re of cutPatterns) {

@@ -247,6 +247,146 @@
         line-height: 1.5;
       }
 
+      .briefing-summary {
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border-left: 3px solid var(--accent-bright);
+        background: var(--accent-dim);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+
+      .briefing-subhead {
+        margin: 18px 0 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-dim);
+        letter-spacing: 0.01em;
+      }
+
+      .briefing-subhead:first-of-type {
+        margin-top: 0;
+      }
+
+      .briefing-twocol {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .briefing-pillar h4 {
+        margin: 0 0 6px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .briefing-pillar--pos h4 { color: var(--up-color); }
+      .briefing-pillar--neg h4 { color: var(--down-color); }
+
+      .briefing-pillar ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text-muted);
+      }
+
+      .briefing-pillar li { margin-bottom: 4px; }
+
+      .briefing-table-wrap {
+        overflow-x: auto;
+      }
+
+      .briefing-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+
+      .briefing-table th,
+      .briefing-table td {
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        vertical-align: top;
+        line-height: 1.45;
+      }
+
+      .briefing-table th {
+        color: var(--text-dim);
+        font-weight: 600;
+        font-size: 11.5px;
+        white-space: nowrap;
+      }
+
+      .briefing-table td:first-child {
+        color: var(--text);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .briefing-table tr:last-child td { border-bottom: none; }
+
+      .briefing-checklist {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text-muted);
+      }
+
+      .briefing-checklist li { margin-bottom: 6px; }
+
+      .briefing-tier {
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .briefing-tier:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      .briefing-tier h4 {
+        margin: 0 0 4px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .briefing-tier .briefing-tier-names {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--accent-bright);
+        margin-bottom: 4px;
+      }
+
+      .briefing-tier p {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      .briefing-conclusion {
+        margin-top: 14px;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text);
+      }
+
+      @media (max-width: 768px) {
+        .briefing-twocol {
+          grid-template-columns: 1fr;
+        }
+
       @media (max-width: 768px) {
         .briefing-grid {
           grid-template-columns: 1fr;
@@ -349,6 +489,60 @@
         <section class="briefing-card briefing-card--crypto" hidden aria-hidden="true">
           <h2>BTC 시황</h2>
           <ul class="briefing-list" id="crypto-list"></ul>
+        </section>
+
+        <section class="briefing-card briefing-card--wide">
+          <h2>글로벌 시장 해석</h2>
+          <div class="briefing-table-wrap" id="global-market-table"></div>
+        </section>
+
+        <section class="briefing-card">
+          <h2>국내증시 장전 체크</h2>
+          <div class="briefing-table-wrap" id="domestic-check-table"></div>
+        </section>
+
+        <section class="briefing-card">
+          <h2>환율·원자재 해석</h2>
+          <div class="briefing-table-wrap" id="forex-commodity-table"></div>
+        </section>
+
+        <section class="briefing-card briefing-card--wide">
+          <h2>오늘의 주요 뉴스</h2>
+          <div class="briefing-twocol">
+            <div>
+              <p class="briefing-subhead">미국</p>
+              <div class="briefing-table-wrap" id="us-news-table"></div>
+            </div>
+            <div>
+              <p class="briefing-subhead">국내</p>
+              <div class="briefing-table-wrap" id="kr-news-table"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="briefing-card">
+          <h2>업종별 전략</h2>
+          <div class="briefing-table-wrap" id="sector-strategy-table"></div>
+        </section>
+
+        <section class="briefing-card">
+          <h2>포트폴리오 전략</h2>
+          <div class="briefing-table-wrap" id="portfolio-table"></div>
+        </section>
+
+        <section class="briefing-card briefing-card--wide">
+          <h2>오늘의 투자전략</h2>
+          <div id="today-strategy"></div>
+        </section>
+
+        <section class="briefing-card briefing-card--wide">
+          <h2>관심 종목군</h2>
+          <div id="watchlist-tiers"></div>
+        </section>
+
+        <section class="briefing-card">
+          <h2>리스크 요인</h2>
+          <div class="briefing-table-wrap" id="risk-table"></div>
         </section>
 
       </main>
@@ -569,17 +763,151 @@
         }
       }
 
+      function renderTable(id, rows, columns) {
+        const el = $(id);
+        if (!el) return;
+        rows = Array.isArray(rows) ? rows.filter(Boolean) : [];
+        if (!rows.length) {
+          el.innerHTML = '<p class="empty-text">분석 대기 중</p>';
+          return;
+        }
+        const thead = `<tr>${columns.map((c) => `<th>${escapeHtml(c.label)}</th>`).join("")}</tr>`;
+        const tbody = rows
+          .map(
+            (row) =>
+              `<tr>${columns
+                .map((c) => `<td>${escapeHtml(row[c.key] ?? "")}</td>`)
+                .join("")}</tr>`
+          )
+          .join("");
+        el.innerHTML = `<table class="briefing-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+      }
+
       function renderAnalysis(ai) {
-        const keyIssues = Array.isArray(ai?.keyIssues) ? ai.keyIssues : [];
-        const watchSectors = Array.isArray(ai?.watchSectors) ? ai.watchSectors : [];
+        ai = ai || {};
+        const keyIssues = Array.isArray(ai.keyIssues) ? ai.keyIssues : [];
+        const watchSectors = Array.isArray(ai.watchSectors) ? ai.watchSectors : [];
+        const positives = Array.isArray(ai.usMarketPositives) ? ai.usMarketPositives : [];
+        const negatives = Array.isArray(ai.usMarketNegatives) ? ai.usMarketNegatives : [];
+        const outlook = ai.todayOutlook || {};
+        const checkpoints = Array.isArray(outlook.checkpoints) ? outlook.checkpoints : [];
+
+        const summaryHtml = ai.summary
+          ? `<p class="briefing-summary">${escapeHtml(ai.summary)}</p>`
+          : "";
+
+        const pillarsHtml =
+          positives.length || negatives.length
+            ? `<p class="briefing-subhead">미국 증시 상세 코멘트</p>
+               <div class="briefing-twocol">
+                 <div class="briefing-pillar briefing-pillar--pos">
+                   <h4>긍정 요인</h4>
+                   <ul>${positives.map((v) => `<li>${escapeHtml(v)}</li>`).join("") || '<li class="empty-text">분석 대기 중</li>'}</ul>
+                 </div>
+                 <div class="briefing-pillar briefing-pillar--neg">
+                   <h4>부정 요인</h4>
+                   <ul>${negatives.map((v) => `<li>${escapeHtml(v)}</li>`).join("") || '<li class="empty-text">분석 대기 중</li>'}</ul>
+                 </div>
+               </div>`
+            : "";
+
+        const outlookHtml = outlook.scenario
+          ? `<p class="briefing-subhead">오늘 예상 흐름</p>
+             <p>${escapeHtml(outlook.scenario)}</p>
+             ${checkpoints.length ? `<ul class="briefing-checklist">${checkpoints.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : ""}`
+          : "";
+
+        const conclusionHtml = ai.conclusion
+          ? `<p class="briefing-subhead">결론</p><div class="briefing-conclusion">${escapeHtml(ai.conclusion)}</div>`
+          : "";
+
         $("ai-analysis").innerHTML = `
-          <h3>오늘 주목할 핵심 이슈 3가지</h3>
+          ${summaryHtml}
+          <p class="briefing-subhead">오늘 주목할 핵심 이슈</p>
           ${keyIssues.length ? `<ol>${keyIssues.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}
-          <h3>국내 증시 영향 분석</h3>
-          <p>${escapeHtml(ai?.domesticImpact || "분석 대기 중")}</p>
-          <h3>오늘 주목 섹터/종목</h3>
+          <p class="briefing-subhead">국내 증시 영향 분석</p>
+          <p>${escapeHtml(ai.domesticImpact || "분석 대기 중")}</p>
+          <p class="briefing-subhead">오늘 주목 섹터/종목</p>
           ${watchSectors.length ? `<ul>${watchSectors.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}
+          ${pillarsHtml}
+          ${outlookHtml}
+          ${conclusionHtml}
         `;
+
+        renderTable("global-market-table", ai.globalMarketTable, [
+          { key: "label", label: "구분" },
+          { key: "level", label: "등락/수준" },
+          { key: "comment", label: "해석" },
+        ]);
+
+        renderTable("domestic-check-table", ai.domesticCheckTable, [
+          { key: "item", label: "항목" },
+          { key: "status", label: "현재 상황" },
+          { key: "impact", label: "영향" },
+        ]);
+
+        renderTable("forex-commodity-table", ai.forexCommodityTable, [
+          { key: "asset", label: "자산" },
+          { key: "trend", label: "흐름" },
+          { key: "interpretation", label: "해석" },
+          { key: "domesticImpact", label: "국내 영향" },
+        ]);
+
+        renderTable("us-news-table", ai.usNewsTable, [
+          { key: "news", label: "뉴스" },
+          { key: "content", label: "내용" },
+          { key: "impact", label: "시장 영향" },
+        ]);
+
+        renderTable("kr-news-table", ai.krNewsTable, [
+          { key: "news", label: "뉴스" },
+          { key: "content", label: "내용" },
+          { key: "impact", label: "시장 영향" },
+        ]);
+
+        renderTable("sector-strategy-table", ai.sectorStrategyTable, [
+          { key: "sector", label: "업종" },
+          { key: "view", label: "의견" },
+          { key: "strategy", label: "전략" },
+        ]);
+
+        renderTable("portfolio-table", ai.portfolioTable, [
+          { key: "category", label: "구분" },
+          { key: "weight", label: "비중" },
+          { key: "note", label: "설명" },
+        ]);
+
+        renderTable("risk-table", ai.riskTable, [
+          { key: "risk", label: "리스크" },
+          { key: "content", label: "내용" },
+          { key: "response", label: "대응" },
+        ]);
+
+        const strategy = ai.todayStrategy || {};
+        const principles = Array.isArray(strategy.tradingPrinciples) ? strategy.tradingPrinciples : [];
+        const strategyEl = $("today-strategy");
+        if (strategyEl) {
+          strategyEl.innerHTML = strategy.indexStrategy || principles.length
+            ? `${strategy.indexStrategy ? `<p class="briefing-subhead">지수 전략</p><p>${escapeHtml(strategy.indexStrategy)}</p>` : ""}
+               ${principles.length ? `<p class="briefing-subhead">매매 원칙</p><ul class="briefing-checklist">${principles.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : ""}`
+            : '<p class="empty-text">분석 대기 중</p>';
+        }
+
+        const watchlist = Array.isArray(ai.watchlist) ? ai.watchlist : [];
+        const watchlistEl = $("watchlist-tiers");
+        if (watchlistEl) {
+          watchlistEl.innerHTML = watchlist.length
+            ? watchlist
+                .map(
+                  (tier) => `<div class="briefing-tier">
+                    <h4>${escapeHtml(tier.tier || "")}${tier.theme ? ` · ${escapeHtml(tier.theme)}` : ""}</h4>
+                    ${Array.isArray(tier.names) && tier.names.length ? `<div class="briefing-tier-names">${tier.names.map(escapeHtml).join(" · ")}</div>` : ""}
+                    ${tier.strategy ? `<p>${escapeHtml(tier.strategy)}</p>` : ""}
+                  </div>`
+                )
+                .join("")
+            : '<p class="empty-text">분석 대기 중</p>';
+        }
       }
 
       function renderMacroList(data) {

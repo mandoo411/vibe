@@ -1,19 +1,16 @@
 #!/usr/bin/env node
 /**
- * 장전 브리핑 데이터 수집
- * - 미국시장, 주요 종목, 섹터 ETF, 환율/원자재, crypto, 국내 뉴스 수집
- * - Claude 분석
- * - data/morning-briefing.json 저장
+ * 장전 브리핑 "숫자" 데이터 수집 전용 스크립트 (push-트리거 GitHub Actions에서 실행)
+ * - 미국시장 지수, 주요 종목, 섹터 ETF, 환율/원자재, crypto, (참고용) 국내 뉴스 수집
+ * - AI 분석(aiAnalysis)은 여기서 생성하지 않음 — Cowork가 이후 단계에서 직접 작성해 채움
+ * - data/morning-briefing.json 저장 (aiAnalysis는 빈 스텁으로 둠)
  *
- * 필수: ANTHROPIC_API_KEY
  * 권장: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, NEWSAPI_KEY
  */
 
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import Anthropic from "@anthropic-ai/sdk";
-import { buildFallbackBriefingAnalysis, isClaudeUnavailableError } from "./claude-utils.mjs";
 import { collectTelegramMessages, telegramRowsForData } from "./telegram-channel-news.mjs";
 
 const USER_AGENT =
@@ -27,7 +24,6 @@ const COINGECKO_URL =
   "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true&include_market_cap=true";
 const NEWSAPI_URL = "https://newsapi.org/v2/everything";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefing.json");
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 
 /** KIS 해외지수 API는 404/빈 응답 — Yahoo·CNBC로 수집 (us-market-data.js와 동일 소스) */
 /** 브리핑·미증시 공통: 나스닥 종합, S&P500, 나스닥 선물(야간/장전) */
@@ -101,12 +97,6 @@ const MARKET_NEWS_KEYWORDS = [
   "네이버",
   "카카오",
 ];
-
-function requireEnv(name) {
-  const value = String(process.env[name] || "").trim();
-  if (!value) throw new Error(`Missing env: ${name}`);
-  return value;
-}
 
 function optionalEnv(name) {
   return String(process.env[name] || "").trim();
@@ -583,66 +573,6 @@ async function fetchDomesticNews() {
   return [...marketNews, ...fill].slice(0, 20);
 }
 
-function parseClaudeJson(text) {
-  const raw = String(text || "").trim();
-  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const body = fenced ? fenced[1].trim() : raw;
-  const start = body.indexOf("{");
-  const end = body.lastIndexOf("}");
-  if (start < 0 || end < start) throw new Error("Claude response did not contain JSON");
-  return JSON.parse(body.slice(start, end + 1));
-}
-
-function buildAnalysisInput(data) {
-  return JSON.stringify(
-    {
-      usMarket: data.usMarket,
-      topStocks: data.topStocks,
-      sectors: data.sectors,
-      forex: data.forex,
-      crypto: data.crypto,
-      news: data.news,
-      telegramNews: data.news?.filter?.((row) => row.telegram) || [],
-    },
-    null,
-    2
-  );
-}
-
-async function analyzeWithClaude(data) {
-  const client = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
-  const msg = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1800,
-    system: `당신은 한국 주식 시장 장전 브리핑 애널리스트입니다.
-입력 데이터만 근거로 한국어 JSON 객체만 반환하세요. 마크다운, 코드펜스, 설명은 금지입니다.
-텔레그램 채널 뉴스가 있으면 RSS보다 우선 근거로 사용하고, 거시경제/미국주식/국내주식 채널 메시지를 가장 중요하게 반영하세요.
-스키마:
-{
-  "keyIssues": ["오늘 주목할 핵심 이슈 1", "오늘 주목할 핵심 이슈 2", "오늘 주목할 핵심 이슈 3"],
-  "domesticImpact": "국내 증시 영향 분석 2~4문장",
-  "watchSectors": ["오늘 주목 섹터/종목 1", "오늘 주목 섹터/종목 2", "오늘 주목 섹터/종목 3"],
-  "marketComments": {
-    "USD/KRW": "환율 움직임 이유 1문장",
-    "WTI유가": "유가 움직임 이유 1문장",
-    "금": "금시세 움직임 이유 1문장",
-    "BTC": "비트코인 움직임 이유 1문장"
-  }
-}
-marketComments는 텔레그램 메시지와 입력된 가격/등락률을 근거로 1~2줄 이내로 작성하세요.
-투자 권유나 단정은 피하고, 리스크와 조건을 함께 언급하세요.`,
-    messages: [{ role: "user", content: buildAnalysisInput(data) }],
-  });
-  const block = msg.content.find((item) => item.type === "text");
-  const parsed = parseClaudeJson(block?.text || "");
-  return {
-    keyIssues: Array.isArray(parsed.keyIssues) ? parsed.keyIssues.map(sanitizeStr).filter(Boolean).slice(0, 3) : [],
-    domesticImpact: sanitizeStr(parsed.domesticImpact),
-    watchSectors: Array.isArray(parsed.watchSectors) ? parsed.watchSectors.map(sanitizeStr).filter(Boolean).slice(0, 5) : [],
-    marketComments: parsed.marketComments && typeof parsed.marketComments === "object" ? parsed.marketComments : {},
-  };
-}
-
 async function safeCollect(label, fallback, fn, errors) {
   try {
     return await fn();
@@ -653,6 +583,28 @@ async function safeCollect(label, fallback, fn, errors) {
     return fallback;
   }
 }
+
+const EMPTY_AI_ANALYSIS = {
+  keyIssues: [],
+  domesticImpact: "",
+  watchSectors: [],
+  marketComments: {},
+  summary: "",
+  globalMarketTable: [],
+  usMarketPositives: [],
+  usMarketNegatives: [],
+  domesticCheckTable: [],
+  forexCommodityTable: [],
+  usNewsTable: [],
+  krNewsTable: [],
+  todayOutlook: { scenario: "", checkpoints: [] },
+  sectorStrategyTable: [],
+  todayStrategy: { indexStrategy: "", tradingPrinciples: [] },
+  portfolioTable: [],
+  watchlist: [],
+  riskTable: [],
+  conclusion: "",
+};
 
 async function main() {
   const errors = [];
@@ -665,6 +617,8 @@ async function main() {
   const crypto = await safeCollect("crypto", { assets: [] }, fetchCrypto, errors);
   const news = await safeCollect("news", [], fetchDomesticNews, errors);
 
+  // aiAnalysis는 의도적으로 비워둠 — 코워크가 네이버 뉴스 MCP + 직접 분석 작성으로 이 부분만 채워서
+  // 다시 커밋한다. 숫자 데이터만 먼저 안전하게 깔아두는 게 이 스크립트의 역할.
   const partial = {
     updatedAt,
     usMarket,
@@ -673,26 +627,9 @@ async function main() {
     forex,
     crypto,
     news,
-    aiAnalysis: {
-      keyIssues: [],
-      domesticImpact: "",
-      watchSectors: [],
-      marketComments: {},
-    },
+    aiAnalysis: EMPTY_AI_ANALYSIS,
     errors,
   };
-
-  partial.aiAnalysis = await safeCollect("aiAnalysis", partial.aiAnalysis, async () => {
-    try {
-      return await analyzeWithClaude(partial);
-    } catch (error) {
-      if (isClaudeUnavailableError(error)) {
-        console.warn("[morning-briefing] Claude unavailable, rule-based fallback");
-        return buildFallbackBriefingAnalysis(partial);
-      }
-      throw error;
-    }
-  }, errors);
 
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await fs.writeFile(OUTPUT_PATH, `${JSON.stringify(partial, null, 2)}\n`, "utf8");

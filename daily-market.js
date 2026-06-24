@@ -979,9 +979,9 @@
     const raw = sanitizeStr(text);
     if (!raw) return "";
     const cutPatterns = [
-      /\n(?:#{1,3}\s*)?오늘의?\s*특징주\b/i,
-      /\n(?:#{1,3}\s*)?특징주\s*분석\b/i,
-      /\n(?:#{1,3}\s*)?향후\s*전략\b/i,
+      /\n[^\n]{0,24}오늘의?\s*특징주\b/i,
+      /\n[^\n]{0,24}특징주\s*분석\b/i,
+      /\n[^\n]{0,24}향후\s*전략\b/i,
       /\n[^\n]{0,24}내일\s*주목(?:할)?\s*변수\b/i,
     ];
     let cutAt = raw.length;

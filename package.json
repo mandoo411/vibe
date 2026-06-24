@@ -13,6 +13,7 @@
     "sync:daily": "node --env-file=.env scripts/telegram-daily-market.mjs",
     "sync:kis": "node --env-file=.env scripts/kis-daily-top30.mjs",
     "sync:briefing": "node --env-file=.env scripts/morning-briefing.mjs",
+    "sync:morning-telegram": "node --env-file=.env scripts/telegram-morning-briefing.mjs",
     "sync:crypto-news": "node --env-file=.env scripts/crypto-news.mjs",
     "cache:world-market": "node scripts/world-market-cache.mjs",
     "create-session": "node scripts/create-telegram-session.mjs"

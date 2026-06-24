@@ -22,7 +22,8 @@ totalmoney.kr(저장소 `D:\vibe`, GitHub `mandoo411/vibe`, Vercel 프로젝트 
 
 ```
 [15:40 KST] GitHub Actions: daily-market-sync.yml (+ save-prev-top50 동시 슬롯)
-   → KIS API 시세 + 네이버 뉴스 수집 → data/daily-market.json 커밋 → Vercel 배포
+   → KIS API 상승·하락·거래대금 TOP30만 수집 → data/daily-market.json 커밋 → Vercel 배포
+   (뉴스·수급·지수·RSS 등 AI 입력용 수집은 Cowork가 담당 — 워크플로우와 중복 제거)
    (외부 cron-job.org 06:40 UTC 트리거 권장 — GitHub schedule 지연 대비)
 
 [16:15 KST] Cowork 예약작업: daily-closing-report
@@ -41,7 +42,7 @@ totalmoney.kr(저장소 `D:\vibe`, GitHub `mandoo411/vibe`, Vercel 프로젝트 
 
 | 파일 | 역할 |
 |---|---|
-| `.github/workflows/daily-market-sync.yml` | 평일 **15:40 KST** (06:40 UTC), KIS+뉴스 원자료 수집 |
+| `.github/workflows/daily-market-sync.yml` | 평일 **15:40 KST** (06:40 UTC), KIS TOP30(상승·하락·거래대금) 수집 |
 | `scripts/daily-market-ai.mjs` | AI 분석 규칙/JSON 스키마의 **원본 정의** (스케줄 작업은 이 파일을 실행하지 않고 읽기만 함). 특징주 그룹A/B 선정 규칙, 제목 형식 규칙도 여기 있음 |
 | `scripts/report-example.md` | Claude에게 보여주는 "이런 수준·구조로 작성하라"는 출력 예시 |
 | `scripts/telegram-utils.mjs`, `scripts/telegram-daily-market.mjs` | `npm run sync:daily` — 텔레그램 발송 스크립트. 제목 블록 추출·볼드 강조 로직 포함 |

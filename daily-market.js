@@ -982,7 +982,7 @@
       /\n(?:#{1,3}\s*)?오늘의?\s*특징주\b/i,
       /\n(?:#{1,3}\s*)?특징주\s*분석\b/i,
       /\n(?:#{1,3}\s*)?향후\s*전략\b/i,
-      /\n(?:#{1,3}\s*)?내일\s*주목(?:할)?\s*변수\b/i,
+      /\n[^\n]{0,24}내일\s*주목(?:할)?\s*변수\b/i,
     ];
     let cutAt = raw.length;
     for (const re of cutPatterns) {
@@ -998,11 +998,24 @@
     return stripFeaturedFromAnalysis(raw);
   }
 
+  function parseWatchlistFromAnalysis(text) {
+    const raw = sanitizeStr(text);
+    if (!raw) return [];
+    const m = raw.match(/(?:🔭\s*)?내일\s*주목(?:할)?\s*변수\s*\n([\s\S]*?)(?:\n\n|$)/i);
+    if (!m) return [];
+    const items = [];
+    for (const line of m[1].split("\n")) {
+      const t = line.replace(/^[\s\-•*]+/, "").trim();
+      if (t) items.push(t);
+    }
+    return items;
+  }
+
   function getWatchlist(day) {
     if (!day) return [];
     if (Array.isArray(day.watchlist) && day.watchlist.length) return day.watchlist;
     if (Array.isArray(day.tomorrowCheckpoints) && day.tomorrowCheckpoints.length) return day.tomorrowCheckpoints;
-    return [];
+    return parseWatchlistFromAnalysis(day.analysis || day.summary || "");
   }
 
   function normalizeKrTvRow(r, i) {

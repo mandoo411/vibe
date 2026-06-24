@@ -144,20 +144,6 @@
         min-height: 100%;
       }
 
-      .briefing-card--macro #forex-list {
-        flex: 1 1 auto;
-      }
-
-      .briefing-card--macro::after {
-        content: "";
-        display: block;
-        flex: 1 1 auto;
-        min-height: 20px;
-        margin-top: auto;
-        border-top: 1px solid var(--border);
-        background: var(--bg-elevated);
-      }
-
       .briefing-card--us {
         order: -3;
         display: flex;
@@ -209,20 +195,6 @@
         font-weight: 500;
         color: var(--accent-bright);
         vertical-align: middle;
-      }
-
-      .briefing-card--us #us-market-list {
-        flex: 1 1 auto;
-      }
-
-      .briefing-card--us::after {
-        content: "";
-        display: block;
-        flex: 1 1 auto;
-        min-height: 20px;
-        margin-top: auto;
-        border-top: 1px solid var(--border);
-        background: var(--bg-elevated);
       }
 
       .briefing-card--crypto {
@@ -862,23 +834,40 @@
         }
       }
 
-      function renderMacroList(data) {
+      function renderMacroList(data, soxLive) {
         const comments = data.aiAnalysis?.marketComments || {};
         const rates = data.forex?.rates || {};
         const commodities = Array.isArray(data.forex?.commodities) ? data.forex.commodities : [];
         const crypto = (Array.isArray(data.crypto?.assets) ? data.crypto.assets : []).find((row) => row.symbol === "BTC");
         const pickCommodity = (id) => commodities.find((row) => row.id === id);
+        const soxFromJson = pickCommodity("sox");
+        const soxPrice = soxLive?.price ?? soxFromJson?.price;
+        const soxChange = soxLive?.changePct ?? soxFromJson?.changePct;
         const rows = [
           { key: "USD/KRW", label: "원/달러 환율", value: rates["USD/KRW"], changePct: null },
           { key: "WTI유가", label: "WTI 유가", value: pickCommodity("wti")?.price, changePct: pickCommodity("wti")?.changePct },
           { key: "금", label: "금시세", value: pickCommodity("gold")?.price, changePct: pickCommodity("gold")?.changePct },
           { key: "BTC", label: "비트코인", value: crypto?.priceUsd, changePct: crypto?.changePct24h, prefix: "$" },
+          { key: "SOX", label: "필라델피아반도체", value: soxPrice, changePct: soxChange },
         ];
         $("forex-list").innerHTML = rows.map((row) => `<li class="briefing-row">
           <strong>${escapeHtml(row.label)}</strong>
           <span class="briefing-row__value"><span>${escapeHtml(row.prefix || "")}${fmtNumber(row.value, row.key === "BTC" ? 0 : 2)}</span>${fmtChange(row.changePct)}</span>
           ${comments[row.key] ? `<small style="grid-column:1/-1;color:var(--text-muted);line-height:1.45">${escapeHtml(comments[row.key])}</small>` : ""}
         </li>`).join("");
+      }
+
+      async function fetchSoxLive() {
+        try {
+          const res = await fetch("/api/us-market-data?action=yahoo-index&symbol=%5ESOX", { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const body = await res.json();
+          if (body.price == null) throw new Error("empty SOX");
+          return { price: body.price, changePct: body.changePct };
+        } catch (error) {
+          console.warn("[briefing] SOX live fetch failed", error);
+          return null;
+        }
       }
 
       async function loadBriefing() {
@@ -891,7 +880,8 @@
           await loadUsMarketLive(data.usMarket?.indices);
           renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
           renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
-          renderMacroList(data);
+          const soxLive = await fetchSoxLive();
+          renderMacroList(data, soxLive);
         } catch (error) {
           console.warn("[briefing] load failed", error);
         }

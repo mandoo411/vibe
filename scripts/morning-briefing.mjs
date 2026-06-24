@@ -53,6 +53,7 @@ const COMMODITIES = [
   { id: "gold", name: "금", symbol: "GC=F" },
   { id: "silver", name: "은", symbol: "SI=F" },
   { id: "copper", name: "구리", symbol: "HG=F" },
+  { id: "sox", name: "필라델피아반도체", symbol: "^SOX" },
 ];
 
 const NEWS_RSS_FEEDS = [

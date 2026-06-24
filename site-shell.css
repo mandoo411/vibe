@@ -1184,22 +1184,6 @@ html[data-theme="light"] .page-home-v2 .home-ticker-bar {
   order: -2;
 }
 
-.page-tm-v2 .briefing-card--macro #forex-list,
-.page-tm-v2 .briefing-card--us #us-market-list {
-  flex: 1 1 auto;
-}
-
-.page-tm-v2 .briefing-card--macro::after,
-.page-tm-v2 .briefing-card--us::after {
-  content: "";
-  display: block;
-  flex: 1 1 auto;
-  min-height: 20px;
-  margin-top: auto;
-  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
-  background: var(--bg-elevated, var(--bg-tertiary));
-}
-
 .page-tm-v2 .briefing-card--wide:has(#ai-analysis) {
   grid-column: 1 / -1;
   border-top: none;

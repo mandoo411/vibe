@@ -1425,9 +1425,22 @@ module.exports = async function handler(req, res) {
       json(res, 200, payload);
       return;
     }
+    if (action === "yahoo-index") {
+      const yahoo = sanitizeStr(req.query.symbol) || "^SOX";
+      if (!/^\^[\w.-]+$/.test(yahoo)) {
+        json(res, 400, { error: "Invalid Yahoo index symbol" });
+        return;
+      }
+      const payload = await cachedPayload(`yahoo-index:${yahoo}`, async () => {
+        const q = await fetchYahooIndexQuote(yahoo);
+        return { symbol: yahoo, price: q.price, changePct: q.changePct, changePoints: q.changePoints };
+      });
+      json(res, 200, payload);
+      return;
+    }
 
     json(res, 400, {
-      error: "Unknown action. Use indices, sectors, market-cap, gainers, volume, candle, quote, or search.",
+      error: "Unknown action. Use indices, sectors, market-cap, gainers, volume, candle, quote, search, or yahoo-index.",
     });
   } catch (e) {
     console.error("[us-market-data]", action, e && e.message, e);

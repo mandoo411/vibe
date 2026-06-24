@@ -1949,6 +1949,20 @@ details[open] .admin__summary {
   font-weight: 700;
 }
 
+.dm-featured-card__metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.dm-featured-card__price {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .dm-badge {
   display: inline-block;
   padding: 2px 8px;

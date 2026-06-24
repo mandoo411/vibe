@@ -1137,13 +1137,18 @@
         const badgeLabel = isUp ? "급등종목" : "급락종목 ⚠️";
         const reason = sanitizeUserCopy(row.reason || row.entryReason, "");
         const point = sanitizeUserCopy(row.point || row.background, "");
+        const priceText = row.price != null && row.price !== "" ? sanitizeUserCopy(String(row.price), "") : "";
+        const priceLabel = priceText ? (/원\s*$/.test(priceText) ? priceText : `${priceText}원`) : "";
         return `<article class="dm-featured-card">
           <header class="dm-featured-card__head">
             <div class="dm-featured-card__title">
               <span class="dm-badge ${badgeClass}">${badgeLabel}</span>
               <strong class="dm-featured-card__name">${escapeHtml(row.name)}</strong>
             </div>
-            <span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>
+            <span class="dm-featured-card__metrics">
+              ${priceLabel ? `<span class="dm-featured-card__price">${escapeHtml(priceLabel)}</span>` : ""}
+              <span class="delta ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>
+            </span>
           </header>
           ${reason ? `<p class="dm-featured-card__reason"><em>재료</em> ${escapeHtml(reason)}</p>` : ""}
           ${point ? `<p class="dm-featured-card__point"><em>투자포인트</em> ${escapeHtml(point)}</p>` : ""}

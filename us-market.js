@@ -412,7 +412,6 @@
     const cls = deltaClass(Number.isFinite(ch) ? ch : null);
     const price = fmtUsdCell(data.currentPrice);
     const pct = escapeHtml(fmtPct(Number.isFinite(ch) ? ch : null));
-    const chgAmt = escapeHtml(fmtUsdChange(data.changeAmt));
     const aiHref = `./stock-analysis.html?q=${encodeURIComponent(String(data.stockCode || ""))}`;
     const closeBtn = `<button type="button" class="rt-acc-close rt-acc-close--pill" aria-label="닫기">닫기</button>`;
     const fin = data.financials || {};
@@ -453,7 +452,6 @@
       `      <div>`,
       `        <div class="rt-acc-price">${price}</div>`,
       `        <div class="rt-acc-chg delta ${cls}">${pct}</div>`,
-      `        <div class="rt-acc-chg delta ${cls}">${chgAmt}</div>`,
       `      </div>`,
       closeBtn,
       `    </div>`,
@@ -564,7 +562,9 @@
     const closeBtn = host.querySelector(".rt-acc-close");
     if (!closeBtn || closeBtn.dataset.wired === "1") return;
     closeBtn.dataset.wired = "1";
-    closeBtn.addEventListener("click", () => {
+    closeBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       state.openTicker = null;
       renderRankTable();
     });
@@ -1072,7 +1072,13 @@
       if (ticker) prefetchUsDetail(ticker);
     });
     body.addEventListener("click", (ev) => {
-      if (ev.target.closest(".rt-acc-close")) return;
+      if (ev.target.closest(".rt-acc-close")) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        state.openTicker = null;
+        renderRankTable();
+        return;
+      }
       const stockRow = ev.target.closest("tr.us-stock-row");
       if (!stockRow || !body.contains(stockRow)) return;
       const ticker = stockRow.getAttribute("data-ticker");

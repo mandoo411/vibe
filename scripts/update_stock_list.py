@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+import urllib.request
 from html.parser import HTMLParser
 
 
@@ -10,6 +11,9 @@ def _strip(s: str) -> str:
 
 
 def _code6(raw: str) -> str:
+    text = _strip(raw).upper()
+    if re.fullmatch(r"[0-9A-Z]{6}", text):
+        return text
     digits = re.sub(r"\D", "", raw or "")
     if not digits:
         return ""
@@ -104,6 +108,24 @@ def parse_kind_download(raw_bytes: bytes) -> list[dict]:
     return out
 
 
+def fetch_naver_etf_list() -> list[dict]:
+    """NAVER 금융 ETF 전종목 — KIND 상장법인 목록에 없는 ETF 검색용."""
+    url = "https://finance.naver.com/api/sise/etfItemList.nhn?pageSize=2000&page=1"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=60) as res:
+        raw = res.read()
+    text = raw.decode("euc-kr", errors="replace")
+    data = json.loads(text)
+    items = (data.get("result") or {}).get("etfItemList") or []
+    out = []
+    for item in items:
+        code = _code6(item.get("itemcode") or "")
+        name = _strip(item.get("itemname") or "")
+        if code and name:
+            out.append({"code": code, "name": name})
+    return out
+
+
 def main():
     if len(sys.argv) < 4:
         print("usage: update_stock_list.py <kospi_file> <kosdaq_file> <output_json>", file=sys.stderr)
@@ -115,16 +137,27 @@ def main():
     with open(kosdaq_file, "rb") as f:
         kosdaq = parse_kind_download(f.read())
 
-    rows = []
+    by_code: dict[str, dict] = {}
     for r in kospi:
-        rows.append({"code": r["code"], "name": r["name"], "market": "KOSPI"})
+        by_code[r["code"]] = {"code": r["code"], "name": r["name"], "market": "KOSPI"}
     for r in kosdaq:
-        rows.append({"code": r["code"], "name": r["name"], "market": "KOSDAQ"})
+        by_code[r["code"]] = {"code": r["code"], "name": r["name"], "market": "KOSDAQ"}
 
-    # Stable ordering
-    rows.sort(key=lambda x: (x["market"], x["code"]))
+    try:
+        etfs = fetch_naver_etf_list()
+        added = 0
+        for r in etfs:
+            if r["code"] in by_code:
+                continue
+            by_code[r["code"]] = {"code": r["code"], "name": r["name"], "market": "ETF"}
+            added += 1
+        print(f"Merged {added} ETF rows from NAVER")
+    except Exception as exc:
+        print(f"WARN: ETF merge skipped: {exc}", file=sys.stderr)
 
-    os.makedirs(os.path.dirname(out_json), exist_ok=True)
+    rows = sorted(by_code.values(), key=lambda x: (x["market"], x["code"]))
+
+    os.makedirs(os.path.dirname(out_json) or ".", exist_ok=True)
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(rows, f, ensure_ascii=False, separators=(",", ":"))
         f.write("\n")
@@ -135,4 +168,3 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

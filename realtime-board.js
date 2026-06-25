@@ -240,11 +240,63 @@
   }
 
   function code6Maybe(s) {
+    const raw = String(s || "").trim().toUpperCase();
+    if (/^[0-9A-Z]{6}$/.test(raw)) return raw;
     const digits = String(s || "").replace(/\D/g, "");
     if (!digits) return "";
     if (digits.length === 6) return digits;
     if (digits.length < 6) return digits.padStart(6, "0");
     return digits.slice(-6);
+  }
+
+  function isValidStockCode(code) {
+    return /^[0-9A-Z]{6}$/i.test(String(code || ""));
+  }
+
+  function normalizeNameKey(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/[^0-9a-z가-힣]/g, "");
+  }
+
+  function normalizeMarket(raw) {
+    const m = String(raw || "").toUpperCase();
+    if (m === "KOSDAQ") return "KOSDAQ";
+    if (m === "ETF") return "ETF";
+    return "KOSPI";
+  }
+
+  function findStockMatches(qRaw, limit = 8) {
+    const q = normalizeQuery(qRaw);
+    if (!q) return [];
+    const list = stockList || [];
+    const code = code6Maybe(q);
+    if (isValidStockCode(code)) {
+      const hit = list.find((x) => x && x.code === code);
+      if (hit) return [hit];
+    }
+    const key = normalizeNameKey(q);
+    if (!key) return [];
+    const lc = q.toLowerCase();
+    const scored = list
+      .map((x) => {
+        if (!x || !x.name) return null;
+        const name = String(x.name);
+        const nk = normalizeNameKey(name);
+        let score = 0;
+        if (nk === key) score = 100;
+        else if (name.toLowerCase() === lc) score = 95;
+        else if (nk.startsWith(key)) score = 80;
+        else if (name.toLowerCase().startsWith(lc)) score = 75;
+        else if (nk.includes(key)) score = 60;
+        else if (name.toLowerCase().includes(lc)) score = 55;
+        else return null;
+        return { item: x, score, len: name.length };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score || a.len - b.len || a.item.code.localeCompare(b.item.code));
+    return scored.slice(0, limit).map((row) => row.item);
   }
 
   /** 종목 행/API 공통 코드 키 (code · stck_shrn_iscd) */
@@ -264,9 +316,9 @@
           .map((x) => ({
             code: code6Maybe(x.code),
             name: String(x.name || "").trim(),
-            market: String(x.market || "").toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI",
+            market: normalizeMarket(x.market),
           }))
-          .filter((x) => /^\d{6}$/.test(x.code) && x.name);
+          .filter((x) => isValidStockCode(x.code) && x.name);
       }
     } catch {}
     return stockList;
@@ -326,12 +378,13 @@
   }
 
   function resolveCodeFromQuery(qRaw) {
+    const matches = findStockMatches(qRaw, 12);
+    if (!matches.length) return "";
+    if (matches.length === 1) return matches[0].code;
     const q = normalizeQuery(qRaw);
-    const code6 = code6Maybe(q);
-    if (/^\d{6}$/.test(code6)) return code6;
-    const list = stockList || [];
-    const exact = list.find((x) => x && x.name === q);
-    if (exact) return exact.code;
+    const key = normalizeNameKey(q);
+    const exact = matches.filter((x) => normalizeNameKey(x.name) === key || x.name === q);
+    if (exact.length === 1) return exact[0].code;
     return "";
   }
 
@@ -2630,8 +2683,17 @@
 
     try {
       await loadStockListOnce();
-      const code6 = resolveCodeFromQuery(q) || "";
-      if (!/^\d{6}$/.test(code6)) {
+      let code6 = resolveCodeFromQuery(q) || "";
+      if (!isValidStockCode(code6)) {
+        const matches = findStockMatches(q, 12);
+        if (matches.length > 1) {
+          panel.innerHTML = `<p class="rt-lw-chart-err">검색 결과가 ${matches.length}건입니다. 목록에서 종목을 선택해 주세요.</p>`;
+          renderAutocomplete(matches.slice(0, 8), matches.length);
+          return;
+        }
+        code6 = matches[0] ? matches[0].code : "";
+      }
+      if (!isValidStockCode(code6)) {
         panel.innerHTML = `<p class="rt-lw-chart-err">종목을 찾을 수 없습니다.</p>`;
         return;
       }
@@ -3120,8 +3182,7 @@
           return;
         }
         await loadStockListOnce();
-        const lc = q.toLowerCase();
-        const matches = (stockList || []).filter((x) => String(x.name || "").toLowerCase().includes(lc));
+        const matches = findStockMatches(q, 200);
         renderAutocomplete(matches.slice(0, 8), matches.length);
       });
       searchInput.addEventListener("keydown", (e) => {

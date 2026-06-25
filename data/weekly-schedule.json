@@ -1,62 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-25 07:15 KST",
-    "from": "2026-06-25",
-    "to": "2026-07-09",
-    "historyFrom": "2026-03-27",
+    "lastUpdatedKst": "2026-06-26 07:20 KST",
+    "from": "2026-06-26",
+    "to": "2026-07-10",
+    "historyFrom": "2026-03-28",
     "source": "investing+forexfactory+38-detail+claude"
   },
-  "economicCalendar": [
-    {
-      "date": "2026-06-25",
-      "event": "Employment Change",
-      "country": "AU",
-      "time": "10:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-18.6K",
-      "estimate": "31.2K",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-25",
-      "event": "Unemployment Rate",
-      "country": "AU",
-      "time": "10:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "4.5%",
-      "estimate": "4.4%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-25",
-      "event": "Core PCE Price Index m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.2%",
-      "estimate": "0.3%",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-25",
-      "event": "Final GDP q/q",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "1.6%",
-      "estimate": "1.6%",
-      "unit": ""
-    }
-  ],
+  "economicCalendar": [],
   "krIPO": [
     {
       "date": "2026-06-29",
@@ -107,18 +58,20 @@
   "krEarnings": [],
   "analysis": {
     "topEvents": [
-      "6월 25일 미국 근원 PCE 물가지수 발표로 연준의 통화정책 방향성 가늠",
-      "6월 25일 미국 최종 GDP 성장률 1.6% 확정 발표 예정",
-      "6월 25일 호주 고용지표 발표로 아시아 증시 변동성 예상",
-      "6월 29일~7월 6일 져스텍, 스트라드비젼, 매드업 등 5개 기업 코스닥 신규 상장",
-      "6월 30일 자율주행 AI 기업 스트라드비젼 코스닥 상장으로 기술주 관심 집중"
+      "6월 29일 져스텍 코스닥 신규 상장 예정",
+      "6월 30일 스트라드비젼과 한국스팩16호 동시 코스닥 상장",
+      "7월 1일 매드업 코스닥 시장 입성",
+      "7월 6일 레몬헬스케어 코스닥 상장으로 2주간 IPO 일정 마무리",
+      "향후 2주간 총 5개 기업의 코스닥 신규 상장 집중"
     ],
     "marketImpacts": [
-      "미국 근원 PCE 물가지수 0.3% 상승 예상으로 인플레이션 재점화 우려 시 국내 증시 하락 압력 가능",
-      "호주 실업률 개선 전망(4.4%)은 아시아 경기 회복 기대감으로 코스피 긍정적 영향",
-      "신규 상장 기업들의 공모 자금 흡수로 단기 유동성 부담 예상",
-      "스트라드비젼 등 기술주 상장으로 2차전지·AI 관련 테마주 동반 상승 가능성"
+      "코스닥 시장에 신규 자금 유입 기대감으로 중소형주 거래 활성화 전망",
+      "스트라드비젼(자율주행 AI) 상장으로 모빌리티·AI 관련주 동반 상승 가능성",
+      "매드업(디지털 마케팅) 상장으로 광고·플랫폼 섹터 관심 집중 예상",
+      "레몬헬스케어 상장으로 헬스케어·디지털 의료 테마주 재조명 가능"
     ],
-    "watchEarnings": []
+    "watchEarnings": [
+      "실적 발표 예정 기업 정보 없음"
+    ]
   }
 }

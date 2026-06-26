@@ -1446,30 +1446,80 @@ details[open] .admin__summary {
 /* 탭 색·치수·좌우 여백: site-shell.css + realtime-board.css 공통 규칙 그대로 사용 */
 
 .page--daily-market .rt-tabs--with-date-nav {
+  flex-direction: column;
   align-items: stretch;
 }
 
-.dm-date-nav {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
+.page--daily-market .dm-tab-date {
   margin-left: auto;
+  flex: 0 0 auto;
+  min-width: 7.25em;
+  padding-inline: 12px;
 }
 
-.page--daily-market .dm-date-nav__btn {
+.page--daily-market .dm-tab-date.is-active {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+}
+
+[data-theme="dark"] .page--daily-market .dm-tab-date.is-active,
+.dark-mode .page--daily-market .dm-tab-date.is-active {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border: none;
+}
+
+.dm-date-picker {
+  width: 100%;
   box-sizing: border-box;
-  width: var(--rt-tab-height, 44px);
-  min-width: var(--rt-tab-height, 44px);
-  height: var(--rt-tab-height, 44px);
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.08));
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 4%, #ffffff);
+}
+
+[data-theme="dark"] .dm-date-picker,
+.dark-mode .dm-date-picker {
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 8%, var(--card-bg, #1a1f35));
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.dm-date-picker__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dm-date-picker__month {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] .dm-date-picker__month,
+.dark-mode .dm-date-picker__month {
+  color: var(--text-primary, #fff);
+}
+
+.dm-date-picker__nav {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
   margin: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--rt-tab-radius, 8px);
-  background: #ffffff;
   border: 1px solid var(--color-border, var(--border, rgba(0, 0, 0, 0.08)));
+  background: #ffffff;
   color: var(--text-primary, #131722);
   font-size: 20px;
   font-weight: 600;
@@ -1478,69 +1528,125 @@ details[open] .admin__summary {
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.15s ease;
+    color 0.15s ease;
 }
 
-.page--daily-market .dm-date-nav__btn:hover:not(:disabled) {
+.dm-date-picker__nav:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 35%, var(--color-border, var(--border)));
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 7%, #ffffff);
   color: var(--accent-brand, #0f8387);
 }
 
-.page--daily-market .dm-date-nav__btn:active:not(:disabled) {
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 14%, #ffffff);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.page--daily-market .dm-date-nav__btn:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent-brand, #0f8387) 45%, transparent);
-  outline-offset: 2px;
-}
-
-.page--daily-market .dm-date-nav__btn:disabled {
-  opacity: 0.4;
+.dm-date-picker__nav:disabled {
+  opacity: 0.35;
   cursor: not-allowed;
-  background: #f8fafc;
 }
 
-.page--daily-market .dm-date-nav__label {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 8.5em;
-  height: var(--rt-tab-height, 44px);
-  padding: 0 12px;
-  font-size: var(--rt-tab-font-size, 14px);
-  font-weight: var(--rt-tab-font-weight, 600);
-  color: var(--text-primary, #131722);
-  white-space: nowrap;
-  text-align: center;
-  letter-spacing: -0.02em;
-}
-
-[data-theme="dark"] .page--daily-market .dm-date-nav__btn,
-.dark-mode .page--daily-market .dm-date-nav__btn {
+[data-theme="dark"] .dm-date-picker__nav,
+.dark-mode .dm-date-picker__nav {
   background: var(--card-bg, #1a1f35);
   border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-body, #d1d5db);
 }
 
-[data-theme="dark"] .page--daily-market .dm-date-nav__btn:hover:not(:disabled),
-.dark-mode .page--daily-market .dm-date-nav__btn:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 45%, rgba(255, 255, 255, 0.1));
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, var(--card-bg, #1a1f35));
+.dm-date-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+  text-align: center;
+}
+
+.dm-date-picker__weekdays span:first-child {
+  color: #e53935;
+}
+
+[data-theme="dark"] .dm-date-picker__weekdays span:first-child,
+.dark-mode .dm-date-picker__weekdays span:first-child {
+  color: var(--accent-gold, #f0b429);
+}
+
+.dm-date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.dm-date-picker__cell {
+  box-sizing: border-box;
+  min-height: 36px;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #131722);
+  line-height: 1;
+}
+
+button.dm-date-picker__cell {
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+button.dm-date-picker__cell:hover {
+  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 8%, #ffffff);
+}
+
+.dm-date-picker__cell--blank {
+  background: transparent;
+  border-color: transparent;
+}
+
+.dm-date-picker__cell--disabled {
+  opacity: 0.32;
+  background: transparent;
+  color: var(--color-text-secondary, #9ca3af);
+  cursor: default;
+}
+
+.dm-date-picker__cell--sun:not(.dm-date-picker__cell--disabled) {
+  color: #e53935;
+}
+
+.dm-date-picker__cell--today:not(.dm-date-picker__cell--active) {
+  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 55%, transparent);
+}
+
+.dm-date-picker__cell--active {
+  background: var(--gradient-primary);
   color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 1px 4px rgba(7, 38, 75, 0.22);
 }
 
-[data-theme="dark"] .page--daily-market .dm-date-nav__btn:disabled,
-.dark-mode .page--daily-market .dm-date-nav__btn:disabled {
+[data-theme="dark"] .dm-date-picker__cell,
+.dark-mode .dm-date-picker__cell {
   background: rgba(255, 255, 255, 0.04);
+  color: var(--text-body, #d1d5db);
 }
 
-[data-theme="dark"] .page--daily-market .dm-date-nav__label,
-.dark-mode .page--daily-market .dm-date-nav__label {
-  color: var(--text-primary, #fff);
+[data-theme="dark"] button.dm-date-picker__cell:hover,
+.dark-mode button.dm-date-picker__cell:hover {
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 18%, rgba(255, 255, 255, 0.06));
+}
+
+[data-theme="dark"] .dm-date-picker__cell--blank,
+[data-theme="dark"] .dm-date-picker__cell--disabled,
+.dark-mode .dm-date-picker__cell--blank,
+.dark-mode .dm-date-picker__cell--disabled {
+  background: transparent;
 }
 
 .dm-missing {
@@ -2254,19 +2360,18 @@ details[open] .admin__summary {
     flex: 0 0 auto;
   }
 
-  .dm-date-nav {
-    width: 100%;
-    justify-content: center;
+  .page--daily-market .dm-tab-date {
     margin-left: 0;
-    padding: 8px 0 10px;
-    border-top: 0.5px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.12));
-    gap: 8px;
+    min-width: 5.5em;
   }
 
-  .page--daily-market .dm-date-nav__label {
-    min-width: 0;
-    flex: 1 1 auto;
-    max-width: 12em;
+  .dm-date-picker {
+    padding: 8px 10px 10px;
+  }
+
+  .dm-date-picker__cell {
+    min-height: 34px;
+    font-size: 12px;
   }
 }
 

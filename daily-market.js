@@ -77,6 +77,8 @@
     liveRowsByTab: { gainers: [], losers: [], tv: [] },
     mainTab: "ai",
     stockSubTab: "gainers",
+    datePickerOpen: false,
+    calendarMonthYmd: null,
     krTv: null,
   };
 
@@ -97,9 +99,14 @@
     dmTabBar: $("dm-tab-bar"),
     dmTabsRow: $("dm-tabs-row"),
     dmTabPanels: $("dm-tab-panels"),
+    dmTabDate: $("dm-tab-date"),
     dmDateLabel: $("dm-date-label"),
-    dmDatePrev: $("dm-date-prev"),
-    dmDateNext: $("dm-date-next"),
+    dmDateLabelShort: $("dm-date-label-short"),
+    dmDatePicker: $("dm-date-picker"),
+    dmCalGrid: $("dm-cal-grid"),
+    dmCalMonth: $("dm-cal-month"),
+    dmCalPrev: $("dm-cal-prev"),
+    dmCalNext: $("dm-cal-next"),
   };
 
   function seoulYmd(d = new Date()) {
@@ -323,10 +330,158 @@
     return copy;
   }
 
-  function resolveSelectedYmd() {
-    const h = (location.hash || "").replace("#", "");
-    if (YMD_RE.test(h)) return h;
-    return state.defaultYmd || resolveDefaultYmd();
+  function shortDateLabelShort(ymd) {
+    if (!YMD_RE.test(ymd)) return "—";
+    const { m, d } = ymdParts(ymd);
+    return `${m}/${d}`;
+  }
+
+  function listSelectableDates() {
+    const today = state.todayYmd || seoulYmd();
+    const set = new Set();
+    for (const ymd of Object.keys(state.days || {})) {
+      if (!YMD_RE.test(ymd) || ymd > today) continue;
+      const day = state.days[ymd];
+      if (day && !isDayEmpty(day)) set.add(ymd);
+    }
+    if (today) set.add(today);
+    return [...set].sort();
+  }
+
+  function isDateSelectable(ymd) {
+    if (!YMD_RE.test(ymd)) return false;
+    const today = state.todayYmd || seoulYmd();
+    if (ymd > today) return false;
+    if (ymd === today) return true;
+    if (marketClosedReason(ymd)) return false;
+    const day = state.days[ymd];
+    return !!(day && !isDayEmpty(day));
+  }
+
+  function calendarMonthYmd() {
+    const ymd = selectedYmd();
+    if (state.calendarMonthYmd && YMD_RE.test(state.calendarMonthYmd)) return state.calendarMonthYmd;
+    return `${ymd.slice(0, 7)}-01`;
+  }
+
+  function setCalendarMonth(ymd) {
+    if (!YMD_RE.test(ymd)) return;
+    state.calendarMonthYmd = `${ymd.slice(0, 7)}-01`;
+  }
+
+  function monthLabelKo(ymd) {
+    const { y, m } = ymdParts(ymd);
+    return `${y}년 ${m}월`;
+  }
+
+  function closeDatePicker() {
+    state.datePickerOpen = false;
+    if (els.dmDatePicker) els.dmDatePicker.hidden = true;
+    if (els.dmTabDate) {
+      els.dmTabDate.setAttribute("aria-expanded", "false");
+      els.dmTabDate.classList.remove("is-active");
+    }
+  }
+
+  function toggleDatePicker() {
+    if (state.datePickerOpen) {
+      closeDatePicker();
+      return;
+    }
+    setCalendarMonth(selectedYmd());
+    state.datePickerOpen = true;
+    if (els.dmDatePicker) els.dmDatePicker.hidden = false;
+    if (els.dmTabDate) {
+      els.dmTabDate.setAttribute("aria-expanded", "true");
+      els.dmTabDate.classList.add("is-active");
+    }
+    renderDatePicker();
+  }
+
+  function renderDatePicker() {
+    if (!els.dmCalGrid || !state.datePickerOpen) return;
+    const today = state.todayYmd || seoulYmd();
+    const monthStart = calendarMonthYmd();
+    const { y, m } = ymdParts(monthStart);
+    if (els.dmCalMonth) els.dmCalMonth.textContent = monthLabelKo(monthStart);
+
+    const selected = selectedYmd();
+    const firstDow = ymdWeekday(monthStart);
+    const daysInMonth = new Date(y, m, 0).getDate();
+
+    const earliest = listSelectableDates().filter((d) => d !== today)[0] || today;
+    const earliestMonth = earliest.slice(0, 7);
+    const todayMonth = today.slice(0, 7);
+    const curMonth = monthStart.slice(0, 7);
+    if (els.dmCalPrev) els.dmCalPrev.disabled = curMonth <= earliestMonth;
+    if (els.dmCalNext) els.dmCalNext.disabled = curMonth >= todayMonth;
+
+    const cells = [];
+    for (let i = 0; i < firstDow; i++) {
+      cells.push('<span class="dm-date-picker__cell dm-date-picker__cell--blank" role="presentation"></span>');
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dd = String(day).padStart(2, "0");
+      const ymd = `${y}-${String(m).padStart(2, "0")}-${dd}`;
+      const w = ymdWeekday(ymd);
+      const isSun = w === 0;
+      const isSelectable = isDateSelectable(ymd);
+      const isSelected = ymd === selected;
+      const isToday = ymd === today;
+      let cls = "dm-date-picker__cell";
+      if (isSun) cls += " dm-date-picker__cell--sun";
+      if (isToday) cls += " dm-date-picker__cell--today";
+      if (isSelected) cls += " dm-date-picker__cell--active";
+      if (!isSelectable) cls += " dm-date-picker__cell--disabled";
+      if (isSelectable) {
+        cells.push(
+          `<button type="button" class="${cls}" data-ymd="${ymd}" role="gridcell" aria-label="${shortDateLabel(ymd)}"${isSelected ? ' aria-current="date"' : ""}>${day}</button>`
+        );
+      } else {
+        cells.push(`<span class="${cls}" role="presentation">${day}</span>`);
+      }
+    }
+    els.dmCalGrid.innerHTML = cells.join("");
+  }
+
+  async function selectDate(ymd) {
+    if (!isDateSelectable(ymd)) return;
+    closeDatePicker();
+    if (ymd === state.selected) {
+      updateDateNav();
+      return;
+    }
+    const prev = state.selected;
+    state.selected = ymd;
+    state.missingYmd = null;
+    try {
+      await ensureDayLoaded(ymd);
+      if (state.missingYmd === ymd && ymd !== state.todayYmd) {
+        state.selected = prev;
+        state.missingYmd = null;
+      }
+      syncHash(state.selected);
+      updateDateNav();
+      render();
+    } catch (e) {
+      console.warn("selectDate failed", e && e.message);
+      state.selected = prev;
+      state.missingYmd = null;
+      render();
+    }
+  }
+
+  function shiftCalendarMonth(delta) {
+    const cur = calendarMonthYmd();
+    const { y, m } = ymdParts(cur);
+    const dt = new Date(y, m - 1 + delta, 1);
+    const next = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-01`;
+    state.calendarMonthYmd = next;
+    renderDatePicker();
+  }
+
+  function resolveInitialYmd() {
+    return state.todayYmd || seoulYmd();
   }
 
   function syncHash(ymd) {
@@ -340,14 +495,14 @@
   }
 
   function updateDateNav() {
-    const today = state.todayYmd || seoulYmd();
     const ymd = selectedYmd();
     if (els.dmDateLabel) els.dmDateLabel.textContent = shortDateLabel(ymd);
-    if (els.dmDatePrev) els.dmDatePrev.disabled = false;
-    if (els.dmDateNext) {
-      const next = skipWeekendNext(ymd);
-      els.dmDateNext.disabled = ymd >= today || next > today;
+    if (els.dmDateLabelShort) els.dmDateLabelShort.textContent = shortDateLabelShort(ymd);
+    if (els.dmTabDate) {
+      els.dmTabDate.setAttribute("aria-expanded", state.datePickerOpen ? "true" : "false");
+      els.dmTabDate.classList.toggle("is-active", state.datePickerOpen);
     }
+    if (state.datePickerOpen) renderDatePicker();
   }
 
   function renderBootState() {
@@ -363,8 +518,8 @@
       if (iconEl) iconEl.className = "ti ti-loader";
     }
     if (els.dmDateLabel) els.dmDateLabel.textContent = "불러오는 중…";
-    if (els.dmDatePrev) els.dmDatePrev.disabled = true;
-    if (els.dmDateNext) els.dmDateNext.disabled = true;
+    if (els.dmDateLabelShort) els.dmDateLabelShort.textContent = "—";
+    closeDatePicker();
   }
 
   async function ensureDayLoaded(ymd, opts) {
@@ -403,19 +558,6 @@
     return false;
   }
 
-  async function navigateDate(direction) {
-    const today = state.todayYmd || seoulYmd();
-    const ymd =
-      direction === "prev"
-        ? skipWeekendPrev(state.selected)
-        : skipWeekendNext(state.selected);
-    if (direction === "next" && (state.selected >= today || ymd > today)) return;
-    state.selected = ymd;
-    syncHash(ymd);
-    await ensureDayLoaded(ymd);
-    updateDateNav();
-    render();
-  }
   function sanitizeUserCopy(v, fallback = "") {
     let t = sanitizeStr(v);
     if (!t) return fallback;
@@ -1117,6 +1259,7 @@
   }
 
   function setMainTab(tabId) {
+    closeDatePicker();
     state.mainTab = tabId;
     if (STOCK_TABS.includes(tabId)) {
       state.stockSubTab = tabId;
@@ -1323,29 +1466,56 @@
       btn.addEventListener("click", () => setMainTab(btn.dataset.dmTab));
     });
 
-    if (els.dmDatePrev) {
-      els.dmDatePrev.addEventListener("click", () => navigateDate("prev"));
+    if (els.dmTabDate) {
+      els.dmTabDate.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDatePicker();
+      });
     }
-    if (els.dmDateNext) {
-      els.dmDateNext.addEventListener("click", () => navigateDate("next"));
+
+    if (els.dmCalGrid) {
+      els.dmCalGrid.addEventListener("click", (e) => {
+        const cell = e.target.closest("[data-ymd]");
+        if (cell && cell.dataset.ymd) void selectDate(cell.dataset.ymd);
+      });
     }
+
+    if (els.dmCalPrev) {
+      els.dmCalPrev.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shiftCalendarMonth(-1);
+      });
+    }
+    if (els.dmCalNext) {
+      els.dmCalNext.addEventListener("click", (e) => {
+        e.stopPropagation();
+        shiftCalendarMonth(1);
+      });
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!state.datePickerOpen) return;
+      if (els.dmTabDate && els.dmTabDate.contains(e.target)) return;
+      if (els.dmDatePicker && els.dmDatePicker.contains(e.target)) return;
+      closeDatePicker();
+      updateDateNav();
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && state.datePickerOpen) {
+        closeDatePicker();
+        updateDateNav();
+      }
+    });
 
     window.addEventListener("hashchange", async () => {
       const h = (location.hash || "").replace("#", "");
-      if (!YMD_RE.test(h)) {
-        const base = state.defaultYmd || state.todayYmd;
-        if (state.selected !== base) {
-          state.selected = base;
-          await ensureDayLoaded(state.selected);
-          render();
-        }
+      if (!YMD_RE.test(h) || !isDateSelectable(h)) {
+        const page = location.pathname.split("/").pop() || "daily-market.html";
+        history.replaceState(null, "", page);
         return;
       }
-      if (h !== state.selected) {
-        state.selected = h;
-        await ensureDayLoaded(h);
-        render();
-      }
+      if (h !== state.selected) await selectDate(h);
     });
 
     function onLayoutModeChange() {
@@ -1406,18 +1576,24 @@
 
   async function main() {
     state.todayYmd = seoulYmd();
+    if (location.hash) {
+      const page = location.pathname.split("/").pop() || "daily-market.html";
+      history.replaceState(null, "", page);
+    }
     renderBootState();
     bindEvents();
     try {
       await Promise.all([loadData(), loadKrTv()]);
       state.defaultYmd = resolveDefaultYmd();
-      state.selected = resolveSelectedYmd();
-      if (!YMD_RE.test(state.selected)) state.selected = state.defaultYmd;
+      state.selected = resolveInitialYmd();
+      state.mainTab = "ai";
+      state.calendarMonthYmd = `${state.selected.slice(0, 7)}-01`;
       syncHash(state.selected);
       await ensureDayLoaded(state.selected, { deferLive: true });
     } catch (e) {
       console.warn("daily-market init failed", e && e.message);
     }
+    setMainTab("ai");
     render();
   }
 

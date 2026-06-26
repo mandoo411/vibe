@@ -29,7 +29,7 @@
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
-    <link rel="stylesheet" href="./daily-market.css?v=7" />
+    <link rel="stylesheet" href="./daily-market.css?v=9" />
     <link rel="stylesheet" href="./realtime-board.css?v=2" />
     <script src="./assets/data-url.js"></script>
   </head>
@@ -100,15 +100,33 @@
                       <button type="button" class="rt-tab" role="tab" data-dm-tab="tv" aria-selected="false" id="dm-tab-tv">
                         <span class="rt-tab-label--full">거래대금 TOP 30</span><span class="rt-tab-label--short">거래대금</span>
                       </button>
+                      <button
+                        type="button"
+                        class="rt-tab dm-tab-date"
+                        id="dm-tab-date"
+                        aria-selected="false"
+                        aria-expanded="false"
+                        aria-controls="dm-date-picker"
+                        aria-label="날짜 선택"
+                      >
+                        <span class="rt-tab-label--full" id="dm-date-label">불러오는 중…</span>
+                        <span class="rt-tab-label--short" id="dm-date-label-short">—</span>
+                      </button>
                     </div>
-                    <div class="dm-date-nav" id="dm-date-nav" aria-label="날짜 선택">
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-prev" aria-label="이전 날짜">
-                        <span aria-hidden="true">‹</span>
-                      </button>
-                      <span class="dm-date-nav__label" id="dm-date-label" aria-live="polite">불러오는 중…</span>
-                      <button type="button" class="dm-date-nav__btn" id="dm-date-next" aria-label="다음 날짜">
-                        <span aria-hidden="true">›</span>
-                      </button>
+                    <div class="dm-date-picker" id="dm-date-picker" hidden>
+                      <div class="dm-date-picker__head">
+                        <button type="button" class="dm-date-picker__nav" id="dm-cal-prev" aria-label="이전 달">
+                          <span aria-hidden="true">‹</span>
+                        </button>
+                        <span class="dm-date-picker__month" id="dm-cal-month" aria-live="polite"></span>
+                        <button type="button" class="dm-date-picker__nav" id="dm-cal-next" aria-label="다음 달">
+                          <span aria-hidden="true">›</span>
+                        </button>
+                      </div>
+                      <div class="dm-date-picker__weekdays" aria-hidden="true">
+                        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+                      </div>
+                      <div class="dm-date-picker__grid" id="dm-cal-grid" role="grid" aria-label="마감시황 날짜"></div>
                     </div>
                   </div>
 
@@ -225,6 +243,6 @@
       </nav>
     </div>
 
-    <script src="./daily-market.js?v=5"></script>
+    <script src="./daily-market.js?v=6"></script>
   </body>
 </html>

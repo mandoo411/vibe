@@ -1,13 +1,98 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-06-28 07:00 KST",
-    "from": "2026-06-28",
-    "to": "2026-07-12",
-    "historyFrom": "2026-03-30",
+    "lastUpdatedKst": "2026-06-29 07:00 KST",
+    "from": "2026-06-29",
+    "to": "2026-07-13",
+    "historyFrom": "2026-03-31",
     "source": "investing+forexfactory+38-detail+claude"
   },
-  "economicCalendar": [],
+  "economicCalendar": [
+    {
+      "date": "2026-06-30",
+      "event": "GDP m/m",
+      "country": "CA",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-0.1%",
+      "estimate": "0.4%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-01",
+      "event": "BOE Gov Bailey Speaks",
+      "country": "GB",
+      "time": "22:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-01",
+      "event": "Fed Chairman Warsh Speaks",
+      "country": "US",
+      "time": "22:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-01",
+      "event": "ISM Manufacturing PMI",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "54.0",
+      "estimate": "53.7",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-02",
+      "event": "Average Hourly Earnings m/m",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.3%",
+      "estimate": "0.3%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-02",
+      "event": "Non-Farm Employment Change",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "172K",
+      "estimate": "114K",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-02",
+      "event": "Unemployment Rate",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "4.3%",
+      "estimate": "4.3%",
+      "unit": ""
+    }
+  ],
   "krIPO": [
     {
       "date": "2026-06-29",
@@ -53,23 +138,21 @@
       "offeringPrice": null,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2293",
       "code": ""
+    },
+    {
+      "date": "2026-07-13",
+      "name": "레메디",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2296",
+      "code": ""
     }
   ],
   "krEarnings": [],
   "analysis": {
-    "topEvents": [
-      "6월 29일 져스텍 코스닥 신규 상장 예정",
-      "6월 30일 스트라드비젼과 한국스팩16호 동시 코스닥 상장",
-      "7월 1일 매드업 코스닥 시장 입성",
-      "7월 6일 레몬헬스케어 코스닥 상장으로 2주간 IPO 일정 마무리",
-      "향후 2주간 총 5개 기업의 코스닥 신규 상장 집중"
-    ],
-    "marketImpacts": [
-      "코스닥 시장에 신규 자금 유입 기대감으로 중소형주 거래 활성화 전망",
-      "IPO 청약 자금 이동으로 단기 유동성 일시적 감소 가능성",
-      "스트라드비젼(자율주행), 레몬헬스케어(헬스케어) 등 성장 섹터 관심도 상승 예상",
-      "공모가 미확정 상태로 청약 일정 임박 시 변동성 확대 가능"
-    ],
+    "topEvents": [],
+    "marketImpacts": [],
     "watchEarnings": []
   }
 }

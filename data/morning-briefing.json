@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 30041.75,
+        "close": 30043.5,
         "previousClose": 29514.25,
         "changePct": 1.79,
-        "changePoints": 527.5
+        "changePoints": 529.25
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 281.35,
-      "changePct": -0.86,
-      "changePoints": 2.43
+      "price": 281.74,
+      "changePct": -5.14,
+      "changePoints": -15.27
     },
     {
       "symbol": "MSFT",
-      "price": 371.5,
-      "changePct": -0.39,
-      "changePoints": 1.47
+      "price": 368.57,
+      "changePct": 0.33,
+      "changePoints": 1.23
     },
     {
       "symbol": "NVDA",
-      "price": 195.25,
-      "changePct": 1.41,
-      "changePoints": 2.72
+      "price": 194.97,
+      "changePct": -6.56,
+      "changePoints": -13.68
     },
     {
       "symbol": "AMZN",
-      "price": 240.77,
-      "changePct": 3.47,
-      "changePoints": 8.08
+      "price": 240.14,
+      "changePct": 3.16,
+      "changePoints": 7.35
     },
     {
       "symbol": "META",
-      "price": 563.01,
-      "changePct": 2.32,
-      "changePoints": 12.76
+      "price": 562.6,
+      "changePct": -0.22,
+      "changePoints": -1.25
     },
     {
       "symbol": "TSLA",
-      "price": 409.03,
-      "changePct": 7.72,
-      "changePoints": 29.32
+      "price": 411.84,
+      "changePct": 1.68,
+      "changePoints": 6.79
     },
     {
       "symbol": "GOOGL",
-      "price": 353.05,
-      "changePct": 4.64,
-      "changePoints": 15.66
+      "price": 353.65,
+      "changePct": 1.14,
+      "changePoints": 3.97
     },
     {
       "symbol": "AMD",
-      "price": 540.13,
-      "changePct": 3.56,
-      "changePoints": 18.55
+      "price": 539.49,
+      "changePct": -2.2,
+      "changePoints": -12.14
     },
     {
       "symbol": "PLTR",
-      "price": 116.78,
-      "changePct": 3.4,
-      "changePoints": 3.85
+      "price": 115.7,
+      "changePct": -3.18,
+      "changePoints": -3.8
     },
     {
       "symbol": "COIN",
-      "price": 151.18,
-      "changePct": 1.42,
-      "changePoints": 2.12
+      "price": 151.65,
+      "changePct": -8,
+      "changePoints": -13.19
     }
   ],
   "sectors": [
@@ -188,25 +188,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 70.24,
-        "changePct": -0.14,
-        "changePoints": -0.1
+        "price": 70.39,
+        "changePct": 0.07,
+        "changePoints": 0.05
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4032.6,
-        "changePct": 1.06,
-        "changePoints": 42.3
+        "price": 4020.6,
+        "changePct": 0.76,
+        "changePoints": 30.3
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 58.98,
-        "changePct": 1.6,
-        "changePoints": 0.93
+        "price": 58.61,
+        "changePct": 0.96,
+        "changePoints": 0.56
       },
       {
         "id": "copper",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 60175,
-        "changePct24h": 0.86,
-        "marketCapUsd": 1206484092586.94
+        "priceUsd": 59768,
+        "changePct24h": 1.23,
+        "marketCapUsd": 1198727538180.61
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1608.87,
-        "changePct24h": 2.21,
-        "marketCapUsd": 194163643527.82
+        "priceUsd": 1594.49,
+        "changePct24h": 2.6,
+        "marketCapUsd": 192506795390.2
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 74.92,
-        "changePct24h": 4.91,
-        "marketCapUsd": 43511781822.34
+        "priceUsd": 74.37,
+        "changePct24h": 5.38,
+        "marketCapUsd": 43202371761.05
       }
     ]
   },
@@ -286,27 +286,6 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-06-29T20:51:30.000Z",
       "summary": "안정적 대출처 임대업도 ‘흔들’ 4년새 못갚은 대출 8천억으로 자영업자 폐업에 이자비용 쑥 식당보다 연체증가 속도 빨라경기 불황의 그늘이 길어지면서 은행에 가장 안정적인 대출 업종.."
-    },
-    {
-      "title": "“마이크론 잡겠다” ... 中 반도체, 숨겨도 티나는 영업비밀은",
-      "url": "https://www.mk.co.kr/news/world/12085720",
-      "source": "매일경제",
-      "publishedAt": "2026-06-29T20:30:00.000Z",
-      "summary": "IPO 코앞인 창신메모리를 가다지난 18일 방문한 중국 최대 D램 기업 창신메모리(CXMT)의 베이징 이좡경제기술개발구 공장 주변에는 긴장감이 맴돌았다. 2022년부터 가동한 이좡.."
-    },
-    {
-      "title": "“강세장에선 누구나 번다” ... IMF와 금융위기 버틴 ‘전설’의 투자 원칙",
-      "url": "https://www.mk.co.kr/news/stock/12085679",
-      "source": "매일경제",
-      "publishedAt": "2026-06-29T20:00:00.000Z",
-      "summary": "김태우 하나자산운용 대표 1편매경플러스 ‘한국의 위대한 투자자’ 시리즈 4번째 주인공은 김태우 하나자산운용 대표(59)다. 피델리티자산운용 한국 대표를 10년 가까이 역임한 그는 .."
-    },
-    {
-      "title": "“맥북 가격 올랐잖아”…美소비자, 삼성·하이닉스·마이크론 ‘담합’ 주장 소송",
-      "url": "https://www.mk.co.kr/news/world/12086032",
-      "source": "매일경제",
-      "publishedAt": "2026-06-29T12:47:35.000Z",
-      "summary": "미국 일부 소비자들이 삼성전자와 SK하이닉스, 마이크론의 메모리 가격 담합으로 피해를 봤다며 집단소송을 제기했다. 이들이 메모리 가격을 부풀려 소비자 전자제품 가격 상승을 불러왔다.."
     },
     {
       "title": "광주 반도체 팹에 6.3GW 전력 필요 … 정부, 신규 원전도 짓는다",
@@ -391,6 +370,27 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-06-29T07:08:51.000Z",
       "summary": "미래산업이 반도체 후공정 장비 생산능력 확대를 위해 아산 신공장을 확보하며 글로벌 수주 대응력을 강화한다. 반도체 후공정 장비 전문기업 미래산업은 충청남도 아산시 음봉면 산동리 소재 공장 토지와 건물을 145억원에 양수하기로 결정했다고 29일 공시했다. 이번 인수 금액은 최초 감정평가액인 182억8153만원보다 약 38억원 낮은 수준이다. 잔금 지급과 소유권 이전은 오는 7월29일 완료될 예정이다. 이번 공장 확보는 최근"
+    },
+    {
+      "title": "코스피, 외국인 매도에 숨고르기…코스닥은 8%대 급등",
+      "url": "https://view.asiae.co.kr/article/2026062916040612147",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-06-29T07:04:06.000Z",
+      "summary": "코스피가 외국인의 매도세에 밀려 약보합권에서 장을 마감했다. 반면 코스닥지수는 강한 상승세를 보이며 920선을 회복했다. 29일 코스피는 전일 대비 16.56포인트(0.2%) 내린 8394.65에 거래를 마쳤다. 거래량은 3억6817주로, 거래대금은 42조2613억원으로 잠정 집계됐다. 투자주체별로는 기관과 개인이 각각 2조9325억원, 4조5971억원을 순매수한 반면 외국인은 7조7560억원을 순매도했다. 선물시장에서는 반대로 기관과 개인이"
+    },
+    {
+      "title": "“최소 연평균 4% 이상 금리 준다”…정부, 개인투자용 국채 발행",
+      "url": "https://www.mk.co.kr/news/economy/12085666",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-06-29T06:45:24.000Z",
+      "summary": "3년물 수익률 4% 돌파재정경제부가 7월 개인투자용 국채를 총 1600억원어치 발행한다. 3년물 이표채와 복리채 각각 30억원·70억원, 5년물 600억원, 10년물 700억원, .."
+    },
+    {
+      "title": "코스닥 69.2P 오른 920.57 마감(8.13%↑)",
+      "url": "https://view.asiae.co.kr/article/2026062915340434042",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-06-29T06:34:03.000Z",
+      "summary": "코스닥 69.2P 오른 920.57 마감(8.13%↑)"
     }
   ],
   "aiAnalysis": {

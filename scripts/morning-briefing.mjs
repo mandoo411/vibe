@@ -3,7 +3,7 @@
  * 장전 브리핑 "숫자" 데이터 수집 전용 스크립트 (push-트리거 GitHub Actions에서 실행)
  * - 미국시장 지수, 주요 종목, 섹터 ETF, 환율/원자재, crypto, (참고용) 국내 뉴스 수집
  * - AI 분석(aiAnalysis)은 여기서 생성하지 않음 — Cowork가 이후 단계에서 직접 작성해 채움
- * - data/morning-briefing.json 저장 (aiAnalysis는 빈 스텁으로 둠)
+ * - data/morning-briefing.json 저장 (기존 aiAnalysis가 있으면 유지 — Cowork가 채운 분석을 덮어쓰지 않음)
  *
  * 권장: KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET, NEWSAPI_KEY
  */
@@ -609,6 +609,40 @@ const EMPTY_AI_ANALYSIS = {
   conclusion: "",
 };
 
+function isAiAnalysisEmpty(ai) {
+  if (!ai || typeof ai !== "object") return true;
+  if (ai.summary?.trim()) return false;
+  if (ai.domesticImpact?.trim()) return false;
+  if (ai.conclusion?.trim()) return false;
+  const arrays = [
+    ai.keyIssues,
+    ai.watchSectors,
+    ai.globalMarketTable,
+    ai.usMarketPositives,
+    ai.usMarketNegatives,
+    ai.domesticCheckTable,
+    ai.forexCommodityTable,
+    ai.usNewsTable,
+    ai.krNewsTable,
+    ai.sectorStrategyTable,
+    ai.portfolioTable,
+    ai.watchlist,
+    ai.riskTable,
+    ai.todayStrategy?.tradingPrinciples,
+    ai.todayOutlook?.checkpoints,
+  ];
+  return !arrays.some((arr) => Array.isArray(arr) && arr.length > 0);
+}
+
+async function loadExistingBriefing() {
+  try {
+    const raw = await fs.readFile(OUTPUT_PATH, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   const errors = [];
   const updatedAt = kstIso(seoulYmd(), "06:00");
@@ -620,8 +654,16 @@ async function main() {
   const crypto = await safeCollect("crypto", { assets: [] }, fetchCrypto, errors);
   const news = await safeCollect("news", [], fetchDomesticNews, errors);
 
-  // aiAnalysis는 의도적으로 비워둠 — 코워크가 네이버 뉴스 MCP + 직접 분석 작성으로 이 부분만 채워서
-  // 다시 커밋한다. 숫자 데이터만 먼저 안전하게 깔아두는 게 이 스크립트의 역할.
+  // aiAnalysis는 Cowork가 별도 커밋으로 채움. 숫자 데이터만 갱신할 때 기존 분석을 지우지 않는다.
+  const existing = await loadExistingBriefing();
+  const preservedAi =
+    existing?.aiAnalysis && !isAiAnalysisEmpty(existing.aiAnalysis)
+      ? existing.aiAnalysis
+      : EMPTY_AI_ANALYSIS;
+  if (preservedAi !== EMPTY_AI_ANALYSIS) {
+    console.log("[morning-briefing] preserving existing aiAnalysis");
+  }
+
   const partial = {
     updatedAt,
     usMarket,
@@ -630,7 +672,7 @@ async function main() {
     forex,
     crypto,
     news,
-    aiAnalysis: EMPTY_AI_ANALYSIS,
+    aiAnalysis: preservedAi,
     errors,
   };
 

@@ -1,11 +1,19 @@
 name: Morning Briefing (numeric data)
 
+# 평일 07:55 KST (= 22:55 UTC 전날) 자동 실행 — Cowork(08:0x KST 예약)가 늦게 깨어나도
+# 수치 데이터는 이미 준비돼 있도록 GHA 자체 schedule로 독립 실행.
+# push(data/.briefing-trigger) 트리거는 Cowork가 즉시 강제로 깨우고 싶을 때 쓰는 보조 경로로 유지.
 on:
+  schedule:
+    - cron: "55 22 * * 0-4"
   push:
     branches: [main]
     paths:
       - "data/.briefing-trigger"
   workflow_dispatch:
+  # 외부 백업 트리거(cron-job.org 등)용 — POST /repos/mandoo411/vibe/dispatches { "event_type": "trigger-morning-briefing" }
+  repository_dispatch:
+    types: [trigger-morning-briefing]
 
 permissions:
   contents: write
@@ -40,17 +48,28 @@ jobs:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-        run: node scripts/morning-briefing.mjs
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if node scripts/morning-briefing.mjs; then
+              exit 0
+            fi
+            echo "::warning::morning-briefing collect failed (attempt ${attempt}/3), retrying in 30s..."
+            sleep 30
+          done
+          exit 1
 
       - name: Commit and push if changed
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- data/morning-briefing.json; then
-            echo "No data change, skipping commit"
+            echo "::notice::No data change, skipping commit"
             exit 0
           fi
           STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
           git add data/morning-briefing.json
           git commit -m "chore(data): briefing numeric data ${STAMP}"
+          git pull --rebase origin main
           git push

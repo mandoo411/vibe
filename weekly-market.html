@@ -118,6 +118,11 @@
             </div>
             <span class="section-date" id="earnings-range">—</span>
           </div>
+          <div class="schedule-filters" id="earnings-market-tabs" role="group" aria-label="실적 필터">
+            <button type="button" class="schedule-filter is-active" data-etab="all">전체</button>
+            <button type="button" class="schedule-filter" data-etab="us">미국</button>
+            <button type="button" class="schedule-filter" data-etab="kr">한국</button>
+          </div>
           <div id="earnings-list">
             <p class="analysis-placeholder">실적 데이터 로딩 중…</p>
           </div>
@@ -126,12 +131,12 @@
         <section class="schedule-card" aria-labelledby="ai-title">
           <div class="section-head">
             <div>
-              <p class="section-kicker tm-claude-kicker">Claude AI</p>
-              <h2 class="section-title" id="ai-title">Claude AI 주간 분석</h2>
+              <p class="section-kicker">Analysis</p>
+              <h2 class="section-title" id="ai-title">일정 분석</h2>
             </div>
           </div>
           <div class="analysis-grid" id="analysis-grid" hidden></div>
-          <p class="analysis-placeholder" id="analysis-placeholder">매주 월요일 오전 업데이트</p>
+          <p class="analysis-placeholder" id="analysis-placeholder">매일 오전 6시 업데이트</p>
         </section>
         </div>
 
@@ -381,7 +386,7 @@
           data: null,
           scheduleFilter: "key",
           earnings: null,
-          earningsTab: "all", /* tabs removed – always show all */
+          earningsTab: "all",
           month: null,
           selectedDate: null,
         };
@@ -948,16 +953,6 @@
               state.selectedDate = btn.dataset.date;
               renderCalendar();
               renderSelectedDay(state.selectedDate);
-              // 선택한 날짜에 데이터 없으면 범위 안내
-              const economic = itemsForDate("economicCalendar", state.selectedDate);
-              const krIPO = itemsForDate("krIPO", state.selectedDate);
-              if (!economic.length && !krIPO.length) {
-                const from = state.data?.meta?.historyFrom || state.data?.meta?.from || "";
-                const to = state.data?.meta?.to || "";
-                if (from && to && (state.selectedDate < from || state.selectedDate > to)) {
-                  $("selected-day").innerHTML += `<p class="empty-text" style="font-size:11px;color:var(--text-muted);margin-top:4px">데이터 범위(${from.slice(5).replace("-","/")}~${to.slice(5).replace("-","/")}) 밖의 날짜입니다</p>`;
-                }
-              }
             });
           });
         }
@@ -1026,13 +1021,10 @@
         }
 
         function renderAnalysis() {
-          const ai = state.data?.analysis || {};
-          const top = (ai.topEvents || []).filter(Boolean);
-          const impacts = (ai.marketImpacts || []).filter(Boolean);
-          const hasContent = top.length || impacts.length;
+          const items = (state.data?.eventAnalysis || []).filter(Boolean);
           const grid = $("analysis-grid");
           const placeholder = $("analysis-placeholder");
-          if (!hasContent) {
+          if (!items.length) {
             if (grid) grid.hidden = true;
             if (placeholder) placeholder.hidden = false;
             return;
@@ -1040,9 +1032,34 @@
           if (placeholder) placeholder.hidden = true;
           if (grid) {
             grid.hidden = false;
-            grid.innerHTML = `
-            <article><h3>이번주 핵심 이벤트 TOP5</h3><ol>${top.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol></article>
-            <article><h3>국내 시장 영향 분석</h3><ul>${impacts.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul></article>`;
+            const macros = items.filter((i) => i.type === "macro");
+            const earnings = items.filter((i) => i.type === "earnings");
+            let html = "";
+            if (macros.length) {
+              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading">\u{1F4C5} 매크로 이벤트</h3><ul class="event-analysis-list">${macros
+                .map((item) => `<li class="event-analysis-item">
+                    <div class="event-analysis-head">
+                      <span class="event-analysis-badge event-analysis-badge--macro">경제지표</span>
+                      <strong class="event-analysis-title">${escapeHtml(item.title || "")}</strong>
+                      ${item.date ? `<span class="event-analysis-date">${escapeHtml(item.date)}</span>` : ""}
+                    </div>
+                    ${item.expected ? `<div class="event-analysis-expected">${escapeHtml(item.expected)}</div>` : ""}
+                    <p class="event-analysis-body">${escapeHtml(item.analysis || "")}</p>
+                  </li>`).join("")}</ul></div>`;
+            }
+            if (earnings.length) {
+              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading">\u{1F4CA} 실적 발표</h3><ul class="event-analysis-list">${earnings
+                .map((item) => `<li class="event-analysis-item">
+                    <div class="event-analysis-head">
+                      <span class="event-analysis-badge event-analysis-badge--earnings">실적</span>
+                      <strong class="event-analysis-title">${escapeHtml(item.title || "")}</strong>
+                      ${item.date ? `<span class="event-analysis-date">${escapeHtml(item.date)}</span>` : ""}
+                    </div>
+                    ${item.expected ? `<div class="event-analysis-expected">${escapeHtml(item.expected)}</div>` : ""}
+                    <p class="event-analysis-body">${escapeHtml(item.analysis || "")}</p>
+                  </li>`).join("")}</ul></div>`;
+            }
+            grid.innerHTML = html;
           }
         }
 
@@ -1134,13 +1151,14 @@
           const today = seoulYmd();
           const us = (e.us || []).filter((r) => r.date >= today);
           const kr = (e.kr || []).filter((r) => r.date >= today);
+          const tab = state.earningsTab;
           let html = "";
-          if (us.length) {
-            html += '<h3 class="earnings-market-title">🇺🇸 미국</h3>';
+          if (tab === "us" || tab === "all") {
+            if (tab === "all") html += '<h3 class="earnings-market-title">🇺🇸 미국 주요 기업</h3>';
             html += renderEarningsGroup(us, "us");
           }
-          if (kr.length) {
-            html += '<h3 class="earnings-market-title">🇰🇷 한국</h3>';
+          if (tab === "kr" || tab === "all") {
+            if (tab === "all") html += '<h3 class="earnings-market-title">🇰🇷 한국 주요 기업</h3>';
             html += renderEarningsGroup(kr, "kr");
           }
           if (!html) html = '<p class="empty-text">이번 기간 주요 실적 발표 없음</p>';
@@ -1213,6 +1231,7 @@
             renderToday();
             renderEarnings();
             renderAnalysis();
+            wireEarningsTabs();
             startCountdownTimer();
           } catch (e) {
             $("masthead-notice").hidden = false;
@@ -1242,10 +1261,19 @@
             renderSelectedDay(state.selectedDate);
             return;
           }
-          // 데이터 범위 안내
           const from = state.data?.meta?.historyFrom || state.data?.meta?.from || "";
           const to = state.data?.meta?.to || "";
           if (from && to) {
             const fLabel = from.slice(5).replace("-", "/");
             const tLabel = to.slice(5).replace("-", "/");
-            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다<br><span style="font-size:11px">데이터 범위: $
+            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다<br><span style="font-size:11px">데이터 범위: ${fLabel} ~ ${tLabel}</span></p>`;
+          } else {
+            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다</p>`;
+          }
+        }
+
+        load();
+      })();
+    </script>
+  </body>
+</html>

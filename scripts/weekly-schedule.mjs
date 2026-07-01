@@ -480,37 +480,76 @@ async function fetchEconomicCalendarMerged(from, to) {
 
 async function analyzeWithClaude({ economicCalendar, krIPO, krEarnings }) {
   const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
-  const payload = { economicCalendar, krIPO, krEarnings };
+
+  // 오늘~+14일 범위 핵심 이벤트만 추출
+  const today = seoulYmd();
+  const twoWeeksLater = addDaysYmd(today, 14);
+
+  const upcomingMacro = economicCalendar
+    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
+    .filter((r) => {
+      const impact = r.impact;
+      return impact === 3 || impact === "3" || String(impact || "").toLowerCase() === "high";
+    })
+    .filter((r) => {
+      const cc = String(r.country || "").toUpperCase();
+      return cc === "US" || cc === "KR" || cc === "미국" || cc === "한국";
+    })
+    .slice(0, 8);
+
+  const upcomingEarnings = [...krEarnings]
+    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
+    .slice(0, 6);
+
+  const payload = { upcomingMacro, upcomingEarnings };
+
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 1800,
-    temperature: 0.2,
+    max_tokens: 2400,
+    temperature: 0.3,
     messages: [
       {
         role: "user",
-        content: `아래 향후 2주 경제 일정, 한국 신규상장, 국내 주요기업 실적 발표를 바탕으로 한국어 JSON만 반환해줘.
+        content: `아래 이번 주~다음 주 핵심 경제지표와 실적 발표 일정을 분석해서 한국어 JSON만 반환해줘.
+
+각 이벤트에 대해 투자자에게 유용한 시나리오 분석을 작성해줘:
+- 매크로 지표: 예상치 대비 결과가 높을 때/낮을 때 증시·환율 영향을 구체적으로 설명
+- 실적 발표: 시장 컨센서스와 업종 내 파급 효과를 설명
+
 스키마:
 {
-  "topEvents": ["이번주 핵심 이벤트 TOP5, 각 항목 1문장"],
-  "marketImpacts": ["각 이벤트가 국내 시장에 미칠 영향, 3~5개"],
-  "watchEarnings": ["주목해야 할 실적 발표 종목, 3~7개"]
+  "eventAnalysis": [
+    {
+      "type": "macro",
+      "date": "YYYY-MM-DD",
+      "title": "지표명 (약어)",
+      "expected": "예측 X / 이전 Y (단위 포함)",
+      "analysis": "예상 상회 시 [증시/환율 영향]. 예상 하회 시 [증시/환율 영향]. 2~3문장."
+    },
+    {
+      "type": "earnings",
+      "date": "YYYY-MM-DD",
+      "title": "회사명 실적발표",
+      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
+      "analysis": "예상 상회 시 [섹터 파급]. 예상 하회 시 [섹터 파급]. 관련 종목 언급. 2~3문장."
+    }
+  ]
 }
 
+주의: eventAnalysis 배열만 반환. 총 항목 최대 6개. 날짜 오름차순 정렬.
+
 데이터:
-${JSON.stringify(payload).slice(0, 60000)}`,
+${JSON.stringify(payload).slice(0, 40000)}`,
       },
     ],
   });
+
   const text = msg.content
     .filter((part) => part.type === "text")
     .map((part) => part.text)
     .join("\n");
   const parsed = parseClaudeJson(text);
-  return {
-    topEvents: Array.isArray(parsed.topEvents) ? parsed.topEvents.slice(0, 5) : [],
-    marketImpacts: Array.isArray(parsed.marketImpacts) ? parsed.marketImpacts : [],
-    watchEarnings: Array.isArray(parsed.watchEarnings) ? parsed.watchEarnings : [],
-  };
+  return Array.isArray(parsed.eventAnalysis) ? parsed.eventAnalysis.slice(0, 6) : [];
 }
 
 async function main() {
@@ -550,10 +589,11 @@ async function main() {
   const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: historyFrom });
   console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
 
-  let analysis = { topEvents: [], marketImpacts: [], watchEarnings: [] };
+  let eventAnalysis = [];
   try {
     const krEarningsForAnalysis = krEarnings.length > 0 ? krEarnings : earningsKrFallback;
-    analysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings: krEarningsForAnalysis });
+    eventAnalysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings: krEarningsForAnalysis });
+    console.log(`일정 분석 ${eventAnalysis.length}건 생성`);
   } catch (error) {
     console.log(`❌ Claude 분석 실패: ${error instanceof Error ? error.message : error}`);
   }
@@ -570,7 +610,7 @@ async function main() {
     economicCalendar,
     krIPO,
     krEarnings: krEarnings.length > 0 ? krEarnings : earningsKrFallback,
-    analysis,
+    eventAnalysis,
   };
 
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });

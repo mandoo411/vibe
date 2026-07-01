@@ -955,7 +955,7 @@
                 const from = state.data?.meta?.historyFrom || state.data?.meta?.from || "";
                 const to = state.data?.meta?.to || "";
                 if (from && to && (state.selectedDate < from || state.selectedDate > to)) {
-                  $("selected-day").innerHTML += `<p class="empty-text" style="font-size:11px;color:var(--text-muted);margin-top:4px">데이터 범위(${from.slice(5).replace("-","/")}~${to.slice(5).replace("-","/)}) 밖의 날짜입니다</p>`;
+                  $("selected-day").innerHTML += `<p class="empty-text" style="font-size:11px;color:var(--text-muted);margin-top:4px">데이터 범위(${from.slice(5).replace("-","/")}~${to.slice(5).replace("-","/")}) 밖의 날짜입니다</p>`;
                 }
               }
             });
@@ -1248,14 +1248,4 @@
           if (from && to) {
             const fLabel = from.slice(5).replace("-", "/");
             const tLabel = to.slice(5).replace("-", "/");
-            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다<br><span style="font-size:11px">데이터 범위: ${fLabel} ~ ${tLabel}</span></p>`;
-          } else {
-            el.innerHTML = `<p class="empty-text">날짜를 클릭하면 일정이 표시됩니다</p>`;
-          }
-        }
-
-        load();
-      })();
-    </script>
-  </body>
-</html>
+            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다<br><span style="font-size:11px">데이터 범위: $

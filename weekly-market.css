@@ -1686,8 +1686,11 @@ a:hover {
 
 .empty-text {
   margin: 0;
-  color: var(--text-dim);
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary, var(--text-dim));
   font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
 /* 일정 페이지: 가로 스크롤 없이 한눈에 (오늘 표 + 월간 달력) */

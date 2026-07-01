@@ -1437,11 +1437,11 @@ body[data-theme="dark"] .page-home-v2 .home-ticker-bar .home-ticker {
 }
 
 [data-theme="dark"] .home-hero__row-name {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 [data-theme="dark"] .home-hero__row-price {
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 [data-theme="dark"] .home-hero__row-pct:not(.is-up):not(.is-down) {

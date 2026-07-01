@@ -1734,6 +1734,22 @@ button.dm-date-picker__cell:hover {
   color: var(--color-text-secondary, #6b7280);
 }
 
+/* 다크모드 empty state 수정 */
+[data-theme="dark"] .dm-preparing__inner {
+  background: var(--card-bg, #111d35);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .dm-preparing__title {
+  color: var(--text-primary, #ffffff);
+}
+[data-theme="dark"] .dm-preparing__hint {
+  color: var(--text-secondary, #aab4c5);
+}
+[data-theme="dark"] .dm-preparing .loading-bar-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .dm-preparing .loading-bar-track {
   height: 4px;
   border-radius: 999px;

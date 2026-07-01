@@ -1665,15 +1665,18 @@
       .rt-table td.rt-td-rank {
         text-align: center;
       }
+      .rt-table td.rt-td-vol,
       .rt-table td.rt-td-tv,
       .rt-table td.rt-td-mcap {
         color: #374151;
       }
+      [data-theme="dark"] .rt-table td.rt-td-vol,
       [data-theme="dark"] .rt-table td.rt-td-tv,
       [data-theme="dark"] .rt-table td.rt-td-mcap,
+      .dark-mode .rt-table td.rt-td-vol,
       .dark-mode .rt-table td.rt-td-tv,
       .dark-mode .rt-table td.rt-td-mcap {
-        color: #e5e7eb;
+        color: #d1d5db;
       }
       .rt-table th {
         position: sticky;

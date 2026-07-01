@@ -703,11 +703,46 @@
       }
       .briefing-card:last-child { border-bottom: none; }
 
-      /* h2 in cards: kicker-like accent underline */
+      /* h2 in cards: kicker-like accent underline + icon */
       .briefing-card h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         padding-bottom: 10px;
         border-bottom: 1px solid var(--border);
         margin-bottom: 16px;
+      }
+      .briefing-card h2 .ti {
+        font-size: 1.05em;
+        color: var(--accent-bright);
+        flex-shrink: 0;
+      }
+
+      /* ── Table improvements ── */
+      .briefing-table-wrap {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .briefing-table thead tr {
+        background: var(--bg-secondary);
+      }
+      .briefing-table thead th {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+      .briefing-table tbody tr:nth-child(even) td {
+        background: color-mix(in srgb, var(--accent-bright) 4%, transparent);
+      }
+
+      /* ── Empty state ── */
+      .briefing-card .empty-text {
+        text-align: center;
+        padding: 28px 16px;
+        color: var(--text-secondary);
+        font-size: 13px;
       }
     </style>
   </head>
@@ -771,55 +806,55 @@
       </div>
       <main class="briefing-grid" aria-live="polite">
         <section class="briefing-card briefing-card--wide">
-          <h2>Claude AI 장전 분석</h2>
+          <h2><i class="ti ti-brain" aria-hidden="true"></i>Claude AI 장전 분석</h2>
           <div id="ai-analysis"><p class="empty-text">브리핑 데이터를 불러오는 중입니다.</p></div>
         </section>
 
         <section class="briefing-card briefing-card--us">
           <h2>
-            간밤 미국시장
+            <i class="ti ti-trending-up" aria-hidden="true"></i>간밤 미국시장
             <span class="briefing-us-updated" id="us-market-updated" hidden></span>
           </h2>
           <ul class="briefing-list" id="us-market-list"></ul>
         </section>
 
         <section class="briefing-card briefing-card--macro">
-          <h2>원자재/환율 현황</h2>
+          <h2><i class="ti ti-coins" aria-hidden="true"></i>원자재/환율 현황</h2>
           <ul class="briefing-list" id="forex-list"></ul>
         </section>
 
         <section class="briefing-card">
-          <h2>미국 주요종목 TOP10</h2>
+          <h2><i class="ti ti-star" aria-hidden="true"></i>미국 주요종목 TOP10</h2>
           <ul class="briefing-list" id="top-stocks-list"></ul>
         </section>
 
         <section class="briefing-card">
-          <h2>섹터별 등락률</h2>
+          <h2><i class="ti ti-chart-bar" aria-hidden="true"></i>섹터별 등락률</h2>
           <ul class="briefing-list" id="sectors-list"></ul>
         </section>
 
         <section class="briefing-card briefing-card--crypto" hidden aria-hidden="true">
-          <h2>BTC 시황</h2>
+          <h2><i class="ti ti-currency-bitcoin" aria-hidden="true"></i>BTC 시황</h2>
           <ul class="briefing-list" id="crypto-list"></ul>
         </section>
 
         <section class="briefing-card briefing-card--wide">
-          <h2>글로벌 시장 해석</h2>
+          <h2><i class="ti ti-world" aria-hidden="true"></i>글로벌 시장 해석</h2>
           <div class="briefing-table-wrap" id="global-market-table"></div>
         </section>
 
         <section class="briefing-card">
-          <h2>국내증시 장전 체크</h2>
+          <h2><i class="ti ti-checklist" aria-hidden="true"></i>국내증시 장전 체크</h2>
           <div class="briefing-table-wrap" id="domestic-check-table"></div>
         </section>
 
         <section class="briefing-card">
-          <h2>환율·원자재 해석</h2>
+          <h2><i class="ti ti-receipt" aria-hidden="true"></i>환율·원자재 해석</h2>
           <div class="briefing-table-wrap" id="forex-commodity-table"></div>
         </section>
 
         <section class="briefing-card briefing-card--wide">
-          <h2>오늘의 주요 뉴스</h2>
+          <h2><i class="ti ti-news" aria-hidden="true"></i>오늘의 주요 뉴스</h2>
           <div class="briefing-twocol">
             <div>
               <p class="briefing-subhead">미국</p>
@@ -833,27 +868,27 @@
         </section>
 
         <section class="briefing-card">
-          <h2>업종별 전략</h2>
+          <h2><i class="ti ti-layers" aria-hidden="true"></i>업종별 전략</h2>
           <div class="briefing-table-wrap" id="sector-strategy-table"></div>
         </section>
 
         <section class="briefing-card">
-          <h2>포트폴리오 전략</h2>
+          <h2><i class="ti ti-chart-pie" aria-hidden="true"></i>포트폴리오 전략</h2>
           <div class="briefing-table-wrap" id="portfolio-table"></div>
         </section>
 
         <section class="briefing-card briefing-card--wide">
-          <h2>오늘의 투자전략</h2>
+          <h2><i class="ti ti-target" aria-hidden="true"></i>오늘의 투자전략</h2>
           <div id="today-strategy"></div>
         </section>
 
         <section class="briefing-card briefing-card--wide">
-          <h2>관심 종목군</h2>
+          <h2><i class="ti ti-bookmark" aria-hidden="true"></i>관심 종목군</h2>
           <div id="watchlist-tiers"></div>
         </section>
 
         <section class="briefing-card briefing-card--wide">
-          <h2>리스크 요인</h2>
+          <h2><i class="ti ti-alert-triangle" aria-hidden="true"></i>리스크 요인</h2>
           <div class="briefing-table-wrap" id="risk-table"></div>
         </section>
 

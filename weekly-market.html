@@ -1088,6 +1088,15 @@
           "051910": { name: "LG화학", sector: "화학" },
           "012450": { name: "한화에어로스페이스", sector: "방산" },
         };
+        const KR_SECTOR_COLORS = {
+          "반도체": "#3b82f6", "자동차": "#f97316", "바이오": "#22c55e",
+          "2차전지": "#8b5cf6", "IT플랫폼": "#06b6d4", "금융": "#eab308",
+          "철강": "#64748b", "화학": "#10b981", "방산": "#ef4444",
+          "기타": "#94a3b8",
+        };
+        function getSectorColor(sector) {
+          return KR_SECTOR_COLORS[sector] || KR_SECTOR_COLORS["기타"];
+        }
         const REPORT_TYPE_MAP = {
           "분기보고서": "분기 실적", "반기보고서": "반기 실적", "사업보고서": "연간 실적",
           "잠정실적": "잠정실적", "실적발표": "실적발표",
@@ -1115,22 +1124,44 @@
           }
           const parts = [];
           for (const [date, items] of [...byDate.entries()].sort()) {
-            parts.push(`<div class="earnings-date-group"><h4 class="earnings-date-label">${escapeHtml(fmtDate(date))}</h4><div class="earnings-cards">`);
+            const dateLabel = escapeHtml(fmtDate(date));
+            parts.push(`<div class="earnings-date-group">
+              <div class="earnings-date-bar"><span class="earnings-date-chip">${dateLabel}</span></div>
+              <div class="earnings-cards">`);
             for (const r of items) {
               if (type === "us") {
                 const koName = US_COMPANY_MAP[r.symbol] || r.name || r.symbol;
-                const epsTxt = r.epsEstimate != null ? `EPS 예측 $${r.epsEstimate}` : "";
-                const revTxt = r.revenueEstimate != null ? `매출 예측 $${(r.revenueEstimate / 1e9).toFixed(1)}B` : "";
+                const epsTxt = r.epsEstimate != null ? `EPS $${r.epsEstimate}` : "";
+                const revTxt = r.revenueEstimate != null ? `매출 $${(r.revenueEstimate / 1e9).toFixed(1)}B` : "";
                 const meta = [epsTxt, revTxt].filter(Boolean).join(" · ");
-                const coreBadge = r.core ? '<span class="earnings-badge earnings-badge--core">핵심</span>' : "";
-                parts.push(`<div class="earnings-card earnings-card--us">${coreBadge}<div class="earnings-card__body"><span class="earnings-name">${escapeHtml(koName)}</span><span class="earnings-ticker">${escapeHtml(r.symbol)}</span></div>${hourLabel(r.hour)}${meta ? `<div class="earnings-meta">${escapeHtml(meta)}</div>` : ""}</div>`);
+                const coreBadge = r.core ? '<span class="ec-core-badge">핵심</span>' : "";
+                parts.push(`<div class="ec-card ec-card--us">
+                  <div class="ec-ticker-box">${escapeHtml(r.symbol || "")}</div>
+                  <div class="ec-info">
+                    <span class="ec-name">${escapeHtml(koName)}</span>
+                    ${meta ? `<span class="ec-meta">${escapeHtml(meta)}</span>` : ""}
+                  </div>
+                  <div class="ec-right">${coreBadge}${hourLabel(r.hour)}</div>
+                </div>`);
               } else {
                 const info = KR_SECTOR_MAP[r.code] || {};
                 const name = info.name || r.name || r.code;
                 const sector = info.sector || "";
                 const rtype = cleanReportName(r.reportName || "");
+                const sc = getSectorColor(sector);
+                const initial = name.slice(0, 1);
                 const naverUrl = `https://finance.naver.com/item/main.naver?code=${encodeURIComponent(r.code || "")}`;
-                parts.push(`<a class="earnings-card earnings-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer"><div class="earnings-card__body"><span class="earnings-name">${escapeHtml(name)}</span>${sector ? `<span class="earnings-sector">${escapeHtml(sector)}</span>` : ""}</div><span class="earnings-rtype">${escapeHtml(rtype)}</span></a>`);
+                parts.push(`<a class="ec-card ec-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer" style="--sc:${sc}">
+                  <div class="ec-avatar">${escapeHtml(initial)}</div>
+                  <div class="ec-info">
+                    <span class="ec-name">${escapeHtml(name)}</span>
+                    <div class="ec-tags">
+                      ${sector ? `<span class="ec-sector-tag">${escapeHtml(sector)}</span>` : ""}
+                      <span class="ec-code">${escapeHtml(r.code || "")}</span>
+                    </div>
+                  </div>
+                  <span class="ec-rtype">${escapeHtml(rtype)}</span>
+                </a>`);
               }
             }
             parts.push("</div></div>");

@@ -90,12 +90,6 @@
       <main class="schedule-page">
         <div class="schedule-layout">
         <div class="schedule-main">
-        <div class="schedule-filters" id="schedule-filters" role="group" aria-label="일정 필터">
-          <button type="button" class="schedule-filter" data-filter="all">전체</button>
-          <button type="button" class="schedule-filter is-active" data-filter="key">핵심만</button>
-          <button type="button" class="schedule-filter" data-filter="us">미국(US)</button>
-          <button type="button" class="schedule-filter" data-filter="kr">한국(KR)</button>
-        </div>
         <section class="schedule-card schedule-card--today" aria-labelledby="today-title">
           <div class="section-head">
             <div>
@@ -114,18 +108,6 @@
               <div id="today-kr-ipo"></div>
             </article>
           </div>
-        </section>
-
-        <section class="schedule-card" aria-labelledby="week-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">This Week</p>
-              <h2 class="section-title" id="week-title">이번주 일정</h2>
-            </div>
-            <span class="section-date" id="week-range">—</span>
-          </div>
-          <div class="week-tabs" id="week-tabs" role="tablist" aria-label="요일별 일정"></div>
-          <div class="week-panels" id="week-panels"></div>
         </section>
 
         <section class="schedule-card" aria-labelledby="earnings-title">
@@ -1225,10 +1207,8 @@
             renderCalendar();
             renderSelectedDay(today);
             renderToday();
-            renderWeek();
             renderEarnings();
             renderAnalysis();
-            wireScheduleFilters();
             wireEarningsTabs();
             startCountdownTimer();
           } catch (e) {
@@ -1253,3 +1233,4 @@
     </script>
   </body>
 </html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

@@ -473,8 +473,8 @@ function parseClaudeJson(text) {
   return JSON.parse(body.slice(start, end + 1));
 }
 
-async function fetchEconomicCalendarMerged(today, to) {
-  const rows = await fetchEconomicCalendar(today, to);
+async function fetchEconomicCalendarMerged(from, to) {
+  const rows = await fetchEconomicCalendar(from, to);
   return mergeEconomicResponses({ economicCalendar: rows });
 }
 
@@ -518,8 +518,9 @@ async function main() {
   const to = addDaysYmd(today, 14);
   const historyFrom = addDaysYmd(today, -90);
 
+  // 과거 90일 + 미래 14일 범위로 경제지표 수집 (달력 이전달 조회 지원)
   const [economicMerged, krIPO, krEarnings] = await Promise.all([
-    fetchEconomicCalendarMerged(today, to),
+    fetchEconomicCalendarMerged(historyFrom, to),
     fetchKRIPO(today, to),
     fetchKREarnings(today, to),
   ]);
@@ -545,7 +546,8 @@ async function main() {
     console.log(`❌ 실적 캘린더 저장 실패: ${error instanceof Error ? error.message : error}`);
   }
 
-  const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: today });
+  // minDate를 historyFrom으로 설정해 과거 90일 고영향 지표도 포함
+  const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: historyFrom });
   console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
 
   let analysis = { topEvents: [], marketImpacts: [], watchEarnings: [] };

@@ -2186,39 +2186,49 @@ a:hover {
    실적 발표 (Earnings Calendar)
 ═══════════════════════════════════════════════ */
 
+/* ── 실적 발표 섹션 가독성 개선 ────────────────────── */
 .earnings-market-title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin: 20px 0 10px;
-  padding: 0 2px;
+  margin: 18px 0 8px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.earnings-market-title:first-child { margin-top: 4px; }
+.earnings-market-title:first-child { margin-top: 0; }
+.earnings-market-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
-.earnings-date-group { margin-bottom: 16px; }
+.earnings-date-group { margin-bottom: 14px; }
 
 .earnings-date-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
   margin: 0 0 8px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 0;
+  border: none;
 }
 
-.earnings-cards { display: flex; flex-direction: column; gap: 6px; }
+.earnings-cards { display: flex; flex-direction: column; gap: 5px; }
 
 .earnings-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface);
-  font-size: 13px;
+  font-size: 14px;
   text-decoration: none;
   color: var(--text-primary);
   transition: border-color 0.15s, background 0.15s;
@@ -2233,7 +2243,8 @@ a:hover {
 .earnings-card__body { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; }
 
 .earnings-name {
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -2248,25 +2259,36 @@ a:hover {
   background: color-mix(in srgb, var(--accent-bright) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-bright) 25%, transparent);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 2px 6px;
   white-space: nowrap;
 }
 
 .earnings-sector {
   font-size: 11px;
-  color: var(--text-muted);
+  font-weight: 500;
+  color: var(--text-secondary);
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 2px 7px;
   white-space: nowrap;
 }
 
-.earnings-rtype { font-size: 11px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+.earnings-rtype {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: auto;
+  white-space: nowrap;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
 
-.earnings-meta { flex: 0 0 100%; font-size: 11px; color: var(--text-muted); padding-left: 2px; margin-top: 2px; }
+.earnings-meta { flex: 0 0 100%; font-size: 11px; color: var(--text-muted); padding-left: 2px; margin-top: 3px; }
 
-.earnings-hour { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap; margin-left: auto; }
+.earnings-hour { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 4px; white-space: nowrap; margin-left: auto; }
 .earnings-hour--bmo { background: color-mix(in srgb, #22c55e 12%, transparent); color: #16a34a; border: 1px solid color-mix(in srgb, #22c55e 30%, transparent); }
 .earnings-hour--amc { background: color-mix(in srgb, #f59e0b 12%, transparent); color: #b45309; border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent); }
 
@@ -2275,10 +2297,11 @@ a:hover {
   color: var(--accent-bright);
   background: color-mix(in srgb, var(--accent-bright) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent-bright) 30%, transparent);
-  border-radius: 4px; padding: 1px 5px; white-space: nowrap; flex-shrink: 0;
+  border-radius: 4px; padding: 2px 6px; white-space: nowrap; flex-shrink: 0;
 }
 
 @media (max-width: 600px) {
-  .earnings-card { padding: 9px 12px; font-size: 12px; }
+  .earnings-card { padding: 10px 12px; font-size: 13px; }
+  .earnings-name { font-size: 13px; }
   .earnings-meta { font-size: 10px; }
 }

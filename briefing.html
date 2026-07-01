@@ -568,6 +568,147 @@
           max-width: 108px;
         }
       }
+
+      /* ===== BRIEFING REDESIGN ===== */
+
+      /* Section subhead: accent bar + flex */
+      .briefing-subhead {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .briefing-subhead::before {
+        content: '';
+        display: block;
+        width: 3px;
+        height: 1.1em;
+        border-radius: 2px;
+        background: var(--accent-bright);
+        flex-shrink: 0;
+      }
+
+      /* Summary box: rounded edges */
+      .briefing-summary {
+        border-radius: 8px;
+        border-left-width: 4px;
+      }
+
+      /* Key Issues: numbered card list */
+      .bf-issue-list {
+        display: grid;
+        gap: 8px;
+        margin: 0 0 12px;
+        padding: 0;
+        list-style: none;
+        counter-reset: bf-issue;
+      }
+      .bf-issue-item {
+        counter-increment: bf-issue;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        font-size: var(--briefing-body);
+        line-height: 1.6;
+        color: var(--briefing-body-color);
+      }
+      .bf-issue-item::before {
+        content: counter(bf-issue);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent-bright);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 800;
+        font-family: var(--font-mono);
+        margin-top: 1px;
+      }
+
+      /* Watch sectors: pill badge tags */
+      .bf-sector-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 12px;
+        padding: 0;
+        list-style: none;
+      }
+      .bf-sector-tag {
+        padding: 5px 13px;
+        border: 1px solid var(--accent-ring);
+        border-radius: 20px;
+        background: var(--accent-dim);
+        color: var(--accent-bright);
+        font-size: var(--briefing-caption);
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+      }
+
+      /* Positives / Negatives: colored border cards */
+      .briefing-pillar--pos {
+        padding: 12px 14px;
+        border: 1px solid color-mix(in srgb, var(--up-color) 28%, transparent);
+        border-left: 3px solid var(--up-color);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--up-color) 6%, transparent);
+      }
+      .briefing-pillar--neg {
+        padding: 12px 14px;
+        border: 1px solid color-mix(in srgb, var(--down-color) 28%, transparent);
+        border-left: 3px solid var(--down-color);
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--down-color) 6%, transparent);
+      }
+      .briefing-pillar--pos ul,
+      .briefing-pillar--neg ul { padding-left: 16px; }
+
+      /* Conclusion: accent left border + dim bg */
+      .briefing-conclusion {
+        border-radius: 10px;
+        border-left: 4px solid var(--accent-bright);
+        background: var(--accent-dim);
+      }
+
+      /* Watchlist: stock name chips */
+      .briefing-tier-names {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      .bf-name-chip {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        border: 1px solid var(--accent-ring);
+        background: var(--accent-dim);
+        color: var(--accent-bright);
+        font-family: var(--font-mono);
+        font-size: var(--briefing-caption);
+        font-weight: 600;
+      }
+
+      /* Briefing card: subtle inner border for section definition */
+      .briefing-card {
+        border-bottom: 1px solid var(--border);
+      }
+      .briefing-card:last-child { border-bottom: none; }
+
+      /* h2 in cards: kicker-like accent underline */
+      .briefing-card h2 {
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
     </style>
   </head>
   <body class="page-tm-v2">
@@ -960,11 +1101,11 @@
         $("ai-analysis").innerHTML = `
           ${summaryHtml}
           <p class="briefing-subhead">오늘 주목할 핵심 이슈</p>
-          ${keyIssues.length ? `<ol>${keyIssues.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}
+          ${keyIssues.length ? `<ol class="bf-issue-list">${keyIssues.map((v) => `<li class="bf-issue-item">${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}
           <p class="briefing-subhead">국내 증시 영향 분석</p>
           <p>${escapeHtml(ai.domesticImpact || "분석 대기 중")}</p>
           <p class="briefing-subhead">오늘 주목 섹터/종목</p>
-          ${watchSectors.length ? `<ul>${watchSectors.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}
+          ${watchSectors.length ? `<ul class="bf-sector-tags">${watchSectors.map((v) => `<li class="bf-sector-tag">${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}
           ${pillarsHtml}
           ${outlookHtml}
           ${conclusionHtml}
@@ -1037,7 +1178,7 @@
                 .map(
                   (tier) => `<div class="briefing-tier">
                     <h4>${escapeHtml(tier.tier || "")}${tier.theme ? ` · ${escapeHtml(tier.theme)}` : ""}</h4>
-                    ${Array.isArray(tier.names) && tier.names.length ? `<div class="briefing-tier-names">${tier.names.map(escapeHtml).join(" · ")}</div>` : ""}
+                    ${Array.isArray(tier.names) && tier.names.length ? `<div class="briefing-tier-names">${tier.names.map(n => `<span class="bf-name-chip">${escapeHtml(n)}</span>`).join("")}</div>` : ""}
                     ${tier.strategy ? `<p>${escapeHtml(tier.strategy)}</p>` : ""}
                   </div>`
                 )

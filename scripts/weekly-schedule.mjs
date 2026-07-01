@@ -524,6 +524,7 @@ async function main() {
     fetchKREarnings(today, to),
   ]);
 
+  let earningsKrFallback = [];
   try {
     const earningsData = await collectEarningsCalendar({ today });
     console.log(
@@ -531,6 +532,15 @@ async function main() {
         (process.env.DART_API_KEY ? " (DART 연동)" : " (DART 미설정)")
     );
     await writeEarningsCalendar(earningsData);
+    earningsKrFallback = earningsData.kr.map((r) => ({
+      date: r.date,
+      name: r.name,
+      sector: "",
+      code: r.code || r.symbol || "",
+      epsEstimate: r.epsEstimate ?? "",
+      previousQuarter: "",
+      reportName: r.reportName || "",
+    }));
   } catch (error) {
     console.log(`❌ 실적 캘린더 저장 실패: ${error instanceof Error ? error.message : error}`);
   }
@@ -540,7 +550,8 @@ async function main() {
 
   let analysis = { topEvents: [], marketImpacts: [], watchEarnings: [] };
   try {
-    analysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings });
+    const krEarningsForAnalysis = krEarnings.length > 0 ? krEarnings : earningsKrFallback;
+    analysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings: krEarningsForAnalysis });
   } catch (error) {
     console.log(`❌ Claude 분석 실패: ${error instanceof Error ? error.message : error}`);
   }
@@ -556,7 +567,7 @@ async function main() {
     },
     economicCalendar,
     krIPO,
-    krEarnings,
+    krEarnings: krEarnings.length > 0 ? krEarnings : earningsKrFallback,
     analysis,
   };
 

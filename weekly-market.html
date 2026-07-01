@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -91,8 +91,8 @@
         <div class="schedule-layout">
         <div class="schedule-main">
         <div class="schedule-filters" id="schedule-filters" role="group" aria-label="일정 필터">
-          <button type="button" class="schedule-filter is-active" data-filter="all">전체</button>
-          <button type="button" class="schedule-filter" data-filter="key">핵심만</button>
+          <button type="button" class="schedule-filter" data-filter="all">전체</button>
+          <button type="button" class="schedule-filter is-active" data-filter="key">핵심만</button>
           <button type="button" class="schedule-filter" data-filter="us">미국(US)</button>
           <button type="button" class="schedule-filter" data-filter="kr">한국(KR)</button>
         </div>
@@ -126,6 +126,24 @@
           </div>
           <div class="week-tabs" id="week-tabs" role="tablist" aria-label="요일별 일정"></div>
           <div class="week-panels" id="week-panels"></div>
+        </section>
+
+        <section class="schedule-card" aria-labelledby="earnings-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">Earnings</p>
+              <h2 class="section-title" id="earnings-title">실적 발표</h2>
+            </div>
+            <span class="section-date" id="earnings-range">—</span>
+          </div>
+          <div class="schedule-filters" id="earnings-market-tabs" role="group" aria-label="실적 필터">
+            <button type="button" class="schedule-filter is-active" data-etab="all">전체</button>
+            <button type="button" class="schedule-filter" data-etab="us">미국</button>
+            <button type="button" class="schedule-filter" data-etab="kr">한국</button>
+          </div>
+          <div id="earnings-list">
+            <p class="analysis-placeholder">실적 데이터 로딩 중…</p>
+          </div>
         </section>
 
         <section class="schedule-card" aria-labelledby="ai-title">
@@ -350,6 +368,25 @@
           "Ascension Day": "예수승천일",
           "Victoria Day": "빅토리아 데이",
           "Battle of Las Piedras": "라스 피에드라스 전투 기념일",
+          /* 추가 번역 */
+          "Average Hourly Earnings m/m": "평균 시간당 임금",
+          "Average Hourly Earnings MoM": "평균 시간당 임금",
+          "Average Hourly Earnings": "평균 시간당 임금",
+          "Nonfarm Payrolls": "비농업 고용",
+          "ADP Employment Change": "ADP 고용변화",
+          "ADP Nonfarm Employment Change": "ADP 비농업고용",
+          "CB Consumer Confidence": "소비자신뢰지수",
+          "JOLTs Job Openings": "JOLTs 구인건수",
+          "JOLTS Job Openings": "JOLTs 구인건수",
+          "ISM Manufacturing": "ISM 제조업지수",
+          "ISM Non-Manufacturing": "ISM 서비스업지수",
+          "Pending Home Sales m/m": "잠정주택판매 (월간)",
+          "Pending Home Sales MoM": "잠정주택판매 (월간)",
+          "Factory Orders m/m": "공장주문 (월간)",
+          "Fed Chair Powell Speaks": "파월 연준의장 발언",
+          "Powell Speaks": "파월 발언",
+          "Beige Book": "베이지북",
+          "FOMC Statement": "FOMC 성명서",
         };
         const INDICATOR_TOOLTIPS = {
           CPI: "소비자물가지수. 인플레이션 핵심 지표",
@@ -365,7 +402,9 @@
         };
         const state = {
           data: null,
-          scheduleFilter: "all",
+          scheduleFilter: "key",
+          earnings: null,
+          earningsTab: "all",
           month: null,
           selectedDate: null,
         };
@@ -562,6 +601,21 @@
           if (/소비자심리|Michigan\s*Consumer|UMich|Consumer\s*Sentiment/i.test(search)) {
             return { nameKo: "소비자심리지수", abbr: "UMich", period };
           }
+          if (/평균\s*시간당\s*임금|Average\s*Hourly\s*Earnings/i.test(search)) {
+            return { nameKo: "평균 시간당 임금", abbr: "AHE", period };
+          }
+          if (/JOLTs?\s*(?:구인|Job\s*Openings)/i.test(search)) {
+            return { nameKo: "구인건수", abbr: "JOLTs", period };
+          }
+          if (/CB\s*소비자신뢰|CB\s*Consumer\s*Confidence/i.test(search)) {
+            return { nameKo: "소비자신뢰지수", abbr: "CB", period };
+          }
+          if (/파월|Powell/i.test(search) && /연설|발언|Speaks?|Speech/i.test(search)) {
+            return { nameKo: "파월 연준의장 발언", abbr: "Powell", period: null };
+          }
+          if (/베이지북|Beige\s*Book/i.test(search)) {
+            return { nameKo: "베이지북", abbr: "Beige Book", period: null };
+          }
           if (/\bISM\b|공급관리/i.test(search)) {
             const isServices = /Non[\s-]?Manufacturing|Services/i.test(search);
             return { nameKo: isServices ? "ISM 서비스업지수" : "ISM 제조업지수", abbr: "ISM", period };
@@ -609,7 +663,6 @@
           const parts = [`<strong class="indicator-name-ko">${escapeHtml(nameKo)}</strong>`];
           if (abbr) parts.push(`<span class="indicator-abbr">(${escapeHtml(abbr)})</span>`);
           if (period) parts.push(`<span class="indicator-period">· ${escapeHtml(period)}</span>`);
-          parts.push(indicatorTooltipHtml(row));
           return parts.join(" ");
         }
 
@@ -1006,6 +1059,119 @@
           }
         }
 
+        /* ── 실적 발표 렌더링 ─────────────────────── */
+        const US_COMPANY_MAP = {
+          NVDA: "엔비디아", AAPL: "애플", MSFT: "마이크로소프트", GOOGL: "알파벳(구글)",
+          AMZN: "아마존", META: "메타", TSLA: "테슬라", TSM: "TSMC", AVGO: "브로드컴",
+          AMD: "AMD", MU: "마이크론", INTC: "인텔", QCOM: "퀄컴", ARM: "ARM홀딩스",
+          JPM: "JP모건", GS: "골드만삭스", BAC: "뱅크오브아메리카", WMT: "월마트",
+          COST: "코스트코", LLY: "일라이릴리", UNH: "유나이티드헬스", ORCL: "오라클", ADBE: "어도비",
+        };
+        const KR_SECTOR_MAP = {
+          "005930": { name: "삼성전자", sector: "반도체" },
+          "000660": { name: "SK하이닉스", sector: "반도체" },
+          "207940": { name: "삼성바이오로직스", sector: "바이오" },
+          "373220": { name: "LG에너지솔루션", sector: "2차전지" },
+          "005380": { name: "현대차", sector: "자동차" },
+          "000270": { name: "기아", sector: "자동차" },
+          "005490": { name: "POSCO홀딩스", sector: "철강" },
+          "068270": { name: "셀트리온", sector: "바이오" },
+          "105560": { name: "KB금융", sector: "금융" },
+          "055550": { name: "신한지주", sector: "금융" },
+          "035720": { name: "카카오", sector: "IT플랫폼" },
+          "035420": { name: "NAVER", sector: "IT플랫폼" },
+          "006400": { name: "삼성SDI", sector: "2차전지" },
+          "051910": { name: "LG화학", sector: "화학" },
+          "012450": { name: "한화에어로스페이스", sector: "방산" },
+        };
+        const REPORT_TYPE_MAP = {
+          "분기보고서": "분기 실적", "반기보고서": "반기 실적", "사업보고서": "연간 실적",
+          "잠정실적": "잠정실적", "실적발표": "실적발표",
+          "장래사업": "경영계획 공시", "공정공시": "공시", "증권발행": "증권 공시",
+        };
+        function cleanReportName(raw) {
+          const t = String(raw || "").replace(/^\[기재정정\]/, "").trim();
+          for (const [key, label] of Object.entries(REPORT_TYPE_MAP)) {
+            if (t.includes(key)) return label;
+          }
+          return "공시";
+        }
+        function hourLabel(hour) {
+          if (hour === "bmo") return '<span class="earnings-hour earnings-hour--bmo">장 전</span>';
+          if (hour === "amc") return '<span class="earnings-hour earnings-hour--amc">장 후</span>';
+          return "";
+        }
+        function renderEarningsGroup(rows, type) {
+          if (!rows.length) return '<p class="empty-text">이번 기간 실적 발표 없음</p>';
+          const byDate = new Map();
+          for (const r of rows) {
+            const d = r.date || "";
+            if (!byDate.has(d)) byDate.set(d, []);
+            byDate.get(d).push(r);
+          }
+          const parts = [];
+          for (const [date, items] of [...byDate.entries()].sort()) {
+            parts.push(`<div class="earnings-date-group"><h4 class="earnings-date-label">${escapeHtml(fmtDate(date))}</h4><div class="earnings-cards">`);
+            for (const r of items) {
+              if (type === "us") {
+                const koName = US_COMPANY_MAP[r.symbol] || r.name || r.symbol;
+                const epsTxt = r.epsEstimate != null ? `EPS 예측 $${r.epsEstimate}` : "";
+                const revTxt = r.revenueEstimate != null ? `매출 예측 $${(r.revenueEstimate / 1e9).toFixed(1)}B` : "";
+                const meta = [epsTxt, revTxt].filter(Boolean).join(" · ");
+                const coreBadge = r.core ? '<span class="earnings-badge earnings-badge--core">핵심</span>' : "";
+                parts.push(`<div class="earnings-card earnings-card--us">${coreBadge}<div class="earnings-card__body"><span class="earnings-name">${escapeHtml(koName)}</span><span class="earnings-ticker">${escapeHtml(r.symbol)}</span></div>${hourLabel(r.hour)}${meta ? `<div class="earnings-meta">${escapeHtml(meta)}</div>` : ""}</div>`);
+              } else {
+                const info = KR_SECTOR_MAP[r.code] || {};
+                const name = info.name || r.name || r.code;
+                const sector = info.sector || "";
+                const rtype = cleanReportName(r.reportName || "");
+                const naverUrl = `https://finance.naver.com/item/main.naver?code=${encodeURIComponent(r.code || "")}`;
+                parts.push(`<a class="earnings-card earnings-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer"><div class="earnings-card__body"><span class="earnings-name">${escapeHtml(name)}</span>${sector ? `<span class="earnings-sector">${escapeHtml(sector)}</span>` : ""}</div><span class="earnings-rtype">${escapeHtml(rtype)}</span></a>`);
+              }
+            }
+            parts.push("</div></div>");
+          }
+          return parts.join("");
+        }
+        function renderEarnings() {
+          const el = $("earnings-list");
+          const rangeEl = $("earnings-range");
+          if (!el) return;
+          const e = state.earnings;
+          if (!e) { el.innerHTML = '<p class="empty-text">실적 데이터 없음 (다음 업데이트 시 표시)</p>'; return; }
+          if (rangeEl && e.meta) {
+            const f = (e.meta.from || "").slice(5).replace("-", "/");
+            const t2 = (e.meta.to || "").slice(5).replace("-", "/");
+            rangeEl.textContent = f && t2 ? `${f} ~ ${t2}` : "";
+          }
+          const today = seoulYmd();
+          const us = (e.us || []).filter((r) => r.date >= today);
+          const kr = (e.kr || []).filter((r) => r.date >= today);
+          const tab = state.earningsTab;
+          let html = "";
+          if (tab === "us" || tab === "all") {
+            if (tab === "all") html += '<h3 class="earnings-market-title">🇺🇸 미국 주요 기업</h3>';
+            html += renderEarningsGroup(us, "us");
+          }
+          if (tab === "kr" || tab === "all") {
+            if (tab === "all") html += '<h3 class="earnings-market-title">🇰🇷 한국 주요 기업</h3>';
+            html += renderEarningsGroup(kr, "kr");
+          }
+          if (!html) html = '<p class="empty-text">이번 기간 주요 실적 발표 없음</p>';
+          el.innerHTML = html;
+        }
+        function wireEarningsTabs() {
+          $("earnings-market-tabs")?.querySelectorAll(".schedule-filter").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              state.earningsTab = btn.dataset.etab || "all";
+              $("earnings-market-tabs").querySelectorAll(".schedule-filter").forEach((b) => {
+                b.classList.toggle("is-active", b === btn);
+              });
+              renderEarnings();
+            });
+          });
+        }
+
         function wireScheduleFilters() {
           $("schedule-filters")?.querySelectorAll(".schedule-filter").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -1045,8 +1211,13 @@
 
         async function load() {
           try {
-            const schedule = await tmFetchJson("data/weekly-schedule.json");
-            state.data = normalizeScheduleData(schedule);
+            const [schedule, earnings] = await Promise.allSettled([
+              tmFetchJson("data/weekly-schedule.json"),
+              tmFetchJson("data/earnings-calendar.json"),
+            ]);
+            state.data = normalizeScheduleData(schedule.status === "fulfilled" ? schedule.value : null);
+            state.earnings = earnings.status === "fulfilled" ? earnings.value : null;
+            if (!state.data) throw new Error("일정 데이터를 불러오지 못했습니다");
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;
@@ -1055,9 +1226,10 @@
             renderSelectedDay(today);
             renderToday();
             renderWeek();
+            renderEarnings();
             renderAnalysis();
             wireScheduleFilters();
-            wireIndicatorTips();
+            wireEarningsTabs();
             startCountdownTimer();
           } catch (e) {
             $("masthead-notice").hidden = false;

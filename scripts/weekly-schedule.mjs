@@ -1,3 +1,4 @@
+error: improper chunk offset(s) 28d3c and 39044
 #!/usr/bin/env node
 import fs from "node:fs/promises";
 import path from "node:path";

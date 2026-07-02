@@ -346,7 +346,52 @@ export async function fetchInvestingEconomicCalendar(fromYmd, toYmd) {
   return rows;
 }
 
+export async function fetchFMPEconomicCalendar(fromYmd, toYmd, apiKey) {
+  if (!apiKey) throw new Error("FMP_API_KEY not set");
+  const url = `https://financialmodelingprep.com/api/v3/economic_calendar?from=${fromYmd}&to=${toYmd}&apikey=${apiKey}`;
+  const res = await fetch(url, {
+    headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
+    signal: AbortSignal.timeout(30000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`FMP HTTP ${res.status}: ${text.slice(0, 120)}`);
+  let rows;
+  try { rows = JSON.parse(text); } catch { throw new Error(`FMP invalid JSON: ${text.slice(0, 120)}`); }
+  if (!Array.isArray(rows)) throw new Error(`FMP unexpected response: ${text.slice(0, 120)}`);
+  const IMPACT = { High: "high", Medium: "medium", Low: "low" };
+  const IMP_NUM = { High: 3, Medium: 2, Low: 1 };
+  const result = rows.map((row) => {
+    // FMP date: "2026-07-02 08:30:00" — treat as UTC
+    const iso = String(row.date || "").replace(" ", "T") + (String(row.date || "").includes("T") ? "" : "Z");
+    const { date, time } = isoToKstParts(iso);
+    if (!date) return null;
+    const impRaw = String(row.impact || "Low");
+    return {
+      date,
+      time,
+      event: String(row.event || "").trim(),
+      country: String(row.country || "").trim(),
+      impact: IMPACT[impRaw] || "low",
+      importance: IMP_NUM[impRaw] || 1,
+      actual: String(row.actual ?? "").trim(),
+      estimate: String(row.estimate ?? "").trim(),
+      previous: String(row.previous ?? "").trim(),
+      unit: "",
+    };
+  }).filter(Boolean);
+  console.log(`✅ FMP 경제캘린더 ${fromYmd}~${toYmd} (${result.length}건)`);
+  return result;
+}
+
 export async function fetchEconomicCalendar(fromYmd, toYmd) {
+  const fmpKey = process.env.FMP_API_KEY;
+  if (fmpKey) {
+    try {
+      return await fetchFMPEconomicCalendar(fromYmd, toYmd, fmpKey);
+    } catch (error) {
+      console.log(`❌ FMP 경제캘린더 실패: ${error.message}`);
+    }
+  }
   try {
     return await fetchInvestingEconomicCalendar(fromYmd, toYmd);
   } catch (error) {

@@ -34,3 +34,4 @@ npx --yes vercel@53.2.0 --prod
 - `script.js`: 계산 로직
 - `vercel.json`: 정적 배포 라우팅 설정
 
+

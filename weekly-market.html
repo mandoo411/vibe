@@ -115,7 +115,7 @@
               <span class="section-date" id="today-date">—</span>
             </div>
             <div id="day-schedule-content">
-              <p class="analysis-placeholder">로딩 중…</p>
+              <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
             </div>
           </section>
 
@@ -128,7 +128,7 @@
               </div>
             </div>
             <div class="analysis-grid" id="analysis-grid" hidden></div>
-            <p class="analysis-placeholder" id="analysis-placeholder">매일 오전 6시 AI 분석 업데이트</p>
+            <p class="analysis-placeholder" id="analysis-placeholder"><i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트</p>
           </section>
 
           <!-- 섹션 3: 다가오는 주요일정 -->
@@ -140,7 +140,7 @@
               </div>
             </div>
             <div id="upcoming-list">
-              <p class="analysis-placeholder">로딩 중…</p>
+              <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
             </div>
           </section>
 
@@ -973,7 +973,7 @@
 
           let html = "";
           if (!hasAny) {
-            html = '<p class="empty-text">이 날은 주요 일정이 없습니다</p>';
+            html = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>이 날은 주요 일정이 없습니다</p>';
           } else {
             // 경제지표
             if (economicFiltered.length) {
@@ -1042,7 +1042,7 @@
           const allKrIPO = (state.data?.krIPO || []).filter((r) => r.date >= fromYmd);
           const allDates = new Set([...allEconomic.map((r) => r.date), ...allKrEarnings.map((r) => r.date), ...allKrIPO.map((r) => r.date)]);
           if (!allDates.size) {
-            el.innerHTML = '<p class="empty-text">데이터 범위 내 다가오는 주요 일정이 없습니다</p>';
+            el.innerHTML = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>데이터 범위 내 다가오는 주요 일정이 없습니다</p>';
             return;
           }
           const sortedDates = [...allDates].sort();
@@ -1070,7 +1070,7 @@
             if (ipo.length) html += renderKRIPO(ipo, true);
             html += "</div></div>";
           }
-          el.innerHTML = html || '<p class="empty-text">다가오는 주요 일정이 없습니다</p>';
+          el.innerHTML = html || '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>다가오는 주요 일정이 없습니다</p>';
         }
 
         function refreshScheduleViews() {
@@ -1325,23 +1325,7 @@
           } catch (e) {
             console.error("일정 로드 실패:", e);
             const el = document.getElementById("day-schedule-content");
-            if (el) el.innerHTML = `<p class="empty-text">일정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>`;
-          }
-        }
-
-        load();
-      })();
-    </script>
-  </body>
-</html>
-| state.data?.meta?.from || "";
-          const to = state.data?.meta?.to || "";
-          if (from && to) {
-            const fLabel = from.slice(5).replace("-", "/");
-            const tLabel = to.slice(5).replace("-", "/");
-            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다<br><span style="font-size:11px">데이터 범위: ${fLabel} ~ ${tLabel}</span></p>`;
-          } else {
-            el.innerHTML = `<p class="empty-text" style="font-size:12px;color:var(--text-muted)">날짜를 클릭하면 일정이 표시됩니다</p>`;
+            if (el) el.innerHTML = `<p class="empty-text"><i class="ti ti-alert-circle" aria-hidden="true"></i>일정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>`;
           }
         }
 

@@ -1058,10 +1058,28 @@ a:hover {
 
 .analysis-placeholder {
   margin: 0;
-  padding: 20px 16px;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   text-align: center;
   color: var(--text-dim);
   font-size: 14px;
+}
+
+.analysis-placeholder i {
+  font-size: 22px;
+  opacity: 0.55;
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .earnings-market-tabs {
@@ -1686,11 +1704,20 @@ a:hover {
 
 .empty-text {
   margin: 0;
-  padding: 24px 16px;
+  padding: 32px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   text-align: center;
   color: var(--text-secondary, var(--text-dim));
   font-size: 13px;
   letter-spacing: 0.01em;
+}
+
+.empty-text i {
+  font-size: 22px;
+  opacity: 0.55;
 }
 
 /* 일정 페이지: 가로 스크롤 없이 한눈에 (오늘 표 + 월간 달력) */
@@ -2389,7 +2416,24 @@ a:hover {
 }
 
 /* 장전/장후 시간 배지 */
-.earnings-hour { font-size: 11px; font-weight:
+.earnings-hour {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.earnings-hour--bmo {
+  color: var(--accent-brand, #0f8387);
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 14%, transparent);
+}
+.earnings-hour--amc {
+  color: #7c3aed;
+  background: color-mix(in srgb, #7c3aed 14%, transparent);
+}
+
 /* ════════════════════════════════════════
    날짜 네비게이션 바
    ════════════════════════════════════════ */

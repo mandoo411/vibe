@@ -90,54 +90,60 @@
       <main class="schedule-page">
         <div class="schedule-layout">
         <div class="schedule-main">
-        <section class="schedule-card schedule-card--today" aria-labelledby="today-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Today</p>
-              <h2 class="section-title" id="today-title">오늘 일정</h2>
-            </div>
-            <span class="section-date" id="today-date">—</span>
-          </div>
-          <div class="today-grid">
-            <article>
-              <h3 class="subsection-title">오늘 경제지표 발표</h3>
-              <div id="today-economic"></div>
-            </article>
-            <article>
-              <h3 class="subsection-title">📋 신규상장</h3>
-              <div id="today-kr-ipo"></div>
-            </article>
-          </div>
-        </section>
 
-        <section class="schedule-card" aria-labelledby="earnings-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Earnings</p>
-              <h2 class="section-title" id="earnings-title">실적 발표</h2>
+          <!-- 날짜 네비게이션 -->
+          <div class="date-nav-bar">
+            <button type="button" class="date-nav-btn" id="date-prev" aria-label="전날">
+              <i class="ti ti-chevron-left"></i><span>전날</span>
+            </button>
+            <div class="date-nav-center">
+              <span class="date-nav-label" id="date-nav-label">—</span>
+              <button type="button" class="date-today-btn" id="date-today-btn">오늘</button>
             </div>
-            <span class="section-date" id="earnings-range">—</span>
+            <button type="button" class="date-nav-btn" id="date-next" aria-label="다음날">
+              <span>다음날</span><i class="ti ti-chevron-right"></i>
+            </button>
           </div>
-          <div class="schedule-filters" id="earnings-market-tabs" role="group" aria-label="실적 필터">
-            <button type="button" class="schedule-filter is-active" data-etab="all">전체</button>
-            <button type="button" class="schedule-filter" data-etab="us">미국</button>
-            <button type="button" class="schedule-filter" data-etab="kr">한국</button>
-          </div>
-          <div id="earnings-list">
-            <p class="analysis-placeholder">실적 데이터 로딩 중…</p>
-          </div>
-        </section>
 
-        <section class="schedule-card" aria-labelledby="ai-title">
-          <div class="section-head">
-            <div>
-              <p class="section-kicker">Analysis</p>
-              <h2 class="section-title" id="ai-title">일정 분석</h2>
+          <!-- 섹션 1: 오늘 일정 -->
+          <section class="schedule-card schedule-card--today" aria-labelledby="day-sched-title">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Today</p>
+                <h2 class="section-title" id="day-sched-title">오늘 일정</h2>
+              </div>
+              <span class="section-date" id="today-date">—</span>
             </div>
-          </div>
-          <div class="analysis-grid" id="analysis-grid" hidden></div>
-          <p class="analysis-placeholder" id="analysis-placeholder">매일 오전 6시 업데이트</p>
-        </section>
+            <div id="day-schedule-content">
+              <p class="analysis-placeholder">로딩 중…</p>
+            </div>
+          </section>
+
+          <!-- 섹션 2: 일정 분석 -->
+          <section class="schedule-card" aria-labelledby="ai-title">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Analysis</p>
+                <h2 class="section-title" id="ai-title">일정 분석</h2>
+              </div>
+            </div>
+            <div class="analysis-grid" id="analysis-grid" hidden></div>
+            <p class="analysis-placeholder" id="analysis-placeholder">매일 오전 6시 AI 분석 업데이트</p>
+          </section>
+
+          <!-- 섹션 3: 다가오는 주요일정 -->
+          <section class="schedule-card" aria-labelledby="upcoming-title">
+            <div class="section-head">
+              <div>
+                <p class="section-kicker">Upcoming</p>
+                <h2 class="section-title" id="upcoming-title">다가오는 주요일정</h2>
+              </div>
+            </div>
+            <div id="upcoming-list">
+              <p class="analysis-placeholder">로딩 중…</p>
+            </div>
+          </section>
+
         </div>
 
         <aside class="schedule-aside">
@@ -156,9 +162,9 @@
           <div class="calendar-legend calendar-legend--compact" aria-label="달력 표시 범례">
             <span><i class="dot dot--economic"></i>경제</span>
             <span><i class="dot dot--kr-ipo"></i>신규상장</span>
+            <span><i class="dot dot--kr-earnings"></i>실적</span>
           </div>
           <div class="month-calendar month-calendar--compact" id="month-calendar" aria-label="월간 일정 달력"></div>
-          <div class="selected-day selected-day--compact" id="selected-day"></div>
         </section>
         </aside>
         </div>
@@ -929,12 +935,70 @@
           return itemsForDate("economicCalendar", ymd).some((row) => isKeyIndicator(row));
         }
 
-        function renderSelectedDay(ymd) {
+        /* ── 날짜별 KR 실적 렌더링 ───────────────── */
+        function renderKrEarningsList(rows) {
+          if (!rows?.length) return "";
+          return `<div class="earnings-cards">${rows.map((r) => {
+            const info = KR_SECTOR_MAP[r.code] || {};
+            const name = info.name || r.name || r.code;
+            const sector = info.sector || r.sector || "";
+            const sc = getSectorColor(sector);
+            const initial = (name || "?").slice(0, 1);
+            const naverUrl = naverFinanceUrl(r.code, name);
+            const rtype = cleanReportName(r.reportName || "잠정실적");
+            return `<a class="ec-card ec-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer" style="--sc:${sc}">
+              <div class="ec-avatar">${escapeHtml(initial)}</div>
+              <div class="ec-info">
+                <span class="ec-name">${escapeHtml(name)}</span>
+                <div class="ec-tags">
+                  ${sector ? `<span class="ec-sector-tag">${escapeHtml(sector)}</span>` : ""}
+                  <span class="ec-code">${escapeHtml(r.code || "")}</span>
+                </div>
+              </div>
+              <span class="ec-rtype">${escapeHtml(rtype)}</span>
+            </a>`;
+          }).join("")}</div>`;
+        }
+
+        /* ── 선택 날짜 일정 렌더링 (섹션 1) ──────── */
+        function renderDateSchedule(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
           const krIPO = itemsForDate("krIPO", ymd);
+          const krEarnings = itemsForDate("krEarnings", ymd);
           const economicFiltered = filterEconomicRows(economic);
-          $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${economicFiltered.length || krIPO.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+          const hasAny = economicFiltered.length || krEarnings.length || krIPO.length;
+
+          if ($("today-date")) $("today-date").textContent = fmtDate(ymd);
+          if ($("date-nav-label")) $("date-nav-label").textContent = fmtDate(ymd);
+
+          let html = "";
+          if (!hasAny) {
+            html = '<p class="empty-text">이 날은 주요 일정이 없습니다</p>';
+          } else {
+            // 경제지표
+            if (economicFiltered.length) {
+              html += `<div class="day-sub-section">
+                <h3 class="subsection-title"><i class="ti ti-chart-bar"></i> 경제지표</h3>
+                ${renderEconomic(economic)}
+              </div>`;
+            }
+            // 실적발표
+            if (krEarnings.length) {
+              html += `<div class="day-sub-section">
+                <h3 class="subsection-title"><i class="ti ti-trending-up"></i> 실적 발표</h3>
+                ${renderKrEarningsList(krEarnings)}
+              </div>`;
+            }
+            // 신규상장
+            if (krIPO.length) {
+              html += `<div class="day-sub-section">
+                <h3 class="subsection-title"><i class="ti ti-building-bank"></i> 신규상장</h3>
+                ${renderKRIPO(krIPO, false)}
+              </div>`;
+            }
+          }
+          const el = $("day-schedule-content");
+          if (el) el.innerHTML = html;
         }
 
         function renderCalendar() {
@@ -950,12 +1014,13 @@
             const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
             const hasEconomic = filterEconomicRows(itemsForDate("economicCalendar", ymd)).length > 0;
             const hasKRIPO = itemsForDate("krIPO", ymd).length > 0;
+            const hasKREarnings = itemsForDate("krEarnings", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
             const isToday = ymd === today ? " calendar-cell--today" : "";
             const isSunday = new Date(year, month - 1, day).getDay() === 0 ? " calendar-cell--sun" : "";
             return `<button type="button" class="calendar-cell${active}${isToday}${isSunday}" data-date="${ymd}">
               <span>${day}</span>
-              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}</i>
+              <i>${hasEconomic ? '<b class="dot dot--economic"></b>' : ""}${hasKRIPO ? '<b class="dot dot--kr-ipo"></b>' : ""}${hasKREarnings ? '<b class="dot dot--kr-earnings"></b>' : ""}</i>
             </button>`;
           }).join("");
           $("month-calendar").innerHTML = heads + blanks + days;
@@ -963,72 +1028,55 @@
             btn.addEventListener("click", () => {
               state.selectedDate = btn.dataset.date;
               renderCalendar();
-              renderSelectedDay(state.selectedDate);
+              renderDateSchedule(state.selectedDate);
             });
           });
         }
 
-        function renderToday() {
-          const ymd = seoulYmd();
-          const economic = itemsForDate("economicCalendar", ymd);
-          const krIPO = itemsForDate("krIPO", ymd);
-          const krIpoWrap = $("today-kr-ipo");
-          $("today-date").textContent = fmtDate(ymd);
-          $("today-economic").innerHTML =
-            filterEconomicRows(economic).length || krIPO.length
-              ? renderEconomic(economic)
-              : '<p class="empty-text">오늘 주요 일정 없음</p>';
-          if (krIpoWrap) {
-            const article = krIpoWrap.closest("article");
-            if (article) article.hidden = !krIPO.length;
-            krIpoWrap.innerHTML = renderKRIPO(krIPO, false);
+        /* ── 다가오는 주요일정 (섹션 3) ───────────── */
+        function renderUpcoming(fromYmd) {
+          const el = $("upcoming-list");
+          if (!el) return;
+          const allEconomic = (state.data?.economicCalendar || []).filter((r) => r.date >= fromYmd && isUsOrKrCountry(r));
+          const allKrEarnings = (state.data?.krEarnings || []).filter((r) => r.date >= fromYmd);
+          const allKrIPO = (state.data?.krIPO || []).filter((r) => r.date >= fromYmd);
+          const allDates = new Set([...allEconomic.map((r) => r.date), ...allKrEarnings.map((r) => r.date), ...allKrIPO.map((r) => r.date)]);
+          if (!allDates.size) {
+            el.innerHTML = '<p class="empty-text">데이터 범위 내 다가오는 주요 일정이 없습니다</p>';
+            return;
           }
+          const sortedDates = [...allDates].sort();
+          let html = "";
+          for (const date of sortedDates) {
+            const econ = allEconomic.filter((r) => r.date === date);
+            const earn = allKrEarnings.filter((r) => r.date === date);
+            const ipo = allKrIPO.filter((r) => r.date === date);
+            const econFiltered = filterEconomicRows(econ);
+            if (!econFiltered.length && !earn.length && !ipo.length) continue;
+            const isToday = date === fromYmd;
+            html += `<div class="upcoming-date-group">
+              <div class="upcoming-date-header${isToday ? " upcoming-date-header--today" : ""}">
+                <span class="upcoming-date-chip">${escapeHtml(fmtDate(date))}</span>
+                ${isToday ? '<span class="today-chip">오늘</span>' : ""}
+              </div>
+              <div class="upcoming-events">`;
+            if (econFiltered.length) html += renderEconomic(econ);
+            if (earn.length) {
+              html += `<div class="kr-schedule-block">
+                <h4 class="kr-schedule-title"><i class="ti ti-trending-up"></i> 실적 발표</h4>
+                ${renderKrEarningsList(earn)}
+              </div>`;
+            }
+            if (ipo.length) html += renderKRIPO(ipo, true);
+            html += "</div></div>";
+          }
+          el.innerHTML = html || '<p class="empty-text">다가오는 주요 일정이 없습니다</p>';
         }
 
         function refreshScheduleViews() {
           const today = seoulYmd();
-          renderToday();
-          renderWeek();
-          if (state.selectedDate) renderSelectedDay(state.selectedDate);
-        }
-
-        function startOfWeek(ymd) {
-          const day = kstDayOfWeek(ymd);
-          if (day === 0) return addDays(ymd, 1);
-          if (day === 6) return addDays(ymd, 2);
-          return addDays(ymd, 1 - day);
-        }
-
-        function renderWeek() {
-          const today = seoulYmd();
-          const monday = startOfWeek(today);
-          const days = WEEKDAYS.map((_, i) => addDays(monday, i));
-          const todayIdx = days.indexOf(today);
-          const activeIndex = todayIdx >= 0 ? todayIdx : 0;
-          $("week-range").textContent = `${fmtDate(days[0])} ~ ${fmtDate(days[4])}`;
-          $("week-tabs").innerHTML = days
-            .map((ymd, i) => {
-              const past = ymd < today;
-              const count = economicCountForDate(ymd);
-              const keyDot = hasKeyIndicatorOnDate(ymd) ? '<i class="week-tab__dot" aria-hidden="true"></i>' : "";
-              const countLabel = count ? `<em class="week-tab__count">(${count}개)</em>` : "";
-              return `<button type="button" class="week-tab${past ? " week-tab--past" : ""}" role="tab" aria-selected="${i === activeIndex}" data-index="${i}">${keyDot}${WEEKDAYS[i]}<span>${ymd.slice(5).replace("-", "/")}</span>${countLabel}</button>`;
-            })
-            .join("");
-          $("week-panels").innerHTML = days
-            .map((ymd, i) => `<section class="week-panel${i === activeIndex ? " is-active" : ""}" data-index="${i}">
-              <h3>${escapeHtml(fmtDate(ymd))}</h3>
-              ${renderEconomic(itemsForDate("economicCalendar", ymd))}
-              ${renderKRIPO(itemsForDate("krIPO", ymd))}
-            </section>`)
-            .join("");
-          $("week-tabs").querySelectorAll(".week-tab").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              const idx = btn.dataset.index;
-              $("week-tabs").querySelectorAll(".week-tab").forEach((b) => b.setAttribute("aria-selected", b.dataset.index === idx));
-              $("week-panels").querySelectorAll(".week-panel").forEach((p) => p.classList.toggle("is-active", p.dataset.index === idx));
-            });
-          });
+          renderDateSchedule(state.selectedDate || today);
+          renderUpcoming(today);
         }
 
         function renderAnalysis() {
@@ -1179,42 +1227,24 @@
           }
           return parts.join("");
         }
-        function renderEarnings() {
-          const el = $("earnings-list");
-          const rangeEl = $("earnings-range");
-          if (!el) return;
-          const e = state.earnings;
-          if (!e) { el.innerHTML = '<p class="empty-text">실적 데이터 없음 (다음 업데이트 시 표시)</p>'; return; }
-          if (rangeEl && e.meta) {
-            const f = (e.meta.from || "").slice(5).replace("-", "/");
-            const t2 = (e.meta.to || "").slice(5).replace("-", "/");
-            rangeEl.textContent = f && t2 ? `${f} ~ ${t2}` : "";
-          }
-          const today = seoulYmd();
-          const us = (e.us || []).filter((r) => r.date >= today);
-          const kr = (e.kr || []).filter((r) => r.date >= today);
-          const tab = state.earningsTab;
-          let html = "";
-          if (tab === "us" || tab === "all") {
-            if (tab === "all") html += '<h3 class="earnings-market-title">🇺🇸 미국 주요 기업</h3>';
-            html += renderEarningsGroup(us, "us");
-          }
-          if (tab === "kr" || tab === "all") {
-            if (tab === "all") html += '<h3 class="earnings-market-title">🇰🇷 한국 주요 기업</h3>';
-            html += renderEarningsGroup(kr, "kr");
-          }
-          if (!html) html = '<p class="empty-text">이번 기간 주요 실적 발표 없음</p>';
-          el.innerHTML = html;
-        }
-        function wireEarningsTabs() {
-          $("earnings-market-tabs")?.querySelectorAll(".schedule-filter").forEach((btn) => {
-            btn.addEventListener("click", () => {
-              state.earningsTab = btn.dataset.etab || "all";
-              $("earnings-market-tabs").querySelectorAll(".schedule-filter").forEach((b) => {
-                b.classList.toggle("is-active", b === btn);
-              });
-              renderEarnings();
-            });
+        function wireDateNav() {
+          $("date-prev")?.addEventListener("click", () => {
+            state.selectedDate = addDays(state.selectedDate, -1);
+            state.month = monthKey(state.selectedDate);
+            renderCalendar();
+            renderDateSchedule(state.selectedDate);
+          });
+          $("date-next")?.addEventListener("click", () => {
+            state.selectedDate = addDays(state.selectedDate, 1);
+            state.month = monthKey(state.selectedDate);
+            renderCalendar();
+            renderDateSchedule(state.selectedDate);
+          });
+          $("date-today-btn")?.addEventListener("click", () => {
+            state.selectedDate = seoulYmd();
+            state.month = monthKey(state.selectedDate);
+            renderCalendar();
+            renderDateSchedule(state.selectedDate);
           });
         }
 
@@ -1243,67 +1273,68 @@
             });
             if (open) return;
             btn.setAttribute("aria-expanded", "true");
-            const pop = document.createElement("span");
+                      const pop = document.createElement("span");
             pop.className = "indicator-tip-pop";
             pop.textContent = tip;
             btn.insertAdjacentElement("afterend", pop);
           });
         }
 
+        function wireCalendarNav() {
+          $("calendar-prev")?.addEventListener("click", () => {
+            const [year, month] = state.month.split("-").map(Number);
+            const d = new Date(year, month - 2, 1);
+            state.month = monthKey(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`);
+            renderCalendar();
+          });
+          $("calendar-next")?.addEventListener("click", () => {
+            const [year, month] = state.month.split("-").map(Number);
+            const d = new Date(year, month, 1);
+            state.month = monthKey(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`);
+            renderCalendar();
+          });
+        }
+
         function startCountdownTimer() {
-          if (countdownTimer) clearInterval(countdownTimer);
-          countdownTimer = setInterval(() => refreshScheduleViews(), 60000);
+          if (window._countdownTimer) clearInterval(window._countdownTimer);
+          window._countdownTimer = setInterval(() => refreshScheduleViews(), 60000);
         }
 
         async function load() {
           try {
-            const [schedule, earnings] = await Promise.allSettled([
+            const [schedule] = await Promise.allSettled([
               tmFetchJson("data/weekly-schedule.json"),
-              tmFetchJson("data/earnings-calendar.json"),
             ]);
             state.data = normalizeScheduleData(schedule.status === "fulfilled" ? schedule.value : null);
-            state.earnings = earnings.status === "fulfilled" ? earnings.value : null;
             if (!state.data) throw new Error("일정 데이터를 불러오지 못했습니다");
             const today = seoulYmd();
             state.month = monthKey(today);
             state.selectedDate = today;
-            $("weekly-updated").textContent = state.data.meta?.lastUpdatedKst ? `마지막 업데이트: ${state.data.meta.lastUpdatedKst}` : "마지막 업데이트: —";
+            const updated = state.data.meta?.lastUpdatedKst;
+            const updatedEl = document.getElementById("weekly-updated");
+            if (updatedEl) updatedEl.textContent = updated ? `마지막 업데이트: ${updated}` : "마지막 업데이트: —";
             renderCalendar();
-            renderSelectedDay(today);
-            renderToday();
-            renderEarnings();
+            renderDateSchedule(today);
             renderAnalysis();
-            wireEarningsTabs();
+            renderUpcoming(today);
+            wireDateNav();
+            wireCalendarNav();
+            wireScheduleFilters();
+            wireIndicatorTips();
             startCountdownTimer();
           } catch (e) {
-            $("masthead-notice").hidden = false;
-            $("masthead-notice").textContent = `데이터를 불러오지 못했습니다: ${e instanceof Error ? e.message : e}`;
+            console.error("일정 로드 실패:", e);
+            const el = document.getElementById("day-schedule-content");
+            if (el) el.innerHTML = `<p class="empty-text">일정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>`;
           }
         }
 
-        $("calendar-prev").addEventListener("click", () => {
-          const [y, m] = state.month.split("-").map(Number);
-          state.month = monthKeyFromParts(y, m - 2);
-          state.selectedDate = null;
-          renderCalendar();
-          renderSelectedDayOrHint();
-        });
-        $("calendar-next").addEventListener("click", () => {
-          const [y, m] = state.month.split("-").map(Number);
-          state.month = monthKeyFromParts(y, m);
-          state.selectedDate = null;
-          renderCalendar();
-          renderSelectedDayOrHint();
-        });
-
-        function renderSelectedDayOrHint() {
-          const el = $("selected-day");
-          if (!el) return;
-          if (state.selectedDate) {
-            renderSelectedDay(state.selectedDate);
-            return;
-          }
-          const from = state.data?.meta?.historyFrom || state.data?.meta?.from || "";
+        load();
+      })();
+    </script>
+  </body>
+</html>
+| state.data?.meta?.from || "";
           const to = state.data?.meta?.to || "";
           if (from && to) {
             const fLabel = from.slice(5).replace("-", "/");

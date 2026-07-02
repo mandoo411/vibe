@@ -2389,110 +2389,253 @@ a:hover {
 }
 
 /* 장전/장후 시간 배지 */
-.earnings-hour { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
-.earnings-hour--bmo { background: color-mix(in srgb, #22c55e 15%, transparent); color: #16a34a; border: 1px solid color-mix(in srgb, #22c55e 30%, transparent); }
-.earnings-hour--amc { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #b45309; border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent); }
-
-@media (max-width: 600px) {
-  .ec-card { padding: 10px 12px; gap: 10px; }
-  .ec-avatar { width: 34px; height: 34px; font-size: 14px; }
-  .ec-ticker-box { min-width: 44px; height: 34px; font-size: 10px; }
-  .ec-name { font-size: 13px; }
-}
-
-/* ── 일정 분석 섹션 ─────────────────────── */
-.event-analysis-section { margin-bottom: 24px; }
-.event-analysis-section:last-child { margin-bottom: 0; }
-
-.event-analysis-heading {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.event-analysis-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.event-analysis-item {
-  background: var(--surface-raised);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.event-analysis-head {
+.earnings-hour { font-size: 11px; font-weight:
+/* ════════════════════════════════════════
+   날짜 네비게이션 바
+   ════════════════════════════════════════ */
+.date-nav-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--sheet-shadow);
 }
 
-.event-analysis-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 4px;
+.date-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   white-space: nowrap;
   flex-shrink: 0;
 }
-.event-analysis-badge--macro {
-  background: color-mix(in srgb, #3b82f6 12%, transparent);
-  color: #2563eb;
-  border: 1px solid color-mix(in srgb, #3b82f6 30%, transparent);
+.date-nav-btn:hover {
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
 }
-.event-analysis-badge--earnings {
-  background: color-mix(in srgb, #f59e0b 12%, transparent);
-  color: #b45309;
-  border: 1px solid color-mix(in srgb, #f59e0b 30%, transparent);
+.date-nav-btn i { font-size: 14px; }
+
+.date-nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
-.event-analysis-title {
-  font-size: 14px;
+.date-nav-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date-today-btn {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent-bright) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-bright) 30%, transparent);
+  color: var(--accent-bright);
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.date-today-btn:hover {
+  background: color-mix(in srgb, var(--accent-bright) 22%, transparent);
+}
+
+/* ════════════════════════════════════════
+   오늘 일정 — 서브섹션
+   ════════════════════════════════════════ */
+.day-sub-section {
+  padding: 0 0 16px;
+}
+.day-sub-section + .day-sub-section {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.day-sub-section .subsection-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin: 0 0 10px;
+  padding: 0 16px;
+}
+.day-sub-section .subsection-title i { font-size: 14px; }
+
+/* ════════════════════════════════════════
+   다가오는 주요일정
+   ════════════════════════════════════════ */
+.upcoming-date-group {
+  margin-bottom: 24px;
+}
+.upcoming-date-group:last-child {
+  margin-bottom: 0;
+}
+
+.upcoming-date-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  margin-bottom: 8px;
+  background: var(--surface);
+  border-left: 3px solid var(--border-strong);
+}
+.upcoming-date-header--today {
+  border-left-color: var(--accent-bright);
+  background: color-mix(in srgb, var(--accent-bright) 6%, var(--surface));
+}
+
+.upcoming-date-chip {
+  font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
 }
+.upcoming-date-header--today .upcoming-date-chip {
+  color: var(--accent-bright);
+}
 
-.event-analysis-date {
+.today-chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--accent-bright);
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.upcoming-events {
+  padding: 0 4px;
+}
+
+/* ════════════════════════════════════════
+   날짜 섹션 헤더 내 일정 없음 공간
+   ════════════════════════════════════════ */
+#day-schedule-content .empty-text {
+  padding: 24px 16px;
+  text-align: center;
+}
+#upcoming-list .upcoming-date-group {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+#upcoming-list .upcoming-date-group:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+/* ════════════════════════════════════════
+   page-tm-v2 — 새 레이아웃 오버라이드
+   ════════════════════════════════════════ */
+.page-tm-v2 #day-schedule-content,
+.page-tm-v2 #upcoming-list {
+  padding: 10px 0;
+}
+
+.page-tm-v2 .day-sub-section {
+  padding: 0 0 12px;
+}
+.page-tm-v2 .day-sub-section + .day-sub-section {
+  padding-top: 12px;
+}
+.page-tm-v2 .day-sub-section .subsection-title {
+  font-size: 11px;
+  margin-bottom: 8px;
+  padding: 0 10px;
+}
+
+.page-tm-v2 .upcoming-date-header {
+  padding: 6px 10px;
+  margin-bottom: 6px;
+}
+.page-tm-v2 .upcoming-date-chip {
   font-size: 12px;
-  color: var(--text-muted);
-  margin-left: auto;
-  white-space: nowrap;
+}
+.page-tm-v2 .upcoming-events {
+  padding: 0 2px;
 }
 
-.event-analysis-expected {
+.page-tm-v2 .date-nav-bar {
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.page-tm-v2 .date-nav-btn {
+  padding: 5px 10px;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  display: inline-block;
-  width: fit-content;
+}
+.page-tm-v2 .date-nav-label {
+  font-size: 14px;
 }
 
-.event-analysis-body {
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--text-secondary);
-  margin: 0;
+.page-tm-v2 #upcoming-list .upcoming-date-group {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
 }
 
-@media (max-width: 600px) {
-  .event-analysis-item { padding: 12px 14px; }
-  .event-analysis-title { font-size: 13px; }
-  .event-analysis-body { font-size: 12px; }
+/* 섹션 카드 내 경제지표 테이블 좌우 패딩 제어 */
+.page-tm-v2 .day-sub-section .schedule-table-wrap {
+  overflow-x: auto;
+}
+.page-tm-v2 .day-sub-section .schedule-table {
+  font-size: 10px;
+  min-width: 0;
+}
+.page-tm-v2 .day-sub-section .schedule-table th,
+.page-tm-v2 .day-sub-section .schedule-table td {
+  padding: 5px 6px;
 }
 
+/* 다가오는 일정 내 경제지표 */
+.page-tm-v2 .upcoming-events .schedule-table-wrap {
+  overflow-x: auto;
+}
+.page-tm-v2 .upcoming-events .schedule-table {
+  font-size: 10px;
+  min-width: 0;
+}
+.page-tm-v2 .upcoming-events .schedule-table th,
+.page-tm-v2 .upcoming-events .schedule-table td {
+  padding: 5px 6px;
+}
+.page-tm-v2 .upcoming-events .kr-schedule-block {
+  padding: 0 4px;
+  margin-top: 8px;
+}
+.page-tm-v2 .upcoming-events .earnings-cards {
+  padding: 0 4px;
+}
+
+/* 모바일 */
+@media (max-width: 640px) {
+  .date-nav-btn span { display: none; }
+  .date-nav-btn { padding: 8px 10px; }
+  .date-nav-label { font-size: 13px; }
+}

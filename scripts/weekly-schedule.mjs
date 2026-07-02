@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import {
   economicRowsFromResponse,
   enrichEconomicPrevious,
+  isUsKrEconomicRow,
   mapEconomicRow,
 } from "./economic-calendar-util.mjs";
 import { fetchEconomicCalendar } from "./investing-calendar.mjs";
@@ -377,7 +378,7 @@ function normalizeEconomic(data, { minDate } = {}) {
   const enriched = enrichEconomicPrevious(mapped);
   const min = minDate || "";
   return enriched
-    .filter((row) => (!min || row.date >= min) && highKeys.has(economicRowKey(row)))
+    .filter((row) => (!min || row.date >= min) && highKeys.has(economicRowKey(row)) && isUsKrEconomicRow(row))
     .map((row) => ({ ...row, impact: "high", importance: 3 }));
 }
 

@@ -505,7 +505,11 @@
     const el = $("home-schedule-body");
     if (!el) return;
     const today = seoulYmd();
-    const list = (rows || []).filter((r) => String(r.date || "").slice(0, 10) === today).slice(0, 4);
+    const isUsKr = (r) => {
+      const c = String(r?.country || "").toUpperCase();
+      return c === "US" || c === "KR" || c === "미국" || c === "한국" || c === "대한민국";
+    };
+    const list = (rows || []).filter((r) => isUsKr(r) && String(r.date || "").slice(0, 10) === today).slice(0, 4);
     if (!list.length) {
       el.innerHTML = '<p class="home-empty">오늘 예정된 지표가 없습니다.</p>';
       return;

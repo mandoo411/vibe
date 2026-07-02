@@ -145,6 +145,26 @@ const INDICATOR_KO = {
   "Ascension Day": "예수승천일",
   "Victoria Day": "빅토리아 데이",
   "Battle of Las Piedras": "라스 피에드라스 전투 기념일",
+  "Average Hourly Earnings m/m": "평균 시간당 임금",
+  "Average Hourly Earnings MoM": "평균 시간당 임금",
+  "Average Hourly Earnings": "평균 시간당 임금",
+  "Nonfarm Payrolls": "비농업 고용",
+  "ADP Employment Change": "ADP 고용변화",
+  "ADP Nonfarm Employment Change": "ADP 비농업고용",
+  "JOLTS Job Openings": "JOLTs 구인건수",
+  "ISM Manufacturing": "ISM 제조업지수",
+  "ISM Non-Manufacturing": "ISM 서비스업지수",
+  "Pending Home Sales m/m": "잠정주택판매 (월간)",
+  "Pending Home Sales MoM": "잠정주택판매 (월간)",
+  "Factory Orders m/m": "공장주문 (월간)",
+  "Fed Chair Powell Speaks": "파월 연준의장 발언",
+  "Powell Speaks": "파월 발언",
+  "Beige Book": "베이지북",
+  "FOMC Statement": "FOMC 성명서",
+  "President Trump Speaks": "트럼프 대통령 연설",
+  "U.S. President Trump Speaks": "트럼프 대통령 연설",
+  "Unemployment Claims": "실업수당 청구건수",
+  "Continuing Jobless Claims": "연속 실업수당 청구",
 };
 const INDICATOR_REGEX = [
   [/non[\s-]?farm\s+payrolls/i, "비농업 고용"],
@@ -292,14 +312,19 @@ function resolveFormalIndicator(row) {
   return { nameKo: null, abbr: null, period };
 }
 
+function indicatorParenLabel(row, formal) {
+  if (formal?.abbr) return formal.abbr;
+  return String(row?.event || "").trim();
+}
+
 function tmEventLabelText(row) {
   const formal = resolveFormalIndicator(row);
   const translated = translateIndicator(row?.event || "");
   const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
-  const abbr = formal.abbr;
+  const paren = indicatorParenLabel(row, formal);
   const period = formal.period || parseLegacyPeriod(translated);
   let label = nameKo;
-  if (abbr) label += ` (${abbr})`;
+  if (paren) label += ` (${paren})`;
   if (period) label += ` · ${period}`;
   return label;
 }

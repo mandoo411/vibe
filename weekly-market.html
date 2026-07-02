@@ -369,6 +369,10 @@
           "Powell Speaks": "파월 발언",
           "Beige Book": "베이지북",
           "FOMC Statement": "FOMC 성명서",
+          "President Trump Speaks": "트럼프 대통령 연설",
+          "U.S. President Trump Speaks": "트럼프 대통령 연설",
+          "Unemployment Claims": "실업수당 청구건수",
+          "Continuing Jobless Claims": "연속 실업수당 청구",
         };
         const INDICATOR_TOOLTIPS = {
           CPI: "소비자물가지수. 인플레이션 핵심 지표",
@@ -608,14 +612,19 @@
           return { nameKo: null, abbr: null, period };
         }
 
+        function indicatorParenLabel(row, formal) {
+          if (formal?.abbr) return formal.abbr;
+          return String(row?.event || "").trim();
+        }
+
         function eventLabelText(row) {
           const formal = resolveFormalIndicator(row);
           const translated = translateIndicator(row?.event || "");
           const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
-          const abbr = formal.abbr;
+          const paren = indicatorParenLabel(row, formal);
           const period = formal.period || parseLegacyPeriod(translated);
           let label = nameKo;
-          if (abbr) label += ` (${abbr})`;
+          if (paren) label += ` (${paren})`;
           if (period) label += ` · ${period}`;
           return label;
         }
@@ -640,16 +649,17 @@
           const formal = resolveFormalIndicator(row);
           const translated = translateIndicator(row?.event || "");
           const nameKo = formal.nameKo || stripLegacyPeriodLabel(translated);
-          const abbr = formal.abbr;
+          const paren = indicatorParenLabel(row, formal);
           const period = formal.period || parseLegacyPeriod(translated);
           const parts = [`<strong class="indicator-name-ko">${escapeHtml(nameKo)}</strong>`];
-          if (abbr) parts.push(`<span class="indicator-abbr">(${escapeHtml(abbr)})</span>`);
+          if (paren) parts.push(`<span class="indicator-abbr">(${escapeHtml(paren)})</span>`);
           if (period) parts.push(`<span class="indicator-period">· ${escapeHtml(period)}</span>`);
           return parts.join(" ");
         }
 
         function filterEconomicRows(rows) {
           return (rows || []).filter((row) => {
+            if (!isUsOrKrCountry(row)) return false;
             const cc = normalizeCountryCode(row?.country);
             if (state.scheduleFilter === "key") return isKeyIndicator(row);
             if (state.scheduleFilter === "us") return cc === "US";
@@ -922,8 +932,9 @@
         function renderSelectedDay(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
           const krIPO = itemsForDate("krIPO", ymd);
+          const economicFiltered = filterEconomicRows(economic);
           $("selected-day").innerHTML = `<h3>${escapeHtml(fmtDate(ymd))}</h3>
-            ${economic.length || krIPO.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
+            ${economicFiltered.length || krIPO.length ? `${renderEconomic(economic)}${renderKRIPO(krIPO)}` : '<p class="empty-text">해당일 주요 일정 없음</p>'}`;
         }
 
         function renderCalendar() {
@@ -937,7 +948,7 @@
           const days = Array.from({ length: last.getDate() }, (_, i) => {
             const day = i + 1;
             const ymd = `${state.month}-${String(day).padStart(2, "0")}`;
-            const hasEconomic = itemsForDate("economicCalendar", ymd).length > 0;
+            const hasEconomic = filterEconomicRows(itemsForDate("economicCalendar", ymd)).length > 0;
             const hasKRIPO = itemsForDate("krIPO", ymd).length > 0;
             const active = ymd === state.selectedDate ? " calendar-cell--active" : "";
             const isToday = ymd === today ? " calendar-cell--today" : "";

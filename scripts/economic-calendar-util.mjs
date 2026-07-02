@@ -1,5 +1,19 @@
 /** 경제 캘린더 정규화·이전값 보강 (weekly-schedule / UI 공용) */
 
+export function normalizeCountryCode(country) {
+  const c = String(country || "").trim();
+  if (!c) return "";
+  const u = c.toUpperCase();
+  if (/^(US|USA|U\.S\.|UNITED STATES)$/.test(u) || c === "미국") return "US";
+  if (/^(KR|KOREA|SOUTH KOREA|ROK)$/.test(u) || c === "한국" || c === "대한민국") return "KR";
+  return u.length === 2 ? u : c;
+}
+
+export function isUsKrEconomicRow(row) {
+  const code = normalizeCountryCode(row?.country);
+  return code === "US" || code === "KR";
+}
+
 export function economicRowsFromResponse(data) {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.economicCalendar)) return data.economicCalendar;

@@ -62,7 +62,11 @@
         const data = await res.json();
         const today = seoulYmd();
         const list = Array.isArray(data.economicCalendar) ? data.economicCalendar : [];
-        const n = list.filter((row) => String(row.date || "").slice(0, 10) === today).length;
+        const isUsKr = (r) => {
+          const c = String(r?.country || "").toUpperCase();
+          return c === "US" || c === "KR";
+        };
+        const n = list.filter((row) => isUsKr(row) && String(row.date || "").slice(0, 10) === today).length;
         return n;
       } catch (_) {
         /* try next */

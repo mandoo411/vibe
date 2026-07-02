@@ -1,144 +1,111 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-01 07:14 KST",
-    "from": "2026-07-01",
-    "to": "2026-07-15",
-    "historyFrom": "2026-04-02",
+    "lastUpdatedKst": "2026-07-02 07:16 KST",
+    "from": "2026-07-02",
+    "to": "2026-07-16",
+    "historyFrom": "2026-04-03",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
     {
-      "date": "2026-07-01",
-      "event": "CPI (YoY)",
-      "country": "EU",
-      "time": "18:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "3.2%",
-      "estimate": "3.0%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
-      "event": "ADP Nonfarm Employment Change",
-      "country": "US",
-      "time": "21:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "122K",
-      "estimate": "118K",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
-      "event": "S&P Global Manufacturing PMI",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "55.1",
-      "estimate": "55.7",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
-      "event": "ISM Manufacturing PMI",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "54.0",
-      "estimate": "53.8",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
-      "event": "ISM Manufacturing Prices",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "82.1",
-      "estimate": "77.7",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
-      "event": "Crude Oil Inventories",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-6.088M",
-      "estimate": "-4.800M",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-02",
+      "date": "2026-04-03",
       "event": "Average Hourly Earnings (MoM)",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "0.3%",
+      "actual": "0.2%",
+      "previous": "0.4%",
       "estimate": "0.3%",
       "unit": ""
     },
     {
-      "date": "2026-07-02",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "215K",
-      "estimate": "220K",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-02",
+      "date": "2026-04-03",
       "event": "Nonfarm Payrolls",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "172K",
-      "estimate": "114K",
+      "actual": "178K",
+      "previous": "-133K",
+      "estimate": "65K",
       "unit": ""
     },
     {
-      "date": "2026-07-02",
+      "date": "2026-04-03",
       "event": "Unemployment Rate",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
+      "actual": "4.3%",
+      "previous": "4.4%",
+      "estimate": "4.4%",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-03",
+      "event": "S&P Global Services PMI",
+      "country": "US",
+      "time": "22:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "49.8",
+      "previous": "51.7",
+      "estimate": "51.1",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-06",
+      "event": "ISM Non-Manufacturing PMI",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "54.0",
+      "previous": "56.1",
+      "estimate": "54.8",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-06",
+      "event": "ISM Non-Manufacturing Prices",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "70.7",
+      "previous": "63.0",
+      "estimate": "67.0",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-07",
+      "event": "U.S. President Trump Speaks",
+      "country": "US",
+      "time": "02:00",
+      "impact": "high",
+      "importance": 3,
       "actual": "",
-      "previous": "4.3%",
-      "estimate": "4.3%",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-07",
+      "event": "Durable Goods Orders (MoM)",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-1.4%",
+      "previous": "-0.5%",
+      "estimate": "-1.1%",
       "unit": ""
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-07-01",
-      "name": "매드업",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2290",
-      "code": ""
-    },
     {
       "date": "2026-07-06",
       "name": "레몬헬스케어",
@@ -158,33 +125,160 @@
       "code": ""
     }
   ],
-  "krEarnings": [],
-  "analysis": {
-    "topEvents": [],
-    "marketImpacts": [],
-    "watchEarnings": []
-  },
-  "eventAnalysis": [
+  "krEarnings": [
     {
-      "type": "macro",
-      "date": "2026-07-02",
-      "title": "비농업 고용 (NFP)",
-      "expected": "예측 220K / 이전 114K",
-      "analysis": "예상 상회 시 고용 시장 견조 → 연준 금리 인하 기대 약화, 달러 강세 및 미국 증시 하방 압력. 예상 하회 시 경기 둔화 우려와 금리 인하 기대가 상충하며 변동성 확대. 코스피는 원화 약세 방향에 따라 외국인 수급 영향 받을 것."
+      "date": "2026-06-29",
+      "name": "SK하이닉스",
+      "sector": "",
+      "code": "000660",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "장래사업ㆍ경영계획(공정공시)"
     },
     {
-      "type": "macro",
-      "date": "2026-07-02",
-      "title": "실업률 (Unemployment Rate)",
-      "expected": "예측 4.3% / 이전 4.3%",
-      "analysis": "NFP와 함께 발표. 예상 상회(악화) 시 경기 침체 우려로 위험자산 하락. 예상 하회(개선) 시 연준 금리 동결 장기화 전망 강화로 채권 금리 상승 가능."
+      "date": "2026-06-29",
+      "name": "삼성전자",
+      "sector": "",
+      "code": "005930",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "[기재정정]장래사업ㆍ경영계획(공정공시)"
     },
     {
-      "type": "earnings",
-      "date": "2026-07-07",
-      "title": "삼성전자 실적발표",
-      "expected": "시장 컨센서스 영업이익 약 9~10조원 / 전분기 대비 회복 기대",
-      "analysis": "HBM3E 출하 확대와 AI 서버향 D램 수요 강세로 반도체 부문 실적 개선 기대. 예상 하회 시 SK하이닉스 등 반도체 섹터 전반 동반 하락 우려. 예상 상회 시 코스피 지수 방어 및 외국인 수급 개선 촉매 역할 기대."
+      "date": "2026-06-29",
+      "name": "삼성전자",
+      "sector": "",
+      "code": "005930",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "장래사업ㆍ경영계획(공정공시)"
+    },
+    {
+      "date": "2026-06-29",
+      "name": "카카오",
+      "sector": "",
+      "code": "035720",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-29",
+      "name": "LG에너지솔루션",
+      "sector": "",
+      "code": "373220",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "현대차",
+      "sector": "",
+      "code": "005380",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "현대차",
+      "sector": "",
+      "code": "005380",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "증권발행실적보고서"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "POSCO홀딩스",
+      "sector": "",
+      "code": "005490",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "조회공시요구(풍문또는보도)에대한답변(미확정)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "삼성SDI",
+      "sector": "",
+      "code": "006400",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "한화에어로스페이스",
+      "sector": "",
+      "code": "012450",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "[기재정정]단일판매ㆍ공급계약체결"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "한화에어로스페이스",
+      "sector": "",
+      "code": "012450",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "LG화학",
+      "sector": "",
+      "code": "051910",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "신한지주",
+      "sector": "",
+      "code": "055550",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-06-30",
+      "name": "KB금융",
+      "sector": "",
+      "code": "105560",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-07-01",
+      "name": "기아",
+      "sector": "",
+      "code": "000270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "지속가능경영보고서등관련사항(자율공시)"
+    },
+    {
+      "date": "2026-07-01",
+      "name": "기아",
+      "sector": "",
+      "code": "000270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)"
+    },
+    {
+      "date": "2026-07-01",
+      "name": "현대차",
+      "sector": "",
+      "code": "005380",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)"
     }
-  ]
+  ],
+  "eventAnalysis": []
 }

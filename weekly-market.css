@@ -2255,9 +2255,15 @@ a:hover {
 .ec-card--kr {
   border-left: 4px solid var(--sc, #94a3b8);
 }
+.ec-card--kr:hover,
+.ec-card--us:hover {
+  text-decoration: none;
+}
 .ec-card--kr:hover {
-  background: var(--surface-hover, color-mix(in srgb, var(--sc, #94a3b8) 5%, var(--surface-raised)));
+  background: var(--surface-hover, color-mix(in srgb, var(--sc, #94a3b8) 8%, var(--surface-raised)));
   border-color: var(--sc, #94a3b8);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 /* 아바타 */
@@ -2339,7 +2345,11 @@ a:hover {
 .ec-card--us {
   border-left: 4px solid #22c55e;
 }
-.ec-card--us:hover { background: color-mix(in srgb, #22c55e 5%, var(--surface-raised)); }
+.ec-card--us:hover {
+  background: color-mix(in srgb, #22c55e 8%, var(--surface-raised));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
 
 /* 티커 박스 */
 .ec-ticker-box {

@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29614.25,
+        "close": 29586.75,
         "previousClose": 30052.75,
-        "changePct": -1.46,
-        "changePoints": -438.5
+        "changePct": -1.55,
+        "changePoints": -466
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 308.29,
-      "changePct": 4.72,
-      "changePoints": 13.91
+      "price": 308.18,
+      "changePct": 4.69,
+      "changePoints": 13.8
     },
     {
       "symbol": "MSFT",
-      "price": 390.8,
-      "changePct": 1.7,
-      "changePoints": 6.52
+      "price": 390.32,
+      "changePct": 1.57,
+      "changePoints": 6.04
     },
     {
       "symbol": "NVDA",
-      "price": 194.57,
-      "changePct": -1.52,
-      "changePoints": 3.01
+      "price": 194.36,
+      "changePct": -1.63,
+      "changePoints": 3.22
     },
     {
       "symbol": "AMZN",
-      "price": 242.98,
-      "changePct": 0.53,
-      "changePoints": 1.28
+      "price": 242.72,
+      "changePct": 0.42,
+      "changePoints": 1.02
     },
     {
       "symbol": "META",
-      "price": 585.25,
-      "changePct": -4.51,
-      "changePoints": 27.67
+      "price": 584.75,
+      "changePct": -4.59,
+      "changePoints": 28.16
     },
     {
       "symbol": "TSLA",
-      "price": 394.3,
-      "changePct": -7.29,
-      "changePoints": 31
+      "price": 394.25,
+      "changePct": -7.3,
+      "changePoints": 31.05
     },
     {
       "symbol": "GOOGL",
-      "price": 359.08,
-      "changePct": -0.59,
-      "changePoints": 2.13
+      "price": 358.85,
+      "changePct": -0.65,
+      "changePoints": 2.37
     },
     {
       "symbol": "AMD",
-      "price": 519.34,
-      "changePct": -3.98,
-      "changePoints": 21.54
+      "price": 519.24,
+      "changePct": -4,
+      "changePoints": 21.64
     },
     {
       "symbol": "PLTR",
-      "price": 129.93,
-      "changePct": 3.34,
-      "changePoints": 4.2
+      "price": 129.51,
+      "changePct": 3.01,
+      "changePoints": 3.78
     },
     {
       "symbol": "COIN",
-      "price": 163.35,
-      "changePct": 2.58,
-      "changePoints": 4.11
+      "price": 164.7,
+      "changePct": 3.43,
+      "changePoints": 5.46
     }
   ],
   "sectors": [
@@ -196,17 +196,17 @@
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4136.2,
-        "changePct": 2.83,
-        "changePoints": 113.9
+        "price": 4139.4,
+        "changePct": 2.91,
+        "changePoints": 117.1
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 61.51,
-        "changePct": 5.72,
-        "changePoints": 3.33
+        "price": 61.56,
+        "changePct": 5.81,
+        "changePoints": 3.38
       },
       {
         "id": "copper",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 61314,
-        "changePct24h": 1.49,
-        "marketCapUsd": 1229650436158.16
+        "priceUsd": 61364,
+        "changePct24h": 2,
+        "marketCapUsd": 1229967699186.81
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1692.44,
-        "changePct24h": 4.73,
-        "marketCapUsd": 204258168060.63
+        "priceUsd": 1693.9,
+        "changePct24h": 4.93,
+        "marketCapUsd": 204309801215.91
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 80.55,
-        "changePct24h": 3.64,
-        "marketCapUsd": 46818027942.66
+        "priceUsd": 80.51,
+        "changePct24h": 3.88,
+        "marketCapUsd": 46776086960.91
       }
     ]
   },
@@ -337,41 +337,6 @@
       "summary": "금융권 최대 현안 중 하나인 '금융지주 지배구조 개편'이 장기간 표류하고 있다. 지난해 12월 이재명 대통령이 금융사 지배구조를 '부패한 이너서클'이라고 비판하자 금융당국은 곧바로.."
     },
     {
-      "title": "'반도체株 직격탄' 코스피 7600선 마감…코스닥도 휘청",
-      "url": "https://view.asiae.co.kr/article/2026070215595296773",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-02T06:59:52.000Z",
-      "summary": "한국 증시가 2일 급락 마감했다. 외국인과 기관의 동반 매도세가 이어지며 7%대 급락했다. 코스닥도 반도체 장비주를 중심으로 매물이 쏟아지며 6% 넘게 밀렸다. 이날 코스피지수는 전 거래일 대비 665.32포인트(7.89%) 내린 7648.09에 마감했다. 코스피는 370.3포인트(4.46%) 내린 7933.10으로 출발한 뒤 장 초반부터 낙폭을 확대했다. 한국거래소는 장 초반 코스피200 선물 급락에 따라 프로그램 매도 호가 효력을 일시 정지하는"
-    },
-    {
-      "title": "\"한국이 명품 허브\"…패피스, A라운드 브릿지 투자유치",
-      "url": "https://view.asiae.co.kr/article/2026070215473812790",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-02T06:47:38.000Z",
-      "summary": "글로벌 중고명품 플랫폼 패피스가 A라운드 브릿지 투자 유치에 성공했다. 한국을 글로벌 중고명품 공급 허브로 만들겠다는 일관된 방향성과 함께, 글로벌 성장 가능성이 높게 평가된 것으로 보인다. 2일 패피스 관계자는 \"이번 라운드는 스마일게이트인베스트먼트가 리드 투자사로 참여했고, 글로벌 액셀러레이터 스파크랩도 함께했다\"며 이같이 밝혔다. 이번 투자로 스마일게이트인베스트먼트는 패피스에 세 번째 후속 투자를 이어"
-    },
-    {
-      "title": "코스닥, 62.63P 내린 866.72 마감(6.74%↓)",
-      "url": "https://view.asiae.co.kr/article/2026070215350279437",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-02T06:35:02.000Z",
-      "summary": "코스닥, 62.63P 내린 866.72 마감(6.74%↓)"
-    },
-    {
-      "title": "코스피, 665.32P 내린 7648.09 마감(7.89%↓)",
-      "url": "https://view.asiae.co.kr/article/2026070215344971672",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-02T06:34:49.000Z",
-      "summary": "코스피, 665.32P 내린 7648.09 마감(7.89%↓)"
-    },
-    {
-      "title": "원·달러 환율, 0.9원 오른 1555.8원 마감",
-      "url": "https://view.asiae.co.kr/article/2026070215333634245",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-02T06:33:36.000Z",
-      "summary": "2일 서울 외환시장에서 원·달러 환율은 오후 3시30분 기준 전 거래일 대비 0.9원 오른 1555.8원에 마감했다."
-    },
-    {
       "title": "“AI 진짜 적은 전기료, HBM 덜 써야 산다” … 빅테크가 찾아낸 생존 공식",
       "url": "https://www.mk.co.kr/news/it/12088932",
       "source": "매일경제",
@@ -391,6 +356,41 @@
       "source": "매일경제",
       "publishedAt": "2026-07-02T14:38:41.000Z",
       "summary": "경찰청이 홍석기 국가수사본부 수사국장을 치안정감으로 승진하는 인사를 2일 실시했다. 이번 인사에 따라 홍 치안정감은 제4대 국가수사본부장으로 임명됐다. 박성주 전 본부장이 정년 퇴.."
+    },
+    {
+      "title": "금감원, 홈플러스 사태 MBK 중징계",
+      "url": "https://www.mk.co.kr/news/stock/12089418",
+      "source": "매일경제",
+      "publishedAt": "2026-07-02T14:11:43.000Z",
+      "summary": "금융위 회의서 최종 확정금융감독원이 홈플러스 사태와 관련해 사모투자펀드(PEF) 운영사 MBK파트너스에 중징계를 결정한 것으로 알려졌다. 금융위원회 회의를 거쳐 중징계가 최종 확정.."
+    },
+    {
+      "title": "“선수들 내분 없었다” 홍명보 전 감독, 귀국 이틀 만에 전격 미국행",
+      "url": "https://www.mk.co.kr/news/society/12089416",
+      "source": "매일경제",
+      "publishedAt": "2026-07-02T14:07:18.000Z",
+      "summary": "MBC 보도, 洪 “할 얘기는 있지만…” 경찰 조사·청문회 등 여부 불투명북중미월드컵 조별리그 탈락 책임을 지고 사퇴한 홍명보 전 축구대표팀 감독이 귀국 이틀 만인 2일 미국으로 .."
+    },
+    {
+      "title": "“선수 미래 빼앗으면 안돼”…‘올림픽 금메달’ 진종오, 배재고 지원 사격",
+      "url": "https://www.mk.co.kr/news/society/12089405",
+      "source": "매일경제",
+      "publishedAt": "2026-07-02T13:50:46.000Z",
+      "summary": "올림픽 사격 금메달리스트 출신인 진종오 국민의힘 의원이 ‘5·18 광주민주화운동 조롱’ 응원 구호를 외친 배재고 야구부에 내려진 ‘전국대회 6개월 출전 정지’ 징계에 대해 “가혹하.."
+    },
+    {
+      "title": "20년 끌었던 은마·잠실5, 드디어…1만2000가구 재건축 스타트",
+      "url": "https://www.mk.co.kr/news/realestate/12089394",
+      "source": "매일경제",
+      "publishedAt": "2026-07-02T13:20:18.000Z",
+      "summary": "오세훈 5기 재건축 속도전 은마, 신청 41일 만에 사업인가 잠실5단지도 민선9기 1호 결재 두 단지 모두 2028년 착공 목표 吳, 31만호 공급공약 힘 받아 사업 본격화에 .."
+    },
+    {
+      "title": "김영광 “‘홍명보 나가’ 화나서 나도 모르게…공항서도 외쳐 난감”",
+      "url": "https://www.mk.co.kr/news/culture/12089388",
+      "source": "매일경제",
+      "publishedAt": "2026-07-02T13:12:47.000Z",
+      "summary": "전 축구선수 김영광이 화제를 모은 ‘홍명보 나가’ 발언 이후 예상치 못한 후폭풍을 겪고 있다고 털어놨다. 김영광은 2일 방송된 SBS 파워FM 두시탈출 컬투쇼에 출연해 최근 온라인.."
     }
   ],
   "aiAnalysis": {

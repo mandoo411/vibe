@@ -331,8 +331,19 @@ export async function fetchForexFactoryEconomicCalendar(fromYmd, toYmd) {
   return rows;
 }
 
-export async function fetchInvestingEconomicCalendar(fromYmd, toYmd) {
-  const html = await fetchWithRetry("Investing 경제", () =>
+function addDaysYmd(ymd, days) {
+  const date = new Date(`${ymd}T12:00:00+09:00`);
+  date.setDate(date.getDate() + days);
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+async function fetchInvestingEconomicChunk(fromYmd, toYmd) {
+  const html = await fetchWithRetry(`Investing 경제 ${fromYmd}~${toYmd}`, () =>
     fetchInvestingHtml(
       "https://www.investing.com/economic-calendar/Service/getCalendarFilteredData",
       "https://www.investing.com/economic-calendar/",
@@ -341,9 +352,31 @@ export async function fetchInvestingEconomicCalendar(fromYmd, toYmd) {
       { timeZone: "88", timeFilter: "timeRemain" }
     )
   );
-  const rows = parseInvestingEconomicRows(html);
-  console.log(`✅ Investing 경제캘린더 ${fromYmd}~${toYmd} (${rows.length}건)`);
-  return rows;
+  return parseInvestingEconomicRows(html);
+}
+
+export async function fetchInvestingEconomicCalendar(fromYmd, toYmd) {
+  const CHUNK_DAYS = 14;
+  const all = [];
+  let cursor = fromYmd;
+  while (cursor <= toYmd) {
+    const chunkEnd = addDaysYmd(cursor, CHUNK_DAYS - 1);
+    const end = chunkEnd > toYmd ? toYmd : chunkEnd;
+    try {
+      const rows = await fetchInvestingEconomicChunk(cursor, end);
+      all.push(...rows);
+      console.log(`✅ Investing 경제캘린더 ${cursor}~${end} (${rows.length}건)`);
+    } catch (error) {
+      console.log(`❌ Investing 경제캘린더 ${cursor}~${end} 실패: ${error.message}`);
+    }
+    if (end >= toYmd) break;
+    cursor = addDaysYmd(end, 1);
+    await sleep(400);
+  }
+  const merged = mergeEconomicRows(all);
+  console.log(`✅ Investing 경제캘린더 합계 ${fromYmd}~${toYmd} (${merged.length}건)`);
+  if (!merged.length) throw new Error("Investing 경제캘린더 수집 실패");
+  return merged;
 }
 
 export async function fetchFMPEconomicCalendar(fromYmd, toYmd, apiKey) {
@@ -383,26 +416,61 @@ export async function fetchFMPEconomicCalendar(fromYmd, toYmd, apiKey) {
   return result;
 }
 
+function economicRowKey(row) {
+  const date = String(row?.date || row?.time || "").slice(0, 10);
+  return `${date}|${row?.country || ""}|${row?.event || ""}`;
+}
+
+function mergeEconomicRows(...lists) {
+  const byKey = new Map();
+  for (const list of lists) {
+    for (const row of list || []) {
+      if (!row?.date || !row?.event) continue;
+      const key = economicRowKey(row);
+      const prev = byKey.get(key);
+      if (!prev) {
+        byKey.set(key, row);
+        continue;
+      }
+      // Prefer row with more filled forecast/actual fields
+      const score = (r) =>
+        [r.actual, r.estimate, r.previous].filter((v) => v != null && String(v).trim()).length;
+      if (score(row) > score(prev)) byKey.set(key, row);
+    }
+  }
+  return [...byKey.values()].sort((a, b) => {
+    const d = a.date.localeCompare(b.date);
+    return d !== 0 ? d : String(a.time || "").localeCompare(String(b.time || ""));
+  });
+}
+
 export async function fetchEconomicCalendar(fromYmd, toYmd) {
+  const batches = [];
   const fmpKey = process.env.FMP_API_KEY;
   if (fmpKey) {
     try {
-      return await fetchFMPEconomicCalendar(fromYmd, toYmd, fmpKey);
+      batches.push(await fetchFMPEconomicCalendar(fromYmd, toYmd, fmpKey));
     } catch (error) {
       console.log(`❌ FMP 경제캘린더 실패: ${error.message}`);
     }
   }
   try {
-    return await fetchInvestingEconomicCalendar(fromYmd, toYmd);
+    batches.push(await fetchInvestingEconomicCalendar(fromYmd, toYmd));
   } catch (error) {
     console.log(`❌ Investing 경제캘린더 실패: ${error.message}`);
-    try {
-      return await fetchForexFactoryEconomicCalendar(fromYmd, toYmd);
-    } catch (fallbackError) {
-      console.log(`❌ ForexFactory 경제캘린더 실패: ${fallbackError.message}`);
-      return [];
-    }
   }
+  try {
+    batches.push(await fetchForexFactoryEconomicCalendar(fromYmd, toYmd));
+  } catch (error) {
+    console.log(`❌ ForexFactory 경제캘린더 실패: ${error.message}`);
+  }
+  const merged = mergeEconomicRows(...batches);
+  if (!merged.length) {
+    console.log("❌ 경제캘린더: 모든 소스 실패");
+  } else {
+    console.log(`✅ 경제캘린더 병합 ${fromYmd}~${toYmd} (${merged.length}건, 소스 ${batches.length}개)`);
+  }
+  return merged;
 }
 
 export async function fetchInvestingEarningsCalendar(fromYmd, toYmd) {

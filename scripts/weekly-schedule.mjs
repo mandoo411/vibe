@@ -369,8 +369,12 @@ function mergeEconomicResponses(...sources) {
 
 function normalizeEconomic(data, { minDate } = {}) {
   const rawRows = economicRowsFromResponse(data);
-  const highKeys = new Set(rawRows.filter(isHighImpact).map(economicRowKey));
-  const enriched = enrichEconomicPrevious(rawRows.map(mapEconomicRow));
+  const mapped = rawRows.map(mapEconomicRow);
+  const highKeys = new Set();
+  for (let i = 0; i < rawRows.length; i += 1) {
+    if (isHighImpact(rawRows[i])) highKeys.add(economicRowKey(mapped[i]));
+  }
+  const enriched = enrichEconomicPrevious(mapped);
   const min = minDate || "";
   return enriched
     .filter((row) => (!min || row.date >= min) && highKeys.has(economicRowKey(row)))
@@ -589,8 +593,21 @@ async function main() {
   }
 
   // minDate를 historyFrom으로 설정해 과거 90일 고영향 지표도 포함
-  const economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: historyFrom });
+  let economicCalendar = normalizeEconomic({ economicCalendar: economicMerged }, { minDate: historyFrom });
   console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
+
+  let priorData = null;
+  if (!economicCalendar.length) {
+    try {
+      priorData = JSON.parse(await fs.readFile(OUTPUT_PATH, "utf8"));
+      if (Array.isArray(priorData?.economicCalendar) && priorData.economicCalendar.length) {
+        economicCalendar = priorData.economicCalendar;
+        console.log(`⚠️ 경제지표 수집 실패 — 기존 ${economicCalendar.length}건 유지`);
+      }
+    } catch {
+      /* no prior file */
+    }
+  }
 
   let eventAnalysis = [];
   try {

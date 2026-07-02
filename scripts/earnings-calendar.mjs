@@ -36,8 +36,9 @@ const KR_CODES = {
 
 const KR_CODE_SET = new Set(Object.keys(KR_CODES));
 
+// 실제 실적 발표만 포함 (공시/경영계획/지속가능보고서 등 제외)
 const EARNINGS_REPORT_RE =
-  /분기보고서|반기보고서|사업보고서|연결재무제표|별도재무제표|실적|영업이익|매출액|잠정|실적발표|공정공시|단일판매|공시/i;
+  /^(분기|반기|사업)보고서|연결재무제표|별도재무제표|영업.*잠정|잠정.*실적/i;
 
 function normalizeCorpName(value) {
   return String(value || "")

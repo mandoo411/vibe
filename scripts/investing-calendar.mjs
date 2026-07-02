@@ -348,7 +348,7 @@ export async function fetchInvestingEconomicCalendar(fromYmd, toYmd) {
 
 export async function fetchFMPEconomicCalendar(fromYmd, toYmd, apiKey) {
   if (!apiKey) throw new Error("FMP_API_KEY not set");
-  const url = `https://financialmodelingprep.com/api/v3/economic_calendar?from=${fromYmd}&to=${toYmd}&apikey=${apiKey}`;
+  const url = `https://financialmodelingprep.com/stable/economic-calendar?from=${fromYmd}&to=${toYmd}&apikey=${apiKey}`;
   const res = await fetch(url, {
     headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
     signal: AbortSignal.timeout(30000),

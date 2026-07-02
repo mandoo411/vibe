@@ -107,13 +107,16 @@ function isYmdInRange(ymd, from, to) {
   return ymd && ymd >= from && ymd <= to;
 }
 
-function isHighImpact(row) {
+function isMediumOrHighImpact(row) {
   const impact = row && row.impact;
   const importance = Number(row && row.importance);
   if (impact === 3 || impact === "3") return true;
   if (String(impact || "").toLowerCase() === "high") return true;
-  return Number.isFinite(importance) && importance >= 3;
+  if (String(impact || "").toLowerCase() === "medium") return true;
+  return Number.isFinite(importance) && importance >= 2;
 }
+// Keep alias for backward compat
+const isHighImpact = isMediumOrHighImpact;
 
 function decodeXml(s) {
   return String(s || "")

@@ -112,6 +112,7 @@
                 <p class="section-kicker">Analysis</p>
                 <h2 class="section-title" id="ai-title">일정 분석</h2>
               </div>
+              <span class="section-date" id="analysis-date">—</span>
             </div>
             <div class="analysis-grid" id="analysis-grid" hidden></div>
             <p class="analysis-placeholder" id="analysis-placeholder"><i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트</p>
@@ -1015,6 +1016,7 @@
               state.selectedDate = btn.dataset.date;
               renderCalendar();
               renderDateSchedule(state.selectedDate);
+              renderAnalysis(state.selectedDate);
             });
           });
         }
@@ -1065,13 +1067,20 @@
           renderUpcoming(today);
         }
 
-        function renderAnalysis() {
-          const items = (state.data?.eventAnalysis || []).filter(Boolean);
+        function renderAnalysis(ymd) {
+          const allItems = (state.data?.eventAnalysis || []).filter(Boolean);
+          const items = ymd ? allItems.filter((i) => i.date === ymd) : allItems;
           const grid = $("analysis-grid");
           const placeholder = $("analysis-placeholder");
+          if ($("analysis-date")) $("analysis-date").textContent = ymd ? fmtDate(ymd) : "—";
           if (!items.length) {
             if (grid) grid.hidden = true;
-            if (placeholder) placeholder.hidden = false;
+            if (placeholder) {
+              placeholder.hidden = false;
+              placeholder.innerHTML = allItems.length
+                ? '<i class="ti ti-calendar-off" aria-hidden="true"></i>이 날짜에 대한 AI 분석이 없습니다'
+                : '<i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트';
+            }
             return;
           }
           if (placeholder) placeholder.hidden = true;
@@ -1301,7 +1310,7 @@
             if (updatedEl) updatedEl.textContent = updated ? `마지막 업데이트: ${updated}` : "마지막 업데이트: —";
             renderCalendar();
             renderDateSchedule(today);
-            renderAnalysis();
+            renderAnalysis(today);
             renderUpcoming(today);
             wireDateNav();
             wireCalendarNav();

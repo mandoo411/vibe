@@ -1073,6 +1073,13 @@ a:hover {
   opacity: 0.55;
 }
 
+/* display:flex/grid를 직접 지정하면 브라우저 기본 [hidden]{display:none}이
+   무력화되어 hidden 처리해도 계속 보이는 문제가 생김 — 명시적으로 복구 */
+#analysis-grid[hidden],
+.analysis-placeholder[hidden] {
+  display: none;
+}
+
 .spin-icon {
   animation: spin 1s linear infinite;
 }

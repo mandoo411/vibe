@@ -13,6 +13,7 @@ import {
 import { fetchEconomicCalendar } from "./investing-calendar.mjs";
 import { collectEarningsCalendar, writeEarningsCalendar } from "./earnings-calendar.mjs";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
+const MANUAL_KR_EARNINGS_PATH = path.resolve("data/kr-earnings-manual.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
 const KR_BLUECHIP = {
   반도체: ["삼성전자", "SK하이닉스", "한미반도체", "HPSP"],
@@ -375,6 +376,20 @@ function mergeKrEarningsSources(...sourceLists) {
   return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// 아직 DART/네이버/KIND 어디에도 실제 공시로 안 잡히는 "예상" 실적 발표일을
+// data/kr-earnings-manual.json에서 읽어온다. 자동 소스가 같은 종목을 찾으면
+// 자동 소스가 우선하고, 못 찾으면 이 수동 항목이 살아남는다.
+async function loadManualKrEarnings(from, to) {
+  try {
+    const raw = await fs.readFile(MANUAL_KR_EARNINGS_PATH, "utf8");
+    const parsed = JSON.parse(raw);
+    const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
+    return entries.filter((e) => e && e.date >= from && e.date <= to);
+  } catch {
+    return [];
+  }
+}
+
 function mergeEconomicResponses(...sources) {
   const byKey = new Map();
   for (const source of sources) {
@@ -629,9 +644,14 @@ async function main() {
 
   // 네이버+KIND 스크레이핑과 DART 결과를 합쳐서 사용 (한쪽에만 있던 실적이
   // 조용히 누락되는 것을 방지 — 삼성전자 7/7 잠정실적 미표시 버그의 원인이었음)
-  const krEarningsMerged = mergeKrEarningsSources(krEarnings, earningsKrFallback);
+  const krEarningsAuto = mergeKrEarningsSources(krEarnings, earningsKrFallback);
+  // 수동 항목은 자동 소스 어디에도 없는 종목일 때만 보충(자동 데이터가 항상 우선)
+  const manualKrEarnings = await loadManualKrEarnings(today, to);
+  const autoCodes = new Set(krEarningsAuto.map((r) => r.code || r.name));
+  const manualToAdd = manualKrEarnings.filter((r) => !autoCodes.has(r.code || r.name));
+  const krEarningsMerged = [...krEarningsAuto, ...manualToAdd].sort((a, b) => a.date.localeCompare(b.date));
   console.log(
-    `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 → 최종 ${krEarningsMerged.length}건`
+    `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 + 수동보충 ${manualToAdd.length}건 → 최종 ${krEarningsMerged.length}건`
   );
 
   let eventAnalysis = [];

@@ -1040,12 +1040,8 @@ async function fetchNaverUpPageJson(market, page) {
   return Array.isArray(json.stocks) ? json.stocks : [];
 }
 
-/** NAVER 상승률 — 코스피·코스닥 합산 TOP100 (UTF-8, ETF/ETN 제외) */
-async function fetchNaverGainersTop100() {
-  const cacheKey = "naver-gainers-json:100:stocks-only";
-  const cached = rankPageCacheGet(cacheKey);
-  if (cached) return cached;
-
+/** NAVER 상승률 — 코스피·코스닥 합산 원본 (ETF/ETN 제외) */
+async function fetchNaverGainersMergedRaw() {
   const [k1, k2, q1, q2] = await Promise.all([
     fetchNaverUpPageJson("KOSPI", 1),
     fetchNaverUpPageJson("KOSPI", 2),
@@ -1057,11 +1053,37 @@ async function fetchNaverGainersTop100() {
     (a, b) =>
       (toNum(b.fluctuationsRatio) ?? -Infinity) - (toNum(a.fluctuationsRatio) ?? -Infinity)
   );
-  const result = merged.slice(0, 100).map((s, i) => {
+  return merged;
+}
+
+function mapNaverGainersMergedRows(merged, limit = 100) {
+  return merged.slice(0, limit).map((s, i) => {
     const row = mapNaverMarketCapRow(s, i + 1);
     const board = sanitizeStr(s.sosok) === "1" ? "KOSDAQ" : "KOSPI";
     return { ...row, tvBoard: board };
   });
+}
+
+/** 실시간 시세 반영 후 상승 종목만 남기고 등락률 내림차순 재정렬 */
+function sanitizeGainersRows(rows) {
+  const positives = (rows || [])
+    .map((r) => finalizeRowQuoteFields(r))
+    .filter((r) => {
+      const p = toNum(r.changePct);
+      return p != null && Number.isFinite(p) && p > 0;
+    })
+    .sort((a, b) => (toNum(b.changePct) ?? 0) - (toNum(a.changePct) ?? 0));
+  return positives.slice(0, 100).map((r, i) => ({ ...r, rank: i + 1 }));
+}
+
+/** NAVER 상승률 — 코스피·코스닥 합산 TOP100 (UTF-8, ETF/ETN 제외) */
+async function fetchNaverGainersTop100() {
+  const cacheKey = "naver-gainers-json:100:stocks-only";
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+
+  const merged = await fetchNaverGainersMergedRaw();
+  const result = mapNaverGainersMergedRows(merged, 100);
   if (result.length < 100) {
     console.warn("[kis-realtime-data][gainers] stocks-only list short", result.length);
   }
@@ -1069,11 +1091,13 @@ async function fetchNaverGainersTop100() {
   return result;
 }
 
-/** 상승률 TOP100 — NAVER 코스피·코스닥 합산 */
+/** 상승률 TOP100 — NAVER 코스피·코스닥 합산 + 실시간 시세 후 상승 종목만 */
 async function fetchGainersAll() {
-  const all = await fetchNaverGainersTop100();
-  const priced = await overlayNaverPriceLive(all.map((r) => finalizeRowQuoteFields(r)));
-  return enrichRowsWithNaverMcap(priced);
+  const merged = await fetchNaverGainersMergedRaw();
+  const candidates = mapNaverGainersMergedRows(merged, 150);
+  const priced = await overlayNaverPriceLive(candidates.map((r) => finalizeRowQuoteFields(r)));
+  const enriched = await enrichRowsWithNaverMcap(priced);
+  return sanitizeGainersRows(enriched);
 }
 
 /** 상승률 TOP100 — 페이지당 25건 */
@@ -1761,7 +1785,7 @@ module.exports = async function handler(req, res) {
       try {
         const pageRaw = req.query && req.query.page;
         if (isRankPageAll(pageRaw)) {
-          const cacheKey = "gainers:nxt-v4:all";
+          const cacheKey = "gainers:nxt-v5:all";
           const cached = rankPageCacheGet(cacheKey);
           if (cached) {
             json(res, 200, { ...cached, cached: true });
@@ -1782,7 +1806,7 @@ module.exports = async function handler(req, res) {
           return;
         }
         const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
-        const cacheKey = `gainers:nxt-v4:${range.page}:${range.pageSize}`;
+        const cacheKey = `gainers:nxt-v5:${range.page}:${range.pageSize}`;
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });

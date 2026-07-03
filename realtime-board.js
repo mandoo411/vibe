@@ -1332,6 +1332,22 @@
       .filter((r) => /^\d{6}$/.test(r.code));
   }
 
+  function toChangePctNum(v) {
+    const n = Number(String(v ?? "").replace(/,/g, ""));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /** 상승률 탭 — 등락률 0 이하 제외 후 내림차순 재정렬 */
+  function sanitizeGainerRows(rows) {
+    return (rows || [])
+      .filter((r) => {
+        const p = toChangePctNum(r.changePct);
+        return p != null && p > 0;
+      })
+      .sort((a, b) => (toChangePctNum(b.changePct) ?? 0) - (toChangePctNum(a.changePct) ?? 0))
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+  }
+
   function getTop100ForTab(tab) {
     return state[top100KeyForTab(tab)];
   }
@@ -1358,7 +1374,8 @@
   }
 
   function setTop100ForTab(tab, stocks) {
-    const rows = normalizeStockRows(tab, stocks);
+    let rows = normalizeStockRows(tab, stocks);
+    if (tab === "gainers") rows = sanitizeGainerRows(rows);
     state[top100KeyForTab(tab)] = rows;
     populatePageCachesFromTop100(tab, rows);
     return rows;
@@ -2877,7 +2894,14 @@
       if (isRankListTab(tab)) {
         try {
           const pack = await fetchStocksAllFromApiForTab(tab);
-          mergeTop100InPlaceForTab(tab, pack.stocks || []);
+          if (tab === "gainers") {
+            if ((pack.stocks || []).length) {
+              setTop100ForTab(tab, pack.stocks);
+              applyTop100Page(tab, currentPageForTab(tab));
+            }
+          } else {
+            mergeTop100InPlaceForTab(tab, pack.stocks || []);
+          }
         } catch (e) {
           console.warn("[realtime-board] refreshPartial stocks merge", e && e.message);
         }

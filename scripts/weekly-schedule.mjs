@@ -359,16 +359,18 @@ function economicRowKey(row) {
   return `${date}|${row.country || ""}|${row.event || ""}`;
 }
 
-// 네이버/KIND 스크레이핑 결과와 DART 기반 결과를 하나로 합침(둘 중 하나만 쓰면
-// 나머지 소스에서만 발견된 실적이 조용히 누락됨 — 예: 삼성전자 7/7 잠정실적).
-// 같은 종목(code, 없으면 name) 기준 date가 더 이른(먼저 확정된) 쪽을 우선한다.
+// 소스 우선순위 병합: 먼저 전달된 sourceLists가 더 신뢰도 높은 소스로 취급되어,
+// 같은 종목(code, 없으면 name)이 여러 소스에 있으면 먼저 등장한 값을 그대로 채택한다.
+// (과거엔 날짜가 더 이른 쪽을 채택했는데, 네이버/KIND HTML 정규식 파싱이 날짜를
+// 잘못 추출해 만들어낸 허위 조기 날짜가 DART 공식 공시보다 항상 이겨버리는 버그가
+// 있었음 -- 기아/현대차 7/1 잠정실적 오표시의 원인. 삼성전자 7/7처럼 한쪽 소스에만
+// 있는 실적이 조용히 누락되는 것은 계속 방지된다.)
 function mergeKrEarningsSources(...sourceLists) {
   const byKey = new Map();
   for (const rows of sourceLists) {
     for (const row of rows || []) {
       const key = `${row.code || row.name}`;
-      const existing = byKey.get(key);
-      if (!existing || row.date < existing.date) {
+      if (!byKey.has(key)) {
         byKey.set(key, row);
       }
     }
@@ -642,9 +644,13 @@ async function main() {
     }
   }
 
-  // 네이버+KIND 스크레이핑과 DART 결과를 합쳐서 사용 (한쪽에만 있던 실적이
-  // 조용히 누락되는 것을 방지 — 삼성전자 7/7 잠정실적 미표시 버그의 원인이었음)
-  const krEarningsAuto = mergeKrEarningsSources(krEarnings, earningsKrFallback);
+  // DART(공식 공시)를 최우선 소스로, 네이버+KIND 스크레이핑은 DART에 없는
+  // 종목만 보충하는 용도로 사용 (한쪽에만 있던 실적이 조용히 누락되는 것을 방지
+  // -- 삼성전자 7/7 잠정실적 미표시 버그의 원인이었음). 네이버/KIND HTML 정규식
+  // 파싱은 날짜 추출 오류(연도 없는 MM.DD를 현재 연도로 강제 매핑)로 실제
+  // 공시가 없는 날짜를 만들어낼 수 있어 DART보다 신뢰도가 낮다 -- 기아/현대차
+  // 7/1 잠정실적 오표시 버그의 원인이었음.
+  const krEarningsAuto = mergeKrEarningsSources(earningsKrFallback, krEarnings);
   // 수동 항목은 자동 소스 어디에도 없는 종목일 때만 보충(자동 데이터가 항상 우선)
   const manualKrEarnings = await loadManualKrEarnings(today, to);
   const autoCodes = new Set(krEarningsAuto.map((r) => r.code || r.name));

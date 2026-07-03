@@ -181,6 +181,24 @@
     };
   }
 
+  /** 등락률 0만 있는 오래된 스냅샷은 즉시 표시하지 않음 (로딩 중 잘못된 시세 노출 방지) */
+  function isUsableStaticPack(pack) {
+    if (!pack || !(pack.stocks || []).length) return false;
+    const updatedAt = pack.updatedAt ? new Date(pack.updatedAt).getTime() : NaN;
+    const ageMs = Number.isFinite(updatedAt) ? Date.now() - updatedAt : Infinity;
+    if (ageMs > 20 * 60 * 1000) return false;
+    const hasNonZeroChange = pack.stocks.some((r) => {
+      const p = Number(String(r.changePct ?? "").replace(/,/g, ""));
+      return Number.isFinite(p) && p !== 0;
+    });
+    if (!hasNonZeroChange && ageMs > 3 * 60 * 1000) return false;
+    return true;
+  }
+
+  function apiActionForTab(tab) {
+    return tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+  }
+
   async function fetchStaticTabPack(tab) {
     const all = await (krAllWarmPromise || loadKrAll().catch(() => null));
     return all ? packFromKrTab(tab, all) : null;
@@ -188,23 +206,40 @@
 
   /**
    * 정적 JSON 즉시 표시(stale-while-revalidate) + API 최신화.
-   * onInstant — 첫 데이터(정적) 도착 시 1회 호출.
+   * onInstant — 첫 데이터(정적 또는 page1) 도착 시 호출.
    */
   async function fetchStocksProgressiveForTab(tab, onInstant) {
-    let instantDone = false;
-    const fireInstant = (pack) => {
-      if (instantDone || !pack || !(pack.stocks || []).length) return;
-      instantDone = true;
+    let instantQuality = 0;
+    const fireInstant = (pack, quality = 1) => {
+      if (!pack || !(pack.stocks || []).length) return;
+      if (quality < instantQuality) return;
+      instantQuality = quality;
       if (typeof onInstant === "function") onInstant(pack);
     };
 
     const staticP = fetchStaticTabPack(tab);
-    staticP.then((pack) => fireInstant(pack));
+    staticP.then((pack) => {
+      if (isUsableStaticPack(pack)) fireInstant(pack, 1);
+    });
+
+    const action = apiActionForTab(tab);
+    const page1P = fetchJson(action, Math.min(FETCH_TIMEOUT_MS, 8000), { page: 1, pageSize: 25 })
+      .then((pack) => ({
+        ...pack,
+        stocks: normalizeStockRows(tab, pack.stocks),
+        cached: !!pack.cached,
+      }))
+      .catch(() => null);
+    page1P.then((pack) => {
+      if (pack && pack.stocks && pack.stocks.length) fireInstant(pack, 2);
+    });
 
     try {
-      return await fetchStocksAllFromApiForTab(tab);
+      const full = await fetchStocksAllFromApiForTab(tab);
+      if (full && full.stocks && full.stocks.length) fireInstant(full, 3);
+      return full;
     } catch (e) {
-      const fallback = await staticP;
+      const fallback = (await page1P) || (await staticP);
       if (fallback && fallback.stocks && fallback.stocks.length) return fallback;
       throw e;
     }
@@ -1556,7 +1591,7 @@
   }
 
   async function fetchStocksAllFromApiForTab(tab) {
-    const action = tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+    const action = apiActionForTab(tab);
     const pack = await fetchJson(action, FETCH_TIMEOUT_MS, { page: "all" });
     return {
       ...pack,

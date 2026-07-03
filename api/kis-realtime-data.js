@@ -911,23 +911,43 @@ function quoteOverlayNeeded(row) {
   return /^\d{6}$/.test(code);
 }
 
-/** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 */
-async function overlayNaverPriceLive(rows) {
+/** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 (청크 단위) */
+async function overlayNaverPriceLive(rows, { limit } = {}) {
   if (!rows || !rows.length) return [];
-  return Promise.all(
-    rows.map(async (r) => {
-      const base = finalizeRowQuoteFields(r);
-      if (!quoteOverlayNeeded(base)) return base;
-      const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-      if (!/^\d{6}$/.test(code)) return base;
-      try {
-        return await rowWithNxtIntegratedVolume(code, base, null);
-      } catch (e) {
-        console.warn("[kis-realtime-data] naver price overlay", code, e && e.message);
-        return base;
-      }
-    })
-  );
+  const needOverlay = [];
+  const skip = [];
+  for (const r of rows) {
+    const base = finalizeRowQuoteFields(r);
+    if (!quoteOverlayNeeded(base)) {
+      skip.push(base);
+      continue;
+    }
+    const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+    if (!/^\d{6}$/.test(code)) {
+      skip.push(base);
+      continue;
+    }
+    needOverlay.push({ code, base });
+  }
+  const capped = limit ? needOverlay.slice(0, limit) : needOverlay;
+  const rest = limit ? needOverlay.slice(limit) : [];
+  const overlaid = [];
+  for (let i = 0; i < capped.length; i += NAVER_PRICE_OVERLAY_CONCURRENCY) {
+    const chunk = capped.slice(i, i + NAVER_PRICE_OVERLAY_CONCURRENCY);
+    const part = await Promise.all(
+      chunk.map(async ({ code, base }) => {
+        try {
+          return await rowWithNxtIntegratedVolume(code, base, null);
+        } catch (e) {
+          console.warn("[kis-realtime-data] naver price overlay", code, e && e.message);
+          return base;
+        }
+      })
+    );
+    overlaid.push(...part);
+  }
+  const tail = rest.map(({ base }) => base);
+  return [...overlaid, ...tail, ...skip];
 }
 
 /** KIS TOP30 시세로 NAVER 순위 목록 상위 종목 실시간 필드 보강 */
@@ -956,11 +976,11 @@ async function overlayKisMarketCapLive(rows) {
   }
 }
 
-/** 시가총액 TOP100 — NAVER 1~100위 + KIS TOP30 시세 보강 */
+/** 시가총액 TOP100 — NAVER 리스트 + KIS TOP30 시세 (NXT /price 100회 호출 생략) */
 async function fetchMarketCapAll() {
   let all = await fetchNaverMarketCapTop100();
   all = await overlayKisMarketCapLive(all);
-  return overlayNaverPriceLive(all);
+  return all.map((r) => finalizeRowQuoteFields(r));
 }
 
 /** 시가총액 TOP100 — 페이지당 25건 */
@@ -1091,12 +1111,11 @@ async function fetchNaverGainersTop100() {
   return result;
 }
 
-/** 상승률 TOP100 — NAVER 코스피·코스닥 합산 + 실시간 시세 후 상승 종목만 */
+/** 상승률 TOP100 — NAVER 리스트 시세 + 상승 종목만 (NXT /price 대량 호출 생략) */
 async function fetchGainersAll() {
   const merged = await fetchNaverGainersMergedRaw();
   const candidates = mapNaverGainersMergedRows(merged, 150);
-  const priced = await overlayNaverPriceLive(candidates.map((r) => finalizeRowQuoteFields(r)));
-  const enriched = await enrichRowsWithNaverMcap(priced);
+  const enriched = await enrichRowsWithNaverMcap(candidates.map((r) => finalizeRowQuoteFields(r)));
   return sanitizeGainersRows(enriched);
 }
 
@@ -1739,7 +1758,7 @@ module.exports = async function handler(req, res) {
     if (action === "market-cap") {
       const pageRaw = req.query && req.query.page;
       if (isRankPageAll(pageRaw)) {
-        const cacheKey = "market-cap:nxt-v3:all";
+        const cacheKey = "market-cap:nxt-v4:all";
         const cached = rankPageCacheGet(cacheKey);
         if (cached) {
           json(res, 200, { ...cached, cached: true });
@@ -1760,7 +1779,7 @@ module.exports = async function handler(req, res) {
         return;
       }
       const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
-      const cacheKey = `market-cap:nxt-v3:${range.page}:${range.pageSize}`;
+      const cacheKey = `market-cap:nxt-v4:${range.page}:${range.pageSize}`;
       const cached = rankPageCacheGet(cacheKey);
       if (cached) {
         json(res, 200, { ...cached, cached: true });

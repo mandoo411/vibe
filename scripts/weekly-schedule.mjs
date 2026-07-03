@@ -358,6 +358,23 @@ function economicRowKey(row) {
   return `${date}|${row.country || ""}|${row.event || ""}`;
 }
 
+// 네이버/KIND 스크레이핑 결과와 DART 기반 결과를 하나로 합침(둘 중 하나만 쓰면
+// 나머지 소스에서만 발견된 실적이 조용히 누락됨 — 예: 삼성전자 7/7 잠정실적).
+// 같은 종목(code, 없으면 name) 기준 date가 더 이른(먼저 확정된) 쪽을 우선한다.
+function mergeKrEarningsSources(...sourceLists) {
+  const byKey = new Map();
+  for (const rows of sourceLists) {
+    for (const row of rows || []) {
+      const key = `${row.code || row.name}`;
+      const existing = byKey.get(key);
+      if (!existing || row.date < existing.date) {
+        byKey.set(key, row);
+      }
+    }
+  }
+  return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 function mergeEconomicResponses(...sources) {
   const byKey = new Map();
   for (const source of sources) {
@@ -610,10 +627,16 @@ async function main() {
     }
   }
 
+  // 네이버+KIND 스크레이핑과 DART 결과를 합쳐서 사용 (한쪽에만 있던 실적이
+  // 조용히 누락되는 것을 방지 — 삼성전자 7/7 잠정실적 미표시 버그의 원인이었음)
+  const krEarningsMerged = mergeKrEarningsSources(krEarnings, earningsKrFallback);
+  console.log(
+    `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 → 최종 ${krEarningsMerged.length}건`
+  );
+
   let eventAnalysis = [];
   try {
-    const krEarningsForAnalysis = krEarnings.length > 0 ? krEarnings : earningsKrFallback;
-    eventAnalysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings: krEarningsForAnalysis });
+    eventAnalysis = await analyzeWithClaude({ economicCalendar, krIPO, krEarnings: krEarningsMerged });
     console.log(`일정 분석 ${eventAnalysis.length}건 생성`);
   } catch (error) {
     console.log(`❌ Claude 분석 실패: ${error instanceof Error ? error.message : error}`);
@@ -630,7 +653,7 @@ async function main() {
     },
     economicCalendar,
     krIPO,
-    krEarnings: krEarnings.length > 0 ? krEarnings : earningsKrFallback,
+    krEarnings: krEarningsMerged,
     eventAnalysis,
   };
 

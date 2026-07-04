@@ -1,25 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-04 07:02 KST",
-    "from": "2026-07-04",
-    "to": "2026-07-18",
-    "historyFrom": "2026-04-05",
+    "lastUpdatedKst": "2026-07-05 06:56 KST",
+    "from": "2026-07-05",
+    "to": "2026-07-19",
+    "historyFrom": "2026-04-06",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-04-05",
-      "event": "OPEC Meeting",
-      "country": "US",
-      "time": "19:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-04-06",
       "event": "ISM Non-Manufacturing Employment",
@@ -197,6 +185,30 @@
       "importance": 3,
       "actual": "0.024M",
       "previous": "0.520M",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-09",
+      "event": "10-Year Note Auction",
+      "country": "US",
+      "time": "02:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "4.282%",
+      "previous": "4.217%",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-04-09",
+      "event": "FOMC Member Daly Speaks",
+      "country": "US",
+      "time": "02:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
       "estimate": "",
       "unit": ""
     },
@@ -705,18 +717,6 @@
       "unit": ""
     },
     {
-      "date": "2026-05-31",
-      "event": "Fed Waller Speaks",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
       "date": "2026-06-01",
       "event": "Fed Chair Powell Speaks",
       "country": "US",
@@ -1002,6 +1002,18 @@
       "actual": "",
       "previous": "",
       "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-30",
+      "event": "S&P/CS HPI Composite - 20 n.s.a. (YoY)",
+      "country": "US",
+      "time": "22:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "1.1%",
+      "previous": "0.9%",
+      "estimate": "0.9%",
       "unit": ""
     },
     {

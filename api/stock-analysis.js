@@ -1,10 +1,14 @@
 /**
- * AI 종목분석 API (KIS 개별종목 현재가 + Claude 분석)
+ * AI 종목분석 API (KIS 개별종목 현재가 + Claude/OpenAI 분석)
  * GET /api/stock-analysis?q=삼성전자
  *
  * Required env:
  * - KIS_ACCESS_TOKEN, KIS_APP_KEY, KIS_APP_SECRET
- * - ANTHROPIC_API_KEY (optional: ANTHROPIC_MODEL)
+ * - ANTHROPIC_API_KEY (optional: ANTHROPIC_MODEL) - 1순위 분석 엔진
+ * - OPENAI_API_KEY (optional: OPENAI_MODEL, 기본 gpt-5.4-mini) - Claude 실패/토큰부족 시 자동 폴백
+ *
+ * 2026-07-07 패치: Claude 호출이 실패하면(토큰 소진 등) 자동으로 OpenAI로 폴백한다.
+ * 또한 재료분석 품질을 높이기 위해 구글 뉴스 RSS(무료)로 최신 헤드라인을 수집해 분석 입력에 추가한다.
  */
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
@@ -285,6 +289,66 @@ function requireAnthropicKey() {
     throw err;
   }
   return k;
+}
+
+function requireOpenAIKey() {
+  const k = sanitizeStr(process.env.OPENAI_API_KEY);
+  if (!k) {
+    const err = new Error("Missing OPENAI_API_KEY");
+    err.statusCode = 503;
+    throw err;
+  }
+  return k;
+}
+
+/** 구글 뉴스 RSS로 최신 헤드라인 수집 (무료, 실패해도 빈 배열 반환해서 전체 파이프라인 보호) */
+async function fetchStockNews(query, maxItems = 5) {
+  try {
+    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`RSS HTTP ${res.status}`);
+    const xml = await res.text();
+
+    const items = [];
+    const seen = new Set();
+    const itemRe = /<item>([\s\S]*?)<\/item>/g;
+    let m;
+    while ((m = itemRe.exec(xml)) && items.length < maxItems) {
+      const block = m[1];
+      const titleRaw = (block.match(/<title>([\s\S]*?)<\/title>/) || [, ""])[1];
+      const sourceRaw = (block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [, ""])[1];
+      const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [, ""])[1];
+
+      const decode = (s) =>
+        String(s || "")
+          .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/, "$1")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .trim();
+
+      const source = decode(sourceRaw);
+      let title = decode(titleRaw);
+      if (source && title.endsWith(source)) {
+        title = title.slice(0, title.length - source.length).replace(/[\s\-–—]+$/, "");
+      }
+      if (!title || seen.has(title)) continue;
+      seen.add(title);
+      items.push({ title, source: source || "출처미상", published: decode(pubDate) });
+    }
+    return items;
+  } catch (e) {
+    console.warn("[stock-analysis] news fetch failed", e && e.message);
+    return [];
+  }
 }
 
 function kisBaseUrl() {
@@ -1130,6 +1194,52 @@ async function claudeAnalyze(input) {
   return normalizeAnalysis(parsed, input);
 }
 
+/** Claude 실패 시(토큰 소진 등) 자동 폴백되는 OpenAI 분석 경로. 프롬프트/응답스키마는 Claude와 동일하게 맞춰서
+ * normalizeAnalysis()를 그대로 재사용할 수 있게 했다 (프론트엔드가 기대하는 응답 형태는 100% 동일). */
+async function openaiAnalyze(input) {
+  const apiKey = requireOpenAIKey();
+  const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+
+  const user = [
+    "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
+    "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
+    "",
+    CLAUDE_RESPONSE_SCHEMA,
+    "",
+    "입력 데이터:",
+    JSON.stringify(input),
+  ].join("\n");
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.25,
+      messages: [
+        { role: "system", content: CLAUDE_SYSTEM_PROMPT },
+        { role: "user", content: user },
+      ],
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    const err = new Error(`OpenAI HTTP ${res.status}: ${errText.slice(0, 300)}`);
+    err.statusCode = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  const text = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+  const parsed = safeParseJsonOnly(text);
+  return normalizeAnalysis(parsed, input);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
@@ -1188,33 +1298,42 @@ module.exports = async function handler(req, res) {
 
   let analysis = null;
   if (!quoteOnly) {
+    const news = await fetchStockNews(resolved.stockName, 5);
+    const analysisInput = {
+      stockName: resolved.stockName,
+      stockCode: resolved.stockCode,
+      market: quote.market || "",
+      currentPrice: quote.currentPrice,
+      change: quote.change,
+      changeRate: quote.changeRate,
+      volume: quote.volume,
+      volTurnoverRate: quote.volTurnoverRate,
+      open: quote.open,
+      high: quote.high,
+      low: quote.low,
+      prevClose: quote.prevClose,
+      high52w: quote.high52w,
+      low52w: quote.low52w,
+      creditRate: quote.creditRate,
+      creditLoanBalance: quote.creditLoanBalance,
+      creditLoanRmndRate: quote.creditLoanRmndRate,
+      marketCap: quote.marketCap,
+      per: quote.per,
+      financials: quote.financials,
+      supply: supplyNormalized,
+      recentNews: news, // 구글뉴스 RSS 헤드라인 (무료) - story/events 근거로 활용
+    };
+
     try {
-      analysis = await claudeAnalyze({
-        stockName: resolved.stockName,
-        stockCode: resolved.stockCode,
-        market: quote.market || "",
-        currentPrice: quote.currentPrice,
-        change: quote.change,
-        changeRate: quote.changeRate,
-        volume: quote.volume,
-        volTurnoverRate: quote.volTurnoverRate,
-        open: quote.open,
-        high: quote.high,
-        low: quote.low,
-        prevClose: quote.prevClose,
-        high52w: quote.high52w,
-        low52w: quote.low52w,
-        creditRate: quote.creditRate,
-        creditLoanBalance: quote.creditLoanBalance,
-        creditLoanRmndRate: quote.creditLoanRmndRate,
-        marketCap: quote.marketCap,
-        per: quote.per,
-        financials: quote.financials,
-        supply: supplyNormalized,
-      });
+      analysis = await claudeAnalyze(analysisInput);
     } catch (e) {
-      console.error("[stock-analysis] Claude error", e && e.message, e);
-      analysis = normalizeAnalysis(null, quote);
+      console.error("[stock-analysis] Claude error (OpenAI로 폴백 시도)", e && e.message, e);
+      try {
+        analysis = await openaiAnalyze(analysisInput);
+      } catch (e2) {
+        console.error("[stock-analysis] OpenAI 폴백도 실패", e2 && e2.message, e2);
+        analysis = normalizeAnalysis(null, quote);
+      }
     }
   }
 

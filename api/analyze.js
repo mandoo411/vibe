@@ -1105,38 +1105,32 @@ async function claudeAnalyze(quote, stockName, indicators) {
   throw err;
 }
 
-/** Claude(웹서치 포함) 실패 시(토큰 소진 등) 자동 폴백되는 OpenAI 분석 경로.
- * Anthropic 내장 web_search가 없으므로 구글 뉴스 RSS(무료) 헤드라인을 근거로 넣어준다.
- * 응답 스키마는 CLAUDE_RESPONSE_SCHEMA(레거시 포맷)와 동일하게 맞춰서
- * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
-async function openaiAnalyze(quote, stockName, indicators, today) {
-  const apiKey = requireOpenAIKey();
-  const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+/** OpenAI Responses API + web_search 툴을 사용하는 실시간 검색 기반 분석 경로.
+ * Claude와 마찬가지로 실제 웹검색을 수행해서, 이미 지난 사건(예: 실적발표 완료)을
+ * "예정"으로 잘못 서술하는 것을 방지한다. 모델/툴 조합이 지원되지 않거나 실패하면
+ * 예외를 던져서 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. */
+async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model) {
   const name = stockName || quote.stockName || quote.stockCode;
-
-  const news = await fetchStockNews(name, 6);
-  const newsBlock = news.length
-    ? "\n\n최신 뉴스 헤드라인(구글뉴스, 참고용):\n" +
-      news.map((n) => `- ${n.title} (${n.source})`).join("\n")
-    : "\n\n(최신 뉴스 헤드라인을 가져오지 못했습니다. 제공된 시세/지표만으로 판단하세요.)";
-
   const ind = indicators && typeof indicators === "object" ? indicators : {};
+
   const system =
     "당신은 한국 주식 전문 애널리스트입니다.\n" +
-    "제공된 데이터를 기반으로 분석하되\n" +
+    "web_search 도구로 반드시 이 종목의 최신 뉴스를 검색해서, 확인된 사실만 근거로 답하세요.\n" +
+    "특히 실적발표·이벤트·재료는 검색 결과로 '이미 발표/발생했는지'를 반드시 먼저 확인하고,\n" +
+    "이미 끝난 일을 절대 '예정'이나 '기대'로 서술하지 마세요 (예: 실적발표가 이미 나왔다면 그 결과를 반영하고,\n" +
+    "다음 분기 실적발표만 새로운 다가오는 이벤트로 표기).\n" +
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
-    "반드시 JSON 형식으로만 응답하고\n" +
-    "다른 텍스트는 절대 포함하지 마세요.";
+    "최종 답변은 반드시 JSON 형식으로만 응답하고 다른 텍스트(설명, 코드블록 등)는 절대 포함하지 마세요.";
 
   const user = [
     `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
-    "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
+    "web_search로 이 종목의 최신 뉴스·공시·실적발표 여부를 반드시 검색해서 확인한 뒤 답하세요.",
+    "검색 없이 학습된 과거 지식만으로 답하지 마세요. 아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
     "",
     `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
-- 오늘은 ${today}이다. 이 날짜 이후(오늘 포함)에 아직 일어나지 않은 일정만 포함할 것.
-- 이미 지나간 날짜, 이미 벌어진 사건('했다/밝혔다/기록했다/하락했다' 등 과거형 서술)은 절대 이벤트로 넣지 말 것.
-- 뉴스 헤드라인은 사건 발생 시점을 참고하는 용도로만 쓰고, 과거 사건 자체를 이벤트로 재작성하지 말 것.
+- 오늘은 ${today}이다. 검색 결과로 확인한, 이 날짜 이후(오늘 포함)에 아직 일어나지 않은 일정만 포함할 것.
+- 검색 결과 이미 발표/발생한 것으로 확인되면(실적발표 포함) 그 사건은 이벤트에 넣지 말고 story/supply/materials에 결과로 반영할 것.
 - 정확한 날짜를 모르면 '2026-07-15' 같은 구체적 날짜 대신 '2026년 하반기 예정'처럼 모호하게 표기.`,
     "",
     `opinion.scenarios 작성 규칙 — 반드시 준수:
@@ -1146,7 +1140,6 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
     "",
     CLAUDE_RESPONSE_SCHEMA,
-    newsBlock,
     "",
     "입력 데이터:",
     JSON.stringify({
@@ -1176,7 +1169,7 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
     }),
   ].join("\n");
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -1184,25 +1177,143 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.25,
-      messages: [
+      tools: [{ type: "web_search", search_context_size: "medium" }],
+      input: [
         { role: "system", content: system },
         { role: "user", content: user },
       ],
     }),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(45000),
   });
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    const err = new Error(`OpenAI HTTP ${res.status}: ${errText.slice(0, 300)}`);
+    const err = new Error(`OpenAI Responses HTTP ${res.status}: ${errText.slice(0, 300)}`);
     err.statusCode = res.status;
     throw err;
   }
 
   const data = await res.json();
-  const text =
-    (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+  const outputs = Array.isArray(data && data.output) ? data.output : [];
+  const msgItem = outputs.find((o) => o && o.type === "message");
+  const contentArr = msgItem && Array.isArray(msgItem.content) ? msgItem.content : [];
+  const textBlock = contentArr.find((c) => c && (c.type === "output_text" || c.type === "text"));
+  const text = (textBlock && textBlock.text) || sanitizeStr(data && data.output_text) || "";
+  if (!text) throw new Error("OpenAI web_search 응답에 텍스트가 없습니다");
+  return text;
+}
+
+/** Claude(웹서치 포함) 실패 시(토큰 소진 등) 자동 폴백되는 OpenAI 분석 경로.
+ * 1순위: Responses API + web_search 툴로 실시간 검색 기반 분석 (실적발표 등 이미 지난
+ * 사건을 "예정"으로 잘못 쓰는 것을 방지). 실패하면(모델/툴 미지원 등) 구글 뉴스
+ * RSS(무료) 헤드라인 기반 경로로 자동 폴백한다.
+ * 응답 스키마는 CLAUDE_RESPONSE_SCHEMA(레거시 포맷)와 동일하게 맞춰서
+ * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
+async function openaiAnalyze(quote, stockName, indicators, today) {
+  const apiKey = requireOpenAIKey();
+  const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+  const name = stockName || quote.stockName || quote.stockCode;
+
+  let text = null;
+  try {
+    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model);
+    console.log("[analyze] OpenAI web_search 경로 사용");
+  } catch (e) {
+    console.warn("[analyze] OpenAI web_search 실패 — RSS 폴백으로 전환", e && e.message);
+  }
+
+  if (!text) {
+    const news = await fetchStockNews(name, 6);
+    const newsBlock = news.length
+      ? "\n\n최신 뉴스 헤드라인(구글뉴스, 참고용):\n" +
+        news.map((n) => `- ${n.title} (${n.source})`).join("\n")
+      : "\n\n(최신 뉴스 헤드라인을 가져오지 못했습니다. 제공된 시세/지표만으로 판단하세요.)";
+
+    const ind = indicators && typeof indicators === "object" ? indicators : {};
+    const system =
+      "당신은 한국 주식 전문 애널리스트입니다.\n" +
+      "제공된 데이터를 기반으로 분석하되\n" +
+      "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
+      "반드시 JSON 형식으로만 응답하고\n" +
+      "다른 텍스트는 절대 포함하지 마세요.";
+
+    const user = [
+      `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
+      "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
+      "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
+      "",
+      `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
+- 오늘은 ${today}이다. 이 날짜 이후(오늘 포함)에 아직 일어나지 않은 일정만 포함할 것.
+- 이미 지나간 날짜, 이미 벌어진 사건('했다/밝혔다/기록했다/하락했다' 등 과거형 서술)은 절대 이벤트로 넣지 말 것.
+- 뉴스 헤드라인은 사건 발생 시점을 참고하는 용도로만 쓰고, 과거 사건 자체를 이벤트로 재작성하지 말 것.
+- 정확한 날짜를 모르면 '2026-07-15' 같은 구체적 날짜 대신 '2026년 하반기 예정'처럼 모호하게 표기.`,
+      "",
+      `opinion.scenarios 작성 규칙 — 반드시 준수:
+- A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
+- B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
+- C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
+- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
+      "",
+      CLAUDE_RESPONSE_SCHEMA,
+      newsBlock,
+      "",
+      "입력 데이터:",
+      JSON.stringify({
+        stockName: name,
+        stockCode: quote.stockCode,
+        market: quote.market,
+        currentPrice: quote.currentPrice,
+        changeAmt: quote.changeAmt,
+        changeRate: quote.changeRate,
+        volume: quote.volume,
+        open: quote.open,
+        high: quote.high,
+        low: quote.low,
+        prevClose: quote.prevClose,
+        high52w: quote.high52w,
+        low52w: quote.low52w,
+        creditRate: quote.creditRate,
+        per: quote.per,
+        pbr: quote.pbr,
+        foreignNetBuy: quote.foreignNetBuy,
+        institutionNetBuy: quote.institutionNetBuy,
+        ma20: toNum(ind.ma20),
+        ma60: toNum(ind.ma60),
+        ma120: toNum(ind.ma120),
+        ma200: toNum(ind.ma200),
+        rsi14: toNum(ind.rsi14),
+      }),
+    ].join("\n");
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.25,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      const err = new Error(`OpenAI HTTP ${res.status}: ${errText.slice(0, 300)}`);
+      err.statusCode = res.status;
+      throw err;
+    }
+
+    const data = await res.json();
+    text =
+      (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+  }
+
   const parsed = safeParseJSON(text);
   if (parsed == null) throw new Error("OpenAI returned non-JSON");
   const normalized = normalizeAnalysis(parsed, quote);

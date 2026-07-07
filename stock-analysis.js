@@ -952,11 +952,15 @@
     const prob = toNum(s.probability);
     const probText = prob == null ? "—" : `${Math.round(prob)}%`;
     const isBear = String(s.label) === "C" || String(s.type).includes("약");
+    // 2026-07-07: 약세(C) 시나리오도 A/B와 동일하게 진입가/목표가/손절가를 보여주고,
+    // 대응전략은 참고용 코멘트로 추가 표시한다 (전에는 C만 가격이 아예 안 보였음).
     const lines = [
       ["조건", s.condition],
-      isBear ? ["대응전략", s.strategy] : ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
-      isBear ? ["목표 하단", s.targetLow != null ? `${fmtPrice(s.targetLow)}원` : null] : ["목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
-      isBear ? null : ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
+      ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
+      ["목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
+      ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
+      isBear && s.targetLow != null ? ["목표 하단", `${fmtPrice(s.targetLow)}원`] : null,
+      isBear ? ["대응전략", s.strategy] : null,
     ]
       .filter(Boolean)
       .filter(([, v]) => v)

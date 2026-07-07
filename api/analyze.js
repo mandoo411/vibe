@@ -91,6 +91,7 @@ const STOCK_ANALYSIS_TOOL = {
           target: { type: "number" },
           scenarioA: {
             type: "object",
+            required: ["condition", "entry", "target", "stopLoss", "probability"],
             properties: {
               condition: { type: "string" },
               entry: { type: "number" },
@@ -101,6 +102,7 @@ const STOCK_ANALYSIS_TOOL = {
           },
           scenarioB: {
             type: "object",
+            required: ["condition", "entry", "target", "stopLoss", "probability"],
             properties: {
               condition: { type: "string" },
               entry: { type: "number" },
@@ -111,8 +113,11 @@ const STOCK_ANALYSIS_TOOL = {
           },
           scenarioC: {
             type: "object",
+            required: ["condition", "entry", "stopLoss", "strategy", "downTarget", "probability"],
             properties: {
               condition: { type: "string" },
+              entry: { type: "number" },
+              stopLoss: { type: "number" },
               strategy: { type: "string" },
               downTarget: { type: "number" },
               probability: { type: "number" },
@@ -237,12 +242,16 @@ function buildSystemPrompt(today) {
     entryPrice = 현재가 ± 1~2%
     stopLoss = entryPrice 기준 -3~5%
     target = entryPrice 기준 +10~20%
+  · scenarioA/B/C 전부 entry(진입가)와 stopLoss(손절가)를 반드시 숫자로 채울 것 (0 금지, 절대 비워두지 말 것):
+    - scenarioA(강세).entry/target/stopLoss: entryPrice 근방에서 강세 시나리오에 맞게 계산
+    - scenarioB(중립).entry/target/stopLoss: 현재가 근방 진입, target=entry+5~8%, stopLoss=entry-3~5%
+    - scenarioC(약세).entry/stopLoss: 이탈 후 반등을 노리는 재진입가 개념으로, entry=downTarget 근방, stopLoss=entry-3% 근방 (target은 downTarget으로 대체)
   · scenarioA/B/C: probability 합계 반드시 100
   · aiComment: 반드시 3문장 이상
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
 - 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률%
-- 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률%
-- 시나리오 C (약세): 조건 / 대응전략 / 목표 하단 / 확률%
+- 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% (entry/target/stopLoss 절대 0으로 두지 말 것)
+- 시나리오 C (약세): 조건 / 진입가 / 대응전략 / 목표 하단 / 손절가 / 확률% (entry/stopLoss도 반드시 채울 것)
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
@@ -307,6 +316,8 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "label": "C",
         "type": "약세",
         "condition": "발동 조건",
+        "entry": 0,
+        "stop": 0,
         "strategy": "대응 전략",
         "targetLow": 0,
         "probability": 25
@@ -477,14 +488,37 @@ function marketLabelFromRow(row) {
   return hint || "";
 }
 
+/** 외국인/기관 순매수 수량 조회 (당일 데이터는 장 종료 후 제공되는 KIS 특성상,
+ * 장중에는 최근 영업일 값이 나올 수 있음). 실패해도 전체 응답을 막지 않도록
+ * null/null을 반환하고 조용히 넘어간다 — inquire-price 응답에는 이 필드가 없어서
+ * 별도 엔드포인트(inquire-investor)를 호출해야 한다. */
+async function fetchKisInvestorFlow(code6) {
+  try {
+    const res = await kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-investor", "FHKST01010900", {
+      FID_COND_MRKT_DIV_CODE: "J",
+      FID_INPUT_ISCD: code6,
+    });
+    const rows = Array.isArray(res && res.output) ? res.output : [];
+    const latest = rows[0] || {};
+    return {
+      foreignNetBuy: toNum(latest.frgn_ntby_qty),
+      institutionNetBuy: toNum(latest.orgn_ntby_qty),
+    };
+  } catch (e) {
+    console.warn("[analyze] investor flow fetch failed", code6, e && e.message);
+    return { foreignNetBuy: null, institutionNetBuy: null };
+  }
+}
+
 async function fetchKisQuote(code6) {
   const commonParams = {
     FID_COND_MRKT_DIV_CODE: "J",
     FID_INPUT_ISCD: code6,
   };
-  const [p1, p2] = await Promise.all([
+  const [p1, p2, investorFlow] = await Promise.all([
     kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-price", "FHKST01010100", commonParams),
     kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-price-2", "FHPST01010000", commonParams),
+    fetchKisInvestorFlow(code6),
   ]);
 
   const o1 = (p1 && p1.output) || {};
@@ -500,8 +534,10 @@ async function fetchKisQuote(code6) {
   const low = toNum(o2.stck_lwpr) ?? toNum(o1.stck_lwpr);
   const prevVolume = toNum(o2.prdy_vol);
   const creditRate = toNum(o2.crdt_rate);
-  const foreignNetBuy = toNum(o1.frgn_ntby_qty ?? o1.frgn_ntby_vol);
-  const institutionNetBuy = toNum(o1.orgn_ntby_qty ?? o1.orgn_ntby_vol);
+  // inquire-price(FHKST01010100) 응답에는 외국인/기관 순매수 필드가 없다.
+  // 별도로 inquire-investor(FHKST01010900)를 호출해 가져온 값을 사용한다.
+  const foreignNetBuy = investorFlow.foreignNetBuy;
+  const institutionNetBuy = investorFlow.institutionNetBuy;
 
   return {
     stockCode: code6,
@@ -634,6 +670,55 @@ function resolveOpinionPrices(entryRaw, stopRaw, targetRaw, currentPrice) {
     entry: entry ?? (cp > 0 ? cp : 0),
     stop: stop ?? 0,
     target: target ?? 0,
+  };
+}
+
+/** 시나리오(A/B/C)별 진입가/목표가/손절가 기본값 보정.
+ * AI가 스키마 예시값(0)을 그대로 남기거나 필드를 비워둔 경우를 대비한 안전망.
+ * - 강세(A): 전체 의견 entry/target/stop을 우선 사용, 없으면 현재가 기준 계산.
+ * - 중립(B): 현재가 근방 진입, target=entry+5~8%, stop=entry-3~5%.
+ * - 약세(C): targetLow(하방 목표) 근방을 재진입 고려가로 보고, stop은 그보다 살짝 낮게.
+ * AI가 이미 유효한 값(0 초과)을 준 경우는 그 값을 그대로 존중하고 건드리지 않는다. */
+function resolveScenarioPrices(s, price, opinionPrices) {
+  const isBull = s.label === "A" || String(s.type).includes("강");
+  const isBear = s.label === "C" || String(s.type).includes("약");
+  const cp = toNum(price) || 0;
+
+  let entry = toNum(s.entry);
+  if (!entry || entry <= 0) {
+    if (isBull) entry = opinionPrices && opinionPrices.entry > 0 ? opinionPrices.entry : cp || null;
+    else if (isBear) {
+      const low = toNum(s.targetLow);
+      entry = low && low > 0 ? Math.round(low * 1.02) : cp > 0 ? Math.round(cp * 0.95) : null;
+    } else {
+      entry = cp > 0 ? cp : null;
+    }
+  }
+
+  let stop = toNum(s.stop);
+  if ((!stop || stop <= 0) && entry) {
+    stop = isBear
+      ? Math.round(entry * 0.97)
+      : Math.round(entry * (isBull ? 0.95 : 0.96));
+  }
+
+  let target = toNum(s.target);
+  if ((!target || target <= 0) && entry) {
+    target = isBear
+      ? Math.round(entry * 1.08)
+      : Math.round(entry * (isBull ? 1.15 : 1.06));
+  }
+
+  let targetLow = toNum(s.targetLow);
+  if (isBear && (!targetLow || targetLow <= 0) && entry) {
+    targetLow = Math.round(entry * 0.93);
+  }
+
+  return {
+    entry: entry ?? 0,
+    stop: stop ?? 0,
+    target: target ?? 0,
+    targetLow: targetLow ?? (s.targetLow ?? null),
   };
 }
 
@@ -825,6 +910,8 @@ function normalizeAnalysis(raw, quote) {
 
   const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
 
+  const prices = resolveOpinionPrices(opinion.entry, opinion.stop, opinion.target, price);
+
   const scenarios = Array.isArray(opinion.scenarios)
     ? opinion.scenarios
         .filter((s) => s && typeof s === "object")
@@ -840,9 +927,12 @@ function normalizeAnalysis(raw, quote) {
           probability: toNum(s.probability),
         }))
         .filter((s) => s.condition || s.strategy)
+        // AI가 스키마 예시값(0)을 그대로 남겨서 entry/target/stop이 비는 경우를 방지하는 안전망.
+        .map((s) => {
+          const resolved = resolveScenarioPrices(s, price, prices);
+          return { ...s, ...resolved };
+        })
     : [];
-
-  const prices = resolveOpinionPrices(opinion.entry, opinion.stop, opinion.target, price);
 
   return {
     summary: {
@@ -932,6 +1022,9 @@ function buildUserPrompt(quote, stockName, today, indicators) {
 - shortTerm, midTerm, longTerm: 문자열 필수
 - entryPrice, stopLoss, target: 숫자 필수(0 금지). 현재가 ${quote.currentPrice || "—"}원 기준
   entryPrice=현재가±1~2%, stopLoss=entry-3~5%, target=entry+10~20%
+- scenarioA/B/C 모두 entry(진입가)/stopLoss(손절가)를 숫자로 반드시 채울 것(0 금지):
+  scenarioB.entry는 현재가 근방, target=entry+5~8%, stopLoss=entry-3~5%
+  scenarioC.entry는 downTarget 근방 재진입가 개념, stopLoss=entry-3% 근방
 - scenarioA/B/C probability 합 100, aiComment 3문장 이상
 - 5번 재료 반영 필수`,
     "",
@@ -1045,6 +1138,12 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
 - 이미 지나간 날짜, 이미 벌어진 사건('했다/밝혔다/기록했다/하락했다' 등 과거형 서술)은 절대 이벤트로 넣지 말 것.
 - 뉴스 헤드라인은 사건 발생 시점을 참고하는 용도로만 쓰고, 과거 사건 자체를 이벤트로 재작성하지 말 것.
 - 정확한 날짜를 모르면 '2026-07-15' 같은 구체적 날짜 대신 '2026년 하반기 예정'처럼 모호하게 표기.`,
+    "",
+    `opinion.scenarios 작성 규칙 — 반드시 준수:
+- A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
+- B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
+- C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
+- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
     "",
     CLAUDE_RESPONSE_SCHEMA,
     newsBlock,

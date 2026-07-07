@@ -158,6 +158,34 @@ function seoulYear() {
   }).format(new Date());
 }
 
+/** 오늘 날짜를 Asia/Seoul 기준 YYYY-MM-DD 로 반환 (이벤트 과거일자 필터링용) */
+function seoulTodayISO() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+/** 문자열에서 YYYY-MM-DD 형태의 날짜를 최대한 관대하게 추출 (구분자 -, ., / 모두 허용).
+ * 못 찾으면 null (예: '2026년 하반기 예정' 같은 모호한 표현은 걸러내지 않고 통과시킴). */
+function extractISODate(raw) {
+  const s = String(raw || "");
+  const m = s.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+  if (!m) return null;
+  const mo = String(m[2]).padStart(2, "0");
+  const d = String(m[3]).padStart(2, "0");
+  return `${m[1]}-${mo}-${d}`;
+}
+
+/** 오늘(Asia/Seoul) 이전 날짜의 이벤트인지 판별. 날짜를 못 읽으면 과거로 취급하지 않음(통과). */
+function isPastEventDate(dateStr, todayISO) {
+  const iso = extractISODate(dateStr);
+  if (!iso) return false;
+  return iso < todayISO;
+}
+
 function buildSystemPrompt(today) {
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요. 학습데이터의 과거 정보가 아니라 web_search 결과의 최신 뉴스를 반드시 사용하세요.`,
@@ -757,6 +785,7 @@ function normalizeAnalysis(raw, quote) {
   const probability =
     probRaw == null ? 50 : Math.max(0, Math.min(100, Math.round(probRaw)));
 
+  const todayISO = seoulTodayISO();
   const events = Array.isArray(raw.events)
     ? raw.events
         .filter((e) => e && typeof e === "object")
@@ -766,6 +795,9 @@ function normalizeAnalysis(raw, quote) {
           date: sanitizeStr(e.date),
         }))
         .filter((e) => e.content)
+        // 종목분석 시점(오늘) 이전 날짜가 명시된 이벤트는 "다가오는 이벤트"가 아니므로 제거.
+        // 날짜를 특정할 수 없는 모호한 표현("2026년 하반기 예정" 등)은 그대로 통과시킨다.
+        .filter((e) => !isPastEventDate(e.date, todayISO))
     : [];
 
   const materialsRaw = raw.materials && typeof raw.materials === "object" ? raw.materials : {};
@@ -1007,6 +1039,12 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
     `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
     "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
+    "",
+    `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
+- 오늘은 ${today}이다. 이 날짜 이후(오늘 포함)에 아직 일어나지 않은 일정만 포함할 것.
+- 이미 지나간 날짜, 이미 벌어진 사건('했다/밝혔다/기록했다/하락했다' 등 과거형 서술)은 절대 이벤트로 넣지 말 것.
+- 뉴스 헤드라인은 사건 발생 시점을 참고하는 용도로만 쓰고, 과거 사건 자체를 이벤트로 재작성하지 말 것.
+- 정확한 날짜를 모르면 '2026-07-15' 같은 구체적 날짜 대신 '2026년 하반기 예정'처럼 모호하게 표기.`,
     "",
     CLAUDE_RESPONSE_SCHEMA,
     newsBlock,

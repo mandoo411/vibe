@@ -1,6 +1,23 @@
 (function () {
   "use strict";
 
+  /** 2026-07-07: site-shell.js와 동일한 베타 우회 키 (localStorage 공유, 같은 origin) */
+  const ANALYSIS_BETA_KEY = "tm-beta-q7x2k9wv";
+  const ANALYSIS_BETA_STORAGE_KEY = "tmBetaAccess";
+
+  function hasStockAnalysisBetaAccess() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qp = params.get("betakey");
+      if (qp && qp === ANALYSIS_BETA_KEY) {
+        window.localStorage.setItem(ANALYSIS_BETA_STORAGE_KEY, ANALYSIS_BETA_KEY);
+      }
+      return window.localStorage.getItem(ANALYSIS_BETA_STORAGE_KEY) === ANALYSIS_BETA_KEY;
+    } catch (e) {
+      return false;
+    }
+  }
+
   let input = null;
   let btn = null;
   let panel = null;
@@ -1130,7 +1147,12 @@
   }
 
   function init() {
-    if (document.getElementById("ai-access-gate")) return;
+    const gateEl = document.getElementById("ai-access-gate");
+    if (gateEl) {
+      if (!hasStockAnalysisBetaAccess()) return;
+      gateEl.remove();
+      document.body.classList.remove("ai-access-gate-open");
+    }
 
     input = document.getElementById("ai-stock-query");
     btn = document.getElementById("analyzeBtn");

@@ -2,6 +2,13 @@
  * AI 종목분석 — Vercel Serverless Function
  * POST /api/analyze
  * body: { code: "005930", name: "삼성전자" }
+ *
+ * Required env (추가):
+ * - OPENAI_API_KEY (optional: OPENAI_MODEL, 기본 gpt-5.4-mini) - Claude 실패/토큰부족 시 자동 폴백
+ *
+ * 2026-07-07 패치: Claude(web_search 포함) 호출이 실패하면(토큰 소진 등) 자동으로 OpenAI로 폴백한다.
+ * OpenAI 경로는 Anthropic 내장 web_search를 쓸 수 없으므로, 대신 구글 뉴스 RSS(무료)로
+ * 최신 헤드라인을 수집해 프롬프트에 근거로 넣어준다.
  */
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
@@ -332,6 +339,67 @@ function requireAnthropicKey() {
     throw err;
   }
   return k;
+}
+
+function requireOpenAIKey() {
+  const k = sanitizeStr(process.env.OPENAI_API_KEY);
+  if (!k) {
+    const err = new Error("Missing OPENAI_API_KEY");
+    err.statusCode = 503;
+    throw err;
+  }
+  return k;
+}
+
+/** 구글 뉴스 RSS로 최신 헤드라인 수집 (무료, 실패해도 빈 배열 반환해서 전체 파이프라인 보호).
+ * OpenAI 폴백 경로에서 Claude의 web_search를 대체하는 용도. */
+async function fetchStockNews(query, maxItems = 5) {
+  try {
+    const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=ko&gl=KR&ceid=KR:ko`;
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`RSS HTTP ${res.status}`);
+    const xml = await res.text();
+
+    const items = [];
+    const seen = new Set();
+    const itemRe = /<item>([\s\S]*?)<\/item>/g;
+    let m;
+    while ((m = itemRe.exec(xml)) && items.length < maxItems) {
+      const block = m[1];
+      const titleRaw = (block.match(/<title>([\s\S]*?)<\/title>/) || [, ""])[1];
+      const sourceRaw = (block.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [, ""])[1];
+      const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [, ""])[1];
+
+      const decode = (s) =>
+        String(s || "")
+          .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/, "$1")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .trim();
+
+      const source = decode(sourceRaw);
+      let title = decode(titleRaw);
+      if (source && title.endsWith(source)) {
+        title = title.slice(0, title.length - source.length).replace(/[\s\-–—]+$/, "");
+      }
+      if (!title || seen.has(title)) continue;
+      seen.add(title);
+      items.push({ title, source: source || "출처미상", published: decode(pubDate) });
+    }
+    return items;
+  } catch (e) {
+    console.warn("[analyze] news fetch failed", e && e.message);
+    return [];
+  }
 }
 
 function kisBaseUrl() {
@@ -912,6 +980,99 @@ async function claudeAnalyze(quote, stockName, indicators) {
   throw err;
 }
 
+/** Claude(웹서치 포함) 실패 시(토큰 소진 등) 자동 폴백되는 OpenAI 분석 경로.
+ * Anthropic 내장 web_search가 없으므로 구글 뉴스 RSS(무료) 헤드라인을 근거로 넣어준다.
+ * 응답 스키마는 CLAUDE_RESPONSE_SCHEMA(레거시 포맷)와 동일하게 맞춰서
+ * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
+async function openaiAnalyze(quote, stockName, indicators, today) {
+  const apiKey = requireOpenAIKey();
+  const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+  const name = stockName || quote.stockName || quote.stockCode;
+
+  const news = await fetchStockNews(name, 6);
+  const newsBlock = news.length
+    ? "\n\n최신 뉴스 헤드라인(구글뉴스, 참고용):\n" +
+      news.map((n) => `- ${n.title} (${n.source})`).join("\n")
+    : "\n\n(최신 뉴스 헤드라인을 가져오지 못했습니다. 제공된 시세/지표만으로 판단하세요.)";
+
+  const ind = indicators && typeof indicators === "object" ? indicators : {};
+  const system =
+    "당신은 한국 주식 전문 애널리스트입니다.\n" +
+    "제공된 데이터를 기반으로 분석하되\n" +
+    "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
+    "반드시 JSON 형식으로만 응답하고\n" +
+    "다른 텍스트는 절대 포함하지 마세요.";
+
+  const user = [
+    `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
+    "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
+    "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
+    "",
+    CLAUDE_RESPONSE_SCHEMA,
+    newsBlock,
+    "",
+    "입력 데이터:",
+    JSON.stringify({
+      stockName: name,
+      stockCode: quote.stockCode,
+      market: quote.market,
+      currentPrice: quote.currentPrice,
+      changeAmt: quote.changeAmt,
+      changeRate: quote.changeRate,
+      volume: quote.volume,
+      open: quote.open,
+      high: quote.high,
+      low: quote.low,
+      prevClose: quote.prevClose,
+      high52w: quote.high52w,
+      low52w: quote.low52w,
+      creditRate: quote.creditRate,
+      per: quote.per,
+      pbr: quote.pbr,
+      foreignNetBuy: quote.foreignNetBuy,
+      institutionNetBuy: quote.institutionNetBuy,
+      ma20: toNum(ind.ma20),
+      ma60: toNum(ind.ma60),
+      ma120: toNum(ind.ma120),
+      ma200: toNum(ind.ma200),
+      rsi14: toNum(ind.rsi14),
+    }),
+  ].join("\n");
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.25,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    const err = new Error(`OpenAI HTTP ${res.status}: ${errText.slice(0, 300)}`);
+    err.statusCode = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  const text =
+    (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+  const parsed = safeParseJSON(text);
+  if (parsed == null) throw new Error("OpenAI returned non-JSON");
+  const normalized = normalizeAnalysis(parsed, quote);
+  if (normalized._error) throw new Error("OpenAI JSON parse failed");
+  return normalized;
+}
+
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") {
@@ -998,14 +1159,21 @@ module.exports = async function handler(req, res) {
   try {
     analysis = await claudeAnalyze(quote, stockName, indicators);
   } catch (e) {
-    analysisError =
+    const claudeErrMsg =
       e && e.message === ANALYSIS_PARSE_ERROR_MSG
         ? ANALYSIS_PARSE_ERROR_MSG
         : (e && e.message) || "Claude 분석 실패";
-    console.error("[analyze] Claude error", analysisError);
-    analysis = normalizeAnalysis(null, quote);
-    if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
-      analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
+    console.error("[analyze] Claude error (OpenAI로 폴백 시도)", claudeErrMsg);
+    try {
+      analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel());
+      console.log("[analyze] OpenAI 폴백 성공");
+    } catch (e2) {
+      analysisError = claudeErrMsg;
+      console.error("[analyze] OpenAI 폴백도 실패", e2 && e2.message);
+      analysis = normalizeAnalysis(null, quote);
+      if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
+        analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
+      }
     }
   }
 

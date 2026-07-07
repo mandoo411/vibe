@@ -1683,7 +1683,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 @media (max-width: 768px) {
-  .ai-search-popular__chips {
+  .ai-search-card__input { font-size: 16px; } /* 모바일 자동확대 방지 */   .ai-search-popular__chips {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

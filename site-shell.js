@@ -17,14 +17,14 @@
   };
 
   const BOTTOM_NAV_LABELS = {
-    home: "홈",
-    market: "지표",
-    realtime: "시세",
+    home: "??,
+    market: "지??,
+    realtime: "?�세",
     us: "미국주식",
-    crypto: "암호화폐",
-    schedule: "일정",
+    crypto: "?�호?�폐",
+    schedule: "?�정",
     analysis: "AI분석",
-    menu: "전체보기",
+    menu: "?�체보기",
   };
 
   const BOTTOM_NAV_MENU_ICON =
@@ -36,24 +36,24 @@
 
   const BOTTOM_NAV_PRIMARY = ["home", "market", "realtime", "us"];
 
-  /** AI 종목분석 접근 제한 (베타) */
-  const ANALYSIS_PAGE_LOCKED = true;
+  /** AI 종목분석 ?�근 ?�한 (베�?) */
+  const ANALYSIS_PAGE_LOCKED = false;
   const ANALYSIS_HREF = "./stock-analysis.html";
 
   const TM_ALL_PAGES = [
-    { id: "home", href: "./index.html", label: "홈", icon: "ti-home" },
-    { id: "realtime", href: "./realtime.html", label: "실시간시세", icon: "ti-activity" },
+    { id: "home", href: "./index.html", label: "??, icon: "ti-home" },
+    { id: "realtime", href: "./realtime.html", label: "?�시간시??, icon: "ti-activity" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
-    { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
-    { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
-    { id: "daily", href: "./daily-market.html", label: "마감시황", icon: "ti-chart-bar" },
-    { id: "market", href: "./market.html", label: "시장지표", icon: "ti-chart-line" },
+    { id: "schedule", href: "./weekly-market.html", label: "?�정", icon: "ti-calendar" },
+    { id: "briefing", href: "./briefing.html", label: "브리??, icon: "ti-file-description" },
+    { id: "daily", href: "./daily-market.html", label: "마감?�황", icon: "ti-chart-bar" },
+    { id: "market", href: "./market.html", label: "?�장지??, icon: "ti-chart-line" },
     { id: "us", href: "./us-market.html", label: "미국주식", icon: "ti-building-skyscraper" },
-    { id: "crypto", href: "./crypto.html", label: "암호화폐", icon: "ti-currency-bitcoin" },
-    { id: "world", href: "./world-market.html", label: "글로벌랭킹", icon: "ti-world" },
+    { id: "crypto", href: "./crypto.html", label: "?�호?�폐", icon: "ti-currency-bitcoin" },
+    { id: "world", href: "./world-market.html", label: "글로벌??��", icon: "ti-world" },
   ];
 
-  /** 전체 메뉴 시트 3×3 (행 우선) */
+  /** ?�체 메뉴 ?�트 3×3 (???�선) */
   const NAV_SHEET_GRID = [
     ["home", "realtime", "analysis"],
     ["schedule", "briefing", "daily"],
@@ -62,16 +62,16 @@
   ];
 
   const NAV_SHEET_LABELS = {
-    home: "홈",
-    realtime: "시세",
+    home: "??,
+    realtime: "?�세",
     analysis: "AI분석",
-    schedule: "일정",
-    briefing: "브리핑",
-    daily: "마감시황",
-    market: "시장지표",
+    schedule: "?�정",
+    briefing: "브리??,
+    daily: "마감?�황",
+    market: "?�장지??,
     us: "미국주식",
-    crypto: "암호화폐",
-    world: "글로벌랭킹",
+    crypto: "?�호?�폐",
+    world: "글로벌??��",
   };
 
   const PATH_TO_PAGE_ID = {
@@ -109,9 +109,9 @@
     gate.innerHTML =
       '<div class="ai-access-gate__backdrop" aria-hidden="true"></div>' +
       '<div class="ai-access-gate__card">' +
-      '<h2 id="ai-access-gate-title" class="ai-access-gate__title">서비스 준비 중</h2>' +
-      '<p class="ai-access-gate__text">AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.</p>' +
-      '<a class="ai-access-gate__btn" href="./index.html">홈으로 돌아가기</a>' +
+      '<h2 id="ai-access-gate-title" class="ai-access-gate__title">?�비??준�?�?/h2>' +
+      '<p class="ai-access-gate__text">AI 종목분석?� ?�재 베�? ?�스??중입?�다.<br>?�식 ?�픈 ???�림???�리겠습?�다.</p>' +
+      '<a class="ai-access-gate__btn" href="./index.html">?�으�??�아가�?/a>' +
       "</div>";
     document.body.insertBefore(gate, document.body.firstChild);
   }
@@ -164,21 +164,21 @@
   }
 
   function formatTickerValue(item) {
-    if (!item || item.value == null || item.value === "") return "—";
+    if (!item || item.value == null || item.value === "") return "??;
     const value = Number(item.value);
-    if (!Number.isFinite(value)) return "—";
+    if (!Number.isFinite(value)) return "??;
     const label = String(item.label || "");
     if (/비트코인|BTC/i.test(label)) return `$${Math.round(value).toLocaleString("ko-KR")}`;
-    if (label.includes("원/달러")) return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
-    if (label.includes("유가") || label.includes("금")) return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    if (label.includes("???�러")) return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    if (label.includes("?��?") || label.includes("�?)) return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
     return value.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
   }
 
   function formatTickerPct(value, label) {
     const n = Number(value);
-    const isUsdKrw = String(label || "").includes("원/달러");
-    if (!Number.isFinite(n)) return isUsdKrw ? "—" : "";
-    if (isUsdKrw && Math.abs(n) < 0.0001) return "—";
+    const isUsdKrw = String(label || "").includes("???�러");
+    if (!Number.isFinite(n)) return isUsdKrw ? "?? : "";
+    if (isUsdKrw && Math.abs(n) < 0.0001) return "??;
     const sign = n > 0 ? "+" : "";
     return `${sign}${n.toFixed(2)}%`;
   }
@@ -186,19 +186,19 @@
   function liveDotHtml(live) {
     const on = live === true;
     const cls = on ? "tm-live-dot--live" : "tm-live-dot--closed";
-    const title = on ? "실시간" : "장 마감";
+    const title = on ? "?�시�? : "??마감";
     return `<span class="tm-live-dot ${cls}" aria-hidden="true" title="${title}"></span>`;
   }
 
   function tickerPctHtml(item) {
     const label = item?.label || "";
     const pct = Number(item?.changePct);
-    const isUsdKrw = label.includes("원/달러");
+    const isUsdKrw = label.includes("???�러");
     if (!Number.isFinite(pct)) {
-      return isUsdKrw ? '<span class="home-ticker__pct">—</span>' : "";
+      return isUsdKrw ? '<span class="home-ticker__pct">??/span>' : "";
     }
     if (isUsdKrw && Math.abs(pct) < 0.0001) {
-      return '<span class="home-ticker__pct">—</span>';
+      return '<span class="home-ticker__pct">??/span>';
     }
     const cls = pct > 0 ? "is-up" : pct < 0 ? "is-down" : "";
     return `<span class="home-ticker__pct ${cls}">${formatTickerPct(pct, label)}</span>`;
@@ -207,7 +207,7 @@
   function filterWebTickerItems(items) {
     const list = Array.isArray(items) ? items : [];
     if (window.innerWidth <= 768) return list;
-    return list.filter((item) => !String(item?.label || "").includes("금시세"));
+    return list.filter((item) => !String(item?.label || "").includes("금시??));
   }
 
   window.tmFilterWebTickerItems = filterWebTickerItems;
@@ -223,7 +223,7 @@
       .then((data) => {
         const items = filterWebTickerItems(data.items);
         if (!items.length) {
-          el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
+          el.innerHTML = '<span class="home-empty">?�장 지??로딩 중�?/span>';
           return;
         }
         el.innerHTML = items
@@ -234,7 +234,7 @@
           .join("");
       })
       .catch(() => {
-        el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';
+        el.innerHTML = '<span class="home-empty">?�장 지?��? 불러?��? 못했?�니??/span>';
       });
   }
 
@@ -279,7 +279,7 @@
     el.dataset.tmTab = tabId;
     if (isMenu) {
       el.type = "button";
-      el.setAttribute("aria-label", "전체 메뉴");
+      el.setAttribute("aria-label", "?�체 메뉴");
       el.setAttribute("aria-controls", "tm-nav-sheet");
       el.setAttribute("aria-expanded", "false");
     } else if (isLockedAnalysis) {
@@ -330,8 +330,8 @@
     sheet.innerHTML =
       '<div class="tm-nav-sheet__backdrop" data-close-sheet tabindex="-1"></div>' +
       '<div class="tm-nav-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="tm-nav-sheet-title">' +
-      '<header class="tm-nav-sheet__head"><h2 id="tm-nav-sheet-title">전체 메뉴</h2>' +
-      '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="닫기"><i class="ti ti-x"></i></button></header>' +
+      '<header class="tm-nav-sheet__head"><h2 id="tm-nav-sheet-title">?�체 메뉴</h2>' +
+      '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="?�기"><i class="ti ti-x"></i></button></header>' +
       `<div class="tm-nav-sheet__body">${body}</div></div>`;
     document.body.appendChild(sheet);
   }
@@ -398,10 +398,10 @@
       else nav.appendChild(meta);
     }
     meta.innerHTML =
-      '<div class="home-nav__live" aria-label="실시간">' +
+      '<div class="home-nav__live" aria-label="?�시�?>' +
       '<span class="home-nav__live-dot" aria-hidden="true"></span>' +
       '<span class="home-nav__live-text">LIVE</span></div>' +
-      '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">' +
+      '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="?�마 ?�환" title="?�마 ?�환">' +
       '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>';
   }
 
@@ -435,7 +435,7 @@
         bar.className = "home-ticker-bar";
         const label = document.createElement("span");
         label.className = "home-ticker-bar__label";
-        label.textContent = "실시간";
+        label.textContent = "?�시�?;
         bar.appendChild(label);
         ticker.parentNode.insertBefore(bar, ticker);
         bar.appendChild(ticker);

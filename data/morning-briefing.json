@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29386.75,
+        "close": 29377,
         "previousClose": 30094.25,
-        "changePct": -2.35,
-        "changePoints": -707.5
+        "changePct": -2.38,
+        "changePoints": -717.25
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 311.1,
-      "changePct": -0.5,
-      "changePoints": 1.56
+      "price": 312.2,
+      "changePct": -0.15,
+      "changePoints": 0.46
     },
     {
       "symbol": "MSFT",
-      "price": 388.53,
+      "price": 388.52,
       "changePct": 0.46,
-      "changePoints": 1.79
+      "changePoints": 1.78
     },
     {
       "symbol": "NVDA",
-      "price": 195.88,
-      "changePct": 0.17,
-      "changePoints": 0.33
+      "price": 196.15,
+      "changePct": 0.31,
+      "changePoints": 0.6
     },
     {
       "symbol": "AMZN",
-      "price": 245.24,
-      "changePct": 0.44,
-      "changePoints": 1.08
+      "price": 245.43,
+      "changePct": 0.52,
+      "changePoints": 1.27
     },
     {
       "symbol": "META",
-      "price": 615.85,
-      "changePct": 2.59,
-      "changePoints": 15.56
+      "price": 616.91,
+      "changePct": 2.77,
+      "changePoints": 16.61
     },
     {
       "symbol": "TSLA",
-      "price": 404,
-      "changePct": -3.76,
-      "changePoints": 15.77
+      "price": 404.29,
+      "changePct": -3.69,
+      "changePoints": 15.48
     },
     {
       "symbol": "GOOGL",
-      "price": 366.78,
-      "changePct": 0.09,
-      "changePoints": 0.32
+      "price": 367.36,
+      "changePct": 0.25,
+      "changePoints": 0.9
     },
     {
       "symbol": "AMD",
-      "price": 517.09,
-      "changePct": -6.33,
-      "changePoints": 34.96
+      "price": 517.25,
+      "changePct": -6.3,
+      "changePoints": 34.81
     },
     {
       "symbol": "PLTR",
-      "price": 134.12,
-      "changePct": 1.19,
-      "changePoints": 1.58
+      "price": 134.3,
+      "changePct": 1.33,
+      "changePoints": 1.76
     },
     {
       "symbol": "COIN",
-      "price": 163.7,
-      "changePct": -3.06,
-      "changePoints": 5.17
+      "price": 163.35,
+      "changePct": -3.27,
+      "changePoints": 5.52
     }
   ],
   "sectors": [
@@ -188,25 +188,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 72.46,
-        "changePct": 5.66,
-        "changePoints": 3.88
+        "price": 72.44,
+        "changePct": 5.63,
+        "changePoints": 3.86
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4108.1,
-        "changePct": 0.98,
-        "changePoints": 39.8
+        "price": 4117.9,
+        "changePct": 1.22,
+        "changePoints": 49.6
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 60.17,
-        "changePct": 0.13,
-        "changePoints": 0.08
+        "price": 60.3,
+        "changePct": 0.35,
+        "changePoints": 0.21
       },
       {
         "id": "copper",
@@ -231,29 +231,29 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 63549,
-        "changePct24h": -1.09,
-        "marketCapUsd": 1274369713408.42
+        "priceUsd": 63653,
+        "changePct24h": -0.75,
+        "marketCapUsd": 1276402138316.92
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1775.92,
-        "changePct24h": -1.74,
-        "marketCapUsd": 214299079642.15
+        "priceUsd": 1778.86,
+        "changePct24h": -1.43,
+        "marketCapUsd": 214664606110
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 80.87,
-        "changePct24h": -1.72,
-        "marketCapUsd": 47034036924.13
+        "priceUsd": 80.95,
+        "changePct24h": -1.57,
+        "marketCapUsd": 47090851306.25
       }
     ]
   },
   "news": [
     {
-      "title": "삼성전자 급락 충격에 뉴욕증시 반도체도 와르르, 유가 5% 뛰며 상승 [월가월부]",
+      "title": "‘삼성전자 충격’ 뉴욕증시 반도체주 ‘와르르’…중동 긴장에 국제유가 급등 [월가월부]",
       "url": "https://www.mk.co.kr/news/stock/12092914",
       "source": "매일경제",
       "publishedAt": "2026-07-07T20:39:23.000Z",

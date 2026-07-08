@@ -375,7 +375,7 @@ function stripCitations(s) {
 
 function sanitizeStr(v) {
   if (v == null) return "";
-  return stripCitations(String(v).trim());
+  return String(v).trim();
 }
 
 function toNum(v) {

@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29413.5,
+        "close": 29449.75,
         "previousClose": 29556,
-        "changePct": -0.48,
-        "changePoints": -142.5
+        "changePct": -0.36,
+        "changePoints": -106.25
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 313.23,
-      "changePct": 0.83,
-      "changePoints": 2.57
+      "price": 313.08,
+      "changePct": 0.78,
+      "changePoints": 2.42
     },
     {
       "symbol": "MSFT",
-      "price": 383.3,
-      "changePct": -1.42,
-      "changePoints": 5.54
+      "price": 383.35,
+      "changePct": -1.41,
+      "changePoints": 5.49
     },
     {
       "symbol": "NVDA",
-      "price": 203,
-      "changePct": 3.08,
-      "changePoints": 6.07
+      "price": 202.87,
+      "changePct": 3.02,
+      "changePoints": 5.94
     },
     {
       "symbol": "AMZN",
-      "price": 242.9,
-      "changePct": -1.25,
-      "changePoints": 3.08
+      "price": 242.95,
+      "changePct": -1.23,
+      "changePoints": 3.03
     },
     {
       "symbol": "META",
-      "price": 603.34,
-      "changePct": -1.99,
-      "changePoints": 12.24
+      "price": 603,
+      "changePct": -2.04,
+      "changePoints": 12.58
     },
     {
       "symbol": "TSLA",
-      "price": 393.32,
-      "changePct": -2.38,
-      "changePoints": 9.58
+      "price": 393.35,
+      "changePct": -2.37,
+      "changePoints": 9.56
     },
     {
       "symbol": "GOOGL",
-      "price": 361.55,
-      "changePct": -1.49,
-      "changePoints": 5.48
+      "price": 361.51,
+      "changePct": -1.5,
+      "changePoints": 5.52
     },
     {
       "symbol": "AMD",
-      "price": 514.94,
-      "changePct": -0.23,
-      "changePoints": 1.17
+      "price": 514.6,
+      "changePct": -0.29,
+      "changePoints": 1.51
     },
     {
       "symbol": "PLTR",
-      "price": 131.32,
-      "changePct": -2.27,
-      "changePoints": 3.05
+      "price": 131.28,
+      "changePct": -2.3,
+      "changePoints": 3.1
     },
     {
       "symbol": "COIN",
-      "price": 160,
-      "changePct": -2.15,
-      "changePoints": 3.51
+      "price": 159.75,
+      "changePct": -2.3,
+      "changePoints": 3.76
     }
   ],
   "sectors": [
@@ -188,25 +188,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 74.56,
-        "changePct": 8.55,
-        "changePoints": 5.87
+        "price": 74.52,
+        "changePct": 8.49,
+        "changePoints": 5.83
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4088.1,
-        "changePct": -0.6,
-        "changePoints": -24.6
+        "price": 4086.2,
+        "changePct": -0.64,
+        "changePoints": -26.5
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 58.83,
-        "changePct": -2.98,
-        "changePoints": -1.81
+        "price": 58.75,
+        "changePct": -3.12,
+        "changePoints": -1.89
       },
       {
         "id": "copper",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 62248,
-        "changePct24h": -2.02,
-        "marketCapUsd": 1248569940115.82
+        "priceUsd": 62231,
+        "changePct24h": -2.23,
+        "marketCapUsd": 1247987574427.42
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1739.18,
-        "changePct24h": -2.07,
-        "marketCapUsd": 209912292995.93
+        "priceUsd": 1739.53,
+        "changePct24h": -2.21,
+        "marketCapUsd": 209925469615.15
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 77.45,
-        "changePct24h": -4.18,
-        "marketCapUsd": 45065016865.38
+        "priceUsd": 77.51,
+        "changePct24h": -4.27,
+        "marketCapUsd": 45105461149.14
       }
     ]
   },

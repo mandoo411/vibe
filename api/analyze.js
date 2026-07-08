@@ -200,6 +200,9 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
   데이터가 없으면 그냥 없다고 말하지 말고, web_search로 실제 데이터를 찾아서 확정적으로 서술한다.
 - 정말 아무리 검색해도 못 찾는 항목은, 애매한 문장으로 채우지 말고 해당 항목 자체를 생략한다 (있지도 않은 이벤트를 "확인 안 됨"이라는 이유로 억지로 만들어 넣지 않는다).
 - 답변 텍스트 안에 URL, 도메인명, "(사이트명)", "([출처](링크))" 같은 출처 표기를 절대 포함하지 않는다. 고객은 링크를 클릭해서 스스로 확인하지 않는다 — 애널리스트가 이미 확인한 사실을 자연스러운 문장으로 결론만 전달한다.
+- 수급(외국인/기관 순매수) 서술 시 반드시 기준 시점을 명시한다 (예: "당일 기준", "최근 5거래일 누적"). 주가가 높은 종목은 주식 수만 나열하면 체감이 안 되므로, 순매수/순매도 수량과 함께 대략적인 금액(수량×현재가 환산, 예: "약 1,830억원")도 함께 언급한다.
+- PER·PBR이 업종 평균이나 그 종목의 역사적 평균 대비 뚜렷하게 높거나 낮으면(예: PBR 5배 이상, PER 30배 이상, 혹은 반대로 지나치게 낮은 경우) 숫자만 나열하지 말고 밸류에이션 부담(또는 저평가) 여부와 그 배수가 왜 형성됐는지(주가 급등, 이익 급감 등)를 한두 문장으로 짚어준다.
+- 다가오는 이벤트는 해당 종목 자체 일정에만 국한하지 않는다. 같은 업종 경쟁사의 실적발표, 업황에 영향을 주는 정책·규제 발표, 주가에 실질적 영향을 줄 매크로 일정(예: 미국 금리 결정, 핵심 경쟁사 실적) 중 확인되는 것이 있으면 함께 포함한다.
 - 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).`;
 
 function buildSystemPrompt(today) {
@@ -748,6 +751,24 @@ function resolveScenarioPrices(s, price, opinionPrices) {
     targetLow = Math.round(entry * 0.93);
   }
 
+  // ── 2026-07-09: 방향성 정합성 안전망 ──
+  // 위 로직은 "값이 비어 있을 때만" 기본값을 채운다. 그런데 AI가 값을 채우긴 했지만
+  // 방향이 틀린 경우(예: 시나리오C의 손절가가 진입가보다 높게 나오는 경우)는 그냥 통과된다.
+  // 세 시나리오 모두 "entry 근방에서 매수 진입"을 전제로 하므로 항상
+  // stop(손절가) < entry(진입가) < target(목표가) 순서가 성립해야 한다.
+  // 값이 존재한다는 이유만으로 신뢰하지 않고, 순서까지 검증해서 어긋나면 교정한다.
+  if (entry) {
+    if (stop && stop >= entry) {
+      stop = Math.round(entry * (isBear ? 0.97 : isBull ? 0.95 : 0.96));
+    }
+    if (target && target <= entry) {
+      target = Math.round(entry * (isBear ? 1.08 : isBull ? 1.15 : 1.06));
+    }
+    if (isBear && targetLow && targetLow >= entry) {
+      targetLow = Math.round(entry * 0.93);
+    }
+  }
+
   return {
     entry: entry ?? 0,
     stop: stop ?? 0,
@@ -785,7 +806,7 @@ function mapToolInputToLegacy(input) {
             reflectionPct:
               reflectionPctRaw == null ? null : Math.max(0, Math.min(100, Math.round(reflectionPctRaw))),
             reflectionNote: "",
-            judgment: sanitizeStr(it && (it.comment || it.judgment)),
+            judgment: stripCitations(sanitizeStr(it && (it.comment || it.judgment))),
           };
         })
         .filter((it) => it.name)
@@ -807,15 +828,15 @@ function mapToolInputToLegacy(input) {
       probability: toNum(summary.confidence ?? summary.probability),
       description: sanitizeStr(summary.reason || summary.description),
     },
-    story: sanitizeStr(input.priceReason || input.story),
-    supply: sanitizeStr(input.supplyDemand || input.supply),
+    story: stripCitations(sanitizeStr(input.priceReason || input.story)),
+    supply: stripCitations(sanitizeStr(input.supplyDemand || input.supply)),
     events,
     materials: {
       items: materialItems,
-      unreflected: sanitizeStr(mat.unreflected || ""),
-      summary: sanitizeStr(mat.aiComment || mat.summary || ""),
+      unreflected: stripCitations(sanitizeStr(mat.unreflected || "")),
+      summary: stripCitations(sanitizeStr(mat.aiComment || mat.summary || "")),
     },
-    chart: sanitizeStr(input.chartAnalysis || input.chart),
+    chart: stripCitations(sanitizeStr(input.chartAnalysis || input.chart)),
     opinion: {
       short: sanitizeStr(j.shortTerm || j.short) || "단기 전망 정보가 없습니다.",
       mid: sanitizeStr(j.midTerm || j.mid) || "중기 전망 정보가 없습니다.",
@@ -823,7 +844,7 @@ function mapToolInputToLegacy(input) {
       entry: prices.entry,
       stop: prices.stop,
       target: prices.target,
-      comment: sanitizeStr(j.aiComment || j.comment),
+      comment: stripCitations(sanitizeStr(j.aiComment || j.comment)),
       scenarios,
     },
   };
@@ -936,7 +957,7 @@ function normalizeAnalysis(raw, quote) {
             strength: strengthNorm,
             reflectionPct,
             reflectionNote: sanitizeStr(it.reflectionNote ?? it.reflection_note),
-            judgment: sanitizeStr(it.judgment),
+            judgment: stripCitations(sanitizeStr(it.judgment)),
           };
         })
         .filter((it) => it.name)
@@ -968,21 +989,66 @@ function normalizeAnalysis(raw, quote) {
         })
     : [];
 
+  // ── 2026-07-09: 시나리오 확률 정합성 보정 ──
+  // A/B/C 확률 합이 100에서 벗어나면 비례 배분해서 정확히 100으로 맞춘다.
+  const scenarioProbSum = scenarios.reduce((sum, s) => sum + (toNum(s.probability) || 0), 0);
+  if (scenarios.length >= 2 && scenarioProbSum > 0 && Math.abs(scenarioProbSum - 100) > 1) {
+    let running = 0;
+    scenarios.forEach((s, idx) => {
+      if (idx === scenarios.length - 1) {
+        s.probability = Math.max(0, 100 - running);
+      } else {
+        const p = Math.round(((toNum(s.probability) || 0) / scenarioProbSum) * 100);
+        s.probability = p;
+        running += p;
+      }
+    });
+  }
+
+  // ── 2026-07-09: 상단 "상승확률" ↔ 시나리오 A(강세) 확률 정합성 보정 ──
+  // 기존엔 summary.probability(상단 배지 숫자)를 AI가 시나리오와 무관하게 별도로 생성해서,
+  // 같은 리포트 안에서 "상승 확률 74%" vs "A안(강세) 40%"처럼 숫자가 서로 어긋나는
+  // 신뢰도 문제가 있었다. 상단 "상승확률"의 정의를 "강세 시나리오(A)가 실현될 확률"로
+  // 고정하고, 시나리오 A 확률이 있으면 그 값으로 강제 통일한다.
+  const scenarioA = scenarios.find(
+    (s) => s.label === "A" || String(s.type).includes("강")
+  );
+  const scenarioAProb = scenarioA ? toNum(scenarioA.probability) : null;
+  const finalProbability =
+    scenarioAProb == null ? probability : Math.max(0, Math.min(100, Math.round(scenarioAProb)));
+
+  // ── 2026-07-09: 52주 고점/저점 괴리 이상치 경고 ──
+  // 52주 고가/저가 비율이 비정상적으로 크면(액면분할 미반영, 데이터 오류 등 가능성),
+  // 그대로 표시했을 때 오해를 부를 수 있어 차트 분석 하단에 확인 caveat을 자동으로 덧붙인다.
+  const high52 = toNum(quote && quote.high52w);
+  const low52 = toNum(quote && quote.low52w);
+  let rangeCaveat = "";
+  if (high52 && low52 && low52 > 0) {
+    const ratio = high52 / low52;
+    if (ratio >= 4) {
+      rangeCaveat =
+        `※ 52주 고점(${Math.round(high52).toLocaleString("ko-KR")}원)과 저점(` +
+        `${Math.round(low52).toLocaleString("ko-KR")}원)의 괴리가 ${ratio.toFixed(1)}배로 매우 큽니다. ` +
+        "액면분할 등 가격 조정 이력이 반영되지 않았거나 데이터 오류일 가능성이 있으니, 실제 투자 판단 전 HTS·증권사 앱에서 재확인을 권장합니다.";
+    }
+  }
+  const chartText = stripCitations(sanitizeStr(raw.chart));
+
   return {
     summary: {
       signal: normalizeSignal(summary.signal),
-      probability,
+      probability: finalProbability,
       description: sanitizeStr(summary.description) || "요약 정보가 없습니다.",
     },
-    story: sanitizeStr(raw.story),
-    supply: sanitizeStr(raw.supply),
+    story: stripCitations(sanitizeStr(raw.story)),
+    supply: stripCitations(sanitizeStr(raw.supply)),
     events,
     materials: {
       items: materialItems,
-      unreflected: sanitizeStr(materialsRaw.unreflected),
-      summary: sanitizeStr(materialsRaw.summary),
+      unreflected: stripCitations(sanitizeStr(materialsRaw.unreflected)),
+      summary: stripCitations(sanitizeStr(materialsRaw.summary)),
     },
-    chart: sanitizeStr(raw.chart),
+    chart: rangeCaveat ? (chartText ? chartText + "\n\n" + rangeCaveat : rangeCaveat) : chartText,
     opinion: {
       short: sanitizeStr(opinion.short) || "단기 전망 정보가 없습니다.",
       mid: sanitizeStr(opinion.mid) || "중기 전망 정보가 없습니다.",
@@ -990,7 +1056,7 @@ function normalizeAnalysis(raw, quote) {
       entry: prices.entry,
       stop: prices.stop,
       target: prices.target,
-      comment: sanitizeStr(opinion.comment),
+      comment: stripCitations(sanitizeStr(opinion.comment)),
       scenarios,
     },
   };

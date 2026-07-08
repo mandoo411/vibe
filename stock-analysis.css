@@ -1234,3 +1234,23 @@
     height: 260px;
   }
 }
+
+
+/* 2026-07-08: 모바일에서 종목명/현재가 폰트가 데스크톱과 동일해서 과도하게 커 보이던 문제 수정 */
+@media (max-width: 768px) {
+  .ai-stock-header__name {
+    font-size: 18px;
+  }
+
+  .ai-stock-header__price {
+    font-size: 22px;
+  }
+
+  .ai-stock-header__won {
+    font-size: 12px;
+  }
+
+  .ai-stock-header__chg {
+    font-size: 14px;
+  }
+}

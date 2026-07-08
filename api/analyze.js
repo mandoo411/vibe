@@ -203,6 +203,8 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - 수급(외국인/기관 순매수) 서술 시 반드시 기준 시점을 명시한다 (예: "당일 기준", "최근 5거래일 누적"). 주가가 높은 종목은 주식 수만 나열하면 체감이 안 되므로, 순매수/순매도 수량과 함께 대략적인 금액(수량×현재가 환산, 예: "약 1,830억원")도 함께 언급한다.
 - PER·PBR이 업종 평균이나 그 종목의 역사적 평균 대비 뚜렷하게 높거나 낮으면(예: PBR 5배 이상, PER 30배 이상, 혹은 반대로 지나치게 낮은 경우) 숫자만 나열하지 말고 밸류에이션 부담(또는 저평가) 여부와 그 배수가 왜 형성됐는지(주가 급등, 이익 급감 등)를 한두 문장으로 짚어준다.
 - 다가오는 이벤트는 해당 종목 자체 일정에만 국한하지 않는다. 같은 업종 경쟁사의 실적발표, 업황에 영향을 주는 정책·규제 발표, 주가에 실질적 영향을 줄 매크로 일정(예: 미국 금리 결정, 핵심 경쟁사 실적) 중 확인되는 것이 있으면 함께 포함한다.
+- entryPrice(진입가)가 현재가와 차이가 나면(예: 눌림목 매수를 노리는 경우) 그 이유를 opinion 총평(comment)에 반드시 한 문장으로 설명한다. entryPrice가 시나리오 B(중립)의 entry와 다르면 왜 다른지도 명시한다 — 숫자만 던지지 말고 왜 그 가격을 골랐는지 반드시 설명한다.
+- 재료 분석의 reflectionPct(반영도)는 "이 재료가 완전히 현실화됐을 때 기대되는 주가 임팩트 대비, 현재 주가에 이미 선반영된 비율"로 정의한다. 각 재료의 judgment(한줄 판단)에는 그 비율을 매긴 근거를 최소 하나 구체적으로 언급한다 — 예: 정보가 공개된 지 얼마나 됐는지, 공개 이후 주가가 이미 얼마나 움직였는지, 증권가 컨센서스·목표주가에 이미 얼마나 반영됐는지. 근거 없이 숫자만 제시하지 않는다.
 - 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).`;
 
 function buildSystemPrompt(today) {
@@ -264,7 +266,7 @@ function buildSystemPrompt(today) {
     - scenarioB(중립).entry/target/stopLoss: 현재가 근방 진입, target=entry+5~8%, stopLoss=entry-3~5%
     - scenarioC(약세).entry/stopLoss: 이탈 후 반등을 노리는 재진입가 개념으로, entry=downTarget 근방, stopLoss=entry-3% 근방 (target은 downTarget으로 대체)
   · scenarioA/B/C: probability 합계 반드시 100
-  · aiComment: 반드시 3문장 이상
+  · aiComment: 반드시 3문장 이상, entryPrice가 현재가·시나리오B entry와 다르면 그 이유 포함
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
 - 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률%
 - 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% (entry/target/stopLoss 절대 0으로 두지 말 것)
@@ -1118,7 +1120,7 @@ function buildUserPrompt(quote, stockName, today, indicators) {
 - scenarioA/B/C 모두 entry(진입가)/stopLoss(손절가)를 숫자로 반드시 채울 것(0 금지):
   scenarioB.entry는 현재가 근방, target=entry+5~8%, stopLoss=entry-3~5%
   scenarioC.entry는 downTarget 근방 재진입가 개념, stopLoss=entry-3% 근방
-- scenarioA/B/C probability 합 100, aiComment 3문장 이상
+- scenarioA/B/C probability 합 100, aiComment 3문장 이상(entryPrice가 현재가·시나리오B entry와 다른 이유 포함)
 - 5번 재료 반영 필수`,
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",

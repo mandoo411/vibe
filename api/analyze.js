@@ -1105,17 +1105,59 @@ async function claudeAnalyze(quote, stockName, indicators) {
   throw err;
 }
 
+/** OpenAI Responses API 1회 호출 (내부 헬퍼). forceSearch=true면 tool_choice로 web_search를
+ * 강제 시도한다 (일부 모델/버전 조합에서는 tool_choice 강제 자체가 400으로 거부될 수 있어
+ * 그 경우엔 호출부에서 forceSearch=false로 재시도한다). 응답 원본(JSON)을 그대로 반환한다. */
+async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch) {
+  const body = {
+    model,
+    tools: [{ type: "web_search", search_context_size: "medium" }],
+    input: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  };
+  if (forceSearch) body.tool_choice = { type: "web_search" };
+
+  const res = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    const err = new Error(`OpenAI Responses HTTP ${res.status}: ${errText.slice(0, 300)}`);
+    err.statusCode = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
 /** OpenAI Responses API + web_search 툴을 사용하는 실시간 검색 기반 분석 경로.
  * Claude와 마찬가지로 실제 웹검색을 수행해서, 이미 지난 사건(예: 실적발표 완료)을
- * "예정"으로 잘못 서술하는 것을 방지한다. 모델/툴 조합이 지원되지 않거나 실패하면
- * 예외를 던져서 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. */
+ * "예정"으로 잘못 서술하는 것을 방지한다.
+ *
+ * 2026-07-08 패치: 같은 종목을 짧은 간격으로 두 번 분석했을 때 결과가 들쭉날쭉했던
+ * 원인 — web_search는 "auto" 모드라 모델이 검색을 하기도 하고 안 하기도 했음(그날그날
+ * 다름). 이제는 (1) tool_choice로 검색을 강제 시도 → (2) 강제가 거부되면(모델이 tool_choice
+ * 강제를 지원 안 하는 경우) auto 모드로 한 번 더 시도 → (3) 두 시도 모두 응답에 실제
+ * web_search_call 흔적이 없으면 "검색 안 한 답변"으로 간주해 신뢰하지 않고 예외를 던져서
+ * 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. 즉 매 호출마다 반드시
+ * "실검색" 또는 "RSS 헤드라인" 둘 중 하나의 실제 최신 정보를 근거로 쓰도록 강제해서
+ * 호출할 때마다 결과가 달라지는 문제를 없앤다. */
 async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model) {
   const name = stockName || quote.stockName || quote.stockCode;
   const ind = indicators && typeof indicators === "object" ? indicators : {};
 
   const system =
     "당신은 한국 주식 전문 애널리스트입니다.\n" +
-    "web_search 도구로 반드시 이 종목의 최신 뉴스를 검색해서, 확인된 사실만 근거로 답하세요.\n" +
+    "web_search 도구를 이번 요청에서 반드시 최소 1회 호출해서, 이 종목의 최신 뉴스를 확인한 뒤에만 답하세요.\n" +
+    "검색을 호출하지 않고 답하는 것은 허용되지 않습니다.\n" +
     "특히 실적발표·이벤트·재료는 검색 결과로 '이미 발표/발생했는지'를 반드시 먼저 확인하고,\n" +
     "이미 끝난 일을 절대 '예정'이나 '기대'로 서술하지 마세요 (예: 실적발표가 이미 나왔다면 그 결과를 반영하고,\n" +
     "다음 분기 실적발표만 새로운 다가오는 이벤트로 표기).\n" +
@@ -1124,7 +1166,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 
   const user = [
     `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
-    "web_search로 이 종목의 최신 뉴스·공시·실적발표 여부를 반드시 검색해서 확인한 뒤 답하세요.",
+    "web_search로 이 종목의 최신 뉴스·공시·실적발표 여부를 반드시 검색해서 확인한 뒤 답하세요. 이번 요청에서 검색 도구 호출은 필수입니다.",
     "검색 없이 학습된 과거 지식만으로 답하지 마세요. 아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지.",
     "",
@@ -1169,32 +1211,36 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     }),
   ].join("\n");
 
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      tools: [{ type: "web_search", search_context_size: "medium" }],
-      input: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-    signal: AbortSignal.timeout(45000),
-  });
+  const hasSearchEvidence = (d) => {
+    const outputs = Array.isArray(d && d.output) ? d.output : [];
+    return outputs.some((o) => o && o.type === "web_search_call");
+  };
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => "");
-    const err = new Error(`OpenAI Responses HTTP ${res.status}: ${errText.slice(0, 300)}`);
-    err.statusCode = res.status;
-    throw err;
+  let data = null;
+
+  // 1차: tool_choice로 web_search 강제 시도.
+  try {
+    data = await callOpenAIResponsesOnce(system, user, apiKey, model, true);
+  } catch (e) {
+    console.warn("[analyze] web_search 강제(tool_choice) 실패 — auto 모드로 재시도", e && e.message);
+    data = null;
   }
 
-  const data = await res.json();
+  // 2차: 강제 호출이 (a) 에러로 실패했거나 (b) 성공했지만 실제로는 검색을 안 한 경우,
+  // auto 모드로 한 번 더 시도한다. 강제 호출이 성공하고 검색 흔적도 있으면 그대로 사용.
+  if (!data || !hasSearchEvidence(data)) {
+    data = await callOpenAIResponsesOnce(system, user, apiKey, model, false);
+  }
+
+  if (!hasSearchEvidence(data)) {
+    // 두 번 다 검색을 안 했다면 최신 정보 없이 학습 당시 지식으로만 답했다는 뜻 — 신뢰하지
+    // 않고 호출부가 RSS 폴백으로 넘어가도록 예외를 던진다. 이게 "호출할 때마다 결과가
+    // 달라지는" 문제의 근본 원인이었다.
+    throw new Error("OpenAI web_search 미실행 — 검색 없이 응답함");
+  }
+
   const outputs = Array.isArray(data && data.output) ? data.output : [];
+
   const msgItem = outputs.find((o) => o && o.type === "message");
   const contentArr = msgItem && Array.isArray(msgItem.content) ? msgItem.content : [];
   const textBlock = contentArr.find((c) => c && (c.type === "output_text" || c.type === "text"));

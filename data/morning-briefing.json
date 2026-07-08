@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29449.75,
+        "close": 29482,
         "previousClose": 29556,
-        "changePct": -0.36,
-        "changePoints": -106.25
+        "changePct": -0.25,
+        "changePoints": -74
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 313.08,
-      "changePct": 0.78,
-      "changePoints": 2.42
+      "price": 313.39,
+      "changePct": 8.3,
+      "changePoints": 24.03
     },
     {
       "symbol": "MSFT",
-      "price": 383.35,
-      "changePct": -1.41,
-      "changePoints": 5.49
+      "price": 383.34,
+      "changePct": 2.77,
+      "changePoints": 10.32
     },
     {
       "symbol": "NVDA",
-      "price": 202.87,
-      "changePct": 3.02,
-      "changePoints": 5.94
+      "price": 204.12,
+      "changePct": 2.01,
+      "changePoints": 4.03
     },
     {
       "symbol": "AMZN",
-      "price": 242.95,
-      "changePct": -1.23,
-      "changePoints": 3.03
+      "price": 243.62,
+      "changePct": 2.22,
+      "changePoints": 5.28
     },
     {
       "symbol": "META",
-      "price": 603,
-      "changePct": -2.04,
-      "changePoints": 12.58
+      "price": 603.12,
+      "changePct": 7.07,
+      "changePoints": 39.83
     },
     {
       "symbol": "TSLA",
-      "price": 393.35,
-      "changePct": -2.37,
-      "changePoints": 9.56
+      "price": 394.06,
+      "changePct": -6.31,
+      "changePoints": -26.54
     },
     {
       "symbol": "GOOGL",
-      "price": 361.51,
-      "changePct": -1.5,
-      "changePoints": 5.52
+      "price": 361.92,
+      "changePct": 1.27,
+      "changePoints": 4.55
     },
     {
       "symbol": "AMD",
-      "price": 514.6,
-      "changePct": -0.29,
-      "changePoints": 1.51
+      "price": 517.41,
+      "changePct": -10.93,
+      "changePoints": -63.5
     },
     {
       "symbol": "PLTR",
-      "price": 131.28,
-      "changePct": -2.3,
-      "changePoints": 3.1
+      "price": 132.22,
+      "changePct": 13.33,
+      "changePoints": 15.55
     },
     {
       "symbol": "COIN",
-      "price": 159.75,
-      "changePct": -2.3,
-      "changePoints": 3.76
+      "price": 159.36,
+      "changePct": 9.01,
+      "changePoints": 13.17
     }
   ],
   "sectors": [
@@ -188,33 +188,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 74.52,
-        "changePct": 8.49,
-        "changePoints": 5.83
+        "price": 74.44,
+        "changePct": 8.37,
+        "changePoints": 5.75
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4086.2,
-        "changePct": -0.64,
-        "changePoints": -26.5
+        "price": 4082.4,
+        "changePct": -0.74,
+        "changePoints": -30.3
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 58.75,
-        "changePct": -3.12,
-        "changePoints": -1.89
+        "price": 58.73,
+        "changePct": -3.15,
+        "changePoints": -1.91
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.12,
-        "changePct": 0.16,
-        "changePoints": 0.01
+        "price": 6.13,
+        "changePct": 0.33,
+        "changePoints": 0.02
       },
       {
         "id": "sox",
@@ -231,34 +231,27 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 62231,
-        "changePct24h": -2.23,
-        "marketCapUsd": 1247987574427.42
+        "priceUsd": 62265,
+        "changePct24h": -1.62,
+        "marketCapUsd": 1248631086507.82
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1739.53,
-        "changePct24h": -2.21,
-        "marketCapUsd": 209925469615.15
+        "priceUsd": 1742.47,
+        "changePct24h": -1.45,
+        "marketCapUsd": 210276866513.96
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 77.51,
-        "changePct24h": -4.27,
-        "marketCapUsd": 45105461149.14
+        "priceUsd": 77.74,
+        "changePct24h": -3.67,
+        "marketCapUsd": 45224793157.57
       }
     ]
   },
   "news": [
-    {
-      "title": "美·이란 무력충돌에 증시 혼조...나스닥은 반등 [월가월부]",
-      "url": "https://www.mk.co.kr/news/economy/12093944",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-07-08T20:42:49.000Z",
-      "summary": "트럼프 “MOU 끝나” 이란 이틀째 공습 국제유가 5% 넘게 급등미국과 이란간 군사적 긴장이 다시 고조되면서 뉴욕증시가 혼조세를 나타냈다. 인공지능(AI) 반도체 피크아웃 논란에.."
-    },
     {
       "title": "메타는 주식 대역죄인? … 데이터센터 투자할 기회 준 셈",
       "url": "https://www.mk.co.kr/news/stock/12092704",
@@ -288,25 +281,11 @@
       "summary": "달러당 원화값이 40일 만에 1400원대를 회복했지만, 중동 전쟁 리스크가 다시 부각되면서 상승분을 반납했다. SK하이닉스의 미국주식예탁증서(ADR) 상장과 한국·일본 외환당국 간.."
     },
     {
-      "title": "[클릭 e종목]\"코스메카코리아, 신규 브랜드 경쟁력 확보…목표가↑\"",
-      "url": "https://view.asiae.co.kr/article/2026070815573831837",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T09:30:00.000Z",
-      "summary": "삼성증권은 8일 코스메카코리아가 신규 브랜드 수주 확보 경쟁력을 확보하면서 수익이 확대될 것을 예상하며 목표주가를 9만원에서 11만원으로 상향하고 투자의견 '매수'를 유지했다. 삼성증권은 코스메카코리아의 2분기 매출액과 영업이익을 각각 2041억원(전년 동기 대비 +26.2%), 263억원(+14.2%)으로 예상했다. 이는 시장 기대치에 부합하는 수치다. 한국법인은 신규 고객사들이 매출 성장 구간에 진입하며 매출액 1536억원을"
-    },
-    {
       "title": "“영업이익으로 이자도 못내는 기업 늘어”...위기관리 중소기업 6만개에서 25만개로 확대",
       "url": "https://www.mk.co.kr/news/economy/12093723",
       "source": "매일경제 증권",
       "publishedAt": "2026-07-08T09:14:56.000Z",
       "summary": "중기부 등 ‘중소기업 재도약 지원대책’ 발표 부실징후 보이면 AI기반 사전 경보 한계중소기업 2024년 8.8%로 증가정부가 중소기업의 재무 위기를 감지해 사전에 알리고, 성장 가.."
-    },
-    {
-      "title": "[클릭 e종목]\"SK이터닉스, 정책·수요·자본 트리플 모멘텀…목표가↑",
-      "url": "https://view.asiae.co.kr/article/2026070815275150038",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T09:05:00.000Z",
-      "summary": "신영증권은 8일 국내 재생에너지 시장 수요 확장과 정책, 그리고 회사의 자본구조 효율화에 따라 SK이터닉스의 수익이 커질 것으로 예상하며 목표주가를 3만원에서 6만원으로 상향하고 투자의견 '매수'를 유지했다. 박세라 신영증권 연구원은 \"재무적투자자(FI)와의 협력에 따라 운용자산(AUM)이 급격히 확장되면서 회사는 자산관리회사(AMC)와 같은 비즈니스 모델을 추구할 수 있게 됐다\"며 \"여기에 중개 매출이 누적되면서 안정적"
     },
     {
       "title": "\"환율·물가·집값 불안 … 이달 기준금리 인상 유력\"",
@@ -330,46 +309,11 @@
       "summary": ""
     },
     {
-      "title": "2026 M&A·투자 연계 밋업데이 성료…유망 벤처 11곳 투자·협력 논의",
-      "url": "https://view.asiae.co.kr/article/2026070817565290398",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T08:56:52.000Z",
-      "summary": "한국벤처캐피탈협회(VC협회)가 민간 중심의 인수합병(M&A) 생태계 활성화를 이끌고, 기업 간 전략적 협력을 촉진하기 위해 마련한 행사가 성황리에 마무리됐다. 중소벤처기업부의 M&A 활성화 지원사업의 일환으로 열린 행사다. 8일 VC협회 관계자는 \"이날 서울 라마다 바이 윈덤 동대문에서 '2026 M&A·투자 연계 밋업데이'를 성황리에 개최했다\"며 이같이 밝혔다. 이번 행사는 투자유치와 M&A를 희망하는 중소·벤"
-    },
-    {
-      "title": "환율, 한 달반 만에 1500원 아래로…1498.5원 주간 마감(상보)",
-      "url": "https://view.asiae.co.kr/article/2026070816520792193",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T07:52:07.000Z",
-      "summary": "8일 원·달러 환율이 한 달 반여 만에 1500원을 하회하며 주간 거래를 마쳤다. 이날 서울 외환시장에서 원·달러 환율의 주간 거래(오후 3시30분 기준) 종가는 전 거래일 대비 29.7원 내린 1498.5원을 기록했다. 원·달러 환율이 1500원을 밑돈 것은 주간 종가 기준으로는 지난 5월14일(1491원), 장중으로는 5월29일(1494.9원) 이후 처음이다. 전날 주간장 이후 1510원대로 떨어진 원·달러 환율은 이란의 호르무즈 해협 선박 피"
-    },
-    {
-      "title": "'검은 수요일' 코스피 5.4% 급락…코스닥도 5%대↓",
-      "url": "https://view.asiae.co.kr/article/2026070815492595779",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T06:49:25.000Z",
-      "summary": "코스피와 코스닥이 5%대 하락하며 장을 마쳤다. 8일 코스피는 전장보다 409.52포인트(5.35%) 내린 7246.79에 거래를 마쳤다. 한때 7791.66을 회복했다가 7186.21까지 밀리기도 했다. 코스피는 오후 1시 31분 58초 코스피200 선물지수의 변동으로 유가증권시장의 프로그램 매도호가 효력이 5분간 정지됐다. 발동 시점 당시 코스피200 선물지수는 전일 종가보다 64.64포인트(5.21%) 내린 1174.36이었다. 유가증권시장에 대한 매도 사"
-    },
-    {
-      "title": "코스닥, 46.23P 내린 785.00 마감(5.56%↓)",
-      "url": "https://view.asiae.co.kr/article/2026070815344798363",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T06:34:47.000Z",
-      "summary": "코스닥, 46.23P 내린 785.00 마감(5.56%↓)"
-    },
-    {
-      "title": "원·달러 환율 29.7원 내린 1498.5원(오후 3시30분)",
-      "url": "https://view.asiae.co.kr/article/2026070815344394776",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T06:34:43.000Z",
-      "summary": "8일 오후 3시30분 서울 외환시장에서 원·달러 환율은 전 거래일 주간 종가 대비 29.7원 내린 1498.5원을 기록 중이다."
-    },
-    {
-      "title": "코스피, 409.52P 내린 7246.79 마감(5.35%↓)",
-      "url": "https://view.asiae.co.kr/article/2026070815340075965",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-08T06:34:14.000Z",
-      "summary": "코스피, 409.52P 내린 7246.79 마감(5.35%↓)"
+      "title": "트럼프 “이란 다시 공격” 한마디에…다우 1% 밀리고 국제유가 급등 [월가월부]",
+      "url": "https://www.mk.co.kr/news/economy/12093944",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-08T20:42:49.000Z",
+      "summary": "트럼프 “MOU 끝나” 이틀째 공습 브렌트유 5.2% 급등하며 78달러미국과 이란간 군사적 긴장이 다시 고조되면서 뉴욕증시가 혼조세를 나타냈다. 인공지능(AI) 반도체 피크아웃 .."
     },
     {
       "title": "“하이닉스로 친구가 2억 벌었대요” … 이 말 듣고 느낀 감정, 그 오랜 역사",
@@ -391,6 +335,62 @@
       "source": "매일경제",
       "publishedAt": "2026-07-08T19:33:00.000Z",
       "summary": "한국 기준으로 연봉 1억 5000만 원이면 잘 사는 중산층일까요? 대기업 과장급, 전문직 초입. 어느 쪽이든 “괜찮은 사람” 범주에 들어가는 벌이입니다. 미국에서는 그 돈을 벌면 .."
+    },
+    {
+      "title": "IMF, 韓 성장률 석달만에 1.9% → 2.6%",
+      "url": "https://www.mk.co.kr/news/economy/12093884",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-08T15:31:00.000Z",
+      "summary": "국제통화기금(IMF)이 올해 한국 경제성장률 전망치를 대폭 상향 조정했다. 반면 세계 경제성장률 전망치는 지난 4월에 이어 다시 한번 소폭 하향했다. 8일(현지시간) IMF는 '.."
+    },
+    {
+      "title": "오늘 전국 곳곳에 많은 비…그친 뒤 다시 무더위",
+      "url": "https://www.mk.co.kr/news/society/12093865",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:41:03.000Z",
+      "summary": "목요일인 오는 9일 전국 대부분 지역에 비가 내리겠다. 기상청 등에 따르면 중부 지방과 전북, 전남광주 서부, 경북 중북부에는 강하고 많은 비가 내리면서 호우특보가 발표될 가능성이.."
+    },
+    {
+      "title": "‘증거인멸’ 의혹...장윤기 사건 전 수사팀장 구속",
+      "url": "https://www.mk.co.kr/news/society/12093864",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:37:43.000Z",
+      "summary": "장윤기(23) 여고생 살인 사건을 수사하는 과정에서 핵심 증거를 확보하지 않은 혐의를 받는 광주광산경찰서 박모(58) 경감이 구속됐다. 광주지법은 8일 공무상비밀누설과 증거인멸 등.."
+    },
+    {
+      "title": "[속보] 트럼프 “대이란 해상봉쇄 재개할 수 있다”",
+      "url": "https://www.mk.co.kr/news/world/12093862",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:34:11.000Z",
+      "summary": ""
+    },
+    {
+      "title": "IMF, 올해 韓 성장률 ‘1.9→2.6%’ 상향 전망…선진국 중 최고",
+      "url": "https://www.mk.co.kr/news/economy/12093859",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-08T13:28:20.000Z",
+      "summary": "3개월 만에 0.7%p 올려 주요 30개국 중 상승폭 최대 내년 성장률, 2.5%로 0.4%p↑국제통화기금(IMF)이 한국의 올해 성장률 전망치를 선진국 중 최고 수준으로 높여 잡.."
+    },
+    {
+      "title": "영화 같은 ‘피습 자작극’ 의혹…구속된 정이한, 실체 규명되나",
+      "url": "https://www.mk.co.kr/news/society/12093856",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:17:04.000Z",
+      "summary": "이른바 ‘피습 자작극’ 혐의를 받는 정이한 전 개혁신당 부산시장 후보에 대한 구속영장이 8일 전격 발부됐다. 한국 정치사에서 전례를 찾기 어려운 사건의 실체가 드러날지 관심이 쏠린.."
+    },
+    {
+      "title": "[속보] 트럼프 “아마도 오늘밤 다시 이란 타격할 것”",
+      "url": "https://www.mk.co.kr/news/world/12093851",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:09:17.000Z",
+      "summary": "도널드 트럼프 미국 대통령이 8일(현지시간) 이란에 대한 이틀 연속 공습을 예고했다. 튀르키예 앙카라에서 열린 북대서양조약기구(NATO) 정상회의에 참석 중인 트럼프 대통령은 이날.."
+    },
+    {
+      "title": "“성과급, 정액 말고 %로 합시다”…노조 바람, SI업계도 덮쳤다",
+      "url": "https://www.mk.co.kr/news/it/12093846",
+      "source": "매일경제",
+      "publishedAt": "2026-07-08T13:00:27.000Z",
+      "summary": "삼성SDS 첫 노조 설립 이어 현대오토에버도 노조 등장 성과급 보상체계 불만 도화선국내 정보기술(IT) 서비스 대기업에서 노동조합 결성이 잇따르고 있다. 삼성SDS가 창사 41년 .."
     }
   ],
   "aiAnalysis": {

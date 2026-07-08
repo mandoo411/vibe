@@ -1017,21 +1017,11 @@ function normalizeAnalysis(raw, quote) {
   const finalProbability =
     scenarioAProb == null ? probability : Math.max(0, Math.min(100, Math.round(scenarioAProb)));
 
-  // ── 2026-07-09: 52주 고점/저점 괴리 이상치 경고 ──
-  // 52주 고가/저가 비율이 비정상적으로 크면(액면분할 미반영, 데이터 오류 등 가능성),
-  // 그대로 표시했을 때 오해를 부를 수 있어 차트 분석 하단에 확인 caveat을 자동으로 덧붙인다.
-  const high52 = toNum(quote && quote.high52w);
-  const low52 = toNum(quote && quote.low52w);
-  let rangeCaveat = "";
-  if (high52 && low52 && low52 > 0) {
-    const ratio = high52 / low52;
-    if (ratio >= 4) {
-      rangeCaveat =
-        `※ 52주 고점(${Math.round(high52).toLocaleString("ko-KR")}원)과 저점(` +
-        `${Math.round(low52).toLocaleString("ko-KR")}원)의 괴리가 ${ratio.toFixed(1)}배로 매우 큽니다. ` +
-        "액면분할 등 가격 조정 이력이 반영되지 않았거나 데이터 오류일 가능성이 있으니, 실제 투자 판단 전 HTS·증권사 앱에서 재확인을 권장합니다.";
-    }
-  }
+  // 2026-07-09: 52주 고점/저점 괴리가 크면 "데이터 오류일 수 있다"고 자동으로 의심하는
+  // caveat을 붙였었는데, 실제로 종목이 정당하게 몇 배씩 급등/급락한 경우(예: 테마 급등주)
+  // 에는 근거 없이 정확한 데이터를 의심하게 만드는 것이라 오히려 신뢰를 깎는 기능이었다.
+  // 가격 데이터만으로 "진짜 급등인지 오류인지" 구분할 방법이 없으므로 제거한다 — 확인 안 된
+  // 것을 확인된 것처럼 단정하지 않는다는 원칙은 "의심"에도 동일하게 적용돼야 한다.
   const chartText = stripCitations(sanitizeStr(raw.chart));
 
   return {
@@ -1048,7 +1038,7 @@ function normalizeAnalysis(raw, quote) {
       unreflected: stripCitations(sanitizeStr(materialsRaw.unreflected)),
       summary: stripCitations(sanitizeStr(materialsRaw.summary)),
     },
-    chart: rangeCaveat ? (chartText ? chartText + "\n\n" + rangeCaveat : rangeCaveat) : chartText,
+    chart: chartText,
     opinion: {
       short: sanitizeStr(opinion.short) || "단기 전망 정보가 없습니다.",
       mid: sanitizeStr(opinion.mid) || "중기 전망 정보가 없습니다.",

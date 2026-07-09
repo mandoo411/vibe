@@ -1,7 +1,12 @@
 /**
- * 암호화폐 시장 데이터 프록시 (CoinMarketCap + Alternative.me Fear & Greed)
- * GET ?action=global|listings|fear-greed
+ * 암호화폐 통합 엔드포인트 (Vercel Hobby 플랜 서버리스 함수 12개 제한 대응)
+ * - kind=data (기본): CoinMarketCap + Alternative.me Fear & Greed (구 api/crypto-data.js)
+ * - kind=news        : RSS 크립토 뉴스 (구 api/crypto-news.js)
+ * vercel.json 라우팅에서 /api/crypto-data -> /api/crypto.js?kind=data,
+ *                        /api/crypto-news -> /api/crypto.js?kind=news 로 매핑됨.
  */
+
+// ===================== data (구 crypto-data.js) =====================
 
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com";
 const FEAR_GREED_URL = "https://api.alternative.me/fng/?limit=1";
@@ -179,7 +184,7 @@ async function fetchCoinGeckoSparklineMap() {
       }
     }
   } catch (e) {
-    console.warn("[crypto-data] coingecko sparkline", e && e.message);
+    console.warn("[crypto] data sparkline", e && e.message);
   }
   return map;
 }
@@ -280,17 +285,7 @@ async function fetchFearGreed() {
   });
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method === "OPTIONS") {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
-  if (req.method !== "GET") {
-    json(res, 405, { error: "Method not allowed" });
-    return;
-  }
-
+async function handleData(req, res) {
   const action = sanitizeStr(req.query && req.query.action) || "global";
   try {
     if (action === "global") {
@@ -308,7 +303,156 @@ module.exports = async function handler(req, res) {
     }
     json(res, 400, { error: "Unknown action. Use global, listings, or fear-greed." });
   } catch (e) {
-    console.error("[crypto-data]", action, e && e.message, e);
+    console.error("[crypto] data", action, e && e.message, e);
     json(res, 502, { error: e.message || String(e) });
   }
+}
+
+// ===================== news (구 crypto-news.js) =====================
+
+const NEWS_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
+const RSS_FEEDS = [
+  { url: "https://www.coindeskkorea.com/feed/", source: "코인데스크 코리아" },
+  { url: "https://tokenpost.kr/rss", source: "토큰포스트" },
+  { url: "https://www.blockmedia.co.kr/feed/", source: "블록미디어" },
+];
+
+const MAX_NEWS = 20;
+
+function decodeXml(value) {
+  return String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
+function decodeHtmlEntities(value) {
+  return String(value || "")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&nbsp;/g, " ");
+}
+
+function stripHtml(value) {
+  return decodeHtmlEntities(
+    String(value || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+function cleanText(value) {
+  return decodeHtmlEntities(decodeXml(value)).replace(/\s+/g, " ").trim();
+}
+
+function parseRssItems(xml, source) {
+  const items = String(xml || "").match(/<item>[\s\S]*?<\/item>/g) || [];
+  return items
+    .map((item) => {
+      const title = cleanText((item.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
+      const url = cleanText((item.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
+      const pubRaw = cleanText(
+        (item.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1] ||
+          (item.match(/<dc:date>([\s\S]*?)<\/dc:date>/) || [])[1]
+      );
+      const summary = stripHtml((item.match(/<description>([\s\S]*?)<\/description>/) || [])[1]);
+      const publishedMs = pubRaw ? new Date(pubRaw).getTime() : NaN;
+      if (!title || !url || Number.isNaN(publishedMs)) return null;
+      return {
+        title,
+        summary: summary || "",
+        source,
+        url,
+        publishedAt: new Date(publishedMs).toISOString(),
+        datetime: publishedMs,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function fetchRssFeed(feed) {
+  const res = await fetch(feed.url, {
+    headers: {
+      "user-agent": NEWS_USER_AGENT,
+      accept: "application/rss+xml, application/xml, text/xml",
+    },
+  });
+  const xml = await res.text();
+  if (!res.ok) throw new Error(`${feed.source} HTTP ${res.status}`);
+  return parseRssItems(xml, feed.source);
+}
+
+function dedupeAndSort(rows) {
+  const seen = new Set();
+  return rows
+    .sort((a, b) => b.datetime - a.datetime)
+    .filter((row) => {
+      const key = row.url || row.title;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_NEWS);
+}
+
+async function handleNews(req, res) {
+  try {
+    const settled = await Promise.allSettled(RSS_FEEDS.map((feed) => fetchRssFeed(feed)));
+    const rows = [];
+    for (let i = 0; i < settled.length; i++) {
+      const result = settled[i];
+      if (result.status === "fulfilled") {
+        rows.push(...result.value);
+      } else {
+        console.warn("[crypto] news RSS failed:", RSS_FEEDS[i].source, result.reason && result.reason.message);
+      }
+    }
+
+    const news = dedupeAndSort(rows);
+    if (!news.length) {
+      throw new Error("No crypto news available from RSS feeds");
+    }
+
+    res.statusCode = 200;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.setHeader("Cache-Control", "s-maxage=300");
+    res.end(
+      JSON.stringify({
+        news,
+        updatedAt: new Date().toISOString(),
+      })
+    );
+  } catch (e) {
+    res.statusCode = 500;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: e.message || String(e) }));
+  }
+}
+
+// ===================== dispatch =====================
+
+module.exports = async function handler(req, res) {
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+  if (req.method !== "GET") {
+    json(res, 405, { error: "Method not allowed" });
+    return;
+  }
+
+  const kind = sanitizeStr(req.query && req.query.kind) || "data";
+  if (kind === "news") {
+    await handleNews(req, res);
+    return;
+  }
+  await handleData(req, res);
 };

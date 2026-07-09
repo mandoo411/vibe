@@ -16,59 +16,174 @@
     },
     {
       "source": "/world-market.html",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/(favicon.ico|icon-t-.*\\.png|apple-touch-icon.*\\.png|site.webmanifest)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     },
     {
       "source": "/(.*\\.css)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
     }
   ],
   "functions": {
-    "api/kis-realtime-data.js": { "maxDuration": 60 },
-    "api/us-market-data.js": { "maxDuration": 60 },
-    "api/crypto-data.js": { "maxDuration": 60 },
-    "api/crypto-news.js": { "maxDuration": 30 },
-    "api/analyze.js": { "maxDuration": 120 },
-    "api/kis-stock-quote.js": { "maxDuration": 30 },
-    "api/world-market.js": { "maxDuration": 60 },
-    "api/repo-data.js": { "maxDuration": 15 },
-    "api/stock-analysis.js": { "maxDuration": 60 },
-    "api/market-ticker.js": { "maxDuration": 15 },
-    "api/market-overview.js": { "maxDuration": 60 },
-    "api/dashboard-data.js": { "maxDuration": 60 },
-    "api/payment/complete.js": { "maxDuration": 30 }
+    "api/kis-realtime-data.js": {
+      "maxDuration": 60
+    },
+    "api/us-market-data.js": {
+      "maxDuration": 60
+    },
+    "api/analyze.js": {
+      "maxDuration": 120
+    },
+    "api/kis-stock-quote.js": {
+      "maxDuration": 30
+    },
+    "api/world-market.js": {
+      "maxDuration": 60
+    },
+    "api/repo-data.js": {
+      "maxDuration": 15
+    },
+    "api/stock-analysis.js": {
+      "maxDuration": 60
+    },
+    "api/market-ticker.js": {
+      "maxDuration": 15
+    },
+    "api/market-overview.js": {
+      "maxDuration": 60
+    },
+    "api/dashboard-data.js": {
+      "maxDuration": 60
+    },
+    "api/payment/complete.js": {
+      "maxDuration": 30
+    },
+    "api/crypto.js": {
+      "maxDuration": 60
+    }
   },
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/apple-touch-icon.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/apple-touch-icon-precomposed.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/apple-touch-icon-180x180.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/apple-touch-icon-152x152.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/apple-touch-icon-120x120.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/icon-t-180.png", "dest": "/assets/icon-t-180.png" },
-    { "src": "/briefing.html", "dest": "/briefing.html" },
-    { "src": "/realtime.html", "dest": "/realtime.html" },
-    { "src": "/daily-market.html", "dest": "/daily-market.html" },
-    { "src": "/market.html", "dest": "/market.html" },
-    { "src": "/weekly-market.html", "dest": "/weekly-market.html" },
-    { "src": "/weekly-market/?", "dest": "/weekly-market.html" },
-    { "src": "/us-market.html", "dest": "/us-market.html" },
-    { "src": "/crypto.html", "dest": "/crypto.html" },
-    { "src": "/world-market.html", "dest": "/world-market.html" },
-    { "src": "/stock-analysis.html", "dest": "/stock-analysis.html" },
-    { "src": "/login.html", "dest": "/login.html" },
-    { "src": "/signup.html", "dest": "/signup.html" },
-    { "src": "/mypage.html", "dest": "/mypage.html" },
-    { "src": "/pricing.html", "dest": "/pricing.html" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/apple-touch-icon-precomposed.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/apple-touch-icon-180x180.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/apple-touch-icon-152x152.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/apple-touch-icon-120x120.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/icon-t-180.png",
+      "dest": "/assets/icon-t-180.png"
+    },
+    {
+      "src": "/briefing.html",
+      "dest": "/briefing.html"
+    },
+    {
+      "src": "/realtime.html",
+      "dest": "/realtime.html"
+    },
+    {
+      "src": "/daily-market.html",
+      "dest": "/daily-market.html"
+    },
+    {
+      "src": "/market.html",
+      "dest": "/market.html"
+    },
+    {
+      "src": "/weekly-market.html",
+      "dest": "/weekly-market.html"
+    },
+    {
+      "src": "/weekly-market/?",
+      "dest": "/weekly-market.html"
+    },
+    {
+      "src": "/us-market.html",
+      "dest": "/us-market.html"
+    },
+    {
+      "src": "/crypto.html",
+      "dest": "/crypto.html"
+    },
+    {
+      "src": "/world-market.html",
+      "dest": "/world-market.html"
+    },
+    {
+      "src": "/stock-analysis.html",
+      "dest": "/stock-analysis.html"
+    },
+    {
+      "src": "/login.html",
+      "dest": "/login.html"
+    },
+    {
+      "src": "/signup.html",
+      "dest": "/signup.html"
+    },
+    {
+      "src": "/mypage.html",
+      "dest": "/mypage.html"
+    },
+    {
+      "src": "/pricing.html",
+      "dest": "/pricing.html"
+    },
+    {
+      "src": "/api/crypto-data",
+      "dest": "/api/crypto.js?kind=data"
+    },
+    {
+      "src": "/api/crypto-news",
+      "dest": "/api/crypto.js?kind=news"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
-

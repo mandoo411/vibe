@@ -498,14 +498,14 @@
       '<div class="home-nav__live" aria-label="실시간">' +
       '<span class="home-nav__live-dot" aria-hidden="true"></span>' +
       '<span class="home-nav__live-text">LIVE</span></div>' +
-      '<a class="home-nav__theme home-nav__theme--header home-nav__account-link" id="home-nav__account-link" href="./login.html" aria-label="로그인" title="로그인">' +
-      '<i class="ti ti-login" aria-hidden="true"></i></a>' +
       '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">' +
-      '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>';
+      '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>' +
+      '<a class="home-nav__theme home-nav__theme--header home-nav__account-link" id="home-nav__account-link" href="./login.html" aria-label="로그인" title="로그인">' +
+      '<i class="ti ti-login" aria-hidden="true"></i><span class="home-nav__account-link-label">로그인</span></a>';
     updateMobileAccountLink();
   }
 
-  /** 모바일 상단바 계정 아이콘 — 로그인 상태에 따라 로그인/마이페이지로 갱신 */
+  /** 모바일 상단바 계정 버튼 — 로그인 상태에 따라 아이콘+텍스트 라벨을 로그인/마이페이지로 갱신 */
   function updateMobileAccountLink() {
     const el = document.getElementById("home-nav__account-link");
     if (!el) return;
@@ -514,12 +514,12 @@
       el.setAttribute("href", "./mypage.html");
       el.setAttribute("aria-label", "마이페이지");
       el.setAttribute("title", "마이페이지");
-      el.innerHTML = '<i class="ti ti-user-circle" aria-hidden="true"></i>';
+      el.innerHTML = '<i class="ti ti-user-circle" aria-hidden="true"></i><span class="home-nav__account-link-label">마이페이지</span>';
     } else {
       el.setAttribute("href", "./login.html");
       el.setAttribute("aria-label", "로그인");
       el.setAttribute("title", "로그인");
-      el.innerHTML = '<i class="ti ti-login" aria-hidden="true"></i>';
+      el.innerHTML = '<i class="ti ti-login" aria-hidden="true"></i><span class="home-nav__account-link-label">로그인</span>';
     }
   }
 

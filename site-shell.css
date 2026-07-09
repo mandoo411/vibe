@@ -512,13 +512,29 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   font-size: 17px;
 }
 
-/* 모바일 상단바 계정(로그인/마이페이지) 아이콘 — 테마 토글과 구분되는 브랜드 색상 */
+/* 모바일 상단바 계정(로그인/마이페이지) 버튼 — 아이콘+텍스트 라벨, 테마 토글과 구분되는 브랜드 색상 */
+.home-nav__account-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .home-nav__account-link i {
   color: var(--accent-brand, #0f8387);
+  font-size: 15px;
+}
+
+.home-nav__account-link-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent-brand, #0f8387);
+  white-space: nowrap;
 }
 
 [data-theme="dark"] .home-nav__account-link i,
-body[data-theme="dark"] .home-nav__account-link i {
+body[data-theme="dark"] .home-nav__account-link i,
+[data-theme="dark"] .home-nav__account-link-label,
+body[data-theme="dark"] .home-nav__account-link-label {
   color: var(--accent-gold, #ffd84d);
 }
 
@@ -1918,6 +1934,22 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
   .page-tm-v2 .home-nav__theme--header i {
     font-size: 16px;
+  }
+
+  /* 계정(로그인/마이페이지) 버튼은 정사각형 아이콘이 아니라 텍스트 라벨이 보이는 알약형 버튼 */
+  .page-tm-v2 .home-nav__theme--header.home-nav__account-link {
+    width: auto;
+    min-width: auto;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(15, 131, 135, 0.12);
+    border-color: transparent;
+  }
+
+  [data-theme="dark"] .page-tm-v2 .home-nav__theme--header.home-nav__account-link,
+  body[data-theme="dark"] .page-tm-v2 .home-nav__theme--header.home-nav__account-link {
+    background: rgba(255, 216, 77, 0.16);
   }
 
   .page-tm-v2 .home-nav__live-dot {

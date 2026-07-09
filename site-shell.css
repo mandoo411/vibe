@@ -512,6 +512,16 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   font-size: 17px;
 }
 
+/* 모바일 상단바 계정(로그인/마이페이지) 아이콘 — 테마 토글과 구분되는 브랜드 색상 */
+.home-nav__account-link i {
+  color: var(--accent-brand, #0f8387);
+}
+
+[data-theme="dark"] .home-nav__account-link i,
+body[data-theme="dark"] .home-nav__account-link i {
+  color: var(--accent-gold, #ffd84d);
+}
+
 /* 헤더 로고·배지 — index.html(home.css)와 동일 */
 [data-theme="dark"] .home-nav__logo-box,
 body[data-theme="dark"] .home-nav__logo-box {

@@ -80,14 +80,15 @@
     { id: "us", href: "./us-market.html", label: "미국주식", icon: "ti-building-skyscraper" },
     { id: "crypto", href: "./crypto.html", label: "암호화폐", icon: "ti-currency-bitcoin" },
     { id: "world", href: "./world-market.html", label: "글로벌랭킹", icon: "ti-world" },
+    { id: "pricing", href: "./pricing.html", label: "요금제", icon: "ti-credit-card" },
   ];
 
-  /** 전체 메뉴 시트 3×3 (행 우선) */
+  /** 전체 메뉴 시트 (행 우선). "account"는 로그인 상태에 따라 로그인/마이페이지로 동적 표시. */
   const NAV_SHEET_GRID = [
     ["home", "realtime", "analysis"],
     ["schedule", "briefing", "daily"],
     ["market", "us", "crypto"],
-    ["world"],
+    ["world", "account", "pricing"],
   ];
 
   const NAV_SHEET_LABELS = {
@@ -101,6 +102,8 @@
     us: "미국주식",
     crypto: "암호화폐",
     world: "글로벌랭킹",
+    account: "계정",
+    pricing: "요금제",
   };
 
   const PATH_TO_PAGE_ID = {
@@ -387,8 +390,18 @@
 
   function ensureNavSheet() {
     if (document.getElementById("tm-nav-sheet")) return;
+    const st = authState();
+    const accountHref = st.isLoggedIn ? "./mypage.html" : "./login.html";
+    const accountLabel = st.isLoggedIn ? "마이페이지" : "로그인";
+    const accountIcon = st.isLoggedIn ? "ti-user-circle" : "ti-login";
     const cells = NAV_SHEET_GRID.flat()
       .map((id) => {
+        if (id === "account") {
+          return (
+            `<a class="tm-nav-sheet__cell" href="${accountHref}" data-tm-page="account" id="tm-nav-sheet-account">` +
+            `<i class="ti ${accountIcon}" aria-hidden="true"></i><span>${accountLabel}</span></a>`
+          );
+        }
         const p = pageById(id);
         if (!p) return "";
         const label = NAV_SHEET_LABELS[id] || p.label;
@@ -485,8 +498,29 @@
       '<div class="home-nav__live" aria-label="실시간">' +
       '<span class="home-nav__live-dot" aria-hidden="true"></span>' +
       '<span class="home-nav__live-text">LIVE</span></div>' +
+      '<a class="home-nav__theme home-nav__theme--header home-nav__account-link" id="home-nav__account-link" href="./login.html" aria-label="로그인" title="로그인">' +
+      '<i class="ti ti-login" aria-hidden="true"></i></a>' +
       '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">' +
       '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>';
+    updateMobileAccountLink();
+  }
+
+  /** 모바일 상단바 계정 아이콘 — 로그인 상태에 따라 로그인/마이페이지로 갱신 */
+  function updateMobileAccountLink() {
+    const el = document.getElementById("home-nav__account-link");
+    if (!el) return;
+    const st = authState();
+    if (st.isLoggedIn) {
+      el.setAttribute("href", "./mypage.html");
+      el.setAttribute("aria-label", "마이페이지");
+      el.setAttribute("title", "마이페이지");
+      el.innerHTML = '<i class="ti ti-user-circle" aria-hidden="true"></i>';
+    } else {
+      el.setAttribute("href", "./login.html");
+      el.setAttribute("aria-label", "로그인");
+      el.setAttribute("title", "로그인");
+      el.innerHTML = '<i class="ti ti-login" aria-hidden="true"></i>';
+    }
   }
 
   function reorderGnbAnalysisLink() {
@@ -561,6 +595,7 @@
   }
 
   document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
+  document.addEventListener("tm-auth-ready", updateMobileAccountLink);
   window.tmHasAnalysisAccess = hasAnalysisBetaAccess;
   window.tmOpenAnalysisGate = openAnalysisGate;
   window.tmEnsureAnalysisGate = ensureAnalysisGate;

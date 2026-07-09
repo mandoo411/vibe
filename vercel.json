@@ -10,7 +10,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: https:; frame-src 'none'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.portone.io; connect-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: https:; frame-src 'none'"
         }
       ]
     },
@@ -43,7 +43,8 @@
     "api/stock-analysis.js": { "maxDuration": 60 },
     "api/market-ticker.js": { "maxDuration": 15 },
     "api/market-overview.js": { "maxDuration": 60 },
-    "api/dashboard-data.js": { "maxDuration": 60 }
+    "api/dashboard-data.js": { "maxDuration": 60 },
+    "api/payment/complete.js": { "maxDuration": 30 }
   },
   "routes": [
     { "handle": "filesystem" },
@@ -63,6 +64,10 @@
     { "src": "/crypto.html", "dest": "/crypto.html" },
     { "src": "/world-market.html", "dest": "/world-market.html" },
     { "src": "/stock-analysis.html", "dest": "/stock-analysis.html" },
+    { "src": "/login.html", "dest": "/login.html" },
+    { "src": "/signup.html", "dest": "/signup.html" },
+    { "src": "/mypage.html", "dest": "/mypage.html" },
+    { "src": "/pricing.html", "dest": "/pricing.html" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }

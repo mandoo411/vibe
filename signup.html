@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07264b" />
+    <title>TotalMoney AI · 회원가입</title>
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6" />
+    <link rel="shortcut icon" href="/favicon.ico?v=6" />
+    <link rel="manifest" href="/site.webmanifest?v=6" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/auth-config.js"></script>
+    <script src="./assets/auth.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="./assets/auth.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  </head>
+  <body class="page-tm-v2 page-signup">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
+            </div>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <a class="home-nav__link" href="./briefing.html">브리핑</a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./us-market.html">미국주식</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </header>
+
+      <main class="tm-main tm-auth-main">
+        <div class="tm-auth-card">
+          <h1 class="tm-auth-card__title">회원가입</h1>
+          <p class="tm-auth-card__desc">이메일로 가입하고 무료 플랜부터 시작하세요.</p>
+
+          <form id="signup-form" autocomplete="on">
+            <div class="tm-auth-field">
+              <label for="signup-name">이름 / 닉네임</label>
+              <input type="text" id="signup-name" name="name" placeholder="닉네임" />
+            </div>
+            <div class="tm-auth-field">
+              <label for="signup-email">이메일</label>
+              <input type="email" id="signup-email" name="email" required placeholder="you@example.com" />
+            </div>
+            <div class="tm-auth-field">
+              <label for="signup-password">비밀번호</label>
+              <input type="password" id="signup-password" name="password" required minlength="6" placeholder="6자 이상" />
+            </div>
+            <button type="submit" class="tm-auth-submit" id="signup-submit">회원가입</button>
+            <div class="tm-auth-msg" id="signup-msg"></div>
+          </form>
+
+          <p class="tm-auth-switch">이미 계정이 있으신가요? <a href="./login.html">로그인</a></p>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        function showMsg(text, isError) {
+          const el = document.getElementById("signup-msg");
+          el.textContent = text;
+          el.classList.add("is-visible");
+          el.classList.toggle("tm-auth-msg--error", !!isError);
+          el.classList.toggle("tm-auth-msg--ok", !isError);
+        }
+
+        document.getElementById("signup-form").addEventListener("submit", async function (e) {
+          e.preventDefault();
+          if (window.TMAuth && window.TMAuth.isSetupPending()) {
+            showMsg("아직 회원가입 기능 설정 중입니다. 잠시 후 다시 시도해주세요.", true);
+            return;
+          }
+          const displayName = document.getElementById("signup-name").value.trim();
+          const email = document.getElementById("signup-email").value.trim();
+          const password = document.getElementById("signup-password").value;
+          const btn = document.getElementById("signup-submit");
+          btn.disabled = true;
+          btn.textContent = "가입 처리 중…";
+          try {
+            await window.TMAuth.signUp({ email, password, displayName });
+            showMsg("가입 신청 완료! 이메일함에서 인증 링크를 확인해주세요.", false);
+            document.getElementById("signup-form").reset();
+          } catch (err) {
+            showMsg((err && err.message) || "회원가입에 실패했습니다.", true);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "회원가입";
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

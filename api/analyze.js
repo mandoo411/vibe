@@ -11,6 +11,17 @@
  * 최신 헤드라인을 수집해 프롬프트에 근거로 넣어준다.
  */
 
+const {
+  bearerToken,
+  getUserFromToken,
+  getSubscription,
+  tryIncrementFreeUsage,
+  currentMonthKeySeoul,
+  isConfigured: supabaseConfigured,
+} = require("../lib/supabase-server");
+
+const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
+
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
 
 const WEB_SEARCH_TOOLS = [
@@ -1706,6 +1717,27 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     json(res, 400, { error: e.message || "Invalid JSON body" });
     return;
+  }
+
+  if (supabaseConfigured()) {
+    const token = bearerToken(req);
+    const user = await getUserFromToken(token);
+    if (!user) {
+      json(res, 401, { error: "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
+      return;
+    }
+    const sub = await getSubscription(user.id);
+    const isPro = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
+    if (!isPro) {
+      const allowed = await tryIncrementFreeUsage(user.id, currentMonthKeySeoul(), FREE_MONTHLY_LIMIT);
+      if (!allowed) {
+        json(res, 403, {
+          error: `\uBB34\uB8CC \uD50C\uB79C\uC740 \uC774\uBC88 \uB2EC AI \uC885\uBAA9\uBD84\uC11D \uCCB4\uD5D8 ${FREE_MONTHLY_LIMIT}\uD68C\uB97C \uBAA8\uB450 \uC0AC\uC6A9\uD588\uC2B5\uB2C8\uB2E4. Pro\uB85C \uC5C5\uADF8\uB808\uC774\uB4DC\uD558\uBA74 \uBB34\uC81C\uD55C \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`,
+          code: "USAGE_LIMIT",
+        });
+        return;
+      }
+    }
   }
 
   const code6 = normalizeCode6(body && body.code);

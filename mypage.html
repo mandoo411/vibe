@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07264b" />
+    <title>TotalMoney AI · 마이페이지</title>
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6" />
+    <link rel="shortcut icon" href="/favicon.ico?v=6" />
+    <link rel="manifest" href="/site.webmanifest?v=6" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/auth-config.js"></script>
+    <script src="./assets/auth.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="./assets/auth.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+  </head>
+  <body class="page-tm-v2 page-mypage">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
+            </div>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <a class="home-nav__link" href="./briefing.html">브리핑</a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./us-market.html">미국주식</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </header>
+
+      <main class="tm-main tm-auth-main" style="align-items: flex-start; padding-top: 40px">
+        <div class="tm-account-card" id="account-card" hidden>
+          <h1 class="tm-auth-card__title" style="margin-bottom: 4px">마이페이지</h1>
+
+          <div class="tm-account-row">
+            <p class="tm-account-row__label">이메일</p>
+            <p class="tm-account-row__value" id="acc-email">—</p>
+          </div>
+
+          <div class="tm-account-row">
+            <p class="tm-account-row__label">현재 요금제</p>
+            <p class="tm-account-row__value">
+              <span class="tm-plan-badge" id="acc-plan-badge">FREE</span>
+              <span id="acc-plan-until" style="font-size: 13px; font-weight: 500; color: var(--text-body); margin-left: 8px"></span>
+            </p>
+          </div>
+
+          <div class="tm-account-row">
+            <p class="tm-account-row__label">결제 내역</p>
+            <div id="acc-orders">불러오는 중…</div>
+          </div>
+
+          <div class="tm-account-actions">
+            <a class="tm-btn tm-btn--primary" href="./pricing.html">요금제 관리 / 업그레이드</a>
+            <button type="button" class="tm-btn tm-btn--ghost" id="acc-logout">로그아웃</button>
+          </div>
+        </div>
+
+        <div class="tm-auth-card" id="guest-card" hidden>
+          <h1 class="tm-auth-card__title">로그인이 필요합니다</h1>
+          <p class="tm-auth-card__desc">마이페이지를 보려면 먼저 로그인해주세요.</p>
+          <a class="tm-auth-submit" style="display: block; text-align: center; text-decoration: none; line-height: 1.6" href="./login.html?next=/mypage.html">로그인 하러 가기</a>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        const PLAN_LABEL = { free: "FREE", pro: "PRO", premium: "PREMIUM" };
+
+        function fmtDate(iso) {
+          if (!iso) return "";
+          try {
+            return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+          } catch (e) {
+            return "";
+          }
+        }
+
+        async function loadOrders(userId, accessToken) {
+          const box = document.getElementById("acc-orders");
+          try {
+            const cfg = window.TM_AUTH_CONFIG;
+            const url = `${cfg.SUPABASE_URL}/rest/v1/orders?user_id=eq.${userId}&select=order_name,amount,status,created_at&order=created_at.desc&limit=10`;
+            const res = await fetch(url, {
+              headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${accessToken}` },
+            });
+            const rows = res.ok ? await res.json() : [];
+            if (!rows.length) {
+              box.textContent = "결제 내역이 없습니다.";
+              return;
+            }
+            box.innerHTML = rows
+              .map(
+                (o) =>
+                  `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-color);font-size:13.5px">` +
+                  `<span>${fmtDate(o.created_at)} · ${o.order_name || ""}</span>` +
+                  `<span>${Number(o.amount).toLocaleString("ko-KR")}원 · ${o.status}</span></div>`
+              )
+              .join("");
+          } catch (e) {
+            box.textContent = "결제 내역을 불러오지 못했습니다.";
+          }
+        }
+
+        async function render() {
+          const state = window.TM_AUTH_STATE;
+          if (!state.isLoggedIn) {
+            document.getElementById("guest-card").hidden = false;
+            document.getElementById("account-card").hidden = true;
+            return;
+          }
+          document.getElementById("guest-card").hidden = true;
+          document.getElementById("account-card").hidden = false;
+          document.getElementById("acc-email").textContent = state.email;
+          const badge = document.getElementById("acc-plan-badge");
+          badge.textContent = PLAN_LABEL[state.plan] || "FREE";
+          badge.classList.toggle("tm-plan-badge--free", state.plan === "free");
+          if (state.hasProAccess) {
+            document.getElementById("acc-plan-until").textContent = "AI 종목분석 무제한 이용 중";
+          } else {
+            document.getElementById("acc-plan-until").textContent = "AI 종목분석은 월 체험 횟수 제한이 있어요";
+          }
+          const token = await window.TMAuth.getAccessToken();
+          loadOrders(state.userId, token);
+        }
+
+        document.addEventListener("tm-auth-ready", render);
+        document.addEventListener("DOMContentLoaded", () => {
+          if (window.TM_AUTH_STATE.loaded) render();
+        });
+
+        document.getElementById("acc-logout").addEventListener("click", async function () {
+          await window.TMAuth.signOut();
+          window.location.href = "./index.html";
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,22 +1,7 @@
 (function () {
   "use strict";
 
-  /** 2026-07-07: site-shell.js와 동일한 베타 우회 키 (localStorage 공유, 같은 origin) */
-  const ANALYSIS_BETA_KEY = "tm-beta-q7x2k9wv";
-  const ANALYSIS_BETA_STORAGE_KEY = "tmBetaAccess";
-
-  function hasStockAnalysisBetaAccess() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const qp = params.get("betakey");
-      if (qp && qp === ANALYSIS_BETA_KEY) {
-        window.localStorage.setItem(ANALYSIS_BETA_STORAGE_KEY, ANALYSIS_BETA_KEY);
-      }
-      return window.localStorage.getItem(ANALYSIS_BETA_STORAGE_KEY) === ANALYSIS_BETA_KEY;
-    } catch (e) {
-      return false;
-    }
-  }
+  // Access control now lives in site-shell.js (window.tmHasAnalysisAccess / tmOpenAnalysisGate)
 
   let input = null;
   let btn = null;
@@ -1056,11 +1041,15 @@
   async function fetchAnalysis(code, name, indicators) {
     console.log("[AI분석] fetch 시작", { code, name, indicators });
     const ind = indicators && typeof indicators === "object" ? indicators : {};
+    const authToken = window.TMAuth ? await window.TMAuth.getAccessToken().catch(() => "") : "";
     let res;
     try {
       res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           code,
           name,
@@ -1150,13 +1139,42 @@
     runAnalysis(q);
   }
 
+  let analysisUiBound = false;
+  let analysisInitSafetyTimer = null;
+
   function init() {
+    const state = window.TM_AUTH_STATE;
+    if (!state || !state.loaded) {
+      document.addEventListener("tm-auth-ready", init, { once: true });
+      if (!analysisInitSafetyTimer) {
+        analysisInitSafetyTimer = setTimeout(init, 4000);
+      }
+      return;
+    }
+    if (analysisInitSafetyTimer) {
+      clearTimeout(analysisInitSafetyTimer);
+      analysisInitSafetyTimer = null;
+    }
+
+    const allowed = typeof window.tmHasAnalysisAccess === "function" ? window.tmHasAnalysisAccess() : true;
+    if (!allowed) {
+      if (typeof window.tmOpenAnalysisGate === "function") window.tmOpenAnalysisGate();
+      document.addEventListener("tm-auth-ready", init, { once: true });
+      return;
+    }
+
     const gateEl = document.getElementById("ai-access-gate");
     if (gateEl) {
-      if (!hasStockAnalysisBetaAccess()) return;
+      gateEl.hidden = true;
       gateEl.remove();
       document.body.classList.remove("ai-access-gate-open");
     }
+    bindAnalyzeUi();
+  }
+
+  function bindAnalyzeUi() {
+    if (analysisUiBound) return;
+    analysisUiBound = true;
 
     input = document.getElementById("ai-stock-query");
     btn = document.getElementById("analyzeBtn");

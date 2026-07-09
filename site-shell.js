@@ -49,6 +49,10 @@
   const ANALYSIS_BETA_KEY = "tm-beta-q7x2k9wv";
   const ANALYSIS_BETA_STORAGE_KEY = "tmBetaAccess";
 
+  function authState() {
+    return window.TM_AUTH_STATE || { loaded: false, isLoggedIn: false, hasProAccess: false, setupPending: true };
+  }
+
   function hasAnalysisBetaAccess() {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -56,10 +60,13 @@
       if (qp && qp === ANALYSIS_BETA_KEY) {
         window.localStorage.setItem(ANALYSIS_BETA_STORAGE_KEY, ANALYSIS_BETA_KEY);
       }
-      return window.localStorage.getItem(ANALYSIS_BETA_STORAGE_KEY) === ANALYSIS_BETA_KEY;
+      if (window.localStorage.getItem(ANALYSIS_BETA_STORAGE_KEY) === ANALYSIS_BETA_KEY) return true;
     } catch (e) {
-      return false;
+      /* ignore */
     }
+    const st = authState();
+    if (st.setupPending) return false;
+    return !!st.isLoggedIn;
   }
 
   const TM_ALL_PAGES = [
@@ -138,8 +145,35 @@
     document.body.insertBefore(gate, document.body.firstChild);
   }
 
+  function updateAnalysisGateContent() {
+    const gate = document.getElementById("ai-access-gate");
+    if (!gate) return;
+    const st = authState();
+    const titleEl = gate.querySelector("#ai-access-gate-title");
+    const textEl = gate.querySelector(".ai-access-gate__text");
+    const btnEl = gate.querySelector(".ai-access-gate__btn");
+    if (!titleEl || !textEl || !btnEl) return;
+    if (st.setupPending) {
+      titleEl.textContent = "서비스 준비 중";
+      textEl.innerHTML = "AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.";
+      btnEl.textContent = "홈으로 돌아가기";
+      btnEl.setAttribute("href", "./index.html");
+    } else if (!st.isLoggedIn) {
+      titleEl.textContent = "로그인이 필요합니다";
+      textEl.innerHTML = "AI 종목분석은 로그인 후 이용하실 수 있습니다.<br>무료 회원가입 시 매월 체험 횟수가 제공됩니다.";
+      btnEl.textContent = "로그인 / 회원가입";
+      btnEl.setAttribute("href", "./login.html?next=/stock-analysis.html");
+    } else {
+      titleEl.textContent = "AI 종목분석 이용 안내";
+      textEl.innerHTML = "무료 플랜은 매월 체험 횟수가 제한됩니다.<br>Pro 플랜으로 업그레이드하면 무제한 이용 가능합니다.";
+      btnEl.textContent = "요금제 보기";
+      btnEl.setAttribute("href", "./pricing.html");
+    }
+  }
+
   function openAnalysisGate() {
     ensureAnalysisGate();
+    updateAnalysisGateContent();
     const gate = document.getElementById("ai-access-gate");
     if (gate) gate.hidden = false;
     document.body.classList.add("ai-access-gate-open");
@@ -150,14 +184,20 @@
     if (!el || el.dataset.analysisGateBound === "1") return;
     el.dataset.analysisGateBound = "1";
     el.addEventListener("click", (e) => {
-      e.preventDefault();
-      openAnalysisGate();
+      if (ANALYSIS_PAGE_LOCKED && !hasAnalysisBetaAccess()) {
+        e.preventDefault();
+        openAnalysisGate();
+        return;
+      }
+      if (el.tagName === "BUTTON") {
+        e.preventDefault();
+        window.location.href = ANALYSIS_HREF;
+      }
     });
   }
 
   function lockAnalysisNavLink(el) {
-    if (!el || el.dataset.analysisLocked === "1") return;
-    el.dataset.analysisLocked = "1";
+    if (!el) return;
     el.classList.add("home-nav__link--analysis-locked");
     el.classList.remove("is-disabled", "home-nav__link--disabled", "tm-bottom-nav__item--disabled");
     el.removeAttribute("aria-current");
@@ -165,17 +205,26 @@
     bindAnalysisGateTrigger(el);
   }
 
+  function unlockAnalysisNavLink(el) {
+    if (!el) return;
+    el.classList.remove("home-nav__link--analysis-locked");
+    el.removeAttribute("aria-disabled");
+  }
+
   function applyAnalysisNavLock() {
-    if (!ANALYSIS_PAGE_LOCKED || hasAnalysisBetaAccess()) return;
-    document.querySelectorAll(".home-nav__soon-badge").forEach((el) => el.remove());
+    if (!ANALYSIS_PAGE_LOCKED) return;
+    const locked = !hasAnalysisBetaAccess();
+    if (locked) document.querySelectorAll(".home-nav__soon-badge").forEach((el) => el.remove());
     document.querySelectorAll('a[href*="stock-analysis.html"]').forEach((el) => {
       if (el.closest(".ai-access-gate")) return;
-      lockAnalysisNavLink(el);
+      if (locked) lockAnalysisNavLink(el);
+      else unlockAnalysisNavLink(el);
     });
-    document.querySelectorAll(".home-nav__link--analysis-locked").forEach((el) => {
+    document.querySelectorAll("[data-analysis-locked]").forEach((el) => {
+      el.classList.toggle("home-nav__link--analysis-locked", locked);
       bindAnalysisGateTrigger(el);
     });
-    document.querySelectorAll("[data-analysis-locked]").forEach(bindAnalysisGateTrigger);
+    if (document.getElementById("ai-access-gate-title")) updateAnalysisGateContent();
   }
 
   function syncBodyTab() {
@@ -378,8 +427,10 @@
     ensureNavSheet();
     document.addEventListener("click", (e) => {
       if (e.target.closest("[data-analysis-locked]")) {
-        e.preventDefault();
-        openAnalysisGate();
+        if (ANALYSIS_PAGE_LOCKED && !hasAnalysisBetaAccess()) {
+          e.preventDefault();
+          openAnalysisGate();
+        }
         return;
       }
       if (e.target.closest(".tm-bottom-nav__item--menu")) {
@@ -497,4 +548,8 @@
   } else {
     boot();
   }
+
+  document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
+  window.tmHasAnalysisAccess = hasAnalysisBetaAccess;
+  window.tmOpenAnalysisGate = openAnalysisGate;
 })();

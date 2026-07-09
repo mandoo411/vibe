@@ -939,12 +939,15 @@
     const isBear = String(s.label) === "C" || String(s.type).includes("약");
     // 2026-07-07: 약세(C) 시나리오도 A/B와 동일하게 진입가/목표가/손절가를 보여주고,
     // 대응전략은 참고용 코멘트로 추가 표시한다 (전에는 C만 가격이 아예 안 보였음).
+    // 2026-07-10: 약세(C) 시나리오의 "목표가"는 지지선 붕괴 후 재진입을 노리는 반등 목표가이고
+    // "목표 하단"은 지지선이 추가로 무너졌을 때의 하방 목표라 성격이 다르다. 둘 다 "목표가"로만
+    // 표기하면 약세 시나리오인데 상방 숫자만 보이는 것처럼 오해할 수 있어 라벨을 구분한다.
     const lines = [
       ["조건", s.condition],
       ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
-      ["목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
+      [isBear ? "반등 목표가" : "목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
       ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
-      isBear && s.targetLow != null ? ["목표 하단", `${fmtPrice(s.targetLow)}원`] : null,
+      isBear && s.targetLow != null ? ["추가 하락 시 목표 하단", `${fmtPrice(s.targetLow)}원`] : null,
       isBear ? ["대응전략", s.strategy] : null,
     ]
       .filter(Boolean)
@@ -1024,14 +1027,15 @@
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
         <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice)}</div></article>
-      </div>`;
+      </div>
+      <p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
 
     if (isDomesticCode(data.stockCode) && chartData) {
       wireAiChart(data.stockCode, chartData, chartPeriod || "D");

@@ -459,6 +459,26 @@
   color: var(--text-title, #f3f4f6);
 }
 
+.ai-summary-prob__note {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}
+
+.ai-disclaimer {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--color-bg-secondary, rgba(148, 163, 184, 0.08));
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.ai-disclaimer strong {
+  color: var(--text-primary, #131722);
+}
+
 .ai-summary-desc {
   flex: 1;
   min-width: 0;

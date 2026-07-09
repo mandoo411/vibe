@@ -298,3 +298,56 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* ---------- 모바일 (768px 이하) ---------- */
+@media (max-width: 768px) {
+  .tm-auth-main {
+    padding: 28px 12px 40px;
+  }
+
+  .tm-auth-card {
+    padding: 26px 20px;
+    border-radius: 14px;
+  }
+
+  .tm-auth-card__title {
+    font-size: 20px;
+  }
+
+  .tm-account-card {
+    gap: 12px;
+  }
+
+  .tm-account-row {
+    padding: 16px 18px;
+    border-radius: 12px;
+  }
+
+  .tm-account-actions {
+    flex-direction: column;
+  }
+
+  .tm-account-actions .tm-btn {
+    width: 100%;
+  }
+
+  .tm-pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .tm-plan-card {
+    padding: 22px 20px;
+  }
+
+  .tm-plan-card__price {
+    font-size: 26px;
+  }
+}
+
+/* 작은 화면(360px 이하)에서 입력 필드 확대(줌 방지: iOS는 16px 미만 폰트에서 자동 확대됨) */
+@media (max-width: 360px) {
+  .tm-auth-field input {
+    font-size: 16px;
+  }
+}

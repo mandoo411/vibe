@@ -245,13 +245,18 @@ function buildSystemPrompt(today) {
 - reflectionPct는 반드시 0-100 사이 숫자.
 - aiComment: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
     "",
-    `6번 차트 흐름 분석 — 제공된 실제 MA/RSI 수치만 사용(추정 금지). 아래 항목 전부 수치와 근거 포함:
-① 이동평균선: 20일/60일/120일/200일선 대비 현재가 위치와 해석
+    `6번 차트 흐름 분석 — 제공된 실제 수치만 사용(추정 금지). 아래 항목 전부 수치와 근거 포함:
+① 이동평균선(일봉): 20일/60일/120일/200일선 대비 현재가 위치와 해석
 ② RSI: 제공된 RSI(14) 값 + 과매수/과매도 해석
 ③ 일목균형표: 전환선/기준선/구름대 위아래 여부
-④ 지지선/저항선: 1차·2차 수치 명시
+④ 지지선/저항선(단기, 일봉 기준): 1차·2차 수치 명시
 ⑤ 전고점/전저점: 수치와 의미 (high52w/low52w 활용)
-⑥ 엘리어트 파동: 현재 구간 추정 및 근거`,
+⑥ 주봉 흐름 — 입력에 weeklyIndicators가 있으면: 20주선/60주선 대비 현재가 위치, 주봉 스윙 저항·지지(resistances/supports) 수치를 지지·저항 구조로 해석
+⑦ 월봉 흐름 — 입력에 monthlyIndicators가 있으면: 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열) 판단, 월봉 스윙 저항·지지를 장기 지지·저항으로 해석
+⑧ 멀티 타임프레임 정합성: 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단 (예: "일봉·주봉은 상승 정배열이나 월봉은 아직 24개월선 아래")
+⑨ 엘리어트 파동: weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서를 근거로 현재 추정 파동 구간 서술. 스윙 데이터가 없으면 "장기 스윙 데이터 미확보로 파동 판단 보류"라고만 쓰고 임의의 파동 번호·가격을 지어내지 말 것
+⑩ ICT(스마트머니) 관점: 제공된 지지·저항 구간을 유동성(liquidity) 구간 개념으로 짧게 해석. 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말고 반드시 제공된 실제 스윙 레벨 범위 안에서만 언급
+- weeklyIndicators/monthlyIndicators가 모두 없으면 ⑥~⑩은 "장기 데이터 미제공으로 판단 보류"라고 한 문장만 쓸 것 (숫자 추정 금지)`,
     "",
     `7번 AI 주관적 판단 지침:
 - aiJudgment 필드는 반드시 모든 하위 필드를 채울 것.
@@ -604,6 +609,160 @@ async function fetchKisQuote(code6) {
     foreignHoldRate: toNum(o1.hts_frgn_ehrt ?? o1.frgn_hldn_qty_rt),
     marketCapRaw: sanitizeStr(o1.hts_avls || o1.stck_avls),
   };
+}
+
+function ymdKst(d = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(d).replace(/-/g, "");
+}
+
+function subtractCalendarDaysFromYmd(ymd, days) {
+  const s = String(ymd || "").replace(/\D/g, "");
+  if (!/^\d{8}$/.test(s)) return s;
+  const y = Number(s.slice(0, 4));
+  const m = Number(s.slice(4, 6)) - 1;
+  const day = Number(s.slice(6, 8));
+  const dt = new Date(Date.UTC(y, m, day));
+  dt.setUTCDate(dt.getUTCDate() - Number(days || 0));
+  return ymdKst(dt);
+}
+
+function mapWmRow(row) {
+  if (!row || typeof row !== "object") return null;
+  const dateRaw = sanitizeStr(row.stck_bsop_date || row.STCK_BSOP_DATE);
+  if (!/^\d{8}$/.test(dateRaw)) return null;
+  const time = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+  const close = toNum(row.stck_clpr || row.STCK_CLPR);
+  const high = toNum(row.stck_hgpr || row.STCK_HGPR);
+  const low = toNum(row.stck_lwpr || row.STCK_LWPR);
+  if (close == null || high == null || low == null) return null;
+  return { time, high: Math.round(high), low: Math.round(low), close: Math.round(close) };
+}
+
+function maLast(closes, period) {
+  if (!Array.isArray(closes) || closes.length < period) return null;
+  let sum = 0;
+  for (let i = closes.length - period; i < closes.length; i++) sum += closes[i];
+  return Math.round(sum / period);
+}
+
+/** 좌우 lookback개 봉보다 고점/저점인 캔들을 스윙 포인트(피벗)로 추출한다.
+ * 일봉이 아닌 주봉/월봉 기준 실제 스윙 고점·저점이므로, 단순 52주 고저 한 쌍보다
+ * 다차원 지지·저항 구조와 엘리어트 파동 추정의 근거로 쓸 수 있다(추정이 아닌 실측 데이터). */
+function findSwingPoints(candles, lookback, maxPoints) {
+  const highs = [];
+  const lows = [];
+  if (!Array.isArray(candles) || candles.length < lookback * 2 + 1) return { resistances: [], supports: [] };
+  for (let i = lookback; i < candles.length - lookback; i++) {
+    const c = candles[i];
+    let isHigh = true;
+    let isLow = true;
+    for (let k = i - lookback; k <= i + lookback; k++) {
+      if (k === i) continue;
+      if (candles[k].high >= c.high) isHigh = false;
+      if (candles[k].low <= c.low) isLow = false;
+    }
+    if (isHigh) highs.push({ time: c.time, price: c.high });
+    if (isLow) lows.push({ time: c.time, price: c.low });
+  }
+  return {
+    resistances: highs.slice(-maxPoints).map((h) => h.price),
+    supports: lows.slice(-maxPoints).map((l) => l.price),
+  };
+}
+
+/** 종목 고유의 실제 주봉/월봉 데이터를 KIS에서 가져와 이동평균·스윙 고점/저점을 계산한다.
+ * 실패해도 전체 분석 응답을 막지 않도록 null을 반환하고 조용히 넘어간다 — 이 데이터가
+ * 없으면 프롬프트에서 장기/단기 다중 타임프레임 지시를 건너뛰도록 처리한다(추정 금지 원칙 유지). */
+async function fetchKisWeeklyMonthly(code6) {
+  try {
+    const endAll = ymdKst(new Date());
+    const weekStart = subtractCalendarDaysFromYmd(endAll, 1460);
+    const monthStart = subtractCalendarDaysFromYmd(endAll, 3650);
+    const commonBase = { FID_COND_MRKT_DIV_CODE: "J", FID_INPUT_ISCD: code6, FID_ORG_ADJ_PRC: "0" };
+    const [wRes, mRes] = await Promise.all([
+      kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100", {
+        ...commonBase,
+        FID_INPUT_DATE_1: weekStart,
+        FID_INPUT_DATE_2: endAll,
+        FID_PERIOD_DIV_CODE: "W",
+      }),
+      kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100", {
+        ...commonBase,
+        FID_INPUT_DATE_1: monthStart,
+        FID_INPUT_DATE_2: endAll,
+        FID_PERIOD_DIV_CODE: "M",
+      }),
+    ]);
+
+    const toRows = (j) => {
+      let raw = j && j.output2;
+      if (raw && !Array.isArray(raw)) raw = [raw];
+      if (!Array.isArray(raw)) raw = [];
+      const rows = raw.map(mapWmRow).filter(Boolean);
+      rows.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+      return rows;
+    };
+
+    const weekly = toRows(wRes);
+    const monthly = toRows(mRes);
+    if (!weekly.length && !monthly.length) return null;
+
+    const wCloses = weekly.map((c) => c.close);
+    const mCloses = monthly.map((c) => c.close);
+    const wSwing = findSwingPoints(weekly, 2, 4);
+    const mSwing = findSwingPoints(monthly, 1, 3);
+
+    return {
+      weekly: {
+        count: weekly.length,
+        ma20: maLast(wCloses, 20),
+        ma60: maLast(wCloses, 60),
+        resistances: wSwing.resistances,
+        supports: wSwing.supports,
+      },
+      monthly: {
+        count: monthly.length,
+        ma12: maLast(mCloses, 12),
+        ma24: maLast(mCloses, 24),
+        resistances: mSwing.resistances,
+        supports: mSwing.supports,
+      },
+    };
+  } catch (e) {
+    console.warn("[analyze] weekly/monthly fetch failed", code6, e && e.message);
+    return null;
+  }
+}
+
+/** 주봉/월봉 데이터를 프롬프트의 JSON 입력 데이터에 끼워넣을 필드로 변환한다.
+ * 세 분석 경로(Claude/OpenAI web_search/OpenAI RSS)가 동일한 형태를 쓰도록 공용 함수로 뺐다. */
+function wmJsonFields(wm) {
+  if (!wm) return { weeklyIndicators: null, monthlyIndicators: null };
+  return {
+    weeklyIndicators: wm.weekly
+      ? { ma20: wm.weekly.ma20, ma60: wm.weekly.ma60, resistances: wm.weekly.resistances, supports: wm.weekly.supports }
+      : null,
+    monthlyIndicators: wm.monthly
+      ? { ma12: wm.monthly.ma12, ma24: wm.monthly.ma24, resistances: wm.monthly.resistances, supports: wm.monthly.supports }
+      : null,
+  };
+}
+
+/** 사람이 읽는 프롬프트 텍스트용 주봉/월봉 수치 블록. wm이 null이면 빈 문자열을 반환한다. */
+function formatWmTextBlock(wm) {
+  if (!wm) return "";
+  const fmt = (n) => (n == null ? "—" : Math.round(n).toLocaleString("ko-KR"));
+  const fmtList = (arr) => (Array.isArray(arr) && arr.length ? arr.map((n) => fmt(n)).join(", ") : "—");
+  const lines = ["", "실제 주봉/월봉 기술적 데이터 (추정 금지, 아래 수치만 사용):"];
+  if (wm.weekly) {
+    lines.push(`[주봉] 20주선: ${fmt(wm.weekly.ma20)}원 / 60주선: ${fmt(wm.weekly.ma60)}원`);
+    lines.push(`[주봉] 스윙 저항: ${fmtList(wm.weekly.resistances)} / 스윙 지지: ${fmtList(wm.weekly.supports)}`);
+  }
+  if (wm.monthly) {
+    lines.push(`[월봉] 12개월선: ${fmt(wm.monthly.ma12)}원 / 24개월선: ${fmt(wm.monthly.ma24)}원`);
+    lines.push(`[월봉] 스윙 저항: ${fmtList(wm.monthly.resistances)} / 스윙 지지: ${fmtList(wm.monthly.supports)}`);
+  }
+  return lines.join("\n");
 }
 
 function extractTextFromContent(content) {
@@ -1061,7 +1220,7 @@ function claudeModelCandidates() {
   return [CLAUDE_MODEL];
 }
 
-function buildUserPrompt(quote, stockName, today, indicators) {
+function buildUserPrompt(quote, stockName, today, indicators, wm) {
   const name = stockName || quote.stockName || quote.stockCode;
   const year = seoulYear();
   const ind = indicators && typeof indicators === "object" ? indicators : {};
@@ -1082,6 +1241,7 @@ function buildUserPrompt(quote, stockName, today, indicators) {
           `RSI(14): ${fmtRsi(rsi14)}`,
         ].join("\n")
       : "";
+  const wmBlock = formatWmTextBlock(wm);
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
     `분석 종목: ${name} (${quote.stockCode})`,
@@ -1112,7 +1272,7 @@ function buildUserPrompt(quote, stockName, today, indicators) {
 - 재료가 없으면 기본 재료로 채울 것: 실적 모멘텀(다음 실적발표 예상치), 업종 트렌드(해당 업종 흐름).
 - strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자.`,
     "",
-    "6번 차트 — 제공된 실제 MA/RSI 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저, 엘리어트 파동 (수치·근거).",
+    "6번 차트 — 제공된 실제 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일. weeklyIndicators/monthlyIndicators가 있으면 주봉·월봉 MA/스윙 지지·저항으로 장기 추세·멀티 타임프레임 정합성·엘리어트 파동·ICT 유동성 관점까지 서술. 없으면 \"장기 데이터 미제공으로 판단 보류\"라고만 쓰고 숫자 추정 금지.",
     "",
     `7번 AI 주관적 판단 (aiJudgment 필수 — 하위 필드 절대 누락 금지):
 - shortTerm, midTerm, longTerm: 문자열 필수
@@ -1127,6 +1287,7 @@ function buildUserPrompt(quote, stockName, today, indicators) {
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
     "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",
     indicatorBlock,
+    wmBlock,
     "",
     "입력 데이터:",
     JSON.stringify({
@@ -1151,16 +1312,17 @@ function buildUserPrompt(quote, stockName, today, indicators) {
       institutionNetBuy: quote.institutionNetBuy,
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
+      ...wmJsonFields(wm),
       analysisDate: today,
     }),
   ].join("\n");
 }
 
-async function claudeAnalyze(quote, stockName, indicators) {
+async function claudeAnalyze(quote, stockName, indicators, wm) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const today = todayKoreaLabel();
-  const user = buildUserPrompt(quote, stockName, today, indicators);
+  const user = buildUserPrompt(quote, stockName, today, indicators, wm);
   const system = buildSystemPrompt(today);
 
   let lastErr = null;
@@ -1246,7 +1408,7 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
  * 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. 즉 매 호출마다 반드시
  * "실검색" 또는 "RSS 헤드라인" 둘 중 하나의 실제 최신 정보를 근거로 쓰도록 강제해서
  * 호출할 때마다 결과가 달라지는 문제를 없앤다. */
-async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model) {
+async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm) {
   const name = stockName || quote.stockName || quote.stockCode;
   const ind = indicators && typeof indicators === "object" ? indicators : {};
 
@@ -1284,6 +1446,15 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
     "",
+    `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
+- MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
+- 입력 데이터에 weeklyIndicators가 있으면 20주선/60주선 대비 현재가 위치와 주봉 스윙 저항·지지(resistances/supports)를 지지·저항 구조로 서술할 것.
+- 입력 데이터에 monthlyIndicators가 있으면 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열)를 판단하고 월봉 스윙 저항·지지를 장기 지지·저항으로 서술할 것.
+- 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단할 것.
+- 엘리어트 파동은 weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서를 근거로 서술하고, 데이터가 없으면 "장기 스윙 데이터 미확보로 파동 판단 보류"라고만 쓸 것 (임의의 파동 번호·가격 금지).
+- ICT(스마트머니) 관점은 제공된 지지·저항 구간을 유동성(liquidity) 구간으로만 짧게 해석하고, 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말 것.
+- weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 "장기 데이터 미제공으로 판단 보류"라고만 쓸 것.`,
+    "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
     "입력 데이터:",
@@ -1311,6 +1482,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       ma120: toNum(ind.ma120),
       ma200: toNum(ind.ma200),
       rsi14: toNum(ind.rsi14),
+      ...wmJsonFields(wm),
     }),
   ].join("\n");
 
@@ -1358,14 +1530,14 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
  * RSS(무료) 헤드라인 기반 경로로 자동 폴백한다.
  * 응답 스키마는 CLAUDE_RESPONSE_SCHEMA(레거시 포맷)와 동일하게 맞춰서
  * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
-async function openaiAnalyze(quote, stockName, indicators, today) {
+async function openaiAnalyze(quote, stockName, indicators, today, wm) {
   const apiKey = requireOpenAIKey();
   const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
   const name = stockName || quote.stockName || quote.stockCode;
 
   let text = null;
   try {
-    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model);
+    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm);
     console.log("[analyze] OpenAI web_search 경로 사용");
   } catch (e) {
     console.warn("[analyze] OpenAI web_search 실패 — RSS 폴백으로 전환", e && e.message);
@@ -1409,6 +1581,15 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
 - C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
       "",
+      `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
+- MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
+- 입력 데이터에 weeklyIndicators가 있으면 20주선/60주선 대비 현재가 위치와 주봉 스윙 저항·지지를 지지·저항 구조로 서술할 것.
+- 입력 데이터에 monthlyIndicators가 있으면 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열)를 판단하고 월봉 스윙 저항·지지를 장기 지지·저항으로 서술할 것.
+- 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단할 것.
+- 엘리어트 파동은 weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서를 근거로 서술하고, 데이터가 없으면 "장기 스윙 데이터 미확보로 파동 판단 보류"라고만 쓸 것 (임의의 파동 번호·가격 금지).
+- ICT(스마트머니) 관점은 제공된 지지·저항 구간을 유동성(liquidity) 구간으로만 짧게 해석하고, 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말 것.
+- weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 "장기 데이터 미제공으로 판단 보류"라고만 쓸 것.`,
+      "",
       CLAUDE_RESPONSE_SCHEMA,
       newsBlock,
       "",
@@ -1437,6 +1618,7 @@ async function openaiAnalyze(quote, stockName, indicators, today) {
         ma120: toNum(ind.ma120),
         ma200: toNum(ind.ma200),
         rsi14: toNum(ind.rsi14),
+        ...wmJsonFields(wm),
       }),
     ].join("\n");
 
@@ -1531,6 +1713,9 @@ module.exports = async function handler(req, res) {
   }
 
   let quote;
+  // 주봉/월봉 데이터는 실패해도 전체 분석을 막지 않으므로(fetchKisWeeklyMonthly 내부에서
+  // 이미 try/catch로 null 처리) 시세 조회와 병렬로 미리 시작해 지연시간을 아낀다.
+  const wmPromise = fetchKisWeeklyMonthly(code6);
   try {
     quote = await fetchKisQuote(code6);
   } catch (e) {
@@ -1538,6 +1723,7 @@ module.exports = async function handler(req, res) {
     json(res, (e && e.statusCode) || 502, { error: "시세 조회 실패" });
     return;
   }
+  const wm = await wmPromise;
 
   const stockName = name || quote.stockName || code6;
 
@@ -1560,7 +1746,7 @@ module.exports = async function handler(req, res) {
   let analysis;
   let analysisError = "";
   try {
-    analysis = await claudeAnalyze(quote, stockName, indicators);
+    analysis = await claudeAnalyze(quote, stockName, indicators, wm);
   } catch (e) {
     const claudeErrMsg =
       e && e.message === ANALYSIS_PARSE_ERROR_MSG
@@ -1568,7 +1754,7 @@ module.exports = async function handler(req, res) {
         : (e && e.message) || "Claude 분석 실패";
     console.error("[analyze] Claude error (OpenAI로 폴백 시도)", claudeErrMsg);
     try {
-      analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel());
+      analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm);
       console.log("[analyze] OpenAI 폴백 성공");
     } catch (e2) {
       analysisError = claudeErrMsg;

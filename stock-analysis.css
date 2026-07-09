@@ -1015,8 +1015,15 @@
   background: var(--color-background-secondary);
   font-size: 15px;
   font-weight: 400;
-  font-style: italic;
   line-height: 1.7;
+}
+
+.ai-opinion-comment__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-style: normal;
+  color: var(--color-text-secondary);
 }
 
 .ai-scenario {

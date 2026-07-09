@@ -413,6 +413,26 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   filter: brightness(1.1);
 }
 
+.ai-access-gate__secondary {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.ai-access-gate__secondary a {
+  color: var(--accent-brand, #0f8387);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ai-access-gate__secondary a:hover {
+  text-decoration: underline;
+}
+
+.ai-access-gate__secondary[hidden] {
+  display: none;
+}
+
 .ai-access-gate-open .tm-wrap,
 .ai-access-gate-open .home-wrap {
   pointer-events: none;

@@ -985,7 +985,9 @@
     const scenarioHtml = scenarios.length
       ? scenarios.map(renderScenarioCard).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
-    const comment = o.comment ? `<div class="ai-opinion-comment">${formatProseText(o.comment)}</div>` : "";
+    const comment = o.comment
+      ? `<div class="ai-opinion-comment"><span class="ai-opinion-comment__label">종합 의견</span>${formatProseText(o.comment)}</div>`
+      : "";
     return (
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
@@ -1084,6 +1086,14 @@
     }
     if (running) return;
 
+    if (freePlanRemaining !== null && freePlanRemaining <= 0) {
+      showError("무료 플랜은 이번 달 AI 종목분석 체험 횟수를 모두 사용했습니다. 요금제 페이지로 이동합니다…");
+      setTimeout(() => {
+        window.location.href = "./pricing.html";
+      }, 1200);
+      return;
+    }
+
     closeAutocomplete();
     running = true;
     setButtonLoading(true);
@@ -1118,6 +1128,7 @@
       const [chartData, data] = await Promise.all([chartPromise, analyzePromise]);
       finishLoadingProgress();
       renderAnalysis(data, chartData, "D");
+      if (freePlanRemaining !== null) freePlanRemaining = Math.max(0, freePlanRemaining - 1);
     } catch (err) {
       console.error("[AI분석] 실패", err);
       showError((err && err.message) || "분석을 불러오지 못했습니다");
@@ -1141,8 +1152,94 @@
 
   let analysisUiBound = false;
   let analysisInitSafetyTimer = null;
+  /** 무료 회원의 이번 달 잔여 체험 횟수. null = 해당 없음(비로그인/Pro/베타키). */
+  let freePlanRemaining = null;
+  /** 서버(api/analyze.js)의 FREE_MONTHLY_LIMIT 과 반드시 맞춰서 수정할 것 */
+  const FREE_MONTHLY_LIMIT = 3;
 
-  function init() {
+  function currentMonthKeySeoulClient() {
+    const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit" });
+    const parts = Object.fromEntries(fmt.formatToParts(new Date()).map((p) => [p.type, p.value]));
+    return `${parts.year}-${parts.month}`;
+  }
+
+  /** 클라이언트에서 Supabase REST로 이번 달 사용횟수를 직접 조회 (서버리스 함수 추가 없이). */
+  async function fetchRemainingFreeAnalysis(userId) {
+    const cfg = window.TM_AUTH_CONFIG || {};
+    if (!userId || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || !window.TMAuth) return FREE_MONTHLY_LIMIT;
+    try {
+      const token = await window.TMAuth.getAccessToken();
+      const monthKey = currentMonthKeySeoulClient();
+      const url = `${cfg.SUPABASE_URL}/rest/v1/analysis_usage?user_id=eq.${userId}&month=eq.${monthKey}&select=count`;
+      const res = await fetch(url, {
+        headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return FREE_MONTHLY_LIMIT;
+      const rows = await res.json();
+      const used = rows && rows[0] ? Number(rows[0].count) || 0 : 0;
+      return Math.max(0, FREE_MONTHLY_LIMIT - used);
+    } catch (e) {
+      // 조회 실패 시에도 실제 호출 한도는 서버(api/analyze.js)가 최종 강제하므로 열어준다.
+      console.warn("[AI분석] 잔여 체험 횟수 조회 실패", e);
+      return FREE_MONTHLY_LIMIT;
+    }
+  }
+
+  /** 무료 회원 방문 시마다 보여주는 "잔여 N회" 확인 팝업. 확인을 눌러야 페이지가 활성화된다. */
+  function showFreeUsageConfirmGate(remaining, onConfirm) {
+    if (typeof window.tmEnsureAnalysisGate === "function") window.tmEnsureAnalysisGate();
+    const gate = document.getElementById("ai-access-gate");
+    if (!gate) {
+      onConfirm();
+      return;
+    }
+    const titleEl = gate.querySelector("#ai-access-gate-title");
+    const textEl = gate.querySelector("#ai-access-gate-text");
+    const btnEl = gate.querySelector("#ai-access-gate-btn");
+    const secondaryEl = gate.querySelector("#ai-access-gate-secondary");
+    if (titleEl) titleEl.textContent = "AI 종목분석 이용 안내";
+    if (textEl) {
+      textEl.innerHTML = `무료 플랜은 이번 달 <strong>${escapeHtml(String(remaining))}회</strong> 이용 가능합니다.<br>Pro로 업그레이드하면 무제한 이용하실 수 있습니다.`;
+    }
+    if (secondaryEl) {
+      secondaryEl.hidden = false;
+      secondaryEl.innerHTML = '<a href="./pricing.html">요금제 보기</a>';
+    }
+    if (btnEl) {
+      btnEl.textContent = "확인";
+      btnEl.setAttribute("href", "#");
+      // 이전에 붙어있었을 수 있는 리스너 제거를 위해 노드를 복제해 교체한다.
+      const fresh = btnEl.cloneNode(true);
+      btnEl.replaceWith(fresh);
+      fresh.addEventListener("click", (e) => {
+        e.preventDefault();
+        onConfirm();
+      });
+    }
+    gate.hidden = false;
+    document.body.classList.add("ai-access-gate-open");
+  }
+
+  function showAnalysisLoadingGateMessage(title, text) {
+    const gate = document.getElementById("ai-access-gate");
+    if (!gate) return;
+    const titleEl = gate.querySelector("#ai-access-gate-title");
+    const textEl = gate.querySelector("#ai-access-gate-text");
+    if (titleEl) titleEl.textContent = title;
+    if (textEl) textEl.textContent = text;
+  }
+
+  function activateAnalysisPage() {
+    const gateEl = document.getElementById("ai-access-gate");
+    if (gateEl) {
+      gateEl.hidden = true;
+      gateEl.remove();
+      document.body.classList.remove("ai-access-gate-open");
+    }
+    bindAnalyzeUi();
+  }
+
+  async function init() {
     const state = window.TM_AUTH_STATE;
     if (!state || !state.loaded) {
       document.addEventListener("tm-auth-ready", init, { once: true });
@@ -1163,13 +1260,19 @@
       return;
     }
 
-    const gateEl = document.getElementById("ai-access-gate");
-    if (gateEl) {
-      gateEl.hidden = true;
-      gateEl.remove();
-      document.body.classList.remove("ai-access-gate-open");
+    if (state.isLoggedIn && !state.hasProAccess) {
+      showAnalysisLoadingGateMessage("이용 가능 여부 확인 중", "잠시만 기다려 주세요…");
+      const remaining = await fetchRemainingFreeAnalysis(state.userId);
+      if (remaining <= 0) {
+        window.location.replace("./pricing.html");
+        return;
+      }
+      freePlanRemaining = remaining;
+      showFreeUsageConfirmGate(remaining, activateAnalysisPage);
+      return;
     }
-    bindAnalyzeUi();
+
+    activateAnalysisPage();
   }
 
   function bindAnalyzeUi() {

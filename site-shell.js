@@ -139,8 +139,9 @@
       '<div class="ai-access-gate__backdrop" aria-hidden="true"></div>' +
       '<div class="ai-access-gate__card">' +
       '<h2 id="ai-access-gate-title" class="ai-access-gate__title">서비스 준비 중</h2>' +
-      '<p class="ai-access-gate__text">AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.</p>' +
-      '<a class="ai-access-gate__btn" href="./index.html">홈으로 돌아가기</a>' +
+      '<p id="ai-access-gate-text" class="ai-access-gate__text">AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.</p>' +
+      '<a id="ai-access-gate-btn" class="ai-access-gate__btn" href="./index.html">홈으로 돌아가기</a>' +
+      '<p id="ai-access-gate-secondary" class="ai-access-gate__secondary" hidden></p>' +
       "</div>";
     document.body.insertBefore(gate, document.body.firstChild);
   }
@@ -150,24 +151,31 @@
     if (!gate) return;
     const st = authState();
     const titleEl = gate.querySelector("#ai-access-gate-title");
-    const textEl = gate.querySelector(".ai-access-gate__text");
-    const btnEl = gate.querySelector(".ai-access-gate__btn");
+    const textEl = gate.querySelector("#ai-access-gate-text");
+    const btnEl = gate.querySelector("#ai-access-gate-btn");
+    const secondaryEl = gate.querySelector("#ai-access-gate-secondary");
     if (!titleEl || !textEl || !btnEl) return;
     if (st.setupPending) {
       titleEl.textContent = "서비스 준비 중";
       textEl.innerHTML = "AI 종목분석은 현재 베타 테스트 중입니다.<br>정식 오픈 시 알림을 드리겠습니다.";
       btnEl.textContent = "홈으로 돌아가기";
       btnEl.setAttribute("href", "./index.html");
+      if (secondaryEl) secondaryEl.hidden = true;
     } else if (!st.isLoggedIn) {
-      titleEl.textContent = "로그인이 필요합니다";
-      textEl.innerHTML = "AI 종목분석은 로그인 후 이용하실 수 있습니다.<br>무료 회원가입 시 매월 체험 횟수가 제공됩니다.";
-      btnEl.textContent = "로그인 / 회원가입";
-      btnEl.setAttribute("href", "./login.html?next=/stock-analysis.html");
+      titleEl.textContent = "회원가입이 필요합니다";
+      textEl.innerHTML = "AI 종목분석은 회원가입 후 이용하실 수 있습니다.<br>무료 회원가입 시 매월 체험 3회가 제공됩니다.";
+      btnEl.textContent = "회원가입 하러 가기";
+      btnEl.setAttribute("href", "./signup.html?next=/stock-analysis.html");
+      if (secondaryEl) {
+        secondaryEl.hidden = false;
+        secondaryEl.innerHTML = '이미 계정이 있으신가요? <a href="./login.html?next=/stock-analysis.html">로그인</a>';
+      }
     } else {
       titleEl.textContent = "AI 종목분석 이용 안내";
       textEl.innerHTML = "무료 플랜은 매월 체험 횟수가 제한됩니다.<br>Pro 플랜으로 업그레이드하면 무제한 이용 가능합니다.";
       btnEl.textContent = "요금제 보기";
       btnEl.setAttribute("href", "./pricing.html");
+      if (secondaryEl) secondaryEl.hidden = true;
     }
   }
 
@@ -209,6 +217,9 @@
     if (!el) return;
     el.classList.remove("home-nav__link--analysis-locked");
     el.removeAttribute("aria-disabled");
+    if (getCurrentPageId() === "analysis") {
+      el.setAttribute("aria-current", "page");
+    }
   }
 
   function applyAnalysisNavLock() {
@@ -552,4 +563,5 @@
   document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
   window.tmHasAnalysisAccess = hasAnalysisBetaAccess;
   window.tmOpenAnalysisGate = openAnalysisGate;
+  window.tmEnsureAnalysisGate = ensureAnalysisGate;
 })();

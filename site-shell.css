@@ -179,7 +179,7 @@ body.page-home-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
     --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
-    --home-nav-menu-gap: 2.2ch;
+    --home-nav-menu-gap: 1.6ch;
   }
 
   .page-home-v2 .home-nav,
@@ -247,7 +247,7 @@ body.page-home-v2 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 10px;
+  padding: 5px 8px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -280,8 +280,8 @@ body.page-home-v2 {
 }
 
 .home-nav__auth-link {
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 @media (min-width: 769px) {

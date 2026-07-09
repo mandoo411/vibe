@@ -29,7 +29,10 @@ function eventsForToday(data, ymd) {
 }
 
 function earningsForToday(data, ymd) {
-  return (Array.isArray(data?.earningsCalendar) ? data.earningsCalendar : [])
+  // 2026-07-10: data/weekly-schedule.json에는 "earningsCalendar" 필드가 존재한 적이
+  // 없다(실제 필드명은 krEarnings) — 이 버그 때문에 실적발표가 있는 날에도 텔레그램
+  // 일간 메시지에는 항상 "오늘 예정된 주요 실적발표 없음"만 나갔었다.
+  return (Array.isArray(data?.krEarnings) ? data.krEarnings : [])
     .filter((row) => row?.date === ymd)
     .slice(0, 8);
 }

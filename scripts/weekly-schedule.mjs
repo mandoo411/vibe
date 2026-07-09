@@ -387,9 +387,47 @@ async function loadManualKrEarnings(from, to) {
     const parsed = JSON.parse(raw);
     const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
     return entries.filter((e) => e && e.date >= from && e.date <= to);
-  } catch {
+  } catch (error) {
+    // 2026-07-10: 예전엔 이 catch가 조용히 []을 반환해서, 파일이 일시적으로 안 읽히거나
+    // JSON이 깨졌을 때 Action 로그에 흔적이 전혀 안 남았다. krEarnings가 통째로 비어버린
+    // 날을 사후에 디버깅할 수 있도록 최소한 로그는 남긴다.
+    console.log(`⚠️ kr-earnings-manual.json 로드 실패(무시하고 진행): ${error instanceof Error ? error.message : error}`);
     return [];
   }
+}
+
+/** 코스피200 선물·옵션 만기일 계산 (매월 둘째 목요일, KRX 표준 규칙).
+ * 3·6·9·12월은 선물·옵션이 동시에 만기하는 "네 마녀의 날"이라 변동성이 특히 커진다.
+ * 외부 API/스크레이핑에 전혀 의존하지 않는 순수 계산이라 항상 정확하고 절대 비어있을
+ * 일이 없다 — economicCalendar/krEarnings 스크레이핑이 전부 실패하는 날에도 최소한
+ * 이 항목만큼은 항상 존재해서 eventAnalysis(AI 일정분석)가 완전히 텅 비는 것을 막아준다. */
+function computeDerivativesExpiry(from, to) {
+  const out = [];
+  const start = new Date(`${from.slice(0, 7)}-01T12:00:00+09:00`);
+  const end = new Date(`${to}T12:00:00+09:00`);
+  for (let cursor = new Date(start); cursor <= end; cursor.setMonth(cursor.getMonth() + 1)) {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth(); // 0-based
+    const first = new Date(year, month, 1);
+    const firstThuOffset = (4 - first.getDay() + 7) % 7; // 0=일,4=목
+    const secondThursday = 1 + firstThuOffset + 7;
+    const ymd = `${year}-${String(month + 1).padStart(2, "0")}-${String(secondThursday).padStart(2, "0")}`;
+    if (ymd < from || ymd > to) continue;
+    const isQuadWitching = [3, 6, 9, 12].includes(month + 1);
+    out.push({
+      date: ymd,
+      event: isQuadWitching ? "코스피200 선물·옵션 동시만기일 (네 마녀의 날)" : "코스피200 옵션 만기일",
+      country: "KR",
+      time: "15:30",
+      impact: "high",
+      importance: 3,
+      actual: "",
+      previous: "",
+      estimate: "",
+      unit: "",
+    });
+  }
+  return out;
 }
 
 function mergeEconomicResponses(...sources) {
@@ -632,17 +670,39 @@ async function main() {
   console.log(`경제지표 ${economicCalendar.length}건 (병합 ${economicMerged.length}건)`);
 
   let priorData = null;
-  if (!economicCalendar.length) {
+  async function loadPriorData() {
+    if (priorData) return priorData;
     try {
       priorData = JSON.parse(await fs.readFile(OUTPUT_PATH, "utf8"));
-      if (Array.isArray(priorData?.economicCalendar) && priorData.economicCalendar.length) {
-        economicCalendar = priorData.economicCalendar;
-        console.log(`⚠️ 경제지표 수집 실패 — 기존 ${economicCalendar.length}건 유지`);
-      }
     } catch {
-      /* no prior file */
+      priorData = {};
+    }
+    return priorData;
+  }
+
+  if (!economicCalendar.length) {
+    const prior = await loadPriorData();
+    if (Array.isArray(prior?.economicCalendar) && prior.economicCalendar.length) {
+      economicCalendar = prior.economicCalendar;
+      console.log(`⚠️ 경제지표 수집 실패 — 기존 ${economicCalendar.length}건 유지`);
     }
   }
+
+  // 2026-07-10: investing.com/forexfactory 스크레이핑이 GitHub Actions IP에서
+  // 막히는 등 외부 소스가 전부 실패해도, 코스피200 선물·옵션 만기일(계산으로만
+  // 나오는 값이라 절대 실패하지 않음)은 항상 채워 넣는다. 이렇게 해야 경제지표가
+  // 하루 종일 통째로 비는 최악의 상황에서도 "오늘 일정"/"일정분석"이 완전히
+  // 텅 비지 않고, AI 일정분석(analyzeWithClaude)에도 분석할 재료가 최소 1개는 남는다.
+  const derivativesExpiry = computeDerivativesExpiry(historyFrom, to);
+  const existingKeys = new Set(economicCalendar.map((r) => `${r.date}|${r.event}`));
+  for (const row of derivativesExpiry) {
+    const key = `${row.date}|${row.event}`;
+    if (!existingKeys.has(key)) {
+      economicCalendar.push(row);
+      existingKeys.add(key);
+    }
+  }
+  economicCalendar.sort((a, b) => a.date.localeCompare(b.date));
 
   // DART(공식 공시)를 최우선 소스로, 네이버+KIND 스크레이핑은 DART에 없는
   // 종목만 보충하는 용도로 사용 (한쪽에만 있던 실적이 조용히 누락되는 것을 방지
@@ -655,10 +715,26 @@ async function main() {
   const manualKrEarnings = await loadManualKrEarnings(today, to);
   const autoCodes = new Set(krEarningsAuto.map((r) => r.code || r.name));
   const manualToAdd = manualKrEarnings.filter((r) => !autoCodes.has(r.code || r.name));
-  const krEarningsMerged = [...krEarningsAuto, ...manualToAdd].sort((a, b) => a.date.localeCompare(b.date));
+  let krEarningsMerged = [...krEarningsAuto, ...manualToAdd].sort((a, b) => a.date.localeCompare(b.date));
   console.log(
     `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 + 수동보충 ${manualToAdd.length}건 → 최종 ${krEarningsMerged.length}건`
   );
+
+  // 2026-07-10: economicCalendar와 달리 krEarnings는 이전까지 실패 시 안전망이 전혀
+  // 없어서, 네이버/KIND·DART·수동보충이 같은 날 모두 실패하면(스크레이핑 차단,
+  // DART_API_KEY 누락, kr-earnings-manual.json 일시적 로드 실패 등) 어제까지 있던
+  // 정상적인 실적 일정까지 통째로 빈 배열로 덮어써버리는 문제가 있었다. 오늘 새로
+  // 못 찾았더라도 "오늘 날짜 이후" 구간에서 어제 데이터에 있던 항목은 유지한다.
+  if (!krEarningsMerged.length) {
+    const prior = await loadPriorData();
+    const priorFuture = Array.isArray(prior?.krEarnings)
+      ? prior.krEarnings.filter((r) => r && r.date >= today)
+      : [];
+    if (priorFuture.length) {
+      krEarningsMerged = priorFuture;
+      console.log(`⚠️ 실적 수집 전체 실패 — 기존 데이터 중 미래분 ${krEarningsMerged.length}건 유지`);
+    }
+  }
 
   let eventAnalysis = [];
   try {

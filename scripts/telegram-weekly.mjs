@@ -48,7 +48,9 @@ function buildMessage(data) {
     .filter(isHighImpact)
     .sort((a, b) => `${a.date} ${a.time || ""}`.localeCompare(`${b.date} ${b.time || ""}`))
     .slice(0, 8);
-  const earnings = rowsThisWeek(Array.isArray(data?.earningsCalendar) ? data.earningsCalendar : [], monday, friday)
+  // 2026-07-10: "earningsCalendar"는 weekly-schedule.json에 존재한 적 없는 필드명 — 실제
+  // 필드는 krEarnings. 이 오타 때문에 주간 텔레그램 메시지에서 실적 일정이 항상 빠졌었다.
+  const earnings = rowsThisWeek(Array.isArray(data?.krEarnings) ? data.krEarnings : [], monday, friday)
     .sort((a, b) => String(a.date).localeCompare(String(b.date)))
     .slice(0, 5);
 

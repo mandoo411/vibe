@@ -1311,6 +1311,18 @@
             const updated = state.data.meta?.lastUpdatedKst;
             const updatedEl = document.getElementById("weekly-updated");
             if (updatedEl) updatedEl.textContent = updated ? `마지막 업데이트: ${updated}` : "마지막 업데이트: —";
+            // 2026-07-10: 자동 수집(investing/forexfactory 등 외부 스크레이핑)이 막히면
+            // 데이터가 조용히 하루 이상 안 갱신될 수 있다. 그럴 때 "오늘 일정 없음"이
+            // 진짜 뉴스가 없다는 뜻인지, 수집이 실패한 것인지 구분이 안 되면 사용자가
+            // 오해하기 쉬우므로, 업데이트 날짜가 오늘이 아니면 배너로 알려준다.
+            const updatedDateOnly = (updated || "").slice(0, 10);
+            if (updatedDateOnly && updatedDateOnly !== today) {
+              const notice = document.getElementById("masthead-notice");
+              if (notice) {
+                notice.hidden = false;
+                notice.textContent = `데이터가 ${updatedDateOnly} 이후 갱신되지 않았습니다 — 자동 수집이 지연되고 있을 수 있어요.`;
+              }
+            }
             renderCalendar();
             renderDateSchedule(today);
             renderAnalysis(today);

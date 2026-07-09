@@ -179,7 +179,7 @@ body.page-home-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
     --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
-    --home-nav-menu-gap: 3ch;
+    --home-nav-menu-gap: 2.2ch;
   }
 
   .page-home-v2 .home-nav,
@@ -204,6 +204,14 @@ body.page-home-v2 {
     padding-right: 8px;
     gap: var(--home-nav-menu-gap);
     flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .page-home-v2 .home-nav__menu::-webkit-scrollbar,
+  .page-tm-v2 .home-nav__menu::-webkit-scrollbar {
+    display: none;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,
@@ -269,6 +277,17 @@ body.page-home-v2 {
   height: 2px;
   border-radius: 2px;
   background: var(--gradient-primary);
+}
+
+.home-nav__auth-link {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+@media (min-width: 769px) {
+  .home-nav__auth-link {
+    margin-right: 0;
+  }
 }
 
 .home-nav__link--analysis-locked {

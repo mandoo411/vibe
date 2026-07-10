@@ -18,6 +18,7 @@ const {
   tryIncrementFreeUsage,
   currentMonthKeySeoul,
   isConfigured: supabaseConfigured,
+  serviceRequest,
 } = require("../lib/supabase-server");
 
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
@@ -1677,6 +1678,36 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
   return normalized;
 }
 
+/** 2026-07-10: 홈 화면 "실시간 AI 분석" 위젯이 예전엔 하드코딩된 더미 3개를 보여주고
+ * 있었다(항상 같은 시각·같은 종목). 그걸 진짜 데이터로 바꾸기 위해, 실제 사용자가 이
+ * 엔드포인트를 호출해 분석을 받을 때마다 그 결과 요약을 Supabase public_ai_feed
+ * 테이블에 한 줄 남긴다 — 홈 화면은 이 테이블의 최신 3건을 그대로 보여주면 되므로
+ * 새로운 AI 호출이 추가로 발생하지 않는다(이미 일어난 실제 분석을 재사용).
+ * 이 로그가 실패해도 사용자에게 보여줄 분석 응답 자체에는 영향을 주지 않는다. */
+async function logPublicAiFeed(stockName, code6, analysis) {
+  if (!supabaseConfigured()) return;
+  const summary = analysis && analysis.summary;
+  if (!summary) return;
+  const desc = sanitizeStr(summary.description).slice(0, 140);
+  if (!desc) return;
+  const confidenceNum = toNum(summary.probability);
+  try {
+    await serviceRequest("public_ai_feed", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        stock_code: code6,
+        stock_name: stockName,
+        direction: summary.signal || "관망",
+        confidence: confidenceNum == null ? null : Math.round(confidenceNum),
+        summary: desc,
+      }),
+    });
+  } catch (e) {
+    console.warn("[analyze] public_ai_feed insert 실패(무시)", e && e.message);
+  }
+}
+
 async function readBody(req) {
   if (req.body && typeof req.body === "object") return req.body;
   if (typeof req.body === "string") {
@@ -1804,6 +1835,10 @@ module.exports = async function handler(req, res) {
         analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
       }
     }
+  }
+
+  if (!analysisError) {
+    await logPublicAiFeed(stockName, code6, analysis);
   }
 
   json(res, 200, {

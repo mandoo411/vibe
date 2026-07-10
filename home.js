@@ -675,6 +675,82 @@
     else if (typeof mq.addListener === "function") mq.addListener(applyPlaceholder);
   }
 
+  function aiFeedBadgeClass(direction) {
+    if (direction === "매수") return "home-m-insight__badge--buy";
+    if (direction === "회피") return "home-m-insight__badge--avoid";
+    return "home-m-insight__badge--hold";
+  }
+
+  function aiFeedBarClass(conf) {
+    if (conf == null) return "home-m-insight__bar--low";
+    if (conf >= 70) return "";
+    if (conf >= 50) return "home-m-insight__bar--mid";
+    return "home-m-insight__bar--low";
+  }
+
+  function aiFeedPctClass(conf) {
+    if (conf == null) return "home-m-insight__pct--low";
+    if (conf >= 70) return "home-m-insight__pct--high";
+    if (conf >= 50) return "home-m-insight__pct--mid";
+    return "home-m-insight__pct--low";
+  }
+
+  function fmtFeedTime(iso) {
+    try {
+      return new Intl.DateTimeFormat("ko-KR", {
+        timeZone: "Asia/Seoul",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(iso));
+    } catch (_) {
+      return "";
+    }
+  }
+
+  async function loadAiLiveFeed() {
+    const list = $("home-m-insights");
+    if (!list) return;
+    const cfg = window.TM_AUTH_CONFIG;
+    if (!cfg || cfg.SETUP_PENDING || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    try {
+      const base = cfg.SUPABASE_URL.replace(/\/+$/, "");
+      const url = `${base}/rest/v1/public_ai_feed?select=stock_name,direction,confidence,summary,created_at&order=created_at.desc&limit=3`;
+      const res = await fetch(url, {
+        headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}` },
+        cache: "no-store",
+      });
+      if (!res.ok) return; // 테이블이 아직 없거나(마이그레이션 전) 일시 오류 — 조용히 스킵, 기존 표시 유지
+      const rows = await res.json();
+      if (!Array.isArray(rows) || !rows.length) {
+        list.innerHTML =
+          '<li class="home-m-insight home-m-insight--empty">아직 실시간 분석 결과가 없습니다 — AI 종목분석을 이용해보세요.</li>';
+        return;
+      }
+      list.innerHTML = rows
+        .map((r) => {
+          const conf = toNum(r.confidence);
+          const confText = conf == null ? "—" : `${Math.round(conf)}%`;
+          const barW = conf == null ? 0 : Math.max(0, Math.min(100, conf));
+          return `<li class="home-m-insight">
+            <div class="home-m-insight__badge ${aiFeedBadgeClass(r.direction)}">${escapeHtml(r.direction || "관망")}</div>
+            <div class="home-m-insight__main">
+              <div class="home-m-insight__row">
+                <span class="home-m-insight__symbol">${escapeHtml(r.stock_name || "")}</span>
+                <div class="home-m-insight__bar-track"><span class="home-m-insight__bar ${aiFeedBarClass(conf)}" style="width:${barW}%"></span></div>
+                <span class="home-m-insight__pct ${aiFeedPctClass(conf)}">${confText}</span>
+              </div>
+              <p class="home-m-insight__desc">${escapeHtml(r.summary || "")}</p>
+            </div>
+            <time class="home-m-insight__time">${escapeHtml(fmtFeedTime(r.created_at))}</time>
+          </li>`;
+        })
+        .join("");
+    } catch (e) {
+      console.warn("[home] AI 실시간 피드 로드 실패", e);
+    }
+  }
+
   async function boot() {
     bindAiForm();
     bindNavToggle();
@@ -682,7 +758,14 @@
     bindHomeRtTabs();
     bindHomeUsTabs();
     syncHomeRtChrome();
-    await Promise.all([loadTickerAndHero(), loadHomeRtTab("cap"), loadHomeUsTab("cap"), loadUsAndCrypto(), loadSideCards()]);
+    await Promise.all([
+      loadTickerAndHero(),
+      loadHomeRtTab("cap"),
+      loadHomeUsTab("cap"),
+      loadUsAndCrypto(),
+      loadSideCards(),
+      loadAiLiveFeed(),
+    ]);
     prefetchHomeRtTabs("cap");
     setInterval(loadTickerAndHero, 5 * 60 * 1000);
     setInterval(() => {
@@ -692,6 +775,7 @@
     }, 5 * 60 * 1000);
     setInterval(loadUsAndCrypto, 5 * 60 * 1000);
     setInterval(() => loadHomeUsTab(homeUsTab), 5 * 60 * 1000);
+    setInterval(loadAiLiveFeed, 3 * 60 * 1000);
   }
 
   if (document.readyState === "loading") {

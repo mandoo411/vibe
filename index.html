@@ -157,43 +157,11 @@
               <span>업데이트 중</span>
             </div>
           </div>
-          <ul class="home-m-insights">
-            <li class="home-m-insight">
-              <div class="home-m-insight__badge home-m-insight__badge--buy">매수</div>
-              <div class="home-m-insight__main">
-                <div class="home-m-insight__row">
-                  <span class="home-m-insight__symbol">삼성전자</span>
-                  <div class="home-m-insight__bar-track"><span class="home-m-insight__bar" style="width: 78%"></span></div>
-                  <span class="home-m-insight__pct home-m-insight__pct--high">78%</span>
-                </div>
-                <p class="home-m-insight__desc">HBM4 공급계약 확대로 상승 모멘텀 지속</p>
-              </div>
-              <time class="home-m-insight__time">09:01</time>
-            </li>
-            <li class="home-m-insight">
-              <div class="home-m-insight__badge home-m-insight__badge--hold">관망</div>
-              <div class="home-m-insight__main">
-                <div class="home-m-insight__row">
-                  <span class="home-m-insight__symbol">현대차</span>
-                  <div class="home-m-insight__bar-track"><span class="home-m-insight__bar home-m-insight__bar--mid" style="width: 62%"></span></div>
-                  <span class="home-m-insight__pct home-m-insight__pct--mid">62%</span>
-                </div>
-                <p class="home-m-insight__desc">보스턴다이나믹스 IPO 6월 결정 앞두고 변동성 주의</p>
-              </div>
-              <time class="home-m-insight__time">08:58</time>
-            </li>
-            <li class="home-m-insight">
-              <div class="home-m-insight__badge home-m-insight__badge--buy">매수</div>
-              <div class="home-m-insight__main">
-                <div class="home-m-insight__row">
-                  <span class="home-m-insight__symbol">비트코인</span>
-                  <div class="home-m-insight__bar-track"><span class="home-m-insight__bar" style="width: 71%"></span></div>
-                  <span class="home-m-insight__pct home-m-insight__pct--high">71%</span>
-                </div>
-                <p class="home-m-insight__desc">ETF 순매수 6일 연속 지속, 단기 상승 가능성</p>
-              </div>
-              <time class="home-m-insight__time">08:45</time>
-            </li>
+          <!-- 2026-07-10: 예전엔 아래 3개가 고정된 더미(항상 09:01/08:58/08:45, 6월 언급 등)였음.
+               실제 사용자가 AI 종목분석을 돌릴 때마다 Supabase public_ai_feed에 결과가 쌓이고,
+               이 목록은 home.js의 loadAiLiveFeed()가 그 최신 3건을 그대로 불러와 채운다. -->
+          <ul class="home-m-insights" id="home-m-insights">
+            <li class="home-m-insight home-m-insight--empty">불러오는 중…</li>
           </ul>
         </section>
 

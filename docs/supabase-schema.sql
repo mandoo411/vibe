@@ -152,3 +152,48 @@ begin
   return true;
 end;
 $$;
+
+-- ------------------------------------------------------------
+-- 7) public_ai_feed: 홈 화면 "실시간 AI 분석" 위젯용 공개 피드
+--    (2026-07-10 추가) — 이전엔 이 위젯이 하드코딩된 더미 3개(항상 같은 시각·
+--    같은 종목)를 보여주고 있었다. 이제는 api/analyze.js가 실제 사용자 요청으로
+--    AI 종목분석을 생성할 때마다 그 결과 요약을 이 테이블에 한 줄 남기고,
+--    홈 화면(home.js)은 이 테이블의 최신 3건을 그대로 읽어와 보여준다.
+--    새 AI 호출이 추가로 발생하지 않으므로(이미 일어난 실제 분석 재사용) 비용 증가 없음.
+-- ------------------------------------------------------------
+create table if not exists public.public_ai_feed (
+  id bigint generated always as identity primary key,
+  stock_code text,
+  stock_name text not null,
+  direction text not null default '관망' check (direction in ('매수', '관망', '회피')),
+  confidence int,
+  summary text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.public_ai_feed enable row level security;
+
+-- 홈 화면은 비로그인 방문자도 보는 공개 위젯이므로 누구나 읽기 가능.
+drop policy if exists "public_ai_feed_select_all" on public.public_ai_feed;
+create policy "public_ai_feed_select_all" on public.public_ai_feed
+  for select using (true);
+
+-- 쓰기는 api/analyze.js가 SUPABASE_SERVICE_ROLE_KEY로만 수행 (클라이언트 쓰기 정책 없음).
+
+-- 오래된 행이 계속 쌓이는 걸 막기 위해, 최신 200건만 남기고 정리하는 함수.
+-- (원하면 Supabase 대시보드에서 별도 스케줄로 주기적 호출해도 되고, 안 돌려도
+-- 홈 화면은 어차피 최신 3건만 보여주므로 기능상 문제는 없음 — 저장공간 정리 목적.)
+create or replace function public.trim_public_ai_feed()
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  delete from public.public_ai_feed
+  where id in (
+    select id from public.public_ai_feed
+    order by created_at desc
+    offset 200
+  );
+end;
+$$;

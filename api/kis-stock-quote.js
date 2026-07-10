@@ -489,6 +489,141 @@ async function handleUsQuoteRequest(res, ticker, nameHint) {
   return json(res, 200, quote);
 }
 
+/**
+ * 2026-07-10: 미국주식·암호화폐도 국내주식과 동일한 자체 캔들+이동평균선 차트를 쓸 수 있도록
+ * 차트 데이터 소스를 추가한다. 미국주식은 기존 시세 조회와 같은 KIS 해외주식 API(기간별시세)를
+ * 재사용하고, 암호화폐는 별도 API 키가 필요 없는 Binance 공개 klines 엔드포인트를 사용한다.
+ * (KIS/CMC는 암호화폐 일별 OHLC를 무료로 제공하지 않아서 부득이하게 다른 소스를 쓴다.)
+ */
+const OVERSEAS_DAILY_PATH = "/uapi/overseas-price/v1/quotations/dailyprice";
+const OVERSEAS_DAILY_TR_ID = "HHDFS76240000";
+const OVERSEAS_GUBN = { D: "0", W: "1", M: "2" };
+const OVERSEAS_CHART_TARGET = { D: 220, W: 150, M: 60 };
+
+function roundSmart(n) {
+  if (n == null || !Number.isFinite(n)) return null;
+  const abs = Math.abs(n);
+  const decimals = abs < 1 ? 6 : abs < 10 ? 4 : abs < 1000 ? 2 : 0;
+  return Math.round(n * 10 ** decimals) / 10 ** decimals;
+}
+
+function mapOverseasDailyCandle(row) {
+  if (!row || typeof row !== "object") return null;
+  const dateRaw = sanitizeStr(pickFirst(row, ["xymd", "XYMD"]));
+  if (!/^\d{8}$/.test(dateRaw)) return null;
+  const time = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+  const open = toNum(pickFirst(row, ["open", "OPEN"]));
+  const high = toNum(pickFirst(row, ["high", "HIGH"]));
+  const low = toNum(pickFirst(row, ["low", "LOW"]));
+  const close = toNum(pickFirst(row, ["clos", "CLOS", "close", "CLOSE"]));
+  if (open == null || high == null || low == null || close == null) return null;
+  const volRaw = toNum(pickFirst(row, ["tvol", "TVOL"]));
+  return {
+    time,
+    open: roundSmart(open),
+    high: roundSmart(high),
+    low: roundSmart(low),
+    close: roundSmart(close),
+    volume: volRaw != null && volRaw >= 0 ? Math.round(volRaw) : 0,
+  };
+}
+
+/** KIS 해외주식 기간별시세는 BYMD를 기준일로 과거 방향 페이지네이션을 지원한다.
+ * 국내주식 차트(fetchChartCandles)와 동일한 원칙: 실패해도 지금까지 모은 것만 반환. */
+async function fetchUsChartCandles(ticker, exchange, period) {
+  const gubn = OVERSEAS_GUBN[period] || "0";
+  const target = OVERSEAS_CHART_TARGET[period] || OVERSEAS_CHART_TARGET.D;
+  const byTime = new Map();
+  let bymd = "";
+  for (let iter = 0; iter < 4; iter++) {
+    const j = await kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
+      AUTH: "",
+      EXCD: exchange,
+      SYMB: ticker,
+      GUBN: gubn,
+      BYMD: bymd,
+      MODP: "0",
+    });
+    let raw = j && j.output2;
+    if (raw && !Array.isArray(raw)) raw = [raw];
+    if (!Array.isArray(raw)) raw = [];
+    const batch = raw.map(mapOverseasDailyCandle).filter(Boolean);
+    if (!batch.length) break;
+    batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    const before = byTime.size;
+    for (const b of batch) byTime.set(b.time, b);
+    if (byTime.size >= target) break;
+    if (byTime.size === before) break;
+    const oldestYmd = String(batch[0].time).replace(/\D/g, "");
+    const nextBymd = subtractCalendarDaysFromYmd(oldestYmd, 1);
+    if (!nextBymd || nextBymd === bymd) break;
+    bymd = nextBymd;
+  }
+  return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
+}
+
+async function handleUsChartRequest(res, ticker, period, exchangeHint) {
+  const exchanges = exchangeHint
+    ? [exchangeHint, ...US_EXCHANGES.filter((e) => e !== exchangeHint)]
+    : US_EXCHANGES;
+  let lastErr = null;
+  for (const exc of exchanges) {
+    try {
+      const candles = await fetchUsChartCandles(ticker, exc, period);
+      if (candles.length) return json(res, 200, enrichChart(candles));
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  return json(res, 502, { error: (lastErr && lastErr.message) || "차트 데이터가 없습니다." });
+}
+
+const CRYPTO_KLINE_INTERVAL = { D: "1d", W: "1w", M: "1M" };
+
+/** 암호화폐 캔들: Binance 공개 klines 엔드포인트(키 불필요). 스테이블코인(USDT/USDC 등)처럼
+ * 자기 자신과의 페어가 없는 심볼은 자연히 실패하며, 그 경우 프런트에서 TradingView로 대체된다. */
+async function fetchCryptoChartCandles(symbol, period) {
+  const interval = CRYPTO_KLINE_INTERVAL[period] || "1d";
+  const pair = `${sanitizeStr(symbol).toUpperCase()}USDT`;
+  const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(pair)}&interval=${interval}&limit=250`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = new Error(`Binance klines HTTP ${res.status}`);
+    err.statusCode = 502;
+    throw err;
+  }
+  const rows = await res.json();
+  if (!Array.isArray(rows)) {
+    const err = new Error("Binance klines 응답이 올바르지 않습니다.");
+    err.statusCode = 502;
+    throw err;
+  }
+  return rows
+    .map((r) => {
+      const openTime = Number(r[0]);
+      if (!Number.isFinite(openTime)) return null;
+      const time = new Intl.DateTimeFormat("en-CA", { timeZone: "UTC" }).format(new Date(openTime));
+      const open = roundSmart(toNum(r[1]));
+      const high = roundSmart(toNum(r[2]));
+      const low = roundSmart(toNum(r[3]));
+      const close = roundSmart(toNum(r[4]));
+      const volume = toNum(r[5]);
+      if (open == null || high == null || low == null || close == null) return null;
+      return { time, open, high, low, close, volume: volume == null ? 0 : Math.round(volume) };
+    })
+    .filter(Boolean);
+}
+
+async function handleCryptoChartRequest(res, symbol, period) {
+  try {
+    const candles = await fetchCryptoChartCandles(symbol, period);
+    if (!candles.length) return json(res, 502, { error: "차트 데이터가 없습니다." });
+    return json(res, 200, enrichChart(candles));
+  } catch (e) {
+    return json(res, (e && e.statusCode) || 502, { error: (e && e.message) || "차트 데이터가 없습니다." });
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
@@ -503,10 +638,29 @@ module.exports = async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
     const market = sanitizeStr(url.searchParams.get("market")).toUpperCase();
+    const isChartReq =
+      url.searchParams.get("chart") === "1" ||
+      url.searchParams.get("mode") === "chart" ||
+      /\/kis-chart\/?$/i.test(url.pathname);
+
+    if (market === "CRYPTO") {
+      const symbol = sanitizeStr(url.searchParams.get("code") || url.searchParams.get("ticker") || "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+      if (!symbol) return json(res, 400, { error: "code(심볼)가 필요합니다." });
+      const period = normalizePeriod(url.searchParams.get("period") || "D");
+      return await handleCryptoChartRequest(res, symbol, period);
+    }
+
     const usTicker = normalizeUsTicker(url.searchParams.get("code") || url.searchParams.get("ticker") || "");
     if (market === "US" || market === "OVERSEAS") {
       if (!usTicker) {
         return json(res, 400, { error: "code(티커)가 필요합니다." });
+      }
+      if (isChartReq) {
+        const period = normalizePeriod(url.searchParams.get("period") || "D");
+        const exchangeHint = sanitizeStr(url.searchParams.get("exchange")).toUpperCase();
+        return await handleUsChartRequest(res, usTicker, period, exchangeHint);
       }
       const nameHint = sanitizeStr(url.searchParams.get("name"));
       return await handleUsQuoteRequest(res, usTicker, nameHint);
@@ -588,4 +742,3 @@ module.exports = async (req, res) => {
     return json(res, status, { error: e && e.message ? e.message : String(e) });
   }
 };
-

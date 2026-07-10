@@ -698,6 +698,19 @@
     return data;
   }
 
+  /** 2026-07-10: 미국주식·암호화폐도 국내주식과 동일한 자체 캔들+이동평균선 차트를 쓴다.
+   * 백엔드(api/kis-stock-quote.js)가 market=US면 KIS 해외 기간별시세를, market=CRYPTO면
+   * Binance 공개 klines를 조회해서 국내주식과 같은 {candles, ma20, ma60, ma120, ma200, rsi14}
+   * 형태로 돌려준다. 실패하면(드문 티커·스테이블코인 등) 호출부에서 TradingView로 대체한다. */
+  async function fetchNonKrChart(code, market, period) {
+    const params = new URLSearchParams({ market, code, chart: "1", period: period || "D" });
+    const res = await fetch(`/api/kis-stock-quote?${params.toString()}`, { cache: "no-store" });
+    const data = safeParseJson(await res.text()) || {};
+    if (!res.ok) throw new Error(data.error || `차트 HTTP ${res.status}`);
+    if (!Array.isArray(data.candles) || !data.candles.length) throw new Error("차트 데이터가 없습니다");
+    return data;
+  }
+
   function ensureLightweightCharts() {
     if (window.LightweightCharts && typeof window.LightweightCharts.createChart === "function") {
       return Promise.resolve(window.LightweightCharts);
@@ -754,7 +767,16 @@
     return out;
   }
 
-  async function mountAiLwChart(hostEl, chartData) {
+  function lwChartPriceFormatterFor(market) {
+    if (market !== "US" && market !== "CRYPTO") return lwChartPriceFormatter;
+    return (price) => {
+      const abs = Math.abs(price);
+      const decimals = abs < 1 ? 6 : abs < 10 ? 4 : abs < 1000 ? 2 : 0;
+      return `$${price.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+    };
+  }
+
+  async function mountAiLwChart(hostEl, chartData, market) {
     if (!hostEl || !chartData || !Array.isArray(chartData.candles) || !chartData.candles.length) return;
     disposeAiChart();
     const LC = await ensureLightweightCharts();
@@ -770,7 +792,7 @@
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       localization: {
-        priceFormatter: lwChartPriceFormatter,
+        priceFormatter: lwChartPriceFormatterFor(market),
       },
     });
     const candleOpts = {
@@ -800,7 +822,7 @@
     for (const [arr, color] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
       if (!lineData.length) continue;
-      const lineOpts = { color, lineWidth: 1, priceLineVisible: false, lastValueVisible: false };
+      const lineOpts = { color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false };
       let line;
       if (LC.LineSeries && typeof chart.addSeries === "function") {
         line = chart.addSeries(LC.LineSeries, lineOpts);
@@ -862,12 +884,12 @@
     );
   }
 
-  function wireAiChart(stockCode, chartData, activePeriod) {
+  function wireAiChart(stockCode, chartData, activePeriod, market) {
     const wrap = panel && panel.querySelector(".ai-lw-chart-wrap");
-    if (!wrap || !isDomesticCode(stockCode)) return;
+    if (!wrap) return;
     const host = wrap.querySelector(".ai-lw-chart-host");
     const period = activePeriod || "D";
-    if (host && chartData) void mountAiLwChart(host, chartData);
+    if (host && chartData) void mountAiLwChart(host, chartData, market);
 
     wrap.querySelectorAll(".ai-chart-period-btn").forEach((btn) => {
       const p = btn.getAttribute("data-ai-period") || "D";
@@ -880,8 +902,11 @@
           b.setAttribute("aria-pressed", b === btn ? "true" : "false")
         );
         try {
-          const data = await fetchKisChart(stockCode, next);
-          await mountAiLwChart(host, data);
+          const data =
+            market === "US" || market === "CRYPTO"
+              ? await fetchNonKrChart(stockCode, market, next)
+              : await fetchKisChart(stockCode, next);
+          await mountAiLwChart(host, data, market);
         } catch (err) {
           console.error("[AI분석] 차트 주기 변경 실패", err);
         }
@@ -1019,8 +1044,12 @@
     });
   }
 
-  function renderChartSection(stockCode, stockName, chartText, market) {
-    const useTv = !isDomesticCode(stockCode) || (market && market !== "KR");
+  function renderChartSection(stockCode, stockName, chartText, market, hasChartData) {
+    // 2026-07-10: 예전엔 국내주식이 아니면 무조건 TradingView(단일 색 이평선만 지원)를 썼다.
+    // 이제는 미국주식·암호화폐도 자체 캔들+4색 이평선 차트 데이터를 받아올 수 있으므로,
+    // 실제로 그 데이터 확보에 성공했는지(hasChartData)를 기준으로 삼는다. 실패했을 때만
+    // (드문 티커, 스테이블코인처럼 Binance 페어가 없는 경우 등) TradingView로 대체한다.
+    const useTv = !hasChartData;
     return renderChartShell(stockCode, stockName, chartText, useTv, market);
   }
 
@@ -1169,13 +1198,13 @@
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
-        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType)}</div></article>
+        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div></article>
         <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div></article>
       </div>
       <p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
 
-    if (isDomesticCode(data.stockCode) && (data.assetType || "KR") === "KR" && chartData) {
-      wireAiChart(data.stockCode, chartData, chartPeriod || "D");
+    if (chartData) {
+      wireAiChart(data.stockCode, chartData, chartPeriod || "D", data.assetType);
     } else {
       refreshTradingViewCharts();
     }
@@ -1250,8 +1279,9 @@
       showLoading(resolved);
 
       const isDomestic = isDomesticCode(resolved.code) && (resolved.market || "KR") === "KR";
-      // fetchQuickQuote/fetchKisChart는 KIS 국내 시세 전용이라 미국주식·암호화폐에는 쓸 수
-      // 없다 — 그 경우 로딩 헤더는 계속 스켈레톤을 보여주다가 최종 분석 응답으로 채워진다.
+      const nonKrMarket = resolved.market === "US" || resolved.market === "CRYPTO" ? resolved.market : "";
+      // fetchQuickQuote는 KIS 국내 시세 전용이라 미국주식·암호화폐에는 쓸 수 없다 — 그 경우
+      // 로딩 헤더는 계속 스켈레톤을 보여주다가 최종 분석 응답으로 채워진다.
       if (isDomestic) {
         void fetchQuickQuote(resolved.code).then((quote) => {
           const host = document.getElementById("ai-loading-quote-host");
@@ -1260,12 +1290,20 @@
         });
       }
 
+      // 2026-07-10: 미국주식·암호화폐도 국내주식과 동일한 자체 캔들+이동평균선 차트를 쓴다
+      // (fetchNonKrChart — KIS 해외 기간별시세 / Binance klines). 실패하면 null을 반환해
+      // renderAnalysis가 TradingView로 대체한다.
       const chartPromise = isDomestic
         ? fetchKisChart(resolved.code, "D").catch((err) => {
             console.warn("[AI분석] chart fetch 실패", err);
             return null;
           })
-        : Promise.resolve(null);
+        : nonKrMarket
+          ? fetchNonKrChart(resolved.code, nonKrMarket, "D").catch((err) => {
+              console.warn("[AI분석] chart fetch 실패", err);
+              return null;
+            })
+          : Promise.resolve(null);
 
       const analyzePromise = chartPromise.then((chartData) =>
         fetchAnalysis(resolved.code, resolved.name, extractChartIndicators(chartData), resolved.market)

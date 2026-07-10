@@ -259,7 +259,13 @@
           </div>
           <div class="home-mini-card">
             <h3 class="home-mini-card__title">📰 AI 장 브리핑</h3>
-            <p class="home-brief-text" id="home-brief-text">브리핑을 불러오는 중…</p>
+            <!-- 2026-07-10: 예전엔 aiAnalysis.domesticImpact 전체 문단(약 200자)을 좁은
+                 사이드바 카드에 그대로 욱여넣어 7줄짜리 벽처럼 보였다. 같은 데이터에 이미
+                 존재하는 aiAnalysis.keyIssues(핵심 이슈 5개, 각 한 줄)를 사용해 짧은
+                 불릿 3개로 요약해서 보여준다. -->
+            <ul class="home-brief-list" id="home-brief-list">
+              <li class="home-brief-item home-brief-item--loading">브리핑을 불러오는 중…</li>
+            </ul>
             <p class="home-brief-time" id="home-brief-time"></p>
             <div style="margin-top:8px"><a class="home-section__more" href="./briefing.html">전체 브리핑 보기 →</a></div>
           </div>

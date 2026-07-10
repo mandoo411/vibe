@@ -333,6 +333,7 @@ body {
 }
 
 [data-theme="dark"] .home-brief-text,
+[data-theme="dark"] .home-brief-item,
 [data-theme="dark"] .home-mini-card .mc-row,
 [data-theme="dark"] .home-mini-row {
   color: var(--text-secondary);

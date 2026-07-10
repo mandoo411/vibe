@@ -1395,6 +1395,42 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
   margin: 0;
 }
 
+.home-brief-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.home-brief-item {
+  position: relative;
+  padding-left: 13px;
+  font-size: 12px;
+  color: #444;
+  line-height: 1.5;
+}
+
+.home-brief-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0f6e56;
+}
+
+.home-brief-item--loading {
+  color: #aaa;
+}
+
+.home-brief-item--loading::before {
+  background: #d5d8e3;
+}
+
 .home-brief-time {
   font-size: 10px;
   color: #ccc;

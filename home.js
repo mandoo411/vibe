@@ -536,12 +536,20 @@
   }
 
   function renderBriefing(data) {
-    const textEl = $("home-brief-text");
+    const listEl = $("home-brief-list");
     const timeEl = $("home-brief-time");
-    if (!textEl) return;
+    if (!listEl) return;
     const ai = data && data.aiAnalysis ? data.aiAnalysis : {};
-    const text = ai.domesticImpact || (Array.isArray(ai.keyIssues) ? ai.keyIssues[0] : "") || "브리핑 데이터를 불러오는 중…";
-    textEl.textContent = String(text).slice(0, 220) + (String(text).length > 220 ? "…" : "");
+    const issues = Array.isArray(ai.keyIssues) ? ai.keyIssues.filter(Boolean) : [];
+    if (issues.length) {
+      listEl.innerHTML = issues
+        .slice(0, 3)
+        .map((s) => `<li class="home-brief-item">${escapeHtml(String(s))}</li>`)
+        .join("");
+    } else {
+      const fallback = ai.domesticImpact || "브리핑 데이터가 아직 없습니다.";
+      listEl.innerHTML = `<li class="home-brief-item">${escapeHtml(String(fallback).slice(0, 60))}${String(fallback).length > 60 ? "…" : ""}</li>`;
+    }
     if (timeEl) {
       const t = data?.updatedAt || data?.meta?.lastUpdatedKst || "";
       timeEl.textContent = t ? `${String(t).replace("T", " ").slice(0, 19)} 업데이트` : "";

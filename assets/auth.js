@@ -170,6 +170,7 @@
         el.replaceWith(fresh);
       }
     });
+    if (typeof window.tmReorderGnbAnalysisLink === "function") window.tmReorderGnbAnalysisLink();
   }
 
   document.addEventListener("tm-auth-ready", injectAuthNav);

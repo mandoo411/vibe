@@ -529,10 +529,10 @@
     const analysis =
       menu.querySelector('a[href*="stock-analysis"]') ||
       menu.querySelector(".home-nav__link--analysis-locked");
-    const themeBtn = menu.querySelector(".home-nav__theme");
-    if (!analysis || !themeBtn) return;
-    if (analysis.nextElementSibling === themeBtn) return;
-    menu.insertBefore(analysis, themeBtn);
+    const anchor = menu.querySelector(".home-nav__auth-link") || menu.querySelector(".home-nav__theme");
+    if (!analysis || !anchor) return;
+    if (analysis.nextElementSibling === anchor) return;
+    menu.insertBefore(analysis, anchor);
   }
 
   function wrapShellTop() {
@@ -599,4 +599,5 @@
   window.tmHasAnalysisAccess = hasAnalysisBetaAccess;
   window.tmOpenAnalysisGate = openAnalysisGate;
   window.tmEnsureAnalysisGate = ensureAnalysisGate;
+  window.tmReorderGnbAnalysisLink = reorderGnbAnalysisLink;
 })();

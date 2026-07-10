@@ -508,6 +508,8 @@ function normalizeKrEarningRows(rows, from, to) {
         code: KR_BLUECHIP_CODES[name] || "",
         epsEstimate: cells.find((cell) => /EPS|예상/.test(cell)) || "",
         previousQuarter: cells.find((cell) => /전분기|직전|QoQ/.test(cell)) || "",
+        confirmed: false,
+        source: "scrape",
       });
     }
   }
@@ -660,6 +662,8 @@ async function main() {
       epsEstimate: r.epsEstimate ?? "",
       previousQuarter: "",
       reportName: r.reportName || "",
+      confirmed: true,
+      source: "dart",
     }));
   } catch (error) {
     console.log(`❌ 실적 캘린더 저장 실패: ${error instanceof Error ? error.message : error}`);
@@ -714,7 +718,9 @@ async function main() {
   // 수동 항목은 자동 소스 어디에도 없는 종목일 때만 보충(자동 데이터가 항상 우선)
   const manualKrEarnings = await loadManualKrEarnings(today, to);
   const autoCodes = new Set(krEarningsAuto.map((r) => r.code || r.name));
-  const manualToAdd = manualKrEarnings.filter((r) => !autoCodes.has(r.code || r.name));
+  const manualToAdd = manualKrEarnings
+    .filter((r) => !autoCodes.has(r.code || r.name))
+    .map((r) => ({ ...r, confirmed: false, source: "manual" }));
   let krEarningsMerged = [...krEarningsAuto, ...manualToAdd].sort((a, b) => a.date.localeCompare(b.date));
   console.log(
     `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 + 수동보충 ${manualToAdd.length}건 → 최종 ${krEarningsMerged.length}건`

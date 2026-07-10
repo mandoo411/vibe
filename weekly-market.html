@@ -935,7 +935,9 @@
             const sc = getSectorColor(sector);
             const initial = (name || "?").slice(0, 1);
             const naverUrl = naverFinanceUrl(r.code, name);
-            const rtype = cleanReportName(r.reportName || "잠정실적");
+            const isUnconfirmed = r.confirmed === false;
+            const rtype = isUnconfirmed ? "estimated" : cleanReportName(r.reportName || "잠정실적");
+            const rtypeCls = isUnconfirmed ? "ec-rtype ec-rtype--estimated" : "ec-rtype";
             return `<a class="ec-card ec-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer" style="--sc:${sc}">
               <div class="ec-avatar">${escapeHtml(initial)}</div>
               <div class="ec-info">
@@ -945,7 +947,7 @@
                   <span class="ec-code">${escapeHtml(r.code || "")}</span>
                 </div>
               </div>
-              <span class="ec-rtype">${escapeHtml(rtype)}</span>
+              <span class="${rtypeCls}">${escapeHtml(rtype)}</span>
             </a>`;
           }).join("")}</div>`;
         }

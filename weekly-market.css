@@ -2375,6 +2375,16 @@ a:hover {
   flex-shrink: 0;
 }
 
+.ec-rtype--estimated {
+  color: #b45309;
+  background: transparent;
+  border: 1px dashed #d97706;
+}
+[data-theme="dark"] .ec-rtype--estimated {
+  color: #fbbf24;
+  border-color: #b45309;
+}
+
 /* US 카드 */
 .ec-card--us {
   border-left: 4px solid #22c55e;

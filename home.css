@@ -520,6 +520,14 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-hero__ai-live {
+  /* 2026-07-10 버그수정: 이 카드가 grid(1fr 1fr)의 오른쪽 칸인데, 내부의
+     home-hero__ai-desc가 white-space:nowrap이라 한 줄 전체 길이가 그대로
+     이 칸의 최소너비(min-content)가 되어버려 왼쪽 타이틀 칸이
+     세로 한글자씩 찌그러지는 원인이었다. min-width:0으로 grid 트랙이
+     정상적으로 줄어들 수 있게 하고, align-self:start로 왼쪽(제목·통계·버튼)
+     높이에 맞춰 억지로 늘어나지 않고 내용 높이만큼만 차지하게 한다. */
+  min-width: 0;
+  align-self: start;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
@@ -1304,6 +1312,13 @@ body[data-theme="dark"] .page-home-v2 .home-tr__metric {
   border-radius: 10px;
   border: 1px solid #eef0f8;
   padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 64, 0.05);
+}
+
+.home-mini-card .home-empty {
+  padding: 14px 0;
+  text-align: center;
+  color: #b7bbc9;
 }
 
 .home-mini-card__title {
@@ -1883,7 +1898,8 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     z-index: 1;
   }
 
-  .page-home-v2 .home-hero__panels {
+  .page-home-v2 .home-hero__panels,
+  .page-home-v2 .home-hero__ai-live {
     display: none;
   }
 

@@ -24,6 +24,123 @@
 
   const CSP_SAFE = true; // eval/new Function 미사용, JSON.parse만 사용
 
+  /**
+   * 2026-07-10: AI 종목분석에 미국주식·암호화폐 지원 추가.
+   * 예전엔 6자리 국내 종목코드만 받아서(runAnalysis의 /^\d{6}$/ 하드 게이트) 그 외
+   * 입력은 전부 "종목을 찾을 수 없습니다"로 막혔다. 이제는 이 두 정적 별칭 테이블로
+   * 한글/영문 이름·티커·심볼을 먼저 매칭해서 market("US"|"CRYPTO")까지 함께 넘긴다.
+   * (KR은 기존 stockList 그대로 사용, 변경 없음)
+   */
+  const CRYPTO_ALIASES = [
+    { symbol: "BTC", name: "비트코인", aliases: ["비트코인", "bitcoin", "btc"] },
+    { symbol: "ETH", name: "이더리움", aliases: ["이더리움", "ethereum", "eth"] },
+    { symbol: "XRP", name: "리플", aliases: ["리플", "ripple", "xrp"] },
+    { symbol: "SOL", name: "솔라나", aliases: ["솔라나", "solana", "sol"] },
+    { symbol: "BNB", name: "바이낸스코인", aliases: ["바이낸스코인", "바이낸스 코인", "binance coin", "bnb"] },
+    { symbol: "DOGE", name: "도지코인", aliases: ["도지코인", "도지 코인", "dogecoin", "doge"] },
+    { symbol: "ADA", name: "에이다", aliases: ["에이다", "카르다노", "cardano", "ada"] },
+    { symbol: "TRX", name: "트론", aliases: ["트론", "tron", "trx"] },
+    { symbol: "TON", name: "톤코인", aliases: ["톤코인", "톤 코인", "toncoin", "ton"] },
+    { symbol: "AVAX", name: "아발란체", aliases: ["아발란체", "avalanche", "avax"] },
+    { symbol: "LINK", name: "체인링크", aliases: ["체인링크", "chainlink", "link"] },
+    { symbol: "SHIB", name: "시바이누", aliases: ["시바이누", "시바 이누", "shiba inu", "shib"] },
+    { symbol: "DOT", name: "폴카닷", aliases: ["폴카닷", "polkadot", "dot"] },
+    { symbol: "MATIC", name: "폴리곤", aliases: ["폴리곤", "polygon", "matic"] },
+    { symbol: "LTC", name: "라이트코인", aliases: ["라이트코인", "라이트 코인", "litecoin", "ltc"] },
+    { symbol: "BCH", name: "비트코인캐시", aliases: ["비트코인캐시", "비트코인 캐시", "bitcoin cash", "bch"] },
+    { symbol: "ICP", name: "인터넷컴퓨터", aliases: ["인터넷컴퓨터", "인터넷 컴퓨터", "internet computer", "icp"] },
+    { symbol: "ETC", name: "이더리움클래식", aliases: ["이더리움클래식", "이더리움 클래식", "ethereum classic", "etc"] },
+    { symbol: "NEAR", name: "니어프로토콜", aliases: ["니어프로토콜", "니어 프로토콜", "near protocol", "near"] },
+    { symbol: "UNI", name: "유니스왑", aliases: ["유니스왑", "uniswap", "uni"] },
+    { symbol: "ATOM", name: "코스모스", aliases: ["코스모스", "cosmos", "atom"] },
+    { symbol: "XLM", name: "스텔라루멘", aliases: ["스텔라루멘", "스텔라", "stellar", "xlm"] },
+    { symbol: "HBAR", name: "헤데라", aliases: ["헤데라", "hedera", "hbar"] },
+    { symbol: "SUI", name: "수이", aliases: ["수이", "sui"] },
+    { symbol: "APT", name: "앱토스", aliases: ["앱토스", "aptos", "apt"] },
+    { symbol: "USDT", name: "테더", aliases: ["테더", "tether", "usdt"] },
+    { symbol: "USDC", name: "USD코인", aliases: ["usd코인", "usd 코인", "usdc", "usd coin"] },
+  ];
+
+  const US_ALIASES = [
+    { symbol: "NVDA", name: "엔비디아", aliases: ["엔비디아", "nvidia"] },
+    { symbol: "AAPL", name: "애플", aliases: ["애플", "apple"] },
+    { symbol: "MSFT", name: "마이크로소프트", aliases: ["마이크로소프트", "microsoft"] },
+    { symbol: "GOOGL", name: "알파벳(구글)", aliases: ["알파벳", "구글", "google", "alphabet"] },
+    { symbol: "AMZN", name: "아마존", aliases: ["아마존", "amazon"] },
+    { symbol: "META", name: "메타", aliases: ["메타", "페이스북", "facebook", "meta"] },
+    { symbol: "TSLA", name: "테슬라", aliases: ["테슬라", "tesla"] },
+    { symbol: "AVGO", name: "브로드컴", aliases: ["브로드컴", "broadcom"] },
+    { symbol: "AMD", name: "AMD", aliases: ["amd"] },
+    { symbol: "INTC", name: "인텔", aliases: ["인텔", "intel"] },
+    { symbol: "MU", name: "마이크론", aliases: ["마이크론", "micron"] },
+    { symbol: "ASML", name: "ASML", aliases: ["asml"] },
+    { symbol: "ORCL", name: "오라클", aliases: ["오라클", "oracle"] },
+    { symbol: "CRM", name: "세일즈포스", aliases: ["세일즈포스", "salesforce"] },
+    { symbol: "ADBE", name: "어도비", aliases: ["어도비", "adobe"] },
+    { symbol: "NFLX", name: "넷플릭스", aliases: ["넷플릭스", "netflix"] },
+    { symbol: "PLTR", name: "팔란티어", aliases: ["팔란티어", "palantir"] },
+    { symbol: "COIN", name: "코인베이스", aliases: ["코인베이스", "coinbase"] },
+    { symbol: "RGTI", name: "리게티컴퓨팅", aliases: ["리게티", "리게티컴퓨팅", "rigetti"] },
+    { symbol: "IONQ", name: "아이온큐", aliases: ["아이온큐", "ionq"] },
+    { symbol: "SMCI", name: "슈퍼마이크로컴퓨터", aliases: ["슈퍼마이크로", "super micro"] },
+    { symbol: "QCOM", name: "퀄컴", aliases: ["퀄컴", "qualcomm"] },
+    { symbol: "TXN", name: "텍사스인스트루먼트", aliases: ["텍사스인스트루먼트", "texas instruments"] },
+    { symbol: "JPM", name: "JP모건", aliases: ["jp모건", "jpmorgan", "jp morgan"] },
+    { symbol: "V", name: "비자", aliases: ["비자", "visa"] },
+    { symbol: "MA", name: "마스터카드", aliases: ["마스터카드", "mastercard"] },
+    { symbol: "WMT", name: "월마트", aliases: ["월마트", "walmart"] },
+    { symbol: "KO", name: "코카콜라", aliases: ["코카콜라", "coca cola", "coca-cola"] },
+    { symbol: "DIS", name: "디즈니", aliases: ["디즈니", "disney"] },
+    { symbol: "BA", name: "보잉", aliases: ["보잉", "boeing"] },
+    { symbol: "XOM", name: "엑슨모빌", aliases: ["엑슨모빌", "exxon mobil", "exxon"] },
+    { symbol: "CVX", name: "셰브론", aliases: ["셰브론", "chevron"] },
+    { symbol: "PFE", name: "화이자", aliases: ["화이자", "pfizer"] },
+    { symbol: "JNJ", name: "존슨앤존슨", aliases: ["존슨앤존슨", "johnson"] },
+    { symbol: "UNH", name: "유나이티드헬스", aliases: ["유나이티드헬스", "unitedhealth"] },
+    { symbol: "LLY", name: "일라이릴리", aliases: ["일라이릴리", "eli lilly"] },
+    { symbol: "COST", name: "코스트코", aliases: ["코스트코", "costco"] },
+    { symbol: "HD", name: "홈디포", aliases: ["홈디포", "home depot"] },
+    { symbol: "NKE", name: "나이키", aliases: ["나이키", "nike"] },
+    { symbol: "SBUX", name: "스타벅스", aliases: ["스타벅스", "starbucks"] },
+    { symbol: "UBER", name: "우버", aliases: ["우버", "uber"] },
+    { symbol: "ABNB", name: "에어비앤비", aliases: ["에어비앤비", "airbnb"] },
+    { symbol: "SNOW", name: "스노우플레이크", aliases: ["스노우플레이크", "snowflake"] },
+    { symbol: "SHOP", name: "쇼피파이", aliases: ["쇼피파이", "shopify"] },
+    { symbol: "PYPL", name: "페이팔", aliases: ["페이팔", "paypal"] },
+    { symbol: "ARM", name: "ARM홀딩스", aliases: ["arm홀딩스", "arm holdings", "arm"] },
+    { symbol: "MRVL", name: "마벨테크놀로지", aliases: ["마벨", "marvell"] },
+    { symbol: "TSM", name: "TSMC", aliases: ["tsmc", "대만반도체"] },
+  ];
+
+  function findAliasMatch(list, qRaw) {
+    const q = String(qRaw || "").trim().toLowerCase();
+    if (!q) return null;
+    const bySymbol = list.find((x) => x.symbol.toLowerCase() === q);
+    if (bySymbol) return bySymbol;
+    const byAliasExact = list.find((x) => x.aliases.some((a) => a === q));
+    if (byAliasExact) return byAliasExact;
+    const partial = list.filter((x) => x.aliases.some((a) => a.includes(q) || q.includes(a)));
+    if (partial.length === 1) return partial[0];
+    return null;
+  }
+
+  function looksLikeUsTicker(q) {
+    return /^[A-Za-z]{1,5}(\.[A-Za-z])?$/.test(String(q || "").trim());
+  }
+
+  function resolveNonKrAsset(qRaw) {
+    const q = String(qRaw || "").trim();
+    if (!q) return null;
+    const crypto = findAliasMatch(CRYPTO_ALIASES, q);
+    if (crypto) return { code: crypto.symbol, name: crypto.name, market: "CRYPTO" };
+    const us = findAliasMatch(US_ALIASES, q);
+    if (us) return { code: us.symbol, name: us.name, market: "US" };
+    if (looksLikeUsTicker(q)) {
+      return { code: q.toUpperCase(), name: q.toUpperCase(), market: "US" };
+    }
+    return null;
+  }
+
   function escapeHtml(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -91,17 +208,18 @@
     const code6 = code6Maybe(q);
     if (/^\d{6}$/.test(code6)) {
       const hit = stockList.find((x) => x.code === code6);
-      return { code: code6, name: hit ? hit.name : code6 };
+      return { code: code6, name: hit ? hit.name : code6, market: "KR" };
     }
     const key = normalizeNameKey(q);
     const exact = stockList.find((x) => normalizeNameKey(x.name) === key);
-    if (exact) return { code: exact.code, name: exact.name };
+    if (exact) return { code: exact.code, name: exact.name, market: "KR" };
     const partial = stockList.filter((x) => {
       const nk = normalizeNameKey(x.name);
       return nk.includes(key) || key.includes(nk);
     });
-    if (partial.length === 1) return { code: partial[0].code, name: partial[0].name };
-    return null;
+    if (partial.length === 1) return { code: partial[0].code, name: partial[0].name, market: "KR" };
+    // 국내 종목에서 못 찾으면 미국주식/암호화폐 별칭 테이블에서 시도.
+    return resolveNonKrAsset(q);
   }
 
   function acHost() {
@@ -165,11 +283,23 @@
 
   function filterStocksForAutocomplete(q) {
     const lc = q.toLowerCase();
-    return (stockList || []).filter((x) => {
+    const kr = (stockList || []).filter((x) => {
       const name = String(x.name || "").toLowerCase();
       const code = String(x.code || "");
       return name.includes(lc) || code.includes(q) || code.includes(lc);
     });
+    const nonKr = [];
+    for (const x of CRYPTO_ALIASES) {
+      if (x.symbol.toLowerCase().includes(lc) || x.aliases.some((a) => a.includes(lc))) {
+        nonKr.push({ code: x.symbol, name: x.name, market: "CRYPTO" });
+      }
+    }
+    for (const x of US_ALIASES) {
+      if (x.symbol.toLowerCase().includes(lc) || x.aliases.some((a) => a.includes(lc))) {
+        nonKr.push({ code: x.symbol, name: x.name, market: "US" });
+      }
+    }
+    return kr.concat(nonKr);
   }
 
   function pickStockItem(item) {
@@ -188,15 +318,20 @@
     const urlCode = code6Maybe(params.get("code") || "");
     const urlName = String(params.get("name") || "").trim();
     if (/^\d{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
-      return { code: urlCode, name: urlName || q };
+      return { code: urlCode, name: urlName || q, market: "KR" };
     }
     return resolveQueryLocal(q);
   }
 
-  function fmtPrice(n) {
+  function fmtPrice(n, market) {
     const v = toNum(n);
     if (v == null || v === 0) return "—";
-    return Math.round(v).toLocaleString("ko-KR");
+    if (market === "US" || market === "CRYPTO") {
+      const abs = Math.abs(v);
+      const decimals = abs < 1 ? 6 : abs < 10 ? 4 : abs < 1000 ? 2 : 0;
+      return `$${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+    }
+    return `${Math.round(v).toLocaleString("ko-KR")}원`;
   }
 
   function resolveOpinionPrices(op, currentPrice) {
@@ -411,9 +546,10 @@
 
   function renderMetaGrid(opts) {
     const o = opts || {};
+    const assetType = o.assetType || "KR";
     const cells = [
-      ["52주 고점", fmtPrice(o.high52w)],
-      ["52주 저점", fmtPrice(o.low52w)],
+      ["52주 고점", fmtPrice(o.high52w, assetType)],
+      ["52주 저점", fmtPrice(o.low52w, assetType)],
       ["시가총액", formatMarketCapPretty(o.marketCapRaw)],
       ["PBR", fmtPbr(o.pbr)],
     ];
@@ -442,7 +578,7 @@
       (market ? `<span class="ai-stock-header__market">${escapeHtml(market)}</span>` : "") +
       `</div></div>` +
       `<div class="ai-stock-header__quote ${priceCls}">` +
-      `<div class="ai-stock-header__price">${escapeHtml(fmtPrice(data.currentPrice))}<span class="ai-stock-header__won">원</span></div>` +
+      `<div class="ai-stock-header__price">${escapeHtml(fmtPrice(data.currentPrice, data.assetType))}</div>` +
       `<div class="ai-stock-header__chg">${escapeHtml(fmtPct(data.changeRate))}</div>` +
       `</div></div>` +
       renderMetaGrid(data) +
@@ -695,9 +831,9 @@
     });
   }
 
-  function renderChartShell(stockCode, stockName, chartText, useTradingView) {
+  function renderChartShell(stockCode, stockName, chartText, useTradingView, market) {
     if (useTradingView) {
-      const sym = tradingViewSymbol(stockCode, stockName);
+      const sym = tradingViewSymbol(stockCode, stockName, market);
       return (
         `<div class="ai-chart-block">` +
         `<div class="ai-chart-tv"><iframe class="ai-tv-widget" data-symbol="${escapeHtml(sym)}" title="${escapeHtml(stockName || stockCode)} TradingView chart" src="${escapeHtml(tradingViewUrl(sym))}" loading="lazy" allowtransparency="true" scrolling="no"></iframe></div>` +
@@ -819,14 +955,15 @@
     );
   }
 
-  function tradingViewSymbol(stockCode, stockName) {
+  function tradingViewSymbol(stockCode, stockName, market) {
     const code = String(stockCode || "").replace(/\D/g, "");
-    if (/^\d{6}$/.test(code)) return `KRX:${code}`;
-    const ticker = String(stockName || stockCode || "")
+    if (/^\d{6}$/.test(code) && market !== "US" && market !== "CRYPTO") return `KRX:${code}`;
+    const ticker = String(stockCode || stockName || "")
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9.]/g, "");
     if (!ticker) return "KRX:005930";
+    if (market === "CRYPTO") return `BINANCE:${ticker}USDT`;
     const nyseTickers = new Set(["BRK.B", "BRK.A", "JPM", "V", "WMT", "XOM", "BAC", "DIS", "T", "KO", "PFE"]);
     const prefix = nyseTickers.has(ticker) ? "NYSE" : "NASDAQ";
     return `${prefix}:${ticker}`;
@@ -882,9 +1019,9 @@
     });
   }
 
-  function renderChartSection(stockCode, stockName, chartText) {
-    const useTv = !isDomesticCode(stockCode);
-    return renderChartShell(stockCode, stockName, chartText, useTv);
+  function renderChartSection(stockCode, stockName, chartText, market) {
+    const useTv = !isDomesticCode(stockCode) || (market && market !== "KR");
+    return renderChartShell(stockCode, stockName, chartText, useTv, market);
   }
 
   function scenarioCardClass(label, type) {
@@ -930,7 +1067,7 @@
     return `<div class="ai-mat-grid">${cards}</div>${unreflected}${summary}`;
   }
 
-  function renderScenarioCard(s) {
+  function renderScenarioCard(s, assetType) {
     const label = escapeHtml(s.label || "?");
     const type = escapeHtml(s.type || "");
     const cls = scenarioCardClass(s.label, s.type);
@@ -944,10 +1081,10 @@
     // 표기하면 약세 시나리오인데 상방 숫자만 보이는 것처럼 오해할 수 있어 라벨을 구분한다.
     const lines = [
       ["조건", s.condition],
-      ["진입가", s.entry != null ? `${fmtPrice(s.entry)}원` : null],
-      [isBear ? "반등 목표가" : "목표가", s.target != null ? `${fmtPrice(s.target)}원` : null],
-      ["손절가", s.stop != null ? `${fmtPrice(s.stop)}원` : null],
-      isBear && s.targetLow != null ? ["추가 하락 시 목표 하단", `${fmtPrice(s.targetLow)}원`] : null,
+      ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null],
+      [isBear ? "반등 목표가" : "목표가", s.target != null ? fmtPrice(s.target, assetType) : null],
+      ["손절가", s.stop != null ? fmtPrice(s.stop, assetType) : null],
+      isBear && s.targetLow != null ? ["추가 하락 시 목표 하단", fmtPrice(s.targetLow, assetType)] : null,
       isBear ? ["대응전략", s.strategy] : null,
     ]
       .filter(Boolean)
@@ -960,7 +1097,7 @@
     return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
-  function renderOpinion(op, currentPrice) {
+  function renderOpinion(op, currentPrice, assetType) {
     const o = op && typeof op === "object" ? op : {};
     const prices = resolveOpinionPrices(o, currentPrice);
     const outlooks = [
@@ -981,12 +1118,12 @@
     ]
       .map(
         ([label, val]) =>
-          `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(fmtPrice(val))}</span></div>`
+          `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(fmtPrice(val, assetType))}</span></div>`
       )
       .join("");
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
     const scenarioHtml = scenarios.length
-      ? scenarios.map(renderScenarioCard).join("")
+      ? scenarios.map((s) => renderScenarioCard(s, assetType)).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
     const comment = o.comment
       ? `<div class="ai-opinion-comment"><span class="ai-opinion-comment__label">종합 의견</span>${formatProseText(o.comment)}</div>`
@@ -1032,20 +1169,20 @@
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
-        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart)}</div></article>
-        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice)}</div></article>
+        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType)}</div></article>
+        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div></article>
       </div>
       <p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
 
-    if (isDomesticCode(data.stockCode) && chartData) {
+    if (isDomesticCode(data.stockCode) && (data.assetType || "KR") === "KR" && chartData) {
       wireAiChart(data.stockCode, chartData, chartPeriod || "D");
     } else {
       refreshTradingViewCharts();
     }
   }
 
-  async function fetchAnalysis(code, name, indicators) {
-    console.log("[AI분석] fetch 시작", { code, name, indicators });
+  async function fetchAnalysis(code, name, indicators, market) {
+    console.log("[AI분석] fetch 시작", { code, name, indicators, market });
     const ind = indicators && typeof indicators === "object" ? indicators : {};
     const authToken = window.TMAuth ? await window.TMAuth.getAccessToken().catch(() => "") : "";
     let res;
@@ -1059,6 +1196,7 @@
         body: JSON.stringify({
           code,
           name,
+          market: market || "KR",
           ma20: ind.ma20,
           ma60: ind.ma60,
           ma120: ind.ma120,
@@ -1104,20 +1242,24 @@
 
     try {
       const resolved = await resolveForAnalysis(q);
-      if (!resolved || !/^\d{6}$/.test(resolved.code)) {
-        throw new Error("종목을 찾을 수 없습니다. 한국 상장 종목명 또는 6자리 코드를 입력해 주세요.");
+      if (!resolved || !resolved.code) {
+        throw new Error("종목을 찾을 수 없습니다. 종목명, 티커, 또는 6자리 코드를 입력해 주세요. (예: 삼성전자, AAPL, 비트코인)");
       }
 
       if (input) input.value = resolved.name || resolved.code;
       showLoading(resolved);
 
-      void fetchQuickQuote(resolved.code).then((quote) => {
-        const host = document.getElementById("ai-loading-quote-host");
-        if (!host) return;
-        host.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
-      });
+      const isDomestic = isDomesticCode(resolved.code) && (resolved.market || "KR") === "KR";
+      // fetchQuickQuote/fetchKisChart는 KIS 국내 시세 전용이라 미국주식·암호화폐에는 쓸 수
+      // 없다 — 그 경우 로딩 헤더는 계속 스켈레톤을 보여주다가 최종 분석 응답으로 채워진다.
+      if (isDomestic) {
+        void fetchQuickQuote(resolved.code).then((quote) => {
+          const host = document.getElementById("ai-loading-quote-host");
+          if (!host) return;
+          host.innerHTML = renderLoadingQuoteHeader(quote, resolved.name, resolved.code);
+        });
+      }
 
-      const isDomestic = isDomesticCode(resolved.code);
       const chartPromise = isDomestic
         ? fetchKisChart(resolved.code, "D").catch((err) => {
             console.warn("[AI분석] chart fetch 실패", err);
@@ -1126,7 +1268,7 @@
         : Promise.resolve(null);
 
       const analyzePromise = chartPromise.then((chartData) =>
-        fetchAnalysis(resolved.code, resolved.name, extractChartIndicators(chartData))
+        fetchAnalysis(resolved.code, resolved.name, extractChartIndicators(chartData), resolved.market)
       );
 
       const [chartData, data] = await Promise.all([chartPromise, analyzePromise]);

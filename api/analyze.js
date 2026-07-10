@@ -227,19 +227,37 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - 고객이 "아, 이런 식으로도 보는구나" 하고 느낄 수 있는 통찰(다른 데서 보기 힘든 연결·비교·해석)을 리포트당 최소 1개 이상 반드시 포함한다. 월 5만원을 내는 고객에게 그냥 숫자 재탕이 아니라 이 돈 값을 한다는 인상을 줘야 한다.
 - 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).`;
 
-function buildSystemPrompt(today) {
+function buildSystemPrompt(today, quote) {
+  const assetType = (quote && quote.assetType) || "KR";
+  const isKr = assetType === "KR";
+  const priceSourceLine = isKr
+    ? "제공된 KIS 실시간 시세와 web_search 최신 뉴스만 근거로 분석하세요."
+    : assetType === "CRYPTO"
+      ? "제공된 실시간 시세(USD)와 web_search 최신 뉴스만 근거로 분석하세요. 통화 단위는 항상 달러($)로 표기하세요."
+      : "제공된 KIS 해외주식 실시간 시세(USD)와 web_search 최신 뉴스만 근거로 분석하세요. 통화 단위는 항상 달러($)로 표기하세요.";
+  const supplyDemandRule = isKr
+    ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
+- 입력 데이터의 foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값을 우선 사용할 것.
+- 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
+- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.`
+    : assetType === "CRYPTO"
+      ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
+- 이 자산은 암호화폐라 국내 KRX 기준 외국인/기관 순매수 수치가 없습니다.
+- web_search로 최근 거래소 순유입/유출, ETF 자금 흐름, 고래(대형 지갑) 매집·매도 동향 등 관련 최신 뉴스를 찾아 확정적으로 서술할 것.
+- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.`
+      : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
+- 이 종목은 미국 상장 종목이라 국내 KRX 기준 외국인/기관 순매수 수치가 없습니다.
+- web_search로 최근 기관 매수·매도 동향, ETF 자금 흐름, 공매도 비중 변화 등 관련 최신 뉴스를 찾아 확정적으로 서술할 것.
+- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.`;
   return [
     ANALYST_PERSONA_RULES,
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요. 학습데이터의 과거 정보가 아니라 web_search 결과의 최신 뉴스를 반드시 사용하세요.`,
     "JSON 작성 전 web_search를 최소 2회, 필요하면 3회까지 실행하세요 (일정/재료 검색 2회 + 수급 데이터가 없을 경우 추가 검색 1회). 검색 없이 답변하지 마세요.",
     "web_search 결과는 2번(story), 3번(supplyDemand), 4번(events), 5번(materials 재료 분석)에 반드시 반영하세요.",
-    "제공된 KIS 실시간 시세와 web_search 최신 뉴스만 근거로 분석하세요.",
+    priceSourceLine,
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
     "",
-    `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
-- 입력 데이터의 foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값을 우선 사용할 것.
-- 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
-- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.`,
+    supplyDemandRule,
     "",
     `4번 다가오는 이벤트 규칙 (반드시 준수):
 - upcomingEvents에는 web_search로 날짜와 사실관계가 명확히 확인된 미래 이벤트만 포함할 것.
@@ -768,20 +786,301 @@ function wmJsonFields(wm) {
 }
 
 /** 사람이 읽는 프롬프트 텍스트용 주봉/월봉 수치 블록. wm이 null이면 빈 문자열을 반환한다. */
-function formatWmTextBlock(wm) {
+function formatWmTextBlock(wm, unit) {
   if (!wm) return "";
+  const u = unit || "원";
   const fmt = (n) => (n == null ? "—" : Math.round(n).toLocaleString("ko-KR"));
   const fmtList = (arr) => (Array.isArray(arr) && arr.length ? arr.map((n) => fmt(n)).join(", ") : "—");
   const lines = ["", "실제 주봉/월봉 기술적 데이터 (추정 금지, 아래 수치만 사용):"];
   if (wm.weekly) {
-    lines.push(`[주봉] 20주선: ${fmt(wm.weekly.ma20)}원 / 60주선: ${fmt(wm.weekly.ma60)}원`);
+    lines.push(`[주봉] 20주선: ${fmt(wm.weekly.ma20)}${u} / 60주선: ${fmt(wm.weekly.ma60)}${u}`);
     lines.push(`[주봉] 스윙 저항: ${fmtList(wm.weekly.resistances)} / 스윙 지지: ${fmtList(wm.weekly.supports)}`);
   }
   if (wm.monthly) {
-    lines.push(`[월봉] 12개월선: ${fmt(wm.monthly.ma12)}원 / 24개월선: ${fmt(wm.monthly.ma24)}원`);
+    lines.push(`[월봉] 12개월선: ${fmt(wm.monthly.ma12)}${u} / 24개월선: ${fmt(wm.monthly.ma24)}${u}`);
     lines.push(`[월봉] 스윙 저항: ${fmtList(wm.monthly.resistances)} / 스윙 지지: ${fmtList(wm.monthly.supports)}`);
   }
   return lines.join("\n");
+}
+
+/** ============================================================
+ * 2026-07-10: 미국주식 / 암호화폐 AI 종목분석 지원
+ * - 미국주식: KIS 해외주식 시세(국내주식과 동일 계정·크레덴셜)를 그대로 재사용 —
+ *   새 API 키 불필요. api/us-market-data.js가 실전에서 쓰는 것과 같은
+ *   overseas-price 엔드포인트(HHDFS00000300)를 그대로 호출한다.
+ * - 암호화폐: api/crypto-data.js와 동일한 CoinMarketCap(CMC_API_KEY)을 재사용.
+ * - 두 경로 모두 quote.assetType("US"/"CRYPTO")과 quote.currency("USD")를 채워서
+ *   buildSystemPrompt/buildUserPrompt가 통화 단위·수급분석 지침을 자산군에 맞게
+ *   분기하도록 한다. 실패해도 KR 경로와 동일하게 statusCode를 실어 던져 상위
+ *   핸들러가 502로 응답하게 한다(전체 응답이 죽지 않도록).
+ * ============================================================ */
+
+const OVERSEAS_PRICE_PATH = "/uapi/overseas-price/v1/quotations/price";
+const OVERSEAS_PRICE_TR_ID = "HHDFS00000300";
+const OVERSEAS_DETAIL_PATH = "/uapi/overseas-price/v1/quotations/price-detail";
+const OVERSEAS_DETAIL_TR_ID = "HHDFS76200200";
+const OVERSEAS_DAILY_PATH = "/uapi/overseas-price/v1/quotations/dailyprice";
+const OVERSEAS_DAILY_TR_ID = "HHDFS76240000";
+const US_EXCHANGES = ["NAS", "NYS", "AMS"];
+
+function normalizeUsSymbol(raw) {
+  return String(raw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9.\-]/g, "");
+}
+
+function pickFirst(obj, keys) {
+  if (!obj || typeof obj !== "object") return undefined;
+  for (const k of keys) {
+    if (obj[k] != null && obj[k] !== "") return obj[k];
+  }
+  return undefined;
+}
+
+/** 미국 주식 현재가 조회. KIS 해외주식 시세는 거래소 코드를 알아야 하므로
+ * NASDAQ→NYSE→AMEX 순서로 시도해서 값이 나오는 첫 거래소를 사용한다. */
+async function fetchUsQuote(symbolRaw) {
+  const symbol = normalizeUsSymbol(symbolRaw);
+  if (!symbol) {
+    const err = new Error("미국 종목 티커가 필요합니다.");
+    err.statusCode = 400;
+    throw err;
+  }
+  let lastErr = null;
+  for (const exchange of US_EXCHANGES) {
+    try {
+      const [p1, p2] = await Promise.all([
+        kisGetJson(OVERSEAS_PRICE_PATH, OVERSEAS_PRICE_TR_ID, { AUTH: "", EXCD: exchange, SYMB: symbol }),
+        kisGetJson(OVERSEAS_DETAIL_PATH, OVERSEAS_DETAIL_TR_ID, { AUTH: "", EXCD: exchange, SYMB: symbol }).catch(
+          () => null
+        ),
+      ]);
+      const o1 = (p1 && p1.output) || {};
+      const o2 = (p2 && p2.output) || {};
+      const currentPrice = toNum(pickFirst(o1, ["last", "LAST", "stck_prpr", "STCK_PRPR"]));
+      if (currentPrice == null) continue; // 이 거래소엔 없는 티커 — 다음 거래소 시도
+      const changeRate = toNum(pickFirst(o1, ["rate", "RATE", "prdy_ctrt", "PRDY_CTRT"]));
+      const prevClose = toNum(
+        pickFirst(o2, ["base", "BASE", "ovrs_stck_prdy_clpr", "OVRS_STCK_PRDY_CLPR"]) ??
+          pickFirst(o1, ["base", "BASE"])
+      );
+      const changeAmt =
+        currentPrice != null && prevClose != null
+          ? Math.round((currentPrice - prevClose) * 100) / 100
+          : toNum(pickFirst(o1, ["diff", "DIFF"]));
+      const volume = toNum(pickFirst(o1, ["tvol", "TVOL", "acml_vol", "ACML_VOL"]));
+
+      return {
+        stockCode: symbol,
+        stockName: sanitizeStr(pickFirst(o1, ["name", "NAME"]) || pickFirst(o2, ["name", "NAME"]) || symbol),
+        market: exchange === "NAS" ? "NASDAQ" : exchange === "NYS" ? "NYSE" : "AMEX",
+        assetType: "US",
+        currency: "USD",
+        exchange,
+        currentPrice: Math.round(currentPrice * 100) / 100,
+        changeAmt: changeAmt == null ? null : Math.round(changeAmt * 100) / 100,
+        changeRate: changeRate == null ? null : Math.round(changeRate * 100) / 100,
+        volume: volume == null ? null : Math.round(volume),
+        prevClose: prevClose == null ? null : Math.round(prevClose * 100) / 100,
+        open: toNum(pickFirst(o2, ["open", "OPEN"])),
+        high: toNum(pickFirst(o2, ["high", "HIGH"])),
+        low: toNum(pickFirst(o2, ["low", "LOW"])),
+        prevVolume: null,
+        creditRate: null,
+        per: toNum(pickFirst(o2, ["perx", "PERX", "per", "PER"])),
+        pbr: toNum(pickFirst(o2, ["pbrx", "PBRX", "pbr", "PBR"])),
+        eps: toNum(pickFirst(o2, ["epsx", "EPSX", "eps", "EPS"])),
+        foreignNetBuy: null,
+        institutionNetBuy: null,
+        high52w: toNum(pickFirst(o2, ["h52p", "H52P"])),
+        low52w: toNum(pickFirst(o2, ["l52p", "L52P"])),
+        volTurnoverRate: null,
+        foreignHoldRate: null,
+        marketCapRaw: sanitizeStr(pickFirst(o2, ["tomv", "TOMV"]) || ""),
+      };
+    } catch (e) {
+      lastErr = e;
+      console.warn("[analyze] US quote fetch failed", symbol, exchange, e && e.message);
+    }
+  }
+  const err = new Error((lastErr && lastErr.message) || `미국 종목(${symbol}) 시세를 찾을 수 없습니다.`);
+  err.statusCode = (lastErr && lastErr.statusCode) || 502;
+  throw err;
+}
+
+function mapOverseasWmRow(row) {
+  if (!row || typeof row !== "object") return null;
+  const dateRaw = sanitizeStr(pickFirst(row, ["xymd", "XYMD", "stck_bsop_date", "STCK_BSOP_DATE"]));
+  if (!/^\d{8}$/.test(dateRaw)) return null;
+  const time = `${dateRaw.slice(0, 4)}-${dateRaw.slice(4, 6)}-${dateRaw.slice(6, 8)}`;
+  const close = toNum(pickFirst(row, ["clos", "CLOS", "stck_clpr", "STCK_CLPR"]));
+  const high = toNum(pickFirst(row, ["high", "HIGH", "stck_hgpr", "STCK_HGPR"]));
+  const low = toNum(pickFirst(row, ["low", "LOW", "stck_lwpr", "STCK_LWPR"]));
+  if (close == null || high == null || low == null) return null;
+  return { time, high, low, close };
+}
+
+/** 미국 주식 주봉/월봉 — KIS 해외 일별시세 엔드포인트에서 주기(GUBN)를 직접 지정해 받아온다.
+ * 국내주식과 동일하게 실패해도 null만 반환하고 조용히 넘어간다(추정 금지 원칙 유지). */
+async function fetchUsWeeklyMonthly(symbol, exchange) {
+  try {
+    const exc = exchange || "NAS";
+    const [wRes, mRes] = await Promise.all([
+      kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
+        AUTH: "",
+        EXCD: exc,
+        SYMB: symbol,
+        GUBN: "1",
+        BYMD: "",
+        MODP: "0",
+      }),
+      kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
+        AUTH: "",
+        EXCD: exc,
+        SYMB: symbol,
+        GUBN: "2",
+        BYMD: "",
+        MODP: "0",
+      }),
+    ]);
+    const toRows = (j) => {
+      let raw = j && j.output2;
+      if (raw && !Array.isArray(raw)) raw = [raw];
+      if (!Array.isArray(raw)) raw = [];
+      const rows = raw.map(mapOverseasWmRow).filter(Boolean);
+      rows.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+      return rows;
+    };
+    const weekly = toRows(wRes);
+    const monthly = toRows(mRes);
+    if (!weekly.length && !monthly.length) return null;
+    const wCloses = weekly.map((c) => c.close);
+    const mCloses = monthly.map((c) => c.close);
+    const wSwing = findSwingPoints(weekly, 2, 4);
+    const mSwing = findSwingPoints(monthly, 1, 3);
+    return {
+      weekly: {
+        count: weekly.length,
+        ma20: maLast(wCloses, 20),
+        ma60: maLast(wCloses, 60),
+        resistances: wSwing.resistances,
+        supports: wSwing.supports,
+      },
+      monthly: {
+        count: monthly.length,
+        ma12: maLast(mCloses, 12),
+        ma24: maLast(mCloses, 24),
+        resistances: mSwing.resistances,
+        supports: mSwing.supports,
+      },
+    };
+  } catch (e) {
+    console.warn("[analyze] US weekly/monthly fetch failed", symbol, e && e.message);
+    return null;
+  }
+}
+
+function requireCmcKey() {
+  const key = sanitizeStr(process.env.CMC_API_KEY);
+  if (!key) {
+    const err = new Error("Missing CMC_API_KEY");
+    err.statusCode = 503;
+    throw err;
+  }
+  return key;
+}
+
+/** 암호화폐 현재가 조회 — api/crypto-data.js와 동일한 CoinMarketCap(CMC_API_KEY) 재사용.
+ * 단일 심볼만 필요하므로 400개 전체 리스팅 대신 quotes/latest(심볼 지정)를 쓴다. */
+async function fetchCryptoQuote(symbolRaw, nameHint) {
+  const symbol = String(symbolRaw || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+  if (!symbol) {
+    const err = new Error("암호화폐 심볼이 필요합니다.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const url = new URL("/v2/cryptocurrency/quotes/latest", "https://pro-api.coinmarketcap.com");
+  url.searchParams.set("symbol", symbol);
+  url.searchParams.set("convert", "USD");
+  const res = await fetch(url.toString(), {
+    headers: { Accept: "application/json", "X-CMC_PRO_API_KEY": requireCmcKey() },
+  });
+  const text = await res.text();
+  let j = null;
+  try {
+    j = JSON.parse(text);
+  } catch (e) {
+    j = null;
+  }
+  if (!res.ok || !j) {
+    const err = new Error(`CMC HTTP ${res.status}: ${text.slice(0, 200)}`);
+    err.statusCode = 502;
+    throw err;
+  }
+  const rows = (j.data && j.data[symbol]) || null;
+  const coin = Array.isArray(rows) ? rows[0] : rows;
+  if (!coin) {
+    const err = new Error(`암호화폐(${symbol}) 시세를 찾을 수 없습니다.`);
+    err.statusCode = 404;
+    throw err;
+  }
+  const usd = (coin.quote && coin.quote.USD) || {};
+  const price = toNum(usd.price);
+  const changeRate = toNum(usd.percent_change_24h);
+  const prevClose = price != null && changeRate != null && changeRate !== -100 ? price / (1 + changeRate / 100) : null;
+
+  return {
+    stockCode: symbol,
+    stockName: sanitizeStr(nameHint) || sanitizeStr(coin.name) || symbol,
+    market: "CRYPTO",
+    assetType: "CRYPTO",
+    currency: "USD",
+    currentPrice: price,
+    changeAmt: prevClose != null && price != null ? Math.round((price - prevClose) * 100) / 100 : null,
+    changeRate: changeRate == null ? null : Math.round(changeRate * 100) / 100,
+    volume: toNum(usd.volume_24h),
+    prevClose: prevClose == null ? null : Math.round(prevClose * 100) / 100,
+    open: null,
+    high: null,
+    low: null,
+    prevVolume: null,
+    creditRate: null,
+    per: null,
+    pbr: null,
+    eps: null,
+    foreignNetBuy: null,
+    institutionNetBuy: null,
+    high52w: null,
+    low52w: null,
+    volTurnoverRate: null,
+    foreignHoldRate: null,
+    marketCapRaw: usd.market_cap != null ? String(Math.round(usd.market_cap)) : "",
+  };
+}
+
+/** V1: 암호화폐는 주봉/월봉 기술적 데이터를 생략한다(무료 API로 신뢰할 만한 장기 캔들을
+ * 안정적으로 확보하기 어려움). wm=null은 기존에도 지원하던 경로라 프롬프트가 자동으로
+ * "①~⑤(일봉 중심) 분석만" 모드로 자연스럽게 축소된다 — 별도 처리 불필요. */
+async function fetchCryptoWeeklyMonthly() {
+  return null;
+}
+
+function currencyUnitOf(quote) {
+  return quote && quote.assetType && quote.assetType !== "KR" ? "$" : "원";
+}
+
+/** KRW는 정수+"원", USD는 "$"+소수점(가격대에 따라 자릿수 가변 — 저가 코인은 $0.1234처럼
+ * 자릿수가 필요해서 일괄 2자리로 고정하지 않는다). */
+function fmtCurrencyAmount(quote, n) {
+  if (n == null) return "—";
+  if (currencyUnitOf(quote) === "원") return `${Math.round(n).toLocaleString("ko-KR")}원`;
+  const v = Number(n);
+  const decimals = Math.abs(v) < 1 ? 6 : Math.abs(v) < 10 ? 4 : Math.abs(v) < 1000 ? 2 : 0;
+  return `$${v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 }
 
 function extractTextFromContent(content) {
@@ -1242,41 +1541,55 @@ function claudeModelCandidates() {
 function buildUserPrompt(quote, stockName, today, indicators, wm) {
   const name = stockName || quote.stockName || quote.stockCode;
   const year = seoulYear();
+  const assetType = quote.assetType || "KR";
+  const isKr = assetType === "KR";
+  const unit = currencyUnitOf(quote);
   const ind = indicators && typeof indicators === "object" ? indicators : {};
   const ma20 = toNum(ind.ma20);
   const ma60 = toNum(ind.ma60);
   const ma120 = toNum(ind.ma120);
   const ma200 = toNum(ind.ma200);
   const rsi14 = toNum(ind.rsi14);
-  const fmtMa = (n) => (n == null ? "—" : `${Math.round(n).toLocaleString("ko-KR")}`);
+  const fmtMa = (n) => (n == null ? "—" : fmtCurrencyAmount(quote, n));
   const fmtRsi = (n) => (n == null ? "—" : String(n));
   const indicatorBlock =
     ma20 != null || ma60 != null || ma120 != null || ma200 != null || rsi14 != null
       ? [
           "",
           "실제 기술적 지표 (추정 금지, 아래 수치만 사용):",
-          `20일선: ${fmtMa(ma20)}원 / 60일선: ${fmtMa(ma60)}원`,
-          `120일선: ${fmtMa(ma120)}원 / 200일선: ${fmtMa(ma200)}원`,
+          `20일선: ${fmtMa(ma20)} / 60일선: ${fmtMa(ma60)}`,
+          `120일선: ${fmtMa(ma120)} / 200일선: ${fmtMa(ma200)}`,
           `RSI(14): ${fmtRsi(rsi14)}`,
         ].join("\n")
       : "";
-  const wmBlock = formatWmTextBlock(wm);
+  const wmBlock = formatWmTextBlock(wm, unit);
+  const searchLine3 = isKr
+    ? "- 입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 검색3으로 '[종목명] 외국인 기관 순매수 오늘'을 추가 검색."
+    : assetType === "CRYPTO"
+      ? "- 검색3으로 '[코인명] 거래소 자금 흐름 고래 매집' 등을 추가 검색해 수급 근거를 확보."
+      : "- 검색3으로 '[종목명] institutional ownership 기관 매수 동향'을 추가 검색해 수급 근거를 확보.";
+  const supplyDemandRule2 = isKr
+    ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
+- foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값이 입력 데이터에 있으면 그 수치로 서술.
+- 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
+- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
+    : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
+- 이 자산은 국내 KRX 상장이 아니라 외국인/기관 순매수 수치가 제공되지 않음.
+- web_search로 최근 기관/ETF 자금 흐름${assetType === "CRYPTO" ? "·거래소 유출입·고래 동향" : "·공매도 비중 변화"}을 찾아 확정적으로 서술.
+- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`;
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
-    `분석 종목: ${name} (${quote.stockCode})`,
+    `분석 종목: ${name} (${quote.stockCode})${isKr ? "" : ` — ${assetType === "CRYPTO" ? "암호화폐" : "미국 상장 주식"}, 통화 단위는 달러($)`}`,
     "",
     "【필수】 web_search 2~4회 — JSON 작성 전 반드시 실행:",
     `- 검색1 (한국어): "${name} 일정 예정 ${year}"`,
     `- 검색2 (영어): "[${name}의 영문기업명 또는 CEO명] schedule event ${year}" (영문명/CEO명 추정 가능하면 사용)`,
-    "- 입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 검색3으로 '[종목명] 외국인 기관 순매수 오늘'을 추가 검색.",
-    `- 검색4: "${name} 목표주가 컨센서스"로 증권사 평균 목표주가를 확인해 2번 story에 현재가 대비 괴리율과 함께 반영. 확인 안 되면 생략.`,
+    searchLine3,
+    `- 검색4: "${name} 목표주가 컨센서스"로 ${isKr ? "증권사" : "애널리스트"} 평균 목표${assetType === "CRYPTO" ? "가" : "주가"}를 확인해 2번 story에 현재가 대비 괴리율과 함께 반영. 확인 안 되면 생략.`,
     "- 검색 결과를 2번 story, 3번 supplyDemand, 4번 events, 5번 materials(재료 분석)에 반드시 반영.",
     "- 학습데이터·과거 기억 금지. web_search 확인 정보만 사용.",
     "",
-    `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
-- foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값이 입력 데이터에 있으면 그 수치로 서술.
-- 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
-- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`,
+    supplyDemandRule2,
     "",
     `4번 다가오는 이벤트 규칙 (반드시 준수):
 - upcomingEvents에는 검색으로 날짜·사실관계가 명확히 확인된 것만 포함. 애매하면 배열에서 제외(추측성 항목 금지).
@@ -1296,7 +1609,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm) {
     "",
     `7번 AI 주관적 판단 (aiJudgment 필수 — 하위 필드 절대 누락 금지):
 - shortTerm, midTerm, longTerm: 문자열 필수
-- entryPrice, stopLoss, target: 숫자 필수(0 금지). 현재가 ${quote.currentPrice || "—"}원 기준
+- entryPrice, stopLoss, target: 숫자 필수(0 금지). 현재가 ${quote.currentPrice != null ? fmtCurrencyAmount(quote, quote.currentPrice) : "—"} 기준
   entryPrice=현재가±1~2%, stopLoss=entry-3~5%, target=entry+10~20%
 - scenarioA/B/C 모두 entry(진입가)/stopLoss(손절가)를 숫자로 반드시 채울 것(0 금지):
   scenarioB.entry는 현재가 근방, target=entry+5~8%, stopLoss=entry-3~5%
@@ -1314,6 +1627,8 @@ function buildUserPrompt(quote, stockName, today, indicators, wm) {
       stockName: name,
       stockCode: quote.stockCode,
       market: quote.market,
+      assetType,
+      currency: quote.currency || (isKr ? "KRW" : "USD"),
       currentPrice: quote.currentPrice,
       changeAmt: quote.changeAmt,
       changeRate: quote.changeRate,
@@ -1343,7 +1658,7 @@ async function claudeAnalyze(quote, stockName, indicators, wm) {
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const today = todayKoreaLabel();
   const user = buildUserPrompt(quote, stockName, today, indicators, wm);
-  const system = buildSystemPrompt(today);
+  const system = buildSystemPrompt(today, quote);
 
   let lastErr = null;
   for (const model of claudeModelCandidates()) {
@@ -1431,6 +1746,7 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
 async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm) {
   const name = stockName || quote.stockName || quote.stockCode;
   const ind = indicators && typeof indicators === "object" ? indicators : {};
+  const isKr = (quote.assetType || "KR") === "KR";
 
   const system =
     ANALYST_PERSONA_RULES + "\n\n" +
@@ -1439,7 +1755,10 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     "특히 실적발표·이벤트·재료는 검색 결과로 '이미 발표/발생했는지'를 반드시 먼저 확인하고,\n" +
     "이미 끝난 일을 절대 '예정'이나 '기대'로 서술하지 마세요 (예: 실적발표가 이미 나왔다면 그 결과를 반영하고,\n" +
     "다음 분기 실적발표만 새로운 다가오는 이벤트로 표기).\n" +
-    "입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 web_search로 당일(또는 직전 거래일) 실제 외국인/기관 순매수 데이터를 찾아서 사용하세요 — 정보 없다고 얼버무리지 마세요.\n" +
+    (isKr
+      ? "입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 web_search로 당일(또는 직전 거래일) 실제 외국인/기관 순매수 데이터를 찾아서 사용하세요 — 정보 없다고 얼버무리지 마세요.\n"
+      : "이 자산은 국내 KRX 상장이 아니라 외국인/기관 순매수 수치가 없습니다. web_search로 최근 기관·ETF 자금 흐름 관련 뉴스를 찾아서 사용하세요 — 정보 없다고 얼버무리지 마세요.\n") +
+    (isKr ? "" : "통화 단위는 항상 달러($)로 표기하세요.\n") +
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
     "최종 답변은 반드시 JSON 형식으로만 응답하고 다른 텍스트(설명, 코드블록 등)는 절대 포함하지 마세요.";
 
@@ -1449,9 +1768,14 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     "검색 없이 학습된 과거 지식만으로 답하지 마세요. 아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지. 답변 텍스트 안에 URL·도메인명·출처 표기도 절대 포함하지 말 것.",
     "",
-    `supply(수급 분석) 작성 규칙 — 반드시 준수:
+    isKr
+      ? `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - 입력 데이터에 foreignNetBuy/institutionNetBuy 값이 있으면 그 수치로 서술.
 - 값이 null이면 web_search로 "[종목명] 외국인 기관 순매수 오늘" 등을 검색해서 실제 데이터를 찾아 확정적으로 서술.
+- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
+      : `supply(수급 분석) 작성 규칙 — 반드시 준수:
+- 이 자산은 국내 KRX 상장이 아니라 외국인/기관 순매수 수치가 없음.
+- web_search로 최근 기관/ETF 자금 흐름 관련 뉴스를 찾아서 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`,
     "",
     `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
@@ -1482,6 +1806,8 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       stockName: name,
       stockCode: quote.stockCode,
       market: quote.market,
+      assetType: quote.assetType || "KR",
+      currency: quote.currency || "KRW",
       currentPrice: quote.currentPrice,
       changeAmt: quote.changeAmt,
       changeRate: quote.changeRate,
@@ -1618,6 +1944,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         stockName: name,
         stockCode: quote.stockCode,
         market: quote.market,
+        assetType: quote.assetType || "KR",
+        currency: quote.currency || "KRW",
         currentPrice: quote.currentPrice,
         changeAmt: quote.changeAmt,
         changeRate: quote.changeRate,
@@ -1778,28 +2106,62 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  const code6 = normalizeCode6(body && body.code);
+  // 2026-07-10: 미국주식/암호화폐 지원 추가 — 프론트엔드가 이미 종목을 해석해서
+  // market("KR"|"US"|"CRYPTO")까지 함께 보낸다. market이 없으면(구버전 클라이언트 등)
+  // 기존과 동일하게 KR로 취급해 하위호환을 유지한다.
+  const marketRaw = sanitizeStr(body && body.market).toUpperCase();
+  const market = marketRaw === "US" || marketRaw === "CRYPTO" ? marketRaw : "KR";
   const name = sanitizeStr(body && body.name);
 
-  if (!/^\d{6}$/.test(code6)) {
-    json(res, 400, { error: "code(6자리)가 필요합니다." });
-    return;
+  let code6 = "";
+  let usSymbol = "";
+  let cryptoSymbol = "";
+  if (market === "KR") {
+    code6 = normalizeCode6(body && body.code);
+    if (!/^\d{6}$/.test(code6)) {
+      json(res, 400, { error: "code(6자리)가 필요합니다." });
+      return;
+    }
+  } else if (market === "US") {
+    usSymbol = normalizeUsSymbol(body && body.code);
+    if (!usSymbol) {
+      json(res, 400, { error: "미국 종목 티커가 필요합니다." });
+      return;
+    }
+  } else {
+    cryptoSymbol = String((body && body.code) || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    if (!cryptoSymbol) {
+      json(res, 400, { error: "암호화폐 심볼이 필요합니다." });
+      return;
+    }
   }
 
   let quote;
-  // 주봉/월봉 데이터는 실패해도 전체 분석을 막지 않으므로(fetchKisWeeklyMonthly 내부에서
-  // 이미 try/catch로 null 처리) 시세 조회와 병렬로 미리 시작해 지연시간을 아낀다.
-  const wmPromise = fetchKisWeeklyMonthly(code6);
+  let wm;
   try {
-    quote = await fetchKisQuote(code6);
+    if (market === "KR") {
+      // 주봉/월봉 데이터는 실패해도 전체 분석을 막지 않으므로(fetchKisWeeklyMonthly 내부에서
+      // 이미 try/catch로 null 처리) 시세 조회와 병렬로 미리 시작해 지연시간을 아낀다.
+      const wmPromise = fetchKisWeeklyMonthly(code6);
+      quote = await fetchKisQuote(code6);
+      wm = await wmPromise;
+    } else if (market === "US") {
+      quote = await fetchUsQuote(usSymbol);
+      wm = await fetchUsWeeklyMonthly(quote.stockCode, quote.exchange);
+    } else {
+      quote = await fetchCryptoQuote(cryptoSymbol, name);
+      wm = await fetchCryptoWeeklyMonthly();
+    }
   } catch (e) {
-    console.error("[analyze] KIS error", code6, e && e.message);
-    json(res, (e && e.statusCode) || 502, { error: "시세 조회 실패" });
+    console.error("[analyze] quote fetch error", market, (body && body.code) || "", e && e.message);
+    json(res, (e && e.statusCode) || 502, { error: (e && e.message) || "시세 조회 실패" });
     return;
   }
-  const wm = await wmPromise;
 
-  const stockName = name || quote.stockName || code6;
+  const stockName = name || quote.stockName || quote.stockCode;
 
   const indicators = {
     ma20: toNum(body && body.ma20),
@@ -1841,12 +2203,15 @@ module.exports = async function handler(req, res) {
   }
 
   if (!analysisError) {
-    await logPublicAiFeed(stockName, code6, analysis);
+    await logPublicAiFeed(stockName, quote.stockCode, analysis);
   }
 
   json(res, 200, {
-    stockCode: code6,
+    stockCode: quote.stockCode,
     stockName,
+    assetType: quote.assetType || "KR",
+    currency: quote.currency || "KRW",
+    exchange: quote.exchange || undefined,
     currentPrice: quote.currentPrice,
     changeAmt: quote.changeAmt,
     changeRate: quote.changeRate,

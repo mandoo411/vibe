@@ -708,9 +708,58 @@
     }
   }
 
+  function renderMobileAiFeed(list, rows) {
+    if (!rows.length) {
+      list.innerHTML =
+        '<li class="home-m-insight home-m-insight--empty">아직 실시간 분석 결과가 없습니다 — AI 종목분석을 이용해보세요.</li>';
+      return;
+    }
+    list.innerHTML = rows
+      .map((r) => {
+        const conf = toNum(r.confidence);
+        const confText = conf == null ? "—" : `${Math.round(conf)}%`;
+        const barW = conf == null ? 0 : Math.max(0, Math.min(100, conf));
+        return `<li class="home-m-insight">
+          <div class="home-m-insight__badge ${aiFeedBadgeClass(r.direction)}">${escapeHtml(r.direction || "관망")}</div>
+          <div class="home-m-insight__main">
+            <div class="home-m-insight__row">
+              <span class="home-m-insight__symbol">${escapeHtml(r.stock_name || "")}</span>
+              <div class="home-m-insight__bar-track"><span class="home-m-insight__bar ${aiFeedBarClass(conf)}" style="width:${barW}%"></span></div>
+              <span class="home-m-insight__pct ${aiFeedPctClass(conf)}">${confText}</span>
+            </div>
+            <p class="home-m-insight__desc">${escapeHtml(r.summary || "")}</p>
+          </div>
+          <time class="home-m-insight__time">${escapeHtml(fmtFeedTime(r.created_at))}</time>
+        </li>`;
+      })
+      .join("");
+  }
+
+  function renderHeroAiFeed(list, rows) {
+    if (!rows.length) {
+      list.innerHTML = '<li class="home-hero__ai-empty">아직 실시간 분석 결과가 없습니다 — AI 종목분석을 이용해보세요.</li>';
+      return;
+    }
+    list.innerHTML = rows
+      .map((r) => {
+        const badge = r.direction === "매수" ? "home-hero__ai-badge--buy" : r.direction === "회피" ? "home-hero__ai-badge--avoid" : "home-hero__ai-badge--hold";
+        return `<li class="home-hero__ai-item">
+          <span class="home-hero__ai-badge ${badge}">${escapeHtml(r.direction || "관망")}</span>
+          <span class="home-hero__ai-name">${escapeHtml(r.stock_name || "")}</span>
+          <span class="home-hero__ai-desc">${escapeHtml(r.summary || "")}</span>
+          <span class="home-hero__ai-time">${escapeHtml(fmtFeedTime(r.created_at))}</span>
+        </li>`;
+      })
+      .join("");
+  }
+
+  /* 홈 화면에는 모바일 전용 리스트(home-m-insights)와 데스크톱 히어로 배너 안의
+   * 리스트(home-hero-ai-feed)가 동시에 존재할 수 있으므로, Supabase는 한 번만
+   * 호출하고 두 컨테이너에 각각 맞는 마크업으로 렌더링한다. */
   async function loadAiLiveFeed() {
-    const list = $("home-m-insights");
-    if (!list) return;
+    const mList = $("home-m-insights");
+    const hList = $("home-hero-ai-feed");
+    if (!mList && !hList) return;
     const cfg = window.TM_AUTH_CONFIG;
     if (!cfg || cfg.SETUP_PENDING || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
     try {
@@ -722,30 +771,9 @@
       });
       if (!res.ok) return; // 테이블이 아직 없거나(마이그레이션 전) 일시 오류 — 조용히 스킵, 기존 표시 유지
       const rows = await res.json();
-      if (!Array.isArray(rows) || !rows.length) {
-        list.innerHTML =
-          '<li class="home-m-insight home-m-insight--empty">아직 실시간 분석 결과가 없습니다 — AI 종목분석을 이용해보세요.</li>';
-        return;
-      }
-      list.innerHTML = rows
-        .map((r) => {
-          const conf = toNum(r.confidence);
-          const confText = conf == null ? "—" : `${Math.round(conf)}%`;
-          const barW = conf == null ? 0 : Math.max(0, Math.min(100, conf));
-          return `<li class="home-m-insight">
-            <div class="home-m-insight__badge ${aiFeedBadgeClass(r.direction)}">${escapeHtml(r.direction || "관망")}</div>
-            <div class="home-m-insight__main">
-              <div class="home-m-insight__row">
-                <span class="home-m-insight__symbol">${escapeHtml(r.stock_name || "")}</span>
-                <div class="home-m-insight__bar-track"><span class="home-m-insight__bar ${aiFeedBarClass(conf)}" style="width:${barW}%"></span></div>
-                <span class="home-m-insight__pct ${aiFeedPctClass(conf)}">${confText}</span>
-              </div>
-              <p class="home-m-insight__desc">${escapeHtml(r.summary || "")}</p>
-            </div>
-            <time class="home-m-insight__time">${escapeHtml(fmtFeedTime(r.created_at))}</time>
-          </li>`;
-        })
-        .join("");
+      const list = Array.isArray(rows) ? rows : [];
+      if (mList) renderMobileAiFeed(mList, list);
+      if (hList) renderHeroAiFeed(hList, list);
     } catch (e) {
       console.warn("[home] AI 실시간 피드 로드 실패", e);
     }

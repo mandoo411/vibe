@@ -519,6 +519,87 @@ body[data-theme="dark"] .home-nav__ai-badge {
   color: rgba(255, 255, 255, 0.88);
 }
 
+.home-hero__ai-live {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.home-hero__ai-live-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-hero__ai-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.home-hero__ai-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.home-hero__ai-badge--buy {
+  background: rgba(99, 153, 34, 0.28);
+  color: #b7e07a;
+}
+
+.home-hero__ai-badge--hold {
+  background: rgba(245, 158, 11, 0.25);
+  color: #ffce7a;
+}
+
+.home-hero__ai-badge--avoid {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.home-hero__ai-name {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-hero__ai-desc {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.home-hero__ai-time {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+}
+
+.home-hero__ai-empty {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  text-align: center;
+  padding: 14px 0;
+  list-style: none;
+}
+
 .home-hero__row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 72px 52px;

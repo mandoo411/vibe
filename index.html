@@ -126,23 +126,14 @@
             >
           </div>
         </div>
-        <div class="home-hero__panels">
-          <div class="home-hero__panel">
-            <div class="home-hero__panel-title"><i class="ti ti-chart-area-line" aria-hidden="true"></i><span>지수</span></div>
-            <div id="hero-panel-index"></div>
-          </div>
-          <div class="home-hero__panel">
-            <div class="home-hero__panel-title"><i class="ti ti-building" aria-hidden="true"></i><span>국내주식</span></div>
-            <div id="hero-panel-kr"></div>
-          </div>
-          <div class="home-hero__panel">
-            <div class="home-hero__panel-title"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i><span>암호화폐</span></div>
-            <div id="hero-panel-crypto"></div>
-          </div>
-          <div class="home-hero__panel">
-            <div class="home-hero__panel-title"><i class="ti ti-building-skyscraper" aria-hidden="true"></i><span>미국주식</span></div>
-            <div id="hero-panel-us"></div>
-          </div>
+        <!-- 2026-07-10: 기존 지수/국내주식/암호화폐/미국주식 4박스는 위 티커바와 아래 실시간시세·
+             미국시장·암호화폐 표에 이미 나오는 정보와 중복이라 제거하고, 그 자리에 실제 사용자
+             AI 종목분석 결과(public_ai_feed)를 보여주는 실시간 피드를 넣었다. -->
+        <div class="home-hero__ai-live" id="home-hero-ai-live">
+          <div class="home-hero__panel-title"><i class="ti ti-bolt" aria-hidden="true"></i><span>실시간 AI 분석</span></div>
+          <ul class="home-hero__ai-live-list" id="home-hero-ai-feed">
+            <li class="home-hero__ai-empty">불러오는 중…</li>
+          </ul>
         </div>
       </section>
 

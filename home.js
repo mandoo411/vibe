@@ -764,15 +764,15 @@
     if (!cfg || cfg.SETUP_PENDING || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
     try {
       const base = cfg.SUPABASE_URL.replace(/\/+$/, "");
-      const url = `${base}/rest/v1/public_ai_feed?select=stock_name,direction,confidence,summary,created_at&order=created_at.desc&limit=3`;
+      const url = `${base}/rest/v1/public_ai_feed?select=stock_name,direction,confidence,summary,created_at&order=created_at.desc&limit=6`;
       const res = await fetch(url, {
         headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}` },
         cache: "no-store",
       });
-      if (!res.ok) return; // 테이블이 아직 없거나(마이그레이션 전) 일시 오류 — 조용히 스킵, 기존 표시 유지
+      if (!res.ok) return;
       const rows = await res.json();
       const list = Array.isArray(rows) ? rows : [];
-      if (mList) renderMobileAiFeed(mList, list);
+      if (mList) renderMobileAiFeed(mList, list.slice(0, 3));
       if (hList) renderHeroAiFeed(hList, list);
     } catch (e) {
       console.warn("[home] AI 실시간 피드 로드 실패", e);

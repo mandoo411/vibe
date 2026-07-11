@@ -175,7 +175,8 @@
   }
 
   function toNum(v) {
-    const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+    if (v == null || v === "") return null;
+    const n = Number(String(v).replace(/,/g, ""));
     return Number.isFinite(n) ? n : null;
   }
 
@@ -517,9 +518,17 @@
     if (el) el.textContent = msg;
   }
 
-  function formatMarketCapPretty(raw) {
+  function formatMarketCapPretty(raw, assetType) {
     const n = toNum(raw);
     if (n == null) return "—";
+    if (assetType === "US" || assetType === "CRYPTO") {
+      const abs = Math.abs(n);
+      if (abs >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
+      if (abs >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
+      if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+      if (abs >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+      return `$${Math.round(n).toLocaleString("en-US")}`;
+    }
     if (n >= 10000) return `${(n / 10000).toFixed(1)}조`;
     if (n >= 1) return `${Math.round(n).toLocaleString("ko-KR")}억`;
     return `${Math.round(n).toLocaleString("ko-KR")}`;
@@ -583,11 +592,16 @@
   function renderMetaGrid(opts) {
     const o = opts || {};
     const assetType = o.assetType || "KR";
+    // 암호화폐는 PBR(주가순자산비율) 개념 자체가 없으므로 대신 24시간 거래대금을 보여준다.
+    const fourthCell =
+      assetType === "CRYPTO"
+        ? ["거래대금(24H)", formatMarketCapPretty(o.volume, assetType)]
+        : ["PBR", fmtPbr(o.pbr)];
     const cells = [
       ["52주 고점", fmtPrice(o.high52w, assetType)],
       ["52주 저점", fmtPrice(o.low52w, assetType)],
-      ["시가총액", formatMarketCapPretty(o.marketCapRaw)],
-      ["PBR", fmtPbr(o.pbr)],
+      ["시가총액", formatMarketCapPretty(o.marketCapRaw, assetType)],
+      fourthCell,
     ];
     return (
       `<div class="ai-stock-meta">` +
@@ -1239,9 +1253,31 @@
     );
   }
 
+  function compute52wHighLowFromChart(chartData) {
+    if (!chartData || !Array.isArray(chartData.candles) || !chartData.candles.length) return null;
+    const recent = chartData.candles.slice(-365);
+    let hi = -Infinity;
+    let lo = Infinity;
+    for (const c of recent) {
+      const h = toNum(c && c.high);
+      const l = toNum(c && c.low);
+      if (h != null && h > hi) hi = h;
+      if (l != null && l < lo) lo = l;
+    }
+    if (!Number.isFinite(hi) || !Number.isFinite(lo)) return null;
+    return { high52w: hi, low52w: lo };
+  }
+
   function renderAnalysis(data, chartData, chartPeriod) {
     if (!panel) return;
     disposeAiChart();
+    if (data && chartData && (data.high52w == null || data.low52w == null)) {
+      const wl = compute52wHighLowFromChart(chartData);
+      if (wl) {
+        if (data.high52w == null) data.high52w = wl.high52w;
+        if (data.low52w == null) data.low52w = wl.low52w;
+      }
+    }
     let analysis = data && data.analysis;
     if (typeof analysis === "string") analysis = safeParseJson(analysis);
     if (!analysis || typeof analysis !== "object") {

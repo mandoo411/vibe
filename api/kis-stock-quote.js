@@ -201,7 +201,7 @@ async function fetchChartCandles(code6, periodDiv) {
   return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
 }
 
-function computeMaSeries(closes, period) {
+function computeMaSeries(closes, period, smart) {
   const out = [];
   for (let i = 0; i < closes.length; i++) {
     if (i < period - 1) {
@@ -210,7 +210,12 @@ function computeMaSeries(closes, period) {
     }
     let sum = 0;
     for (let j = i - period + 1; j <= i; j++) sum += closes[j];
-    out.push(Math.round(sum / period));
+    const avg = sum / period;
+    // 2026-07-11: 국내주식(원, 정수 단위)은 기존처럼 정수로 반올림하지만, 미국주식/암호화폐는
+    // 달러 표시 소수점이 필요하다. 정수로 반올림하면(예: NVDA 이평선을 $1 단위로 반올림) 실제로는
+    // 하루하루 완만하게 움직이는 이평선이 며칠씩 같은 값으로 뭉쳤다가 $1씩 점프하는 "계단" 형태로
+    // 보이는 버그가 있었다 — roundSmart(가격대별 소수점 자동 조정)로 바꿔서 자연스럽게 이어지게 한다.
+    out.push(smart ? roundSmart(avg) : Math.round(avg));
   }
   return out;
 }
@@ -242,14 +247,15 @@ function computeRsi14(closes) {
   return Math.round((100 - 100 / (1 + rs)) * 100) / 100;
 }
 
-function enrichChart(candles) {
+function enrichChart(candles, assetType) {
   const closes = candles.map((c) => c.close);
+  const smart = assetType === "US" || assetType === "CRYPTO";
   return {
     candles,
-    ma20: computeMaSeries(closes, 20),
-    ma60: computeMaSeries(closes, 60),
-    ma120: computeMaSeries(closes, 120),
-    ma200: computeMaSeries(closes, 200),
+    ma20: computeMaSeries(closes, 20, smart),
+    ma60: computeMaSeries(closes, 60, smart),
+    ma120: computeMaSeries(closes, 120, smart),
+    ma200: computeMaSeries(closes, 200, smart),
     rsi14: computeRsi14(closes),
   };
 }
@@ -577,7 +583,7 @@ async function handleUsChartRequest(res, ticker, period, exchangeHint) {
   for (const exc of exchanges) {
     try {
       const candles = await fetchUsChartCandles(ticker, exc, period);
-      if (candles.length) return json(res, 200, enrichChart(candles));
+      if (candles.length) return json(res, 200, enrichChart(candles, "US"));
     } catch (e) {
       lastErr = e;
     }
@@ -592,23 +598,37 @@ const CRYPTO_KLINE_LIMIT = { D: 730, W: 150, M: 60 };
 
 /** 암호화폐 캔들: Binance 공개 klines 엔드포인트(키 불필요). 스테이블코인(USDT/USDC 등)처럼
  * 자기 자신과의 페어가 없는 심볼은 자연히 실패하며, 그 경우 프런트에서 TradingView로 대체된다. */
+const BINANCE_KLINE_HOSTS = [
+  // data-api.binance.vision: Binance가 공개 시세 전용으로 제공하는 미러 도메인. api.binance.com은
+  // 미국 등 여러 클라우드/데이터센터 IP 대역을 지역 제한(HTTP 451)으로 차단해서, Vercel 서버리스
+  // 함수에서 호출하면 종종 막혀 자체 캔들 차트가 TradingView로 폴백되는 원인이었다.
+  "https://data-api.binance.vision",
+  "https://api.binance.com",
+];
+
 async function fetchCryptoChartCandles(symbol, period) {
   const interval = CRYPTO_KLINE_INTERVAL[period] || "1d";
   const limit = CRYPTO_KLINE_LIMIT[period] || CRYPTO_KLINE_LIMIT.D;
   const pair = `${sanitizeStr(symbol).toUpperCase()}USDT`;
-  const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(pair)}&interval=${interval}&limit=${limit}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const err = new Error(`Binance klines HTTP ${res.status}`);
-    err.statusCode = 502;
-    throw err;
+  let lastErr = null;
+  for (const host of BINANCE_KLINE_HOSTS) {
+    try {
+      const url = `${host}/api/v3/klines?symbol=${encodeURIComponent(pair)}&interval=${interval}&limit=${limit}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Binance klines HTTP ${res.status}`);
+      const rows = await res.json();
+      if (!Array.isArray(rows)) throw new Error("Binance klines 응답이 올바르지 않습니다.");
+      return mapBinanceKlineRows(rows);
+    } catch (e) {
+      lastErr = e;
+    }
   }
-  const rows = await res.json();
-  if (!Array.isArray(rows)) {
-    const err = new Error("Binance klines 응답이 올바르지 않습니다.");
-    err.statusCode = 502;
-    throw err;
-  }
+  const err = new Error((lastErr && lastErr.message) || "Binance klines 조회 실패");
+  err.statusCode = 502;
+  throw err;
+}
+
+function mapBinanceKlineRows(rows) {
   return rows
     .map((r) => {
       const openTime = Number(r[0]);
@@ -629,7 +649,7 @@ async function handleCryptoChartRequest(res, symbol, period) {
   try {
     const candles = await fetchCryptoChartCandles(symbol, period);
     if (!candles.length) return json(res, 502, { error: "차트 데이터가 없습니다." });
-    return json(res, 200, enrichChart(candles));
+    return json(res, 200, enrichChart(candles, "CRYPTO"));
   } catch (e) {
     return json(res, (e && e.statusCode) || 502, { error: (e && e.message) || "차트 데이터가 없습니다." });
   }

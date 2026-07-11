@@ -157,13 +157,16 @@
       wick_up_color: "#e24b4a",
       wick_down_color: "#3b82f6",
     });
-    // 2026-07-11: 거래량 바 색상이 캔들 색상과 다르게 나오는 문제 — TradingView 위젯이
-    // 거래량 스터디를 자동으로 붙일 때도 있고 안 붙일 때도 있어서, studies_overrides의
-    // volume.volume.color.* 가 어떤 인스턴스에 적용될지 불확실했다. 항상 명시적으로
-    // Volume 스터디를 요청해서(같은 known id) 오버라이드가 확실히 그 인스턴스에 걸리게 한다.
+    // 2026-07-11: 거래량 바 색상이 캔들 색상과 다르게 나오는 문제 — 1차 시도로 studies_overrides에
+    // volume.volume.color.*를 걸었지만 여전히 안 맞았다. 원인: TradingView 위젯은 심볼에 거래량이
+    // 있으면 메인 차트에 "기본 내장 거래량"을 자동으로 그리는데, 이 기본 거래량은 studies_overrides로
+    // 색을 못 바꾼다(우리가 추가한 Volume@tv-basicstudies 스터디와는 별개). hide_volume:true로
+    // 그 기본 내장 거래량을 끄고, 우리가 명시적으로 추가한 Volume 스터디(정확히 오버라이드된 색상)만
+    // 보이게 해야 실제로 캔들과 같은 상승/하락 색이 적용된다.
     const studies = Array.isArray(opts.studies) ? opts.studies.slice() : [];
     if (!opts.noVolume && !studies.some((s) => /volume/i.test(String(s)))) {
       studies.push("Volume@tv-basicstudies");
+      params.set("hide_volume", "1");
     }
     if (studies.length) params.set("studies", JSON.stringify(studies));
     params.set("overrides", JSON.stringify(tradingViewCandleOverrides(isDark)));

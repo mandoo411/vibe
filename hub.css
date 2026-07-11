@@ -325,7 +325,7 @@ body.page-home-premium .market-sub {
 
 [data-theme="dark"].page-home-premium .menu-card,
 .dark-mode .menu-card {
-  background: #1c2030 !important;
+  background: var(--bg-tertiary) !important;
   border: 0.5px solid rgba(255, 255, 255, 0.07) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
@@ -1026,7 +1026,7 @@ a.hub-card:hover .hub-card__chev {
 
   [data-theme="dark"].page-home-premium .tm-bottom-nav,
   .dark-mode.page-home-premium .tm-bottom-nav {
-    background: #1c2030;
+    background: var(--bg-tertiary);
     border-top-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.45);
   }

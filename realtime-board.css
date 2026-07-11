@@ -393,7 +393,7 @@
       .dark-mode .pagination button:not([aria-current="page"]),
       [data-theme="dark"] .pagination .page-btn:not(.active),
       .dark-mode .pagination .page-btn:not(.active) {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border: 0.5px solid rgba(255, 255, 255, 0.1);
         color: #aaa;
       }
@@ -541,7 +541,7 @@
       }
       [data-theme="dark"] .rt-acc,
       .dark-mode .rt-acc {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border: 0.5px solid rgba(255, 255, 255, 0.1);
       }
       .rt-acc-header {
@@ -555,7 +555,7 @@
       }
       [data-theme="dark"] .rt-acc-header,
       .dark-mode .rt-acc-header {
-        background: #242b3d;
+        background: var(--accent-blue);
         border-bottom-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-header__left {
@@ -672,7 +672,7 @@
       }
       [data-theme="dark"] .rt-acc-btn--dismiss,
       .dark-mode .rt-acc-btn--dismiss {
-        background: #242b3d;
+        background: var(--accent-blue);
         border-color: rgba(255, 255, 255, 0.12);
         color: var(--text-primary, #f3f4f6);
       }
@@ -709,7 +709,7 @@
       }
       [data-theme="dark"] .rt-acc-cell,
       .dark-mode .rt-acc-cell {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border-right-color: rgba(255, 255, 255, 0.08);
         border-bottom-color: rgba(255, 255, 255, 0.08);
       }
@@ -762,7 +762,7 @@
       }
       [data-theme="dark"] .rt-acc-grid--profit .rt-acc-cell,
       .dark-mode .rt-acc-grid--profit .rt-acc-cell {
-        background: #1c2030;
+        background: var(--bg-tertiary);
       }
       .rt-acc-grid--profit .rt-acc-cell__v {
         font-size: 14px;
@@ -831,7 +831,7 @@
       }
       [data-theme="dark"] .rt-acc-section-bar,
       .dark-mode .rt-acc-section-bar {
-        background: #242b3d;
+        background: var(--accent-blue);
         border-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-section-bar__title {
@@ -867,7 +867,7 @@
       }
       [data-theme="dark"] .rt-acc-footer,
       .dark-mode .rt-acc-footer {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border-top-color: rgba(255, 255, 255, 0.1);
       }
       .rt-acc-btn {
@@ -1003,7 +1003,7 @@
       }
       [data-theme="dark"] .rt-chart-toggle,
       .dark-mode .rt-chart-toggle {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border: 0.5px solid rgba(255, 255, 255, 0.1);
         color: #aaa;
       }
@@ -1017,7 +1017,7 @@
       }
       [data-theme="dark"] .rt-block,
       .dark-mode .rt-block {
-        background: #1c2030;
+        background: var(--bg-tertiary);
         border: 0.5px solid rgba(255, 255, 255, 0.1);
       }
       .rt-block__title {

@@ -8,6 +8,24 @@
   const CLIENT_CACHE_MS = 3 * 60 * 1000;
   const TAB_TTL_MS = 3 * 60 * 1000;
 
+  // 2026-07-11: 자체 캔들 차트(assets/lw-candle-chart.js)로 바꾸면서, 다크/라이트 테마 전환
+  // 버튼을 눌러도 이미 열려있는 차트의 배경·이평선200일 색이 안 바뀌던 문제 — TradingView
+  // iframe은 src를 다시 그려서 자동 반영됐지만, 캔버스 차트는 명시적으로 다시 칠해줘야 한다.
+  // 동시에 여러 종목의 차트 아코디언이 열려있을 수 있어서 Set으로 전부 추적한다.
+  const activeUsChartHandles = new Set();
+
+  function wireUsChartThemeToggle() {
+    const themeBtn = document.getElementById("theme-toggle");
+    if (!themeBtn || themeBtn.dataset.usChartThemeBound === "1") return;
+    themeBtn.dataset.usChartThemeBound = "1";
+    themeBtn.addEventListener("click", () => {
+      setTimeout(() => {
+        if (!window.tmApplyCandleChartTheme) return;
+        activeUsChartHandles.forEach((h) => window.tmApplyCandleChartTheme(h));
+      }, 0);
+    });
+  }
+
   const TAB_CONFIG = {
     "market-cap": {
       rtTab: "cap",
@@ -525,8 +543,15 @@
       if (!lwHost) return;
       try {
         const chartData = await fetchUsLwChart(ticker, period);
-        if (chartHandle && window.tmDisposeCandleChart) window.tmDisposeCandleChart(chartHandle);
+        if (chartHandle) {
+          activeUsChartHandles.delete(chartHandle);
+          if (window.tmDisposeCandleChart) window.tmDisposeCandleChart(chartHandle);
+        }
         chartHandle = await window.tmMountCandleChart(lwHost, chartData, { market: "US" });
+        if (chartHandle) {
+          activeUsChartHandles.add(chartHandle);
+          wireUsChartThemeToggle();
+        }
       } catch (err) {
         console.warn("[미국주식] 차트 로드 실패", ticker, err && err.message);
         lwHost.innerHTML = `<p class="tm-lw-chart-error">차트를 불러오지 못했습니다.</p>`;

@@ -1575,8 +1575,21 @@
           });
         }
 
+        // 2026-07-11: TradingView iframe 시절엔 theme.js의 공용 핸들러(bindTradingViewThemeRefresh)가
+        // 알아서 iframe을 다시 그려서 테마가 반영됐지만, 자체 캔들 차트(assets/lw-candle-chart.js)로
+        // 바꾼 뒤로는 테마 토글을 눌러도 이미 열려있는 차트의 배경·이평선200일 색이 안 바뀌던 문제 —
+        // 명시적으로 다시 칠해준다.
         function wireThemeChartRefresh() {
-          /* theme.js bindTradingViewThemeRefresh handles toggle */
+          const themeBtn = document.getElementById("theme-toggle");
+          if (!themeBtn || themeBtn.dataset.cryptoChartThemeBound === "1") return;
+          themeBtn.dataset.cryptoChartThemeBound = "1";
+          themeBtn.addEventListener("click", () => {
+            setTimeout(() => {
+              if (state.chartHandle && window.tmApplyCandleChartTheme) {
+                window.tmApplyCandleChartTheme(state.chartHandle);
+              }
+            }, 0);
+          });
         }
 
         async function refreshAll() {

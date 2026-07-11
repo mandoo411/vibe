@@ -1577,11 +1577,14 @@ function normalizeDomesticStockCode6(code) {
   return digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6);
 }
 
-/** 일/주/월봉 목표 개수 */
+/** 일/주/월봉 목표 개수 — 2026-07-11: 일봉은 200개(약 1년치)로는 us-market/crypto 차트의
+ * 2년치 시야에 못 미친다는 피드백으로 400개(약 2년치)로 상향. 주봉(200개≈4년)·월봉(120개≈10년)은
+ * 이미 2년치를 넉넉히 넘어서 그대로 둔다. */
 function dailyCandleTargetCount(periodDiv) {
   const p = String(periodDiv || "D").toUpperCase();
   if (p === "M") return 120;
-  return 200;
+  if (p === "W") return 200;
+  return 400;
 }
 
 /** 첫 조회 fid_input_date_1 하한 (오늘 기준 과거 달력일) */

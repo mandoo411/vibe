@@ -236,10 +236,16 @@
       [chartData.ma120, "#008000", 1],
       [chartData.ma200, isDark ? "#f5f5f5" : "#000000", 2],
     ];
+    // 2026-07-11: 다크모드 전환 시 200일선(마지막 인덱스)만 검정↔흰색으로 다시 칠해야 해서
+    // 라인 시리즈 참조를 index 그대로 보관해둔다(handle.maSeries) — applyCandleChartTheme 참고.
+    const maSeries = [];
     for (const [arr, color, lineWidth] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
-      if (!lineData.length) continue;
-      // 2026-07-11: 이평선 위에 뜨는 동그란 크로스헤어 마커는 끄고, 대신 OHLC 툴팁 박스로
+      if (!lineData.length) {
+        maSeries.push(null);
+        continue;
+      }
+      // 이평선 위에 뜨는 동그란 크로스헤어 마커는 끄고, 대신 OHLC 툴팁 박스로
       // 시가/고가/저가/종가/거래량을 한 번에 보여준다(아래 wireOhlcTooltip).
       const lineOpts = {
         color,
@@ -255,6 +261,7 @@
         line = chart.addLineSeries(lineOpts);
       }
       line.setData(lineData);
+      maSeries.push(line);
     }
     wireOhlcTooltip(hostEl, chart, chartData.candles, priceFormatterFor(market));
     chart.timeScale().fitContent();
@@ -268,7 +275,7 @@
     });
     ro.observe(hostEl);
 
-    return { chart, ro, hostEl };
+    return { chart, ro, hostEl, maSeries };
   }
 
   function disposeCandleChart(handle) {
@@ -292,6 +299,11 @@
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
       grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
     });
+    // 2026-07-11: 배경/그리드만 갱신하고 200일 이평선 색은 그대로 남아있던 버그 — 다크모드에서는
+    // 검정 200일선이 어두운 배경에 묻혀 안 보였다. 다크/라이트 전환 때마다 흰색↔검정으로 다시 칠한다.
+    if (handle.maSeries && handle.maSeries[3]) {
+      handle.maSeries[3].applyOptions({ color: isDarkTheme() ? "#f5f5f5" : "#000000" });
+    }
   }
 
   window.tmMountCandleChart = mountCandleChart;

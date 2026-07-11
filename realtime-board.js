@@ -106,7 +106,7 @@
     /** 캔들 주기: D|W|M — API period와 동일 */
     candlePeriod: "D",
     /** 화면에 쓸 최근 봉 개수 */
-    chartBarsLimit: 200,
+    chartBarsLimit: 400,
     /** 탭별 데이터 마지막 로드 시각(ms) — 3분 캐시 */
     tabLoadedAt: {},
     /** 데이터 기준 시각(updatedAt) */
@@ -965,8 +965,10 @@
     return { candle: LW_CANDLE_H, vol: LW_VOL_H };
   }
 
+  /** 2026-07-11: 일봉 기준 약 2년치(400개)가 보이도록 상향 — us-market/crypto 자체 차트와
+   * 동일한 시야로 맞춘다. 모바일은 화면이 좁아 200개로 절반만 적용. */
   function lwChartBarsLimit() {
-    return isMobileLayout() ? 120 : state.chartBarsLimit || 200;
+    return isMobileLayout() ? 200 : state.chartBarsLimit || 400;
   }
 
   /** 아코디언 패널별 차트 인스턴스 */
@@ -1167,7 +1169,7 @@
 
   function applyLwChartSeriesData(bundle, candles, limit, maData) {
     if (!bundle || !bundle.candle || !bundle.vol || !candles || !candles.length) return [];
-    const lim = limit || state.chartBarsLimit || 200;
+    const lim = limit || state.chartBarsLimit || 400;
     const sliced = sliceCandlesFromEnd(candles, lim);
     bundle.candle.setData(sliced);
     bundle.vol.setData(buildVolumeHistogramData(sliced));

@@ -404,6 +404,31 @@
     ].join("");
   }
 
+  // 2026-07-11: TradingView 위젯의 거래량 색상 커스터마이징이 계속 실패해서(iframe 위젯의
+  // 한계) AI 종목분석에서 이미 검증된 자체 캔들+거래량+이평선 차트(assets/lw-candle-chart.js)로
+  // 교체했다. 거래량 바 색이 캔들과 100% 동일(같은 시리즈 데이터에서 직접 계산)해서 어긋날 수 없다.
+  function lwChartShellHtml(chartHostId, ticker) {
+    return [
+      `<div class="tm-tv-chart-shell">`,
+      `  <div class="tm-tv-chart-toolbar">`,
+      `    <div class="tm-lw-period-group" role="toolbar" aria-label="캔들 주기">`,
+      `      <button type="button" class="rt-chart-interval-btn tm-lw-period-btn" data-lw-period="D" aria-pressed="true">일봉</button>`,
+      `      <button type="button" class="rt-chart-interval-btn tm-lw-period-btn" data-lw-period="W" aria-pressed="false">주봉</button>`,
+      `      <button type="button" class="rt-chart-interval-btn tm-lw-period-btn" data-lw-period="M" aria-pressed="false">월봉</button>`,
+      `    </div>`,
+      `    <button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>`,
+      `  </div>`,
+      `  <div class="tm-lw-chart-legend">`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>`,
+      `  </div>`,
+      `  <div id="${escapeHtml(chartHostId)}" class="tm-lw-chart-host" data-lw-symbol="${escapeHtml(ticker)}" role="region" aria-label="캔들 차트"></div>`,
+      `</div>`,
+    ].join("");
+  }
+
   function usStockAccHtml(data) {
     const name = escapeHtml(data.stockName || data.stockCode || "—");
     const ticker = escapeHtml(data.stockCode || "");
@@ -464,18 +489,22 @@
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
       `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden>`,
       `      <div class="rt-chart-body">`,
-      tvChartShellHtml(
-        "us-tv-widget",
-        tradingViewSymbol(data),
-        String(data.stockCode || ""),
-        `${data.stockName || data.stockCode || ""} chart`,
-        tradingViewUrl(data)
-      ),
+      lwChartShellHtml(`${chartId}-lw`, String(data.stockCode || "")),
       `      </div>`,
       `    </div>`,
       `  </footer>`,
       `</div>`,
     ].join("");
+  }
+
+  /** market=US 자체 캔들 차트 데이터 조회 (AI 종목분석과 동일 엔드포인트). */
+  async function fetchUsLwChart(ticker, period) {
+    const qs = new URLSearchParams({ market: "US", code: ticker, chart: "1", period: period || "D" });
+    const res = await fetch(`${KIS_QUOTE_API}?${qs.toString()}`, { cache: "no-store" });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error((json && json.error) || `HTTP ${res.status}`);
+    if (!Array.isArray(json.candles) || !json.candles.length) throw new Error("차트 데이터가 없습니다");
+    return json;
   }
 
   function wireUsStockAcc(host, data) {
@@ -485,7 +514,25 @@
     const chartId = toggle && toggle.getAttribute("data-chart-target");
     const chartHost = chartId ? document.getElementById(chartId) : null;
     if (!toggle || !chartHost) return;
+    const ticker = String(data.stockCode || "");
+    const lwHost = chartHost.querySelector(".tm-lw-chart-host");
     let chartOpen = false;
+    let chartHandle = null;
+    let mounted = false;
+    let activePeriod = "D";
+
+    const mount = async (period) => {
+      if (!lwHost) return;
+      try {
+        const chartData = await fetchUsLwChart(ticker, period);
+        if (chartHandle && window.tmDisposeCandleChart) window.tmDisposeCandleChart(chartHandle);
+        chartHandle = await window.tmMountCandleChart(lwHost, chartData, { market: "US" });
+      } catch (err) {
+        console.warn("[미국주식] 차트 로드 실패", ticker, err && err.message);
+        lwHost.innerHTML = `<p class="tm-lw-chart-error">차트를 불러오지 못했습니다.</p>`;
+      }
+    };
+
     const setToggle = (open) => {
       chartOpen = !!open;
       toggle.setAttribute("aria-expanded", chartOpen ? "true" : "false");
@@ -493,17 +540,27 @@
       chartHost.hidden = !chartOpen;
     };
     setToggle(false);
-    toggle.addEventListener("click", (ev) => {
+
+    chartHost.querySelectorAll(".tm-lw-period-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const period = btn.getAttribute("data-lw-period") || "D";
+        if (period === activePeriod) return;
+        activePeriod = period;
+        chartHost.querySelectorAll(".tm-lw-period-btn").forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+        await mount(period);
+      });
+    });
+
+    toggle.addEventListener("click", async (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
       setToggle(!chartOpen);
       if (!chartOpen) return;
-      const iframe = chartHost.querySelector(".us-tv-widget");
-      if (iframe && !iframe.dataset.mounted) {
-        iframe.src = tradingViewUrl(data);
-        iframe.dataset.mounted = "1";
-      }
       if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(chartHost);
+      if (!mounted) {
+        mounted = true;
+        await mount(activePeriod);
+      }
     });
   }
 

@@ -34,6 +34,7 @@
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
     <script src="./assets/data-url.js"></script>
+    <script src="./assets/lw-candle-chart.js?v=1"></script>
     <style>
       .crypto-wrap,
       .tm-main > .page {
@@ -452,6 +453,54 @@
       [data-theme="dark"] .crypto-chart-box,
       [data-theme="dark"] .tm-tv-chart-shell {
         background: #131722;
+      }
+      /* 2026-07-11: TradingView 위젯을 자체 캔들 차트(assets/lw-candle-chart.js)로 교체하며 추가 */
+      .tm-lw-chart-host {
+        width: 100%;
+        min-height: 260px;
+        background: #ffffff;
+      }
+      [data-theme="dark"] .tm-lw-chart-host {
+        background: #131722;
+      }
+      .tm-lw-period-group {
+        display: flex;
+        gap: 6px;
+        margin-right: auto;
+      }
+      .tm-lw-period-group .tm-lw-period-btn {
+        margin: 0;
+        height: 30px;
+        padding: 4px 12px;
+        font-size: 11px;
+      }
+      .tm-lw-chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .tm-lw-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .tm-lw-legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      [data-theme="dark"] .tm-lw-legend-dot--ma200 {
+        background: #f5f5f5 !important;
+      }
+      .tm-lw-chart-error {
+        padding: 24px 12px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--text-muted);
       }
       .crypto-error {
         margin-top: 12px;
@@ -897,6 +946,8 @@
           coins: [],
           currency: "USD",
           openSymbol: null,
+          chartPeriod: "D",
+          chartHandle: null,
           pollTimer: null,
           currentPage: 1,
           sortKey: "marketCap",
@@ -1348,30 +1399,75 @@
 
         window.tmTradingViewUrl = tradingViewUrl;
 
+        // 2026-07-11: TradingView 위젯의 거래량 색상 커스터마이징이 두 번(studies_overrides,
+        // hide_volume) 모두 실패해서(두 번째 시도는 거래량이 아예 사라짐) AI 종목분석에서 이미
+        // 검증된 자체 캔들+거래량+이평선 차트(assets/lw-candle-chart.js)로 교체했다. 거래량은
+        // 캔들과 같은 데이터에서 직접 색을 계산해서 그리므로 어긋날 수 없다.
         function chartRowHtml(c) {
-          const tvSym = tradingViewSymbol(c.symbol);
           return `<tr class="crypto-chart-row">
             <td colspan="8">
               <div class="crypto-chart-box">
-                <p class="crypto-chart-title">${escapeHtml(c.name)} · TradingView</p>
+                <p class="crypto-chart-title">${escapeHtml(c.name)} (${escapeHtml(c.symbol)})</p>
                 <div class="tm-tv-chart-shell">
                   <div class="tm-tv-chart-toolbar">
+                    <div class="tm-lw-period-group" role="toolbar" aria-label="캔들 주기">
+                      <button type="button" class="crypto-page-btn tm-lw-period-btn" data-lw-period="D" aria-pressed="${state.chartPeriod === "D" ? "true" : "false"}">일봉</button>
+                      <button type="button" class="crypto-page-btn tm-lw-period-btn" data-lw-period="W" aria-pressed="${state.chartPeriod === "W" ? "true" : "false"}">주봉</button>
+                      <button type="button" class="crypto-page-btn tm-lw-period-btn" data-lw-period="M" aria-pressed="${state.chartPeriod === "M" ? "true" : "false"}">월봉</button>
+                    </div>
                     <button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>
                   </div>
-                  <iframe
-                    class="crypto-tv-widget"
-                    data-tv-symbol="${escapeHtml(tvSym)}"
-                    data-symbol="${escapeHtml(c.symbol)}"
-                    title="${escapeHtml(c.name)} TradingView chart"
-                    src="${escapeHtml(tradingViewUrl(c.symbol))}"
-                    loading="lazy"
-                    allowtransparency="true"
-                    scrolling="no"
-                  ></iframe>
+                  <div class="tm-lw-chart-legend">
+                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>
+                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>
+                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>
+                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>
+                  </div>
+                  <div class="tm-lw-chart-host" data-lw-symbol="${escapeHtml(c.symbol)}" role="region" aria-label="캔들 차트"></div>
                 </div>
               </div>
             </td>
           </tr>`;
+        }
+
+        /** market=CRYPTO 자체 캔들 차트 데이터 조회 (AI 종목분석과 동일 엔드포인트, Binance 공개
+         * klines 기반). 스테이블코인처럼 자기 자신과의 USDT 페어가 없는 극소수 코인은 실패할 수
+         * 있음 — 그 경우 에러 메시지만 보여준다(전체 페이지에는 영향 없음). */
+        async function fetchCryptoLwChart(symbol, period) {
+          const qs = new URLSearchParams({ market: "CRYPTO", code: symbol, chart: "1", period: period || "D" });
+          const res = await fetch(`/api/kis-stock-quote?${qs.toString()}`, { cache: "no-store" });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error((json && json.error) || `HTTP ${res.status}`);
+          if (!Array.isArray(json.candles) || !json.candles.length) throw new Error("차트 데이터가 없습니다");
+          return json;
+        }
+
+        async function mountOpenCryptoChart() {
+          if (!state.openSymbol) return;
+          const host = document.querySelector(`.tm-lw-chart-host[data-lw-symbol="${state.openSymbol}"]`);
+          if (!host || !window.tmMountCandleChart) return;
+          try {
+            const chartData = await fetchCryptoLwChart(state.openSymbol, state.chartPeriod);
+            if (state.chartHandle && window.tmDisposeCandleChart) window.tmDisposeCandleChart(state.chartHandle);
+            state.chartHandle = await window.tmMountCandleChart(host, chartData, { market: "CRYPTO" });
+          } catch (err) {
+            console.warn("[크립토] 차트 로드 실패", state.openSymbol, err && err.message);
+            host.innerHTML = `<p class="tm-lw-chart-error">차트를 불러오지 못했습니다.</p>`;
+          }
+        }
+
+        function wireOpenCryptoChartPeriodButtons() {
+          document.querySelectorAll(".tm-lw-period-btn").forEach((btn) => {
+            btn.addEventListener("click", async (ev) => {
+              ev.preventDefault();
+              ev.stopPropagation();
+              const period = btn.getAttribute("data-lw-period") || "D";
+              if (period === state.chartPeriod) return;
+              state.chartPeriod = period;
+              document.querySelectorAll(".tm-lw-period-btn").forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+              await mountOpenCryptoChart();
+            });
+          });
         }
 
         function renderTable() {
@@ -1385,6 +1481,10 @@
           }
           body.innerHTML = parts.join("") || '<tr><td colspan="8"><p class="home-empty">데이터 없음</p></td></tr>';
           if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(body);
+          if (state.openSymbol) {
+            wireOpenCryptoChartPeriodButtons();
+            void mountOpenCryptoChart();
+          }
         }
 
         function renderPagination() {
@@ -1450,7 +1550,13 @@
             const btn = ev.target.closest(".crypto-name-btn");
             if (!btn || !body.contains(btn)) return;
             const symbol = btn.getAttribute("data-symbol");
-            state.openSymbol = state.openSymbol === symbol ? null : symbol;
+            const opening = state.openSymbol !== symbol;
+            if (state.chartHandle && window.tmDisposeCandleChart) {
+              window.tmDisposeCandleChart(state.chartHandle);
+              state.chartHandle = null;
+            }
+            state.openSymbol = opening ? symbol : null;
+            state.chartPeriod = "D";
             renderTable();
           });
         }

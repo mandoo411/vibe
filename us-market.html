@@ -42,6 +42,48 @@
       [data-theme="dark"] .rt-chart-body {
         background: #131722;
       }
+      /* 2026-07-11: TradingView 위젯을 자체 캔들 차트(assets/lw-candle-chart.js)로 교체하며 추가 */
+      .tm-lw-chart-host {
+        width: 100%;
+        min-height: 260px;
+        background: #ffffff;
+      }
+      [data-theme="dark"] .tm-lw-chart-host {
+        background: #131722;
+      }
+      .tm-lw-period-group {
+        display: flex;
+        gap: 6px;
+        margin-right: auto;
+      }
+      .tm-lw-chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--color-text-secondary, #6b7280);
+      }
+      .tm-lw-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .tm-lw-legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        display: inline-block;
+      }
+      [data-theme="dark"] .tm-lw-legend-dot--ma200 {
+        background: #f5f5f5 !important;
+      }
+      .tm-lw-chart-error {
+        padding: 24px 12px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--color-text-secondary, #6b7280);
+      }
       .rt-acc-grid--4 .rt-acc-cell--spacer {
         background: transparent;
         border-right: none;
@@ -290,6 +332,7 @@
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
 
-    <script src="./us-market.js?v=20260602a"></script>
+    <script src="./assets/lw-candle-chart.js?v=1"></script>
+    <script src="./us-market.js?v=20260711a"></script>
   </body>
 </html>

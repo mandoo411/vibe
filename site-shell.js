@@ -41,29 +41,18 @@
   const ANALYSIS_HREF = "./stock-analysis.html";
 
   /**
-   * 2026-07-07: 베타 기간 중 운영자 본인만 게이트를 우회해서 테스트할 수 있게 하는 장치.
-   * ?betakey=시크릿 으로 한 번 접속하면 이 브라우저(localStorage)에 저장되어
-   * 이후에는 게이트 없이 바로 이용 가능. 일반 방문자에게는 기존과 동일하게 잠겨있음.
-   * (완전한 서버 인증은 아니고 클라이언트 우회용 - 페이지 소스에 키가 노출됨을 감안할 것)
+   * 2026-07-11: 과거 베타 기간에 있던 ?betakey= 우회 장치(localStorage에 영구 저장되어
+   * 로그인 없이 게이트를 통과시킴)를 완전히 제거했다. 그 키가 이 파일(공개 소스)에 평문으로
+   * 노출되어 있었고, 한 번이라도 그 파라미터가 붙은 링크로 접속한 브라우저는 로그인 여부와
+   * 무관하게 영구적으로 게이트가 풀리는 실질적 보안 구멍이었다 — "게이트 팝업이 떴다가
+   * 바로 사라지고 검색 화면으로 넘어간다"는 버그의 원인. 이제는 오직 실제 로그인/구독
+   * 상태(window.TM_AUTH_STATE)만으로 접근 여부를 판단한다.
    */
-  const ANALYSIS_BETA_KEY = "tm-beta-q7x2k9wv";
-  const ANALYSIS_BETA_STORAGE_KEY = "tmBetaAccess";
-
   function authState() {
     return window.TM_AUTH_STATE || { loaded: false, isLoggedIn: false, hasProAccess: false, setupPending: true };
   }
 
   function hasAnalysisBetaAccess() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const qp = params.get("betakey");
-      if (qp && qp === ANALYSIS_BETA_KEY) {
-        window.localStorage.setItem(ANALYSIS_BETA_STORAGE_KEY, ANALYSIS_BETA_KEY);
-      }
-      if (window.localStorage.getItem(ANALYSIS_BETA_STORAGE_KEY) === ANALYSIS_BETA_KEY) return true;
-    } catch (e) {
-      /* ignore */
-    }
     const st = authState();
     if (st.setupPending) return false;
     return !!st.isLoggedIn;

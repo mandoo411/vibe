@@ -736,16 +736,18 @@
 
   function readChartCandleCache(code, periodUpper) {
     const ent = chartCandleCache.get(chartCacheKey(code, periodUpper));
-    return ent && Array.isArray(ent.candles) && ent.candles.length ? ent.candles : null;
+    return ent && Array.isArray(ent.candles) && ent.candles.length ? ent : null;
   }
 
-  function writeChartCandleCache(code, periodUpper, candles) {
+  /** 2026-07-11: 이동평균(20/60/120일선) 데이터도 캔들과 함께 캐시해서 같은 종목/주기를
+   * 다시 열 때 다시 계산하지 않고 그대로 재사용한다. */
+  function writeChartCandleCache(code, periodUpper, candles, maData) {
     const k = chartCacheKey(code, periodUpper);
     while (chartCandleCache.size >= CHART_CACHE_MAX_ENTRIES) {
       const first = chartCandleCache.keys().next().value;
       chartCandleCache.delete(first);
     }
-    chartCandleCache.set(k, { candles: candles.slice() });
+    chartCandleCache.set(k, { candles: candles.slice(), maData: maData || null });
   }
 
   const WD_KO_SUN0 = ["일", "월", "화", "수", "목", "금", "토"];
@@ -898,6 +900,44 @@
       document.documentElement.getAttribute("data-theme") === "dark" ||
       (document.body && document.body.classList.contains("dark"))
     );
+  }
+
+  /** 2026-07-11: us-market/crypto "차트 보기"와 동일한 이동평균선 색상 — 200일선은 다크모드에서
+   * 흰색으로 바뀐다(검은 선이 어두운 배경에 안 보이는 문제 방지). */
+  function lwMa200Color() {
+    return isLwChartDarkTheme() ? "#f5f5f5" : "#000000";
+  }
+
+  const LW_MA_LINE_SPECS = [
+    { key: "ma20", color: "#FF0000", lineWidth: 1 },
+    { key: "ma60", color: "#1E90FF", lineWidth: 1 },
+    { key: "ma120", color: "#008000", lineWidth: 1 },
+    { key: "ma200", color: null, lineWidth: 2 },
+  ];
+
+  /** 캔들 차트 위에 20/60/120/200일 이동평균선 4개를 얹는다 (거래량 차트가 아니라 캔들 차트에). */
+  function addMaLineSeries(LC, chart) {
+    return LW_MA_LINE_SPECS.map((spec) => {
+      const color = spec.key === "ma200" ? lwMa200Color() : spec.color;
+      const opts = { color, lineWidth: spec.lineWidth, priceLineVisible: false, lastValueVisible: false };
+      if (LC.LineSeries && typeof chart.addSeries === "function") return chart.addSeries(LC.LineSeries, opts);
+      if (typeof chart.addLineSeries === "function") return chart.addLineSeries(opts);
+      return null;
+    });
+  }
+
+  /** candles(잘리기 전 전체)와 같은 길이의 ma 배열을 candles와 동일한 방식(끝에서 N개)으로 잘라
+   * time과 짝지은 라인 데이터로 변환한다. */
+  function buildMaLineData(fullCandles, maArr, limit) {
+    if (!Array.isArray(maArr) || !maArr.length) return [];
+    const slicedCandles = sliceCandlesFromEnd(fullCandles, limit);
+    const slicedMa = sliceCandlesFromEnd(maArr, limit);
+    const out = [];
+    for (let i = 0; i < slicedCandles.length; i++) {
+      const v = slicedMa[i];
+      if (v != null) out.push({ time: slicedCandles[i].time, value: v });
+    }
+    return out;
   }
 
   function getLwChartTheme() {
@@ -1111,17 +1151,26 @@
     const candle = addCandleSeries(LC, chartCandle);
     const vol = addVolSeries(LC, chartVol);
     if (!candle || !vol) throw new Error("차트 시리즈를 초기화하지 못했습니다.");
+    const maSeries = addMaLineSeries(LC, chartCandle);
     linkLogicalRangeSync(chartCandle, chartVol);
     syncLwDualChartAxes(chartCandle, chartVol);
-    return { chartCandle, chartVol, candle, vol };
+    return { chartCandle, chartVol, candle, vol, maSeries };
   }
 
-  function applyLwChartSeriesData(bundle, candles, limit) {
+  function applyLwChartSeriesData(bundle, candles, limit, maData) {
     if (!bundle || !bundle.candle || !bundle.vol || !candles || !candles.length) return [];
-    const sliced = sliceCandlesFromEnd(candles, limit || state.chartBarsLimit || 200);
+    const lim = limit || state.chartBarsLimit || 200;
+    const sliced = sliceCandlesFromEnd(candles, lim);
     bundle.candle.setData(sliced);
     bundle.vol.setData(buildVolumeHistogramData(sliced));
     bundle.crosshairLookup = buildCrosshairLookup(sliced);
+    if (Array.isArray(bundle.maSeries) && maData) {
+      LW_MA_LINE_SPECS.forEach((spec, i) => {
+        const series = bundle.maSeries[i];
+        if (!series) return;
+        series.setData(buildMaLineData(candles, maData[spec.key], lim));
+      });
+    }
     syncLwDualChartAxes(bundle.chartCandle, bundle.chartVol);
     return sliced;
   }
@@ -1141,6 +1190,9 @@
     };
     bundle.chartCandle.applyOptions(opts);
     bundle.chartVol.applyOptions(opts);
+    if (Array.isArray(bundle.maSeries) && bundle.maSeries[3]) {
+      bundle.maSeries[3].applyOptions({ color: lwMa200Color() });
+    }
   }
 
   function refreshAllLwChartsTheme() {
@@ -2317,6 +2369,12 @@
       `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="W" aria-pressed="false">주봉</button>`,
       `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
       `</div>`,
+      `<div class="tm-lw-chart-legend">`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>`,
+      `</div>`,
       `<div class="rt-chart-body">`,
       `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,
       `  <div class="rt-chart-panes rt-chart-panes--pending" style="display:none;">`,
@@ -2635,7 +2693,7 @@
     disposePanelLwChart(panelEl);
     delete panes.dataset.mountedKey;
 
-    const cachedCandles = readChartCandleCache(code6, periodKey);
+    const cachedEntry = readChartCandleCache(code6, periodKey);
 
     try {
       await ensureLightweightCharts(CHART_SCRIPT_TIMEOUT_MS);
@@ -2673,8 +2731,8 @@
       bundle.resizeObs = resizeObs;
 
       const barsLimit = lwChartBarsLimit();
-      if (cachedCandles && cachedCandles.length) {
-        bundle.fullCandles = applyLwChartSeriesData(bundle, cachedCandles, barsLimit);
+      if (cachedEntry && cachedEntry.candles && cachedEntry.candles.length) {
+        bundle.fullCandles = applyLwChartSeriesData(bundle, cachedEntry.candles, barsLimit, cachedEntry.maData);
         panes.dataset.mountedKey = mountKey;
       } else {
         const ctrl = new AbortController();
@@ -2688,8 +2746,9 @@
           if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
           const candles = Array.isArray(data.candles) ? data.candles : [];
           if (!candles.length) throw new Error("차트 데이터가 없습니다.");
-          bundle.fullCandles = applyLwChartSeriesData(bundle, candles, barsLimit);
-          writeChartCandleCache(code6, periodKey, candles);
+          const maData = { ma20: data.ma20, ma60: data.ma60, ma120: data.ma120, ma200: data.ma200 };
+          bundle.fullCandles = applyLwChartSeriesData(bundle, candles, barsLimit, maData);
+          writeChartCandleCache(code6, periodKey, candles, maData);
           panes.dataset.mountedKey = mountKey;
         } finally {
           clearTimeout(tid);

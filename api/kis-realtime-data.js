@@ -1600,6 +1600,34 @@ function dailyBackwardChunkDays(periodDiv) {
   return 450;
 }
 
+/** 2026-07-11: 실시간시세 페이지 차트에 미국주식/암호화폐와 동일한 이동평균선(20/60/120/200일)을
+ * 추가하기 위한 계산 — 국내주식은 원 단위 정수라 그대로 반올림한다(us-market/crypto의
+ * roundSmart 소수점 보정은 여기선 불필요). */
+function computeMaSeries(closes, period) {
+  const out = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < period - 1) {
+      out.push(null);
+      continue;
+    }
+    let sum = 0;
+    for (let j = i - period + 1; j <= i; j++) sum += closes[j];
+    out.push(Math.round(sum / period));
+  }
+  return out;
+}
+
+function withMaSeries(bars) {
+  const closes = (bars || []).map((c) => c.close);
+  return {
+    candles: bars,
+    ma20: computeMaSeries(closes, 20),
+    ma60: computeMaSeries(closes, 60),
+    ma120: computeMaSeries(closes, 120),
+    ma200: computeMaSeries(closes, 200),
+  };
+}
+
 /** KIS output2 행 → Lightweight Charts용 일/주/월 (time YYYY-MM-DD) */
 function mapDailyItemchartRow(row) {
   if (!row || typeof row !== "object") return null;
@@ -1976,12 +2004,12 @@ module.exports = async function handler(req, res) {
         !Object.prototype.hasOwnProperty.call(cached.bars[0], "volume");
       const ttl = candleCacheTtlMs();
       if (cached && now < cached.expiresAt && !cacheStaleVolume) {
-        json(res, 200, { code: code6, period: periodKey, candles: cached.bars, cached: true });
+        json(res, 200, { code: code6, period: periodKey, ...withMaSeries(cached.bars), cached: true });
         return;
       }
       const bars = await fetchDailyItemchartCandlesFromKis(code6, periodKey);
       candleMemoryCache.set(cacheKey, { bars, expiresAt: now + ttl, period: periodKey });
-      json(res, 200, { code: code6, period: periodKey, candles: bars, cached: false });
+      json(res, 200, { code: code6, period: periodKey, ...withMaSeries(bars), cached: false });
       return;
     }
 

@@ -1413,6 +1413,13 @@
   async function fetchAnalysis(code, name, indicators, market) {
     console.log("[AI분석] fetch 시작", { code, name, indicators, market });
     const ind = indicators && typeof indicators === "object" ? indicators : {};
+    // 2026-07-11: 탭을 오래 열어두면 Supabase access_token이 만료돼서, 로그인 게이트를
+    // 통과했던(TM_AUTH_STATE가 최초 1회 캐시된) 상태에서도 실제로는 만료된 토큰을 보내
+    // 서버가 401을 주는 경우가 있었다(로그인/Pro 상태인데 "로그인이 필요합니다" 오류).
+    // 요청 직전에 세션을 한 번 새로고침해서 최신 토큰을 쓰도록 한다.
+    if (window.TMAuth && typeof window.TMAuth.refreshState === "function") {
+      await window.TMAuth.refreshState().catch(() => {});
+    }
     const authToken = window.TMAuth ? await window.TMAuth.getAccessToken().catch(() => "") : "";
     let res;
     try {
@@ -1442,6 +1449,13 @@
     const text = await res.text();
     const data = safeParseJson(text) || {};
     console.log("[AI분석] 응답", res.status, data.analysisError || "ok");
+
+    if (res.status === 401) {
+      // 세션 새로고침 후에도 서버가 로그인 안 된 것으로 판단했다면 진짜로 세션이 끊긴 것 —
+      // 단순 에러 텍스트만 보여주지 않고 원래 로그인 게이트(팝업)를 다시 띄워 재로그인을 유도한다.
+      if (typeof window.tmOpenAnalysisGate === "function") window.tmOpenAnalysisGate();
+      throw new Error("로그인 세션이 만료되었습니다. 다시 로그인해 주세요.");
+    }
 
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     if (data.error) throw new Error(data.error);

@@ -817,6 +817,91 @@
     return out;
   }
 
+  /** 2026-07-11: 크로스헤어에 시가/고가/저가/종가/거래량을 보여주는 툴팁 박스 —
+   * us-market/crypto의 자체 캔들 차트(assets/lw-candle-chart.js)와 동일한 구현. 이평선 위에
+   * 뜨던 동그란 마커는 각 라인 시리즈에서 꺼서 없애고 이 박스로 정보를 대신 보여준다. */
+  function ensureAiOhlcTooltipStyle() {
+    if (document.getElementById("tm-lw-ohlc-tooltip-style")) return;
+    const style = document.createElement("style");
+    style.id = "tm-lw-ohlc-tooltip-style";
+    style.textContent =
+      ".tm-lw-ohlc-tooltip{position:absolute;z-index:50;left:0;top:0;display:none;" +
+      "min-width:150px;max-width:min(260px,92vw);padding:9px 11px;pointer-events:none;" +
+      "background:var(--bg-secondary,#fff);border:1px solid var(--border-strong,rgba(0,0,0,.12));" +
+      "border-radius:var(--radius,6px);box-shadow:var(--sheet-shadow,0 6px 20px rgba(30,40,90,.12));" +
+      'font-family:"Noto Sans KR",-apple-system,sans-serif;font-size:11px;line-height:1.45;' +
+      "color:var(--text-primary,#131722);}" +
+      ".tm-lw-ohlc-tooltip__dt{margin:0 0 7px;padding-bottom:6px;" +
+      "border-bottom:1px solid var(--border,rgba(0,0,0,.08));font-weight:600;" +
+      "color:var(--accent-brand);letter-spacing:.02em;}" +
+      ".tm-lw-ohlc-tooltip__row{display:flex;justify-content:space-between;gap:12px;margin:2px 0;}" +
+      ".tm-lw-ohlc-tooltip__row span:first-child{color:var(--text-secondary,#5d606b);flex-shrink:0;}" +
+      ".tm-lw-ohlc-tooltip__row span:last-child{color:var(--text-primary,#131722);" +
+      "text-align:right;font-variant-numeric:tabular-nums;}" +
+      '[data-theme="dark"] .tm-lw-ohlc-tooltip{background:rgba(28,32,48,.98);' +
+      "border-color:rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(0,0,0,.55);}" +
+      '[data-theme="dark"] .tm-lw-ohlc-tooltip__dt{color:var(--accent-bright,var(--accent-brand));' +
+      "border-bottom-color:rgba(255,255,255,.08);}" +
+      '[data-theme="dark"] .tm-lw-ohlc-tooltip__row span:first-child{color:var(--text-secondary,#787b86);}' +
+      '[data-theme="dark"] .tm-lw-ohlc-tooltip__row span:last-child{color:var(--text-primary,#d1d4dc);}';
+    document.head.appendChild(style);
+  }
+
+  function aiOhlcDateLabel(time) {
+    const s = String(time || "");
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (!m) return s;
+    return `${m[1]}년 ${Number(m[2])}월 ${Number(m[3])}일`;
+  }
+
+  function fmtAiOhlcVol(n) {
+    if (n == null || !Number.isFinite(Number(n))) return "—";
+    return Math.round(Number(n)).toLocaleString("ko-KR");
+  }
+
+  function wireAiOhlcTooltip(hostEl, chart, candles, formatPrice) {
+    ensureAiOhlcTooltipStyle();
+    if (getComputedStyle(hostEl).position === "static") hostEl.style.position = "relative";
+    const tip = document.createElement("div");
+    tip.className = "tm-lw-ohlc-tooltip";
+    tip.setAttribute("aria-hidden", "true");
+    hostEl.appendChild(tip);
+
+    const byTime = new Map(candles.map((c) => [String(c.time), c]));
+
+    chart.subscribeCrosshairMove((param) => {
+      if (!param || param.time == null || !param.point) {
+        tip.style.display = "none";
+        return;
+      }
+      const row = byTime.get(String(param.time));
+      if (!row || row.open == null) {
+        tip.style.display = "none";
+        return;
+      }
+      tip.innerHTML =
+        `<div class="tm-lw-ohlc-tooltip__dt">${aiOhlcDateLabel(row.time)}</div>` +
+        `<div class="tm-lw-ohlc-tooltip__row"><span>시가</span><span>${formatPrice(row.open)}</span></div>` +
+        `<div class="tm-lw-ohlc-tooltip__row"><span>고가</span><span>${formatPrice(row.high)}</span></div>` +
+        `<div class="tm-lw-ohlc-tooltip__row"><span>저가</span><span>${formatPrice(row.low)}</span></div>` +
+        `<div class="tm-lw-ohlc-tooltip__row"><span>종가</span><span>${formatPrice(row.close)}</span></div>` +
+        `<div class="tm-lw-ohlc-tooltip__row"><span>거래량</span><span>${fmtAiOhlcVol(row.volume)}</span></div>`;
+      tip.style.display = "block";
+      const hostRect = hostEl.getBoundingClientRect();
+      const pad = 8;
+      let x = param.point.x + 14;
+      let y = param.point.y + 14;
+      tip.style.visibility = "hidden";
+      const tw = tip.offsetWidth || 160;
+      const th = tip.offsetHeight || 110;
+      tip.style.visibility = "visible";
+      if (x + tw + pad > hostRect.width) x = Math.max(pad, param.point.x - tw - 14);
+      if (y + th + pad > hostRect.height) y = Math.max(pad, param.point.y - th - 14);
+      tip.style.left = `${Math.max(pad, x)}px`;
+      tip.style.top = `${Math.max(pad, y)}px`;
+    });
+  }
+
   function lwChartPriceFormatterFor(market) {
     if (market !== "US" && market !== "CRYPTO") return lwChartPriceFormatter;
     return (price) => {
@@ -902,7 +987,15 @@
     for (const [arr, color, lineWidth] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
       if (!lineData.length) continue;
-      const lineOpts = { color, lineWidth, priceLineVisible: false, lastValueVisible: false };
+      // 2026-07-11: 이평선 위에 뜨는 동그란 크로스헤어 마커는 끄고, 대신 OHLC 툴팁 박스로
+      // 시가/고가/저가/종가/거래량을 한 번에 보여준다(아래 wireAiOhlcTooltip).
+      const lineOpts = {
+        color,
+        lineWidth,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      };
       let line;
       if (LC.LineSeries && typeof chart.addSeries === "function") {
         line = chart.addSeries(LC.LineSeries, lineOpts);
@@ -911,6 +1004,7 @@
       }
       line.setData(lineData);
     }
+    wireAiOhlcTooltip(hostEl, chart, chartData.candles, lwChartPriceFormatterFor(market));
     chart.timeScale().fitContent();
 
     const ro = new ResizeObserver(() => {

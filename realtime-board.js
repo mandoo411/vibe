@@ -919,7 +919,15 @@
   function addMaLineSeries(LC, chart) {
     return LW_MA_LINE_SPECS.map((spec) => {
       const color = spec.key === "ma200" ? lwMa200Color() : spec.color;
-      const opts = { color, lineWidth: spec.lineWidth, priceLineVisible: false, lastValueVisible: false };
+      // 2026-07-11: 이평선 위에 뜨는 동그란 크로스헤어 마커 제거 — OHLC 툴팁 박스
+      // (wireRtCrosshairTooltip)가 이미 시가/고가/저가/종가/거래량을 보여주므로 불필요.
+      const opts = {
+        color,
+        lineWidth: spec.lineWidth,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      };
       if (LC.LineSeries && typeof chart.addSeries === "function") return chart.addSeries(LC.LineSeries, opts);
       if (typeof chart.addLineSeries === "function") return chart.addLineSeries(opts);
       return null;

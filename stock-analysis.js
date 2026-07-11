@@ -1529,6 +1529,30 @@
     bindAnalyzeUi();
   }
 
+  /** 2026-07-11: site-shell.js(게이트 로직이 실제로 들어있는 파일)가 아직 로드/실행되지
+   * 않았을 때, window.tmHasAnalysisAccess가 없다는 이유로 "허용"으로 새는(fail-open) 버그가
+   * 있었다 — 비로그인 상태에서도 검색창이 그냥 보이는 문제의 원인. 최대 2초(100ms x 20회)
+   * 정도 재시도하며 site-shell.js 로딩을 기다리고, 그래도 없으면 반드시 차단(fail-closed)한다. */
+  let analysisGateFnWaitCount = 0;
+  const ANALYSIS_GATE_FN_MAX_WAIT = 20;
+
+  /** site-shell.js 자체가 끝내 로드되지 않아 게이트 UI(window.tmOpenAnalysisGate)조차 띄울
+   * 수 없는 최악의 경우를 대비한 최소한의 자체 차단 — 검색 UI가 그냥 노출되는 일은 없게 한다. */
+  function fallbackBlockAnalysisUi() {
+    const searchInput = document.getElementById("ai-stock-query");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    if (searchInput) searchInput.disabled = true;
+    if (analyzeBtn) analyzeBtn.disabled = true;
+    const card = document.querySelector(".ai-search-card, main");
+    if (card && !document.getElementById("ai-fallback-block-msg")) {
+      const msg = document.createElement("p");
+      msg.id = "ai-fallback-block-msg";
+      msg.style.cssText = "margin-top:12px;padding:12px;border-radius:8px;background:#fee2e2;color:#991b1b;font-size:13px;";
+      msg.textContent = "페이지를 불러오는 중 문제가 발생했습니다. 새로고침해 주세요.";
+      card.appendChild(msg);
+    }
+  }
+
   async function init() {
     const state = window.TM_AUTH_STATE;
     if (!state || !state.loaded) {
@@ -1543,9 +1567,22 @@
       analysisInitSafetyTimer = null;
     }
 
-    const allowed = typeof window.tmHasAnalysisAccess === "function" ? window.tmHasAnalysisAccess() : true;
+    if (typeof window.tmHasAnalysisAccess !== "function" && analysisGateFnWaitCount < ANALYSIS_GATE_FN_MAX_WAIT) {
+      analysisGateFnWaitCount++;
+      setTimeout(init, 100);
+      return;
+    }
+
+    // fail-closed: window.tmHasAnalysisAccess가 끝내 없으면(스크립트 로드 실패 등) "허용"이
+    // 아니라 "차단"으로 처리한다 — 절대 로그인 게이트를 건너뛰게 하지 않는다.
+    const allowed = typeof window.tmHasAnalysisAccess === "function" ? window.tmHasAnalysisAccess() : false;
     if (!allowed) {
-      if (typeof window.tmOpenAnalysisGate === "function") window.tmOpenAnalysisGate();
+      if (typeof window.tmOpenAnalysisGate === "function") {
+        window.tmOpenAnalysisGate();
+      } else {
+        console.error("[AI분석] tmOpenAnalysisGate 없음 — site-shell.js 로드 실패로 추정, 자체 차단");
+        fallbackBlockAnalysisUi();
+      }
       document.addEventListener("tm-auth-ready", init, { once: true });
       return;
     }

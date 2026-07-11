@@ -21,6 +21,11 @@ const {
   serviceRequest,
 } = require("../lib/supabase-server");
 
+// 2026-07-11: 크립토 페이지(coindeskkorea/tokenpost/blockmedia RSS)와 동일한 뉴스 소스를
+// AI 종목분석(암호화폐)에도 재사용 — Claude/OpenAI의 범용 web_search만으로는 국내 크립토
+// 전문 매체 기사를 놓치는 경우가 많아서, 이미 있는 RSS 피드를 프롬프트 근거로 직접 공급한다.
+const { fetchAllCryptoNews, filterNewsByRelevance } = require("../lib/crypto-news");
+
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
@@ -242,14 +247,14 @@ function buildSystemPrompt(today, quote) {
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.`
     : assetType === "CRYPTO"
       ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
-- "코스피처럼 외국인·기관 순매수로 읽는 자산이 아니다" 같은 핑계·비교성 문구는 절대 쓰지 말 것.
-- 대신 제공된 캔들·거래량 데이터를 근거로 거래량 기반 기술적 수급을 해석할 것 — 예: 저점권에서 거래량이 늘고 있으면 매집(긍정적) 신호, 상승 구간에서 거래량이 줄면 추세 힘 약화, 급락 시 거래량 급증은 투매/공포매도로 해석하는 식으로 구체적인 방향성을 확정적으로 제시할 것.
+- "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
+- 제공된 캔들·거래량 데이터를 근거로 거래량 기반 기술적 수급을 해석할 것 — 예: 저점권에서 거래량이 늘고 있으면 매집(긍정적) 신호, 상승 구간에서 거래량이 줄면 추세 힘 약화, 급락 시 거래량 급증은 투매/공포매도로 해석하는 식으로 구체적인 방향성을 확정적으로 제시할 것.
 - 추가로 web_search로 최근 거래소 순유입/유출, ETF 자금 흐름, 고래(대형 지갑) 매집·매도 동향 등 관련 최신 뉴스가 있으면 반드시 반영할 것.
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.`
       : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
-- "코스피처럼 외국인·기관 순매수로 읽는 자산이 아니다" 같은 핑계·비교성 문구는 절대 쓰지 말 것.
-- 대신 제공된 캔들·거래량 데이터를 근거로 거래량 기반 기술적 수급을 해석할 것 — 예: 저점권에서 거래량이 늘고 있으면 매집(긍정적) 신호, 상승 구간에서 거래량이 줄면 추세 힘 약화, 실적 발표 전후 거래량 급증은 포지셔닝으로 해석하는 식으로 구체적인 방향성을 확정적으로 제시할 것.
-- 추가로 web_search로 최근 기관 매수·매도 동향, ETF 자금 흐름, 공매도 비중 변화 등 관련 최신 뉴스가 있으면 반드시 반영할 것.
+- "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
+- 제공된 캔들·거래량 데이터를 근거로 거래량 기반 기술적 수급을 해석할 것 — 예: 저점권에서 거래량이 늘고 있으면 매집(긍정적) 신호, 상승 구간에서 거래량이 줄면 추세 힘 약화, 실적 발표 전후 거래량 급증은 포지셔닝으로 해석하는 식으로 구체적인 방향성을 확정적으로 제시할 것.
+- 추가로 web_search로 최근 매수·매도 동향, ETF 자금 흐름, 공매도 비중 변화 등 관련 최신 뉴스가 있으면 반드시 반영할 것(펀드/자산운용사 자금 등으로 자연스럽게 풀어서 표현).
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.`;
   return [
     ANALYST_PERSONA_RULES,
@@ -1540,7 +1545,33 @@ function claudeModelCandidates() {
   return [CLAUDE_MODEL];
 }
 
-function buildUserPrompt(quote, stockName, today, indicators, wm) {
+/** 암호화폐 분석에만 쓰는 뉴스 보강 — 코인데스크코리아/토큰포스트/블록미디어 RSS(크립토
+ * 페이지와 동일 소스)에서 종목명과 관련된 기사를 우선 골라 최대 8개 반환한다. 실패해도
+ * 전체 분석을 막지 않도록 조용히 빈 배열을 반환한다(web_search가 여전히 보조 근거가 됨). */
+async function fetchCryptoNewsForPrompt(assetType, name) {
+  if (assetType !== "CRYPTO") return [];
+  try {
+    const all = await fetchAllCryptoNews(20);
+    return filterNewsByRelevance(all, name, 8);
+  } catch (e) {
+    console.warn("[analyze] crypto news fetch failed", e && e.message);
+    return [];
+  }
+}
+
+function formatCryptoNewsBlock(news) {
+  if (!Array.isArray(news) || !news.length) return "";
+  const lines = news.map(
+    (n) => `- [${n.source}] ${n.title}${n.summary ? " — " + n.summary.slice(0, 120) : ""}`
+  );
+  return [
+    "",
+    "실제 크립토 전문매체 뉴스 헤드라인(코인데스크코리아/토큰포스트/블록미디어, 이미 확인된 사실이므로 web_search로 재검증할 필요 없이 그대로 근거로 사용 가능 — 2번 story, 3번 supplyDemand, 5번 materials에 관련 있으면 반드시 반영):",
+    ...lines,
+  ].join("\n");
+}
+
+function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
   const name = stockName || quote.stockName || quote.stockCode;
   const year = seoulYear();
   const assetType = quote.assetType || "KR";
@@ -1576,9 +1607,9 @@ function buildUserPrompt(quote, stockName, today, indicators, wm) {
 - 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
     : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
-- "KRX 기준 외국인/기관 순매수 수치가 없다"는 식의 핑계 문구 절대 금지.
-- 대신 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
-- web_search로 최근 기관/ETF 자금 흐름${assetType === "CRYPTO" ? "·거래소 유출입·고래 동향" : "·공매도 비중 변화"}을 찾아 반영.
+- "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
+- 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
+- web_search로 최근 자금 흐름${assetType === "CRYPTO" ? "·거래소 유출입·고래 동향" : "·ETF 자금 흐름·공매도 비중 변화"}을 찾아 반영.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`;
   return [
     `오늘은 ${today}입니다. 모든 분석은 이 시점 기준으로 작성하세요.`,
@@ -1624,6 +1655,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm) {
     "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",
     indicatorBlock,
     wmBlock,
+    formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
     JSON.stringify({
@@ -1660,7 +1692,8 @@ async function claudeAnalyze(quote, stockName, indicators, wm) {
   const Anthropic = require("@anthropic-ai/sdk");
   const client = new Anthropic({ apiKey: requireAnthropicKey() });
   const today = todayKoreaLabel();
-  const user = buildUserPrompt(quote, stockName, today, indicators, wm);
+  const cryptoNews = await fetchCryptoNewsForPrompt(quote.assetType, stockName || quote.stockName);
+  const user = buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews);
   const system = buildSystemPrompt(today, quote);
 
   let lastErr = null;
@@ -1746,7 +1779,7 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
  * 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. 즉 매 호출마다 반드시
  * "실검색" 또는 "RSS 헤드라인" 둘 중 하나의 실제 최신 정보를 근거로 쓰도록 강제해서
  * 호출할 때마다 결과가 달라지는 문제를 없앤다. */
-async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm) {
+async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews) {
   const name = stockName || quote.stockName || quote.stockCode;
   const ind = indicators && typeof indicators === "object" ? indicators : {};
   const isKr = (quote.assetType || "KR") === "KR";
@@ -1760,7 +1793,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     "다음 분기 실적발표만 새로운 다가오는 이벤트로 표기).\n" +
     (isKr
       ? "입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 web_search로 당일(또는 직전 거래일) 실제 외국인/기관 순매수 데이터를 찾아서 사용하세요 — 정보 없다고 얼버무리지 마세요.\n"
-      : "이 자산은 KRX 기준 외국인/기관 순매수 수치가 없습니다. \"수급 데이터가 없다\"는 핑계 대신 캔들·거래량 데이터로 저점 매집/추세 소진 등 거래량 기반 기술적 수급을 확정적으로 해석하고, web_search로 최근 기관·ETF 자금 흐름 관련 뉴스도 찾아서 반영하세요 — 정보 없다고 얼버무리지 마세요.\n") +
+      : "\"외국인\", \"기관\", \"코스피\", \"코스닥\", \"KRX\"라는 단어 자체를 쓰지 말고, 캔들·거래량 데이터로 저점 매집/추세 소진 등 거래량 기반 기술적 수급을 확정적으로 해석하고, web_search로 최근 자금 흐름 관련 뉴스도 찾아서 반영하세요 — 정보 없다고 얼버무리지 마세요.\n") +
     (isKr ? "" : "통화 단위는 항상 달러($)로 표기하세요.\n") +
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
     "최종 답변은 반드시 JSON 형식으로만 응답하고 다른 텍스트(설명, 코드블록 등)는 절대 포함하지 마세요.";
@@ -1777,9 +1810,9 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - 값이 null이면 web_search로 "[종목명] 외국인 기관 순매수 오늘" 등을 검색해서 실제 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
       : `supply(수급 분석) 작성 규칙 — 반드시 준수:
-- "KRX 기준 외국인/기관 순매수 수치가 없다"는 핑계 문구 절대 금지.
-- 대신 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
-- web_search로 최근 기관/ETF 자금 흐름 관련 뉴스가 있으면 찾아서 반영.
+- "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
+- 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
+- web_search로 최근 자금 흐름 관련 뉴스가 있으면 찾아서 반영.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`,
     "",
     `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
@@ -1802,6 +1835,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - 엘리어트 파동은 weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서가 있으면 그 근거로 서술하고, 데이터가 불충분해 파동 번호를 특정하기 어려우면 "미확보"나 "판단 보류" 같은 내부 사정을 고객에게 노출하지 말고 파동 번호 언급 없이 정성적 표현으로 자연스럽게 넘어갈 것 (임의의 파동 번호·가격 금지).
 - ICT(스마트머니) 관점은 제공된 지지·저항 구간을 유동성(liquidity) 구간으로만 짧게 해석하고, 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말 것.
 - weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 언급 자체를 생략하고 일봉 중심 분석만으로 자연스럽게 마무리할 것 ("데이터 없음" 같은 문구를 고객에게 노출하지 말 것).`,
+    formatCryptoNewsBlock(cryptoNews),
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
@@ -1884,19 +1918,26 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
   const apiKey = requireOpenAIKey();
   const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
   const name = stockName || quote.stockName || quote.stockCode;
+  const cryptoNews = await fetchCryptoNewsForPrompt(quote.assetType, name);
 
   let text = null;
   try {
-    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm);
+    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews);
     console.log("[analyze] OpenAI web_search 경로 사용");
   } catch (e) {
     console.warn("[analyze] OpenAI web_search 실패 — RSS 폴백으로 전환", e && e.message);
   }
 
   if (!text) {
-    const news = await fetchStockNews(name, 6);
+    // 암호화폐는 크립토 전문매체 RSS(이미 fetch해둔 cryptoNews)를 우선 쓰고, 부족하면
+    // 구글뉴스로 보충한다. 그 외 자산은 기존과 동일하게 구글뉴스만 사용.
+    const genericNews = await fetchStockNews(name, 6);
+    const news =
+      quote.assetType === "CRYPTO" && cryptoNews.length
+        ? [...cryptoNews, ...genericNews].slice(0, 10)
+        : genericNews;
     const newsBlock = news.length
-      ? "\n\n최신 뉴스 헤드라인(구글뉴스, 참고용):\n" +
+      ? "\n\n최신 뉴스 헤드라인(참고용):\n" +
         news.map((n) => `- ${n.title} (${n.source})`).join("\n")
       : "\n\n(최신 뉴스 헤드라인을 가져오지 못했습니다. 제공된 시세/지표만으로 판단하세요.)";
 

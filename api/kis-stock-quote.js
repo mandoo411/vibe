@@ -128,19 +128,22 @@ function normalizePeriod(raw) {
 
 function targetCount(periodDiv) {
   if (periodDiv === "M") return 120;
-  return 200;
+  if (periodDiv === "W") return 200;
+  // 2026-07-11: 일봉은 추세를 보기에 200개(약 10개월)로는 부족하다는 피드백에 따라
+  // 약 2년치(거래일 기준 약 500개)를 받아오도록 늘렸다.
+  return 500;
 }
 
 function firstWindowDays(periodDiv) {
   if (periodDiv === "M") return 3650;
   if (periodDiv === "W") return 1460;
-  return 200;
+  return 750;
 }
 
 function backwardChunkDays(periodDiv) {
   if (periodDiv === "M") return 4000;
   if (periodDiv === "W") return 1000;
-  return 250;
+  return 400;
 }
 
 async function fetchChartCandles(code6, periodDiv) {
@@ -498,7 +501,8 @@ async function handleUsQuoteRequest(res, ticker, nameHint) {
 const OVERSEAS_DAILY_PATH = "/uapi/overseas-price/v1/quotations/dailyprice";
 const OVERSEAS_DAILY_TR_ID = "HHDFS76240000";
 const OVERSEAS_GUBN = { D: "0", W: "1", M: "2" };
-const OVERSEAS_CHART_TARGET = { D: 220, W: 150, M: 60 };
+// 2026-07-11: 미국주식 일봉 캔들이 너무 적다는 피드백 — 약 2년치(거래일 기준 약 500개)로 확대.
+const OVERSEAS_CHART_TARGET = { D: 500, W: 200, M: 80 };
 
 function roundSmart(n) {
   if (n == null || !Number.isFinite(n)) return null;
@@ -535,7 +539,10 @@ async function fetchUsChartCandles(ticker, exchange, period) {
   const target = OVERSEAS_CHART_TARGET[period] || OVERSEAS_CHART_TARGET.D;
   const byTime = new Map();
   let bymd = "";
-  for (let iter = 0; iter < 4; iter++) {
+  // 2026-07-11: KIS 해외 기간별시세는 한 번 호출에 최대 약 100개만 돌려줘서, 2년치(약 500개)를
+  // 모으려면 페이지네이션을 더 여러 번 반복해야 한다. 기존 4회로는 200개도 못 채웠음.
+  const maxIter = period === "D" ? 12 : period === "W" ? 6 : 4;
+  for (let iter = 0; iter < maxIter; iter++) {
     const j = await kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
       AUTH: "",
       EXCD: exchange,
@@ -579,13 +586,17 @@ async function handleUsChartRequest(res, ticker, period, exchangeHint) {
 }
 
 const CRYPTO_KLINE_INTERVAL = { D: "1d", W: "1w", M: "1M" };
+// 2026-07-11: 국내/미국주식과 동일하게 암호화폐도 2년치 캔들을 볼 수 있도록 확대.
+// Binance klines limit 최대치는 1000이라 여유 있게 받아온다.
+const CRYPTO_KLINE_LIMIT = { D: 730, W: 150, M: 60 };
 
 /** 암호화폐 캔들: Binance 공개 klines 엔드포인트(키 불필요). 스테이블코인(USDT/USDC 등)처럼
  * 자기 자신과의 페어가 없는 심볼은 자연히 실패하며, 그 경우 프런트에서 TradingView로 대체된다. */
 async function fetchCryptoChartCandles(symbol, period) {
   const interval = CRYPTO_KLINE_INTERVAL[period] || "1d";
+  const limit = CRYPTO_KLINE_LIMIT[period] || CRYPTO_KLINE_LIMIT.D;
   const pair = `${sanitizeStr(symbol).toUpperCase()}USDT`;
-  const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(pair)}&interval=${interval}&limit=250`;
+  const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(pair)}&interval=${interval}&limit=${limit}`;
   const res = await fetch(url);
   if (!res.ok) {
     const err = new Error(`Binance klines HTTP ${res.status}`);

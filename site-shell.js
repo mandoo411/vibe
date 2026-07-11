@@ -494,22 +494,31 @@
       if (toggle) nav.insertBefore(meta, toggle);
       else nav.appendChild(meta);
     }
+    // 2026-07-11: 기본값을 곧바로 "로그인"으로 박아두지 않는다 — 로그인 상태 확인이
+    // 끝나기 전까지는 home-nav__account-link--pending 클래스로 숨겨 두고, 확인이 끝나면
+    // updateMobileAccountLink()가 실제 상태에 맞는 라벨과 함께 한 번만 보여준다. 예전엔
+    // 항상 "로그인"을 먼저 그렸다가 인증 완료 후 "마이페이지"로 바꿔서, 로그인된 사용자도
+    // 페이지 이동/마이페이지 클릭마다 "로그인" 버튼이 잠깐 보였다 바뀌는 깜빡임이 있었다.
     meta.innerHTML =
       '<div class="home-nav__live" aria-label="실시간">' +
       '<span class="home-nav__live-dot" aria-hidden="true"></span>' +
       '<span class="home-nav__live-text">LIVE</span></div>' +
       '<button type="button" class="home-nav__theme home-nav__theme--header tm-theme-toggle" aria-label="테마 전환" title="테마 전환">' +
       '<i class="ti ti-moon" data-theme-icon-mobile aria-hidden="true"></i></button>' +
-      '<a class="home-nav__theme home-nav__theme--header home-nav__account-link" id="home-nav__account-link" href="./login.html" aria-label="로그인" title="로그인">' +
+      '<a class="home-nav__theme home-nav__theme--header home-nav__account-link home-nav__account-link--pending" id="home-nav__account-link" href="./login.html" aria-label="로그인" title="로그인">' +
       '<i class="ti ti-login" aria-hidden="true"></i><span class="home-nav__account-link-label">로그인</span></a>';
     updateMobileAccountLink();
   }
 
-  /** 모바일 상단바 계정 버튼 — 로그인 상태에 따라 아이콘+텍스트 라벨을 로그인/마이페이지로 갱신 */
+  /** 모바일 상단바 계정 버튼 — 로그인 상태에 따라 아이콘+텍스트 라벨을 로그인/마이페이지로 갱신.
+   * 상태 확인이 아직 끝나지 않았으면(!st.loaded) 아무것도 바꾸지 않고 숨김 상태를 유지한다 —
+   * 그래야 "로그인"으로 잘못 확정 표시했다가 로그인 상태로 바뀌는 깜빡임이 생기지 않는다. */
   function updateMobileAccountLink() {
     const el = document.getElementById("home-nav__account-link");
     if (!el) return;
     const st = authState();
+    if (!st.loaded) return;
+    el.classList.remove("home-nav__account-link--pending");
     if (st.isLoggedIn) {
       el.setAttribute("href", "./mypage.html");
       el.setAttribute("aria-label", "마이페이지");
@@ -596,6 +605,28 @@
 
   document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
   document.addEventListener("tm-auth-ready", updateMobileAccountLink);
+
+  /**
+   * 2026-07-11: 모바일 브라우저(특히 iOS Safari)는 뒤로가기/스와이프로 돌아올 때 페이지를
+   * 다시 로드하지 않고 bfcache(back-forward cache)에 저장해둔 이전 DOM 상태를 그대로
+   * 복원한다. 예전에 접근 가능했던 상태(게이트가 이미 해제된 화면)가 그대로 보일 수 있으므로,
+   * pageshow에서 event.persisted === true(캐시 복원)면 잠금 상태를 강제로 다시 계산한다.
+   */
+  window.addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    // bfcache 복원 시 window.TM_AUTH_STATE도 그 시점(캐시 당시)의 스냅샷이라 로그인/로그아웃이
+    // 그 사이 바뀌었을 수 있다. 세션을 먼저 새로 확인한 뒤 잠금/버튼 상태를 다시 계산한다.
+    if (window.TMAuth && typeof window.TMAuth.refreshState === "function") {
+      window.TMAuth.refreshState().then(() => {
+        applyAnalysisNavLock();
+        updateMobileAccountLink();
+      });
+    } else {
+      applyAnalysisNavLock();
+      updateMobileAccountLink();
+    }
+  });
+
   window.tmHasAnalysisAccess = hasAnalysisBetaAccess;
   window.tmOpenAnalysisGate = openAnalysisGate;
   window.tmEnsureAnalysisGate = ensureAnalysisGate;

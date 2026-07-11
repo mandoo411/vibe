@@ -164,7 +164,10 @@
           }
         }
 
+        let loggingOut = false;
+
         async function render() {
+          if (loggingOut) return;
           const state = window.TM_AUTH_STATE;
           if (!state.isLoggedIn) {
             document.getElementById("guest-card").hidden = false;
@@ -192,6 +195,11 @@
         });
 
         document.getElementById("acc-logout").addEventListener("click", async function () {
+          // 2026-07-11: signOut() 내부에서 refreshState()가 "tm-auth-ready"를 쏘는데, 그걸 그대로
+          // 두면 render()가 로그아웃된 상태로 다시 그려져서 "로그인이 필요합니다" 게스트 카드가
+          // 홈으로 이동하기 직전에 잠깐 보이는(엉킨 화면처럼 느껴지는) 현상이 있었다.
+          // loggingOut 플래그로 그 사이의 재렌더를 건너뛰고 바로 홈으로 이동한다.
+          loggingOut = true;
           await window.TMAuth.signOut();
           window.location.href = "./index.html";
         });

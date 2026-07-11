@@ -517,6 +517,15 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
+
+/* 2026-07-11: 로그인 상태 확인이 끝나기 전에는 숨겨서, "로그인"으로 잘못 그렸다가
+   "마이페이지"로 바뀌는 깜빡임이 보이지 않게 한다. */
+.home-nav__account-link--pending {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .home-nav__account-link i {

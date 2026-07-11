@@ -135,10 +135,35 @@
     if (crypto) return { code: crypto.symbol, name: crypto.name, market: "CRYPTO" };
     const us = findAliasMatch(US_ALIASES, q);
     if (us) return { code: us.symbol, name: us.name, market: "US" };
-    if (looksLikeUsTicker(q)) {
-      return { code: q.toUpperCase(), name: q.toUpperCase(), market: "US" };
-    }
+    // 티커 형태인데 별칭 테이블에 없는 경우의 최종 판별(암호화폐 동적 조회 포함)은
+    // resolveForAnalysis에서 처리한다 (2026-07-11, CoinMarketCap 전종목 지원).
     return null;
+  }
+
+  /** 2026-07-11: 정적 별칭 테이블(메이저 코인 ~27개)에 없는 티커도 분석할 수 있도록,
+   * CoinMarketCap 전체 코인 목록에 실제로 존재하는지 서버(api/crypto.js)에 물어본다.
+   * 존재하면 암호화폐로, 아니면(혹은 조회 실패 시) 기존처럼 미국주식으로 취급한다. */
+  async function resolveCryptoDynamic(qRaw) {
+    const symbol = String(qRaw || "")
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    if (!symbol) return null;
+    try {
+      const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 5000) : null;
+      const res = await fetch(`/api/crypto-data?action=resolve&symbol=${encodeURIComponent(symbol)}`, {
+        cache: "no-store",
+        signal: ctrl ? ctrl.signal : undefined,
+      });
+      if (timer) clearTimeout(timer);
+      const data = safeParseJson(await res.text()) || {};
+      if (!res.ok || !data.found) return null;
+      return { code: symbol, name: data.name || symbol, market: "CRYPTO" };
+    } catch (err) {
+      console.warn("[AI분석] 암호화폐 동적 조회 실패", err);
+      return null;
+    }
   }
 
   function escapeHtml(s) {
@@ -320,7 +345,18 @@
     if (/^\d{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
       return { code: urlCode, name: urlName || q, market: "KR" };
     }
-    return resolveQueryLocal(q);
+
+    const local = resolveQueryLocal(q);
+    if (local) return local;
+
+    // 국내 종목·별칭 테이블 어디에도 없고 티커 모양이면, 미국주식으로 단정하기 전에
+    // CoinMarketCap에 있는 코인인지 먼저 확인한다(2026-07-11).
+    if (looksLikeUsTicker(q)) {
+      const dynCrypto = await resolveCryptoDynamic(q);
+      if (dynCrypto) return dynCrypto;
+      return { code: q.toUpperCase(), name: q.toUpperCase(), market: "US" };
+    }
+    return null;
   }
 
   function fmtPrice(n, market) {
@@ -795,13 +831,15 @@
         priceFormatter: lwChartPriceFormatterFor(market),
       },
     });
+    const UP_COLOR = "#e24b4a";
+    const DOWN_COLOR = "#3b82f6";
     const candleOpts = {
-      upColor: "#e24b4a",
-      downColor: "#3b82f6",
-      borderUpColor: "#e24b4a",
-      borderDownColor: "#3b82f6",
-      wickUpColor: "#e24b4a",
-      wickDownColor: "#3b82f6",
+      upColor: UP_COLOR,
+      downColor: DOWN_COLOR,
+      borderUpColor: UP_COLOR,
+      borderDownColor: DOWN_COLOR,
+      wickUpColor: UP_COLOR,
+      wickDownColor: DOWN_COLOR,
     };
     let candleSeries;
     if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
@@ -813,16 +851,44 @@
     }
     candleSeries.setData(chartData.candles);
 
+    // 2026-07-11: 캔들 밑에 거래량 바 추가. 색상은 일봉 캔들과 동일하게 상승/하락 색을 맞춘다.
+    // priceScaleId를 별도(overlay)로 두고 scaleMargins로 하단 20%만 차지하게 해서 가격 차트와
+    // 같은 패널 안에서 아래쪽에 거래량이 표시되도록 한다(국내/미국/암호화폐 공통).
+    const volumeData = chartData.candles
+      .filter((cd) => cd && cd.volume != null)
+      .map((cd) => ({
+        time: cd.time,
+        value: Math.max(0, Number(cd.volume) || 0),
+        color: cd.close >= cd.open ? UP_COLOR : DOWN_COLOR,
+      }));
+    if (volumeData.length) {
+      const volumeOpts = { priceFormat: { type: "volume" }, priceScaleId: "ai-volume", lastValueVisible: false, priceLineVisible: false };
+      let volumeSeries;
+      if (LC.HistogramSeries && typeof chart.addSeries === "function") {
+        volumeSeries = chart.addSeries(LC.HistogramSeries, volumeOpts);
+      } else if (typeof chart.addHistogramSeries === "function") {
+        volumeSeries = chart.addHistogramSeries(volumeOpts);
+      }
+      if (volumeSeries) {
+        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+        volumeSeries.setData(volumeData);
+      }
+    }
+
+    // 2026-07-11: 이평선 색상/두께 변경 — 20일 빨강, 60일 파랑(도저블루), 120일 초록, 200일 검정.
+    // 두께는 200일선만 2, 나머지는 1. 다크 테마에서는 200일선(검정)이 배경색과 거의 같아
+    // 안 보이므로 다크 테마일 때만 흰색으로 바꿔서 가독성을 유지한다.
+    const isDark = isDarkTheme();
     const specs = [
-      [chartData.ma20, "#ef4444"],
-      [chartData.ma60, "#0f8387"],
-      [chartData.ma120, "#22c55e"],
-      [chartData.ma200, "#f97316"],
+      [chartData.ma20, "#FF0000", 1],
+      [chartData.ma60, "#1E90FF", 1],
+      [chartData.ma120, "#008000", 1],
+      [chartData.ma200, isDark ? "#f5f5f5" : "#000000", 2],
     ];
-    for (const [arr, color] of specs) {
+    for (const [arr, color, lineWidth] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
       if (!lineData.length) continue;
-      const lineOpts = { color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false };
+      const lineOpts = { color, lineWidth, priceLineVisible: false, lastValueVisible: false };
       let line;
       if (LC.LineSeries && typeof chart.addSeries === "function") {
         line = chart.addSeries(LC.LineSeries, lineOpts);
@@ -872,10 +938,10 @@
       `<button type="button" class="rt-chart-interval-btn ai-chart-period-btn" data-ai-period="M" aria-pressed="false">월봉</button>` +
       `</div>` +
       `<div class="ai-chart-legend">` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#ef4444"></i>20일</span>` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#0f8387"></i>60일</span>` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#22c55e"></i>120일</span>` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#f97316"></i>200일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#FF0000"></i>20일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#1E90FF"></i>60일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#008000"></i>120일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot ai-chart-legend__dot--ma200" style="background:#000000"></i>200일</span>` +
       `</div>` +
       `<div class="ai-lw-chart-host" role="region" aria-label="캔들 차트"></div>` +
       `</div>` +
@@ -995,15 +1061,19 @@
   }
 
   function tradingViewMaStudies() {
-    return JSON.stringify(
-      [20, 60, 120, 200].map((length) => ({
-        id: "MASimple@tv-basicstudies",
-        inputs: { length, source: "close" },
-      }))
-    );
+    return [20, 60, 120, 200].map((length) => ({
+      id: "MASimple@tv-basicstudies",
+      inputs: { length, source: "close" },
+    }));
   }
 
   function tradingViewUrl(symbol) {
+    // 2026-07-11: theme.js의 공용 헬퍼(tmTradingViewWidgetEmbedUrl)로 위임한다 — 이 헬퍼는
+    // 거래량 스터디를 항상 명시적으로 추가하고 studies_overrides로 캔들과 같은 색을 입혀서,
+    // 이 페이지에서만 따로 만들었던(거래량 색 오버라이드가 빠진) 구현보다 정확하다.
+    if (typeof window.tmTradingViewWidgetEmbedUrl === "function") {
+      return window.tmTradingViewWidgetEmbedUrl(symbol, { interval: "D", studies: tradingViewMaStudies() });
+    }
     const isDark = isDarkTheme();
     const theme = isDark ? "dark" : "light";
     const chartBg = isDark ? "#131722" : "#ffffff";
@@ -1023,7 +1093,7 @@
       calendar: "0",
       withdateranges: "1",
       hideideas: "1",
-      studies: tradingViewMaStudies(),
+      studies: JSON.stringify(tradingViewMaStudies()),
       up_color: "#e24b4a",
       down_color: "#3b82f6",
       border_up_color: "#e24b4a",
@@ -1602,4 +1672,21 @@
   } else {
     init();
   }
+
+  // 2026-07-11: 모바일 브라우저의 bfcache(뒤로가기 캐시)로 이 페이지가 복원되면 예전에
+  // 게이트가 이미 풀렸던 DOM 상태(분석 UI가 이미 바인딩된 상태)가 그대로 보일 수 있다.
+  // UI를 다시 바인딩하면 이벤트 리스너가 중복 등록될 수 있으므로 손대지 않고, 세션만 새로
+  // 확인해서 더 이상 접근 권한이 없으면 게이트만 다시 띄운다.
+  window.addEventListener("pageshow", (e) => {
+    if (!e.persisted) return;
+    const recheck = () => {
+      const allowed = typeof window.tmHasAnalysisAccess === "function" ? window.tmHasAnalysisAccess() : true;
+      if (!allowed && typeof window.tmOpenAnalysisGate === "function") window.tmOpenAnalysisGate();
+    };
+    if (window.TMAuth && typeof window.TMAuth.refreshState === "function") {
+      window.TMAuth.refreshState().then(recheck);
+    } else {
+      recheck();
+    }
+  });
 })();

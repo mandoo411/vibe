@@ -157,7 +157,15 @@
       wick_up_color: "#e24b4a",
       wick_down_color: "#3b82f6",
     });
-    if (opts.studies) params.set("studies", opts.studies);
+    // 2026-07-11: 거래량 바 색상이 캔들 색상과 다르게 나오는 문제 — TradingView 위젯이
+    // 거래량 스터디를 자동으로 붙일 때도 있고 안 붙일 때도 있어서, studies_overrides의
+    // volume.volume.color.* 가 어떤 인스턴스에 적용될지 불확실했다. 항상 명시적으로
+    // Volume 스터디를 요청해서(같은 known id) 오버라이드가 확실히 그 인스턴스에 걸리게 한다.
+    const studies = Array.isArray(opts.studies) ? opts.studies.slice() : [];
+    if (!opts.noVolume && !studies.some((s) => /volume/i.test(String(s)))) {
+      studies.push("Volume@tv-basicstudies");
+    }
+    if (studies.length) params.set("studies", JSON.stringify(studies));
     params.set("overrides", JSON.stringify(tradingViewCandleOverrides(isDark)));
     params.set("studies_overrides", JSON.stringify(tradingViewStudiesOverrides()));
     return `https://www.tradingview.com/widgetembed/?${params.toString()}`;

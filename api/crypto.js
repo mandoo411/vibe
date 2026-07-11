@@ -285,6 +285,36 @@ async function fetchFearGreed() {
   });
 }
 
+/**
+ * 2026-07-11: AI 종목분석에서 정적 별칭 테이블(메이저 코인 ~27개)에 없는 티커도 분석할 수
+ * 있도록, CoinMarketCap 전체 코인 맵에서 심볼이 실존하는지 확인하는 가벼운 조회.
+ * 시세(quotes/latest)까지 안 가고 map만 확인하므로 저렴하고, 하루 단위로 캐시한다.
+ * 동일 심볼을 쓰는 코인이 여러 개면(예: 이름만 비슷한 잡코인) rank가 가장 낮은(=가장 유명한)
+ * 코인을 대표로 고른다.
+ */
+async function fetchCryptoResolve(symbolRaw) {
+  const symbol = sanitizeStr(symbolRaw).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!symbol || symbol.length > 20) return { found: false };
+  return cached(
+    `resolve:${symbol}`,
+    async () => {
+      const j = await cmcFetch("/v1/cryptocurrency/map", { symbol, listing_status: "active" });
+      const rows = Array.isArray(j && j.data) ? j.data : [];
+      if (!rows.length) return { found: false, symbol };
+      rows.sort((a, b) => (toNum(a && a.rank) ?? 999999) - (toNum(b && b.rank) ?? 999999));
+      const best = rows[0] || {};
+      return {
+        found: true,
+        symbol,
+        name: sanitizeStr(best.name) || symbol,
+        cmcId: best.id,
+        rank: toNum(best.rank),
+      };
+    },
+    24 * 60 * 60 * 1000
+  );
+}
+
 async function handleData(req, res) {
   const action = sanitizeStr(req.query && req.query.action) || "global";
   try {
@@ -301,7 +331,12 @@ async function handleData(req, res) {
       json(res, 200, await fetchFearGreed());
       return;
     }
-    json(res, 400, { error: "Unknown action. Use global, listings, or fear-greed." });
+    if (action === "resolve") {
+      const symbol = sanitizeStr(req.query && req.query.symbol);
+      json(res, 200, await fetchCryptoResolve(symbol));
+      return;
+    }
+    json(res, 400, { error: "Unknown action. Use global, listings, fear-greed, or resolve." });
   } catch (e) {
     console.error("[crypto] data", action, e && e.message, e);
     json(res, 502, { error: e.message || String(e) });

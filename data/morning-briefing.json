@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29889.5,
+        "close": 29891.5,
         "previousClose": 29391.5,
-        "changePct": 1.69,
-        "changePoints": 498
+        "changePct": 1.7,
+        "changePoints": 500
       },
       {
         "id": "korea-etf",
@@ -188,33 +188,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 73.72,
-        "changePct": 4.66,
-        "changePoints": 3.28
+        "price": 73.66,
+        "changePct": 4.57,
+        "changePoints": 3.22
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4084.9,
-        "changePct": -1.46,
-        "changePoints": -60.4
+        "price": 4077.4,
+        "changePct": -1.64,
+        "changePoints": -67.9
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 59.17,
-        "changePct": -2.89,
-        "changePoints": -1.76
+        "price": 59.07,
+        "changePct": -3.05,
+        "changePoints": -1.86
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.26,
-        "changePct": 1.46,
-        "changePoints": 0.09
+        "price": 6.25,
+        "changePct": 1.3,
+        "changePoints": 0.08
       },
       {
         "id": "sox",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 63818,
-        "changePct24h": -0.57,
-        "marketCapUsd": 1279901376725.8
+        "priceUsd": 63769,
+        "changePct24h": -0.23,
+        "marketCapUsd": 1278689904274.86
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1802.96,
-        "changePct24h": -0.58,
-        "marketCapUsd": 217586846249.79
+        "priceUsd": 1802.31,
+        "changePct24h": 0.24,
+        "marketCapUsd": 217447567684.9
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 76.7,
-        "changePct24h": -1.43,
-        "marketCapUsd": 44657585198.53
+        "priceUsd": 76.71,
+        "changePct24h": -1.06,
+        "marketCapUsd": 44659475726.91
       }
     ]
   },

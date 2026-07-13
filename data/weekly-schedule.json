@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-13 06:45 KST",
-    "from": "2026-07-13",
-    "to": "2026-07-27",
-    "historyFrom": "2026-04-14",
+    "lastUpdatedKst": "2026-07-14 06:53 KST",
+    "from": "2026-07-14",
+    "to": "2026-07-28",
+    "historyFrom": "2026-04-15",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -113,7 +113,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.4%",
-      "estimate": "0.3%",
+      "estimate": "0.4%",
       "unit": ""
     },
     {
@@ -149,7 +149,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.8%",
-      "estimate": "-0.1%",
+      "estimate": "0.0%",
       "unit": ""
     },
     {
@@ -161,7 +161,7 @@
       "importance": 3,
       "actual": "",
       "previous": "10.3",
-      "estimate": "12.1",
+      "estimate": "12.7",
       "unit": ""
     },
     {
@@ -173,7 +173,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.9%",
-      "estimate": "0.3%",
+      "estimate": "0.2%",
       "unit": ""
     },
     {
@@ -185,7 +185,7 @@
       "importance": 3,
       "actual": "",
       "previous": "215K",
-      "estimate": "215K",
+      "estimate": "216K",
       "unit": ""
     },
     {
@@ -197,7 +197,7 @@
       "importance": 3,
       "actual": "",
       "previous": "48.9",
-      "estimate": "51.4",
+      "estimate": "51.0",
       "unit": ""
     },
     {
@@ -214,15 +214,6 @@
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-07-13",
-      "name": "레메디",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2296",
-      "code": ""
-    },
     {
       "date": "2026-07-24",
       "name": "에이치엘지노믹스",
@@ -242,6 +233,7 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
+      "evidenceCount": 6,
       "confirmed": false,
       "source": "manual"
     },
@@ -253,17 +245,7 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "confirmed": false,
-      "source": "manual"
-    },
-    {
-      "date": "2026-07-24",
-      "name": "POSCO홀딩스",
-      "sector": "철강",
-      "code": "005490",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "영업(잠정)실적(공정공시)",
+      "evidenceCount": 6,
       "confirmed": false,
       "source": "manual"
     }

@@ -41,10 +41,22 @@
     text-align: left;
   }
   .cta-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
     font-size: 40px;
     font-weight: 800;
     color: var(--accent-gold);
     margin-bottom: 16px;
+  }
+  .cta-link .logo-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+  .cta-link .logo-box span {
+    font-size: 11px;
   }
   .cta-sub {
     font-size: 24px;
@@ -70,7 +82,7 @@
       <div class="panel cta-feature">실시간 차트 분석</div>
       <div class="panel cta-feature">실시간 알림</div>
     </div>
-    <div class="cta-link">→ totalmoney.kr</div>
+    <div class="cta-link"><div class="logo-box"><span>TM</span><span>AI</span></div> totalmoney.kr</div>
     <div class="cta-sub">텔레그램 구독하기 · t.me/totalmoney_ai</div>
   </div>
 

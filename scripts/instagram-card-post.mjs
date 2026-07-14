@@ -46,7 +46,7 @@ function dirsFor(slot) {
 async function buildCardDataForSlot(slot) {
   if (slot === "morning") {
     const snapshot = await loadMorningSnapshot();
-    const cardData = buildMorningCardData(snapshot, { dateLabel: todayLabel(seoulYmd()), theme: THEME });
+    const cardData = await buildMorningCardData(snapshot, { dateLabel: todayLabel(seoulYmd()), theme: THEME });
     return { cardData, caption: buildMorningCaption(cardData) };
   }
 

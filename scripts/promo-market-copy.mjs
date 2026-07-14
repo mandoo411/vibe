@@ -8,17 +8,18 @@
  * Claude 호출도 이미 만들어진 analysis 원문을 압축하는 용도로만 가볍게 1회 사용한다(Haiku).
  */
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
+import { summarizeToSentence } from "./promo-text-utils.mjs";
 import { ensureJsonSafe, isClaudeUnavailableError, parseJsonFromAssistant, sanitizeUnicode } from "./claude-utils.mjs";
 import Anthropic from "@anthropic-ai/sdk";
 
 const MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
 const DATA_PATH = "./data/daily-market.json";
 
-/** analysis 원문(마크다운 텍스트)에서 "핵심 한 줄" 섹션만 뽑아내는 폴백 파서 */
+/** analysis 원문(마크다운 텍스트)에서 "핵심 한 줄" 섹션만 뽑아내는 폴백 파서 (완결 문장 기준, 어중간하게 끊기지 않도록) */
 function extractHeadlineFallback(analysisText) {
   const m = String(analysisText || "").match(/핵심 한 줄\s*\n([\s\S]*?)(?:\n\n|📈)/);
-  const line = m ? m[1].trim() : "";
-  return line.length > 60 ? line.slice(0, 58) + "…" : line || "오늘의 시장 요약";
+  const para = m ? m[1].trim() : "";
+  return para ? summarizeToSentence(para, 100) : "오늘의 시장 요약";
 }
 
 function extractOutlookFallback(analysisText) {
@@ -35,9 +36,23 @@ function extractOutlookFallback(analysisText) {
 function extractFlowCommentFallback(analysisText) {
   const m = String(analysisText || "").match(/(?:🔄\s*)?시장 흐름 분석\s*\n([\s\S]*?)(?:\n\n|$)/);
   const para = m ? m[1].trim() : "";
-  if (!para) return "";
-  const sentence = para.split(/(?<=[.다다요])\s+/)[0] || para;
-  return sentence.length > 90 ? sentence.slice(0, 88) + "…" : sentence;
+  return para ? summarizeToSentence(para, 110) : "";
+}
+
+/**
+ * 코스피/코스닥 실측 등락률로 짧고 완결된 헤드라인 문장을 직접 만든다.
+ * "핵심 한 줄" 원문(analysis)은 종종 200자 넘는 만연체라 어디를 잘라도 어색하게 끊기므로,
+ * 폴백 헤드라인은 프로즈를 자르지 않고 숫자로 직접 조립한다(항상 짧고 완결됨).
+ */
+function buildIndexHeadline(snapshot) {
+  const { kospi, kosdaq } = snapshot.indexes || {};
+  if (!kospi?.close || !Number.isFinite(kospi.changePercent)) return "";
+  const dirWord = (pct) => (pct > 0 ? "올라" : pct < 0 ? "내려" : "보합으로");
+  let s = `코스피는 ${Math.abs(kospi.changePercent).toFixed(2)}% ${dirWord(kospi.changePercent)} ${kospi.close.toLocaleString()}에`;
+  if (kosdaq?.close && Number.isFinite(kosdaq.changePercent)) {
+    s += `, 코스닥은 ${Math.abs(kosdaq.changePercent).toFixed(2)}% ${dirWord(kosdaq.changePercent)} ${kosdaq.close.toLocaleString()}에`;
+  }
+  return `${s} 마감했다.`;
 }
 
 /** data/daily-market.json에서 오늘(없으면 가장 최근) 스냅샷을 읽는다 */
@@ -60,11 +75,11 @@ export async function buildPromoCopy(snapshot) {
   const gainers = (snapshot.topGainers || []).slice(0, 3);
 
   const fallback = () => {
-    const headline = extractHeadlineFallback(analysisText);
+    const headline = buildIndexHeadline(snapshot) || extractHeadlineFallback(analysisText);
     const flowComment = extractFlowCommentFallback(analysisText);
     return {
       headline,
-      aiComment: flowComment || headline,
+      aiComment: flowComment || extractHeadlineFallback(analysisText),
       checkpoints: extractOutlookFallback(analysisText),
       stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
     };

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!--
+  슬라이드 1 — 커버
+  치환 변수: {{DATE}} {{KOSPI_DIR}}(up|down) {{KOSPI_PCT}} {{HEADLINE}}
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared.css" />
+<style>
+  .cover-wrap {
+    position: absolute;
+    top: 240px;
+    left: 64px;
+    right: 64px;
+    bottom: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cover-date {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+  }
+  .cover-title {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.28;
+    letter-spacing: -0.5px;
+    margin-bottom: 48px;
+  }
+  .cover-kospi {
+    font-size: 64px;
+    font-weight: 800;
+    margin-bottom: 28px;
+  }
+  .cover-kospi .label {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-right: 18px;
+  }
+  .cover-headline {
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.04);
+    border-left: 4px solid var(--accent-gold);
+    padding: 22px 28px;
+    border-radius: 0 12px 12px 0;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+  <div class="brand-lockup">
+    <div class="logo-box"><span>TM</span><span>AI</span></div>
+    <div>
+      <div class="brand-name">TotalMoney</div>
+      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
+    </div>
+  </div>
+
+  <div class="cover-wrap">
+    <div class="cover-date">{{DATE}} 오늘의 시장 요약</div>
+    <div class="cover-title">AI가 읽은<br/>오늘의 시장</div>
+    <div class="cover-kospi">
+      <span class="label">코스피</span><span class="{{KOSPI_DIR}}">{{KOSPI_ARROW}} {{KOSPI_PCT}}%</span>
+    </div>
+    <div class="cover-headline">"{{HEADLINE}}"</div>
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

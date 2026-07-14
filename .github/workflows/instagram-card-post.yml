@@ -1,0 +1,68 @@
+name: Instagram Daily Card News
+
+# 평일 17:30 KST 자동 실행. daily-market-sync가 그 전에 끝나 있어야 최신 데이터로 카드가 만들어진다.
+on:
+  schedule:
+    - cron: "30 8 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-card-post
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  render-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 카드뉴스 이모지(📊🔥🤖)가 제대로 그려지도록 컬러 이모지 폰트 설치
+      - name: Install emoji font
+        run: sudo apt-get update && sudo apt-get install -y fonts-noto-color-emoji
+
+      - name: Render 5 card images
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/instagram-card-post.mjs --render
+
+      - name: Commit and push generated images
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/
+          if git diff --staged --quiet; then
+            echo "::notice::No image change, skipping commit"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
+          git commit -m "chore(promo): daily instagram cards ${STAMP}"
+          git pull --rebase origin main
+          git push
+
+      # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
+      - name: Wait for CDN
+        run: sleep 20
+
+      - name: Publish carousel via Meta Graph API
+        run: node scripts/instagram-card-post.mjs --publish
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}

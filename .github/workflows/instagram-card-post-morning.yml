@@ -1,16 +1,17 @@
-name: Instagram Daily Card News (Closing)
+name: Instagram Daily Card News (Morning)
 
-# 평일 17:30 KST 자동 실행 — 마감 시황 카드뉴스. daily-market-sync가 그 전에 끝나 있어야 최신 데이터로 카드가 만들어진다.
+# 평일 08:30 KST(=전날 23:30 UTC) 자동 실행 — 아침 브리핑 카드뉴스.
+# morning-briefing.yml이 07:55 KST에 data/morning-briefing.json을 먼저 채워둔다.
 on:
   schedule:
-    - cron: "30 8 * * 1-5"
+    - cron: "30 23 * * 0-4"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: instagram-card-post-closing
+  group: instagram-card-post-morning
   cancel-in-progress: false
 
 env:
@@ -43,9 +44,7 @@ jobs:
           fc-cache -f
 
       - name: Render 5 card images
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node scripts/instagram-card-post.mjs --slot=closing --render
+        run: node scripts/instagram-card-post.mjs --slot=morning --render
 
       - name: Commit and push generated images
         run: |
@@ -58,7 +57,7 @@ jobs:
             exit 0
           fi
           STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
-          git commit -m "chore(promo): closing instagram cards ${STAMP}"
+          git commit -m "chore(promo): morning instagram cards ${STAMP}"
           git pull --rebase origin main
           git push
 
@@ -67,7 +66,7 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
-        run: node scripts/instagram-card-post.mjs --slot=closing --publish
+        run: node scripts/instagram-card-post.mjs --slot=morning --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}

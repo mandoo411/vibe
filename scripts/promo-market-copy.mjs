@@ -122,3 +122,35 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
   console.warn("[promo-market-copy] Claude 전체 실패, 원문에서 직접 추출:", lastError instanceof Error ? lastError.message : lastError);
   return fallback();
 }
+
+/**
+ * snapshot(daily-market.json) + copy(buildPromoCopy 결과) + gainers를 promo-render-cards.mjs가
+ * 바로 쓸 수 있는 공통 cardData 형태로 변환한다 (아침 브리핑 카드와 동일한 포맷).
+ */
+export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme = "light" }) {
+  const { kospi, kosdaq, usdkrw } = snapshot.indexes || {};
+  const indexRows = [
+    kospi && { name: "코스피", value: kospi.close?.toLocaleString?.() ?? String(kospi.close ?? "—"), pct: kospi.changePercent },
+    kosdaq && { name: "코스닥", value: kosdaq.close?.toLocaleString?.() ?? String(kosdaq.close ?? "—"), pct: kosdaq.changePercent },
+    usdkrw?.rate && { name: "원/달러", value: `${Math.round(usdkrw.rate).toLocaleString()}원`, pct: 0 },
+  ].filter(Boolean);
+
+  return {
+    date: dateLabel,
+    slotLabel: "마감 시황",
+    coverTitleLine1: "AI가 읽은",
+    coverTitleLine2: "오늘의 시장",
+    heroLabel: "코스피",
+    heroPct: kospi?.changePercent || 0,
+    headline: copy.headline,
+    indexTitle: "오늘의 지수",
+    indexRows,
+    listTitle: "오늘의 특징주 TOP3",
+    listItems: gainers.map((g) => ({ name: g.name, reason: g.reason, pct: g.change })),
+    aiTitle: "AI 오늘의 판단",
+    aiComment: copy.aiComment,
+    checkpointsTitle: "내일 주목할 변수",
+    checkpoints: copy.checkpoints || [],
+    theme,
+  };
+}

@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
   슬라이드 1 — 커버
-  치환 변수: {{DATE}} {{KOSPI_DIR}}(up|down) {{KOSPI_PCT}} {{HEADLINE}}
+  치환 변수: {{DATE}} {{SLOT_LABEL}} {{COVER_TITLE_LINE1}} {{COVER_TITLE_LINE2}}
+  {{HERO_LABEL}} {{HERO_DIR}}(up|down|flat) {{HERO_ARROW}} {{HERO_PCT}} {{HEADLINE}}
 -->
 <html lang="ko">
 <head>
@@ -64,10 +65,10 @@
   </div>
 
   <div class="cover-wrap">
-    <div class="cover-date">{{DATE}} 오늘의 시장 요약</div>
-    <div class="cover-title">AI가 읽은<br/>오늘의 시장</div>
+    <div class="cover-date">{{DATE}} {{SLOT_LABEL}}</div>
+    <div class="cover-title">{{COVER_TITLE_LINE1}}<br/>{{COVER_TITLE_LINE2}}</div>
     <div class="cover-kospi">
-      <span class="label">코스피</span><span class="{{KOSPI_DIR}}">{{KOSPI_ARROW}} {{KOSPI_PCT}}%</span>
+      <span class="label">{{HERO_LABEL}}</span><span class="{{HERO_DIR}}">{{HERO_ARROW}} {{HERO_PCT}}%</span>
     </div>
     <div class="cover-headline">"{{HEADLINE}}"</div>
   </div>

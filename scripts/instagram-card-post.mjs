@@ -16,7 +16,7 @@ import { join } from "node:path";
 
 const GENERATED_DIR = join(process.cwd(), "generated");
 const CAPTION_FILE = join(GENERATED_DIR, "today-caption.txt");
-const THEME = process.env.PROMO_CARD_THEME || "dark"; // 'dark' | 'light'
+const THEME = process.env.PROMO_CARD_THEME || "light"; // 'dark' | 'light' (기본: light — 사이트 기본 테마와 통일)
 
 function todayLabel(ymd) {
   return ymd.replaceAll("-", ".");
@@ -29,9 +29,14 @@ async function render() {
   console.log("2) Claude로 카드 문구 압축 생성...");
   const copy = await buildPromoCopy(snapshot);
 
-  const gainers = (snapshot.topGainers || []).slice(0, 3).map((g) => ({
+  // featured_stocks(에디터가 고른 실제 이슈 종목, reason/point 포함)를 우선 사용.
+  // topGainers는 거래대금 상위 원시 데이터라 reason/theme이 비어있는 경우가 많아 카드가 빈약해짐.
+  const featuredGainers = (snapshot.featured_stocks || []).filter((s) => s.type === "급등");
+  const gainerSource = featuredGainers.length >= 3 ? featuredGainers : snapshot.topGainers || [];
+  const trimReason = (s) => (s && s.length > 42 ? s.slice(0, 40) + "…" : s || "");
+  const gainers = gainerSource.slice(0, 3).map((g) => ({
     ...g,
-    reason: copy.stockReasons?.[g.name] || g.reason || g.theme || "",
+    reason: trimReason(copy.stockReasons?.[g.name] || g.reason || g.point || g.theme || ""),
   }));
 
   console.log(`3) HTML 카드 5장 빌드 중 (테마: ${THEME})...`);

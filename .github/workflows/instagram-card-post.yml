@@ -15,6 +15,7 @@ concurrency:
 
 env:
   TZ: Asia/Seoul
+  PROMO_CARD_THEME: light  # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
 
 jobs:
   render-and-publish:

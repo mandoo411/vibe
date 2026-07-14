@@ -31,6 +31,15 @@ function extractOutlookFallback(analysisText) {
     .slice(0, 3);
 }
 
+/** "시장 흐름 분석" 섹션에서 AI 코멘트용 문단을 뽑는 폴백(헤드라인과 겹치지 않도록 별도 소스 사용) */
+function extractFlowCommentFallback(analysisText) {
+  const m = String(analysisText || "").match(/(?:🔄\s*)?시장 흐름 분석\s*\n([\s\S]*?)(?:\n\n|$)/);
+  const para = m ? m[1].trim() : "";
+  if (!para) return "";
+  const sentence = para.split(/(?<=[.다다요])\s+/)[0] || para;
+  return sentence.length > 90 ? sentence.slice(0, 88) + "…" : sentence;
+}
+
 /** data/daily-market.json에서 오늘(없으면 가장 최근) 스냅샷을 읽는다 */
 export async function loadLatestSnapshot() {
   const raw = await readJson(DATA_PATH);
@@ -50,27 +59,21 @@ export async function buildPromoCopy(snapshot) {
   const analysisText = sanitizeUnicode(snapshot.analysis || "");
   const gainers = (snapshot.topGainers || []).slice(0, 3);
 
-  const fallback = () => ({
-    headline: extractHeadlineFallback(analysisText),
-    aiComment: extractHeadlineFallback(analysisText),
-    checkpoints: extractOutlookFallback(analysisText),
-    stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
-  });
+  const fallback = () => {
+    const headline = extractHeadlineFallback(analysisText);
+    const flowComment = extractFlowCommentFallback(analysisText);
+    return {
+      headline,
+      aiComment: flowComment || headline,
+      checkpoints: extractOutlookFallback(analysisText),
+      stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
+    };
+  };
 
   if (!apiKey || !analysisText) return fallback();
 
-  try {
-    const client = new Anthropic({ apiKey });
-    const res = await client.messages.create({
-      model: MODEL,
-      max_tokens: 600,
-      system:
-        "TotalMoney AI 카드뉴스/트윗 문구 작성자. 브랜드 보이스: 전문적이지만 쉽게, 결론이 명확하게, 과장 없이. " +
-        "반드시 JSON만 출력 (마크다운 코드블록 금지).",
-      messages: [
-        {
-          role: "user",
-          content: ensureJsonSafe(`아래는 오늘 장마감 리포트 원문이야. 이걸 압축해서 SNS 카드뉴스/트윗용 짧은 문구로 만들어줘.
+  const client = new Anthropic({ apiKey });
+  const userPrompt = ensureJsonSafe(`아래는 오늘 장마감 리포트 원문이야. 이걸 압축해서 SNS 카드뉴스/트윗용 짧은 문구로 만들어줘.
 
 [리포트 원문]
 ${analysisText.slice(0, 6000)}
@@ -81,20 +84,41 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
 다음 JSON 스키마로만 응답:
 {
   "headline": "커버 슬라이드용 한 줄 헤드라인 (20자 내외)",
-  "aiComment": "AI 오늘의 판단 코멘트 (60~90자, 근거+주의사항 포함)",
+  "aiComment": "AI 오늘의 판단 코멘트 (60~90자, 근거+주의사항 포함, headline과 다른 내용/문장으로)",
   "checkpoints": ["내일 주목할 변수 1", "변수 2", "변수 3"],
   "stockReasons": { "종목명": "상승/하락 이유 한 줄(15자 내외)" }
-}`),
-        },
-      ],
-    });
-    const text = res.content?.find((b) => b.type === "text")?.text || "";
-    return parseJsonFromAssistant(text);
-  } catch (error) {
-    console.warn(
-      `[promo-market-copy] Claude 실패(${isClaudeUnavailableError(error) ? "billing/unavailable" : "error"}), 원문에서 직접 추출:`,
-      error instanceof Error ? error.message : error
-    );
-    return fallback();
+}`);
+
+  const MAX_ATTEMPTS = 3;
+  let lastError;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model: MODEL,
+        max_tokens: 600,
+        system:
+          "TotalMoney AI 카드뉴스/트윗 문구 작성자. 브랜드 보이스: 전문적이지만 쉽게, 결론이 명확하게, 과장 없이. " +
+          "반드시 JSON만 출력 (마크다운 코드블록 금지).",
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      const text = res.content?.find((b) => b.type === "text")?.text || "";
+      const parsed = parseJsonFromAssistant(text);
+      // headline과 aiComment가 우연히 같으면 폴백 코멘트로 대체(카드가 중복되어 보이는 것 방지)
+      if (parsed.aiComment && parsed.headline && parsed.aiComment === parsed.headline) {
+        parsed.aiComment = extractFlowCommentFallback(analysisText) || parsed.aiComment;
+      }
+      return parsed;
+    } catch (error) {
+      lastError = error;
+      const retryable = isClaudeUnavailableError(error) || /connection error/i.test(String(error?.message || ""));
+      console.warn(
+        `[promo-market-copy] Claude 시도 ${attempt}/${MAX_ATTEMPTS} 실패(${retryable ? "재시도 가능" : "치명적"}):`,
+        error instanceof Error ? error.message : error
+      );
+      if (!retryable || attempt === MAX_ATTEMPTS) break;
+      await new Promise((r) => setTimeout(r, 1500 * attempt));
+    }
   }
+  console.warn("[promo-market-copy] Claude 전체 실패, 원문에서 직접 추출:", lastError instanceof Error ? lastError.message : lastError);
+  return fallback();
 }

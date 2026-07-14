@@ -19,6 +19,40 @@ async function graphPost(path, params) {
   return data;
 }
 
+async function graphGet(path, params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${GRAPH_BASE}${path}?${qs}`);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(`Graph API 오류: ${JSON.stringify(data.error || data)}`);
+  return data;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * 미디어 컨테이너(단일 이미지든 캐러셀이든)는 생성 직후 바로 게시할 수 없다 —
+ * Meta가 이미지를 다운로드·처리하는 데 몇 초~수십 초가 걸리고, status_code가
+ * FINISHED가 되기 전에 media_publish를 부르면 "Media ID is not available"(코드 9007)로 실패한다.
+ * status_code가 FINISHED가 될 때까지 폴링하고, ERROR/EXPIRED면 즉시 에러를 던진다.
+ */
+async function waitUntilFinished(containerId, accessToken, { maxAttempts = 15, intervalMs = 3000 } = {}) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const { status_code } = await graphGet(`/${containerId}`, {
+      fields: "status_code",
+      access_token: accessToken,
+    });
+    if (status_code === "FINISHED") return;
+    if (status_code === "ERROR" || status_code === "EXPIRED") {
+      throw new Error(`미디어 컨테이너 처리 실패 (id=${containerId}, status=${status_code})`);
+    }
+    // IN_PROGRESS 등 — 대기 후 재시도
+    await sleep(intervalMs);
+  }
+  throw new Error(`미디어 컨테이너 처리 시간 초과 (id=${containerId})`);
+}
+
 function publicImageUrl(fileName) {
   const repo = process.env.GITHUB_REPOSITORY || "mandoo411/vibe";
   const branch = process.env.PROMO_ASSET_BRANCH || "main";
@@ -37,6 +71,7 @@ export async function postInstagramCarousel(imageFileNames, caption) {
       is_carousel_item: "true",
       access_token: accessToken,
     });
+    await waitUntilFinished(item.id, accessToken);
     childIds.push(item.id);
   }
 
@@ -46,6 +81,7 @@ export async function postInstagramCarousel(imageFileNames, caption) {
     caption,
     access_token: accessToken,
   });
+  await waitUntilFinished(carousel.id, accessToken);
 
   return graphPost(`/${igUserId}/media_publish`, {
     creation_id: carousel.id,

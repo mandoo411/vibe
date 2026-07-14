@@ -16,11 +16,15 @@
     "sync:morning-telegram": "node --env-file=.env scripts/telegram-morning-briefing.mjs",
     "sync:crypto-news": "node --env-file=.env scripts/crypto-news.mjs",
     "cache:world-market": "node scripts/world-market-cache.mjs",
-    "create-session": "node scripts/create-telegram-session.mjs"
+    "create-session": "node scripts/create-telegram-session.mjs",
+    "post:instagram-render": "node scripts/instagram-card-post.mjs --render",
+    "post:instagram-publish": "node scripts/instagram-card-post.mjs --publish",
+    "post:twitter": "node scripts/twitter-post.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "input": "^1.0.1",
-    "telegram": "^2.26.22"
+    "telegram": "^2.26.22",
+    "puppeteer": "^23.0.0"
   }
 }

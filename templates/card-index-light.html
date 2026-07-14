@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!--
+  슬라이드 2 — 지수 현황
+  치환 변수: 4개 행(row) 배열 → name,value,dir,pct
+  render.mjs가 ROW_TEMPLATE 블록을 데이터 개수만큼 반복 삽입합니다.
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared-light.css" />
+<style>
+  .page-title {
+    position: absolute;
+    top: 240px;
+    left: 64px;
+    font-size: 40px;
+    font-weight: 800;
+  }
+  .rows {
+    position: absolute;
+    top: 340px;
+    left: 64px;
+    right: 64px;
+    bottom: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    justify-content: center;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 40px;
+  }
+  .row .name {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .row .value {
+    font-size: 36px;
+    font-weight: 800;
+    margin-left: auto;
+    margin-right: 24px;
+  }
+  .row .pct {
+    font-size: 30px;
+    font-weight: 800;
+    min-width: 140px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+  <div class="brand-lockup">
+    <div class="logo-box"><span>TM</span><span>AI</span></div>
+    <div>
+      <div class="brand-name">TotalMoney</div>
+      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
+    </div>
+  </div>
+
+  <div class="page-title">📈 오늘의 지수</div>
+
+  <div class="rows" id="rows">
+    <!--ROW_TEMPLATE_START
+    <div class="panel row">
+      <div class="name">{{NAME}}</div>
+      <div class="value">{{VALUE}}</div>
+      <div class="pct {{DIR}}">{{ARROW}} {{PCT}}%</div>
+    </div>
+    ROW_TEMPLATE_END-->
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</bod

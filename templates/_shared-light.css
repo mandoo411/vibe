@@ -1,0 +1,150 @@
+/*
+  TotalMoney AI — 카드뉴스 공통 디자인 토큰 (라이트 모드)
+  ⚠️ mandoo411/vibe repo의 theme.css [data-theme="light"] 실측값을 그대로 사용했습니다.
+  사이트의 실제 기본 테마는 라이트입니다 (theme.js의 getStoredTheme() 기본값 "light").
+  다크 버전은 _shared.css 참고 — 클래스명은 동일하므로 HTML은 손대지 않고
+  <link href> 만 이 파일로 바꾸면 라이트 카드가 됩니다 (card-*-light.html 참고).
+*/
+
+:root {
+  /* 배경 */
+  --bg-header: #f0f7f7;
+  --bg-body: #ffffff;
+  --bg-card: #ffffff;
+  --border-color: #eef0f8;
+
+  /* 텍스트 */
+  --text-primary: #131722;
+  --text-secondary: #5d606b;
+  --text-muted: #8b93a3;
+
+  /* 브랜드 — 라이트 테마엔 골드가 없고 딥네이비+틸이 브랜드 컬러 (accent-brand-deep/accent-brand) */
+  --accent-gold: #0f8387; /* 다크의 골드 포인트 자리를 라이트에서는 틸이 대신함 */
+  --accent-blue: #07264b;
+  --gradient-primary: linear-gradient(135deg, #07264b 0%, #0f8387 100%);
+  --gradient-hero: linear-gradient(135deg, #07264b 0%, #0f8387 100%);
+
+  /* 시세 컬러 (국내 관례: 상승 빨강 / 하락 파랑) — 다크와 동일, 사이트 전역 고정값 */
+  --up-color: #e24b4a;
+  --down-color: #3b82f6;
+
+  /* 카드 */
+  --card-shadow: 0 2px 10px rgba(16, 24, 64, 0.06);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 10px;
+
+  --font-sans: "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--bg-body);
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(15, 131, 135, 0.10) 0%, transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(7, 38, 75, 0.06) 0%, transparent 28%),
+    linear-gradient(180deg, var(--bg-header) 0%, var(--bg-body) 34%);
+  background-repeat: no-repeat;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  position: relative;
+}
+
+/* 상단 브랜드 로고 락업 */
+.brand-lockup {
+  position: absolute;
+  top: 56px;
+  left: 64px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-box {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.15;
+  box-shadow: 0 4px 14px rgba(7, 38, 75, 0.18);
+}
+.logo-box span {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.brand-name {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+.brand-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 10px;
+  border-radius: 6px;
+  background: var(--gradient-primary);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* 워터마크 — 위치 고정, 변경 금지 */
+.watermark {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  opacity: 0.55;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* 카드 컴포넌트 */
+.panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+}
+
+/* 시세 컬러 유틸 */
+.up { color: var(--up-color); }
+.down { color: var(--down-color); }
+.flat { color: var(--text-secondary); }
+
+.tag-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(15, 131, 135, 0.08);
+  border: 1px solid rgba(15, 131, 135, 0.30);
+  color: var(--accent-gold);
+  font-size: 18px;
+  font-weight: 700;
+}

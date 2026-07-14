@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29770.25,
+        "close": 29784.75,
         "previousClose": 29937,
-        "changePct": -0.56,
-        "changePoints": -166.75
+        "changePct": -0.51,
+        "changePoints": -152.25
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 314.6,
-      "changePct": -0.86,
-      "changePoints": 2.71
+      "price": 314.33,
+      "changePct": -0.94,
+      "changePoints": 2.98
     },
     {
       "symbol": "MSFT",
-      "price": 385.3,
-      "changePct": -1.46,
-      "changePoints": 5.69
+      "price": 385.6,
+      "changePct": -1.38,
+      "changePoints": 5.39
     },
     {
       "symbol": "NVDA",
-      "price": 211.4,
-      "changePct": 3.87,
-      "changePoints": 7.87
+      "price": 211.38,
+      "changePct": 3.86,
+      "changePoints": 7.85
     },
     {
       "symbol": "AMZN",
-      "price": 246.96,
-      "changePct": -0.14,
-      "changePoints": 0.35
+      "price": 247.49,
+      "changePct": 0.07,
+      "changePoints": 0.18
     },
     {
       "symbol": "META",
-      "price": 659.53,
-      "changePct": 0.43,
-      "changePoints": 2.8
+      "price": 659.99,
+      "changePct": 0.5,
+      "changePoints": 3.26
     },
     {
       "symbol": "TSLA",
-      "price": 395.2,
-      "changePct": 0.11,
-      "changePoints": 0.44
+      "price": 395.38,
+      "changePct": 0.16,
+      "changePoints": 0.62
     },
     {
       "symbol": "GOOGL",
-      "price": 358.25,
-      "changePct": 1.63,
-      "changePoints": 5.74
+      "price": 358.3,
+      "changePct": 1.64,
+      "changePoints": 5.79
     },
     {
       "symbol": "AMD",
-      "price": 545.9,
-      "changePct": 2.15,
-      "changePoints": 11.51
+      "price": 546.9,
+      "changePct": 2.34,
+      "changePoints": 12.51
     },
     {
       "symbol": "PLTR",
-      "price": 133.29,
-      "changePct": 2.5,
-      "changePoints": 3.25
+      "price": 133.36,
+      "changePct": 2.55,
+      "changePoints": 3.32
     },
     {
       "symbol": "COIN",
-      "price": 161.76,
-      "changePct": 2.79,
-      "changePoints": 4.39
+      "price": 162.74,
+      "changePct": 3.41,
+      "changePoints": 5.37
     }
   ],
   "sectors": [
@@ -188,25 +188,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 79.94,
-        "changePct": 10.9,
-        "changePoints": 7.86
+        "price": 79.93,
+        "changePct": 10.89,
+        "changePoints": 7.85
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4055.7,
-        "changePct": -1.81,
-        "changePoints": -74.9
+        "price": 4054.5,
+        "changePct": -1.84,
+        "changePoints": -76.1
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 59,
-        "changePct": -2.29,
-        "changePoints": -1.38
+        "price": 59.02,
+        "changePct": -2.25,
+        "changePoints": -1.36
       },
       {
         "id": "copper",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 64758,
+        "priceUsd": 64911,
         "changePct24h": 4.63,
-        "marketCapUsd": 1298819170473.35
+        "marketCapUsd": 1301791383000.72
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1878.56,
-        "changePct24h": 6.92,
-        "marketCapUsd": 226728272342.95
+        "priceUsd": 1884.35,
+        "changePct24h": 6.94,
+        "marketCapUsd": 227322595948.4
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 77.58,
-        "changePct24h": 4.25,
-        "marketCapUsd": 45182708250.54
+        "priceUsd": 77.74,
+        "changePct24h": 4.31,
+        "marketCapUsd": 45283803260.54
       }
     ]
   },
@@ -286,13 +286,6 @@
       "source": "매일경제",
       "publishedAt": "2026-07-14T13:31:51.000Z",
       "summary": "한 20대 남성이 주식 투자 유튜버에게 흉기를 휘두른 혐의로 경찰에 붙잡혔다. 14일 부산 남부경찰서는 살인 미수 혐의로 20대 남성 A씨를 붙잡아 조사 중이라고 밝혔다. A씨는 .."
-    },
-    {
-      "title": "삼전·닉스 레버리지발 변동성에…증권업계, 예탁금 올린다",
-      "url": "https://view.asiae.co.kr/article/2026071419554963795",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T10:55:49.000Z",
-      "summary": "최근 삼성전자와 SK하이닉스 단일종목 레버리지 상장지수펀드(ETF)를 둘러싼 투자자 손실과 시장 변동성 우려가 커지자 증권업계가 기본 예탁금을 상향하는 등 자율적인 투자자 보호 조치에 나서기로 했다. 금융투자협회와 10개 주요 증권사 최고경영자(CEO)들은 14일 서울 영등포구 여의도 금투센터에서 긴급회의를 열고 단일종목 레버리지 ETF의 시장 상황과 투자자 보호 방안을 논의했다. 참석자들은 단일종목 레버리지 ETF가 투"
     },
     {
       "title": "[단독] 기업마다 노동자대표委 띄운다",
@@ -337,13 +330,6 @@
       "summary": "캐피털사의 자동차 렌탈 사업 규제 완화를 놓고 캐피털 업계와 렌터카 업계 간 갈등이 재점화되고 있다. 금융당국과 캐피털사는 소비자 편의를 위해 규제 완화가 필요하다는 입장이다. 렌.."
     },
     {
-      "title": "메리츠금융 만난 홈플러스 일반노조…\"MBK 포함 3자회동 제안\"",
-      "url": "https://view.asiae.co.kr/article/2026071417400098529",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T08:40:00.000Z",
-      "summary": "홈플러스 일반노조가 14일 최대 채권자인 메리츠금융그룹을 만나 홈플러스 최대 주주인 MBK파트너스와의 3자 회동을 제안했다. 홈플러스 이종성 일반노조 위원장을 포함한 노조 관계자들은 이날 오전 고용노동부 서울남부지청에서 메리츠금융그룹 경영진을 만난 뒤 \"메리츠와 MBK 양측의 답을 기다리고 있다\"며 이같이 말했다. 메리츠금융그룹은 이 자리에서 MBK파트너스와 김병주 MBK 회장의 보증을 조건으로 1000억원의 긴급운영"
-    },
-    {
       "title": "호남 '반도체 클러스터'에 LNG발전 신설 … 신규 입찰 재추진",
       "url": "https://www.mk.co.kr/news/economy/12098464",
       "source": "매일경제 증권",
@@ -358,13 +344,6 @@
       "summary": "현대해상이 전 세계 32개국 대학생이 지역사회 문제를 해결하는 프로젝트 '인액터스 코리아' 국내 대회 후원에 나섰다. 현대해상은 회사가 후원하는 인액터스 코리아 대회가 지난 10~.."
     },
     {
-      "title": "국고채 금리 '중동전 재개 우려'에 상승…3년물 연 3.887%",
-      "url": "https://view.asiae.co.kr/article/2026071417240109523",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T08:24:01.000Z",
-      "summary": "미국의 대이란 해상 봉쇄가 재개됐다는 소식에 국제유가가 급등하면서 14일 국고채 금리가 일제히 상승했다. 이날 서울 채권시장에서 3년 만기 국고채 금리는 전 거래일보다 7.8bp(1bp=0.01%포인트) 오른 연 3.887%에 장을 마쳤다. 이는 연고점인 3.940%(6월8일)과 약 5bp 차에 불과하다. 10년물 금리는 4.333%로 7.0bp 상승했다. 5년물과 2년물 금리는 각각 8.7bp, 8.2bp 올라 4.128%, 3.763%를 기록했다. 20년물은 4.492%로 6.9b"
-    },
-    {
       "title": "[표] 외국환율고시표",
       "url": "https://www.mk.co.kr/news/economy/12098423",
       "source": "매일경제 증권",
@@ -372,25 +351,46 @@
       "summary": ""
     },
     {
-      "title": "\"사모펀드 인수 의지 높은 롯데렌탈, 주주환원↑\"[클릭 e종목]",
-      "url": "https://view.asiae.co.kr/article/2026071415155177114",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T08:22:00.000Z",
-      "summary": "신한투자증권은 14일 롯데렌탈에 대해 투자의견 매수와 목표주가 4만3000원을 유지했다. 최승환 신한투자증권 연구원은 \"본업인 장단기 오토렌탈 업황은 매우 양호하다\"며 이같이 밝혔다. 최 연구원은 롯데렌탈의 올해 2분기 실적에 대해 매출액 7799억원, 영업이익 870억원으로 예상했다. 이는 전년 대비 각각 4.2%, 12.7% 증가한 수치다. 최 연구원에 따르면 장기렌탈은 투입대수 순증이 지속되고 있으며 단기렌탈은 인바운드 및"
+      "title": "62년간 투명인간으로 살아온 남자…첫 신분증 받고 한말",
+      "url": "https://www.mk.co.kr/news/society/12098343",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T21:00:00.000Z",
+      "summary": "“이제야 사람답게 살 수 있게 됐습니다.” 60년 넘게 기록되지 못했던 한 시민의 이름이 대한민국의 주민등록부에 당당히 새겨졌다. 그리고 그 이름과 함께, 너무 늦었지만 새로운 일.."
     },
     {
-      "title": "\"400만닉스\" 기대 속, 나홀로 \"185만\" 외쳤던 증권사 재조명",
-      "url": "https://view.asiae.co.kr/article/2026071416102168392",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T07:11:00.000Z",
-      "summary": "글로벌 인공지능(AI) 반도체 시장의 호황을 이끌며 '300만원 선' 돌파를 눈앞에 뒀던 SK하이닉스의 주가가 폭락세로 돌아서며 심리적 마지노선이던 180만원대마저 위협받고 있다. 이 가운데 시장이 낙관론에 취해 있던 시기, 홀로 '목표주가 185만원'을 제시했던 증권사 보고서가 재조명되고 있다. 당시에는 지나치게 보수적인 전망으로 받아들여졌지만 결과적으로는 단기 조정을 예고한 '선행 신호'였다는 평가가 나온다. \"사실상"
+      "title": "‘좋아요’ 말고 ‘결제 고객’부터 세라 … AI시대 창업 성공 공식",
+      "url": "https://www.mk.co.kr/news/business/12098380",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T20:00:00.000Z",
+      "summary": "창업 전 꼭 따져볼 체크포인트인공지능(AI) 시대가 열리면서 직업 구조가 흔들리고 있다. 은퇴와 생계에 대한 불안은 중장년뿐 아니라 20·30대까지 확산됐다. 직장에서 밀려난 뒤가.."
     },
     {
-      "title": "코스피, 반도체 중심 상승 마감…코스닥은 바이오발 약세",
-      "url": "https://view.asiae.co.kr/article/2026071416054443477",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-14T07:05:44.000Z",
-      "summary": "코스피가 14일 장중 상승 마감했다. 장 초반 하락 출발한 뒤 한때 낙폭을 키웠지만, 삼성전자와 SK하이닉스 등 반도체 대형주가 강세를 보이며 지수를 끌어올렸다. 반면 코스닥은 바이오주 약세에 밀려 1%대 하락 마감했다. 이날 코스피 지수는 전 거래일 대비 49.90포인트(0.73%) 오른 6856.83에 마감했다. 지수는 37.87포인트(0.56%) 내린 6769.06으로 출발한 뒤 장중 등락을 거듭했다. 외국인이 9700억원, 기관이 3조2158억원어"
+      "title": "그렇게 주변을 푹푹 찔러대더니 … 칼차고 태어난 홍명보, 양인살에 폭발?",
+      "url": "https://www.mk.co.kr/news/society/12097403",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T20:00:00.000Z",
+      "summary": "‘칼을 찬 남자’. 맞습니다. 축구공을 차지 않고, ‘양인(羊刃)살’, 즉 칼을 찬 남자가 바로 홍명보 전 축구대표팀 감독이라는 것, 사주 좀 보는 분들은 다 압니다. 그래서 갑니.."
+    },
+    {
+      "title": "환갑에 회춘 여의도 … 신축 2만4000세대 옆동네도 주목",
+      "url": "https://www.mk.co.kr/news/realestate/12098232",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T19:17:00.000Z",
+      "summary": "여의주 품고 변신하는 여의도서울에는 3대 도심이 있다. 시청·광화문 등 도심 업무지구(CBD), 강남 업무지구(GBD), 여의도 업무지구(YBD) 등이다. 여의도는 대한민국 정치 .."
+    },
+    {
+      "title": "내년 최저임금 1만700원… 3.7% 인상…합의 불발로 표결",
+      "url": "https://www.mk.co.kr/news/society/12098735",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T14:43:15.000Z",
+      "summary": "내년도 최저임금이 시간당 1만700원으로 결정됐다. 지난해 17년 만에 성사됐던 노사 합의는 올해 이어지지 못했다. 노동계와 경영계가 끝내 인상 폭에 대한 견해차를 좁히지 못하면서.."
+    },
+    {
+      "title": "월급 환산땐 223만6300원 … 주휴수당 등도 올라",
+      "url": "https://www.mk.co.kr/news/society/12098734",
+      "source": "매일경제",
+      "publishedAt": "2026-07-14T14:42:00.000Z",
+      "summary": "내년도 최저임금인 시간당 1만700원은 올해보다 3.7% 오른 수준으로, 월 환산액은 223만6300원이다. 최저임금위원회는 14일 정부세종청사에서 제14차 전원회의를 열고 202.."
     }
   ],
   "aiAnalysis": {

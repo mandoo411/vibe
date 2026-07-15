@@ -1,0 +1,75 @@
+name: Refresh Indicator Actuals
+
+# 오늘 HIGH 등급 경제지표(CPI/PPI 등) 중 발표시간이 지났는데 실제수치(actual)가 아직
+# 비어있는 항목을 5분 간격으로 확인해 채우고, 새로 채워진 항목만 텔레그램 속보로 보낸다.
+# 스크립트 자체가 "확인할 대상이 없으면 즉시 종료"하므로 대부분의 실행은 수 초 안에 끝난다.
+#
+# 06:00~24:00 KST(한국/미국 지표 발표가 몰리는 시간대)만 커버 — UTC로 환산하면
+# 21:00~23:59(=06:00~08:59 KST)와 00:00~14:59(=09:00~23:59 KST) 두 구간.
+on:
+  schedule:
+    - cron: "*/5 21-23 * * *"
+    - cron: "*/5 0-14 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-indicator-actuals
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env from secrets
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+        run: |
+          {
+            printf 'TELEGRAM_TOKEN=%s\n'      "$TELEGRAM_TOKEN"
+            printf 'TELEGRAM_CHANNEL_ID=%s\n' "$TELEGRAM_CHANNEL_ID"
+            printf 'FMP_API_KEY=%s\n'         "$FMP_API_KEY"
+          } > .env
+
+      - name: Check for released indicators and update actuals
+        run: node --env-file=.env scripts/refresh-indicator-actuals.mjs
+
+      - name: Commit updated schedule (only if actuals changed)
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/weekly-schedule.json; then
+            echo "::notice::No actual-value changes to commit"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git add data/weekly-schedule.json
+            git commit -m "chore(data): 지표 실제수치 갱신 ${STAMP}"
+            git pull --rebase origin main
+            git push
+          fi
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f .env

@@ -165,19 +165,19 @@ body {
 .slot-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
+  gap: 10px;
+  padding: 12px 26px;
   border-radius: 999px;
   background: var(--gradient-primary);
   color: #ffffff;
-  font-size: 20px;
+  font-size: 28px;
   font-weight: 800;
   letter-spacing: 0.2px;
   box-shadow: 0 6px 16px rgba(7, 38, 75, 0.22);
 }
 .slot-badge .dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #f59e0b;
 }

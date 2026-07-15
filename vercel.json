@@ -96,6 +96,9 @@
     },
     "api/crypto.js": {
       "maxDuration": 60
+    },
+    "api/trade-signal.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
@@ -165,6 +168,10 @@
     {
       "src": "/stock-analysis.html",
       "dest": "/stock-analysis.html"
+    },
+    {
+      "src": "/trade-signal.html",
+      "dest": "/trade-signal.html"
     },
     {
       "src": "/login.html",

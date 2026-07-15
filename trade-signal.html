@@ -505,7 +505,7 @@
               const to = btn.getAttribute("data-toggle-to");
               btn.disabled = true;
               try {
-                await apiFetch(`/api/trade-signal-strategies?id=${encodeURIComponent(id)}`, {
+                await apiFetch(`/api/trade-signal?id=${encodeURIComponent(id)}`, {
                   method: "PATCH",
                   body: JSON.stringify({ status: to }),
                 });
@@ -523,7 +523,7 @@
               if (!confirm("이 전략을 삭제할까요?")) return;
               btn.disabled = true;
               try {
-                await apiFetch(`/api/trade-signal-strategies?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+                await apiFetch(`/api/trade-signal?id=${encodeURIComponent(id)}`, { method: "DELETE" });
                 await loadStrategies();
               } catch (e) {
                 alert(e.message || "삭제에 실패했습니다.");
@@ -550,7 +550,7 @@
 
         async function loadStrategies() {
           try {
-            const data = await apiFetch("/api/trade-signal-strategies", { method: "GET" });
+            const data = await apiFetch("/api/trade-signal", { method: "GET" });
             strategies = data.strategies || [];
             events = data.events || [];
             renderStrategies();
@@ -575,7 +575,7 @@
           btn.textContent = "해석 중…";
           $("ts-parse-error").classList.add("ts-hidden");
           try {
-            const result = await apiFetch("/api/trade-signal-parse", {
+            const result = await apiFetch("/api/trade-signal?action=parse", {
               method: "POST",
               body: JSON.stringify({ text }),
             });
@@ -609,7 +609,7 @@
           btn.disabled = true;
           btn.textContent = "저장 중…";
           try {
-            await apiFetch("/api/trade-signal-strategies", {
+            await apiFetch("/api/trade-signal", {
               method: "POST",
               body: JSON.stringify(pendingResult),
             });

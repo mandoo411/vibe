@@ -205,7 +205,7 @@
       el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
       return;
     }
-    el.innerHTML = list
+    const itemsHtml = list
       .map((item) => {
         const label = String(item.label || "");
         const isUsdKrw = label.includes("원/달러");
@@ -222,6 +222,11 @@
         return `<div class="home-ticker__item"><span class="home-ticker__name">${escapeHtml(label)}</span><span class="home-ticker__val">${escapeHtml(fmtTickerValue(item))}</span>${pctHtml}</div>`;
       })
       .join("");
+    // 2026-07-15: index.html은 site-shell.js의 renderTicker()와 별개로 이 함수가 홈 히어로
+    // 데이터(loadTickerAndHero)와 함께 티커를 다시 그린다 — 두 곳 모두 같은 좌측 스크롤
+    // 마퀴 마크업(.home-ticker__track, 두 벌 이어붙이기)을 써야 site-shell.css의
+    // tm-ticker-scroll 애니메이션이 이 페이지에서도 동일하게 적용된다.
+    el.innerHTML = `<div class="home-ticker__track">${itemsHtml}${itemsHtml}</div>`;
   }
 
   function renderHeroPanel(panelId, rows, kind) {

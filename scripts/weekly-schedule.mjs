@@ -560,39 +560,8 @@ async function fetchEconomicCalendarMerged(from, to) {
   return mergeEconomicResponses({ economicCalendar: rows });
 }
 
-async function analyzeWithClaude({ economicCalendar, krIPO, krEarnings }) {
-  const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
-
-  // 오늘~+14일 범위 핵심 이벤트만 추출
-  const today = seoulYmd();
-  const twoWeeksLater = addDaysYmd(today, 14);
-
-  const upcomingMacro = economicCalendar
-    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
-    .filter((r) => {
-      const impact = r.impact;
-      return impact === 3 || impact === "3" || String(impact || "").toLowerCase() === "high";
-    })
-    .filter((r) => {
-      const cc = String(r.country || "").toUpperCase();
-      return cc === "US" || cc === "KR" || cc === "미국" || cc === "한국";
-    })
-    .slice(0, 8);
-
-  const upcomingEarnings = [...krEarnings]
-    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
-    .slice(0, 6);
-
-  const payload = { upcomingMacro, upcomingEarnings };
-
-  const msg = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 2400,
-    temperature: 0.3,
-    messages: [
-      {
-        role: "user",
-        content: `아래 이번 주~다음 주 핵심 경제지표와 실적 발표 일정을 분석해서 한국어 JSON만 반환해줘.
+function buildAnalysisPrompt(payload) {
+  return `아래 이번 주~다음 주 핵심 경제지표와 실적 발표 일정을 분석해서 한국어 JSON만 반환해줘.
 
 각 이벤트에 대해 투자자에게 유용한 시나리오 분석을 작성해줘:
 - 매크로 지표: 예상치 대비 결과가 높을 때/낮을 때 증시·환율 영향을 구체적으로 설명
@@ -621,16 +590,99 @@ async function analyzeWithClaude({ economicCalendar, krIPO, krEarnings }) {
 주의: eventAnalysis 배열만 반환. 총 항목 최대 6개. 날짜 오름차순 정렬.
 
 데이터:
-${JSON.stringify(payload).slice(0, 40000)}`,
-      },
-    ],
-  });
+${JSON.stringify(payload).slice(0, 40000)}`;
+}
 
+async function callOpenAIForAnalysis(prompt) {
+  const apiKey = requireEnv("OPENAI_API_KEY");
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.3,
+      max_tokens: 2400,
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(`OpenAI API 오류 ${res.status}: ${data?.error?.message || JSON.stringify(data).slice(0, 300)}`);
+  }
+  const text = data?.choices?.[0]?.message?.content || "";
+  return parseClaudeJson(text);
+}
+
+async function callAnthropicForAnalysis(prompt) {
+  const anthropic = new Anthropic({ apiKey: requireEnv("ANTHROPIC_API_KEY") });
+  const msg = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 2400,
+    temperature: 0.3,
+    messages: [{ role: "user", content: prompt }],
+  });
   const text = msg.content
     .filter((part) => part.type === "text")
     .map((part) => part.text)
     .join("\n");
-  const parsed = parseClaudeJson(text);
+  return parseClaudeJson(text);
+}
+
+async function analyzeWithClaude({ economicCalendar, krIPO, krEarnings }) {
+  // 오늘~+14일 범위 핵심 이벤트만 추출
+  const today = seoulYmd();
+  const twoWeeksLater = addDaysYmd(today, 14);
+
+  const upcomingMacro = economicCalendar
+    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
+    .filter((r) => {
+      const impact = r.impact;
+      return impact === 3 || impact === "3" || String(impact || "").toLowerCase() === "high";
+    })
+    .filter((r) => {
+      const cc = String(r.country || "").toUpperCase();
+      return cc === "US" || cc === "KR" || cc === "미국" || cc === "한국";
+    })
+    .slice(0, 8);
+
+  const upcomingEarnings = [...krEarnings]
+    .filter((r) => r.date >= today && r.date <= twoWeeksLater)
+    .slice(0, 6);
+
+  const prompt = buildAnalysisPrompt({ upcomingMacro, upcomingEarnings });
+
+  // 2026-07-15: Anthropic 크레딧이 바닥나(400 "credit balance is too low") 이 호출이
+  // 계속 실패해 eventAnalysis가 통째로 비었던 문제가 있었다. OPENAI_API_KEY가 설정돼
+  // 있으면 OpenAI를 우선 쓰고, 실패하거나 키가 없으면 Anthropic으로 폴백한다 —
+  // 두 공급자 중 하나만 크레딧이 있어도 계속 동작하도록 이중화.
+  const hasOpenAI = !!String(process.env.OPENAI_API_KEY || "").trim();
+  const hasAnthropic = !!String(process.env.ANTHROPIC_API_KEY || "").trim();
+
+  let parsed = null;
+  if (hasOpenAI) {
+    try {
+      parsed = await callOpenAIForAnalysis(prompt);
+      console.log(`일정 분석: OpenAI(${process.env.OPENAI_MODEL || "gpt-4o-mini"})로 생성`);
+    } catch (error) {
+      console.log(`⚠️ OpenAI 분석 실패: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  if (!parsed && hasAnthropic) {
+    parsed = await callAnthropicForAnalysis(prompt);
+    console.log(`일정 분석: Anthropic(${MODEL})으로 생성`);
+  }
+  if (!parsed) {
+    if (!hasOpenAI && !hasAnthropic) {
+      throw new Error("Missing env: OPENAI_API_KEY 또는 ANTHROPIC_API_KEY 둘 다 없음");
+    }
+    throw new Error("AI 분석 실패 — OpenAI/Anthropic 모두 실패했거나 사용 가능한 공급자 없음");
+  }
+
   return Array.isArray(parsed.eventAnalysis) ? parsed.eventAnalysis.slice(0, 6) : [];
 }
 

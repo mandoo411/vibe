@@ -32,6 +32,9 @@ jobs:
 
       - name: Collect weekly schedule
         env:
+          # OPENAI_API_KEY가 있으면 우선 사용하고, 없거나 실패하면 ANTHROPIC_API_KEY로
+          # 폴백한다(scripts/weekly-schedule.mjs의 analyzeWithClaude 참고).
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           # 한국 실적 (opendart list.json) — secrets.DART_API_KEY

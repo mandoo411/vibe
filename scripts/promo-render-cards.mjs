@@ -42,6 +42,24 @@ const arrow = (pct) => (pct > 0 ? "▲" : pct < 0 ? "▼" : "");
 const dir = (pct) => (pct > 0 ? "up" : pct < 0 ? "down" : "flat");
 const suffix = (theme) => (theme === "light" ? "-light" : "");
 
+/** 커버 히어로 수치 옆에 넣는 미니 트렌드 스파크라인 SVG (상승/하락/보합에 따라 색·모양 변경) */
+function heroTrendSVG(pct) {
+  const up = pct > 0;
+  const flat = pct === 0;
+  const color = flat ? "#9aa3b2" : up ? "#e24b4a" : "#3b82f6";
+  const points = flat
+    ? "4,30 20,30 36,30 52,30 68,30 84,30 100,30"
+    : up
+    ? "4,44 20,38 36,40 52,26 68,30 84,12 100,6"
+    : "4,6 20,12 36,10 52,24 68,20 84,38 100,44";
+  const dotXY = up ? "100,6" : flat ? "100,30" : "100,44";
+  const [dx, dy] = dotXY.split(",");
+  return `<svg viewBox="0 0 104 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="${points}" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+    <circle cx="${dx}" cy="${dy}" r="6" fill="${color}"/>
+  </svg>`;
+}
+
 /** 5장의 카드에 들어갈 HTML을 채워서 반환. cardData.theme: 'dark' | 'light' */
 export function buildCardsHTML(cardData) {
   const {
@@ -68,6 +86,7 @@ export function buildCardsHTML(cardData) {
     HERO_DIR: dir(heroPct),
     HERO_ARROW: arrow(heroPct),
     HERO_PCT: Math.abs(heroPct).toFixed(2),
+    HERO_TREND_SVG: heroTrendSVG(heroPct),
     HEADLINE: headline,
   });
 
@@ -82,7 +101,7 @@ export function buildCardsHTML(cardData) {
 
   let stocks = read("card-stocks");
   stocks = fillSimpleVars(stocks, { PAGE_TITLE: listTitle });
-  stocks = fillRepeatBlock(stocks, "ITEM", listItems.slice(0, 3), (g, i) => `
+  stocks = fillRepeatBlock(stocks, "ITEM", listItems.slice(0, 5), (g, i) => `
     <div class="panel item">
       <div class="rank ${i === 0 ? "gold" : ""}">${i + 1}</div>
       <div class="info">

@@ -16,50 +16,65 @@
     padding: 0 90px;
   }
   .cta-lead {
-    font-size: 30px;
+    font-size: 33px;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
   .cta-title {
-    font-size: 46px;
+    font-size: 56px;
     font-weight: 800;
-    line-height: 1.4;
-    margin-bottom: 56px;
+    line-height: 1.35;
+    margin-bottom: 58px;
+    letter-spacing: -0.5px;
   }
   .cta-features {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    margin-bottom: 64px;
+    gap: 20px;
+    margin-bottom: 60px;
     width: 100%;
   }
   .cta-feature {
-    font-size: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 31px;
     font-weight: 700;
-    padding: 22px 32px;
+    padding: 24px 32px;
     text-align: left;
   }
+  .cta-feature .feature-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cta-feature .feature-icon svg { width: 24px; height: 24px; }
   .cta-link {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 14px;
-    font-size: 40px;
+    font-size: 44px;
     font-weight: 800;
     color: var(--accent-gold);
-    margin-bottom: 16px;
+    margin-bottom: 18px;
   }
   .cta-link .logo-box {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
   }
   .cta-link .logo-box span {
-    font-size: 11px;
+    font-size: 12px;
   }
   .cta-sub {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 600;
     color: var(--text-secondary);
   }
@@ -78,9 +93,18 @@
     <div class="cta-lead">더 자세한 분석이 필요하다면</div>
     <div class="cta-title">AI가 매일 먼저 읽는<br/>시장의 흐름</div>
     <div class="cta-features">
-      <div class="panel cta-feature">AI 종목 심층 분석</div>
-      <div class="panel cta-feature">실시간 차트 분석</div>
-      <div class="panel cta-feature">실시간 알림</div>
+      <div class="panel cta-feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" stroke="white" stroke-width="2.2"/><path d="M19 19l-4.5-4.5" stroke="#f59e0b" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        AI 종목 심층 분석
+      </div>
+      <div class="panel cta-feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 20V10M12 20V4M20 20v-7" stroke="white" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+        실시간 차트 분석
+      </div>
+      <div class="panel cta-feature">
+        <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zM18 16v-5a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z" fill="white"/></svg></div>
+        실시간 알림
+      </div>
     </div>
     <div class="cta-link"><div class="logo-box"><span>TM</span><span>AI</span></div> totalmoney.kr</div>
     <div class="cta-sub">텔레그램 구독하기 · t.me/totalmoney_ai</div>

@@ -56,10 +56,13 @@ async function buildCardDataForSlot(slot) {
 
   // featured_stocks(에디터가 고른 실제 이슈 종목, reason/point 포함)를 우선 사용.
   // topGainers는 거래대금 상위 원시 데이터라 reason/theme이 비어있는 경우가 많아 카드가 빈약해짐.
+  // 5종목을 채워야 하므로 featured_stocks가 모자라면 topGainers로 나머지를 보충한다(중복 종목명 제외).
   const featuredGainers = (snapshot.featured_stocks || []).filter((s) => s.type === "급등");
-  const gainerSource = featuredGainers.length >= 3 ? featuredGainers : snapshot.topGainers || [];
+  const usedNames = new Set(featuredGainers.map((s) => s.name));
+  const fillerGainers = (snapshot.topGainers || []).filter((s) => !usedNames.has(s.name));
+  const gainerSource = [...featuredGainers, ...fillerGainers];
   const trimReason = (s) => (s && s.length > 42 ? s.slice(0, 40) + "…" : s || "");
-  const gainers = gainerSource.slice(0, 3).map((g) => ({
+  const gainers = gainerSource.slice(0, 5).map((g) => ({
     ...g,
     reason: trimReason(copy.stockReasons?.[g.name] || g.reason || g.point || g.theme || ""),
   }));

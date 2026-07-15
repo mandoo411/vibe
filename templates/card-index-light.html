@@ -9,45 +9,48 @@
 <meta charset="UTF-8" />
 <link rel="stylesheet" href="./_shared-light.css" />
 <style>
-  .page-title {
+  .title-row {
     position: absolute;
-    top: 240px;
+    top: 216px;
     left: 64px;
-    font-size: 40px;
+    right: 64px;
+  }
+  .page-title {
+    font-size: 46px;
     font-weight: 800;
   }
   .rows {
     position: absolute;
-    top: 340px;
+    top: 320px;
     left: 64px;
     right: 64px;
-    bottom: 140px;
+    bottom: 110px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
     justify-content: center;
   }
   .row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 32px 40px;
+    padding: 30px 38px;
   }
   .row .name {
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 700;
     color: var(--text-primary);
   }
   .row .value {
-    font-size: 36px;
+    font-size: 38px;
     font-weight: 800;
     margin-left: auto;
-    margin-right: 24px;
+    margin-right: 22px;
   }
   .row .pct {
-    font-size: 30px;
+    font-size: 32px;
     font-weight: 800;
-    min-width: 140px;
+    min-width: 150px;
     text-align: right;
   }
 </style>
@@ -61,7 +64,18 @@
     </div>
   </div>
 
-  <div class="page-title">{{PAGE_TITLE}}</div>
+  <div class="deco-ring tr"></div>
+
+  <div class="title-row">
+    <div class="icon-chip">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="12" width="4" height="9" rx="1" fill="white"/>
+        <rect x="10" y="7" width="4" height="14" rx="1" fill="white"/>
+        <rect x="17" y="3" width="4" height="18" rx="1" fill="#f59e0b"/>
+      </svg>
+    </div>
+    <div class="page-title">{{PAGE_TITLE}}</div>
+  </div>
 
   <div class="rows" id="rows">
     <!--ROW_TEMPLATE_START
@@ -74,4 +88,5 @@
   </div>
 
   <div class="watermark">TotalMoney.kr</div>
-</bod
+</body>
+</html>

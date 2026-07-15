@@ -8,44 +8,47 @@
 <meta charset="UTF-8" />
 <link rel="stylesheet" href="./_shared-light.css" />
 <style>
-  .page-title {
+  .title-row {
     position: absolute;
-    top: 240px;
+    top: 216px;
     left: 64px;
-    font-size: 40px;
+    right: 64px;
+  }
+  .page-title {
+    font-size: 46px;
     font-weight: 800;
   }
   .comment-panel {
     position: absolute;
-    top: 340px;
+    top: 318px;
     left: 64px;
     right: 64px;
-    padding: 48px 44px;
+    padding: 46px 44px;
   }
   .comment-panel .quote-mark {
-    font-size: 60px;
+    font-size: 68px;
     font-weight: 800;
     color: var(--accent-gold);
     line-height: 1;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .comment-panel .text {
-    font-size: 34px;
+    font-size: 39px;
     font-weight: 600;
-    line-height: 1.6;
+    line-height: 1.55;
     color: var(--text-primary);
   }
   .sector-title {
     position: absolute;
-    top: 780px;
+    top: 790px;
     left: 64px;
-    font-size: 26px;
+    font-size: 29px;
     font-weight: 700;
     color: var(--text-secondary);
   }
   .sectors {
     position: absolute;
-    top: 830px;
+    top: 842px;
     left: 64px;
     right: 64px;
     display: flex;
@@ -63,7 +66,17 @@
     </div>
   </div>
 
-  <div class="page-title">{{PAGE_TITLE}}</div>
+  <div class="deco-ring tr"></div>
+
+  <div class="title-row">
+    <div class="icon-chip">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2.5l1.8 5.2 5.2 1.8-5.2 1.8L12 17.5l-1.8-6.2-5.2-1.8 5.2-1.8L12 2.5z" fill="white"/>
+        <path d="M18.5 15l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8.8-2.3z" fill="#f59e0b"/>
+      </svg>
+    </div>
+    <div class="page-title">{{PAGE_TITLE}}</div>
+  </div>
 
   <div class="panel comment-panel">
     <div class="quote-mark">"</div>

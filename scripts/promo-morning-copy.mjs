@@ -81,7 +81,7 @@ export async function buildMorningCardData(snapshot, { dateLabel, theme = "light
   const topStocks = [...(snapshot.topStocks || [])]
     .filter((s) => Number.isFinite(s.changePct))
     .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct))
-    .slice(0, 3)
+    .slice(0, 5)
     .map((s) => ({
       name: TICKER_NAME_KO[s.symbol] || s.symbol,
       reason: TICKER_REASON_KO[s.symbol] || "",

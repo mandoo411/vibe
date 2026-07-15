@@ -72,7 +72,7 @@ export async function loadLatestSnapshot() {
 export async function buildPromoCopy(snapshot) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const analysisText = sanitizeUnicode(snapshot.analysis || "");
-  const gainers = (snapshot.topGainers || []).slice(0, 3);
+  const gainers = (snapshot.topGainers || []).slice(0, 5);
 
   const fallback = () => {
     const headline = buildIndexHeadline(snapshot) || extractHeadlineFallback(analysisText);
@@ -160,7 +160,7 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     headline: copy.headline,
     indexTitle: "오늘의 지수",
     indexRows,
-    listTitle: "오늘의 특징주 TOP3",
+    listTitle: "오늘의 특징주 TOP5",
     listItems: gainers.map((g) => ({ name: g.name, reason: g.reason, pct: g.change })),
     aiTitle: "AI 오늘의 판단",
     aiComment: copy.aiComment,

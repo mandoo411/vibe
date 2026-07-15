@@ -51,9 +51,10 @@ const US_SECTORS = [
 const EXCHANGES = ["NAS", "NYS"];
 const memoryCache = new Map();
 
-// 랭킹에서 제외할 티커(현재 없음). GOOGL/GOOG는 둘 다 표시하되 클래스별 발행주식수로 시총을 각각 계산함
+// 랭킹에서 제외할 티커. GOOGL/GOOG는 둘 다 표시하되 클래스별 발행주식수로 시총을 각각 계산함
 // (아래 KNOWN_SHARES_OUTSTANDING). Yahoo/KIS는 양쪽에 회사 전체 시총(~$4.5T)을 주므로 그대로 쓰면 중복으로 보임.
-const EXCLUDED_US_TICKERS = new Set();
+// SKHYV는 SK하이닉스 나스닥 ADR 상장 첫날 임시 배정된 티커로, 정식 티커 SKHY와 동일 종목이 중복 표시되는 문제가 있어 제외.
+const EXCLUDED_US_TICKERS = new Set(["SKHYV"]);
 function isExcludedUsTicker(t) {
   return EXCLUDED_US_TICKERS.has(String(t || "").toUpperCase());
 }

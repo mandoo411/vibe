@@ -2233,6 +2233,11 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     flex-shrink: 0;
   }
 
+  [data-theme="dark"] .page-home-v2 .home-m-ai-live__title,
+  body[data-theme="dark"] .page-home-v2 .home-m-ai-live__title {
+    color: #e8eaef;
+  }
+
   [data-theme="dark"] .page-home-v2 .home-m-insight,
   body[data-theme="dark"] .page-home-v2 .home-m-insight {
     background: var(--bg-tertiary);

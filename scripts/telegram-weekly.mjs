@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
 import {
   addDaysYmd,
   companyName,
@@ -14,6 +15,20 @@ import {
   seoulYmd,
   SITE_URL,
 } from "./telegram-utils.mjs";
+
+// weekly-market.html과 동일한 번역 사전을 재사용 (assets/indicator-ko.js — CommonJS로도 export됨).
+const require = createRequire(import.meta.url);
+const { tmEventLabelText } = require("../assets/indicator-ko.js");
+
+function translatedEventTitle(row) {
+  const raw = eventTitle(row);
+  if (!raw || raw === "경제지표") return raw;
+  try {
+    return tmEventLabelText(row);
+  } catch {
+    return raw;
+  }
+}
 
 const DATA_PATH = process.env.WEEKLY_SCHEDULE_PATH || "data/weekly-schedule.json";
 
@@ -31,7 +46,7 @@ function rowsThisWeek(rows, monday, friday) {
 function formatEventLine(row) {
   const [, , day] = row.date.split("-");
   const label = `${dayKo(row.date)} ${Number(day)}일`;
-  return `- ${label}: ${mdText(eventTitle(row))}`;
+  return `- ${label}: ${mdText(translatedEventTitle(row))}`;
 }
 
 function formatEarningLine(row) {

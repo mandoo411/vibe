@@ -749,6 +749,20 @@ async function main() {
   } catch (error) {
     console.log(`❌ Claude 분석 실패: ${error instanceof Error ? error.message : error}`);
   }
+  // 2026-07-15: Claude 호출 실패(예: Anthropic 크레딧 부족 — 이 에러는 재시도로 해결되지
+  // 않고 사람이 결제를 충전해야 함) 시 예전엔 eventAnalysis가 통째로 []로 저장되어 그날
+  // 하루 "AI 일정분석" 섹션이 완전히 비어버렸다. krEarnings와 동일한 패턴으로, 실패 시
+  // 기존 파일에 남아있던 항목 중 아직 유효한(오늘 이후 날짜) 분석은 유지한다.
+  if (!eventAnalysis.length) {
+    const prior = await loadPriorData();
+    const priorFuture = Array.isArray(prior?.eventAnalysis)
+      ? prior.eventAnalysis.filter((r) => r && typeof r.date === "string" && r.date >= today)
+      : [];
+    if (priorFuture.length) {
+      eventAnalysis = priorFuture;
+      console.log(`⚠️ 일정 분석 실패 — 기존 데이터 중 미래분 ${eventAnalysis.length}건 유지`);
+    }
+  }
 
   const data = {
     meta: {

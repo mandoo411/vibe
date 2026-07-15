@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
 import {
   companyName,
   countryFlag,
@@ -13,6 +14,23 @@ import {
   seoulYmd,
   SITE_URL,
 } from "./telegram-utils.mjs";
+
+// assets/indicator-ko.js는 브라우저 전역 스크립트지만 CommonJS로도 내보내도록 되어 있어
+// (window shim 포함) 텔레그램 발송 스크립트에서도 그대로 재사용할 수 있다 — 웹/텔레그램이
+// 서로 다른 번역을 쓰다가 어긋나는 일이 없도록 사전을 하나만 유지한다.
+const require = createRequire(import.meta.url);
+const { tmEventLabelText } = require("../assets/indicator-ko.js");
+
+// "한글 번역 (영어 원문)" 형태로 텔레그램에도 웹과 동일한 표기를 쓴다.
+function translatedEventTitle(row) {
+  const raw = eventTitle(row);
+  if (!raw || raw === "경제지표") return raw;
+  try {
+    return tmEventLabelText(row);
+  } catch {
+    return raw;
+  }
+}
 
 const DATA_PATH = process.env.WEEKLY_SCHEDULE_PATH || "data/weekly-schedule.json";
 
@@ -46,7 +64,7 @@ function formatEvent(row) {
   const time = row?.time ? `${row.time} ` : "";
   const flag = countryFlag(row?.country);
   const estimate = formatEstimate(row?.estimate);
-  return `- ${time}${flag} ${mdText(eventTitle(row))} 예측: ${estimate}`;
+  return `- ${time}${flag} ${mdText(translatedEventTitle(row))} 예측: ${estimate}`;
 }
 
 function buildDailyMessage(data, ymd) {
@@ -87,7 +105,7 @@ function buildBreakingMessages(data, ymd) {
     .filter((row) => row.actual !== "" && row.actual != null)
     .map((row) => {
       const flag = countryFlag(row.country);
-      const title = mdText(eventTitle(row));
+      const title = mdText(translatedEventTitle(row));
       const estimate = formatEstimate(row.estimate);
       const actual = formatEstimate(row.actual);
       const label = surpriseLabel(row.actual, row.estimate);

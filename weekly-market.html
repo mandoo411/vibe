@@ -109,7 +109,9 @@
           </section>
 
           <!-- 섹션 2: 일정 분석 -->
-          <section class="schedule-card" aria-labelledby="ai-title">
+          <!-- 2026-07-15: 선택한 날짜에 AI 일정분석이 없으면 이 섹션 자체를 숨긴다(renderAnalysis 참고).
+               초기 로딩 중에는 보여야 하므로 hidden 속성은 넣지 않고 JS가 매번 최신 상태로 갱신한다. -->
+          <section class="schedule-card" id="analysis-section" aria-labelledby="ai-title">
             <div class="section-head">
               <div>
                 <p class="section-kicker">Analysis</p>
@@ -1077,17 +1079,17 @@
           const items = ymd ? allItems.filter((i) => i.date === ymd) : allItems;
           const grid = $("analysis-grid");
           const placeholder = $("analysis-placeholder");
+          const section = $("analysis-section");
           if ($("analysis-date")) $("analysis-date").textContent = ymd ? fmtDate(ymd) : "—";
+          // 2026-07-15: 선택한 날짜에 AI 일정분석이 하나도 없으면(그날 이벤트가 없거나,
+          // 데이터 수집 실패로 못 만든 경우 모두 포함) 안내 문구 대신 섹션 자체를 숨긴다.
           if (!items.length) {
+            if (section) section.hidden = true;
             if (grid) grid.hidden = true;
-            if (placeholder) {
-              placeholder.hidden = false;
-              placeholder.innerHTML = allItems.length
-                ? '<i class="ti ti-calendar-off" aria-hidden="true"></i>이 날짜에 대한 AI 분석이 없습니다'
-                : '<i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트';
-            }
+            if (placeholder) placeholder.hidden = true;
             return;
           }
+          if (section) section.hidden = false;
           if (placeholder) placeholder.hidden = true;
           if (grid) {
             grid.hidden = false;

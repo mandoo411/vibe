@@ -1,4 +1,10 @@
 /** 경제지표 영문→한글 (weekly-market.html과 동기) */
+// Node.js(텔레그램 발송 스크립트 등)에서 require()로 불러올 때는 브라우저의 window가
+// 없으므로, 파일 하단의 window.tmXxx = ... 대입이 에러 나지 않게 global을 window로 잡아준다.
+// 브라우저에서는 typeof window === "undefined"가 거짓이라 이 블록이 스킵되고 영향 없음.
+if (typeof window === "undefined" && typeof global !== "undefined") {
+  global.window = global;
+}
 const INDICATOR_KO = {
   "Fed Interest Rate Decision": "연준 금리 결정",
   "FOMC Meeting Minutes": "FOMC 의사록",
@@ -177,6 +183,58 @@ const INDICATOR_REGEX = [
   [/exports\s+yoy/i, "수출 (연간)"],
   [/imports\s+yoy/i, "수입 (연간)"],
 ];
+// 인물명이 매번 바뀌는 일정(연준 의장 교체, 다양한 위원 연설/증언 등)은 사전에 통째로
+// 등록할 수 없으므로, 캡처그룹으로 이름만 뽑아 문장 틀에 끼워넣는 패턴 규칙을 둔다.
+// 예: "Fed Chairman Warsh Testifies" → "美 연준 의장 워시 의회 증언"
+//     의장이 바뀌어도(Powell→Warsh→...) 이름만 다시 매핑하면 되고, 매핑이 없는 이름도
+//     원문 이름을 그대로 살려 "美 연준 의장 OOO 의회 증언"처럼 자연스럽게 처리된다.
+const FED_NAME_KO = {
+  powell: "파월",
+  warsh: "워시",
+  waller: "월러",
+  williams: "윌리엄스",
+  bowman: "보우먼",
+  barkin: "바킨",
+  daly: "데일리",
+  goolsbee: "굴스비",
+  kashkari: "카시카리",
+  logan: "로건",
+  mester: "메스터",
+  harker: "하커",
+  collins: "콜린스",
+  musalem: "무살렘",
+  schmid: "슈미드",
+  cook: "쿡",
+  jefferson: "제퍼슨",
+  barr: "바",
+};
+function koPersonName(name) {
+  const key = String(name || "")
+    .trim()
+    .toLowerCase();
+  return FED_NAME_KO[key] || name;
+}
+const INDICATOR_PATTERN_KO = [
+  [
+    /^Fed\s+Chair(?:man|woman)?\s+([A-Za-z][A-Za-z.'-]*)\s+Testifies$/i,
+    (m) => `美 연준 의장 ${koPersonName(m[1])} 의회 증언`,
+  ],
+  [
+    /^Fed\s+Vice[\s-]?Chair(?:man|woman)?\s+([A-Za-z][A-Za-z.'-]*)\s+Testifies$/i,
+    (m) => `美 연준 부의장 ${koPersonName(m[1])} 의회 증언`,
+  ],
+  [
+    /^Fed\s+Chair(?:man|woman)?\s+([A-Za-z][A-Za-z.'-]*)\s+Speaks$/i,
+    (m) => `美 연준 의장 ${koPersonName(m[1])} 발언`,
+  ],
+  [
+    /^FOMC\s+Member\s+([A-Za-z][A-Za-z.'-]*)\s+Speaks$/i,
+    (m) => `FOMC 위원 ${koPersonName(m[1])} 발언`,
+  ],
+  [/^([A-Za-z][A-Za-z.'-]*)\s+Testifies$/i, (m) => `${koPersonName(m[1])} 의회 증언`],
+  [/^([A-Za-z][A-Za-z.'-]*)\s+Speaks$/i, (m) => `${koPersonName(m[1])} 발언`],
+  [/^([A-Za-z][A-Za-z.'-]*)\s+Speech$/i, (m) => `${koPersonName(m[1])} 연설`],
+];
 function translateIndicator(name) {
   const raw = String(name || "").trim();
   if (!raw) return raw;
@@ -195,6 +253,10 @@ function translateIndicator(name) {
   if (exactCi) return INDICATOR_KO[exactCi];
   for (const [re, ko] of INDICATOR_REGEX) {
     if (re.test(normalized)) return ko;
+  }
+  for (const [re, fn] of INDICATOR_PATTERN_KO) {
+    const m = normalized.match(re);
+    if (m) return fn(m);
   }
   const partial = Object.keys(INDICATOR_KO)
     .sort((a, b) => b.length - a.length)
@@ -314,7 +376,13 @@ function resolveFormalIndicator(row) {
 
 function indicatorParenLabel(row, formal) {
   if (formal?.abbr) return formal.abbr;
-  return String(row?.event || "").trim();
+  const raw = String(row?.event || "").trim();
+  if (!raw) return "";
+  // translateIndicator가 매핑을 못 찾아 원문을 그대로 반환한 경우, 괄호 안에
+  // 같은 영어 원문을 중복 표시하지 않는다("Fed X Testifies (Fed X Testifies)" 버그 방지).
+  const translated = translateIndicator(raw);
+  if (!translated || translated.trim() === raw) return "";
+  return raw;
 }
 
 function tmEventLabelText(row) {
@@ -365,3 +433,13 @@ window.tmTranslateCountry = function tmTranslateCountry(c) {
   const k = String(c || "").trim();
   return COUNTRY_KO[k] || k;
 };
+
+// Node.js(텔레그램 발송 스크립트 등)에서도 같은 번역 사전을 재사용할 수 있도록 CommonJS로도
+// 내보낸다. 브라우저에는 영향 없음(module이 정의되지 않은 환경에서는 이 블록이 스킵됨).
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    translateIndicator,
+    tmEventLabelText,
+    tmTranslateCountry: window.tmTranslateCountry,
+  };
+}

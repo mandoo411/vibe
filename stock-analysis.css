@@ -880,73 +880,118 @@
 .ai-chart-text {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 10px;
   margin-top: 4px;
 }
 
-.ai-chart-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--color-border-tertiary);
+/* 2026-07-15: 6번 차트 흐름 분석 — 소제목 + 내용을 한 덩어리(박스)로 시각 분리.
+ * 기존엔 밑줄 구분선 하나짜리 리스트라 촘촘한 서술형처럼 보였던 문제를
+ * 카드형 박스 + 좌측 컬러바 + 소제목 헤더로 정리. */
+.ai-chart-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  border-left: 3px solid #9ca3af;
   font-size: var(--ai-body-size);
   line-height: var(--ai-body-lh);
 }
 
-.ai-chart-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.ai-chart-item__content {
-  flex: 1;
-  min-width: 0;
-}
-
-.ai-chart-item__title {
-  font-weight: 500;
-  margin-right: 4px;
-}
-
-.ai-chart-line {
+.ai-chart-box__head {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: var(--ai-body-size);
-  line-height: var(--ai-body-lh);
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.ai-chart-box__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-chart-box__title {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-chart-box__body {
+  margin: 0;
 }
 
 .ai-chart-dot {
   flex-shrink: 0;
-  width: 8px;
-  height: 8px;
-  margin-top: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
 }
 
 .ai-chart-dot--red {
   background: #e24b4a;
 }
+.ai-chart-box--red {
+  border-left-color: #e24b4a;
+}
 
 .ai-chart-dot--blue {
   background: var(--accent-brand);
 }
+.ai-chart-box--blue {
+  border-left-color: var(--accent-brand);
+}
 
 .ai-chart-dot--purple {
-  background: var(--accent-brand);
+  background: #a855f7;
+}
+.ai-chart-box--purple {
+  border-left-color: #a855f7;
 }
 
 .ai-chart-dot--yellow {
   background: #eab308;
 }
+.ai-chart-box--yellow {
+  border-left-color: #eab308;
+}
 
 .ai-chart-dot--gray {
   background: #9ca3af;
 }
+.ai-chart-box--gray {
+  border-left-color: #9ca3af;
+}
 
 .ai-chart-dot--green {
   background: #22c55e;
+}
+.ai-chart-box--green {
+  border-left-color: #22c55e;
+}
+
+.ai-chart-dot--teal {
+  background: #14b8a6;
+}
+.ai-chart-box--teal {
+  border-left-color: #14b8a6;
+}
+
+.ai-chart-dot--orange {
+  background: #f97316;
+}
+.ai-chart-box--orange {
+  border-left-color: #f97316;
+}
+
+.ai-chart-dot--indigo {
+  background: #6366f1;
+}
+.ai-chart-box--indigo {
+  border-left-color: #6366f1;
+}
+
+.ai-chart-dot--pink {
+  background: #ec4899;
+}
+.ai-chart-box--pink {
+  border-left-color: #ec4899;
 }
 
 .ai-chart-text-empty {

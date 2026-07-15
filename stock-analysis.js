@@ -651,46 +651,131 @@
     return renderStockHeader(payload);
   }
 
+  // 2026-07-15: "6번 차트 흐름 분석"을 소제목 박스로 구조화해서 보여주기 위한 섹션 정의.
+  // AI가 ①②③ 마커/줄바꿈 없이 하나의 flowing text로 응답해도(기존 캐시된 분석 포함)
+  // 문장 단위로 키워드를 매칭해 소제목별 박스로 재구성한다.
+  // 배열 순서 = 매칭 우선순위(위에 있을수록 더 구체적인 키워드 → 먼저 검사).
+  const CHART_SECTIONS = [
+    { key: "hilo", title: "전고점·전저점(52주)", color: "gray", re: /52주|전고점|전저점/ },
+    { key: "ichimoku", title: "일목균형표", color: "purple", re: /일목균형|전환선|기준선|구름대/ },
+    { key: "elliott", title: "엘리어트 파동", color: "green", re: /엘리어트|파동|조정\s*국면/ },
+    {
+      key: "mtf",
+      title: "멀티 타임프레임 정합성",
+      color: "indigo",
+      re: /멀티\s*타임프레임|일봉[·,\s]*주봉[·,\s]*월봉|같은\s*방향으로/,
+    },
+    { key: "weekly", title: "주봉 흐름", color: "teal", re: /주봉/ },
+    { key: "monthly", title: "월봉 흐름", color: "orange", re: /월봉/ },
+    { key: "rsi", title: "RSI", color: "blue", re: /RSI/i },
+    {
+      key: "ict",
+      title: "ICT(스마트머니) 관점",
+      color: "pink",
+      re: /ICT|유동성|스마트머니|오더블록|order\s*block|FVG/i,
+    },
+    {
+      key: "sr",
+      title: "지지선·저항선",
+      color: "yellow",
+      re: /지지선|저항선|지지대|저항대|1차\s*저항|2차\s*저항|1차\s*지지|2차\s*지지/,
+    },
+    {
+      key: "ma",
+      title: "이동평균선(일봉)",
+      color: "red",
+      re: /이동평균|이평선|20일선|60일선|120일선|200일선|정배열|역배열/,
+    },
+  ];
+
+  function chartSectionFor(text) {
+    const t = String(text || "");
+    for (const sec of CHART_SECTIONS) {
+      if (sec.re.test(t)) return sec;
+    }
+    return null;
+  }
+
   function chartDotClass(line) {
-    const t = String(line || "");
-    if (/엘리어트|파동/i.test(t)) return "ai-chart-dot--green";
-    if (/전고|전저|52주/i.test(t)) return "ai-chart-dot--gray";
-    if (/지지|저항/i.test(t)) return "ai-chart-dot--yellow";
-    if (/일목|구름/i.test(t)) return "ai-chart-dot--purple";
-    if (/RSI/i.test(t)) return "ai-chart-dot--blue";
-    if (/이동평균|MA|20일|60일|120일|200일/i.test(t)) return "ai-chart-dot--red";
-    return "ai-chart-dot--gray";
+    const sec = chartSectionFor(line);
+    return `ai-chart-dot--${sec ? sec.color : "gray"}`;
   }
 
   function parseChartLine(line) {
     const raw = String(line || "").trim();
-    const m = raw.match(/^[①②③④⑤⑥⑦⑧⑨]?\s*([^:：—\-]+?)[:：—\-]\s*(.+)$/);
+    const m = raw.match(/^[①②③④⑤⑥⑦⑧⑨⑩]?\s*([^:：—\-]+?)[:：—\-]\s*(.+)$/);
     if (m) return { title: m[1].trim(), body: m[2].trim() };
     return { title: "", body: raw };
+  }
+
+  /** 종결어미(다/요/음/함/임/됨) + 마침표/물음표/느낌표 뒤 공백(또는 끝)을 문장 경계로 인정해서 분리.
+   * 경계가 되는 종결 패턴의 "끝 위치"만 찾고 그 사이 구간은 통째로 슬라이스하기 때문에
+   * "48.02%" 같은 문장 중간의 소수점에 걸려 텍스트가 유실되는 일이 없다. */
+  function splitChartSentences(text) {
+    const s = String(text || "").trim();
+    if (!s) return [];
+    const enderRe = /[다요음함임됨][.!?]+(?=\s|$)/g;
+    const out = [];
+    let lastEnd = 0;
+    let m;
+    while ((m = enderRe.exec(s))) {
+      const end = m.index + m[0].length;
+      const piece = s.slice(lastEnd, end).trim();
+      if (piece) out.push(piece);
+      lastEnd = end;
+    }
+    const rest = s.slice(lastEnd).trim();
+    if (rest) out.push(rest);
+    return out;
+  }
+
+  /** 줄바꿈이 전혀 없는 하나의 서술형 문단을 소제목별 문단(박스)으로 재구성.
+   * AI가 마커 없이 flowing text로 응답한 경우(가장 흔한 케이스)를 위한 안전망. */
+  function groupChartSections(text) {
+    const sentences = splitChartSentences(text);
+    const groups = [];
+    let current = null;
+    sentences.forEach((sent) => {
+      const sec = chartSectionFor(sent);
+      if (sec && (!current || current.key !== sec.key)) {
+        current = { key: sec.key, title: sec.title, parts: [] };
+        groups.push(current);
+      } else if (!current) {
+        current = { key: null, title: "", parts: [] };
+        groups.push(current);
+      }
+      current.parts.push(sent);
+    });
+    return groups.filter((g) => g.parts.length).map((g) => ({ title: g.title, body: g.parts.join(" ") }));
   }
 
   function renderChartText(text) {
     const raw = String(text || "").trim();
     if (!raw) return `<p class="ai-chart-text-empty">차트 분석이 없습니다.</p>`;
-    const lines = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-    if (lines.length <= 1 && !/①|②|③/.test(raw)) {
-      return (
-        `<div class="ai-chart-text">` +
-        `<div class="ai-chart-item"><span class="ai-chart-dot ai-chart-dot--gray"></span><div class="ai-chart-item__content"><span>${escapeHtml(raw)}</span></div></div>` +
-        `</div>`
-      );
+
+    let items;
+    if (/\n/.test(raw)) {
+      items = raw
+        .split(/\n+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((line) => parseChartLine(line));
+    } else {
+      items = groupChartSections(raw);
     }
+    if (!items.length) items = [{ title: "", body: raw }];
+
     return (
       `<div class="ai-chart-text">` +
-      lines
-        .map((line) => {
-          const parsed = parseChartLine(line);
-          const dotCls = chartDotClass(parsed.title || line);
-          const titleHtml = parsed.title
-            ? `<span class="ai-chart-item__title">${escapeHtml(parsed.title)}</span>`
+      items
+        .map(({ title, body }) => {
+          const sec = chartSectionFor(title || body);
+          const color = sec ? sec.color : "gray";
+          const titleHtml = title
+            ? `<div class="ai-chart-box__head"><span class="ai-chart-dot ai-chart-dot--${color}"></span><span class="ai-chart-box__title">${escapeHtml(title)}</span></div>`
             : "";
-          const bodyHtml = emphasizeMetrics(escapeHtml(parsed.body));
-          return `<div class="ai-chart-item"><span class="ai-chart-dot ${dotCls}"></span><div class="ai-chart-item__content">${titleHtml}<span>${bodyHtml}</span></div></div>`;
+          const bodyHtml = emphasizeMetrics(escapeHtml(body));
+          return `<div class="ai-chart-box ai-chart-box--${color}">${titleHtml}<p class="ai-chart-box__body">${bodyHtml}</p></div>`;
         })
         .join("") +
       `</div>`

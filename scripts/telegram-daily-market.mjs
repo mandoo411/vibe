@@ -115,6 +115,29 @@ function formatAnalysisBodyHtml(body) {
     .join("\n");
 }
 
+// Telegram sendMessage 하드 한도는 4096 UTF-16 코드유닛. 분석 본문이 길면(특징주 10종목 등)
+// 쉽게 초과해서 API가 메시지 전체를 거부(Bad Request: message is too long)하고, 그 결과
+// 텔레그램 발송 자체가 통째로 실패했었다(2026-07-09·07-10 등). 안전 여유를 두고, 길면
+// 분석 본문 뒷부분(중요도가 낮은 뒷문단)부터 잘라내고 "더보기" 안내를 붙인다.
+// 각 줄이 <b>...</b> 형태로 자기완결적으로 닫혀 있으므로(formatAnalysisBodyHtml 참고),
+// 줄 단위로 잘라내면 HTML 태그가 중간에서 끊길 위험이 없다.
+const TELEGRAM_SAFE_LIMIT = 3900;
+
+function truncateBodyLines(bodyLines, budget) {
+  if (bodyLines.join("\n").length <= budget) return { lines: bodyLines, truncated: false };
+  const notice = "…(하략 — 전체 분석은 아래 링크에서 확인하세요)";
+  const kept = [];
+  let used = notice.length + 1;
+  for (const line of bodyLines) {
+    const next = used + line.length + 1;
+    if (next > budget) break;
+    kept.push(line);
+    used = next;
+  }
+  kept.push(notice);
+  return { lines: kept, truncated: true };
+}
+
 function buildMessage(data) {
   const { ymd, day } = pickTargetDay(data);
   const indexes = Array.isArray(day.indexes) ? day.indexes : [];
@@ -123,36 +146,48 @@ function buildMessage(data) {
   const idxLine =
     [kospi, kosdaq].filter(Boolean).map(formatIndexLine).join(" | ") || "지수 데이터 준비 중";
 
-  const lines = [bold(`[${formatDateKo(ymd)} 마감시황]`), idxLine];
+  const headLines = [bold(`[${formatDateKo(ymd)} 마감시황]`), idxLine];
 
+  const bodyLines = [];
   const analysis = day.analysis || day.summary || day.marketSummary || "";
   if (analysis) {
     const { title, body } = splitAnalysisTitle(analysis);
-    lines.push("", "━━━━━━━━━━━━━━━━━━", bold("📊 종합분석"));
+    bodyLines.push("", "━━━━━━━━━━━━━━━━━━", bold("📊 종합분석"));
     if (title) {
       const boldTitle = title
         .split("\n")
         .filter((l) => l.trim())
         .map((l) => bold(l))
         .join("\n");
-      lines.push(boldTitle);
+      bodyLines.push(boldTitle);
     }
-    lines.push("━━━━━━━━━━━━━━━━━━");
-    lines.push(formatAnalysisBodyHtml(body || analysis));
+    bodyLines.push("━━━━━━━━━━━━━━━━━━");
+    // formatAnalysisBodyHtml의 결과는 줄바꿈 포함 문자열이므로 다시 줄 단위로 풀어서
+    // truncateBodyLines가 개별 줄 단위로 자를 수 있게 한다.
+    bodyLines.push(...formatAnalysisBodyHtml(body || analysis).split("\n"));
   }
 
   const supplyLine = formatSupplyLine(day.supply || []);
   if (supplyLine && supplyLine !== "수급 데이터 준비 중") {
-    lines.push("", bold("💰 수급 (코스피)"), htmlText(supplyLine));
+    bodyLines.push("", bold("💰 수급 (코스피)"), htmlText(supplyLine));
   }
 
   const decliners = formatDecliners(day);
   if (decliners) {
-    lines.push("", bold("⚠️ 급락"), decliners);
+    bodyLines.push("", bold("⚠️ 급락"), decliners);
   }
 
-  lines.push("", bold("👉 전체 분석"), `${SITE_URL}/daily-market.html`);
-  return lines.join("\n");
+  const footLines = ["", bold("👉 전체 분석"), `${SITE_URL}/daily-market.html`];
+
+  const budget = TELEGRAM_SAFE_LIMIT - headLines.join("\n").length - footLines.join("\n").length - 2;
+  const { lines: safeBodyLines, truncated } = truncateBodyLines(bodyLines, budget);
+  if (truncated) {
+    console.warn(
+      `[telegram-daily-market] message exceeded ${TELEGRAM_SAFE_LIMIT} chars, truncated body for Telegram send.`
+    );
+  }
+
+  return [...headLines, ...safeBodyLines, ...footLines].join("\n");
 }
 
 async function main() {

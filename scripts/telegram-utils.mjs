@@ -146,15 +146,39 @@ export function companyName(row) {
   return firstNonEmpty(row?.company, row?.name, row?.symbol, "");
 }
 
+// Telegram sendMessage 하드 한도: 4096 UTF-16 코드유닛. 개별 발송 스크립트가 이 한도를
+// 놓치면 API가 통째로 거부해 발송 자체가 조용히 실패한다(과거 마감시황 발송 장애의 원인).
+// 여기서 최종 안전망으로 한 번 더 자른다 — 줄바꿈 경계에서만 자르므로 각 줄이
+// 자기완결적인 <b>...</b>/마크다운 태그를 쓰는 한 태그가 중간에서 끊기지 않는다.
+const TELEGRAM_HARD_LIMIT = 4096;
+const TELEGRAM_SAFETY_MARGIN = 100;
+
+function truncateToTelegramLimit(text) {
+  const max = TELEGRAM_HARD_LIMIT - TELEGRAM_SAFETY_MARGIN;
+  if (text.length <= max) return text;
+  const notice = "\n…(하략 — 메시지 길이 제한으로 일부 생략)";
+  const budget = max - notice.length;
+  let cut = text.slice(0, budget);
+  const lastNewline = cut.lastIndexOf("\n");
+  if (lastNewline > 0) cut = cut.slice(0, lastNewline);
+  return cut + notice;
+}
+
 export async function sendTelegramMessage(text, { parseMode = "Markdown" } = {}) {
   const token = requireEnv("TELEGRAM_TOKEN");
   const chatId = requireEnv("TELEGRAM_CHANNEL_ID");
+  const safeText = truncateToTelegramLimit(String(text || ""));
+  if (safeText.length !== String(text || "").length) {
+    console.warn(
+      `[telegram] message length ${String(text || "").length} exceeded safe limit, truncated to ${safeText.length}.`
+    );
+  }
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      text,
+      text: safeText,
       parse_mode: parseMode,
       disable_web_page_preview: true,
     }),

@@ -113,7 +113,12 @@ export function buildCardsHTML(cardData) {
 
   let ai = read("card-ai");
   ai = fillSimpleVars(ai, { PAGE_TITLE: aiTitle, AI_COMMENT: aiComment, CHECKPOINTS_TITLE: checkpointsTitle });
-  ai = fillRepeatBlock(ai, "TAG", checkpoints.slice(0, 3), (c) => `<span class="tag-gold">${c}</span>`);
+  const checkColor = theme === "light" ? "#0f8387" : "#d4af37";
+  ai = fillRepeatBlock(ai, "TAG", checkpoints.slice(0, 3), (c) => `
+    <span class="tag-gold">
+      <svg class="chk" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="${checkColor}"/><path d="M7 12.5l3 3 7-7.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>${c}</span>
+    </span>`);
 
   const cta = read("card-cta");
 

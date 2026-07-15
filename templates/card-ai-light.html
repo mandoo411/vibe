@@ -26,33 +26,33 @@
     padding: 46px 44px;
   }
   .comment-panel .quote-mark {
-    font-size: 68px;
+    font-size: 72px;
     font-weight: 800;
     color: var(--accent-gold);
     line-height: 1;
     margin-bottom: 10px;
   }
   .comment-panel .text {
-    font-size: 39px;
+    font-size: 42px;
     font-weight: 600;
     line-height: 1.55;
     color: var(--text-primary);
   }
   .sector-title {
     position: absolute;
-    top: 790px;
+    top: 730px;
     left: 64px;
-    font-size: 29px;
+    font-size: 32px;
     font-weight: 700;
     color: var(--text-secondary);
   }
   .sectors {
     position: absolute;
-    top: 842px;
+    top: 786px;
     left: 64px;
     right: 64px;
     display: flex;
-    gap: 16px;
+    gap: 18px;
     flex-wrap: wrap;
   }
 </style>
@@ -86,7 +86,7 @@
   <div class="sector-title">{{CHECKPOINTS_TITLE}}</div>
   <div class="sectors" id="sectors">
     <!--TAG_TEMPLATE_START
-    <span class="tag-gold">{{SECTOR}}</span>
+    <span class="tag-gold"><svg class="chk" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#0f8387"/><path d="M7 12.5l3 3 7-7.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{SECTOR}}</span></span>
     TAG_TEMPLATE_END-->
   </div>
 

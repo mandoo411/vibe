@@ -300,12 +300,15 @@
           el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
           return;
         }
-        el.innerHTML = items
+        const itemsHtml = items
           .map((item) => {
             const pctHtml = tickerPctHtml(item);
             return `<div class="home-ticker__item">${liveDotHtml(item.live)}<span class="home-ticker__name">${item.label || "-"}</span><span class="home-ticker__val">${formatTickerValue(item)}</span>${pctHtml}</div>`;
           })
           .join("");
+        // 주식방송 자막처럼 좌측으로 끊김없이 흐르게: 동일 항목을 두 번 이어붙여
+        // .home-ticker__track을 -50% 만큼 translateX 하면 이음매가 보이지 않는다.
+        el.innerHTML = `<div class="home-ticker__track">${itemsHtml}${itemsHtml}</div>`;
       })
       .catch(() => {
         el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';

@@ -228,16 +228,13 @@ body.page-home-v2 {
 
   .page-home-v2 .home-ticker-bar .home-ticker,
   .page-tm-v2 .home-ticker-bar .home-ticker {
-    justify-content: space-between;
-    gap: 0;
     overflow: hidden;
   }
 
   .page-home-v2 .home-ticker-bar .home-ticker__item,
   .page-tm-v2 .home-ticker-bar .home-ticker__item {
-    flex: 1 1 0;
+    flex: 0 0 auto;
     min-width: 0;
-    max-width: none;
     justify-content: center;
     gap: 6px;
   }
@@ -865,22 +862,51 @@ body.tm-nav-sheet-open {
 .home-ticker {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   padding: 7px var(--shell-pad-inline-end, 32px) 7px var(--shell-pad-inline, 24px);
   background: var(--bg-primary, #ffffff);
   border-bottom: 1px solid var(--border, #eef0f8);
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
 .home-ticker::-webkit-scrollbar {
   display: none;
 }
 
+/* 주식방송 자막처럼 좌측으로 흐르는 티커: 항목을 두 벌 이어붙인 트랙을
+   -50% translateX 애니메이션으로 무한 루프시킨다. renderTicker()가
+   #home-ticker 안에 이 트랙을 렌더링한다(로딩/에러 상태는 트랙 없이 일반 텍스트). */
+.home-ticker__track {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  width: max-content;
+  animation: tm-ticker-scroll 34s linear infinite;
+  will-change: transform;
+}
+
+.home-ticker:hover .home-ticker__track {
+  animation-play-state: paused;
+}
+
+@keyframes tm-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-ticker__track {
+    animation: none;
+  }
+}
+
 .home-ticker__item {
-  flex: 1 1 0;
-  min-width: 110px;
+  flex: 0 0 auto;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -1996,13 +2022,14 @@ body[data-theme="dark"] .home-ticker-bar__label {
     padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 0;
     background: transparent;
     border: none;
-    justify-content: flex-start;
     align-items: center;
     gap: 12px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scroll-padding-inline-end: 16px;
+    overflow: hidden;
+  }
+
+  .page-tm-v2 .home-ticker__track,
+  .page-home-v2 .home-ticker__track {
+    gap: 20px;
   }
 
   .page-tm-v2 .home-empty {

@@ -1,0 +1,47 @@
+name: Trade Signal Scan
+
+# 매매시그널(유료 기능) — 사용자가 만든 활성 전략의 조건을 15분 간격으로 판정해서
+# 충족되면 trade_signal_events에 기록한다(사이트 "발견된 시그널" 목록에 표시).
+# 평일 장중(KST 09:00~15:45)만 커버. 활성 전략이 없으면 스크립트가 즉시 종료한다.
+
+on:
+  schedule:
+    - cron: "*/15 0-6 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trade-signal-scan
+  cancel-in-progress: true
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run trade signal scan
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        run: node scripts/trade-signal-scan.mjs

@@ -1,0 +1,658 @@
+﻿<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07264b" />
+    <title>TotalMoney AI · 매매시그널</title>
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6">
+    <link rel="shortcut icon" href="/favicon.ico?v=6">
+    <link rel="manifest" href="/site.webmanifest?v=6">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/auth-config.js"></script>
+    <script src="./assets/auth.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      .ts-page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      .ts-masthead {
+        margin-bottom: 20px;
+      }
+      .ts-masthead__kicker {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--text-muted-ui);
+        text-transform: uppercase;
+        margin: 0 0 4px;
+      }
+      .ts-masthead__title {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text-title);
+        margin: 0;
+      }
+      .ts-masthead__desc {
+        font-size: 13.5px;
+        color: var(--text-secondary);
+        margin: 6px 0 0;
+      }
+      .ts-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 18px;
+      }
+      .ts-gate {
+        text-align: center;
+        padding: 40px 20px;
+      }
+      .ts-gate__title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-title);
+        margin: 0 0 8px;
+      }
+      .ts-gate__text {
+        font-size: 13.5px;
+        color: var(--text-secondary);
+        margin: 0 0 18px;
+        line-height: 1.6;
+      }
+      .ts-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 18px;
+        border-radius: 8px;
+        background: var(--accent-gold, var(--accent-brand));
+        color: #1a1305;
+        font-size: 13.5px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .ts-btn--ghost {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+      .ts-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .ts-hidden {
+        display: none !important;
+      }
+      .ts-label {
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+      .ts-textarea {
+        width: 100%;
+        min-height: 60px;
+        resize: vertical;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 12px 14px;
+        color: var(--text-primary);
+        font-size: 13.5px;
+        line-height: 1.6;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      .ts-row-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .ts-preview {
+        border-top: 1px solid var(--border-color);
+        padding-top: 14px;
+        margin-top: 14px;
+      }
+      .ts-preview__hint {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: var(--accent-brand);
+        margin-bottom: 10px;
+      }
+      .ts-preview__dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent-brand);
+      }
+      .ts-preview-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+      .ts-preview-row__label {
+        font-size: 11px;
+        color: var(--text-muted-ui);
+        width: 52px;
+        flex-shrink: 0;
+      }
+      .ts-tag {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 5px 9px;
+        border-radius: 6px;
+        font-size: 12.5px;
+      }
+      .ts-tag--accent {
+        background: rgba(15, 131, 135, 0.18);
+        color: var(--accent-brand);
+      }
+      .ts-error {
+        font-size: 12.5px;
+        color: #e24b4a;
+        margin-top: 10px;
+      }
+      .ts-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-title);
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .ts-strategy {
+        background: var(--card-bg);
+        border-radius: 8px;
+        border-left: 3px solid var(--text-muted-ui);
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .ts-strategy--active {
+        border-left-color: #639922;
+      }
+      .ts-strategy--paused {
+        border-left-color: var(--text-muted-ui);
+      }
+      .ts-strategy__name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-title);
+      }
+      .ts-strategy__cond {
+        font-size: 11.5px;
+        color: var(--text-secondary);
+        margin-top: 2px;
+      }
+      .ts-strategy__actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .ts-status-badge {
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 5px;
+        background: var(--bg-tertiary);
+        color: var(--text-secondary);
+        white-space: nowrap;
+      }
+      .ts-status-badge--active {
+        background: rgba(99, 153, 34, 0.16);
+        color: #97c459;
+      }
+      .ts-icon-btn {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .ts-event {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 12px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        font-size: 12.5px;
+        margin-bottom: 6px;
+      }
+      .ts-event__msg {
+        color: var(--text-title);
+      }
+      .ts-event__time {
+        color: var(--text-muted-ui);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .ts-empty {
+        font-size: 13px;
+        color: var(--text-muted-ui);
+        padding: 14px 4px;
+      }
+      .ts-limit-note {
+        font-size: 12px;
+        color: var(--text-muted-ui);
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body class="page-tm-v2">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <span>TM</span>
+            <span>AI</span>
+          </div>
+          <div>
+            <div class="home-nav__brand-name">TotalMoney</div>
+            <div class="home-nav__brand-sub">
+              <span>powered by</span>
+              <span class="home-nav__ai-badge">AI</span>
+            </div>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <a class="home-nav__link" href="./briefing.html">브리핑</a>
+          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
+          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./us-market.html">미국주식</a>
+          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석</a>
+          <a class="home-nav__link" href="./trade-signal.html" aria-current="page">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </header>
+
+      <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
+        <span class="home-empty">시장 지표 로딩 중…</span>
+      </div>
+
+      <main class="tm-main">
+        <div class="ts-page">
+          <header class="ts-masthead">
+            <p class="ts-masthead__kicker">TRADE SIGNAL</p>
+            <h1 class="ts-masthead__title">매매시그널</h1>
+            <p class="ts-masthead__desc">원하는 매수·매도 조건을 문장으로 입력하면 AI가 조건으로 해석하고, 조건에 맞을 때 알려드립니다.</p>
+          </header>
+
+          <div id="ts-gate" class="ts-card ts-gate ts-hidden">
+            <p class="ts-gate__title" id="ts-gate-title">Pro 전용 기능입니다</p>
+            <p class="ts-gate__text" id="ts-gate-text">매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.</p>
+            <a class="ts-btn" href="./pricing.html">요금제 보기</a>
+          </div>
+
+          <div id="ts-content" class="ts-hidden">
+            <section class="ts-card">
+              <p class="ts-label">어떤 조건일 때 알림을 받을까요?</p>
+              <textarea id="ts-input" class="ts-textarea" placeholder="예: 삼성전자 20일선이 60일선을 상향 돌파하면 매수 신호로 알려줘"></textarea>
+              <div class="ts-row-actions">
+                <button type="button" class="ts-btn" id="ts-parse-btn">AI로 해석하기</button>
+              </div>
+              <p class="ts-error ts-hidden" id="ts-parse-error"></p>
+
+              <div id="ts-preview" class="ts-preview ts-hidden">
+                <p class="ts-preview__hint"><span class="ts-preview__dot" aria-hidden="true"></span>AI가 이렇게 해석했어요</p>
+                <div class="ts-preview-row">
+                  <span class="ts-preview-row__label">종목</span>
+                  <span class="ts-tag" id="ts-preview-stock"></span>
+                </div>
+                <div class="ts-preview-row">
+                  <span class="ts-preview-row__label">조건</span>
+                  <span class="ts-tag ts-tag--accent" id="ts-preview-summary"></span>
+                </div>
+                <div class="ts-preview-row">
+                  <span class="ts-preview-row__label">알림</span>
+                  <span class="ts-tag" id="ts-preview-alert"></span>
+                </div>
+                <div class="ts-row-actions">
+                  <button type="button" class="ts-btn ts-btn--ghost" id="ts-retry-btn">다시 입력</button>
+                  <button type="button" class="ts-btn" id="ts-save-btn">이대로 저장</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="ts-card">
+              <p class="ts-section-title">내 전략<span class="ts-limit-note" id="ts-strategy-count"></span></p>
+              <div id="ts-strategy-list"><p class="ts-empty">불러오는 중…</p></div>
+            </section>
+
+            <section class="ts-card">
+              <p class="ts-section-title">발견된 시그널</p>
+              <div id="ts-event-list"><p class="ts-empty">불러오는 중…</p></div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      <footer class="home-footer">
+        <div class="home-footer__top">
+          <div>
+            <div class="home-footer__brand-name">TotalMoney AI</div>
+            <div class="home-footer__slogan">실시간 시장을 AI로 분석하세요</div>
+          </div>
+          <div class="home-footer__divider" aria-hidden="true"></div>
+          <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
+          <div class="home-footer__sns">
+            <a href="https://www.instagram.com/totalmoney_ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="https://t.me/totalmoney_ai" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><i class="ti ti-brand-telegram"></i></a>
+            <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
+          </div>
+        </div>
+        <div class="home-footer__bottom">
+          <span>© 2026 TotalMoney AI</span>
+          <div class="home-footer__links">
+            <a href="#">이용약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="mailto:contact@totalmoney.ai">문의하기</a>
+          </div>
+          <span>Data by KIS · FMP · CMC</span>
+        </div>
+      </footer>
+
+      <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
+        <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
+        <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
+        <a class="tm-bottom-nav__item" href="./trade-signal.html" data-tm-tab="trade-signal"><i class="ti ti-bell" aria-hidden="true"></i><span>매매시그널</span></a>
+        <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
+        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
+      </nav>
+    </div>
+
+    <script>
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        let pendingResult = null;
+        let strategies = [];
+        let events = [];
+
+        function escapeHtml(value) {
+          return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function fmtTime(iso) {
+          try {
+            const d = new Date(iso);
+            const now = new Date();
+            const sameDay = d.toDateString() === now.toDateString();
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+            if (sameDay) return `${hh}:${mm}`;
+            return `${d.getMonth() + 1}.${d.getDate()} ${hh}:${mm}`;
+          } catch {
+            return "";
+          }
+        }
+
+        function clauseText(c) {
+          const dirText = c.direction === "down" ? "하향" : "상향";
+          if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파`;
+          if (c.type === "price_cross_ma") return `현재가가 ${c.period}일선을 ${dirText} 돌파`;
+          if (c.type === "rsi") return `RSI ${c.op === "lt" || c.op === "lte" ? "≤" : "≥"} ${c.value}`;
+          if (c.type === "volume_ratio") return `거래량 20일평균 대비 ${c.value}% 이상`;
+          if (c.type === "high52w_breakout") return "52주 신고가 갱신";
+          if (c.type === "low52w_breakdown") return "52주 신저가 갱신";
+          if (c.type === "price_change_pct") return `당일 등락률 ${c.op === "lte" ? "≤" : "≥"} ${c.value}%`;
+          return c.type;
+        }
+
+        function conditionText(condition) {
+          if (!condition || !Array.isArray(condition.clauses)) return "";
+          return condition.clauses.map(clauseText).join(" 그리고 ");
+        }
+
+        async function authToken() {
+          if (!window.TMAuth) return "";
+          try {
+            return (await window.TMAuth.getAccessToken()) || "";
+          } catch {
+            return "";
+          }
+        }
+
+        async function apiFetch(path, options = {}) {
+          const token = await authToken();
+          const res = await fetch(path, {
+            ...options,
+            headers: {
+              "content-type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              ...(options.headers || {}),
+            },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || `요청 실패 (HTTP ${res.status})`);
+          return data;
+        }
+
+        function renderStrategies() {
+          const list = $("ts-strategy-list");
+          $("ts-strategy-count").textContent = strategies.length ? ` (${strategies.length}/20)` : "";
+          if (!strategies.length) {
+            list.innerHTML = `<p class="ts-empty">아직 만든 전략이 없어요. 위에서 조건을 입력해보세요.</p>`;
+            return;
+          }
+          list.innerHTML = strategies
+            .map((s) => {
+              const active = s.status === "active";
+              return `<div class="ts-strategy ${active ? "ts-strategy--active" : "ts-strategy--paused"}">
+                <div>
+                  <div class="ts-strategy__name">${escapeHtml(s.stock_name)} · ${s.alert_type === "buy" ? "매수" : "매도"} 시그널</div>
+                  <div class="ts-strategy__cond">${escapeHtml(conditionText(s.condition))}</div>
+                </div>
+                <div class="ts-strategy__actions">
+                  <span class="ts-status-badge ${active ? "ts-status-badge--active" : ""}">${active ? "감시중" : "일시정지"}</span>
+                  <button type="button" class="ts-icon-btn" data-toggle-id="${escapeHtml(s.id)}" data-toggle-to="${active ? "paused" : "active"}" aria-label="${active ? "일시정지" : "재개"}">
+                    <i class="ti ${active ? "ti-player-pause" : "ti-player-play"}" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="ts-icon-btn" data-delete-id="${escapeHtml(s.id)}" aria-label="삭제">
+                    <i class="ti ti-trash" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>`;
+            })
+            .join("");
+
+          list.querySelectorAll("[data-toggle-id]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const id = btn.getAttribute("data-toggle-id");
+              const to = btn.getAttribute("data-toggle-to");
+              btn.disabled = true;
+              try {
+                await apiFetch(`/api/trade-signal-strategies?id=${encodeURIComponent(id)}`, {
+                  method: "PATCH",
+                  body: JSON.stringify({ status: to }),
+                });
+                await loadStrategies();
+              } catch (e) {
+                alert(e.message || "변경에 실패했습니다.");
+              } finally {
+                btn.disabled = false;
+              }
+            });
+          });
+          list.querySelectorAll("[data-delete-id]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const id = btn.getAttribute("data-delete-id");
+              if (!confirm("이 전략을 삭제할까요?")) return;
+              btn.disabled = true;
+              try {
+                await apiFetch(`/api/trade-signal-strategies?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+                await loadStrategies();
+              } catch (e) {
+                alert(e.message || "삭제에 실패했습니다.");
+              } finally {
+                btn.disabled = false;
+              }
+            });
+          });
+        }
+
+        function renderEvents() {
+          const list = $("ts-event-list");
+          if (!events.length) {
+            list.innerHTML = `<p class="ts-empty">아직 발견된 시그널이 없어요.</p>`;
+            return;
+          }
+          list.innerHTML = events
+            .map(
+              (e) =>
+                `<div class="ts-event"><span class="ts-event__msg">${escapeHtml(e.message)}</span><span class="ts-event__time">${escapeHtml(fmtTime(e.triggered_at))}</span></div>`
+            )
+            .join("");
+        }
+
+        async function loadStrategies() {
+          try {
+            const data = await apiFetch("/api/trade-signal-strategies", { method: "GET" });
+            strategies = data.strategies || [];
+            events = data.events || [];
+            renderStrategies();
+            renderEvents();
+          } catch (e) {
+            $("ts-strategy-list").innerHTML = `<p class="ts-empty">불러오지 못했습니다: ${escapeHtml(e.message || "")}</p>`;
+            $("ts-event-list").innerHTML = "";
+          }
+        }
+
+        function resetPreview() {
+          pendingResult = null;
+          $("ts-preview").classList.add("ts-hidden");
+          $("ts-parse-error").classList.add("ts-hidden");
+        }
+
+        $("ts-parse-btn").addEventListener("click", async () => {
+          const text = $("ts-input").value.trim();
+          if (!text) return;
+          const btn = $("ts-parse-btn");
+          btn.disabled = true;
+          btn.textContent = "해석 중…";
+          $("ts-parse-error").classList.add("ts-hidden");
+          try {
+            const result = await apiFetch("/api/trade-signal-parse", {
+              method: "POST",
+              body: JSON.stringify({ text }),
+            });
+            if (!result.matched) {
+              $("ts-parse-error").textContent = result.clarifyMessage || "조건을 이해하지 못했어요. 다시 입력해주세요.";
+              $("ts-parse-error").classList.remove("ts-hidden");
+              $("ts-preview").classList.add("ts-hidden");
+              return;
+            }
+            pendingResult = result;
+            $("ts-preview-stock").textContent = `${result.stockName} (${result.stockCode})`;
+            $("ts-preview-summary").textContent = conditionText(result.condition) || result.summary;
+            $("ts-preview-alert").textContent = `${result.alertType === "buy" ? "매수" : "매도"} 신호 · 사이트 알림`;
+            $("ts-preview").classList.remove("ts-hidden");
+          } catch (e) {
+            $("ts-parse-error").textContent = e.message || "조건 해석에 실패했습니다.";
+            $("ts-parse-error").classList.remove("ts-hidden");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "AI로 해석하기";
+          }
+        });
+
+        $("ts-retry-btn").addEventListener("click", () => {
+          resetPreview();
+        });
+
+        $("ts-save-btn").addEventListener("click", async () => {
+          if (!pendingResult) return;
+          const btn = $("ts-save-btn");
+          btn.disabled = true;
+          btn.textContent = "저장 중…";
+          try {
+            await apiFetch("/api/trade-signal-strategies", {
+              method: "POST",
+              body: JSON.stringify(pendingResult),
+            });
+            $("ts-input").value = "";
+            resetPreview();
+            await loadStrategies();
+          } catch (e) {
+            alert(e.message || "저장에 실패했습니다.");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "이대로 저장";
+          }
+        });
+
+        async function checkGateAndInit() {
+          if (window.TMAuth && typeof window.TMAuth.refreshState === "function") {
+            await window.TMAuth.refreshState().catch(() => {});
+          }
+          const st = window.TM_AUTH_STATE || {};
+          if (!st.isLoggedIn) {
+            $("ts-gate-title").textContent = "로그인이 필요합니다";
+            $("ts-gate-text").textContent = "매매시그널은 로그인 후 Pro/Premium 요금제에서 이용할 수 있어요.";
+            $("ts-gate").classList.remove("ts-hidden");
+            $("ts-content").classList.add("ts-hidden");
+            return;
+          }
+          if (!st.hasProAccess) {
+            $("ts-gate-title").textContent = "Pro 전용 기능입니다";
+            $("ts-gate-text").textContent = "매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.";
+            $("ts-gate").classList.remove("ts-hidden");
+            $("ts-content").classList.add("ts-hidden");
+            return;
+          }
+          $("ts-gate").classList.add("ts-hidden");
+          $("ts-content").classList.remove("ts-hidden");
+          await loadStrategies();
+        }
+
+        checkGateAndInit();
+        if (document.addEventListener) {
+          document.addEventListener("tm-auth-ready", checkGateAndInit);
+        }
+      })();
+    </script>
+  </body>
+</html>

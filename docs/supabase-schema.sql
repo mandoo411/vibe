@@ -197,3 +197,70 @@ begin
   );
 end;
 $$;
+
+-- ------------------------------------------------------------
+-- 8) trade_signal_strategies / trade_signal_events — 매매 시그널(유료 기능)
+--    (2026-07-15 추가) — 사용자가 자연어로 "삼성전자 20일선이 60일선 상향
+--    돌파하면 매수 알려줘" 같은 조건을 입력하면 AI(api/trade-signal-parse.js)가
+--    구조화 조건(jsonb)으로 변환해 저장한다. 실제 판정은 이 jsonb 조건만 보고
+--    돌아가므로(자연어 재해석 없음) 스캔 비용이 안 든다.
+--    condition 예시: {"logic":"AND","clauses":[{"type":"ma_cross","fast":20,"slow":60,"direction":"up"}]}
+--    지원 clause type: ma_cross, price_cross_ma, rsi, volume_ratio,
+--                       high52w_breakout, low52w_breakdown, price_change_pct
+-- ------------------------------------------------------------
+create table if not exists public.trade_signal_strategies (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  market text not null default 'KR' check (market in ('KR')),
+  stock_code text not null,
+  stock_name text not null,
+  raw_text text not null,
+  alert_type text not null default 'buy' check (alert_type in ('buy', 'sell')),
+  condition jsonb not null,
+  status text not null default 'active' check (status in ('active', 'paused')),
+  last_triggered_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists trade_signal_strategies_user_idx on public.trade_signal_strategies (user_id);
+create index if not exists trade_signal_strategies_active_idx on public.trade_signal_strategies (status) where status = 'active';
+
+alter table public.trade_signal_strategies enable row level security;
+
+drop policy if exists "trade_signal_strategies_select_own" on public.trade_signal_strategies;
+create policy "trade_signal_strategies_select_own" on public.trade_signal_strategies
+  for select using (auth.uid() = user_id);
+
+-- insert/update/delete는 클라이언트 정책을 만들지 않는다. api/trade-signal-strategies.js가
+-- 로그인 토큰으로 본인 확인 + Pro/Premium 등급 확인 후 SUPABASE_SERVICE_ROLE_KEY로만 기록한다
+-- (subscriptions/orders와 동일한 패턴 — 위조 방지를 위해 서버에서만 씀).
+
+create table if not exists public.trade_signal_events (
+  id bigint generated always as identity primary key,
+  strategy_id uuid not null references public.trade_signal_strategies(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  message text not null,
+  triggered_at timestamptz not null default now()
+);
+
+create index if not exists trade_signal_events_user_idx on public.trade_signal_events (user_id, triggered_at desc);
+
+alter table public.trade_signal_events enable row level security;
+
+drop policy if exists "trade_signal_events_select_own" on public.trade_signal_events;
+create policy "trade_signal_events_select_own" on public.trade_signal_events
+  for select using (auth.uid() = user_id);
+
+-- 쓰기는 scripts/trade-signal-scan.mjs가 SUPABASE_SERVICE_ROLE_KEY로만 수행.
+
+-- 사용자당 활성 전략 개수 제한(스캔 비용 통제용, 기본 20개) — 서버가 생성 전에
+-- 이 함수로 현재 개수를 확인한다.
+create or replace function public.count_active_trade_signal_strategies(p_user_id uuid)
+returns integer
+language sql
+security definer set search_path = public
+as $$
+  select count(*)::int from public.trade_signal_strategies
+  where user_id = p_user_id and status = 'active';
+$$;

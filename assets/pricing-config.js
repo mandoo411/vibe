@@ -19,7 +19,7 @@ window.TM_PRICING_PLANS = [
     amount: 9900,
     period: "월",
     tagline: "AI 종목분석 무제한",
-    features: ["무료 플랜 전체 포함", "AI 종목분석 무제한 이용", "관심종목 알림(예정)"],
+    features: ["무료 플랜 전체 포함", "AI 종목분석 무제한 이용", "매매시그널 — 자연어 조건 알림"],
     cta: "Pro 구독하기",
     highlight: true,
   },

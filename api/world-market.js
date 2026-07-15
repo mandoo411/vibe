@@ -576,7 +576,12 @@ function buildRow(meta, quote, type, rank, usdKrwRate) {
   };
 }
 
-async function rowsFor(type, { includeSparks = true } = {}) {
+// 2026-07-15: 이 함수(rowsForLive)는 매 요청마다 TOP100 전체(최대 200개 심볼)를
+// FMP/Yahoo에 실시간으로 순차 조회했다. 청크당 대기시간(120ms/80ms/60ms)까지 더해지면
+// 응답까지 수 초~수십 초가 걸려 "글로벌 랭킹 페이지가 너무 느리다"는 문제의 핵심 원인이었다.
+// 기본 경로는 아래 rowsForCached로 교체하고, 이 함수는 ?live=1로 명시 요청했을 때만
+// (수동 디버깅/강제 새로고침용) 남겨둔다.
+async function rowsForLive(type, { includeSparks = true } = {}) {
   if (!Array.isArray(RANKED_COMPANIES) || RANKED_COMPANIES.length < 1) {
     throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
   }
@@ -594,6 +599,69 @@ async function rowsFor(type, { includeSparks = true } = {}) {
     const quote = mergeQuotesForMeta(meta, quoteMap);
     return buildRow(meta, quote, type, index + 1, usdKrwRate);
   });
+
+  rows = sortRowsByValue(rows, type);
+  return rows;
+}
+
+// 2026-07-15: 기본 경로 — data/world-market-cache.json(평일 4회 GitHub Actions 갱신)을
+// 그대로 사용해서 rank/marketCap/netIncome/revenue/price/changePct를 채운다.
+// 실시간 외부 API 호출은 원화 종목 2개(삼성전자·SK하이닉스, 캐시 가격의 통화가 불명확해
+// 기존에도 라이브 조회로만 처리하던 종목)의 가격 보정 + 환율 조회 1건뿐이라
+// 응답이 파일 읽기 수준(수십~수백 ms)으로 끝난다. 스파크라인(sparks=1)은 페이지
+// 최초 렌더 이후 백그라운드에서만 요청되므로(world-market.html의 requestIdleCallback)
+// 여기서 시간이 좀 걸려도 체감 로딩 속도에는 영향이 없다.
+async function rowsForCached(type, { includeSparks = true } = {}) {
+  if (!Array.isArray(RANKED_COMPANIES) || RANKED_COMPANIES.length < 1) {
+    throw new Error("world-market-ranked 목록을 불러오지 못했습니다.");
+  }
+
+  const krwMetas = RANKED_COMPANIES.filter((meta) => isKrwStock(meta));
+  const [usdKrwRate, krwQuotes] = await Promise.all([
+    fetchUsdKrwRate(),
+    Promise.all(
+      krwMetas.map(async (meta) => {
+        const sym = chartSymbolFor(meta);
+        if (!sym) return null;
+        try {
+          return await fetchYahooChartQuote(sym);
+        } catch {
+          return null;
+        }
+      })
+    ),
+  ]);
+  const krwQuoteMap = new Map();
+  krwMetas.forEach((meta, idx) => {
+    const q = krwQuotes[idx];
+    if (q) krwQuoteMap.set(chartSymbolFor(meta).toUpperCase(), q);
+  });
+
+  let rows = RANKED_COMPANIES.map((meta, index) => {
+    const rank = index + 1;
+    let quote = null;
+    if (isKrwStock(meta)) {
+      const live = krwQuoteMap.get(chartSymbolFor(meta).toUpperCase());
+      if (live) quote = { priceKrw: live.price, changesPercentage: live.changesPercentage };
+    }
+    return buildRow(meta, quote, type, rank, usdKrwRate);
+  });
+
+  if (includeSparks) {
+    const sparkMap = new Map();
+    await attachSparklinesForCompanies(sparkMap, RANKED_COMPANIES);
+    rows = rows.map((row, index) => {
+      const meta = RANKED_COMPANIES[index];
+      const quoteKey = (quoteSymbolFor(meta) || chartSymbolFor(meta)).toUpperCase();
+      const spark = sparkMap.get(quoteKey) || sparkMap.get(chartSymbolFor(meta).toUpperCase());
+      if (!spark || !Array.isArray(spark.sparkline)) return row;
+      let sparkline = spark.sparkline;
+      if (isKrwStock(meta) && usdKrwRate > 0) {
+        sparkline = sparkline.map((p) => p / usdKrwRate);
+      }
+      return { ...row, sparkline, sparkUp: spark.sparkUp };
+    });
+  }
 
   rows = sortRowsByValue(rows, type);
   return rows;
@@ -634,14 +702,16 @@ module.exports = async function handler(req, res) {
   if (req.method !== "GET") return send(res, 405, { error: "Method not allowed" });
   const type = ["marketCap", "netIncome", "revenue"].includes(req.query?.type) ? req.query.type : "marketCap";
   const includeSparks = req.query?.sparks !== "0";
+  // ?live=1 이 명시된 경우에만 예전처럼 TOP100 전체를 실시간 조회(느림, 디버깅/강제 새로고침용).
+  // 기본값은 캐시 기반 rowsForCached — 응답이 훨씬 빠르다.
+  const forceLive = req.query?.live === "1";
   try {
-    const rows = await rowsFor(type, { includeSparks });
-    const fetchSymbols = RANKED_COMPANIES.map((c) => c.symbol).filter(Boolean);
+    const rows = forceLive ? await rowsForLive(type, { includeSparks }) : await rowsForCached(type, { includeSparks });
     const withQuote = rows.filter((row) => row.hasQuote).length;
     const withData = rows.filter((row) => row.hasQuote && row.value != null && row.value > 0).length;
     const warning =
       withQuote < 5
-        ? `FMP quote 일부만 조회됨 (${withQuote}/${rows.length}, 요청 ${fetchSymbols.length}개). 잠시 후 다시 시도하세요.`
+        ? `데이터 일부만 조회됨 (${withQuote}/${rows.length}). 잠시 후 다시 시도하세요.`
         : null;
     const cacheMeta = loadMarketCache();
     send(res, 200, {

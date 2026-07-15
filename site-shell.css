@@ -881,7 +881,7 @@ body.tm-nav-sheet-open {
   align-items: center;
   gap: 32px;
   width: max-content;
-  animation: tm-ticker-scroll 34s linear infinite;
+  animation: tm-ticker-scroll 24s linear infinite;
   will-change: transform;
 }
 
@@ -895,12 +895,6 @@ body.tm-nav-sheet-open {
   }
   to {
     transform: translateX(-50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .home-ticker__track {
-    animation: none;
   }
 }
 

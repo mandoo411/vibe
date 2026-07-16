@@ -2374,17 +2374,15 @@ async function tsHandleParse(req, res, user) {
   if (!text) return tsJson(res, 400, { error: "조건 문장을 입력해주세요." });
 
   const candidates = tsFindStockCandidates(text);
+  // 2026-07-17: Anthropic 계정 크레딧 소진으로 Claude 호출이 항상 실패하는 상태라
+  // (사용자 확인) OpenAI를 기본으로 바로 사용한다. 필요하면 나중에 다시 Claude를
+  // 우선순위로 되돌릴 수 있도록 tsParseWithClaude 함수 자체는 남겨둔다.
   let raw = null;
   try {
-    raw = await tsParseWithClaude(text, candidates);
-  } catch (claudeErr) {
-    console.error("[trade-signal parse] Claude 실패, OpenAI로 폴백", claudeErr && claudeErr.message);
-    try {
-      raw = await tsParseWithOpenAI(text, candidates);
-    } catch (openaiErr) {
-      console.error("[trade-signal parse] OpenAI도 실패", openaiErr && openaiErr.message);
-      return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
-    }
+    raw = await tsParseWithOpenAI(text, candidates);
+  } catch (openaiErr) {
+    console.error("[trade-signal parse] OpenAI 실패", openaiErr && openaiErr.message);
+    return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
   }
   const result = tsNormalizeParseResult(raw, candidates);
   if (result.matched) result.rawText = text;
@@ -2541,17 +2539,14 @@ async function tsHandleScreen(req, res, user) {
     if (!text) return tsJson(res, 400, { error: "검색할 조건 문장을 입력해주세요." });
     rawText = text;
 
+    // 2026-07-17: Anthropic 계정 크레딧 소진으로 Claude 호출이 항상 실패하는 상태라
+    // (사용자 확인) OpenAI를 기본으로 바로 사용한다.
     let raw = null;
     try {
-      raw = await tsParseScreenWithClaude(text);
-    } catch (claudeErr) {
-      console.error("[trade-signal screen] Claude 실패, OpenAI로 폴백", claudeErr && claudeErr.message);
-      try {
-        raw = await tsParseScreenWithOpenAI(text);
-      } catch (openaiErr) {
-        console.error("[trade-signal screen] OpenAI도 실패", openaiErr && openaiErr.message);
-        return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
-      }
+      raw = await tsParseScreenWithOpenAI(text);
+    } catch (openaiErr) {
+      console.error("[trade-signal screen] OpenAI 실패", openaiErr && openaiErr.message);
+      return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
     }
     const normalized = tsNormalizeScreenCondition(raw);
     if (!normalized.understood) {
@@ -2835,24 +2830,18 @@ module.exports = async function handler(req, res) {
 
   let analysis;
   let analysisError = "";
+  // 2026-07-17: Anthropic 계정 크레딧 소진 확인 후 사용자가 OpenAI를 기본으로 쓰기로
+  // 결정함. claudeAnalyze()는 나중에 다시 우선순위로 되돌릴 수 있도록 그대로 남겨둔다.
   try {
-    analysis = await claudeAnalyze(quote, stockName, indicators, wm);
+    analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm);
   } catch (e) {
-    const claudeErrMsg =
-      e && e.message === ANALYSIS_PARSE_ERROR_MSG
-        ? ANALYSIS_PARSE_ERROR_MSG
-        : (e && e.message) || "Claude 분석 실패";
-    console.error("[analyze] Claude error (OpenAI로 폴백 시도)", claudeErrMsg);
-    try {
-      analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm);
-      console.log("[analyze] OpenAI 폴백 성공");
-    } catch (e2) {
-      analysisError = claudeErrMsg;
-      console.error("[analyze] OpenAI 폴백도 실패", e2 && e2.message);
-      analysis = normalizeAnalysis(null, quote);
-      if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
-        analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
-      }
+    const openaiErrMsg =
+      e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";
+    analysisError = openaiErrMsg;
+    console.error("[analyze] OpenAI 실패", openaiErrMsg);
+    analysis = normalizeAnalysis(null, quote);
+    if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
+      analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
     }
   }
 

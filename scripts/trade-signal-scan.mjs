@@ -17,7 +17,8 @@
 
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { fetchChartCandles, computeMaSeries, computeRsiSeries } = require("../lib/kis-indicators.js");
+const { fetchChartCandles, computeMaSeries, computeRsiSeries, detectDivergence } = require("../lib/kis-indicators.js");
+const { buildSnapshotFromSeries, evaluateCondition } = require("../lib/trade-condition-eval.js");
 
 function requireEnv(name) {
   const v = process.env[name];
@@ -79,70 +80,6 @@ function alreadyTriggeredToday(lastTriggeredAt) {
   return seoulYmd(new Date(lastTriggeredAt)) === seoulYmd(new Date());
 }
 
-function evaluateClause(clause, series) {
-  const { closes, ma, rsiSeries, volumes, highs, lows } = series;
-  const n = closes.length;
-  if (n < 2) return false;
-  const i = n - 1;
-  const prevI = n - 2;
-
-  if (clause.type === "ma_cross") {
-    const fastArr = ma[clause.fast];
-    const slowArr = ma[clause.slow];
-    if (!fastArr || !slowArr) return false;
-    const f0 = fastArr[prevI], s0 = slowArr[prevI], f1 = fastArr[i], s1 = slowArr[i];
-    if ([f0, s0, f1, s1].some((v) => v == null)) return false;
-    return clause.direction === "down" ? f0 >= s0 && f1 < s1 : f0 <= s0 && f1 > s1;
-  }
-  if (clause.type === "price_cross_ma") {
-    const maArr = ma[clause.period];
-    if (!maArr) return false;
-    const m0 = maArr[prevI], m1 = maArr[i];
-    const c0 = closes[prevI], c1 = closes[i];
-    if (m0 == null || m1 == null) return false;
-    return clause.direction === "down" ? c0 >= m0 && c1 < m1 : c0 <= m0 && c1 > m1;
-  }
-  if (clause.type === "rsi") {
-    const r = rsiSeries[i];
-    if (r == null) return false;
-    if (clause.op === "lt") return r < clause.value;
-    if (clause.op === "lte") return r <= clause.value;
-    if (clause.op === "gt") return r > clause.value;
-    if (clause.op === "gte") return r >= clause.value;
-    return false;
-  }
-  if (clause.type === "volume_ratio") {
-    const windowVol = volumes.slice(Math.max(0, i - 20), i);
-    if (!windowVol.length) return false;
-    const avg = windowVol.reduce((a, b) => a + b, 0) / windowVol.length;
-    if (!avg) return false;
-    const ratio = (volumes[i] / avg) * 100;
-    return clause.op === "gt" ? ratio > clause.value : ratio >= clause.value;
-  }
-  if (clause.type === "high52w_breakout") {
-    const windowHighs = highs.slice(Math.max(0, i - 252), i);
-    if (!windowHighs.length) return false;
-    return closes[i] > Math.max(...windowHighs);
-  }
-  if (clause.type === "low52w_breakdown") {
-    const windowLows = lows.slice(Math.max(0, i - 252), i);
-    if (!windowLows.length) return false;
-    return closes[i] < Math.min(...windowLows);
-  }
-  if (clause.type === "price_change_pct") {
-    const c0 = closes[prevI], c1 = closes[i];
-    if (!c0) return false;
-    const pct = ((c1 - c0) / c0) * 100;
-    return clause.op === "lte" ? pct <= clause.value : pct >= clause.value;
-  }
-  return false;
-}
-
-function evaluateCondition(condition, series) {
-  if (!condition || !Array.isArray(condition.clauses) || !condition.clauses.length) return false;
-  return condition.clauses.every((clause) => evaluateClause(clause, series));
-}
-
 async function buildSeriesForStock(stockCode) {
   const candles = await fetchChartCandles(stockCode, "D");
   if (!candles.length) return null;
@@ -157,7 +94,8 @@ async function buildSeriesForStock(stockCode) {
     200: computeMaSeries(closes, 200, false),
   };
   const rsiSeries = computeRsiSeries(closes);
-  return { closes, highs, lows, volumes, ma, rsiSeries };
+  const divergence = detectDivergence(closes, rsiSeries);
+  return { closes, highs, lows, volumes, ma, rsiSeries, divergence };
 }
 
 function messageFor(strategy) {
@@ -196,7 +134,7 @@ async function main() {
 
     let matched = false;
     try {
-      matched = evaluateCondition(strategy.condition, series);
+      matched = evaluateCondition(strategy.condition, buildSnapshotFromSeries(series));
     } catch (error) {
       console.warn(`[trade-signal-scan] ${strategy.id} 조건 판정 실패: ${error.message}`);
       continue;

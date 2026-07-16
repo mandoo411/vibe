@@ -2227,6 +2227,34 @@ const TS_PARSE_TOOL = {
   },
 };
 
+/**
+ * 2026-07-17: OpenAI가 response_format=json_object인데도 가끔 코드펜스(```json ... ```)를
+ * 씌우거나 JSON 뒤에 여분의 텍스트를 붙여서 JSON.parse가 실패하는 경우가 있어 방어적으로
+ * 정리 후 재시도한다. 그래도 실패하면 원래 에러를 그대로 던진다.
+ */
+function tsSafeJsonParse(rawText) {
+  const text = String(rawText || "").trim();
+  try {
+    return JSON.parse(text);
+  } catch (firstError) {
+    const cleaned = text.replace(/^```(?:json)?/i, "").replace(/```\s*$/i, "").trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start >= 0 && end > start) {
+        try {
+          return JSON.parse(cleaned.slice(start, end + 1));
+        } catch {
+          // fall through
+        }
+      }
+      throw firstError;
+    }
+  }
+}
+
 function tsBuildParsePrompt(text, candidates) {
   const candidateLines = candidates.length
     ? candidates.map((c) => `- ${c.name} (${c.code}, ${c.market})`).join("\n")
@@ -2292,7 +2320,7 @@ async function tsParseWithOpenAI(text, candidates) {
   const body = await res.json();
   const text2 = body?.choices?.[0]?.message?.content;
   if (!text2) throw new Error("OpenAI 응답에 내용이 없습니다.");
-  return JSON.parse(text2);
+  return tsSafeJsonParse(text2);
 }
 
 function tsNormalizeClause(raw) {
@@ -2346,12 +2374,17 @@ async function tsHandleParse(req, res, user) {
   if (!text) return tsJson(res, 400, { error: "조건 문장을 입력해주세요." });
 
   const candidates = tsFindStockCandidates(text);
-  let raw;
+  let raw = null;
   try {
     raw = await tsParseWithClaude(text, candidates);
   } catch (claudeErr) {
     console.error("[trade-signal parse] Claude 실패, OpenAI로 폴백", claudeErr && claudeErr.message);
-    raw = await tsParseWithOpenAI(text, candidates);
+    try {
+      raw = await tsParseWithOpenAI(text, candidates);
+    } catch (openaiErr) {
+      console.error("[trade-signal parse] OpenAI도 실패", openaiErr && openaiErr.message);
+      return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
+    }
   }
   const result = tsNormalizeParseResult(raw, candidates);
   if (result.matched) result.rawText = text;
@@ -2474,7 +2507,7 @@ async function tsParseScreenWithOpenAI(text) {
   const body = await res.json();
   const text2 = body?.choices?.[0]?.message?.content;
   if (!text2) throw new Error("OpenAI 응답에 내용이 없습니다.");
-  return JSON.parse(text2);
+  return tsSafeJsonParse(text2);
 }
 
 function tsNormalizeScreenCondition(raw) {
@@ -2508,12 +2541,17 @@ async function tsHandleScreen(req, res, user) {
     if (!text) return tsJson(res, 400, { error: "검색할 조건 문장을 입력해주세요." });
     rawText = text;
 
-    let raw;
+    let raw = null;
     try {
       raw = await tsParseScreenWithClaude(text);
     } catch (claudeErr) {
       console.error("[trade-signal screen] Claude 실패, OpenAI로 폴백", claudeErr && claudeErr.message);
-      raw = await tsParseScreenWithOpenAI(text);
+      try {
+        raw = await tsParseScreenWithOpenAI(text);
+      } catch (openaiErr) {
+        console.error("[trade-signal screen] OpenAI도 실패", openaiErr && openaiErr.message);
+        return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
+      }
     }
     const normalized = tsNormalizeScreenCondition(raw);
     if (!normalized.understood) {

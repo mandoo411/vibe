@@ -179,7 +179,7 @@ body.page-home-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
     --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
-    --home-nav-menu-gap: 6px;
+    --home-nav-menu-gap: 2.6ch;
   }
 
   .page-home-v2 .home-nav,
@@ -345,8 +345,8 @@ body.page-home-v2 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 7px 12px;
-  border-radius: 9px;
+  padding: 5px 8px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary, #444);
@@ -355,25 +355,14 @@ body.page-home-v2 {
   transition: background 0.15s, color 0.15s;
 }
 
-/* 2026-07-17: 메뉴 항목끼리 다닥다닥 붙어 보인다는 피드백 — 홈 버튼처럼 하나하나
-   박스로 분리된 느낌을 주기 위해 배경을 기본으로 깔고, 간격도 넓혔다.
-   .home-nav 자체 배경이 --bg-secondary라서 같은 색을 쓰면 안 보이므로,
-   대비되는 --bg-primary(흰색) + 옅은 테두리로 홈 버튼과 같은 톤으로 맞춘다. */
-.home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):not(.home-nav__more-btn) {
-  background: var(--bg-primary, #ffffff);
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.06));
-}
-
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 10%, var(--bg-primary, #fff));
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 30%, var(--border, transparent));
+  background: transparent;
   color: var(--accent, var(--accent-brand));
 }
 
 .home-nav__link[aria-current="page"] {
   position: relative;
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, var(--bg-primary, #fff));
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 35%, var(--border, transparent));
+  background: transparent;
   color: var(--accent-brand, #0f8387);
 }
 
@@ -1654,20 +1643,13 @@ body[data-theme="dark"] .home-ticker-bar__label {
   color: var(--text-secondary);
 }
 
-[data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):not(.home-nav__more-btn) {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
 [data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.16);
+  background: transparent;
   color: var(--text-primary);
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
-  background: color-mix(in srgb, var(--accent-gold, #d4af37) 18%, rgba(255, 255, 255, 0.06));
-  border-color: color-mix(in srgb, var(--accent-gold, #d4af37) 40%, rgba(255, 255, 255, 0.08));
+  background: transparent;
   color: var(--accent-gold);
 }
 

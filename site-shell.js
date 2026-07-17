@@ -329,6 +329,37 @@
     });
   }
 
+  /* 2026-07-17: 데스크톱 GNB 메뉴 항목이 늘어나 가로 스크롤이 필요해진 뒤 —
+     (1) 마우스 휠(세로)을 메뉴 위에서 가로 스크롤로 변환해 스크롤 가능함을 바로 체감하게 하고
+     (2) 로드 시 현재 페이지 링크가 스크롤 밖에 있으면 보이는 위치로 스크롤해준다. */
+  function bindNavMenuScroll() {
+    const menu = document.querySelector(".home-nav__menu");
+    if (!menu) return;
+
+    menu.addEventListener(
+      "wheel",
+      (e) => {
+        if (menu.scrollWidth <= menu.clientWidth) return;
+        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        e.preventDefault();
+        menu.scrollLeft += e.deltaY;
+      },
+      { passive: false }
+    );
+
+    const active = menu.querySelector('.home-nav__link[aria-current="page"]');
+    if (active) {
+      requestAnimationFrame(() => {
+        const menuRect = menu.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
+        const isVisible = activeRect.left >= menuRect.left && activeRect.right <= menuRect.right;
+        if (!isVisible) {
+          active.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
+        }
+      });
+    }
+  }
+
   function bindBottomNavActive() {
     const pageId = getCurrentPageId();
     const sheet = document.getElementById("tm-nav-sheet");
@@ -583,6 +614,7 @@
     enhanceShell();
     applyAnalysisNavLock();
     bindNavToggle();
+    bindNavMenuScroll();
     if (!document.body.classList.contains("page-home-v2")) {
       renderTicker();
       setInterval(renderTicker, 5 * 60 * 1000);

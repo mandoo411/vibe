@@ -182,6 +182,27 @@ body.page-home-v2 {
     --home-nav-menu-gap: 1.6ch;
   }
 
+  /* 2026-07-17: 메뉴 항목이 늘어나(AI 종목분석 PRO 배지 등) 1200px 박스 폭을 넘어서면서
+     overflow-x:auto + 숨김 스크롤바 조합이 "오른쪽 잘림"처럼 보이는 문제 — 스크롤 가능한
+     영역임을 알 수 있도록 오른쪽(스크롤 시 왼쪽도) 가장자리에 페이드 마스크를 준다. */
+  .page-home-v2 .home-nav__menu,
+  .page-tm-v2 .home-nav__menu {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--home-nav-menu-inset, 8px),
+      #000 calc(100% - 28px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--home-nav-menu-inset, 8px),
+      #000 calc(100% - 28px),
+      transparent 100%
+    );
+  }
+
   .page-home-v2 .home-nav,
   .page-tm-v2 .home-nav {
     gap: 0;
@@ -201,17 +222,28 @@ body.page-home-v2 {
     margin-left: 0;
     min-width: 0;
     padding-left: max(8px, var(--home-nav-menu-inset));
-    padding-right: 8px;
+    padding-right: 28px;
     gap: var(--home-nav-menu-gap);
     flex-wrap: nowrap;
     overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
   }
 
   .page-home-v2 .home-nav__menu::-webkit-scrollbar,
   .page-tm-v2 .home-nav__menu::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  .page-home-v2 .home-nav__menu::-webkit-scrollbar-thumb,
+  .page-tm-v2 .home-nav__menu::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--text-secondary, #888) 35%, transparent);
+    border-radius: 2px;
+  }
+
+  .page-home-v2 .home-nav__menu::-webkit-scrollbar-track,
+  .page-tm-v2 .home-nav__menu::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,

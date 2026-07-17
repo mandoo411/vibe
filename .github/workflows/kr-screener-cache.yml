@@ -47,6 +47,7 @@ jobs:
           KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
 
       - name: Commit data/kr-screener-cache.json
+        id: commit
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -54,9 +55,20 @@ jobs:
           git add data/kr-screener-cache.json
           if git diff --staged --quiet; then
             echo "::notice::No screener cache changes to commit"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
             git commit -m "chore(data): KR screener cache ${STAMP}"
             git pull --rebase origin main
             git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # data/ 전용 커밋은 vercel.json의 ignoreCommand(배포 횟수 절약용)가 자동 배포를
+      # 건너뛰기 때문에, 여기서 명시적으로 배포하지 않으면 스크리너 데이터가 커밋만 되고
+      # 실제 서비스에는 영원히 반영되지 않는다. daily-market-sync.yml과 동일한 패턴.
+      - name: Deploy to Vercel
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes

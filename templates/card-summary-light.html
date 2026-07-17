@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!--
+  슬라이드 2 — 오늘의 시황 요약 (5줄, 마감 시황 전용)
+  치환 변수: {{PAGE_TITLE}}
+  반복 블록: SUMMARY (완결 문장 5개, promo-render-cards.mjs의 checkBadgeRow가 채워 넣음)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared-light.css" />
+<style>
+  .title-row {
+    position: absolute;
+    top: 216px;
+    left: 64px;
+    right: 64px;
+  }
+  .page-title {
+    font-size: 46px;
+    font-weight: 800;
+  }
+  .summary-list {
+    position: absolute;
+    top: 318px;
+    left: 64px;
+    right: 64px;
+    bottom: 108px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    justify-content: center;
+  }
+  .summary-list .tag-gold {
+    font-size: 32px;
+  }
+</style>
+</head>
+<body>
+  <div class="brand-lockup">
+    <div class="logo-box"><span>TM</span><span>AI</span></div>
+    <div>
+      <div class="brand-name">TotalMoney</div>
+      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
+    </div>
+  </div>
+
+  <div class="deco-ring tr"></div>
+
+  <div class="title-row">
+    <div class="icon-chip">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 19h3v-7H4v7zM10.5 19h3V8h-3v11zM17 19h3v-4h-3v4z" fill="white"/>
+        <path d="M4.5 10.5l4-4.5 3.5 3 5-6" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="page-title">{{PAGE_TITLE}}</div>
+  </div>
+
+  <div class="summary-list" id="summaryList">
+    <!--SUMMARY_TEMPLATE_START
+    <span class="tag-gold"><svg class="chk" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="#0f8387"/><path d="M7 12.5l3 3 7-7.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{{LINE}}</span></span>
+    SUMMARY_TEMPLATE_END-->
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

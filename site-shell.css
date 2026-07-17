@@ -215,6 +215,10 @@ body.page-home-v2 {
   .page-tm-v2 .home-nav__links {
     flex: 1 1 auto;
     min-width: 0;
+    /* 2026-07-17: 이 안쪽 링크끼리의 간격(원래 6px)이 바깥 flex 간격(--home-nav-menu-gap)과
+       달라서 홈→첫 링크, 마지막 링크→더보기 사이만 유독 넓어 보이는 문제가 있었음.
+       바깥과 같은 변수를 써서 모든 항목 사이 간격을 동일하게 맞춘다. */
+    gap: var(--home-nav-menu-gap);
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,

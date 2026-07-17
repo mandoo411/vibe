@@ -179,7 +179,7 @@ body.page-home-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
     --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
-    --home-nav-menu-gap: 1.6ch;
+    --home-nav-menu-gap: 6px;
   }
 
   .page-home-v2 .home-nav,
@@ -345,8 +345,8 @@ body.page-home-v2 {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 8px;
-  border-radius: 8px;
+  padding: 7px 12px;
+  border-radius: 9px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary, #444);
@@ -355,14 +355,20 @@ body.page-home-v2 {
   transition: background 0.15s, color 0.15s;
 }
 
+/* 2026-07-17: 메뉴 항목끼리 다닥다닥 붙어 보인다는 피드백 — 홈 버튼처럼 하나하나
+   박스로 분리된 느낌을 주기 위해 은은한 배경을 기본으로 깔고, 간격도 넓혔다. */
+.home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):not(.home-nav__more-btn) {
+  background: var(--bg-secondary, rgba(15, 23, 42, 0.04));
+}
+
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: transparent;
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, var(--bg-secondary, transparent));
   color: var(--accent, var(--accent-brand));
 }
 
 .home-nav__link[aria-current="page"] {
   position: relative;
-  background: transparent;
+  background: color-mix(in srgb, var(--accent-brand, #0f8387) 14%, var(--bg-secondary, transparent));
   color: var(--accent-brand, #0f8387);
 }
 
@@ -1643,13 +1649,17 @@ body[data-theme="dark"] .home-ticker-bar__label {
   color: var(--text-secondary);
 }
 
+[data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):not(.home-nav__more-btn) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 [data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.09);
   color: var(--text-primary);
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
-  background: transparent;
+  background: color-mix(in srgb, var(--accent-gold, #d4af37) 18%, rgba(255, 255, 255, 0.05));
   color: var(--accent-gold);
 }
 

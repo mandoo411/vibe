@@ -76,6 +76,7 @@
         </button>
         <nav class="home-nav__menu">
           <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <div class="home-nav__links" id="home-nav-links">
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
           <a class="home-nav__link" href="./market.html">시장지표</a>
@@ -85,7 +86,12 @@
           <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
           <a class="home-nav__link" href="./weekly-market.html">일정</a>
           <a class="home-nav__link home-nav__link--analysis-locked" href="./stock-analysis.html" aria-current="page">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>          </div>
+  <div class="home-nav__more" id="home-nav-more">
+            <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+            <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
+          </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>

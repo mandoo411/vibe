@@ -182,27 +182,6 @@ body.page-home-v2 {
     --home-nav-menu-gap: 1.6ch;
   }
 
-  /* 2026-07-17: 메뉴 항목이 늘어나(AI 종목분석 PRO 배지 등) 1200px 박스 폭을 넘어서면서
-     overflow-x:auto + 숨김 스크롤바 조합이 "오른쪽 잘림"처럼 보이는 문제 — 스크롤 가능한
-     영역임을 알 수 있도록 오른쪽(스크롤 시 왼쪽도) 가장자리에 페이드 마스크를 준다. */
-  .page-home-v2 .home-nav__menu,
-  .page-tm-v2 .home-nav__menu {
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 var(--home-nav-menu-inset, 8px),
-      #000 calc(100% - 28px),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0,
-      #000 var(--home-nav-menu-inset, 8px),
-      #000 calc(100% - 28px),
-      transparent 100%
-    );
-  }
-
   .page-home-v2 .home-nav,
   .page-tm-v2 .home-nav {
     gap: 0;
@@ -222,36 +201,30 @@ body.page-home-v2 {
     margin-left: 0;
     min-width: 0;
     padding-left: max(8px, var(--home-nav-menu-inset));
-    padding-right: 28px;
+    padding-right: 8px;
     gap: var(--home-nav-menu-gap);
     flex-wrap: nowrap;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    scrollbar-width: thin;
+    overflow: visible;
   }
 
-  .page-home-v2 .home-nav__menu::-webkit-scrollbar,
-  .page-tm-v2 .home-nav__menu::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .page-home-v2 .home-nav__menu::-webkit-scrollbar-thumb,
-  .page-tm-v2 .home-nav__menu::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--text-secondary, #888) 35%, transparent);
-    border-radius: 2px;
-  }
-
-  .page-home-v2 .home-nav__menu::-webkit-scrollbar-track,
-  .page-tm-v2 .home-nav__menu::-webkit-scrollbar-track {
-    background: transparent;
+  /* 2026-07-17: "우선순위 네비게이션" — 메뉴 항목이 화면 폭에 안 들어가면 스크롤로
+     숨기는 대신, site-shell.js가 우선순위 낮은 항목부터 "더보기" 드롭다운으로 옮긴다.
+     JS가 아직 계산 전이거나 실패한 경우를 대비해 .home-nav__links 자체는 스크롤
+     폴백을 갖는다(아래 no-JS fallback 규칙). */
+  .page-home-v2 .home-nav__links,
+  .page-tm-v2 .home-nav__links {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .page-home-v2 .home-nav__menu > .home-nav__home-btn,
   .page-tm-v2 .home-nav__menu > .home-nav__home-btn,
-  .page-home-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
-  .page-tm-v2 .home-nav__menu > .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme),
+  .page-home-v2 .home-nav__links > .home-nav__link,
+  .page-tm-v2 .home-nav__links > .home-nav__link,
   .page-home-v2 .home-nav__menu > .home-nav__theme,
-  .page-tm-v2 .home-nav__menu > .home-nav__theme {
+  .page-tm-v2 .home-nav__menu > .home-nav__theme,
+  .page-home-v2 .home-nav__more,
+  .page-tm-v2 .home-nav__more {
     flex: 0 0 auto;
     margin: 0;
     padding-left: 0;
@@ -270,6 +243,97 @@ body.page-home-v2 {
     justify-content: center;
     gap: 6px;
   }
+}
+
+/* 링크들을 담는 안쪽 래퍼 — JS 우선순위 계산 전/실패 시엔 그냥 가로 스크롤로 폴백 */
+.home-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.home-nav__links::-webkit-scrollbar {
+  height: 4px;
+}
+
+.home-nav__links::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-secondary, #888) 35%, transparent);
+  border-radius: 2px;
+}
+
+.home-nav__links::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* site-shell.js가 우선순위 계산을 마치면 .home-nav 에 이 클래스를 붙여 스크롤 폴백을 끈다 */
+.home-nav--priority-ready .home-nav__links {
+  overflow: visible;
+}
+
+.home-nav__links > .home-nav__link[hidden] {
+  display: none !important;
+}
+
+/* "더보기" 드롭다운 — 화면에 다 안 들어가는 메뉴가 이 안으로 옮겨온다.
+   display:none 대신 visibility:hidden을 쓰는 이유: 이 버튼 자체의 폭도 항상 flex 레이아웃에
+   반영돼 있어야 site-shell.js가 "링크에 쓸 수 있는 진짜 폭"을 정확히 계산할 수 있다 —
+   버튼이 나타났다 사라졌다 하면서 폭 계산이 매 프레임 어긋나는 것을 방지. */
+.home-nav__more {
+  position: relative;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.home-nav__more.has-overflow {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.home-nav__more-btn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+}
+
+.home-nav__more-btn i {
+  font-size: 12px;
+  margin-left: 2px;
+  transition: transform 0.15s;
+}
+
+.home-nav__more.is-open .home-nav__more-btn i {
+  transform: rotate(180deg);
+}
+
+.home-nav__more-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 168px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+  z-index: 200;
+}
+
+.home-nav__more.is-open .home-nav__more-panel {
+  display: flex;
+}
+
+.home-nav__more-panel > .home-nav__link {
+  width: 100%;
+  justify-content: flex-start;
+  white-space: nowrap;
 }
 
 .home-nav__link {

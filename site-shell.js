@@ -329,35 +329,115 @@
     });
   }
 
-  /* 2026-07-17: 데스크톱 GNB 메뉴 항목이 늘어나 가로 스크롤이 필요해진 뒤 —
-     (1) 마우스 휠(세로)을 메뉴 위에서 가로 스크롤로 변환해 스크롤 가능함을 바로 체감하게 하고
-     (2) 로드 시 현재 페이지 링크가 스크롤 밖에 있으면 보이는 위치로 스크롤해준다. */
-  function bindNavMenuScroll() {
+  /* 2026-07-17: "우선순위 네비게이션" — 데스크톱 GNB에 메뉴 항목이 늘어나면서 화면에
+     다 안 들어가는 경우가 생겨, 스크롤(숨겨진 스크롤바 때문에 "잘려보임") 대신 우선순위가
+     낮은 항목부터 "더보기" 드롭다운으로 자동 이동시킨다. 화면이 넓으면 전부 펼쳐지고,
+     좋아지면 "더보기" 자체가 사라진다 — 가로 스크롤이나 잘림 없이 항상 다 들어간다. */
+
+  /* 숫자가 작을수록 우선순위 높음(화면이 좍을 때 더 오래 남아있음) — PRO 기능과 핵심
+     트래픽 페이지를 우선, 보조 정보성 페이지(일정/글로벌랑킹 등)를 먼저 "더보기"로 보낸다. */
+  const NAV_PRIORITY = {
+    "./stock-analysis.html": 1,
+    "./trade-signal.html": 2,
+    "./realtime.html": 3,
+    "./daily-market.html": 4,
+    "./us-market.html": 5,
+    "./crypto.html": 6,
+    "./market.html": 7,
+    "./briefing.html": 8,
+    "./world-market.html": 9,
+    "./weekly-market.html": 10,
+  };
+
+  function bindNavPriorityMenu() {
+    const nav = document.querySelector(".home-nav");
     const menu = document.querySelector(".home-nav__menu");
-    if (!menu) return;
+    const linksWrap = document.getElementById("home-nav-links");
+    const moreWrap = document.getElementById("home-nav-more");
+    const moreBtn = document.getElementById("home-nav-more-btn");
+    const morePanel = document.getElementById("home-nav-more-panel");
+    if (!nav || !menu || !linksWrap || !moreWrap || !moreBtn || !morePanel) return;
 
-    menu.addEventListener(
-      "wheel",
-      (e) => {
-        if (menu.scrollWidth <= menu.clientWidth) return;
-        if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-        e.preventDefault();
-        menu.scrollLeft += e.deltaY;
-      },
-      { passive: false }
-    );
+    const items = Array.from(linksWrap.querySelectorAll(":scope > .home-nav__link")).map((el) => ({
+      el,
+      width: 0,
+      priority: NAV_PRIORITY[el.getAttribute("href") || ""] ?? 99,
+    }));
+    if (!items.length) return;
 
-    const active = menu.querySelector('.home-nav__link[aria-current="page"]');
-    if (active) {
-      requestAnimationFrame(() => {
-        const menuRect = menu.getBoundingClientRect();
-        const activeRect = active.getBoundingClientRect();
-        const isVisible = activeRect.left >= menuRect.left && activeRect.right <= menuRect.right;
-        if (!isVisible) {
-          active.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
-        }
+    // 자연 폭은 한 번만 측정(리사이즈마다 다시 측정하면 레이아웃 스래싱 발생)
+    items.forEach((it) => {
+      it.el.hidden = false;
+      it.width = it.el.offsetWidth;
+    });
+
+    let raf = 0;
+    function recalc() {
+      // 현재 페이지 링크는 우선순위와 상관없이 항상 보이도록 0순위로 취급
+      const rank = items
+        .map((it, idx) => ({ idx, priority: it.el.hasAttribute("aria-current") ? -1 : it.priority }))
+        .sort((a, b) => a.priority - b.priority);
+
+      const gap = parseFloat(getComputedStyle(linksWrap).columnGap || getComputedStyle(linksWrap).gap) || 6;
+      const available = linksWrap.clientWidth;
+
+      const visible = new Set();
+      let used = 0;
+      for (const { idx } of rank) {
+        const w = items[idx].width;
+        const next = used + (visible.size > 0 ? gap : 0) + w;
+        if (next > available && visible.size > 0) continue;
+        visible.add(idx);
+        used = next;
+      }
+
+      let hiddenCount = 0;
+      items.forEach((it, idx) => {
+        if (!visible.has(idx)) hiddenCount++;
       });
+
+      if (hiddenCount > 0) {
+        moreWrap.classList.add("has-overflow");
+        // 더보기 패널 안은 항상 원래 링크 순서(DOM 순서)로 정리
+        items.forEach((it, idx) => {
+          if (visible.has(idx)) linksWrap.appendChild(it.el);
+          else morePanel.appendChild(it.el);
+        });
+      } else {
+        moreWrap.classList.remove("has-overflow");
+        moreWrap.classList.remove("is-open");
+        moreBtn.setAttribute("aria-expanded", "false");
+        items.forEach((it) => linksWrap.appendChild(it.el));
+      }
+      nav.classList.add("home-nav--priority-ready");
     }
+
+    function scheduleRecalc() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(recalc);
+    }
+
+    scheduleRecalc();
+    window.addEventListener("resize", scheduleRecalc);
+
+    moreBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = !moreWrap.classList.contains("is-open");
+      moreWrap.classList.toggle("is-open", open);
+      moreBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", (e) => {
+      if (!moreWrap.contains(e.target)) {
+        moreWrap.classList.remove("is-open");
+        moreBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        moreWrap.classList.remove("is-open");
+        moreBtn.setAttribute("aria-expanded", "false");
+      }
+    });
   }
 
   function bindBottomNavActive() {
@@ -614,7 +694,7 @@
     enhanceShell();
     applyAnalysisNavLock();
     bindNavToggle();
-    bindNavMenuScroll();
+    bindNavPriorityMenu();
     if (!document.body.classList.contains("page-home-v2")) {
       renderTicker();
       setInterval(renderTicker, 5 * 60 * 1000);

@@ -428,13 +428,27 @@
     }
 
     function scheduleRecalc() {
+      // 2026-07-17: 백그라운드 탭(document.hidden===true)에서는 requestAnimationFrame
+      // 콜백이 브라우저에 의해 사실상 무기한 지연/차단된다 — 탭 안에서 링크 폭 측정
+      // 자체는 정상이지만(레이아웃은 계속 계산됨) rAF만 안 돌아서 "더보기" 정리가
+      // 영원히 안 되는 경우가 있었다. 보이는 탭이면 즉시 실행하고, rAF는 리사이즈처럼
+      // 짧은 시간에 여러 번 발생하는 이벤트를 한 프레임으로 묶는 용도로만 쓴다.
       if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(recalc);
+      if (document.visibilityState === "visible") {
+        raf = requestAnimationFrame(recalc);
+      } else {
+        recalc();
+      }
     }
 
     requestNavRecalc = scheduleRecalc;
     scheduleRecalc();
     window.addEventListener("resize", scheduleRecalc);
+    // 백그라운드 탭에서 로드된 경우를 대비해, 탭이 실제로 보이게 되는 시점에 한 번 더
+    // 재계산해 확실히 맞춰준다.
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") scheduleRecalc();
+    });
 
     moreBtn.addEventListener("click", (e) => {
       e.stopPropagation();

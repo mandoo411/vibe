@@ -12,11 +12,12 @@ permissions:
 
 concurrency:
   group: instagram-card-post-morning
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   TZ: Asia/Seoul
-  PROMO_CARD_THEME: light  # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
+  PROMO_CARD_THEME: light # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
+  SLOT: morning
 
 jobs:
   render-and-publish:
@@ -26,27 +27,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check if already published today (dedup guard)
+        id: dupcheck
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
+          STAMP_FILE="generated/${SLOT}/last-published-date.txt"
+          if [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
+            echo "::notice::오늘(${TODAY}) 이미 ${SLOT} 발행 완료 — 중복 실행 스킵"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Node.js
+        if: steps.dupcheck.outputs.should_publish == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: npm ci
 
       # 한글(특히 영문+한글이 붙어있는 굵은 글씨) 렌더링 깨짐 방지용 Noto Sans CJK 설치.
       # ubuntu-latest 러너 기본 폰트만으로는 일부 글자가 대체 폰트로 넘어가며 네모(tofu)로 깨지는 현상이 있었음.
       - name: Install Korean + emoji fonts
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji
           fc-cache -f
 
       - name: Render 5 card images
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: node scripts/instagram-card-post.mjs --slot=morning --render
 
       - name: Commit and push generated images
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -63,10 +82,28 @@ jobs:
 
       # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
       - name: Wait for CDN
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: node scripts/instagram-card-post.mjs --slot=morning --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+
+      - name: Record published date (dedup guard)
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p "generated/${SLOT}"
+          TZ=Asia/Seoul date '+%Y-%m-%d' > "generated/${SLOT}/last-published-date.txt"
+          git add "generated/${SLOT}/last-published-date.txt"
+          if git diff --staged --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(promo): mark ${SLOT} published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          git pull --rebase origin main
+          git push

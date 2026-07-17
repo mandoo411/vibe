@@ -2584,6 +2584,7 @@ async function tsHandleScreen(req, res, user) {
       console.error("[trade-signal screen] OpenAI 실패", openaiErr && openaiErr.message);
       return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
     }
+    console.error("[trade-signal screen] OpenAI raw parse result:", JSON.stringify(raw).slice(0, 800));
     const normalized = tsNormalizeScreenCondition(raw);
     if (!normalized.understood) {
       return tsJson(res, 200, { matched: false, clarifyMessage: normalized.clarifyMessage });

@@ -1,6 +1,6 @@
 /**
  * templates/*.html -> PNG 렌더링 (Puppeteer)
- * 카드뉴스 5장(커버/지수/리스트/AI 코멘트/CTA)을 만든다.
+ * 카드뉴스 5장(커버/지수 또는 시황요약/리스트/AI 코멘트/CTA)을 만든다.
  *
  * 아침 브리핑(간밤 미국장 + 오늘 전망) / 마감 시황(코스피·코스닥 마감 + 특징주) 두 모드를
  * 같은 템플릿으로 렌더링할 수 있도록, 모드별 어댑터(promo-market-copy.mjs / promo-morning-copy.mjs)가
@@ -12,7 +12,8 @@
  *   coverTitleLine1, coverTitleLine2,    // 커버 제목 2줄
  *   heroLabel, heroPct,                  // 커버 큰 수치("코스피" / "나스닥" 등 + 등락률)
  *   headline,                            // 커버 하단 인용구
- *   indexTitle, indexRows: [{name, value, pct}],       // 슬라이드 2
+ *   indexTitle, indexRows: [{name, value, pct}],       // 슬라이드 2 (지수표, light테마 마감 시황은 summaryLines가 있으면 대체됨)
+ *   summaryLines: [string],              // 슬라이드 2 대체용 "시황 5줄 요약" (light테마 전용, 완결 문장 최대 5개)
  *   listTitle, listItems: [{name, reason, pct?}],      // 슬라이드 3 (pct 없으면 등락 배지 생략)
  *   aiTitle, aiComment,                  // 슬라이드 4
  *   checkpointsTitle, checkpoints: [string],
@@ -42,6 +43,15 @@ const arrow = (pct) => (pct > 0 ? "▲" : pct < 0 ? "▼" : "");
 const dir = (pct) => (pct > 0 ? "up" : pct < 0 ? "down" : "flat");
 const suffix = (theme) => (theme === "light" ? "-light" : "");
 
+/** 체크마크 뱃지 한 줄(시황 5줄 요약 / 내일 주목할 변수 공용) */
+function checkBadgeRow(text, checkColor) {
+  return `
+    <span class="tag-gold">
+      <svg class="chk" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="${checkColor}"/><path d="M7 12.5l3 3 7-7.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>${text}</span>
+    </span>`;
+}
+
 /** 커버 히어로 수치 옆에 넣는 미니 트렌드 스파크라인 SVG (상승/하락/보합에 따라 색·모양 변경) */
 function heroTrendSVG(pct) {
   const up = pct > 0;
@@ -68,6 +78,7 @@ export function buildCardsHTML(cardData) {
     heroLabel, heroPct,
     headline,
     indexTitle, indexRows = [],
+    summaryLines = [],
     listTitle, listItems = [],
     aiTitle, aiComment,
     checkpointsTitle, checkpoints = [],
@@ -76,6 +87,7 @@ export function buildCardsHTML(cardData) {
 
   const s = suffix(theme);
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}${s}.html`), "utf8");
+  const checkColor = theme === "light" ? "#0f8387" : "#d4af37";
 
   const cover = fillSimpleVars(read("card-cover"), {
     DATE: date,
@@ -90,14 +102,22 @@ export function buildCardsHTML(cardData) {
     HEADLINE: headline,
   });
 
-  let index = read("card-index");
-  index = fillSimpleVars(index, { PAGE_TITLE: indexTitle });
-  index = fillRepeatBlock(index, "ROW", indexRows, (r) => `
+  // 마감 시황(light 테마)이고 summaryLines가 준비돼 있으면 지수표 대신 "시황 5줄 요약" 카드를 사용.
+  // 그 외(아침 브리핑, dark 테마, summaryLines 없음)에는 기존 지수표 템플릿으로 안전하게 폴백.
+  const useSummary = theme === "light" && Array.isArray(summaryLines) && summaryLines.length > 0;
+  let index;
+  if (useSummary) {
+    index = fillSimpleVars(read("card-summary"), { PAGE_TITLE: indexTitle });
+    index = fillRepeatBlock(index, "SUMMARY", summaryLines.slice(0, 5), (line) => checkBadgeRow(line, checkColor));
+  } else {
+    index = fillSimpleVars(read("card-index"), { PAGE_TITLE: indexTitle });
+    index = fillRepeatBlock(index, "ROW", indexRows, (r) => `
     <div class="panel row">
       <div class="name">${r.name}</div>
       <div class="value">${r.value}</div>
       <div class="pct ${dir(r.pct)}">${r.pct ? `${arrow(r.pct)} ${Math.abs(r.pct).toFixed(2)}%` : ""}</div>
     </div>`);
+  }
 
   let stocks = read("card-stocks");
   stocks = fillSimpleVars(stocks, { PAGE_TITLE: listTitle });
@@ -113,12 +133,7 @@ export function buildCardsHTML(cardData) {
 
   let ai = read("card-ai");
   ai = fillSimpleVars(ai, { PAGE_TITLE: aiTitle, AI_COMMENT: aiComment, CHECKPOINTS_TITLE: checkpointsTitle });
-  const checkColor = theme === "light" ? "#0f8387" : "#d4af37";
-  ai = fillRepeatBlock(ai, "TAG", checkpoints.slice(0, 3), (c) => `
-    <span class="tag-gold">
-      <svg class="chk" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="11" fill="${checkColor}"/><path d="M7 12.5l3 3 7-7.5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>${c}</span>
-    </span>`);
+  ai = fillRepeatBlock(ai, "TAG", checkpoints.slice(0, 3), (c) => checkBadgeRow(c, checkColor));
 
   const cta = read("card-cta");
 

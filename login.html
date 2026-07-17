@@ -62,15 +62,18 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <main class="tm-main tm-auth-main">
         <div class="tm-auth-card">
           <h1 class="tm-auth-card__title">로그인</h1>
           <p class="tm-auth-card__desc">TotalMoney AI 계정으로 로그인하세요.</p>
+
           <form id="login-form" autocomplete="on">
             <div class="tm-auth-field">
               <label for="login-email">이메일</label>
@@ -83,9 +86,11 @@
             <button type="submit" class="tm-auth-submit" id="login-submit">로그인</button>
             <div class="tm-auth-msg" id="login-msg"></div>
           </form>
+
           <p class="tm-auth-switch">아직 계정이 없으신가요? <a href="./signup.html">회원가입</a></p>
         </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -110,8 +115,10 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
+
     <script>
       (function () {
         function showMsg(text, isError) {
@@ -121,11 +128,13 @@
           el.classList.toggle("tm-auth-msg--error", !!isError);
           el.classList.toggle("tm-auth-msg--ok", !isError);
         }
+
         function redirectAfterLogin() {
           const params = new URLSearchParams(window.location.search);
           const next = params.get("next");
           window.location.href = next && next.startsWith("/") ? next : "./mypage.html";
         }
+
         document.getElementById("login-form").addEventListener("submit", async function (e) {
           e.preventDefault();
           if (window.TMAuth && window.TMAuth.isSetupPending()) {

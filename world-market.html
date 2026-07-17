@@ -28,6 +28,7 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
+
     <link rel="stylesheet" href="./weekly-market.css" />
     <style>
       .world-panel {
@@ -489,14 +490,17 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
+
       <main class="tm-main">
 <div class="page">
       <header class="masthead masthead--title-only">
@@ -541,6 +545,7 @@
       </section>
     </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -565,6 +570,7 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
         <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
@@ -573,6 +579,7 @@
         <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>
     </div>
+
     <script>
       (() => {
         const state = { type: "marketCap", openKey: null, rows: [], allRows: null, sparksLoaded: false };

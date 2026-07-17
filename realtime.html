@@ -30,6 +30,7 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
+
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="preload" href="/api/repo-data?path=data/kr-realtime.json" as="fetch" crossorigin />
@@ -81,14 +82,17 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
+
       <main class="tm-main">
 <div class="page page--realtime">
       <header class="masthead masthead--title-only">
@@ -97,6 +101,7 @@
           <h1 class="masthead__title">실시간시세</h1>
         </div>
       </header>
+
       <div class="rt-wrap">
         <div class="rt-panel" role="tabpanel">
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
@@ -123,8 +128,11 @@
             </div>
             </div>
           </div>
+
           <div class="rt-data-freshness" id="rt-data-freshness" aria-live="polite"></div>
+
           <div id="stock-result-panel" class="rt-stock-panel" hidden aria-live="polite"></div>
+
           <div class="table-box">
             <div class="rt-scroll">
               <div class="rt-header-row" aria-hidden="true">
@@ -161,12 +169,16 @@
               </table>
             </div>
           </div>
+
         </div>
+
         <div id="rt-table-pager" class="pagination" hidden aria-label="페이지"></div>
+
         <p id="rt-error" class="rt-error" hidden></p>
       </div>
     </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -191,6 +203,7 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
         <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
@@ -199,15 +212,18 @@
         <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>
     </div>
+
     <script>
       (function () {
         "use strict";
+
         function tradingViewSymbol(symbol) {
           const s = String(symbol || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
           if (!s) return "CRYPTOCAP:TOTAL";
           if (s === "USDT" || s === "USDC" || s === "DAI") return `CRYPTOCAP:${s}`;
           return `BINANCE:${s}USDT`;
         }
+
         function tradingViewUrl(symbol) {
           // 2026-07-11: theme.js의 공용 헬퍼로 위임 — 거래량 스터디를 명시적으로 추가하고
           // studies_overrides로 캔들과 같은 색을 입혀서, 거래량/캔들 색이 어긋나던 문제를 고친다.
@@ -247,13 +263,16 @@
           }
           return `https://www.tradingview.com/widgetembed/?${params.toString()}`;
         }
+
         function refreshTradingViewCharts() {
           document.querySelectorAll(".crypto-tv-widget, .realtime-tv-widget").forEach((iframe) => {
             const sym = iframe.dataset.symbol;
             if (sym) iframe.src = tradingViewUrl(sym);
           });
         }
+
         window.tmTradingViewUrl = tradingViewUrl;
+
         function wireThemeChartRefresh() {
           const btn = document.getElementById("theme-toggle");
           if (!btn || btn.dataset.rtTvThemeBound === "1") return;
@@ -262,6 +281,7 @@
             setTimeout(refreshTradingViewCharts, 0);
           });
         }
+
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", wireThemeChartRefresh, { once: true });
         } else {

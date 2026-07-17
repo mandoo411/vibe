@@ -418,14 +418,17 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
+
       <main class="tm-main">
         <div class="ts-page">
           <header class="ts-masthead">
@@ -433,11 +436,13 @@
             <h1 class="ts-masthead__title">매매시그널</h1>
             <p class="ts-masthead__desc">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
           </header>
+
           <div id="ts-gate" class="ts-card ts-gate ts-hidden">
             <p class="ts-gate__title" id="ts-gate-title">Pro 전용 기능입니다</p>
             <p class="ts-gate__text" id="ts-gate-text">매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.</p>
             <a class="ts-btn" href="./pricing.html">요금제 보기</a>
           </div>
+
           <div id="ts-content" class="ts-hidden">
             <section class="ts-card">
               <p class="ts-label">어떤 조건에 맞는 종목을 찾을까요?</p>
@@ -446,6 +451,7 @@
                 <button type="button" class="ts-btn" id="ts-search-btn">검색하기</button>
               </div>
               <p class="ts-error ts-hidden" id="ts-search-error"></p>
+
               <div id="ts-results" class="ts-results ts-hidden">
                 <div class="ts-results__summary">
                   <span class="ts-tag ts-tag--accent" id="ts-results-summary"></span>
@@ -460,10 +466,12 @@
                 <div id="ts-result-list" style="margin-top:12px;"></div>
               </div>
             </section>
+
             <section class="ts-card">
               <p class="ts-section-title">내 전략<span class="ts-limit-note" id="ts-strategy-count"></span></p>
               <div id="ts-strategy-list"><p class="ts-empty">불러오는 중…</p></div>
             </section>
+
             <section class="ts-card">
               <p class="ts-section-title">발견된 시그널</p>
               <div id="ts-event-list"><p class="ts-empty">불러오는 중…</p></div>
@@ -471,6 +479,7 @@
           </div>
         </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -495,6 +504,7 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
         <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
@@ -503,6 +513,7 @@
         <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>
     </div>
+
     <script>
       (() => {
         const $ = (id) => document.getElementById(id);
@@ -511,9 +522,11 @@
         let currentScreen = null; // { condition, summary, rawText, stocks }
         let selectedAlertType = "buy";
         const savedRowCodes = new Set();
+
         function escapeHtml(value) {
           return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
+
         function fmtTime(iso) {
           try {
             const d = new Date(iso);
@@ -527,22 +540,26 @@
             return "";
           }
         }
+
         function fmtPrice(n) {
           if (n == null || Number.isNaN(Number(n))) return "-";
           return Number(n).toLocaleString("ko-KR");
         }
+
         function fmtChangePct(n) {
           if (n == null || Number.isNaN(Number(n))) return "-";
           const v = Number(n);
           const sign = v > 0 ? "+" : "";
           return `${sign}${v.toFixed(2)}%`;
         }
+
         function fmtCacheDate(ymd) {
           if (!ymd) return "";
           const parts = String(ymd).split("-");
           if (parts.length !== 3) return ymd;
           return `${parts[0]}.${parts[1]}.${parts[2]}`;
         }
+
         function clauseText(c) {
           const dirText = c.direction === "down" ? "하향" : "상향";
           if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파`;
@@ -554,10 +571,12 @@
           if (c.type === "price_change_pct") return `당일 등락률 ${c.op === "lte" ? "≤" : "≥"} ${c.value}%`;
           return c.type;
         }
+
         function conditionText(condition) {
           if (!condition || !Array.isArray(condition.clauses)) return "";
           return condition.clauses.map(clauseText).join(" 그리고 ");
         }
+
         async function authToken() {
           if (!window.TMAuth) return "";
           try {
@@ -566,6 +585,7 @@
             return "";
           }
         }
+
         async function apiFetch(path, options = {}) {
           const token = await authToken();
           const res = await fetch(path, {
@@ -580,6 +600,7 @@
           if (!res.ok) throw new Error(data.error || `요청 실패 (HTTP ${res.status})`);
           return data;
         }
+
         function renderStrategies() {
           const list = $("ts-strategy-list");
           $("ts-strategy-count").textContent = strategies.length ? ` (${strategies.length}/20)` : "";
@@ -607,6 +628,7 @@
               </div>`;
             })
             .join("");
+
           list.querySelectorAll("[data-toggle-id]").forEach((btn) => {
             btn.addEventListener("click", async () => {
               const id = btn.getAttribute("data-toggle-id");
@@ -641,6 +663,7 @@
             });
           });
         }
+
         function renderEvents() {
           const list = $("ts-event-list");
           if (!events.length) {
@@ -654,6 +677,7 @@
             )
             .join("");
         }
+
         async function loadStrategies() {
           try {
             const data = await apiFetch("/api/analyze?feature=trade-signal", { method: "GET" });
@@ -666,12 +690,14 @@
             $("ts-event-list").innerHTML = "";
           }
         }
+
         function resetResults() {
           currentScreen = null;
           savedRowCodes.clear();
           $("ts-results").classList.add("ts-hidden");
           $("ts-search-error").classList.add("ts-hidden");
         }
+
         function renderResultList() {
           const wrap = $("ts-result-list");
           if (!currentScreen || !currentScreen.stocks || !currentScreen.stocks.length) {
@@ -705,6 +731,7 @@
               </div>`;
             })
             .join("");
+
           wrap.querySelectorAll("[data-save-code]").forEach((btn) => {
             btn.addEventListener("click", async () => {
               if (!currentScreen) return;
@@ -735,6 +762,7 @@
             });
           });
         }
+
         $("ts-alert-buy").addEventListener("click", () => {
           selectedAlertType = "buy";
           $("ts-alert-buy").classList.add("ts-pill--active");
@@ -745,6 +773,7 @@
           $("ts-alert-sell").classList.add("ts-pill--active");
           $("ts-alert-buy").classList.remove("ts-pill--active");
         });
+
         $("ts-search-btn").addEventListener("click", async () => {
           const text = $("ts-input").value.trim();
           if (!text) return;
@@ -781,6 +810,7 @@
             btn.textContent = "검색하기";
           }
         });
+
         async function checkGateAndInit(opts) {
           const skipRefresh = opts && opts.skipRefresh;
           if (!skipRefresh && window.TMAuth && typeof window.TMAuth.refreshState === "function") {
@@ -805,6 +835,7 @@
           $("ts-content").classList.remove("ts-hidden");
           await loadStrategies();
         }
+
         checkGateAndInit();
         if (document.addEventListener) {
           // tm-auth-ready 핸들러에서 refreshState()를 다시 호출하면 refreshState()가 끝에

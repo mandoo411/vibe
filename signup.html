@@ -62,15 +62,18 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <main class="tm-main tm-auth-main">
         <div class="tm-auth-card">
           <h1 class="tm-auth-card__title">회원가입</h1>
           <p class="tm-auth-card__desc">이메일로 가입하고 무료 플랜부터 시작하세요.</p>
+
           <form id="signup-form" autocomplete="on">
             <div class="tm-auth-field">
               <label for="signup-name">이름 / 닉네임</label>
@@ -87,9 +90,11 @@
             <button type="submit" class="tm-auth-submit" id="signup-submit">회원가입</button>
             <div class="tm-auth-msg" id="signup-msg"></div>
           </form>
+
           <p class="tm-auth-switch">이미 계정이 있으신가요? <a href="./login.html">로그인</a></p>
         </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -114,8 +119,10 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
+
     <script>
       (function () {
         function showMsg(text, isError) {
@@ -125,6 +132,7 @@
           el.classList.toggle("tm-auth-msg--error", !!isError);
           el.classList.toggle("tm-auth-msg--ok", !isError);
         }
+
         document.getElementById("signup-form").addEventListener("submit", async function (e) {
           e.preventDefault();
           if (window.TMAuth && window.TMAuth.isSetupPending()) {

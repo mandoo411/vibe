@@ -62,18 +62,22 @@
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
+
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
+
       <main class="tm-main tm-auth-main" style="align-items: flex-start; padding-top: 40px">
         <div class="tm-account-card" id="account-card" hidden>
           <h1 class="tm-auth-card__title" style="margin-bottom: 4px">마이페이지</h1>
+
           <div class="tm-account-row">
             <p class="tm-account-row__label">이메일</p>
             <p class="tm-account-row__value" id="acc-email">—</p>
           </div>
+
           <div class="tm-account-row">
             <p class="tm-account-row__label">현재 요금제</p>
             <p class="tm-account-row__value">
@@ -81,21 +85,25 @@
               <span id="acc-plan-until" style="font-size: 13px; font-weight: 500; color: var(--text-body); margin-left: 8px"></span>
             </p>
           </div>
+
           <div class="tm-account-row">
             <p class="tm-account-row__label">결제 내역</p>
             <div id="acc-orders">불러오는 중…</div>
           </div>
+
           <div class="tm-account-actions">
             <a class="tm-btn tm-btn--primary" href="./pricing.html">요금제 관리 / 업그레이드</a>
             <button type="button" class="tm-btn tm-btn--ghost" id="acc-logout">로그아웃</button>
           </div>
         </div>
+
         <div class="tm-auth-card" id="guest-card" hidden>
           <h1 class="tm-auth-card__title">로그인이 필요합니다</h1>
           <p class="tm-auth-card__desc">마이페이지를 보려면 먼저 로그인해주세요.</p>
           <a class="tm-auth-submit" style="display: block; text-align: center; text-decoration: none; line-height: 1.6" href="./login.html?next=/mypage.html">로그인 하러 가기</a>
         </div>
       </main>
+
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -120,11 +128,14 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
+
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
+
     <script>
       (function () {
         const PLAN_LABEL = { free: "FREE", pro: "PRO", premium: "PREMIUM" };
+
         function fmtDate(iso) {
           if (!iso) return "";
           try {
@@ -133,6 +144,7 @@
             return "";
           }
         }
+
         async function loadOrders(userId, accessToken) {
           const box = document.getElementById("acc-orders");
           try {
@@ -158,7 +170,9 @@
             box.textContent = "결제 내역을 불러오지 못했습니다.";
           }
         }
+
         let loggingOut = false;
+
         async function render() {
           if (loggingOut) return;
           const state = window.TM_AUTH_STATE;
@@ -181,10 +195,12 @@
           const token = await window.TMAuth.getAccessToken();
           loadOrders(state.userId, token);
         }
+
         document.addEventListener("tm-auth-ready", render);
         document.addEventListener("DOMContentLoaded", () => {
           if (window.TM_AUTH_STATE.loaded) render();
         });
+
         document.getElementById("acc-logout").addEventListener("click", async function () {
           // 2026-07-11: signOut() 내부에서 refreshState()가 "tm-auth-ready"를 쏘는데, 그걸 그대로
           // 두면 render()가 로그아웃된 상태로 다시 그려져서 "로그인이 필요합니다" 게스트 카드가

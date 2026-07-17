@@ -811,8 +811,9 @@
           }
         });
 
-        async function checkGateAndInit() {
-          if (window.TMAuth && typeof window.TMAuth.refreshState === "function") {
+        async function checkGateAndInit(opts) {
+          const skipRefresh = opts && opts.skipRefresh;
+          if (!skipRefresh && window.TMAuth && typeof window.TMAuth.refreshState === "function") {
             await window.TMAuth.refreshState().catch(() => {});
           }
           const st = window.TM_AUTH_STATE || {};
@@ -837,7 +838,11 @@
 
         checkGateAndInit();
         if (document.addEventListener) {
-          document.addEventListener("tm-auth-ready", checkGateAndInit);
+          // tm-auth-ready 핸들러에서 refreshState()를 다시 호출하면 refreshState()가 끝에
+          // tm-auth-ready를 재발생시켜 무한 루프(깜빡임 + 요청 폭주)가 발생한다.
+          // 이 이벤트가 왔다는 것 자체가 TM_AUTH_STATE가 이미 최신이라는 뜻이므로
+          // skipRefresh로 재조회 없이 현재 상태만 반영한다.
+          document.addEventListener("tm-auth-ready", () => checkGateAndInit({ skipRefresh: true }));
         }
       })();
     </script>

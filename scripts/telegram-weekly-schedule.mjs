@@ -17,6 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
+import { isClaudeUnavailableError } from "./claude-utils.mjs";
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -312,7 +313,20 @@ async function main() {
     process.exit(1);
   }
 
-  const ai = await runClaude({ apiKey, model, weekMonday, transcript });
+  // 2026-07-17: Anthropic 크레딧 소진(또는 일시 장애) 시 이 스크립트가 죽어서
+  // data/weekly-schedule.json이 그날 아예 갱신 안 되던 문제 — 실패하면 기존 파일을
+  // 그대로 두고 exit(0)으로 조용히 넘어간다(다음 스케줄 실행에서 재시도).
+  let ai;
+  try {
+    ai = await runClaude({ apiKey, model, weekMonday, transcript });
+  } catch (error) {
+    const reason = isClaudeUnavailableError(error) ? "크레딧/일시 장애" : "기타 오류";
+    console.error(
+      `Claude 분석 실패(${reason}): ${error instanceof Error ? error.message : error}`
+    );
+    console.error("기존 data/weekly-schedule.json을 그대로 유지하고 이번 실행은 건너뜁니다.");
+    process.exit(0);
+  }
   const days = validateWeekPayload(ai, weekMonday);
 
   const data = await readJsonIfExists(outputPath);

@@ -1,25 +1,24 @@
 /**
  * 인스타/X 홍보 콘텐츠용 카피 생성
  * data/daily-market.json (기존 sync 워크플로우가 채워둔 데이터)을 읽어서
- * 카드뉴스·트윗에 필요한 짧은 문구(headline, aiComment, checkpoints, stockReasons)를 만든다.
+ * 카드뉴스·트윗에 필요한 짧은 문구(headline, summaryLines, aiComment, checkpoints, stockReasons)를 만든다.
  *
  * 설계 원칙: KIS API를 새로 호출하지 않는다 — 이미 kis-daily-top30.mjs / daily-market-ai.mjs가
  * 채워둔 data/daily-market.json 을 그대로 재사용한다 (중복 API 호출·토큰 관리 방지).
  * Claude 호출도 이미 만들어진 analysis 원문을 압축하는 용도로만 가볍게 1회 사용한다(Haiku).
  */
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
-import { summarizeToSentence } from "./promo-text-utils.mjs";
+import { summarizeToSentence, trimToNaturalBreak } from "./promo-text-utils.mjs";
 import { ensureJsonSafe, isClaudeUnavailableError, parseJsonFromAssistant, sanitizeUnicode } from "./claude-utils.mjs";
 import Anthropic from "@anthropic-ai/sdk";
 
 const MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
 const DATA_PATH = "./data/daily-market.json";
 
-/** analysis 원문(마크다운 텍스트)에서 "핵심 한 줄" 섹션만 뽑아내는 폴백 파서 (완결 문장 기준, 어중간하게 끊기지 않도록) */
 function extractHeadlineFallback(analysisText) {
   const m = String(analysisText || "").match(/핵심 한 줄\s*\n([\s\S]*?)(?:\n\n|📈)/);
   const para = m ? m[1].trim() : "";
-  return para ? summarizeToSentence(para, 100) : "오늘의 시장 요약";
+  return para ? summarizeToSentence(para, 110) : "";
 }
 
 function extractOutlookFallback(analysisText) {
@@ -32,18 +31,12 @@ function extractOutlookFallback(analysisText) {
     .slice(0, 3);
 }
 
-/** "시장 흐름 분석" 섹션에서 AI 코멘트용 문단을 뽑는 폴백(헤드라인과 겹치지 않도록 별도 소스 사용) */
 function extractFlowCommentFallback(analysisText) {
   const m = String(analysisText || "").match(/(?:🔄\s*)?시장 흐름 분석\s*\n([\s\S]*?)(?:\n\n|$)/);
   const para = m ? m[1].trim() : "";
   return para ? summarizeToSentence(para, 110) : "";
 }
 
-/**
- * 코스피/코스닥 실측 등락률로 짧고 완결된 헤드라인 문장을 직접 만든다.
- * "핵심 한 줄" 원문(analysis)은 종종 200자 넘는 만연체라 어디를 잘라도 어색하게 끊기므로,
- * 폴백 헤드라인은 프로즈를 자르지 않고 숫자로 직접 조립한다(항상 짧고 완결됨).
- */
 function buildIndexHeadline(snapshot) {
   const { kospi, kosdaq } = snapshot.indexes || {};
   if (!kospi?.close || !Number.isFinite(kospi.changePercent)) return "";
@@ -55,7 +48,26 @@ function buildIndexHeadline(snapshot) {
   return `${s} 마감했다.`;
 }
 
-/** data/daily-market.json에서 오늘(없으면 가장 최근) 스냅샷을 읽는다 */
+function buildFallbackSummaryLines(snapshot, analysisText) {
+  const { kospi, kosdaq, usdkrw } = snapshot.indexes || {};
+  const dirWord = (pct) => (pct > 0 ? "상승" : pct < 0 ? "하락" : "보합");
+  const lines = [];
+  if (kospi?.close && Number.isFinite(kospi.changePercent)) {
+    lines.push(`코스피 ${kospi.close.toLocaleString()}, ${Math.abs(kospi.changePercent).toFixed(2)}% ${dirWord(kospi.changePercent)} 마감`);
+  }
+  if (kosdaq?.close && Number.isFinite(kosdaq.changePercent)) {
+    lines.push(`코스닥 ${kosdaq.close.toLocaleString()}, ${Math.abs(kosdaq.changePercent).toFixed(2)}% ${dirWord(kosdaq.changePercent)} 마감`);
+  }
+  if (usdkrw?.rate) {
+    lines.push(`원/달러 환율 ${Math.round(usdkrw.rate).toLocaleString()}원 기록`);
+  }
+  const flow = extractFlowCommentFallback(analysisText);
+  if (flow) lines.push(flow);
+  const outlook = extractOutlookFallback(analysisText)[0];
+  if (outlook) lines.push(trimToNaturalBreak(outlook, 32));
+  return lines.slice(0, 5);
+}
+
 export async function loadLatestSnapshot() {
   const raw = await readJson(DATA_PATH);
   const days = raw.days || {};
@@ -65,21 +77,19 @@ export async function loadLatestSnapshot() {
   return { ymd: key, ...days[key] };
 }
 
-/**
- * 카드뉴스/트윗 공용 카피 생성.
- * Claude 실패 시 analysis 원문에서 직접 뽑은 문구로 자동 폴백 (기존 daily-market-ai.mjs 방식과 동일한 철학).
- */
 export async function buildPromoCopy(snapshot) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const analysisText = sanitizeUnicode(snapshot.analysis || "");
   const gainers = (snapshot.topGainers || []).slice(0, 5);
+  const { kospi, kosdaq, usdkrw } = snapshot.indexes || {};
 
   const fallback = () => {
-    const headline = buildIndexHeadline(snapshot) || extractHeadlineFallback(analysisText);
+    const headline = extractHeadlineFallback(analysisText) || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
     const flowComment = extractFlowCommentFallback(analysisText);
     return {
       headline,
-      aiComment: flowComment || extractHeadlineFallback(analysisText),
+      summaryLines: buildFallbackSummaryLines(snapshot, analysisText),
+      aiComment: flowComment || extractHeadlineFallback(analysisText) || "",
       checkpoints: extractOutlookFallback(analysisText),
       stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
     };
@@ -88,7 +98,19 @@ export async function buildPromoCopy(snapshot) {
   if (!apiKey || !analysisText) return fallback();
 
   const client = new Anthropic({ apiKey });
-  const userPrompt = ensureJsonSafe(`아래는 오늘 장마감 리포트 원문이야. 이걸 압축해서 SNS 카드뉴스/트윗용 짧은 문구로 만들어줘.
+  const indexFacts = [
+    kospi?.close && Number.isFinite(kospi.changePercent) ? `코스피 ${kospi.close.toLocaleString()} (${kospi.changePercent > 0 ? "+" : ""}${kospi.changePercent}%)` : null,
+    kosdaq?.close && Number.isFinite(kosdaq.changePercent) ? `코스닥 ${kosdaq.close.toLocaleString()} (${kosdaq.changePercent > 0 ? "+" : ""}${kosdaq.changePercent}%)` : null,
+    usdkrw?.rate ? `원/달러 ${Math.round(usdkrw.rate).toLocaleString()}원` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const userPrompt = ensureJsonSafe(`아래는 오늘 장마감 리포트 원문이야. 이걸로 SNS 카드뉴스용 문구를 만들어줘.
+반드시 아래 [리포트 원문]과 [오늘 지수 마감]에 있는 사실만 사용하고, 원문에 없는 수치·사건·이유는 절대 지어내지 마(할루시네이션 금지). 근거가 부족하면 과장하지 말고 일반적인 표현을 써.
+
+[오늘 지수 마감]
+${indexFacts || "데이터 없음"}
 
 [리포트 원문]
 ${analysisText.slice(0, 6000)}
@@ -98,11 +120,13 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
 
 다음 JSON 스키마로만 응답:
 {
-  "headline": "커버 슬라이드용 한 줄 헤드라인 (20자 내외)",
-  "aiComment": "AI 오늘의 판단 코멘트 (60~90자, 근거+주의사항 포함, headline과 다른 내용/문장으로)",
+  "headline": "커버 슬라이드용 한 줄 총평 (35~55자). 화면에 이미 표시되는 지수 등락률 숫자를 그대로 반복하지 말고, 오늘 시장이 왜 그렇게 움직였는지 핵심 원인과 의미를 임팩트 있게 설명. 완결된 문장으로 끝낼 것.",
+  "summaryLines": ["오늘 시황을 완결된 문장 5개로 요약(각 20~32자). 지수 흐름/주도 업종/수급 주체/환율·원자재/향후 변수 등 서로 다른 포인트를 다뤄서 정보 밀도를 높일 것. 원문에 없는 내용 금지."],
+  "aiComment": "AI 오늘의 판단 (70~100자). 오늘 시황에서 가장 중요한 포인트 1~2개를 근거와 함께 설명하고 투자 유의사항을 짧게 포함. headline과 다른 문장/내용으로 쓸 것.",
   "checkpoints": ["내일 주목할 변수 1", "변수 2", "변수 3"],
-  "stockReasons": { "종목명": "상승/하락 이유 한 줄(15자 내외)" }
-}`);
+  "stockReasons": { "종목명": "상승/하락 이유를 완결된 명사구로 12~16자 내외 (중간에 끊기지 않게 짧게)" }
+}
+summaryLines는 정확히 5개를 배열로 반환해.`);
 
   const MAX_ATTEMPTS = 3;
   let lastError;
@@ -110,17 +134,20 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
     try {
       const res = await client.messages.create({
         model: MODEL,
-        max_tokens: 600,
+        max_tokens: 900,
         system:
           "TotalMoney AI 카드뉴스/트윗 문구 작성자. 브랜드 보이스: 전문적이지만 쉽게, 결론이 명확하게, 과장 없이. " +
+          "제공된 리포트 원문과 지수 수치에 없는 사실을 지어내지 마라(할루시네이션 금지) — 모르면 일반적인 표현을 써라. " +
           "반드시 JSON만 출력 (마크다운 코드블록 금지).",
         messages: [{ role: "user", content: userPrompt }],
       });
       const text = res.content?.find((b) => b.type === "text")?.text || "";
       const parsed = parseJsonFromAssistant(text);
-      // headline과 aiComment가 우연히 같으면 폴백 코멘트로 대체(카드가 중복되어 보이는 것 방지)
       if (parsed.aiComment && parsed.headline && parsed.aiComment === parsed.headline) {
         parsed.aiComment = extractFlowCommentFallback(analysisText) || parsed.aiComment;
+      }
+      if (!Array.isArray(parsed.summaryLines) || parsed.summaryLines.length === 0) {
+        parsed.summaryLines = buildFallbackSummaryLines(snapshot, analysisText);
       }
       return parsed;
     } catch (error) {
@@ -134,14 +161,10 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
       await new Promise((r) => setTimeout(r, 1500 * attempt));
     }
   }
-  console.warn("[promo-market-copy] Claude 전체 실패, 원문에서 직접 추출:", lastError instanceof Error ? lastError.message : lastError);
+  console.warn("[promo-market-copy] Claude 전체 실패, 원문/실측 지수에서 직접 추출:", lastError instanceof Error ? lastError.message : lastError);
   return fallback();
 }
 
-/**
- * snapshot(daily-market.json) + copy(buildPromoCopy 결과) + gainers를 promo-render-cards.mjs가
- * 바로 쓸 수 있는 공통 cardData 형태로 변환한다 (아침 브리핑 카드와 동일한 포맷).
- */
 export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme = "light" }) {
   const { kospi, kosdaq, usdkrw } = snapshot.indexes || {};
   const indexRows = [
@@ -158,8 +181,9 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     heroLabel: "코스피",
     heroPct: kospi?.changePercent || 0,
     headline: copy.headline,
-    indexTitle: "오늘의 지수",
+    indexTitle: "오늘의 시황 요약",
     indexRows,
+    summaryLines: copy.summaryLines || [],
     listTitle: "오늘의 특징주 TOP5",
     listItems: gainers.map((g) => ({ name: g.name, reason: g.reason, pct: g.change })),
     aiTitle: "AI 오늘의 판단",

@@ -44,37 +44,34 @@
             </div>
           </div>
         </a>
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
         <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
           <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
         <nav class="home-nav__menu">
-          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
           <div class="home-nav__links" id="home-nav-links">
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./us-market.html">미국주식</a>
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="home-nav__link" href="./weekly-market.html">일정</a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>          </div>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a></div>
   <div class="home-nav__more" id="home-nav-more">
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
-
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
-
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
-
       <main class="tm-main" style="padding: 40px 16px 80px">
         <header class="masthead masthead--title-only" style="max-width: 960px; margin: 0 auto 28px">
           <div class="masthead__copy">
@@ -82,17 +79,14 @@
             <h1 class="masthead__title">요금제</h1>
           </div>
         </header>
-
         <div class="tm-setup-banner" id="setup-banner" hidden>
           ⚠️ 결제 시스템 설정이 아직 완료되지 않았습니다 (테스트 준비 중). 관리자에게 문의해주세요.
         </div>
-
         <div class="tm-pricing-grid" id="pricing-grid"></div>
         <p style="max-width: 960px; margin: 20px auto 0; font-size: 12.5px; color: var(--text-muted-ui); text-align: center">
           결제는 포트원(PortOne) 테스트 결제 모듈로 진행됩니다. 실제 정식 결제 전환은 사업자등록 완료 후 적용됩니다.
         </p>
       </main>
-
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -117,15 +111,12 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
-
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
-
     <script>
       (function () {
         const plans = window.TM_PRICING_PLANS || [];
         const grid = document.getElementById("pricing-grid");
-
         function renderPlans() {
           const state = window.TM_AUTH_STATE || {};
           grid.innerHTML = plans
@@ -149,12 +140,10 @@
             })
             .join("");
         }
-
         function checkSetup() {
           const cfg = window.TM_AUTH_CONFIG || {};
           document.getElementById("setup-banner").hidden = !cfg.SETUP_PENDING;
         }
-
         async function startCheckout(plan) {
           const state = window.TM_AUTH_STATE;
           if (!state.isLoggedIn) {
@@ -162,13 +151,11 @@
             return;
           }
           if (plan.amount <= 0) return; // 무료 플랜은 결제 불필요
-
           const cfg = window.TM_AUTH_CONFIG;
           if (!window.PortOne || cfg.SETUP_PENDING) {
             alert("결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해주세요.");
             return;
           }
-
           const paymentId = `tm-${plan.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           try {
             const result = await window.PortOne.requestPayment({
@@ -182,12 +169,10 @@
               customer: { email: state.email },
               customData: { plan: plan.id, userId: state.userId },
             });
-
             if (result && result.code) {
               alert("결제가 취소되었거나 실패했습니다: " + (result.message || result.code));
               return;
             }
-
             // 결제창에서 승인된 결과를 서버로 보내 재검증 + 구독 반영
             const token = await window.TMAuth.getAccessToken();
             const res = await fetch("/api/payment/complete", {
@@ -207,14 +192,12 @@
             alert("결제 요청 중 오류가 발생했습니다: " + (e && e.message));
           }
         }
-
         grid.addEventListener("click", function (e) {
           const btn = e.target.closest("[data-plan]");
           if (!btn || btn.disabled) return;
           const plan = plans.find((p) => p.id === btn.dataset.plan);
           if (plan) startCheckout(plan);
         });
-
         document.addEventListener("tm-auth-ready", renderPlans);
         document.addEventListener("DOMContentLoaded", () => {
           renderPlans();

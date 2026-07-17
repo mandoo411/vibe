@@ -201,37 +201,34 @@
             </div>
           </div>
         </a>
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
         <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
           <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
         <nav class="home-nav__menu">
-          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
           <div class="home-nav__links" id="home-nav-links">
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./us-market.html" aria-current="page">미국주식</a>
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="home-nav__link" href="./weekly-market.html">일정</a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>          </div>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a></div>
   <div class="home-nav__more" id="home-nav-more">
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
-
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
-
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
-
       <main class="tm-main">
         <div class="page page--realtime">
           <header class="masthead masthead--title-only">
@@ -240,7 +237,6 @@
               <h1 class="masthead__title">미국주식</h1>
             </div>
           </header>
-
           <div class="rt-wrap">
             <div class="rt-panel" role="tabpanel">
               <div class="rt-tabs" role="tablist" aria-label="미국주식 보기">
@@ -263,11 +259,8 @@
                   </div>
                 </div>
               </div>
-
               <div class="rt-data-freshness" id="us-data-freshness" aria-live="polite"></div>
-
               <div id="us-stock-result-panel" class="rt-stock-panel" hidden aria-live="polite"></div>
-
               <div class="table-box">
                 <div class="rt-scroll">
                   <div class="rt-header-row" aria-hidden="true">
@@ -305,12 +298,10 @@
                 </div>
               </div>
             </div>
-
             <p id="us-error" class="rt-error" hidden></p>
           </div>
         </div>
       </main>
-
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -335,10 +326,8 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
-
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
-
     <script src="./assets/lw-candle-chart.js?v=1"></script>
     <script src="./us-market.js?v=20260711a"></script>
   </body>

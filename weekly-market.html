@@ -30,7 +30,6 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
-
     <link rel="stylesheet" href="./weekly-market.css" />
     <script src="./assets/data-url.js"></script>
     </head>
@@ -50,37 +49,34 @@
             </div>
           </div>
         </a>
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
         <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
           <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
         <nav class="home-nav__menu">
-          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
           <div class="home-nav__links" id="home-nav-links">
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html" aria-current="page">일정</a>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./market.html">시장지표</a>
           <a class="home-nav__link" href="./us-market.html">미국주식</a>
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="home-nav__link" href="./weekly-market.html" aria-current="page">일정</a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>          </div>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a></div>
   <div class="home-nav__more" id="home-nav-more">
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
-
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
-
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
-
       <main class="tm-main">
 <div class="page">
       <header class="masthead masthead--title-only">
@@ -96,11 +92,9 @@
           <span class="page-meta-bar__poll">매일 오전 6시 자동 업데이트</span>
         </div>
       </div>
-
       <main class="schedule-page">
         <div class="schedule-layout">
         <div class="schedule-main">
-
           <!-- 섹션 1: 오늘 일정 -->
           <section class="schedule-card schedule-card--today" aria-labelledby="day-sched-title">
             <div class="section-head">
@@ -114,7 +108,6 @@
               <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
             </div>
           </section>
-
           <!-- 섹션 2: 일정 분석 -->
           <!-- 2026-07-15: 선택한 날짜에 AI 일정분석이 없으면 이 섹션 자체를 숨긴다(renderAnalysis 참고).
                초기 로딩 중에는 보여야 하므로 hidden 속성은 넣지 않고 JS가 매번 최신 상태로 갱신한다. -->
@@ -129,7 +122,6 @@
             <div class="analysis-grid" id="analysis-grid" hidden></div>
             <p class="analysis-placeholder" id="analysis-placeholder"><i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트</p>
           </section>
-
           <!-- 섹션 3: 다가오는 주요일정 -->
           <section class="schedule-card" aria-labelledby="upcoming-title">
             <div class="section-head">
@@ -142,9 +134,7 @@
               <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
             </div>
           </section>
-
         </div>
-
         <aside class="schedule-aside">
         <section class="schedule-card calendar-card" aria-labelledby="calendar-title">
           <div class="section-head section-head--compact">
@@ -170,7 +160,6 @@
       </main>
     </div>
       </main>
-
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -195,7 +184,6 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
-
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
         <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
@@ -204,7 +192,6 @@
         <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>
     </div>
-
     <script>
       (() => {
         const WD = ["일", "월", "화", "수", "목", "금", "토"];
@@ -405,7 +392,6 @@
         };
         let countdownTimer = null;
         const $ = (id) => document.getElementById(id);
-
         function seoulYmd(date = new Date()) {
           return new Intl.DateTimeFormat("sv-SE", {
             timeZone: "Asia/Seoul",
@@ -414,32 +400,26 @@
             day: "2-digit",
           }).format(date);
         }
-
         function addDays(ymd, days) {
           const d = new Date(`${ymd}T12:00:00+09:00`);
           d.setDate(d.getDate() + days);
           return seoulYmd(d);
         }
-
         function kstDayOfWeek(ymd) {
           return new Date(`${ymd}T12:00:00+09:00`).getUTCDay();
         }
-
         function monthKey(ymd) {
           return String(ymd || seoulYmd()).slice(0, 7);
         }
-
         function monthKeyFromParts(year, monthIndex) {
           const d = new Date(year, monthIndex, 1);
           return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
         }
-
         function fmtDate(ymd) {
           if (!ymd) return "—";
           const [, m, d] = ymd.split("-");
           return `${Number(m)}월 ${Number(d)}일 (${WD[kstDayOfWeek(ymd)]})`;
         }
-
         function escapeHtml(v) {
           return String(v == null ? "" : v)
             .replace(/&/g, "&amp;")
@@ -447,7 +427,6 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;");
         }
-
         function decodeHtmlText(v) {
           return String(v == null ? "" : v)
             .replace(/&nbsp;/gi, " ")
@@ -459,49 +438,41 @@
             .replace(/\s+/g, " ")
             .trim();
         }
-
         function cleanIpoName(name) {
           return decodeHtmlText(name).replace(/\(구\.[^)]+\)/g, "").trim();
         }
-
         function money(v) {
           if (v == null || v === "") return "—";
           const n = Number(v);
           if (!Number.isFinite(n)) return escapeHtml(v);
           return n >= 1_000_000 ? `${Math.round(n / 1_000_000).toLocaleString()}M` : n.toLocaleString();
         }
-
         function itemsForDate(type, ymd) {
           const rows = state.data?.[type] || [];
           return rows.filter((row) => row.date === ymd);
         }
-
         function naverFinanceUrl(code, name) {
           return code
             ? `https://finance.naver.com/item/main.naver?code=${encodeURIComponent(code)}`
             : `https://finance.naver.com/search/searchList.naver?query=${encodeURIComponent(name || "")}`;
         }
-
         function ipoDetailUrl(row) {
           const raw = String(row?.url || "").trim();
           if (raw) return /^https?:\/\//i.test(raw) ? raw : `https://www.38.co.kr${raw.startsWith("/") ? raw : `/${raw}`}`;
           if (row?.code) return naverFinanceUrl(row.code, row.name);
           return `https://www.38.co.kr/html/fund/?o=r`;
         }
-
         function formatOfferingPrice(value) {
           const n = Number(value);
           if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return "";
           return `${n.toLocaleString("ko-KR")}원`;
         }
-
         function stripLegacyPeriodLabel(text) {
           return String(text || "")
             .replace(/\s*·\s*(월간|연간|분기)\s*$/g, "")
             .replace(/\s*\(\s*(월간|연간|분기)[^)]*\)/g, "")
             .trim();
         }
-
         function parseLegacyPeriod(text) {
           const t = String(text || "");
           if (/\(연간|연간\)|\byoy\b|\by\/y\b/i.test(t)) return "연간";
@@ -509,7 +480,6 @@
           if (/\(분기|분기\)|\bqoq\b|\bq\/q\b/i.test(t)) return "분기";
           return null;
         }
-
         function detectIndicatorPeriod(...texts) {
           const t = texts.filter(Boolean).join(" ");
           if (/\b(yoy|y\/y|annual|yearly)\b/i.test(t) || /\(연간\)/i.test(t)) return "연간";
@@ -517,7 +487,6 @@
           if (/\b(qoq|q\/q|quarterly)\b/i.test(t) || /\(분기\)/i.test(t)) return "분기";
           return null;
         }
-
         function normalizeCountryCode(country) {
           const c = String(country || "").trim();
           if (!c) return "";
@@ -526,22 +495,18 @@
           if (/^(KR|KOREA|SOUTH KOREA|ROK)$/.test(u) || c === "한국" || c === "대한민국") return "KR";
           return u.length === 2 ? u : c;
         }
-
         function isUnitedStates(country) {
           return normalizeCountryCode(country) === "US";
         }
-
         function isUsOrKrCountry(row) {
           const code = normalizeCountryCode(row?.country);
           return code === "US" || code === "KR";
         }
-
         function resolveFormalIndicator(row) {
           const raw = String(row?.event || "").trim();
           const translated = translateIndicator(raw);
           const search = `${raw} ${translated}`;
           const period = detectIndicatorPeriod(raw, translated) || parseLegacyPeriod(translated);
-
           if (/근원\s*인플레이션|Core\s*Inflation\s*Rate|Core\s*CPI/i.test(search)) {
             return { nameKo: "근원 소비자물가지수", abbr: "Core CPI", period };
           }
@@ -620,7 +585,6 @@
           }
           return { nameKo: null, abbr: null, period };
         }
-
         function indicatorParenLabel(row, formal) {
           if (formal?.abbr) return formal.abbr;
           const raw = String(row?.event || "").trim();
@@ -631,7 +595,6 @@
           if (!translated || translated.trim() === raw) return "";
           return raw;
         }
-
         function eventLabelText(row) {
           const formal = resolveFormalIndicator(row);
           const translated = translateIndicator(row?.event || "");
@@ -643,7 +606,6 @@
           if (period) label += ` · ${period}`;
           return label;
         }
-
         function indicatorTooltipKey(row) {
           const formal = resolveFormalIndicator(row);
           const t = eventSearchText(row);
@@ -652,14 +614,12 @@
           if (/VIX|공포지수/i.test(t)) return "VIX";
           return formal.abbr || "";
         }
-
         function indicatorTooltipHtml(row) {
           const key = indicatorTooltipKey(row);
           const tip = INDICATOR_TOOLTIPS[key];
           if (!tip) return "";
           return `<button type="button" class="indicator-tip" aria-label="지표 설명" data-tip="${escapeHtml(tip)}">?</button>`;
         }
-
         function indicatorDisplayHtml(row) {
           const formal = resolveFormalIndicator(row);
           const translated = translateIndicator(row?.event || "");
@@ -671,7 +631,6 @@
           if (period) parts.push(`<span class="indicator-period">· ${escapeHtml(period)}</span>`);
           return parts.join(" ");
         }
-
         function filterEconomicRows(rows) {
           return (rows || []).filter((row) => {
             if (!isUsOrKrCountry(row)) return false;
@@ -682,14 +641,12 @@
             return true;
           });
         }
-
         function parseEconNumber(value) {
           if (value === null || value === undefined || value === "") return null;
           const text = String(value).replace(/,/g, "").replace(/%/g, "").trim();
           const n = Number(text);
           return Number.isFinite(n) ? n : null;
         }
-
         function surpriseClass(actual, estimate) {
           const a = parseEconNumber(actual);
           const e = parseEconNumber(estimate);
@@ -698,14 +655,12 @@
           if (a < e) return "surprise-down";
           return "surprise-flat";
         }
-
         function eventDateTime(row) {
           const date = String(row?.date || "");
           const time = String(row?.time || "00:00").match(/(\d{2}:\d{2})/);
           const hm = time ? time[1] : "00:00";
           return new Date(`${date}T${hm}:00+09:00`);
         }
-
         function countdownLabel(row) {
           const target = eventDateTime(row);
           if (Number.isNaN(target.getTime())) return { text: "", done: false };
@@ -723,7 +678,6 @@
           if (dayDiff > 0) return { text: `D-${dayDiff}`, done: false };
           return { text: `${diffHr}시간 후`, done: false };
         }
-
         function timeCellHtml(row) {
           const cd = countdownLabel(row);
           const time = escapeHtml(row.time || "—");
@@ -731,12 +685,10 @@
           const cls = cd.done ? "countdown countdown--done" : "countdown";
           return `<div class="time-cell"><span>${time}</span><span class="${cls}">${escapeHtml(cd.text)}</span></div>`;
         }
-
         function eventSearchText(row) {
           const label = eventLabelText(row);
           return `${label} ${row?.event || ""}`.trim();
         }
-
         function isMediumOnlyIndicator(text) {
           const t = String(text || "");
           if (/FOMC\s*의사록|FOMC\s*회의록|의사록/i.test(t)) return true;
@@ -746,28 +698,22 @@
           if (/소비자심리|Michigan\s*Consumer|UMich|Consumer\s*Sentiment/i.test(t)) return true;
           return false;
         }
-
         function isKeyIndicator(row) {
           if (!isUsOrKrCountry(row)) return false;
           const t = eventSearchText(row);
           if (isMediumOnlyIndicator(t)) return false;
-
           const isUS = normalizeCountryCode(row?.country) === "US";
-
           if (/소비자물가|\bCPI\b/i.test(t) && !/PPI|Producer|생산자물가/i.test(t)) return true;
           if (/근원\s*소비자물가|Core\s*CPI/i.test(t)) return true;
           if (/기준금리|금리\s*결정|\bFOMC\b|금통위|한국은행/i.test(t)) return true;
           if (/국내총생산|\bGDP\b/i.test(t)) return true;
-
           if (isUS) {
             if (/고용|비농업|실업률|\bNFP\b/i.test(t)) return true;
             if (/개인소비지출|\bPCE\b/i.test(t)) return true;
             if (/파월\s*기자회견|연준의장\s*기자회견/i.test(t)) return true;
           }
-
           return false;
         }
-
         function resolveImpactKey(row) {
           const text = eventSearchText(row);
           if (isMediumOnlyIndicator(text)) return "medium";
@@ -781,16 +727,13 @@
           }
           return "low";
         }
-
         function impactRank(key) {
           return { high: 3, medium: 2, low: 1 }[key] || 0;
         }
-
         function impactBadgeHtml(key) {
           const label = { high: "높음", medium: "보통", low: "낮음" }[key] || "낮음";
           return `<span class="impact-badge impact-badge--${key}">${label}</span>`;
         }
-
         const INDICATOR_REGEX = [
           [/non[\s-]?farm\s+payrolls/i, "비농업 고용"],
           [/balance\s+of\s+trade/i, "무역수지"],
@@ -853,7 +796,6 @@
           [/^([A-Za-z][A-Za-z.'-]*)\s+Speaks$/i, (m) => `${koPersonName(m[1])} 발언`],
           [/^([A-Za-z][A-Za-z.'-]*)\s+Speech$/i, (m) => `${koPersonName(m[1])} 연설`],
         ];
-
         function pickEconField(row, ...keys) {
           for (const key of keys) {
             if (!row || !(key in row)) continue;
@@ -864,7 +806,6 @@
           }
           return "";
         }
-
         function enrichEconomicPrevious(rows) {
           const sorted = [...(rows || [])].sort((a, b) => {
             const d = a.date.localeCompare(b.date);
@@ -883,12 +824,10 @@
           }
           return sorted;
         }
-
         function normalizeScheduleData(data) {
           if (!data || !Array.isArray(data.economicCalendar)) return data;
           return { ...data, economicCalendar: enrichEconomicPrevious(data.economicCalendar.map((r) => ({ ...r }))) };
         }
-
         function translateIndicator(name) {
           const raw = String(name || "").trim();
           if (!raw) return raw;
@@ -921,7 +860,6 @@
             });
           return partial ? INDICATOR_KO[partial] : raw;
         }
-
         function fmtEconValue(v, unit) {
           if (v === null || v === undefined) return "—";
           if (typeof v === "string" && !v.trim()) return "—";
@@ -937,7 +875,6 @@
           if (u === "%" || u === "％") return `${text}%`;
           return `${text} ${u}`;
         }
-
         function renderEconomic(rows) {
           const list = filterEconomicRows(rows).sort((a, b) => {
             const d = impactRank(resolveImpactKey(b)) - impactRank(resolveImpactKey(a));
@@ -974,7 +911,6 @@
               .join("")}</tbody>
           </table></div>`;
         }
-
         function renderKRIPO(rows, showTitle = true) {
           if (!rows?.length) return "";
           return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
@@ -990,15 +926,12 @@
             })
             .join("")}</div></div>`;
         }
-
         function economicCountForDate(ymd) {
           return filterEconomicRows(itemsForDate("economicCalendar", ymd)).length;
         }
-
         function hasKeyIndicatorOnDate(ymd) {
           return itemsForDate("economicCalendar", ymd).some((row) => isKeyIndicator(row));
         }
-
         /* ── 날짜별 KR 실적 렌더링 ───────────────── */
         function renderKrEarningsList(rows) {
           if (!rows?.length) return "";
@@ -1025,7 +958,6 @@
             </a>`;
           }).join("")}</div>`;
         }
-
         /* ── 선택 날짜 일정 렌더링 (섹션 1) ──────── */
         function renderDateSchedule(ymd) {
           const economic = itemsForDate("economicCalendar", ymd);
@@ -1033,10 +965,8 @@
           const krEarnings = itemsForDate("krEarnings", ymd);
           const economicFiltered = filterEconomicRows(economic);
           const hasAny = economicFiltered.length || krEarnings.length || krIPO.length;
-
           if ($("today-date")) $("today-date").textContent = fmtDate(ymd);
           if ($("date-nav-label")) $("date-nav-label").textContent = fmtDate(ymd);
-
           let html = "";
           if (!hasAny) {
             html = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>이 날은 주요 일정이 없습니다</p>';
@@ -1066,7 +996,6 @@
           const el = $("day-schedule-content");
           if (el) el.innerHTML = html;
         }
-
         function renderCalendar() {
           const [year, month] = state.month.split("-").map(Number);
           const first = new Date(year, month - 1, 1);
@@ -1099,7 +1028,6 @@
             });
           });
         }
-
         /* ── 다가오는 주요일정 (섹션 3) ───────────── */
         function renderUpcoming(fromYmd) {
           const el = $("upcoming-list");
@@ -1139,13 +1067,11 @@
           }
           el.innerHTML = html || '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>다가오는 주요 일정이 없습니다</p>';
         }
-
         function refreshScheduleViews() {
           const today = seoulYmd();
           renderDateSchedule(state.selectedDate || today);
           renderUpcoming(today);
         }
-
         function renderAnalysis(ymd) {
           const allItems = (state.data?.eventAnalysis || []).filter(Boolean);
           const items = ymd ? allItems.filter((i) => i.date === ymd) : allItems;
@@ -1195,7 +1121,6 @@
             grid.innerHTML = html;
           }
         }
-
         /* ── 실적 발표 렌더링 ─────────────────────── */
         const US_COMPANY_MAP = {
           NVDA: "엔비디아", AAPL: "애플", MSFT: "마이크로소프트", GOOGL: "알파벳(구글)",
@@ -1321,7 +1246,6 @@
             renderDateSchedule(state.selectedDate);
           });
         }
-
         function wireScheduleFilters() {
           $("schedule-filters")?.querySelectorAll(".schedule-filter").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -1333,7 +1257,6 @@
             });
           });
         }
-
         function wireIndicatorTips() {
           document.addEventListener("click", (event) => {
             const btn = event.target.closest(".indicator-tip");
@@ -1353,7 +1276,6 @@
             btn.insertAdjacentElement("afterend", pop);
           });
         }
-
         function wireCalendarNav() {
           $("calendar-prev")?.addEventListener("click", () => {
             const [year, month] = state.month.split("-").map(Number);
@@ -1368,12 +1290,10 @@
             renderCalendar();
           });
         }
-
         function startCountdownTimer() {
           if (window._countdownTimer) clearInterval(window._countdownTimer);
           window._countdownTimer = setInterval(() => refreshScheduleViews(), 60000);
         }
-
         async function load() {
           try {
             const [schedule] = await Promise.allSettled([
@@ -1414,7 +1334,6 @@
             if (el) el.innerHTML = `<p class="empty-text"><i class="ti ti-alert-circle" aria-hidden="true"></i>일정 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>`;
           }
         }
-
         load();
       })();
     </script>

@@ -43,37 +43,34 @@
             </div>
           </div>
         </a>
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
         <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
           <i class="ti ti-menu-2" aria-hidden="true"></i>
         </button>
         <nav class="home-nav__menu">
-          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
           <div class="home-nav__links" id="home-nav-links">
           <a class="home-nav__link" href="./briefing.html">브리핑</a>
           <a class="home-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="home-nav__link" href="./market.html" aria-current="page">시장지표</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>
+          <a class="home-nav__link" href="./weekly-market.html">일정</a>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./market.html" aria-current="page">시장지표</a>
           <a class="home-nav__link" href="./us-market.html">미국주식</a>
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          <a class="home-nav__link" href="./weekly-market.html">일정</a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>          </div>
+          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a></div>
   <div class="home-nav__more" id="home-nav-more">
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
-
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
             <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
           </button>
         </nav>
       </header>
-
       <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
         <span class="home-empty">시장 지표 로딩 중…</span>
       </div>
-
       <main class="tm-main">
         <div class="page">
           <header class="masthead masthead--title-only">
@@ -94,7 +91,6 @@
           </div>
         </div>
       </main>
-
       <footer class="home-footer">
         <div class="home-footer__top">
           <div>
@@ -119,14 +115,11 @@
           <span>Data by KIS · FMP · CMC</span>
         </div>
       </footer>
-
       <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
-
     <script>
       (function () {
         const $ = (id) => document.getElementById(id);
-
         const SECTIONS = [
           { key: "korea", en: "KOREA", ko: "국내 증시", sub: "코스피·코스닥 실시간" },
           { key: "us", en: "WALL STREET", ko: "미국 증시", sub: "나스닥·S&P500·다우·선물" },
@@ -136,24 +129,20 @@
           { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "비트코인 · 이더리움 · 리플" },
           { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
         ];
-
         function liveDotHtml(item) {
           const live = item && item.live === true;
           const cls = live ? "tm-live-dot--live" : "tm-live-dot--closed";
           const title = live ? "실시간" : "장 마감";
           return `<span class="tm-live-dot ${cls}" aria-hidden="true" title="${title}"></span>`;
         }
-
         function liveNameHtml(item) {
           return `<span class="tm-indicator-name">${liveDotHtml(item)}<span>${item.name}</span></span>`;
         }
-
         function fmtPct(n) {
           if (n == null || !Number.isFinite(n)) return "—";
           const sign = n > 0 ? "+" : "";
           return `${sign}${n.toFixed(2)}%`;
         }
-
         function fmtValue(item) {
           if (item.value == null || !Number.isFinite(item.value)) return "—";
           const v = item.value;
@@ -170,17 +159,14 @@
           }
           return v.toLocaleString("en-US", { maximumFractionDigits: 2 });
         }
-
         function changeClass(pct) {
           if (pct == null || !Number.isFinite(pct) || Math.abs(pct) < 0.0001) return "market-card__change--flat";
           return pct > 0 ? "market-card__change--up" : "market-card__change--down";
         }
-
         function sparkTrend(pct) {
           if (pct == null || !Number.isFinite(pct) || Math.abs(pct) < 0.0001) return null;
           return pct > 0;
         }
-
         function sparklineSvg(points, up, itemId, featured) {
           if (!Array.isArray(points) || points.length < 2) return "";
           const w = featured ? 200 : 100;
@@ -210,13 +196,11 @@
             <path class="market-spark__line" d="${lineD.trim()}"/>
           </svg>`;
         }
-
         function changeChipHtml(pct) {
           const cls = changeClass(pct);
           const arrow = cls === "market-card__change--up" ? "▲" : cls === "market-card__change--down" ? "▼" : "−";
           return `<span class="market-card__change ${cls}"><span class="market-card__change-arrow" aria-hidden="true">${arrow}</span>${fmtPct(pct)}</span>`;
         }
-
         function cardHtml(item, featured) {
           const pct = item.changePct;
           const subText = item.hint || "";
@@ -234,12 +218,10 @@
             </div>
           </article>`;
         }
-
         function gridHtml(items) {
           if (!items?.length) return "";
           return items.map((item, i) => cardHtml(item, i === 0)).join("");
         }
-
         function sectionHead(meta) {
           return `<header class="market-section__head">
             <div class="market-section__bar" aria-hidden="true"></div>
@@ -250,11 +232,9 @@
             </div>
           </header>`;
         }
-
         function isDarkTheme() {
           return document.documentElement.getAttribute("data-theme") === "dark";
         }
-
         function fearGreedMeta(score) {
           const n = Number(score);
           const dark = isDarkTheme();
@@ -300,12 +280,10 @@
             gauge: dark ? "#f87171" : "#e24b4a",
           };
         }
-
         function polar(cx, cy, r, deg) {
           const rad = (deg * Math.PI) / 180;
           return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
         }
-
         function arcPath(cx, cy, r, startDeg, endDeg) {
           const start = polar(cx, cy, r, startDeg);
           const end = polar(cx, cy, r, endDeg);
@@ -313,7 +291,6 @@
           const sweep = endDeg < startDeg ? 1 : 0;
           return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${large} ${sweep} ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
         }
-
         function semiGaugeSvg(value, max, color, uid) {
           const v = Math.max(0, Math.min(max, Number(value) || 0));
           const pct = v / max;
@@ -325,7 +302,6 @@
             ${fg ? `<path class="market-gauge__fill" d="${fg}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round"/>` : ""}
           </svg>`;
         }
-
         function donutGaugeSvg(value, max, color, uid) {
           const v = Math.max(0, Math.min(max, Number(value) || 0));
           const pct = v / max;
@@ -338,7 +314,6 @@
               transform="rotate(-90 44 44)" stroke-linecap="round"/>
           </svg>`;
         }
-
         function vixMeta(v) {
           const n = Number(v);
           if (!Number.isFinite(n)) return { cls: "market-vix--calm", label: "변동성 지수" };
@@ -346,7 +321,6 @@
           if (n < 30) return { cls: "market-vix--caution", label: "주의 구간" };
           return { cls: "market-vix--danger", label: "위험 구간" };
         }
-
         function sentimentCardHtml(item) {
           if (item.id === "fear-greed") {
             const meta = fearGreedMeta(item.value);
@@ -391,7 +365,6 @@
             </div>
           </article>`;
         }
-
         function sentimentSectionHtml(items) {
           if (!items?.length) return "";
           const meta = SECTIONS.find((s) => s.key === "sentiment");
@@ -400,7 +373,6 @@
             <div class="market-sentiment-grid">${items.map(sentimentCardHtml).join("")}</div>
           </section>`;
         }
-
         function commoditiesSectionHtml(items) {
           if (!items?.length) return "";
           const meta = SECTIONS.find((s) => s.key === "commodities");
@@ -425,7 +397,6 @@
             .join("");
           return `<section class="market-section">${sectionHead(meta)}${body}</section>`;
         }
-
         function globalSectionHtml(global) {
           const asia = global?.asia || [];
           const europe = global?.europe || [];
@@ -440,7 +411,6 @@
           }
           return `<section class="market-section">${sectionHead(meta)}${parts.join("")}</section>`;
         }
-
         function simpleSectionHtml(key, items) {
           if (!items?.length) return "";
           const meta = SECTIONS.find((s) => s.key === key);
@@ -449,7 +419,6 @@
             <div class="market-grid">${gridHtml(items)}</div>
           </section>`;
         }
-
         function render(data) {
           const s = data.sections || {};
           const html = [
@@ -469,7 +438,6 @@
             $("market-updated").textContent = `업데이트: ${d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })} (KST)`;
           }
         }
-
         async function load() {
           try {
             const res = await fetch("/api/market-overview?t=" + Date.now(), { cache: "no-store" });
@@ -485,9 +453,7 @@
             $("market-updated").textContent = "";
           }
         }
-
         load();
-
         document.querySelectorAll(".tm-theme-toggle, #theme-toggle").forEach((btn) => {
           btn.addEventListener("click", () => {
             setTimeout(() => {

@@ -338,17 +338,22 @@
 
   /* 숫자가 작을수록 우선순위 높음(화면이 좍을 때 더 오래 남아있음) — PRO 기능과 핵심
      트래픽 페이지를 우선, 보조 정보성 페이지(일정/글로벌랑킹 등)를 먼저 "더보기"로 보낸다. */
+  // 2026-07-17: 사용자가 지정한 순서(홈 브리핑 마감시황 실시간시세 일정 매매시그널
+  // AI종목분석 더보기...)를 그대로 우선순위로 씀 — 이 순서의 항목들이 좁은 화면에서도
+  // 가장 먼저 노출되고, 나머지(시장지표/미국주식/암호화폐/글로벌랭킹)가 먼저 "더보기"로
+  // 밀려난다. 실제 노출 순서는 DOM 순서(각 HTML의 .home-nav__links 안 배치)를 따른다 —
+  // 이 숫자는 "좁을 때 누구부터 접을지"만 결정한다.
   const NAV_PRIORITY = {
-    "./stock-analysis.html": 1,
-    "./trade-signal.html": 2,
+    "./briefing.html": 1,
+    "./daily-market.html": 2,
     "./realtime.html": 3,
-    "./daily-market.html": 4,
-    "./us-market.html": 5,
-    "./crypto.html": 6,
+    "./weekly-market.html": 4,
+    "./trade-signal.html": 5,
+    "./stock-analysis.html": 6,
     "./market.html": 7,
-    "./briefing.html": 8,
-    "./world-market.html": 9,
-    "./weekly-market.html": 10,
+    "./us-market.html": 8,
+    "./crypto.html": 9,
+    "./world-market.html": 10,
   };
 
   function bindNavPriorityMenu() {

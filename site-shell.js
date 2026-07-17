@@ -391,25 +391,38 @@
         used = next;
       }
 
-      let hiddenCount = 0;
-      items.forEach((it, idx) => {
-        if (!visible.has(idx)) hiddenCount++;
-      });
-
-      if (hiddenCount > 0) {
-        moreWrap.classList.add("has-overflow");
-        // 더보기 패널 안은 항상 원래 링크 순서(DOM 순서)로 정리
-        items.forEach((it, idx) => {
-          if (visible.has(idx)) linksWrap.appendChild(it.el);
-          else morePanel.appendChild(it.el);
-        });
-      } else {
-        moreWrap.classList.remove("has-overflow");
-        moreWrap.classList.remove("is-open");
-        moreBtn.setAttribute("aria-expanded", "false");
-        items.forEach((it) => linksWrap.appendChild(it.el));
+      function applyVisibility() {
+        const hiddenCount = items.reduce((n, it, idx) => n + (visible.has(idx) ? 0 : 1), 0);
+        if (hiddenCount > 0) {
+          moreWrap.classList.add("has-overflow");
+          // 더보기 패널 안은 항상 원래 링크 순서(DOM 순서)로 정리
+          items.forEach((it, idx) => {
+            if (visible.has(idx)) linksWrap.appendChild(it.el);
+            else morePanel.appendChild(it.el);
+          });
+        } else {
+          moreWrap.classList.remove("has-overflow");
+          moreWrap.classList.remove("is-open");
+          moreBtn.setAttribute("aria-expanded", "false");
+          items.forEach((it) => linksWrap.appendChild(it.el));
+        }
       }
+
+      applyVisibility();
       nav.classList.add("home-nav--priority-ready");
+
+      // 2026-07-17: 사전 계산한 폭이 폰트 로딩/서브픽셀 반올림 등으로 실제 렌더링과
+      // 살짝 어긋나면(예: "매매시그널 PRO"가 "더보기"와 겹쳐 보이던 버그) overflow:hidden
+      // 만으로는 "잘린 링크"가 남을 수 있어 — 실측값(scrollWidth)으로 한 번 더 확인해
+      // 여전히 넘치면 낮은 우선순위 항목부터 실제로 안 들어갈 때까지 계속 더보기로 옮긴다.
+      let guard = items.length;
+      while (guard-- > 0 && linksWrap.scrollWidth > linksWrap.clientWidth + 1) {
+        const rankVisible = rank.filter(({ idx }) => visible.has(idx));
+        const worst = rankVisible[rankVisible.length - 1];
+        if (!worst) break;
+        visible.delete(worst.idx);
+        applyVisibility();
+      }
     }
 
     function scheduleRecalc() {

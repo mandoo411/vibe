@@ -268,9 +268,12 @@ body.page-home-v2 {
   background: transparent;
 }
 
-/* site-shell.js가 우선순위 계산을 마치면 .home-nav 에 이 클래스를 붙여 스크롤 폴백을 끈다 */
+/* site-shell.js가 우선순위 계산을 마치면 .home-nav 에 이 클래스를 붙여 스크롤 폴백을 끈다.
+   overflow는 계속 hidden으로 둔다 — JS 폭 계산이 서브픽셀/폰트 로딩 시점 등으로 아주
+   살짝 어긋나도(2026-07-17에 이런 이유로 "매매시그널PRO"와 "더보기"가 겹쳐 보인 적 있음)
+   시각적으로 겹쳐 보이는 대신 조용히 클리핑되도록 하는 안전장치. */
 .home-nav--priority-ready .home-nav__links {
-  overflow: visible;
+  overflow: hidden;
 }
 
 .home-nav__links > .home-nav__link[hidden] {

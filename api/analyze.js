@@ -2297,7 +2297,7 @@ function tsBuildParsePrompt(text, candidates) {
     : "(문장에서 종목명을 찾지 못함)";
   return [
     "당신은 한국 주식 매매 조건을 구조화하는 파서입니다.",
-    "사용자 입력 문장을 읽고 parse_trade_condition 도구를 반드시 호출해서 결과를 반환하세요.",
+    "사용자 입력 문장을 읽고 아래 스키마에 맞는 JSON 객체를 만들어 반환하세요. tool_name/arguments 같은 래퍼 없이, matched/stockCode/condition 등 필드를 최상위에 바로 담을 것.",
     "",
     `사용자 입력: "${text}"`,
     "",
@@ -2373,7 +2373,18 @@ function tsNormalizeClause(raw) {
   return out;
 }
 
-function tsNormalizeParseResult(raw, candidates) {
+/** OpenAI가 가끔 "tool_name"/"arguments" 같은 가짜 함수호출 래퍼로 감싸서 반환할 때가
+ * 있어(우리가 실제로 tools API를 쓰는 게 아닌데도 프롬프트의 "도구 호출" 표현에
+ * 영향받는 것으로 보임) 방어적으로 한 겹 풀어준다. */
+function tsUnwrapToolCallShape(raw) {
+  if (raw && typeof raw === "object" && raw.arguments && typeof raw.arguments === "object") {
+    return raw.arguments;
+  }
+  return raw;
+}
+
+function tsNormalizeParseResult(rawInput, candidates) {
+  const raw = tsUnwrapToolCallShape(rawInput);
   const matched = raw && raw.matched === true;
   const stockCode = sanitizeStr(raw && raw.stockCode);
   const validCandidate = candidates.find((c) => c.code === stockCode);
@@ -2489,7 +2500,7 @@ function tsBuildScreenPrompt(text) {
   return [
     "당신은 한국 주식 스크리닝(전체 종목 검색) 조건을 구조화하는 파서입니다.",
     "사용자는 특정 종목이 아니라 조건에 맞는 '모든 종목'을 찾고 싶어합니다 — 문장에 종목명이 있어도 무시하고 조건만 추출하세요.",
-    "사용자 입력 문장을 읽고 parse_screen_condition 도구를 반드시 호출해서 결과를 반환하세요.",
+    "사용자 입력 문장을 읽고 아래 스키마에 맞는 JSON 객체를 만들어 반환하세요. tool_name/arguments 같은 래퍼 없이, understood/condition/summary 등 필드를 최상위에 바로 담을 것.",
     "",
     `사용자 입력: "${text}"`,
     "",
@@ -2544,7 +2555,8 @@ async function tsParseScreenWithOpenAI(text) {
   return tsSafeJsonParse(text2);
 }
 
-function tsNormalizeScreenCondition(raw) {
+function tsNormalizeScreenCondition(rawInput) {
+  const raw = tsUnwrapToolCallShape(rawInput);
   const understood = raw && raw.understood === true;
   const clauses = Array.isArray(raw?.condition?.clauses)
     ? raw.condition.clauses.map(tsNormalizeClause).filter(Boolean)
@@ -2584,7 +2596,6 @@ async function tsHandleScreen(req, res, user) {
       console.error("[trade-signal screen] OpenAI 실패", openaiErr && openaiErr.message);
       return tsJson(res, 200, { matched: false, clarifyMessage: "지금 조건을 해석하지 못했어요. 표현을 조금 바꿔서 다시 시도해주세요." });
     }
-    console.error("[trade-signal screen] OpenAI raw parse result:", JSON.stringify(raw).slice(0, 800));
     const normalized = tsNormalizeScreenCondition(raw);
     if (!normalized.understood) {
       return tsJson(res, 200, { matched: false, clarifyMessage: normalized.clarifyMessage });

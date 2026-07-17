@@ -1,8 +1,8 @@
 /**
  * 인스타그램 데일리 카드뉴스 자동화 — 메인 스크립트
  * 하루 2회 다른 내용으로 발행한다:
- *   --slot=morning  (08:30 KST) — data/morning-briefing.json 기반, 간밤 미국장 + 오늘 전망
- *   --slot=closing  (17:30 KST) — data/daily-market.json 기반, 코스피·코스닥 마감 + 특징주
+ *   --slot=morning (08:30 KST) — data/morning-briefing.json 기반, 간밤 미국장 + 오늘 전망
+ *   --slot=closing (17:30 KST) — data/daily-market.json 기반, 코스피·코스닥 마감 + 특징주
  *
  * 흐름: 스냅샷 읽기 → 카피 생성/변환 → 5장 PNG 렌더링 → generated/<slot>/ 저장
  *       → git commit·push (워크플로우가 처리) → Meta Graph API로 캐러셀 발행
@@ -20,6 +20,7 @@ import { postInstagramCarousel } from "./promo-instagram-api.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { seoulYmd } from "./telegram-utils.mjs";
+import { trimToNaturalBreak } from "./promo-text-utils.mjs";
 
 const THEME = process.env.PROMO_CARD_THEME || "light"; // 'dark' | 'light' (기본: light — 사이트 기본 테마와 통일)
 
@@ -61,7 +62,8 @@ async function buildCardDataForSlot(slot) {
   const usedNames = new Set(featuredGainers.map((s) => s.name));
   const fillerGainers = (snapshot.topGainers || []).filter((s) => !usedNames.has(s.name));
   const gainerSource = [...featuredGainers, ...fillerGainers];
-  const trimReason = (s) => (s && s.length > 42 ? s.slice(0, 40) + "…" : s || "");
+  // 자연스러운 지점(공백/쉼표)에서 자르기 때문에 카드 안에서 문장이 중간에 끊기지 않는다.
+  const trimReason = (s) => trimToNaturalBreak(s || "", 28);
   const gainers = gainerSource.slice(0, 5).map((g) => ({
     ...g,
     reason: trimReason(copy.stockReasons?.[g.name] || g.reason || g.point || g.theme || ""),

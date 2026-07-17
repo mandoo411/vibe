@@ -2232,6 +2232,42 @@ const TS_PARSE_TOOL = {
  * 씌우거나 JSON 뒤에 여분의 텍스트를 붙여서 JSON.parse가 실패하는 경우가 있어 방어적으로
  * 정리 후 재시도한다. 그래도 실패하면 원래 에러를 그대로 던진다.
  */
+/** 문자열에서 첫 번째로 완전히 닫히는 { ... } 블록만 정확히 추출 (문자열 안의 중괄호는 무시,
+ * 두 번째 JSON이나 뒤에 붙은 설명 텍스트는 무시) — lastIndexOf("}")로는 뒤에 JSON이 하나 더
+ * 붙어 있을 때 두 객체를 통째로 이어버려서 여전히 파싱 실패했던 문제를 해결. */
+function tsExtractFirstJsonObject(text) {
+  const start = text.indexOf("{");
+  if (start < 0) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c === "\\") {
+        escape = true;
+        continue;
+      }
+      if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 function tsSafeJsonParse(rawText) {
   const text = String(rawText || "").trim();
   try {
@@ -2241,15 +2277,15 @@ function tsSafeJsonParse(rawText) {
     try {
       return JSON.parse(cleaned);
     } catch {
-      const start = cleaned.indexOf("{");
-      const end = cleaned.lastIndexOf("}");
-      if (start >= 0 && end > start) {
+      const extracted = tsExtractFirstJsonObject(cleaned);
+      if (extracted) {
         try {
-          return JSON.parse(cleaned.slice(start, end + 1));
+          return JSON.parse(extracted);
         } catch {
           // fall through
         }
       }
+      console.error("[tsSafeJsonParse] 복구 실패, 원본 앞부분:", cleaned.slice(0, 500));
       throw firstError;
     }
   }

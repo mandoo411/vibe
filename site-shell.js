@@ -329,6 +329,8 @@
     });
   }
 
+  let requestNavRecalc = null;
+
   /* 2026-07-17: "우선순위 네비게이션" — 데스크톱 GNB에 메뉴 항목이 늘어나면서 화면에
      다 안 들어가는 경우가 생겨, 스크롤(숨겨진 스크롤바 때문에 "잘려보임") 대신 우선순위가
      낮은 항목부터 "더보기" 드롭다운으로 자동 이동시킨다. 화면이 넓으면 전부 펼쳐지고,
@@ -430,6 +432,7 @@
       raf = requestAnimationFrame(recalc);
     }
 
+    requestNavRecalc = scheduleRecalc;
     scheduleRecalc();
     window.addEventListener("resize", scheduleRecalc);
 
@@ -648,16 +651,13 @@
     }
   }
 
+  /* 2026-07-17: 예전엔 "AI 종목분석" 링크를 .home-nav__menu의 직계 자식으로 강제 이동시켜
+     로그인/테마 버튼 바로 옆에 고정시켰다. 지금은 .home-nav__links(우선순위 네비게이션)
+     안에서 최우선순위(가장 늦게 접힘)로 처리되므로 굳이 DOM을 옮길 필요가 없다 — 오히려
+     .home-nav__links 밖으로 빼내면 폭 계산에서 빠져 다른 항목과 겹쳐 보이는 버그가 생겼다.
+     하위 호환을 위해 함수/전역 노출은 남겨두되, 우선순위 네비 재계산만 요청하도록 바꾼다. */
   function reorderGnbAnalysisLink() {
-    const menu = document.querySelector(".home-nav__menu");
-    if (!menu) return;
-    const analysis =
-      menu.querySelector('a[href*="stock-analysis"]') ||
-      menu.querySelector(".home-nav__link--analysis-locked");
-    const anchor = menu.querySelector(".home-nav__auth-link") || menu.querySelector(".home-nav__theme");
-    if (!analysis || !anchor) return;
-    if (analysis.nextElementSibling === anchor) return;
-    menu.insertBefore(analysis, anchor);
+    if (typeof requestNavRecalc === "function") requestNavRecalc();
   }
 
   function wrapShellTop() {
@@ -722,6 +722,11 @@
 
   document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
   document.addEventListener("tm-auth-ready", updateMobileAccountLink);
+  // 로그인/마이페이지 링크(.home-nav__auth-link)가 로그인 상태에 따라 폭이 달라지므로,
+  // 인증 상태가 확정된 뒤에도 우선순위 네비게이션 폭 계산을 다시 실행한다.
+  document.addEventListener("tm-auth-ready", () => {
+    if (typeof requestNavRecalc === "function") requestNavRecalc();
+  });
 
   /**
    * 2026-07-11: 모바일 브라우저(특히 iOS Safari)는 뒤로가기/스와이프로 돌아올 때 페이지를

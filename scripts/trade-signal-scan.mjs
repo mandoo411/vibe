@@ -17,7 +17,16 @@
 
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { fetchChartCandles, computeMaSeries, computeRsiSeries, detectDivergence } = require("../lib/kis-indicators.js");
+const {
+  fetchChartCandles,
+  computeMaSeries,
+  computeRsiSeries,
+  detectDivergence,
+  computeMacd,
+  computeBollinger,
+  computeStochastic,
+  computeADX,
+} = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries, evaluateCondition } = require("../lib/trade-condition-eval.js");
 
 function requireEnv(name) {
@@ -95,7 +104,11 @@ async function buildSeriesForStock(stockCode) {
   };
   const rsiSeries = computeRsiSeries(closes);
   const divergence = detectDivergence(closes, rsiSeries);
-  return { closes, highs, lows, volumes, ma, rsiSeries, divergence };
+  const macd = computeMacd(closes);
+  const bollinger = computeBollinger(closes);
+  const stochastic = computeStochastic(highs, lows, closes);
+  const adx = computeADX(highs, lows, closes);
+  return { closes, highs, lows, volumes, ma, rsiSeries, divergence, candles, macd, bollinger, stochastic, adx };
 }
 
 function messageFor(strategy) {

@@ -22,7 +22,16 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { fetchChartCandles, computeMaSeries, computeRsiSeries, detectDivergence } = require("../lib/kis-indicators.js");
+const {
+  fetchChartCandles,
+  computeMaSeries,
+  computeRsiSeries,
+  detectDivergence,
+  computeMacd,
+  computeBollinger,
+  computeStochastic,
+  computeADX,
+} = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries } = require("../lib/trade-condition-eval.js");
 const STOCK_LIST = require("../assets/stock-list.json");
 
@@ -59,7 +68,24 @@ async function buildOne(stock) {
       };
       const rsiSeries = computeRsiSeries(closes);
       const divergence = detectDivergence(closes, rsiSeries);
-      const snapshot = buildSnapshotFromSeries({ closes, highs, lows, volumes, ma, rsiSeries, divergence });
+      const macd = computeMacd(closes);
+      const bollinger = computeBollinger(closes);
+      const stochastic = computeStochastic(highs, lows, closes);
+      const adx = computeADX(highs, lows, closes);
+      const snapshot = buildSnapshotFromSeries({
+        closes,
+        highs,
+        lows,
+        volumes,
+        ma,
+        rsiSeries,
+        divergence,
+        candles,
+        macd,
+        bollinger,
+        stochastic,
+        adx,
+      });
 
       const n = closes.length;
       const close = closes[n - 1];

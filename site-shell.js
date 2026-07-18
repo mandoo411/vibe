@@ -388,7 +388,20 @@
         .sort((a, b) => a.priority - b.priority);
 
       const gap = parseFloat(getComputedStyle(linksWrap).columnGap || getComputedStyle(linksWrap).gap) || 6;
-      const available = linksWrap.clientWidth;
+      // 2026-07-18: linksWrap이 flex-grow로 남는 폭을 계속 떠안으면, 항목이 더보기로
+      // 옮겨가 실제 콘텐츠가 줄어도 컨테이너 자체는 넓은 채로 남아 마지막 링크와
+      // "더보기" 사이에만 유독 큰 빈 칸이 생긴다. 그래서 linksWrap은 더 이상 자라지
+      // 않게 하고(CSS: flex: 0 1 auto), 대신 형제 요소(홈버튼/더보기/마이페이지/
+      // 테마버튼) 실측 폭을 menu 전체 폭에서 뺀 값을 "available"로 쓴다.
+      const menuStyle = getComputedStyle(menu);
+      const menuPadX = (parseFloat(menuStyle.paddingLeft) || 0) + (parseFloat(menuStyle.paddingRight) || 0);
+      const menuGap = parseFloat(menuStyle.columnGap || menuStyle.gap) || gap;
+      const menuChildren = Array.from(menu.children);
+      const siblingsWidth = menuChildren
+        .filter((el) => el !== linksWrap)
+        .reduce((sum, el) => sum + el.getBoundingClientRect().width, 0);
+      const rowGaps = menuChildren.length > 1 ? (menuChildren.length - 1) * menuGap : 0;
+      const available = menu.clientWidth - menuPadX - siblingsWidth - rowGaps;
 
       const visible = new Set();
       let used = 0;

@@ -217,7 +217,11 @@ body.page-home-v2 {
      폴백을 갖는다(아래 no-JS fallback 규칙). */
   .page-home-v2 .home-nav__links,
   .page-tm-v2 .home-nav__links {
-    flex: 1 1 auto;
+    /* 2026-07-18: flex-grow(1)로 두면 항목이 더보기로 옮겨가 실제 콘텐츠가 줄어도
+       컨테이너 자체는 넓게 남아, 마지막 보이는 링크와 "더보기" 사이에만 유독 큰
+       빈 칸이 생긴다(간격 불균일). 콘텐츠 크기만큼만 차지하도록 grow를 끈다 —
+       "available" 폭 계산은 site-shell.js에서 형제 요소 실측 폭으로 별도 계산한다. */
+    flex: 0 1 auto;
     min-width: 0;
     /* 2026-07-17: 이 안쪽 링크끼리의 간격(원래 6px)이 바깥 flex 간격(--home-nav-menu-gap)과
        달라서 홈→첫 링크, 마지막 링크→더보기 사이만 유독 넓어 보이는 문제가 있었음.

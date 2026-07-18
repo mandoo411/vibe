@@ -178,11 +178,7 @@ body.page-home-v2 {
   body.page-tm-v2 {
     --home-nav-logo-slot: 192px;
     --home-ticker-col-w: 176px;
-    /* 2026-07-17: 홈 버튼을 메뉴 줄에서 빼서 로고 옆으로 옮겼다(아래 .home-nav__home-btn
-       규칙). 그만큼(버튼 36px + 여백 10px) 메뉴 시작 inset을 줄여 오른쪽 메뉴 항목들에
-       더 많은 자리를 준다. */
-    --home-nav-homebtn-w: 46px;
-    --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot) - var(--home-nav-homebtn-w));
+    --home-nav-menu-inset: calc(2 * var(--home-ticker-col-w) - var(--home-nav-logo-slot));
     --home-nav-menu-gap: 2ch;
   }
 
@@ -199,15 +195,10 @@ body.page-home-v2 {
     max-width: var(--home-nav-logo-slot);
   }
 
-  /* 2026-07-17: 홈 버튼은 이제 .home-nav__menu 안이 아니라 로고 바로 옆, .home-nav의
-     직계 자식으로 옮겨졌다 — 메뉴 줄이 좁아지면 오른쪽 항목이 밀려나는 대신 로고
-     쪽 여유 공간을 쓰도록. */
-  .page-home-v2 .home-nav > .home-nav__home-btn,
-  .page-tm-v2 .home-nav > .home-nav__home-btn {
-    flex: 0 0 auto;
-    margin-left: 10px;
-  }
-
+  /* 2026-07-18: 홈 버튼을 다시 .home-nav__menu 첫 항목으로 되돌렸다 — 로고 옆에 따로
+     둘 때 그 주변 간격만 나머지 항목들과 달라 보인다는 피드백이 있었음. 이제 홈 버튼도
+     .home-nav__menu의 다른 항목들과 똑같이 --home-nav-menu-gap(2ch)으로 균일하게
+     떨어진다(아래 .home-nav__menu > .home-nav__home-btn 규칙). */
   .page-home-v2 .home-nav__menu,
   .page-tm-v2 .home-nav__menu {
     flex: 1 1 auto;
@@ -234,6 +225,8 @@ body.page-home-v2 {
     gap: var(--home-nav-menu-gap);
   }
 
+  .page-home-v2 .home-nav__menu > .home-nav__home-btn,
+  .page-tm-v2 .home-nav__menu > .home-nav__home-btn,
   .page-home-v2 .home-nav__links > .home-nav__link,
   .page-tm-v2 .home-nav__links > .home-nav__link,
   .page-home-v2 .home-nav__menu > .home-nav__theme,

@@ -343,15 +343,17 @@
   // 가장 먼저 노출되고, 나머지(시장지표/미국주식/암호화폐/글로벌랭킹)가 먼저 "더보기"로
   // 밀려난다. 실제 노출 순서는 DOM 순서(각 HTML의 .home-nav__links 안 배치)를 따른다 —
   // 이 숫자는 "좁을 때 누구부터 접을지"만 결정한다.
+  // 2026-07-18: 사용자 지정 순서(홈 시장지표 브리핑 마감시황 일정 실시간시세 미국주식
+  // 매매시그널 AI종목분석 더보기...)를 우선순위로 반영.
   const NAV_PRIORITY = {
-    "./briefing.html": 1,
-    "./daily-market.html": 2,
-    "./realtime.html": 3,
+    "./market.html": 1,
+    "./briefing.html": 2,
+    "./daily-market.html": 3,
     "./weekly-market.html": 4,
-    "./trade-signal.html": 5,
-    "./stock-analysis.html": 6,
-    "./market.html": 7,
-    "./us-market.html": 8,
+    "./realtime.html": 5,
+    "./us-market.html": 6,
+    "./trade-signal.html": 7,
+    "./stock-analysis.html": 8,
     "./crypto.html": 9,
     "./world-market.html": 10,
   };

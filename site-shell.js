@@ -395,7 +395,11 @@
       for (const { idx } of rank) {
         const w = items[idx].width;
         const next = used + (visible.size > 0 ? gap : 0) + w;
-        if (next > available && visible.size > 0) continue;
+        // 2026-07-18: continue를 쓰면 폭이 좁은 낮은 우선순위 항목이 넓은 높은
+        // 우선순위 항목을 건너뛰고 먼저 끼어들어가 보이는 문제(매매시그널/AI종목분석은
+        // 더보기로 밀리는데 암호화폐가 그 자리를 채우는 문제)가 생긴다.
+        // 우선순위 순서를 그대로 지키기 위해 안 들어가는 순간 바로 멈춘다.
+        if (next > available && visible.size > 0) break;
         visible.add(idx);
         used = next;
       }

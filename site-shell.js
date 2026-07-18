@@ -61,6 +61,10 @@
   const TM_ALL_PAGES = [
     { id: "home", href: "./index.html", label: "홈", icon: "ti-home" },
     { id: "realtime", href: "./realtime.html", label: "실시간시세", icon: "ti-activity" },
+    // 2026-07-18: "매매시그널"(PRO 유료 기능)이 이 목록에 아예 빠져 있어 모바일
+    // "전체보기" 시트에서 접근할 방법이 없었다 — 데스크톱 GNB에는 있는데 모바일에는
+    // 없는 상태였음. 수익화 핵심 기능이라 AI 종목분석과 나란히 상단에 노출한다.
+    { id: "signal", href: "./trade-signal.html", label: "매매시그널", icon: "ti-bell" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
@@ -74,15 +78,17 @@
 
   /** 전체 메뉴 시트 (행 우선). "account"는 로그인 상태에 따라 로그인/마이페이지로 동적 표시. */
   const NAV_SHEET_GRID = [
-    ["home", "realtime", "analysis"],
-    ["schedule", "briefing", "daily"],
-    ["market", "us", "crypto"],
-    ["world", "account", "pricing"],
+    ["home", "signal", "realtime"],
+    ["analysis", "schedule", "briefing"],
+    ["daily", "market", "us"],
+    ["crypto", "world", "account"],
+    ["pricing"],
   ];
 
   const NAV_SHEET_LABELS = {
     home: "홈",
     realtime: "시세",
+    signal: "매매시그널",
     analysis: "AI분석",
     schedule: "일정",
     briefing: "브리핑",
@@ -107,6 +113,8 @@
     "/crypto.html": "crypto",
     "/world-market.html": "world",
     "/stock-analysis.html": "analysis",
+    "/trade-signal.html": "signal",
+    "/pricing.html": "pricing",
   };
 
   function getCurrentPageId() {

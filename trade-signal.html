@@ -128,6 +128,32 @@
         gap: 8px;
         margin-top: 10px;
       }
+      .ts-example-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color);
+      }
+      .ts-chip {
+        appearance: none;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-secondary, var(--text-primary));
+        border-radius: 999px;
+        padding: 5px 12px;
+        font-size: 12px;
+        line-height: 1.4;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+      .ts-chip:hover {
+        background: rgba(15, 131, 135, 0.14);
+        border-color: var(--accent-brand);
+        color: var(--accent-brand);
+      }
       .ts-preview {
         border-top: 1px solid var(--border-color);
         padding-top: 14px;
@@ -450,6 +476,7 @@
               <div class="ts-row-actions">
                 <button type="button" class="ts-btn" id="ts-search-btn">검색하기</button>
               </div>
+              <div class="ts-example-chips" id="ts-example-chips" aria-label="예시 검색어"></div>
               <p class="ts-error ts-hidden" id="ts-search-error"></p>
 
               <div id="ts-results" class="ts-results ts-hidden">
@@ -562,13 +589,45 @@
 
         function clauseText(c) {
           const dirText = c.direction === "down" ? "하향" : "상향";
+          const cmp = (op) => (op === "lt" || op === "lte" ? "≤" : "≥");
           if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파`;
           if (c.type === "price_cross_ma") return `현재가가 ${c.period}일선을 ${dirText} 돌파`;
-          if (c.type === "rsi") return `RSI ${c.op === "lt" || c.op === "lte" ? "≤" : "≥"} ${c.value}`;
+          if (c.type === "rsi") return `RSI ${cmp(c.op)} ${c.value}`;
           if (c.type === "volume_ratio") return `거래량 20일평균 대비 ${c.value}% 이상`;
           if (c.type === "high52w_breakout") return "52주 신고가 갱신";
           if (c.type === "low52w_breakdown") return "52주 신저가 갱신";
           if (c.type === "price_change_pct") return `당일 등락률 ${c.op === "lte" ? "≤" : "≥"} ${c.value}%`;
+          if (c.type === "rsi_divergence") return c.direction === "bearish" ? "RSI 약세 다이버전스" : "RSI 강세 다이버전스";
+          if (c.type === "macd_cross") return `MACD ${dirText} 크로스(${c.direction === "down" ? "데드" : "골든"})`;
+          if (c.type === "macd_histogram_turn") return `MACD 히스토그램 ${c.direction === "down" ? "매도" : "매수"} 전환`;
+          if (c.type === "bollinger") {
+            const map = {
+              upper_break: "볼린저밴드 상단 돌파",
+              lower_break: "볼린저밴드 하단 이탈",
+              upper_touch: "볼린저밴드 상단 터치",
+              lower_touch: "볼린저밴드 하단 터치",
+            };
+            return map[c.position] || "볼린저밴드 조건";
+          }
+          if (c.type === "stochastic") return `스토캐스틱 %${(c.line || "k").toUpperCase()} ${cmp(c.op)} ${c.value}`;
+          if (c.type === "stochastic_cross") return `스토캐스틱 %K가 %D ${dirText} 교차`;
+          if (c.type === "ma_alignment") return c.direction === "bearish" ? "이동평균 역배열" : "이동평균 정배열";
+          if (c.type === "disparity") return `${c.period}일 이격도 ${cmp(c.op)} ${c.value}%`;
+          if (c.type === "adx") return `ADX ${c.op === "gt" ? ">" : "≥"} ${c.value} (추세 강도)`;
+          if (c.type === "di_cross") return `+DI가 -DI ${dirText} 교차`;
+          if (c.type === "candle_pattern") {
+            const map = {
+              bullish_engulfing: "상승장악형 캔들",
+              bearish_engulfing: "하락장악형 캔들",
+              hammer: "망치형 캔들",
+              shooting_star: "유성형 캔들",
+              doji: "도지 캔들",
+            };
+            return map[c.pattern] || "캔들패턴";
+          }
+          if (c.type === "gap") return c.direction === "down" ? "갭하락 발생" : "갭상승 발생";
+          if (c.type === "consecutive_candles") return `${c.count || 3}일 연속 ${c.direction === "down" ? "음봉" : "양봉"}`;
+          if (c.type === "high52w_near") return `52주 신고가 대비 ${c.withinPct || 5}% 이내 근접`;
           return c.type;
         }
 
@@ -773,6 +832,38 @@
           $("ts-alert-sell").classList.add("ts-pill--active");
           $("ts-alert-buy").classList.remove("ts-pill--active");
         });
+
+        const TS_EXAMPLE_QUERIES = [
+          "RSI 30 이하인 종목 찾아줘",
+          "20일선이 60일선 골든크로스한 종목 찾아줘",
+          "MACD 골든크로스 발생한 종목 찾아줘",
+          "볼린저밴드 하단 터치한 종목 찾아줘",
+          "스토캐스틱 20 이하로 과매도인 종목 찾아줘",
+          "이동평균 정배열인 종목 찾아줘",
+          "이격도 120% 이상인 종목 찾아줘",
+          "ADX 25 이상으로 추세 강한 종목 찾아줘",
+          "거래량이 평소보다 200% 이상 터진 종목 찾아줘",
+          "상승장악형 캔들 나온 종목 찾아줘",
+          "갭상승으로 시작한 종목 찾아줘",
+          "3일 연속 양봉인 종목 찾아줘",
+          "52주 신고가 5% 이내로 근접한 종목 찾아줘",
+          "RSI 강세 다이버전스가 발생한 종목 찾아줘",
+        ];
+
+        function renderExampleChips() {
+          const wrap = $("ts-example-chips");
+          if (!wrap) return;
+          wrap.innerHTML = TS_EXAMPLE_QUERIES.map(
+            (q) => `<button type="button" class="ts-chip" data-example="${escapeHtml(q)}">${escapeHtml(q)}</button>`
+          ).join("");
+          wrap.querySelectorAll("[data-example]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              $("ts-input").value = btn.getAttribute("data-example") || "";
+              $("ts-search-btn").click();
+            });
+          });
+        }
+        renderExampleChips();
 
         $("ts-search-btn").addEventListener("click", async () => {
           const text = $("ts-input").value.trim();

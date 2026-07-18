@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-18T11:27:55.032Z",
+  "updatedAt": "2026-07-18T12:11:36.873Z",
   "source": "kis+yahoo",
   "action": "market-cap",
   "count": 50,
@@ -138,6 +138,18 @@
     },
     {
       "rank": 12,
+      "ticker": "LLY",
+      "name": "일라이 릴리",
+      "price": 1179.11,
+      "changePct": 0.85,
+      "changePoints": 9.94,
+      "volume": 2757541,
+      "marketCap": 1110416230510,
+      "tradingValue": 3251444169,
+      "exchange": "NYS"
+    },
+    {
+      "rank": 13,
       "ticker": "SKHY",
       "name": "SK하이닉스(ADR)",
       "price": 154.03,
@@ -149,18 +161,6 @@
       "exchange": "NAS"
     },
     {
-      "rank": 13,
-      "ticker": "LLY",
-      "name": "일라이 릴리",
-      "price": 1179.11,
-      "changePct": 0.85,
-      "changePoints": 9.94,
-      "volume": 2757541,
-      "marketCap": 1051461156864,
-      "tradingValue": 3251444169,
-      "exchange": "NYS"
-    },
-    {
       "rank": 14,
       "ticker": "MU",
       "name": "마이크론 테크놀로지",
@@ -168,12 +168,24 @@
       "changePct": -0.5,
       "changePoints": -4.27,
       "volume": 63346278,
-      "marketCap": 958798299136,
+      "marketCap": 958795640500,
       "tradingValue": 53777822708,
       "exchange": "NAS"
     },
     {
       "rank": 15,
+      "ticker": "JPM",
+      "name": "제이피모간 체이스",
+      "price": 341.1,
+      "changePct": -0.6,
+      "changePoints": -2.06,
+      "volume": 9250854,
+      "marketCap": 913980861000,
+      "tradingValue": 3155466299,
+      "exchange": "NYS"
+    },
+    {
+      "rank": 16,
       "ticker": "WMT",
       "name": "월마트",
       "price": 114.24,
@@ -185,18 +197,6 @@
       "exchange": "NAS"
     },
     {
-      "rank": 16,
-      "ticker": "JPM",
-      "name": "제이피모간 체이스",
-      "price": 341.1,
-      "changePct": -0.6,
-      "changePoints": -2.06,
-      "volume": 9250854,
-      "marketCap": 906712055808,
-      "tradingValue": 3155466299,
-      "exchange": "NYS"
-    },
-    {
       "rank": 17,
       "ticker": "AMD",
       "name": "AMD",
@@ -204,7 +204,7 @@
       "changePct": -1.03,
       "changePoints": -5.16,
       "volume": 32115875,
-      "marketCap": 808386560000,
+      "marketCap": 808386256000,
       "tradingValue": 15921766190,
       "exchange": "NAS"
     },
@@ -222,18 +222,6 @@
     },
     {
       "rank": 19,
-      "ticker": "V",
-      "name": "비자",
-      "price": 358.56,
-      "changePct": -1.8,
-      "changePoints": -6.57,
-      "volume": 7400403,
-      "marketCap": 681889234944,
-      "tradingValue": 2653488500,
-      "exchange": "NYS"
-    },
-    {
-      "rank": 20,
       "ticker": "ASML",
       "name": "ASML 홀딩(ADR)",
       "price": 1747.58,
@@ -245,19 +233,19 @@
       "exchange": "NAS"
     },
     {
-      "rank": 21,
+      "rank": 20,
       "ticker": "XOM",
       "name": "엑슨 모빌",
       "price": 147.36,
       "changePct": 0.97,
       "changePoints": 1.42,
       "volume": 19031354,
-      "marketCap": 610799452160,
+      "marketCap": 610727625600,
       "tradingValue": 2804460325,
       "exchange": "NYS"
     },
     {
-      "rank": 22,
+      "rank": 21,
       "ticker": "JNJ",
       "name": "존슨 앤드 존슨",
       "price": 253.04,
@@ -269,19 +257,19 @@
       "exchange": "NYS"
     },
     {
-      "rank": 23,
-      "ticker": "MA",
-      "name": "마스타카드",
-      "price": 543.6,
-      "changePct": -1.44,
-      "changePoints": -7.94,
-      "volume": 3221821,
-      "marketCap": 480316162048,
-      "tradingValue": 1751381896,
+      "rank": 22,
+      "ticker": "V",
+      "name": "비자",
+      "price": 358.56,
+      "changePct": -1.8,
+      "changePoints": -6.57,
+      "volume": 7400403,
+      "marketCap": 595105617600,
+      "tradingValue": 2653488500,
       "exchange": "NYS"
     },
     {
-      "rank": 24,
+      "rank": 23,
       "ticker": "INTC",
       "name": "인텔",
       "price": 95.04,
@@ -291,6 +279,18 @@
       "marketCap": 477671030784,
       "tradingValue": 12049105432,
       "exchange": "NAS"
+    },
+    {
+      "rank": 24,
+      "ticker": "MA",
+      "name": "마스타카드",
+      "price": 543.6,
+      "changePct": -1.44,
+      "changePoints": -7.94,
+      "volume": 3221821,
+      "marketCap": 476756769600,
+      "tradingValue": 1751381896,
+      "exchange": "NYS"
     },
     {
       "rank": 25,
@@ -336,7 +336,7 @@
       "changePct": -0.36,
       "changePoints": -0.22,
       "volume": 45045229,
-      "marketCap": 429990871040,
+      "marketCap": 434808069300,
       "tradingValue": 2759921181,
       "exchange": "NYS"
     },
@@ -372,7 +372,7 @@
       "changePct": 0.35,
       "changePoints": 3.07,
       "volume": 3377169,
-      "marketCap": 405449900032,
+      "marketCap": 405489538360,
       "tradingValue": 2972854327,
       "exchange": "NYS"
     },
@@ -456,7 +456,7 @@
       "changePct": -3.96,
       "changePoints": -3.36,
       "volume": 32902956,
-      "marketCap": 350910447616,
+      "marketCap": 350910268800,
       "tradingValue": 2683565091,
       "exchange": "NYS"
     },
@@ -468,7 +468,7 @@
       "changePct": -1,
       "changePoints": -1.51,
       "volume": 8917388,
-      "marketCap": 349243277312,
+      "marketCap": 349243428000,
       "tradingValue": 1337429852,
       "exchange": "NYS"
     },
@@ -504,7 +504,7 @@
       "changePct": -2.63,
       "changePoints": -9.15,
       "volume": 4434024,
-      "marketCap": 337892933632,
+      "marketCap": 337893037790,
       "tradingValue": 1502557713,
       "exchange": "NYS"
     },
@@ -528,7 +528,7 @@
       "changePct": -0.1,
       "changePoints": -0.13,
       "volume": 13472722,
-      "marketCap": 314902609920,
+      "marketCap": 314902050000,
       "tradingValue": 1717772055,
       "exchange": "NYS"
     },
@@ -540,7 +540,7 @@
       "changePct": -2.76,
       "changePoints": -30.23,
       "volume": 2162709,
-      "marketCap": 314247806976,
+      "marketCap": 314247356540,
       "tradingValue": 2303760881,
       "exchange": "NYS"
     },
@@ -552,7 +552,7 @@
       "changePct": 1.65,
       "changePoints": 3.13,
       "volume": 5203084,
-      "marketCap": 300770689024,
+      "marketCap": 300770908800,
       "tradingValue": 1004091150,
       "exchange": "NYS"
     },

@@ -2216,6 +2216,11 @@ const TS_PARSE_TOOL = {
                 direction: { type: "string" },
                 op: { type: "string" },
                 value: { type: "number" },
+                position: { type: "string", description: "bollinger 전용: upper_break|lower_break|upper_touch|lower_touch" },
+                line: { type: "string", description: "stochastic 전용: k|d" },
+                pattern: { type: "string", description: "candle_pattern 전용: bullish_engulfing|bearish_engulfing|hammer|shooting_star|doji" },
+                count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
+                withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
               },
             },
           },
@@ -2370,6 +2375,12 @@ function tsNormalizeClause(raw) {
   if (raw.direction) out.direction = sanitizeStr(raw.direction) === "down" ? "down" : "up";
   if (raw.op) out.op = sanitizeStr(raw.op);
   if (raw.value != null) out.value = Number(raw.value);
+  // 2026-07-18: 신규 시그널군(MACD/볼린저/스토캐스틱/ADX/캔들패턴/갭/연속캔들/52주근접) 전용 필드
+  if (raw.position) out.position = sanitizeStr(raw.position);
+  if (raw.line) out.line = sanitizeStr(raw.line) === "d" ? "d" : "k";
+  if (raw.pattern) out.pattern = sanitizeStr(raw.pattern);
+  if (raw.count != null) out.count = Number(raw.count);
+  if (raw.withinPct != null) out.withinPct = Number(raw.withinPct);
   return out;
 }
 
@@ -2485,6 +2496,11 @@ const TS_SCREEN_PARSE_TOOL = {
                 direction: { type: "string" },
                 op: { type: "string" },
                 value: { type: "number" },
+                position: { type: "string", description: "bollinger 전용: upper_break|lower_break|upper_touch|lower_touch" },
+                line: { type: "string", description: "stochastic 전용: k|d" },
+                pattern: { type: "string", description: "candle_pattern 전용: bullish_engulfing|bearish_engulfing|hammer|shooting_star|doji" },
+                count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
+                withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
               },
             },
           },

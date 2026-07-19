@@ -338,6 +338,9 @@
         font-size: 12px;
         color: var(--text-muted-ui);
       }
+      .ts-result-item {
+        margin-bottom: 6px;
+      }
       .ts-result-row {
         display: flex;
         align-items: center;
@@ -347,10 +350,18 @@
         border-radius: 8px;
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        margin-bottom: 6px;
+        cursor: pointer;
+      }
+      .ts-result-item .ts-result-row {
+        margin-bottom: 0;
+      }
+      .ts-result-item .ts-result-row[aria-expanded="true"] {
+        border-radius: 8px 8px 0 0;
+        border-bottom-color: transparent;
       }
       .ts-result-row__main {
         min-width: 0;
+        flex: 1 1 auto;
       }
       .ts-result-row__name {
         font-size: 13px;
@@ -365,15 +376,22 @@
         color: var(--text-muted-ui);
         margin-top: 2px;
       }
+      .ts-result-row__stats {
+        flex: 0 0 auto;
+        min-width: 92px;
+        text-align: right;
+      }
       .ts-result-row__price {
         font-size: 13px;
         font-weight: 600;
         color: var(--text-primary);
         white-space: nowrap;
+        font-variant-numeric: tabular-nums;
       }
       .ts-result-row__change {
         font-size: 12px;
         white-space: nowrap;
+        font-variant-numeric: tabular-nums;
       }
       .ts-result-row__change--up {
         color: #e24b4a;
@@ -386,6 +404,63 @@
         align-items: center;
         gap: 10px;
         flex-shrink: 0;
+      }
+      .ts-detail {
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        background: var(--card-bg);
+        padding: 12px;
+      }
+      .ts-detail__loading {
+        font-size: 12.5px;
+        color: var(--text-muted-ui);
+      }
+      .ts-detail__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 10px 12px;
+      }
+      .ts-detail__cell {
+        min-width: 0;
+      }
+      .ts-detail__label {
+        font-size: 10.5px;
+        color: var(--text-muted-ui);
+        margin-bottom: 2px;
+      }
+      .ts-detail__value {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ts-detail__value--pos { color: #e24b4a; }
+      .ts-detail__value--neg { color: #2d7ff9; }
+      .ts-detail__actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .ts-detail__actions .ts-btn {
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+      .ts-detail__chart {
+        margin-top: 12px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
+      }
+      .ts-detail__chart-host {
+        width: 100%;
+        height: 220px;
+      }
+      .ts-detail__chart-msg {
+        font-size: 12px;
+        color: var(--text-muted-ui);
       }
       .ts-save-mini {
         padding: 6px 10px;
@@ -763,6 +838,219 @@
           $("ts-search-error").classList.add("ts-hidden");
         }
 
+        const detailCache = new Map(); // code -> quoteOnly 응답 데이터
+        const openDetailCode = new Set(); // 현재 펼쳐진 code 집합
+        const chartMountedCode = new Set(); // 차트가 이미 그려진 code 집합
+
+        function tsFmtVolumeMan(raw) {
+          const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+          if (!Number.isFinite(n) || n < 0) return "—";
+          if (n < 10000) return n.toLocaleString("ko-KR");
+          return `${(Math.round(n / 1000) / 10).toFixed(1)}만`;
+        }
+
+        function tsFmtTradeValue(raw) {
+          const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+          if (!Number.isFinite(n) || n <= 0) return "—";
+          if (n >= 1e12) return `${(n / 1e12).toFixed(1)}조`;
+          const eok = Math.round(n / 1e8);
+          return `${eok.toLocaleString("ko-KR")}억`;
+        }
+
+        function tsFmtMarketCap(raw) {
+          const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+          if (!Number.isFinite(n)) return "—";
+          if (n >= 10000) return `${(n / 10000).toFixed(1)}조`;
+          if (n >= 1) return `${Math.round(n).toLocaleString("ko-KR")}억`;
+          return `${Math.round(n).toLocaleString("ko-KR")}`;
+        }
+
+        function tsFmtEokSigned(raw) {
+          if (raw == null) return { text: "—", cls: "" };
+          const n = Number(String(raw).replace(/,/g, ""));
+          if (!Number.isFinite(n)) return { text: "—", cls: "" };
+          const sign = n > 0 ? "+" : "";
+          return {
+            text: `${sign}${Math.round(n).toLocaleString("ko-KR")}억`,
+            cls: n > 0 ? "ts-detail__value--pos" : n < 0 ? "ts-detail__value--neg" : "",
+          };
+        }
+
+        function tsFmtProfitEok(raw) {
+          // 2026-07-19: KIS 실적(매출/영업이익/순이익) 원시값은 이미 "억원" 단위로 내려온다
+          // (realtime-board.js의 formatEokJoEok/formatKoMoneyEok과 동일 가정 — 여기서 /1e8을
+          // 하면 안 됨. 처음엔 실수로 나눴다가 realtime-board.js 관례를 확인하고 수정함).
+          if (raw == null) return "—";
+          const n = Number(String(raw).replace(/,/g, ""));
+          if (!Number.isFinite(n)) return "—";
+          const abs = Math.abs(n);
+          const sign = n < 0 ? "-" : "";
+          if (abs >= 10000) return `${sign}${(abs / 10000).toFixed(1)}조`;
+          return `${sign}${Math.round(abs).toLocaleString("ko-KR")}억`;
+        }
+
+        function tsDetailCell(label, value, cls) {
+          return `<div class="ts-detail__cell">
+            <div class="ts-detail__label">${escapeHtml(label)}</div>
+            <div class="ts-detail__value ${cls || ""}">${value}</div>
+          </div>`;
+        }
+
+        function tsRenderDetailInner(code, data) {
+          const ch = Number(data.changeRate);
+          const per = data.financials && data.financials.per != null ? data.financials.per : data.per;
+          const eps = data.financials ? data.financials.eps : null;
+          const bps = data.financials ? data.financials.bps : null;
+          const pbr = data.financials ? data.financials.pbr : null;
+          const sup = data.supply || {};
+          const pf = data.profit || {};
+          const inst = tsFmtEokSigned(sup.institution);
+          const indv = tsFmtEokSigned(sup.individual);
+          const frgn = tsFmtEokSigned(sup.foreigner);
+
+          const grid = [
+            tsDetailCell("시가", escapeHtml(fmtPrice(data.open))),
+            tsDetailCell("고가", escapeHtml(fmtPrice(data.high))),
+            tsDetailCell("저가", escapeHtml(fmtPrice(data.low))),
+            tsDetailCell("전일종가", escapeHtml(fmtPrice(data.prevClose))),
+            tsDetailCell("거래량", escapeHtml(tsFmtVolumeMan(data.volume))),
+            tsDetailCell("거래대금", escapeHtml(tsFmtTradeValue(data.tradingValue))),
+            tsDetailCell("시가총액", escapeHtml(tsFmtMarketCap(data.marketCapRaw || data.marketCap))),
+            tsDetailCell("52주고", escapeHtml(fmtPrice(data.high52w))),
+            tsDetailCell("52주저", escapeHtml(fmtPrice(data.low52w))),
+            tsDetailCell("PER", per == null ? "—" : escapeHtml(Number(per).toFixed(1))),
+            tsDetailCell("PBR", pbr == null ? "—" : escapeHtml(Number(pbr).toFixed(1))),
+            tsDetailCell("EPS", eps == null ? "—" : escapeHtml(fmtPrice(eps))),
+            tsDetailCell("BPS", bps == null ? "—" : escapeHtml(fmtPrice(bps))),
+            tsDetailCell("기관수급", inst.text, inst.cls),
+            tsDetailCell("개인수급", indv.text, indv.cls),
+            tsDetailCell("외국인수급", frgn.text, frgn.cls),
+            tsDetailCell("매출", tsFmtProfitEok(pf.revenue)),
+            tsDetailCell("영업이익", tsFmtProfitEok(pf.operatingProfit)),
+            tsDetailCell("당기순이익", tsFmtProfitEok(pf.netIncome)),
+          ].join("");
+
+          const aiHref = `./stock-analysis.html?code=${encodeURIComponent(code)}&name=${encodeURIComponent(data.stockName || "")}`;
+
+          return `<div class="ts-detail__grid">${grid}</div>
+            <div class="ts-detail__actions">
+              <a class="ts-btn ts-btn--ghost" href="${aiHref}">AI 분석하기</a>
+              <button type="button" class="ts-btn ts-btn--ghost" data-chart-toggle="${escapeHtml(code)}">차트 보기</button>
+            </div>
+            <div class="ts-detail__chart ts-hidden" data-chart-wrap="${escapeHtml(code)}">
+              <p class="ts-detail__chart-msg" data-chart-msg="${escapeHtml(code)}">차트 불러오는 중…</p>
+              <div class="ts-detail__chart-host" data-chart-host="${escapeHtml(code)}"></div>
+            </div>`;
+        }
+
+        let lwChartsLoadPromise = null;
+        function ensureLwCharts() {
+          if (window.LightweightCharts) return Promise.resolve();
+          if (lwChartsLoadPromise) return lwChartsLoadPromise;
+          lwChartsLoadPromise = new Promise((resolve, reject) => {
+            const s = document.createElement("script");
+            s.src = "https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js";
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error("차트 라이브러리를 불러오지 못했습니다."));
+            document.head.appendChild(s);
+          });
+          return lwChartsLoadPromise;
+        }
+
+        async function tsMountChart(code) {
+          if (chartMountedCode.has(code)) return;
+          const host = document.querySelector(`[data-chart-host="${CSS.escape(code)}"]`);
+          const msg = document.querySelector(`[data-chart-msg="${CSS.escape(code)}"]`);
+          if (!host) return;
+          try {
+            await ensureLwCharts();
+            const res = await fetch(`/api/kis-realtime-data?action=candle&code=${encodeURIComponent(code)}&period=D`, { cache: "no-store" });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            const candles = Array.isArray(data.candles) ? data.candles : [];
+            if (!candles.length) throw new Error("차트 데이터가 없어요.");
+
+            const LC = window.LightweightCharts;
+            const chart = LC.createChart(host, {
+              width: host.clientWidth || 300,
+              height: 220,
+              layout: { background: { color: "transparent" }, textColor: "var(--text-muted-ui)" },
+              grid: { vertLines: { visible: false }, horzLines: { color: "rgba(128,128,128,0.12)" } },
+              rightPriceScale: { borderVisible: false },
+              timeScale: { borderVisible: false },
+            });
+            const candleSeries = chart.addCandlestickSeries({
+              upColor: "#e24b4a", downColor: "#2d7ff9",
+              borderUpColor: "#e24b4a", borderDownColor: "#2d7ff9",
+              wickUpColor: "#e24b4a", wickDownColor: "#2d7ff9",
+            });
+            candleSeries.setData(candles);
+
+            const maColors = { ma20: "#f0a500", ma60: "#8e5cf2", ma120: "#2d9e6f", ma200: "#888" };
+            for (const key of ["ma20", "ma60", "ma120", "ma200"]) {
+              const series = data[key];
+              if (!Array.isArray(series)) continue;
+              const lineSeries = chart.addLineSeries({ color: maColors[key], lineWidth: 1 });
+              const points = candles
+                .map((c, i) => (series[i] != null ? { time: c.time, value: series[i] } : null))
+                .filter(Boolean);
+              if (points.length) lineSeries.setData(points);
+            }
+
+            chart.timeScale().fitContent();
+            const resizeObs = new ResizeObserver(() => {
+              if (host.clientWidth > 0) chart.applyOptions({ width: host.clientWidth });
+            });
+            resizeObs.observe(host);
+
+            if (msg) msg.remove();
+            chartMountedCode.add(code);
+          } catch (e) {
+            if (msg) msg.textContent = e.message || "차트를 불러오지 못했어요.";
+          }
+        }
+
+        async function tsToggleDetail(item, code, name) {
+          const row = item.querySelector(".ts-result-row");
+          const panel = item.querySelector(".ts-detail");
+          const isOpen = openDetailCode.has(code);
+          if (isOpen) {
+            openDetailCode.delete(code);
+            panel.classList.add("ts-hidden");
+            row.setAttribute("aria-expanded", "false");
+            return;
+          }
+          openDetailCode.add(code);
+          panel.classList.remove("ts-hidden");
+          row.setAttribute("aria-expanded", "true");
+
+          let data = detailCache.get(code);
+          if (!data) {
+            panel.innerHTML = `<p class="ts-detail__loading">불러오는 중…</p>`;
+            try {
+              const res = await fetch(`/api/stock-analysis?q=${encodeURIComponent(code)}&quoteOnly=1`, { cache: "no-store" });
+              data = await res.json().catch(() => ({}));
+              if (!res.ok || data.error) throw new Error((data && data.error) || `HTTP ${res.status}`);
+              detailCache.set(code, data);
+            } catch (e) {
+              panel.innerHTML = `<p class="ts-detail__loading">불러오지 못했어요: ${escapeHtml(e.message || "")}</p>`;
+              return;
+            }
+          }
+          panel.innerHTML = tsRenderDetailInner(code, data);
+          const chartBtn = panel.querySelector("[data-chart-toggle]");
+          if (chartBtn) {
+            chartBtn.addEventListener("click", () => {
+              const wrap = panel.querySelector(`[data-chart-wrap="${CSS.escape(code)}"]`);
+              if (!wrap) return;
+              const nowHidden = wrap.classList.contains("ts-hidden");
+              wrap.classList.toggle("ts-hidden");
+              chartBtn.textContent = nowHidden ? "차트 닫기" : "차트 보기";
+              if (nowHidden) tsMountChart(code);
+            });
+          }
+        }
+
         function renderResultList() {
           const wrap = $("ts-result-list");
           if (!currentScreen || !currentScreen.stocks || !currentScreen.stocks.length) {
@@ -774,31 +1062,52 @@
             }</p>`;
             return;
           }
+          openDetailCode.clear();
+          chartMountedCode.clear();
           wrap.innerHTML = currentScreen.stocks
             .map((s) => {
               const up = Number(s.changePct) > 0;
               const down = Number(s.changePct) < 0;
               const saved = savedRowCodes.has(s.code);
-              return `<div class="ts-result-row">
-                <div class="ts-result-row__main">
-                  <div class="ts-result-row__name">${escapeHtml(s.name)}</div>
-                  <div class="ts-result-row__meta">${escapeHtml(s.code)} · ${escapeHtml(s.market || "")}</div>
+              return `<div class="ts-result-item" data-item-code="${escapeHtml(s.code)}">
+                <div class="ts-result-row" role="button" tabindex="0" aria-expanded="false" data-toggle-code="${escapeHtml(s.code)}" data-toggle-name="${escapeHtml(s.name)}">
+                  <div class="ts-result-row__main">
+                    <div class="ts-result-row__name">${escapeHtml(s.name)}</div>
+                    <div class="ts-result-row__meta">${escapeHtml(s.code)} · ${escapeHtml(s.market || "")}</div>
+                  </div>
+                  <div class="ts-result-row__stats">
+                    <div class="ts-result-row__price">${fmtPrice(s.close)}</div>
+                    <div class="ts-result-row__change ${up ? "ts-result-row__change--up" : down ? "ts-result-row__change--down" : ""}">${fmtChangePct(s.changePct)}</div>
+                  </div>
+                  <div class="ts-result-row__right">
+                    <button type="button" class="ts-save-mini ${saved ? "ts-save-mini--saved" : ""}" data-save-code="${escapeHtml(s.code)}" data-save-name="${escapeHtml(s.name)}" ${saved ? "disabled" : ""}>
+                      ${saved ? "저장됨" : "감시 저장"}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <div class="ts-result-row__price">${fmtPrice(s.close)}</div>
-                  <div class="ts-result-row__change ${up ? "ts-result-row__change--up" : down ? "ts-result-row__change--down" : ""}">${fmtChangePct(s.changePct)}</div>
-                </div>
-                <div class="ts-result-row__right">
-                  <button type="button" class="ts-save-mini ${saved ? "ts-save-mini--saved" : ""}" data-save-code="${escapeHtml(s.code)}" data-save-name="${escapeHtml(s.name)}" ${saved ? "disabled" : ""}>
-                    ${saved ? "저장됨" : "감시 저장"}
-                  </button>
-                </div>
+                <div class="ts-detail ts-hidden"></div>
               </div>`;
             })
             .join("");
 
+          wrap.querySelectorAll("[data-toggle-code]").forEach((row) => {
+            const activate = (ev) => {
+              if (ev.target.closest("[data-save-code]")) return;
+              const item = row.closest(".ts-result-item");
+              tsToggleDetail(item, row.getAttribute("data-toggle-code"), row.getAttribute("data-toggle-name"));
+            };
+            row.addEventListener("click", activate);
+            row.addEventListener("keydown", (ev) => {
+              if (ev.key === "Enter" || ev.key === " ") {
+                ev.preventDefault();
+                activate(ev);
+              }
+            });
+          });
+
           wrap.querySelectorAll("[data-save-code]").forEach((btn) => {
-            btn.addEventListener("click", async () => {
+            btn.addEventListener("click", async (ev) => {
+              ev.stopPropagation();
               if (!currentScreen) return;
               const code = btn.getAttribute("data-save-code");
               const name = btn.getAttribute("data-save-name");

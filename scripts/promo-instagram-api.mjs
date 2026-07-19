@@ -55,7 +55,10 @@ async function waitUntilFinished(containerId, accessToken, { maxAttempts = 15, i
 
 function publicImageUrl(fileName) {
   const repo = process.env.GITHUB_REPOSITORY || "mandoo411/vibe";
-  const branch = process.env.PROMO_ASSET_BRANCH || "main";
+  // 수동 workflow_dispatch를 다른 브랜치에서 실행했을 때, 발행 이미지가 실제로 렌더링된
+  // 브랜치가 아니라 항상 main에서만 읽혀서 최신 렌더와 발행 결과가 어긋나는 버그가 있었다.
+  // GITHUB_REF_NAME(Actions가 자동 제공)을 우선 사용해 "실행 중인 브랜치"의 이미지를 읽도록 한다.
+  const branch = process.env.PROMO_ASSET_BRANCH || process.env.GITHUB_REF_NAME || "main";
   return `https://raw.githubusercontent.com/${repo}/${branch}/generated/${fileName}`;
 }
 

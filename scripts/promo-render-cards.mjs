@@ -122,9 +122,13 @@ export function buildCardsHTML(cardData) {
   let stocks = read("card-stocks");
   stocks = fillSimpleVars(stocks, { PAGE_TITLE: listTitle });
   stocks = fillRepeatBlock(stocks, "ITEM", listItems.slice(0, 5), (g, i) => `
-    <div class="panel item">
+    <div class="panel item ${g.type === "급등" ? "is-up" : g.type === "급락" ? "is-down" : ""}">
       <div class="rank ${i === 0 ? "gold" : ""}">${i + 1}</div>
       <div class="info">
+        <div class="tags">
+        ${g.market ? `<span class="mkt-tag">${g.market}</span>` : ""}
+        ${g.type ? `<span class="type-tag ${g.type === "급등" ? "up" : "down"}">${g.type}</span>` : ""}
+        </div>
         <div class="name">${g.name}</div>
         <div class="reason">${g.reason || ""}</div>
       </div>

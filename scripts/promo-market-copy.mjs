@@ -71,7 +71,7 @@ function buildFallbackSummaryLines(snapshot, analysisText) {
 export async function loadLatestSnapshot() {
   const raw = await readJson(DATA_PATH);
   const days = raw.days || {};
-  const today = seoulYmd();
+  const today = process.env.PROMO_FORCE_DATE || seoulYmd();
   const key = days[today] ? today : Object.keys(days).sort().pop();
   if (!key) throw new Error("data/daily-market.json에 사용 가능한 날짜 데이터가 없습니다");
   return { ymd: key, ...days[key] };
@@ -185,7 +185,7 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     indexRows,
     summaryLines: copy.summaryLines || [],
     listTitle: "오늘의 특징주 TOP5",
-    listItems: gainers.map((g) => ({ name: g.name, reason: g.reason, pct: g.change })),
+    listItems: gainers.map((g) => ({ name: g.name, reason: g.reason, pct: g.change, market: g.market, type: g.type })),
     aiTitle: "AI 오늘의 판단",
     aiComment: copy.aiComment,
     checkpointsTitle: "내일 주목할 변수",

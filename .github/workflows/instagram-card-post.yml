@@ -44,14 +44,14 @@ jobs:
           TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
           DOW=$(TZ=Asia/Seoul date '+%u')  # 1=Mon ... 6=Sat, 7=Sun
 
-          if [ "$DOW" -ge 6 ]; then
+          if [ -z "${PROMO_FORCE_DATE:-}" ] && [ "$DOW" -ge 6 ]; then
             echo "::notice::주말(요일=${DOW}) — 발행 스킵"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           STAMP_FILE="generated/${SLOT}/last-published-date.txt"
-          if [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
+          if [ -z "${PROMO_FORCE_DATE:-}" ] && [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
             echo "::notice::오늘(${TODAY}) 이미 ${SLOT} 발행 완료 — 중복 실행 스킵"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -97,8 +97,7 @@ jobs:
           fi
           STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
           git commit -m "chore(promo): closing instagram cards ${STAMP}"
-          git pull --rebase origin main
-          git push
+          git push origin HEAD:${GITHUB_REF_NAME}
 
       # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
       - name: Wait for CDN
@@ -125,5 +124,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore(promo): mark ${SLOT} published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
-          git pull --rebase origin main
-          git push
+          git push origin HEAD:${GITHUB_REF_NAME}

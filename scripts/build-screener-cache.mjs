@@ -32,6 +32,7 @@ const {
   computeStochastic,
   computeADX,
   fetchMarketSnapshot,
+  computePeriodReturns,
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries } = require("../lib/trade-condition-eval.js");
 const STOCK_LIST = require("../assets/stock-list.json");
@@ -62,6 +63,8 @@ async function buildOne(stock) {
       const volumes = candles.map((c) => c.volume);
 
       const ma = {
+        5: computeMaSeries(closes, 5, false),
+        10: computeMaSeries(closes, 10, false),
         20: computeMaSeries(closes, 20, false),
         60: computeMaSeries(closes, 60, false),
         120: computeMaSeries(closes, 120, false),
@@ -74,6 +77,7 @@ async function buildOne(stock) {
       const stochastic = computeStochastic(highs, lows, closes);
       const adx = computeADX(highs, lows, closes);
       const market = await fetchMarketSnapshot(stock.code);
+      const periodReturns = computePeriodReturns(closes);
       const snapshot = buildSnapshotFromSeries({
         closes,
         highs,
@@ -89,6 +93,7 @@ async function buildOne(stock) {
         adx,
         marketCapEok: market.marketCapEok,
         tradingValueEok: market.tradingValueEok,
+        periodReturns,
       });
 
       const n = closes.length;

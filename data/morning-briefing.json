@@ -1,105 +1,105 @@
 {
-  "updatedAt": "2026-07-17T06:00:00+09:00",
+  "updatedAt": "2026-07-20T06:00:00+09:00",
   "usMarket": {
     "indices": [
       {
         "id": "nasdaq",
         "name": "나스닥",
         "symbol": "^NDX",
-        "close": 29025.77,
-        "previousClose": 29727.1,
-        "changePct": -2.36,
-        "changePoints": -701.33
+        "close": 28592.66,
+        "previousClose": 29825.11,
+        "changePct": -4.13,
+        "changePoints": -1232.45
       },
       {
         "id": "sp500",
         "name": "S&P 500",
         "symbol": "^GSPC",
-        "close": 7533.77,
-        "previousClose": 7543.64,
-        "changePct": -0.13,
-        "changePoints": -9.87
+        "close": 7457.69,
+        "previousClose": 7575.39,
+        "changePct": -1.55,
+        "changePoints": -117.7
       },
       {
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29064,
-        "previousClose": 29475.75,
-        "changePct": -1.4,
-        "changePoints": -411.75
+        "close": 28824.25,
+        "previousClose": 29790.25,
+        "changePct": -3.24,
+        "changePoints": -966
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
-        "close": 163.36,
-        "previousClose": 184.75,
-        "changePct": -11.58,
-        "changePoints": -21.39
+        "close": 162.54,
+        "previousClose": 183.52,
+        "changePct": -11.43,
+        "changePoints": -20.98
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 334.81,
-      "changePct": 2.23,
-      "changePoints": 7.31
+      "price": 333.74,
+      "changePct": 0.14,
+      "changePoints": 0.48
     },
     {
       "symbol": "MSFT",
-      "price": 400.25,
-      "changePct": 1.17,
-      "changePoints": 4.62
+      "price": 393.82,
+      "changePct": -1.82,
+      "changePoints": 7.28
     },
     {
       "symbol": "NVDA",
-      "price": 206.11,
-      "changePct": -3.01,
-      "changePoints": 6.39
+      "price": 202.81,
+      "changePct": -2.21,
+      "changePoints": 4.59
     },
     {
       "symbol": "AMZN",
-      "price": 251.13,
-      "changePct": -1.5,
-      "changePoints": 3.83
+      "price": 247.23,
+      "changePct": -1.06,
+      "changePoints": 2.66
     },
     {
       "symbol": "META",
-      "price": 665.53,
-      "changePct": -2.32,
-      "changePoints": 15.78
+      "price": 646.01,
+      "changePct": -2.79,
+      "changePoints": 18.53
     },
     {
       "symbol": "TSLA",
-      "price": 388.35,
-      "changePct": -1.55,
-      "changePoints": 6.11
+      "price": 380.84,
+      "changePct": -2.61,
+      "changePoints": 10.22
     },
     {
       "symbol": "GOOGL",
-      "price": 357.55,
-      "changePct": -3.6,
-      "changePoints": 13.37
+      "price": 346.77,
+      "changePct": -2.17,
+      "changePoints": 7.69
     },
     {
       "symbol": "AMD",
-      "price": 493.75,
-      "changePct": -6.69,
-      "changePoints": 35.39
+      "price": 495.76,
+      "changePct": -1.03,
+      "changePoints": 5.18
     },
     {
       "symbol": "PLTR",
-      "price": 132.8,
-      "changePct": -0.72,
-      "changePoints": 0.96
+      "price": 132.38,
+      "changePct": -1.53,
+      "changePoints": 2.06
     },
     {
       "symbol": "COIN",
-      "price": 159.61,
-      "changePct": -4.55,
-      "changePoints": 7.6
+      "price": 157.12,
+      "changePct": -2.1,
+      "changePoints": 3.37
     }
   ],
   "sectors": [
@@ -107,122 +107,122 @@
       "symbol": "XLK",
       "sector": "기술",
       "name": "기술 (XLK)",
-      "price": 177.52,
-      "changePct": -4.22
+      "price": 175.59,
+      "changePct": -5.48
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
-      "price": 56.75,
-      "changePct": 2.18
+      "price": 56.26,
+      "changePct": 0.99
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
-      "price": 57.02,
-      "changePct": 4.01
+      "price": 57.68,
+      "changePct": 4.72
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
-      "price": 161.8,
-      "changePct": -0.23
+      "price": 161.09,
+      "changePct": 0.16
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
-      "price": 180.15,
-      "changePct": -0.53
+      "price": 179.41,
+      "changePct": -1.38
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
-      "price": 117.34,
-      "changePct": 0.42
+      "price": 115.44,
+      "changePct": -1.54
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
-      "price": 85.81,
-      "changePct": 3.14
+      "price": 85.19,
+      "changePct": 1.27
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
-      "price": 45.47,
-      "changePct": 0.75
+      "price": 45.17,
+      "changePct": -0.53
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
-      "price": 50.89,
-      "changePct": 1.25
+      "price": 50.53,
+      "changePct": -0.71
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
-      "price": 45.46,
-      "changePct": 2.78
+      "price": 45.42,
+      "changePct": 2.18
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1488.31,
-      "USD/JPY": 162.16,
-      "USD/CNY": 6.78,
+      "USD/KRW": 1486.12,
+      "USD/JPY": 162.39,
+      "USD/CNY": 6.79,
       "EUR/USD": 1.14
     },
     "base": "USD",
-    "updatedAt": "Thu, 16 Jul 2026 00:02:31 +0000",
+    "updatedAt": "Sun, 19 Jul 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 78.98,
-        "changePct": 1.07,
-        "changePoints": 0.84
+        "price": 84.03,
+        "changePct": 5.91,
+        "changePoints": 4.69
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 3983.6,
-        "changePct": -0.34,
-        "changePoints": -13.4
+        "price": 3997.3,
+        "changePct": -1.57,
+        "changePoints": -63.8
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 55.76,
-        "changePct": -3.24,
-        "changePoints": -1.87
+        "price": 56.05,
+        "changePct": -4.63,
+        "changePoints": -2.72
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.29,
-        "changePct": 0.96,
-        "changePoints": 0.06
+        "price": 6.27,
+        "changePct": -0.95,
+        "changePoints": -0.06
       },
       {
         "id": "sox",
         "name": "필라델피아반도체",
         "symbol": "^SOX",
-        "price": 11867.5,
-        "changePct": -8.43,
-        "changePoints": -1092.5
+        "price": 11673.89,
+        "changePct": -9.97,
+        "changePoints": -1293.27
       }
     ]
   },
@@ -231,166 +231,166 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 63775,
-        "changePct24h": -1.43,
-        "marketCapUsd": 1279146474697.6
+        "priceUsd": 64634,
+        "changePct24h": -0.19,
+        "marketCapUsd": 1296056417955.35
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1861.09,
-        "changePct24h": -2.82,
-        "marketCapUsd": 224603689510.56
+        "priceUsd": 1868.49,
+        "changePct24h": 0.39,
+        "marketCapUsd": 225404906126.36
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 75.17,
-        "changePct24h": -2.75,
-        "marketCapUsd": 43789310568.46
+        "priceUsd": 76.06,
+        "changePct24h": 0.84,
+        "marketCapUsd": 44308230236.5
       }
     ]
   },
   "news": [
     {
-      "title": "젠슨 황도 베팅한 로보틱스 … 천재·데이터 가진 곳에 투자하라",
-      "url": "https://www.mk.co.kr/news/business/12100419",
+      "title": "반도체 사이클 가르는 분수령 ... 구글 실적따라 주가 출렁일 듯",
+      "url": "https://www.mk.co.kr/news/business/12101697",
       "source": "매일경제",
-      "publishedAt": "2026-07-16T20:00:00.000Z",
-      "summary": "‘로봇의 미래’ 저자 공경철 카이스트 교수 인터뷰지난 6월 젠슨 황 엔비디아 최고경영자(CEO)의 한국 방문을 계기로 자산 시장에서 가장 뜨겁게 달아오른 산업이 있다. 바로 ‘로보.."
+      "publishedAt": "2026-07-19T20:20:00.000Z",
+      "summary": "흔들리는 코스피, 이번주 전망은지난주 한국증시는 크게 흔들렸습니다. 7월 13일 코스피가 9% 가까이 급락한 뒤 15일 6% 넘게 반등했지만, 16일 다시 6% 넘게 떨어졌습니다..."
     },
     {
-      "title": "‘영주권 장사’ 아니다 … 미국이 투자이민 못버리는 진짜 이유",
-      "url": "https://www.mk.co.kr/news/world/12100372",
+      "title": "SK하이닉스도 깃발 꽂았다 … ADR 상장을 통해 본 기업의 미래",
+      "url": "https://www.mk.co.kr/news/stock/12101667",
       "source": "매일경제",
-      "publishedAt": "2026-07-16T19:30:00.000Z",
-      "summary": "투자이민이 아닌 민간자본 전략서 답을 찾다미국 투자이민(EB-5)을 이야기하면 대부분은 ’영주권을 받기 위한 투자 제도’를 떠올린다. 그러나 지난 25년 동안 현장에서 EB-5를 .."
+      "publishedAt": "2026-07-19T19:50:00.000Z",
+      "summary": "최근 한국 주식시장의 가장 뜨거운 화두 중 하나는 단연 SK하이닉스의 미국 나스닥 상장 소식이었습니다. 국내 투자자들에게 너무나 친숙한 대표 반도체 기업이 한국 코스피 시장을 넘어.."
     },
     {
-      "title": "이 대통령 “선거 때문에 주식 마구 사서 주가 올렸냐”…연금공단 “아니다”",
-      "url": "https://www.mk.co.kr/news/politics/12100699",
+      "title": "먹잇감 된 노후대비 자금…예금 깨 투자했는데 ‘0원’",
+      "url": "https://www.mk.co.kr/news/society/12101969",
       "source": "매일경제",
-      "publishedAt": "2026-07-16T11:51:32.000Z",
-      "summary": "李, 주가부양에 국민연금 동원 의혹 일축 국민연금 이사장 “그대로 갖고 있었다”이재명 대통령은 16일 6·3 지방선거를 앞두고 주가부양을 위해 국민연금공단(연금공단)을 동원해 주식.."
+      "publishedAt": "2026-07-19T11:55:48.000Z",
+      "summary": "평생 모은 자산이 ‘먹잇감’으로…고령층 사기 피해자 6만명지난해 2월, 60대 장 모씨는 안정적인 노후 소득을 약속하는 한 투자설명회를 방문했다가 노후 자산을 잃는 피해를 봤다. .."
     },
     {
-      "title": "“홀짝홀짝 증시에 없던 병 생길 판”…7천피 붕괴이유 있다는데",
-      "url": "https://www.mk.co.kr/news/stock/12100641",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T10:16:16.000Z",
-      "summary": "코스피 6.3% 급락에 7000선 반납 모건스탠리 “데이터센터 건설 잇단 취소” AI인프라투자 회의론에 삼전닉스 주가 뚝 기준금리 인상에 외국인·기관 매물폭탄코스피가 한국은행의 기.."
-    },
-    {
-      "title": "“연금으로 단타 치다간 노후 끝장납니다”…변동성 시대 생존 투자법 [매달 연금 500만원 받는법]",
-      "url": "https://www.mk.co.kr/news/economy/12100620",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T09:43:01.000Z",
-      "summary": "매달 연금 500만원 받는법 6회“요즘은 하루에도 수천만 원씩 왔다 갔다 합니다.” 지난해 대기업에서 퇴직한 최 씨는 퇴직금을 퇴직연금계좌(IRP)로 받아 약 3억 원을 주식형 상.."
-    },
-    {
-      "title": "GC녹십자, 오창공장에 5300억 투자…SCIG 전용 라인 신설",
-      "url": "https://view.asiae.co.kr/article/2026071618321346306",
+      "title": "SK하이닉스, 미국선 잘나가는데 국내선 답답?…오히려 매수 신호[주末머니]",
+      "url": "https://view.asiae.co.kr/article/2026071515230949799",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T09:32:13.000Z",
-      "summary": "GC녹십자가 미국 피하주사형 면역글로불린(SCIG) 인프라 구축을 본격화한다. GC녹십자는 충청북도청에서 충청북도, 청주시와 청주시 내 중장기 투자를 위한 업무협약(MOU)을 체결했다고 16일 밝혔다. GC녹십자는 오창공장에 2033년까지 향후 8년간 총 5300억원을 투자한다. 이 중 1400억원은 '20% SCIG(GC5136B)' 생산 설비 구축에 투입한다. 20% SCIG는 최근 회사가 선정한 5대 최우선 순위 파이프라인 중 하나다. GC녹십자는 최"
+      "publishedAt": "2026-07-19T08:57:00.000Z",
+      "summary": "SK하이닉스의 미국 주식예탁증서(ADR)가 나스닥 시장에 성공적으로 안착하면서 국내 본주와의 가격 차이(프리미엄)가 벌어질수록 외국인이 국내 본주를 순매수할 수 있는 계기가 될 것이라는 분석이 나왔다. 18일 현대차증권에 따르면 지난 10일 나스닥 시장에 공모가 대비 12.76% 상승한 168.01달러로 상장된 SK하이닉스 ADR은 상승세를 이어가면서 본주와의 격차를 한때 51%까지 벌렸다. 일부 증권사에서는 미국 ADR로 외국인 자"
+    },
+    {
+      "title": "외국인, 뉴욕서 원화 빌려 韓주식 살 수 있다",
+      "url": "https://www.mk.co.kr/news/economy/12101834",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-19T08:37:59.000Z",
+      "summary": "앞으로 외국인 투자자가 뉴욕이나 런던의 글로벌 은행에서 원화를 빌려 삼성전자 등 국내 주식에 투자할 수 있게 된다. 국내 투자자도 야간 시간대에 실시간 시장환율로 환전해 해외 주식.."
+    },
+    {
+      "title": "\"반도체 추가세수 청년에 우선투자\"",
+      "url": "https://www.mk.co.kr/news/economy/12101812",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-19T08:26:27.000Z",
+      "summary": "박홍근 기획예산처 장관이 반도체 슈퍼사이클 정점론에 대해 \"정부 안에서 논의하는 과정을 보면 (반도체 호황기가) 급격히 꺼질 것이라고 생각하지 않는다\"고 밝혔다. 지난 18일 박 .."
     },
     {
       "title": "[표] 외국환율고시표",
-      "url": "https://www.mk.co.kr/news/economy/12100583",
+      "url": "https://www.mk.co.kr/news/economy/12101797",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:55:58.000Z",
+      "publishedAt": "2026-07-19T08:18:06.000Z",
       "summary": ""
     },
     {
-      "title": "KB국민銀, 코스닥협회와 코스닥 시장 활성화 MOU",
-      "url": "https://www.mk.co.kr/news/economy/12100580",
+      "title": "[포토] NH농협금융, 아문디와 협업 모색",
+      "url": "https://www.mk.co.kr/news/economy/12101798",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:55:57.000Z",
-      "summary": "KB국민은행이 코스닥 상장기업에 대한 생산적 금융 지원을 확대하고 기업금융과 자본시장 서비스를 연계한 맞춤형 솔루션을 제공한다. KB국민은행은 지난 15일 코스닥협회와 '코스닥시장.."
-    },
-    {
-      "title": "[포토] 삼성화재·강북삼성병원, 고객 맞춤 라이프케어 센터 설립",
-      "url": "https://www.mk.co.kr/news/economy/12100581",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:55:57.000Z",
+      "publishedAt": "2026-07-19T08:18:06.000Z",
       "summary": ""
     },
     {
-      "title": "정책금융 뭉쳐 초기 스타트업 돕는다",
-      "url": "https://www.mk.co.kr/news/economy/12100582",
+      "title": "李 정부 포용금융 기조에 중소기업 대출금리 낮아져",
+      "url": "https://www.mk.co.kr/news/economy/12101794",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:55:57.000Z",
-      "summary": "IBK기업은행, 신용보증기금 등 정책금융기관이 뭉쳐 스타트업에 대한 대출과 투자를 확대한다. 기업은행은 중·저신용자에게 4.9% 단일 금리를 적용하는 포용대출 상품도 출시한다. 1.."
+      "publishedAt": "2026-07-19T08:18:05.000Z",
+      "summary": "올 들어 금리인상 기조가 본격화됐지만, 중소기업과 자영업자 대출금리는 지속적으로 낮아지고 있는 것으로 나타났다. 가계대출에서는 주택담보대출 금리 상단이 7%대, 개인신용대출이 8%.."
     },
     {
-      "title": "연체율 비상·총량규제 압박에 상호금융 가계대출 28조 급감",
-      "url": "https://www.mk.co.kr/news/economy/12100578",
+      "title": "절치부심 우리금융, 고객 기반 확 늘린다",
+      "url": "https://www.mk.co.kr/news/economy/12101796",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:55:56.000Z",
-      "summary": "새마을금고·신협·농협·수협 등 대표적인 서민금융 창구인 상호금융권의 가계대출이 최근 4년간 약 28조원 감소한 것으로 나타났다. 같은 기간 은행과 보험업권의 가계대출이 큰 폭으로 .."
+      "publishedAt": "2026-07-19T08:18:05.000Z",
+      "summary": "우리금융그룹이 하반기 최우선 과제로 '고객 기반 확대'를 내걸었다. 최근 금융지주들의 호실적 속에서 나 홀로 실적이 뒷걸음질 친 우리금융은 하반기 은행과 비은행 부문의 영업력과 수.."
     },
     {
-      "title": "[포토] '레버리지 ETF' 대책 머리 맞댄 F4",
-      "url": "https://www.mk.co.kr/news/economy/12100566",
+      "title": "내수도 외국인도 받쳐준다…'비중확대' 제시한 이 업종은?[주末머니]",
+      "url": "https://view.asiae.co.kr/article/2026071616213828637",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-19T08:03:00.000Z",
+      "summary": "내수 및 외국인 소비가 회복되면서 백화점 업종의 성장세가 지속될 것이라는 전망이 나온다. 18일 교보증권은 백화점 업종에 대해 투자의견 '비중확대'를 제시했다. 장민지 교보증권 연구원은 \"백화점 업종은 내수 소비 회복과 외국인 소비 확대라는 두 가지 성장 동력을 확보한 것으로 판단된다\"고 전했다. 백화점 3사(롯데·신세계·현대백화점)의 평균 향후 12개월 예상 주당 순이익은 12.2배 수준으로 지난해(7.5배)와 비교해"
+    },
+    {
+      "title": "주차로봇·가전구독 … 재건축 단지로 눈돌린 기업들",
+      "url": "https://www.mk.co.kr/news/economy/12101744",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:53:58.000Z",
-      "summary": ""
+      "publishedAt": "2026-07-19T08:01:47.000Z",
+      "summary": "서울 압구정동 등에서 고급 아파트 재건축 사업이 본격화하며 주요 기업들이 공동주택으로 잇달아 사업 영토를 넓히고 있다. 현대자동차그룹 등 로보틱스 기업들은 정부가 아파트에 주차로봇.."
     },
     {
-      "title": "申 \"물가 안정때까지 인상 기조\"… 연내 3%대 기준금리 예고",
-      "url": "https://www.mk.co.kr/news/economy/12100498",
+      "title": "\"주가 빠질 때가 기회\"…폭락장에 증권가가 담으라는 종목[주末머니]",
+      "url": "https://view.asiae.co.kr/article/2026071517233231147",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-19T07:53:00.000Z",
+      "summary": "반도체 중심 조정 국면에서 배당 매력이 있는 상장지수펀드(ETF)와 주식에 투자할 기회를 잡으라는 증권가 조언이 나왔다. 강송철 유진투자증권 연구원은 \"최근 한 달간 반도체 ETF에는 3조5000억원, 삼성전자·SK하이닉스 단일종목 레버리지는 7조원 가까운 자금이 몰렸다\"며 \"쏠림이 심하다는 것은 뒤집으면 관심 밖으로 밀려난 좋은 종목을 싸게 담을 기회가 그만큼 많다는 뜻\"이라고 제안했다. 현재 시중 금리 대비 배당수익률"
+    },
+    {
+      "title": "1500원 아래로 하락한 원달러 환율",
+      "url": "https://www.mk.co.kr/news/economy/12101696",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T08:34:50.000Z",
-      "summary": "한국은행이 3년6개월 만에 기준금리 인상 카드를 전격 꺼낸 주된 이유는 반도체 경기 호조로 성장세가 예상보다 강한 흐름을 보이는 가운데 물가 상승률이 상당 기간 목표 수준을 웃돌고.."
+      "publishedAt": "2026-07-19T07:07:11.000Z",
+      "summary": "이달 초 1560원에 육박했던 달러·원 환율이 빠르게 하락하면서 원화 가치 상승률이 주요국 통화 가운데 가장 높은 것으로 나타난 가운데 19일 명동의 화전소에 환율이 안내되고 있다.."
     },
     {
-      "title": "금융연수원, 특성화고 학생들에 은행권 취업 교육 [금융가 톺아보기]",
-      "url": "https://www.mk.co.kr/news/economy/12100424",
+      "title": "원달러 환율 다시 1500밑으로",
+      "url": "https://www.mk.co.kr/news/economy/12101695",
       "source": "매일경제 증권",
-      "publishedAt": "2026-07-16T07:54:22.000Z",
-      "summary": "고교생 진로 지원 금융권 각종 활동한국금융연수원이 지난 15일부터 서울시 소재 특성화고 17개교 학생 61명을 대상으로 은행권 취업을 위한 무료 교육을 시작했다고 밝혔다. 진행 기.."
+      "publishedAt": "2026-07-19T07:06:39.000Z",
+      "summary": "이달 초 1560원에 육박했던 달러·원 환율이 빠르게 하락하면서 원화 가치 상승률이 주요국 통화 가운데 가장 높은 것으로 나타난 가운데 19일 명동의 화전소에 환율이 안내되고 있다.."
     },
     {
-      "title": "하루걸러 급등락 '롤러코스터' 코스피, 6.4% 하락 마감",
-      "url": "https://view.asiae.co.kr/article/2026071616163590661",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T07:16:35.000Z",
-      "summary": "전날 6% 넘게 오른 코스피가 16일 바로 6% 넘게 하락하며 급등락을 반복했다. 미국발 반도체주 투자심리 악화와 외국인 및 기관의 동반 매도에 지수가 크게 출렁였다. 이날 코스피는 전날 대비 6.37% 내린 6820.60에 정규장 거래를 마쳤다. 전날 종가 기준 상승폭 6.24%를 그대로 반납하면서 다시 6800대로 주저앉았다. 개장과 동시에 7000선 아래로 떨어진 이후 6700대까지 밀리기도 했다 개장 직후에는 프로그램 매도호가 일시 효"
+      "title": "“민간 자금부담 낮추고 공급속도 높인다”…LH, 신축매입약정사업 큰폭 개선",
+      "url": "https://www.mk.co.kr/news/realestate/12101671",
+      "source": "매일경제",
+      "publishedAt": "2026-07-19T21:00:00.000Z",
+      "summary": "토지확보지원금 확대 공정률 연동 대금지급 착공 최대 5개월 단축 추진 수도권 매입목표 향후 2년간 1.1만 가구(규제지역 2.1만 가구) 확대한국토지주택공사(LH)가 정부의 주.."
     },
     {
-      "title": "[속보]\"단일 레버리지 ETF, 신규상장 잠정중단...광고도 금지\"",
-      "url": "https://view.asiae.co.kr/article/2026071615584732206",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T07:09:36.000Z",
-      "summary": "관계기관 합동, 단일종목 레버리지 상품(ETF·ETN) 보완방안 발표"
+      "title": "지역의사제 도입 따른 초등학교 순유입 … 서울 강남구 2위, 그럼 1위 지역은?",
+      "url": "https://www.mk.co.kr/news/society/12101663",
+      "source": "매일경제",
+      "publishedAt": "2026-07-19T20:30:00.000Z",
+      "summary": "고교 진학 고려한 초등학교 이동 추이 분석초등학교 때 전출입은 중고등학교 진학을 염두해 둔 이동으로 볼 수 있다. 앞으로 큰 변화의 원인이 될 지방권 의대에서는 지방권에 소재하고 .."
     },
     {
-      "title": "[속보]단일 레버리지 ETF, 기본 예탁금 '현금 3천만원'으로 상향",
-      "url": "https://view.asiae.co.kr/article/2026071615564913598",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T07:08:40.000Z",
-      "summary": "관계기관 합동, 단일종목 레버리지 상품(ETF·ETN) 보완방안 발표"
+      "title": "집 살 때, 전세 구할 때 ... “하반기 대출 문턱 더 높아진다”",
+      "url": "https://www.mk.co.kr/news/economy/12101673",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-07-19T20:00:00.000Z",
+      "summary": "올해 하반기 부동산 대출 방향올해 하반기 ‘부동산 대출’ 정책엔 어떤 변화가 있을까요. 최근 재정경제부가 발표한 하반기 경제성장전략과 금융위가 제출한 업무보고를 살펴보면 쉽게 힌트.."
     },
     {
-      "title": "알테오젠, 코스닥 남는다…코스피 이전 미루고 무상증자",
-      "url": "https://view.asiae.co.kr/article/2026071615482573043",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T06:48:24.000Z",
-      "summary": "알테오젠이 유가증권시장(코스피) 이전상장 추진을 잠정 유보하고 코스닥시장에 잔류하기로 했다. 주주가치 제고를 위해 30% 무상증자도 실시한다. 알테오젠은 자본시장 환경과 정부의 코스닥시장 활성화 정책, 수급 효과 등을 검토한 결과 코스피 이전상장 시기를 미루기로 결정했다고 16일 공시했다. 알테오젠은 지난해 12월 임시주주총회에서 코스닥시장 조건부 상장폐지와 코스피 이전상장 안건을 승인받았다. 그러나 최근 시장"
+      "title": "주도주 쏠림이 하락 원인이라고? ... 강세장의 정상적 패턴!",
+      "url": "https://www.mk.co.kr/news/stock/12101817",
+      "source": "매일경제",
+      "publishedAt": "2026-07-19T20:00:00.000Z",
+      "summary": "데이터로 살펴본 쏠림의 진실“이번 하락은 반도체에 너무 쏠렸기 때문입니다.” 최근 시장에서 가장 많이 들리는 해석이다. 시장이 흔들리면 사람들은 언제나 원인을 찾는다. 이번에는 소.."
     },
     {
-      "title": "코스닥, 37.59P 내린 791.84 마감(4.53%↓)",
-      "url": "https://view.asiae.co.kr/article/2026071615412210205",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T06:41:22.000Z",
-      "summary": ""
-    },
-    {
-      "title": "코스피, 463.81P 내린 6820.60 마감(6.37%↓)",
-      "url": "https://view.asiae.co.kr/article/2026071615403599099",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-07-16T06:40:36.000Z",
-      "summary": ""
+      "title": "연어 부산물의 화려한 변신…콜라겐·PDRN으로 세계시장 공략 [강원대 앵커사업단]",
+      "url": "https://www.mk.co.kr/news/society/12100269",
+      "source": "매일경제",
+      "publishedAt": "2026-07-19T15:10:00.000Z",
+      "summary": "⑩ 신성바이오팜연어 한 마리를 가공하고 나면 다양한 부산물이 남는다. 상품으로 팔리는 부분이 있는 반면 활용처를 찾지 못한 부산물은 처리 비용이 드는 골칫거리다. 강원도 바이오기업.."
     }
   ],
   "aiAnalysis": {

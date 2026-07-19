@@ -472,7 +472,7 @@
           <div id="ts-content" class="ts-hidden">
             <section class="ts-card">
               <p class="ts-label">어떤 조건에 맞는 종목을 찾을까요?</p>
-              <textarea id="ts-input" class="ts-textarea" placeholder="예: RSI 30 이하이고 일봉 기준 강세 다이버전스가 발생한 종목 찾아줘"></textarea>
+              <textarea id="ts-input" class="ts-textarea" autocomplete="off" placeholder="예: RSI 30 이하이고 일봉 기준 강세 다이버전스가 발생한 종목 찾아줘"></textarea>
               <div class="ts-row-actions">
                 <button type="button" class="ts-btn" id="ts-search-btn">검색하기</button>
               </div>
@@ -628,6 +628,8 @@
           if (c.type === "gap") return c.direction === "down" ? "갭하락 발생" : "갭상승 발생";
           if (c.type === "consecutive_candles") return `${c.count || 3}일 연속 ${c.direction === "down" ? "음봉" : "양봉"}`;
           if (c.type === "high52w_near") return `52주 신고가 대비 ${c.withinPct || 5}% 이내 근접`;
+          if (c.type === "market_cap") return `시가총액 ${cmp(c.op)} ${c.value}억`;
+          if (c.type === "trading_value") return `거래대금 ${cmp(c.op)} ${c.value}억`;
           return c.type;
         }
 
@@ -926,6 +928,17 @@
           $("ts-content").classList.remove("ts-hidden");
           await loadStrategies();
         }
+
+        // 2026-07-19: 새로고침(특히 브라우저 bfcache로 뒤로가기/앞으로가기 복원 시)에도
+        // 이전 검색 결과·입력값이 그대로 남아있어서 "검색하기를 안 눌렀는데 이전 조건처럼
+        // 보인다"는 혼란이 있었다 — 페이지가 보여질 때마다(최초 로드 + bfcache 복원 모두)
+        // 검색창/결과를 항상 빈 상태로 되돌린다.
+        function resetSearchUiToPristine() {
+          $("ts-input").value = "";
+          resetResults();
+        }
+        window.addEventListener("pageshow", resetSearchUiToPristine);
+        resetSearchUiToPristine();
 
         checkGateAndInit();
         if (document.addEventListener) {

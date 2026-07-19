@@ -17,6 +17,7 @@ env:
   TZ: Asia/Seoul
   PROMO_CARD_THEME: light # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
   SLOT: closing
+  PROMO_FORCE_DATE: "2026-07-16" # TEMP TEST: 7/16 마감데이터 강제 지정, 검증 후 제거 예정
 
 jobs:
   render-and-publish:
@@ -44,14 +45,14 @@ jobs:
           TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
           DOW=$(TZ=Asia/Seoul date '+%u')  # 1=Mon ... 6=Sat, 7=Sun
 
-          if [ "$DOW" -ge 6 ]; then
+          if [ -z "${PROMO_FORCE_DATE:-}" ] && [ "$DOW" -ge 6 ]; then
             echo "::notice::주말(요일=${DOW}) — 발행 스킵"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           STAMP_FILE="generated/${SLOT}/last-published-date.txt"
-          if [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
+          if [ -z "${PROMO_FORCE_DATE:-}" ] && [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
             echo "::notice::오늘(${TODAY}) 이미 ${SLOT} 발행 완료 — 중복 실행 스킵"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -106,14 +107,14 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: false # TEMP TEST: disabled until rendered PNG is verified
         run: node scripts/instagram-card-post.mjs --slot=closing --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: false # TEMP TEST: disabled until rendered PNG is verified
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

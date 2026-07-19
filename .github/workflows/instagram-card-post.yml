@@ -106,14 +106,12 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
-        if: false # TEMP TEST: disabled until rendered PNG is verified
         run: node scripts/instagram-card-post.mjs --slot=closing --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: false # TEMP TEST: disabled until rendered PNG is verified
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -125,5 +123,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore(promo): mark ${SLOT} published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
-          git pull --rebase origin main
-          git push
+          git push origin HEAD:${GITHUB_REF_NAME}

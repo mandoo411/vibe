@@ -98,8 +98,7 @@ jobs:
           fi
           STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
           git commit -m "chore(promo): closing instagram cards ${STAMP}"
-          git pull --rebase origin main
-          git push
+          git push origin HEAD:${GITHUB_REF_NAME}
 
       # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
       - name: Wait for CDN

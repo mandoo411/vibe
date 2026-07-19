@@ -17,7 +17,6 @@ env:
   TZ: Asia/Seoul
   PROMO_CARD_THEME: light # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
   SLOT: closing
-  PROMO_FORCE_DATE: "2026-07-16" # TEMP TEST: 7/16 마감데이터 강제 지정, 검증 후 제거 예정
 
 jobs:
   render-and-publish:
@@ -106,12 +105,14 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: node scripts/instagram-card-post.mjs --slot=closing --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

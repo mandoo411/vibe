@@ -29,7 +29,7 @@ function ok() {
 }
 
 async function checkClosing() {
-  const today = seoulYmd();
+  const today = process.env.PROMO_FORCE_DATE || seoulYmd();
   let raw;
   try {
     raw = await readJson("./data/daily-market.json");
@@ -59,7 +59,7 @@ async function checkClosing() {
 }
 
 async function checkMorning() {
-  const today = seoulYmd();
+  const today = process.env.PROMO_FORCE_DATE || seoulYmd();
   let raw;
   try {
     raw = await readJson("./data/morning-briefing.json");

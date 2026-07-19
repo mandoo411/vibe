@@ -31,6 +31,7 @@ const {
   computeBollinger,
   computeStochastic,
   computeADX,
+  fetchMarketSnapshot,
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries } = require("../lib/trade-condition-eval.js");
 const STOCK_LIST = require("../assets/stock-list.json");
@@ -72,6 +73,7 @@ async function buildOne(stock) {
       const bollinger = computeBollinger(closes);
       const stochastic = computeStochastic(highs, lows, closes);
       const adx = computeADX(highs, lows, closes);
+      const market = await fetchMarketSnapshot(stock.code);
       const snapshot = buildSnapshotFromSeries({
         closes,
         highs,
@@ -85,6 +87,8 @@ async function buildOne(stock) {
         bollinger,
         stochastic,
         adx,
+        marketCapEok: market.marketCapEok,
+        tradingValueEok: market.tradingValueEok,
       });
 
       const n = closes.length;
@@ -93,13 +97,18 @@ async function buildOne(stock) {
       const changePct = prevClose ? Math.round(((close - prevClose) / prevClose) * 10000) / 100 : 0;
       const volume = volumes[n - 1] || 0;
 
+      const tradingValueWonAccurate =
+        market.tradingValueEok != null ? Math.round(market.tradingValueEok * 1e8) : null;
+
       return {
         code: stock.code,
         name: stock.name,
         market: stock.market,
         close,
         changePct,
-        tradingValue: Math.round(close * volume),
+        tradingValue: tradingValueWonAccurate != null ? tradingValueWonAccurate : Math.round(close * volume),
+        marketCapEok: market.marketCapEok,
+        tradingValueEok: market.tradingValueEok,
         snapshot,
       };
     } catch (error) {

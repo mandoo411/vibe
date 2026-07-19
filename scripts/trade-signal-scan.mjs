@@ -26,6 +26,7 @@ const {
   computeBollinger,
   computeStochastic,
   computeADX,
+  fetchMarketSnapshot,
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries, evaluateCondition } = require("../lib/trade-condition-eval.js");
 
@@ -108,7 +109,12 @@ async function buildSeriesForStock(stockCode) {
   const bollinger = computeBollinger(closes);
   const stochastic = computeStochastic(highs, lows, closes);
   const adx = computeADX(highs, lows, closes);
-  return { closes, highs, lows, volumes, ma, rsiSeries, divergence, candles, macd, bollinger, stochastic, adx };
+  const market = await fetchMarketSnapshot(stockCode);
+  return {
+    closes, highs, lows, volumes, ma, rsiSeries, divergence, candles, macd, bollinger, stochastic, adx,
+    marketCapEok: market.marketCapEok,
+    tradingValueEok: market.tradingValueEok,
+  };
 }
 
 function messageFor(strategy) {

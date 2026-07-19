@@ -106,14 +106,14 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
-        if: false # TEMP: 재검증 전까지 발행 비활성화
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: node scripts/instagram-card-post.mjs --slot=closing --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: false # TEMP: 재검증 전까지 비활성화
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

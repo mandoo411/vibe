@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 28824.25,
+        "close": 28823,
         "previousClose": 29790.25,
-        "changePct": -3.24,
-        "changePoints": -966
+        "changePct": -3.25,
+        "changePoints": -967.25
       },
       {
         "id": "korea-etf",
@@ -188,33 +188,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 84.03,
-        "changePct": 5.91,
-        "changePoints": 4.69
+        "price": 83.79,
+        "changePct": 5.61,
+        "changePoints": 4.45
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 3997.3,
-        "changePct": -1.57,
-        "changePoints": -63.8
+        "price": 3996.3,
+        "changePct": -1.6,
+        "changePoints": -64.8
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 56.05,
-        "changePct": -4.63,
-        "changePoints": -2.72
+        "price": 56.02,
+        "changePct": -4.68,
+        "changePoints": -2.75
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.27,
-        "changePct": -0.95,
-        "changePoints": -0.06
+        "price": 6.26,
+        "changePct": -1.11,
+        "changePoints": -0.07
       },
       {
         "id": "sox",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 64634,
+        "priceUsd": 64660,
         "changePct24h": -0.19,
-        "marketCapUsd": 1296056417955.35
+        "marketCapUsd": 1296979013004.93
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1868.49,
-        "changePct24h": 0.39,
-        "marketCapUsd": 225404906126.36
+        "priceUsd": 1869.56,
+        "changePct24h": 0.47,
+        "marketCapUsd": 225623470512.89
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 76.06,
-        "changePct24h": 0.84,
-        "marketCapUsd": 44308230236.5
+        "priceUsd": 76.34,
+        "changePct24h": 1.14,
+        "marketCapUsd": 44476459544.64
       }
     ]
   },
@@ -265,13 +265,6 @@
       "source": "매일경제",
       "publishedAt": "2026-07-19T19:50:00.000Z",
       "summary": "최근 한국 주식시장의 가장 뜨거운 화두 중 하나는 단연 SK하이닉스의 미국 나스닥 상장 소식이었습니다. 국내 투자자들에게 너무나 친숙한 대표 반도체 기업이 한국 코스피 시장을 넘어.."
-    },
-    {
-      "title": "먹잇감 된 노후대비 자금…예금 깨 투자했는데 ‘0원’",
-      "url": "https://www.mk.co.kr/news/society/12101969",
-      "source": "매일경제",
-      "publishedAt": "2026-07-19T11:55:48.000Z",
-      "summary": "평생 모은 자산이 ‘먹잇감’으로…고령층 사기 피해자 6만명지난해 2월, 60대 장 모씨는 안정적인 노후 소득을 약속하는 한 투자설명회를 방문했다가 노후 자산을 잃는 피해를 봤다. .."
     },
     {
       "title": "SK하이닉스, 미국선 잘나가는데 국내선 답답?…오히려 매수 신호[주末머니]",
@@ -391,6 +384,13 @@
       "source": "매일경제",
       "publishedAt": "2026-07-19T15:10:00.000Z",
       "summary": "⑩ 신성바이오팜연어 한 마리를 가공하고 나면 다양한 부산물이 남는다. 상품으로 팔리는 부분이 있는 반면 활용처를 찾지 못한 부산물은 처리 비용이 드는 골칫거리다. 강원도 바이오기업.."
+    },
+    {
+      "title": "“요즘 왜 게임 접속 안해?”…떠난 사람들 ‘이 앱’에 40시간 썼다",
+      "url": "https://www.mk.co.kr/news/it/12102008",
+      "source": "매일경제",
+      "publishedAt": "2026-07-19T15:02:10.000Z",
+      "summary": "3년새 게임 이용률 74%→50% 뚝 AI 캐릭터와 대화하는 ‘AI동반자’로 제타 앱 월평균 이용 40시간에 달해한국인의 게임 이용률이 3년 만에 74.4%에서 50.2%로 주저앉.."
     }
   ],
   "aiAnalysis": {

@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-19 06:47 KST",
-    "from": "2026-07-19",
-    "to": "2026-08-02",
-    "historyFrom": "2026-04-20",
+    "lastUpdatedKst": "2026-07-20 06:49 KST",
+    "from": "2026-07-20",
+    "to": "2026-08-03",
+    "historyFrom": "2026-04-21",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -45,183 +45,15 @@
       "unit": ""
     },
     {
-      "date": "2026-07-14",
-      "event": "Core CPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.2%",
-      "estimate": "0.2%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-14",
-      "event": "Core CPI y/y",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "2.9%",
-      "estimate": "2.8%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-14",
-      "event": "CPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.5%",
-      "estimate": "-0.1%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-14",
-      "event": "CPI y/y",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "4.2%",
-      "estimate": "3.8%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-14",
-      "event": "Fed Chairman Warsh Testifies",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-15",
-      "event": "Core PPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.4%",
-      "estimate": "0.3%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-15",
-      "event": "PPI m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "1.1%",
-      "estimate": "0.0%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-15",
-      "event": "Fed Chairman Warsh Testifies",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-16",
-      "event": "Core Retail Sales m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.8%",
-      "estimate": "0.0%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-16",
-      "event": "Philly Fed Manufacturing Index",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "10.3",
-      "estimate": "12.7",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-16",
-      "event": "Retail Sales m/m",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.9%",
-      "estimate": "0.2%",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-16",
+      "date": "2026-07-23",
       "event": "Unemployment Claims",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "215K",
-      "estimate": "216K",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-17",
-      "event": "President Trump Speaks",
-      "country": "US",
-      "time": "10:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-17",
-      "event": "Prelim UoM Consumer Sentiment",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "48.9",
-      "estimate": "51.0",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-17",
-      "event": "Prelim UoM Inflation Expectations",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "4.6%",
-      "estimate": "",
+      "previous": "208K",
+      "estimate": "211K",
       "unit": ""
     }
   ],
@@ -288,32 +120,39 @@
   ],
   "eventAnalysis": [
     {
+      "type": "macro",
+      "date": "2026-07-23",
+      "title": "실업수당 청구건수 (Unemployment Claims)",
+      "expected": "예측 211K / 이전 208K",
+      "analysis": "예상 상회 시 미국 경제의 회복세가 더욱 강화되며 증시가 긍정적인 반응을 보일 가능성이 높습니다. 반면 예상 하회 시 고용 시장의 둔화가 우려되며 증시가 부정적인 영향을 받을 수 있습니다."
+    },
+    {
       "type": "earnings",
       "date": "2026-07-23",
       "title": "신한지주 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 금융 섹터 전반에 긍정적인 영향을 미칠 수 있으며, 신한지주 주가 상승이 예상됩니다. 예상 하회 시 금융주 전반에 부정적인 신호로 작용할 수 있으며, 특히 신한지주와 유사한 비즈니스 모델을 가진 기업들이 영향을 받을 것입니다."
+      "analysis": "예상 상회 시 금융 섹터 전반에 긍정적인 영향을 미치며, 신한지주 주가 상승이 예상됩니다. 예상 하회 시 금융주 전반에 부정적인 영향을 미칠 수 있으며, KB금융 등 다른 금융주에도 악영향이 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-23",
       "title": "KB금융 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 KB금융의 주가는 상승할 가능성이 높으며, 금융 섹터 전반에 긍정적인 분위기를 조성할 것입니다. 예상 하회 시 주가 하락과 함께 경쟁 금융사에도 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 금융업계 전반에 긍정적인 신호로 작용하며, 특히 신한지주와 함께 주가 상승을 이끌 것으로 보입니다. 예상 하회 시 금융주 전반의 신뢰도 하락으로 이어질 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-29",
       "title": "SK하이닉스 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 섹터의 긍정적인 전망을 강화하며, SK하이닉스의 주가는 상승할 것으로 보입니다. 예상 하회 시 반도체 업계 전반에 부정적인 영향을 미치고, 경쟁사인 삼성전자에도 악영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 반도체 섹터의 긍정적인 전망을 강화하며, 관련 종목인 삼성전자에도 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 반도체 업계 전반에 부정적인 영향을 미치고, 주가 하락이 우려됩니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-30",
       "title": "삼성전자 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 삼성전자의 주가는 크게 상승할 것으로 예상되며, 반도체 및 전자기기 섹터 전반에 긍정적인 영향을 미칠 것입니다. 예상 하회 시 삼성전자 주가 하락과 함께 관련 업종의 부정적인 영향을 초래할 가능성이 있습니다."
+      "analysis": "예상 상회 시 삼성전자의 주가 상승과 함께 반도체 섹터 전체에 긍정적인 영향을 미칠 것으로 보입니다. 예상 하회 시 삼성전자의 실적 부진이 반도체 업계 전반에 부정적인 영향을 미칠 수 있습니다."
     }
   ]
 }

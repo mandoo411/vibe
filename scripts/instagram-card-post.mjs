@@ -62,11 +62,18 @@ async function buildCardDataForSlot(slot) {
     [...(snapshot.topGainers || []), ...(snapshot.topDecliners || [])].map((s) => [s.code, s.market])
   );
   const featuredAll = snapshot.featured_stocks || [];
-  const usedNames = new Set(featuredAll.map((s) => s.name));
-  const fillerAll = [...(snapshot.topGainers || []), ...(snapshot.topDecliners || [])]
-    .filter((s) => !usedNames.has(s.name))
-    .map((s) => ({ name: s.name, code: s.code, change: s.change, type: s.change >= 0 ? "급등" : "급락", reason: s.reason || s.theme || "" }));
-  const gainerSource = [...featuredAll, ...fillerAll].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+  // featured_stocks(에디터가 고른 실제 이슈 종목)만을 |등락률| 기준 내림차순 정렬해 상위 5개를 뽑는다.
+  // topGainers/topDecliners 원시 데이터는 상한가(30%) 무명 소형주가 섞여 있어 순위에 끼면 카드가 왜곡되므로,
+  // featured_stocks가 5개 미만일 때만 보충용으로 사용한다.
+  let gainerSource = [...featuredAll].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+  if (gainerSource.length < 5) {
+    const usedNames = new Set(featuredAll.map((s) => s.name));
+    const fillerAll = [...(snapshot.topGainers || []), ...(snapshot.topDecliners || [])]
+      .filter((s) => !usedNames.has(s.name))
+      .map((s) => ({ name: s.name, code: s.code, change: s.change, type: s.change >= 0 ? "급등" : "급락", reason: s.reason || s.theme || "" }))
+      .sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+    gainerSource = [...gainerSource, ...fillerAll];
+  }
   // 자연스러운 지점(공백/쉼표)에서 자르기 때문에 카드 안에서 문장이 중간에 끊기지 않는다.
   const trimReason = (s) => trimToNaturalBreak(s || "", 28);
   const gainers = gainerSource.slice(0, 5).map((g) => ({

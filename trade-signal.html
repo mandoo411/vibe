@@ -630,6 +630,10 @@
           if (c.type === "high52w_near") return `52주 신고가 대비 ${c.withinPct || 5}% 이내 근접`;
           if (c.type === "market_cap") return `시가총액 ${cmp(c.op)} ${c.value}억`;
           if (c.type === "trading_value") return `거래대금 ${cmp(c.op)} ${c.value}억`;
+          if (c.type === "period_return") {
+            const periodLabel = { 5: "1주", 21: "1개월", 63: "3개월", 126: "6개월", 252: "1년" }[c.days] || `${c.days}거래일`;
+            return `최근 ${periodLabel}간 등락률 ${cmp(c.op)} ${c.value}%`;
+          }
           return c.type;
         }
 
@@ -850,6 +854,9 @@
           "3일 연속 양봉인 종목 찾아줘",
           "52주 신고가 5% 이내로 근접한 종목 찾아줘",
           "RSI 강세 다이버전스가 발생한 종목 찾아줘",
+          "시가총액 1000억 이상이고 거래대금 50억 넘는 종목 찾아줘",
+          "5일선이 20일선 골든크로스한 종목 찾아줘",
+          "최근 3개월간 20% 이상 상승한 종목 찾아줘",
         ];
 
         function renderExampleChips() {

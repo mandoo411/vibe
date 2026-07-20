@@ -943,6 +943,7 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 }
 
 .tm-nav-sheet__cell {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -959,6 +960,20 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
+}
+
+.tm-nav-sheet__pro {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #d4af37 0%, #f5d576 100%);
+  color: #1a1305;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
 }
 
 button.tm-nav-sheet__cell {

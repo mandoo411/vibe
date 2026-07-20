@@ -570,14 +570,15 @@
         const p = pageById(id);
         if (!p) return "";
         const label = NAV_SHEET_LABELS[id] || p.label;
+        const proBadge = id === "signal" || id === "analysis" ? '<span class="tm-nav-sheet__pro">PRO</span>' : "";
         if (id === "analysis" && ANALYSIS_PAGE_LOCKED) {
           return (
             `<button type="button" class="tm-nav-sheet__cell home-nav__link--analysis-locked" data-tm-page="${p.id}" data-analysis-locked="1">` +
-            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span></button>`
+            `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span>${proBadge}</button>`
           );
         }
         return (
-          `<a class="tm-nav-sheet__cell" href="${p.href}" data-tm-page="${p.id}">` +
+          `<a class="tm-nav-sheet__cell" href="${p.href}" data-tm-page="${p.id}">${proBadge}` +
           `<i class="ti ${p.icon}" aria-hidden="true"></i><span>${label}</span></a>`
         );
       })

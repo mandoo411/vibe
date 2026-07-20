@@ -34,12 +34,12 @@
         padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
         padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
       }
-      .ts-masthead__desc {
+      .ts-intro {
         font-size: 13.5px;
-        color: rgba(255, 255, 255, 0.86);
-        margin: 6px 0 0;
-        max-width: 640px;
-        line-height: 1.55;
+        color: var(--text-secondary);
+        margin: 0 0 16px;
+        max-width: 720px;
+        line-height: 1.6;
       }
       .ts-card {
         background: var(--card-bg);
@@ -600,11 +600,11 @@
             <div class="masthead__copy">
               <p class="masthead__kicker">TRADE SIGNAL</p>
               <h1 class="masthead__title">매매시그널</h1>
-              <p class="ts-masthead__desc">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
             </div>
           </header>
 
           <div class="ts-body">
+          <p class="ts-intro">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
           <div id="ts-gate" class="ts-card ts-gate ts-hidden">
             <p class="ts-gate__title" id="ts-gate-title">Pro 전용 기능입니다</p>
             <p class="ts-gate__text" id="ts-gate-text">매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.</p>

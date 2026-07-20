@@ -41,29 +41,7 @@ jobs:
       - name: Check if should publish (weekend / dedup / data-ready)
         id: dupcheck
         run: |
-          set -euo pipefail
-          TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
-          DOW=$(TZ=Asia/Seoul date '+%u')  # 1=Mon ... 6=Sat, 7=Sun
-
-          if [ "$DOW" -ge 6 ]; then
-            echo "::notice::주말(요일=${DOW}) — 발행 스킵"
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          STAMP_FILE="generated/${SLOT}/last-published-date.txt"
-          if [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
-            echo "::notice::오늘(${TODAY}) 이미 ${SLOT} 발행 완료 — 중복 실행 스킵"
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if ! node scripts/check-promo-data-ready.mjs --slot="${SLOT}"; then
-            echo "::notice::오늘(${TODAY}) ${SLOT} 데이터 미준비(휴장일 등) — 발행 스킵"
-            echo "should_publish=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
+          echo "::notice::TEST BRANCH — dedup bypass for render-only verification"
           echo "should_publish=true" >> "$GITHUB_OUTPUT"
 
       - name: Install dependencies
@@ -105,14 +83,14 @@ jobs:
         run: sleep 20
 
       - name: Publish carousel via Meta Graph API
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: false
         run: node scripts/instagram-card-post.mjs --slot=morning --publish
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: false
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

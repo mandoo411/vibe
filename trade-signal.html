@@ -470,9 +470,27 @@
         border-top: 1px solid var(--border-color);
         padding-top: 12px;
       }
+      .ts-detail__chart-legend {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 8px;
+        font-size: 11px;
+        color: var(--text-secondary);
+      }
+      .ts-detail__chart-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .ts-detail__chart-legend-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
       .ts-detail__chart-host {
         width: 100%;
-        height: 220px;
+        height: 280px;
       }
       .ts-detail__chart-msg {
         font-size: 12px;
@@ -954,6 +972,12 @@
               <button type="button" class="ts-btn ts-btn--ghost" data-chart-toggle="${escapeHtml(code)}">차트 보기</button>
             </div>
             <div class="ts-detail__chart ts-hidden" data-chart-wrap="${escapeHtml(code)}">
+              <div class="ts-detail__chart-legend">
+                <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#FF0000"></i>20일</span>
+                <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#1E90FF"></i>60일</span>
+                <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#008000"></i>120일</span>
+                <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:currentColor"></i>200일</span>
+              </div>
               <p class="ts-detail__chart-msg" data-chart-msg="${escapeHtml(code)}">차트 불러오는 중…</p>
               <div class="ts-detail__chart-host" data-chart-host="${escapeHtml(code)}"></div>
             </div>`;
@@ -1002,11 +1026,12 @@
             if (!candles.length) throw new Error("차트 데이터가 없어요.");
 
             const LC = window.LightweightCharts;
+            const chartColors = tsLwChartColors();
             const chart = LC.createChart(host, {
               width: host.clientWidth || 300,
-              height: 220,
-              layout: { background: { color: "transparent" }, textColor: tsLwChartColors().text },
-              grid: { vertLines: { visible: false }, horzLines: { color: tsLwChartColors().grid } },
+              height: 280,
+              layout: { background: { color: "transparent" }, textColor: chartColors.text },
+              grid: { vertLines: { visible: false }, horzLines: { color: chartColors.grid } },
               rightPriceScale: { borderVisible: false },
               timeScale: { borderVisible: false },
             });
@@ -1014,14 +1039,34 @@
               upColor: "#e24b4a", downColor: "#2d7ff9",
               borderUpColor: "#e24b4a", borderDownColor: "#2d7ff9",
               wickUpColor: "#e24b4a", wickDownColor: "#2d7ff9",
+              priceScaleId: "right",
             });
+            candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
             candleSeries.setData(candles);
 
-            const maColors = { ma20: "#f0a500", ma60: "#8e5cf2", ma120: "#2d9e6f", ma200: "#888" };
+            const volumeSeries = chart.addHistogramSeries({
+              priceFormat: { type: "volume" },
+              priceScaleId: "ts-vol",
+            });
+            volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
+            volumeSeries.setData(
+              candles.map((c) => ({
+                time: c.time,
+                value: Number(c.volume) || 0,
+                color: c.close >= c.open ? "rgba(226,75,74,0.55)" : "rgba(45,127,249,0.55)",
+              }))
+            );
+
+            const ma200Color = chartColors.text;
+            const maColors = { ma20: "#FF0000", ma60: "#1E90FF", ma120: "#008000", ma200: ma200Color };
             for (const key of ["ma20", "ma60", "ma120", "ma200"]) {
               const series = data[key];
               if (!Array.isArray(series)) continue;
-              const lineSeries = chart.addLineSeries({ color: maColors[key], lineWidth: 1 });
+              const lineSeries = chart.addLineSeries({
+                color: maColors[key],
+                lineWidth: key === "ma200" ? 2 : 1,
+                priceScaleId: "right",
+              });
               const points = candles
                 .map((c, i) => (series[i] != null ? { time: c.time, value: series[i] } : null))
                 .filter(Boolean);

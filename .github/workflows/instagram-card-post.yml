@@ -17,6 +17,7 @@ env:
   TZ: Asia/Seoul
   PROMO_CARD_THEME: light # 사이트 기본 테마와 통일 (다크로 바꾸려면 'dark')
   SLOT: closing
+  PROMO_FORCE_DATE: "2026-07-16" # 7/16 게시물 정정 재발행용 임시 오버라이드 - 이 1회 실행 후 제거
 
 jobs:
   render-and-publish:
@@ -112,7 +113,7 @@ jobs:
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: false # 7/16 정정 재발행이 오늘(7/20) 실제 발행 기록을 오염시키지 않도록 임시 비활성화
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

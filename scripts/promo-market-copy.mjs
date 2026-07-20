@@ -86,14 +86,15 @@ export async function buildPromoCopy(snapshot) {
   const fallback = () => {
     // 커버 슬라이드(headline)는 화면에 이미 크게 표시되는 지수 등락률 숫자를 반복하지 않고,
     // "왜" 그렇게 움직였는지 원인을 담는다 (사용자 피드백 반영: 숫자 재언급 금지, 원인 코멘트 필수).
-    // 지수 결과 숫자 요약은 AI 판단 슬라이드(aiComment) 쪽에 배치한다.
+    // (aiComment 쪽 결과-숫자 요약 문장은 자연스러운 조기 종결점이 없어 110자 제한에서 어색하게
+    //  잘리므로, 검증 결과 그대로 두고 원인 코멘트를 재사용한다.)
     const flowComment = extractFlowCommentFallback(analysisText);
     const resultLine = extractHeadlineFallback(analysisText);
     const headline = flowComment || resultLine || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
     return {
       headline,
       summaryLines: buildFallbackSummaryLines(snapshot, analysisText),
-      aiComment: resultLine || flowComment || "",
+      aiComment: flowComment || resultLine || "",
       checkpoints: extractOutlookFallback(analysisText),
       stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
     };

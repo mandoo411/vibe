@@ -103,7 +103,7 @@ jobs:
       # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
       - name: Wait for CDN
         if: steps.dupcheck.outputs.should_publish == 'true'
-        run: sleep 20
+        run: sleep 60
 
       - name: Publish carousel via Meta Graph API
         if: steps.dupcheck.outputs.should_publish == 'true'

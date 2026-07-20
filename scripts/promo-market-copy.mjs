@@ -35,17 +35,26 @@ function extractOutlookFallback(analysisText) {
 }
 
 function extractInvestorFlowFallback(analysisText) {
-  const m = String(analysisText || "").match(/투자자별 매매 동향[^\n]*\n([\s\S]*?)(?:\n\n|🎯|$)/);
-  const block = m ? m[1] : "";
+  // 섹션 안에 [코스피]/[코스닥] 줄 사이사이 빈 줄이 끼어 있어 첫 "\n\n"에서 끊으면
+  // 정작 필요한 "핵심:" 줄에 도달하지 못한다. 다음 섹션(🎯) 시작 전까지 통째로 훑는다.
+  const text = String(analysisText || "");
+  const start = text.indexOf("투자자별 매매 동향");
+  if (start === -1) return "";
+  const nextSection = text.indexOf("🎯", start);
+  const block = nextSection === -1 ? text.slice(start) : text.slice(start, nextSection);
   const core = block.match(/핵심:\s*([^\n]+)/);
   return core ? summarizeToSentence(core[1].trim(), 32) : "";
 }
 
 function extractStrategyFallback(analysisText) {
-  const m = String(analysisText || "").match(/향후 전략 및 총평\s*\n([\s\S]*?)(?:\n\n|🔭|$)/);
-  const block = m ? m[1] : "";
+  const text = String(analysisText || "");
+  const start = text.indexOf("향후 전략 및 총평");
+  if (start === -1) return "";
+  const nextSection = text.indexOf("🔭", start);
+  const block = nextSection === -1 ? text.slice(start) : text.slice(start, nextSection);
   const line = block
     .split("\n")
+    .slice(1)
     .map((s) => s.trim())
     .find(Boolean) || "";
   return line ? summarizeToSentence(line, 32) : "";

@@ -26,9 +26,38 @@ function extractOutlookFallback(analysisText) {
   if (!m) return [];
   return m[1]
     .split("\n")
-    .map((s) => s.replace(/^-\s*/, "").trim())
+    .map((s) => s.replace(/^\d+\)\s*|^-\s*/, "").trim())
     .filter(Boolean)
+    // "내일 주목할 변수"는 불확실한 관전 포인트여야 한다. 증시 휴장 같은 단순 일정 공지는
+    // 변수가 아니므로 체크포인트에서 제외한다 (사용자 피드백: "휴장은 변수에 왜 쓰는거?").
+    .filter((s) => !/휴장|임시공휴일/.test(s))
     .slice(0, 3);
+}
+
+function extractInvestorFlowFallback(analysisText) {
+  // 섹션 안에 [코스피]/[코스닥] 줄 사이사이 빈 줄이 끼어 있어 첫 "\n\n"에서 끊으면
+  // 정작 필요한 "핵심:" 줄에 도달하지 못한다. 다음 섹션(🎯) 시작 전까지 통째로 훑는다.
+  const text = String(analysisText || "");
+  const start = text.indexOf("투자자별 매매 동향");
+  if (start === -1) return "";
+  const nextSection = text.indexOf("🎯", start);
+  const block = nextSection === -1 ? text.slice(start) : text.slice(start, nextSection);
+  const core = block.match(/핵심:\s*([^\n]+)/);
+  return core ? summarizeToSentence(core[1].trim(), 32) : "";
+}
+
+function extractStrategyFallback(analysisText) {
+  const text = String(analysisText || "");
+  const start = text.indexOf("향후 전략 및 총평");
+  if (start === -1) return "";
+  const nextSection = text.indexOf("🔭", start);
+  const block = nextSection === -1 ? text.slice(start) : text.slice(start, nextSection);
+  const line = block
+    .split("\n")
+    .slice(1)
+    .map((s) => s.trim())
+    .find(Boolean) || "";
+  return line ? summarizeToSentence(line, 32) : "";
 }
 
 function extractFlowCommentFallback(analysisText) {
@@ -61,10 +90,18 @@ function buildFallbackSummaryLines(snapshot, analysisText) {
   if (usdkrw?.rate) {
     lines.push(`원/달러 환율 ${Math.round(usdkrw.rate).toLocaleString()}원 기록`);
   }
-  const flow = extractFlowCommentFallback(analysisText);
-  if (flow) lines.push(flow);
-  const outlook = extractOutlookFallback(analysisText)[0];
-  if (outlook) lines.push(trimToNaturalBreak(outlook, 32));
+  // 커버(headline)·AI 판단(aiComment) 슬라이드가 이미 "왜 움직였는지" 원인을 다루므로,
+  // 시황 요약 슬라이드는 같은 문장을 복사하지 않고 수급 주체·전략 등 다른 포인트로 채운다
+  // (사용자 피드백: "전 페이지에 썼던 거 그대로 가져다 쓴다").
+  const investorFlow = extractInvestorFlowFallback(analysisText);
+  if (investorFlow) lines.push(investorFlow);
+  const strategy = extractStrategyFallback(analysisText);
+  if (strategy) lines.push(strategy);
+  // 수급/전략 섹션이 리포트에 없을 때만 최후 수단으로 원인 코멘트를 재사용한다
+  if (lines.length < 5) {
+    const flow = extractFlowCommentFallback(analysisText);
+    if (flow) lines.push(trimToNaturalBreak(flow, 32));
+  }
   return lines.slice(0, 5);
 }
 

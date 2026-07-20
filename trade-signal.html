@@ -23,36 +23,23 @@
     <script src="./assets/auth.js"></script>
     <link rel="stylesheet" href="./theme.css" />
     <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="./weekly-market.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
     <style>
-      .ts-page {
-        max-width: 880px;
-        margin: 0 auto;
-        padding: 24px 16px 48px;
-      }
-      .ts-masthead {
-        margin-bottom: 20px;
-      }
-      .ts-masthead__kicker {
-        font-size: 12px;
-        letter-spacing: 0.08em;
-        color: var(--text-muted-ui);
-        text-transform: uppercase;
-        margin: 0 0 4px;
-      }
-      .ts-masthead__title {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--text-title);
-        margin: 0;
+      .ts-body {
+        margin-top: 24px;
+        padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+        padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
       }
       .ts-masthead__desc {
         font-size: 13.5px;
-        color: var(--text-secondary);
+        color: rgba(255, 255, 255, 0.86);
         margin: 6px 0 0;
+        max-width: 640px;
+        line-height: 1.55;
       }
       .ts-card {
         background: var(--card-bg);
@@ -442,6 +429,7 @@
       .ts-detail__value--neg { color: #2d7ff9; }
       .ts-detail__actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
         margin-top: 12px;
       }
@@ -472,7 +460,8 @@
       }
       .ts-detail__chart-legend {
         display: flex;
-        gap: 12px;
+        flex-wrap: wrap;
+        gap: 8px 12px;
         margin-bottom: 8px;
         font-size: 11px;
         color: var(--text-secondary);
@@ -489,12 +478,53 @@
         border-radius: 50%;
       }
       .ts-detail__chart-host {
+        position: relative;
         width: 100%;
         height: 280px;
       }
       .ts-detail__chart-msg {
         font-size: 12px;
         color: var(--text-muted-ui);
+      }
+      .ts-chart-tooltip {
+        position: absolute;
+        z-index: 5;
+        left: 0;
+        top: 0;
+        display: none;
+        min-width: 140px;
+        max-width: min(240px, 90%);
+        padding: 8px 10px;
+        pointer-events: none;
+        background: var(--card-bg, #ffffff);
+        border: 1px solid var(--border-color, rgba(0,0,0,0.12));
+        border-radius: 8px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--text-primary);
+      }
+      .ts-chart-tooltip__dt {
+        margin: 0 0 6px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.08));
+        font-weight: 600;
+        color: var(--accent-brand, var(--accent-gold));
+      }
+      .ts-chart-tooltip__row {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 2px 0;
+      }
+      .ts-chart-tooltip__row span:first-child {
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }
+      .ts-chart-tooltip__row span:last-child {
+        color: var(--text-primary);
+        text-align: right;
+        font-variant-numeric: tabular-nums;
       }
       .ts-save-mini {
         padding: 6px 10px;
@@ -565,13 +595,16 @@
       </div>
 
       <main class="tm-main">
-        <div class="ts-page">
-          <header class="ts-masthead">
-            <p class="ts-masthead__kicker">TRADE SIGNAL</p>
-            <h1 class="ts-masthead__title">매매시그널</h1>
-            <p class="ts-masthead__desc">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
+        <div class="page">
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">TRADE SIGNAL</p>
+              <h1 class="masthead__title">매매시그널</h1>
+              <p class="ts-masthead__desc">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
+            </div>
           </header>
 
+          <div class="ts-body">
           <div id="ts-gate" class="ts-card ts-gate ts-hidden">
             <p class="ts-gate__title" id="ts-gate-title">Pro 전용 기능입니다</p>
             <p class="ts-gate__text" id="ts-gate-text">매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.</p>
@@ -613,6 +646,7 @@
               <div id="ts-event-list"><p class="ts-empty">불러오는 중…</p></div>
             </section>
           </div>
+          </div>
         </div>
       </main>
 
@@ -644,9 +678,9 @@
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동">
         <a class="tm-bottom-nav__item" href="./index.html" data-tm-tab="home"><i class="ti ti-home" aria-hidden="true"></i><span>홈</span></a>
         <a class="tm-bottom-nav__item" href="./realtime.html" data-tm-tab="realtime"><i class="ti ti-activity" aria-hidden="true"></i><span>실시간시세</span></a>
-        <a class="tm-bottom-nav__item" href="./trade-signal.html" data-tm-tab="trade-signal"><i class="ti ti-bell" aria-hidden="true"></i><span>매매시그널</span></a>
+        <a class="tm-bottom-nav__item tm-bottom-nav__item--pro" href="./trade-signal.html" data-tm-tab="trade-signal"><i class="ti ti-bell" aria-hidden="true"></i><span>매매시그널</span></a>
         <a class="tm-bottom-nav__item" href="./weekly-market.html" data-tm-tab="schedule"><i class="ti ti-calendar" aria-hidden="true"></i><span>일정</span></a>
-        <a class="tm-bottom-nav__item" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
+        <a class="tm-bottom-nav__item tm-bottom-nav__item--pro" href="./stock-analysis.html" data-tm-tab="analysis"><i class="ti ti-robot" aria-hidden="true"></i><span>AI분석</span></a>
       </nav>
     </div>
 
@@ -983,6 +1017,94 @@
             </div>`;
         }
 
+        const TS_WD_KO_SUN0 = ["일", "월", "화", "수", "목", "금", "토"];
+
+        function tsParseBusinessDay(time) {
+          if (time == null) return null;
+          if (typeof time === "string") {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(time).trim());
+            if (!m) return null;
+            return { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
+          }
+          if (typeof time === "object" && time.year != null && time.month != null && time.day != null) {
+            return { year: +time.year, month: +time.month, day: +time.day };
+          }
+          if (typeof time === "number" && Number.isFinite(time)) {
+            const d = new Date(time * 1000);
+            return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+          }
+          return null;
+        }
+
+        function tsChartTimeKey(time) {
+          const bd = tsParseBusinessDay(time);
+          if (!bd) return "";
+          return `${bd.year}-${String(bd.month).padStart(2, "0")}-${String(bd.day).padStart(2, "0")}`;
+        }
+
+        function tsFormatChartTimeKo(time) {
+          const bd = tsParseBusinessDay(time);
+          if (!bd) return "";
+          const { year, month, day } = bd;
+          const utc = Date.UTC(year, month - 1, day);
+          const dow = TS_WD_KO_SUN0[new Date(utc).getUTCDay()];
+          return `${year}년 ${month}월 ${day}일 (${dow})`;
+        }
+
+        function tsFmtChartPrice(n) {
+          if (n == null || !Number.isFinite(Number(n))) return "—";
+          return Number(n).toLocaleString("ko-KR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function tsFmtChartVol(n) {
+          if (n == null || !Number.isFinite(Number(n))) return "—";
+          return Math.round(Number(n)).toLocaleString("ko-KR");
+        }
+
+        function tsWireChartTooltip(host, chart, candles) {
+          let tip = host.querySelector(".ts-chart-tooltip");
+          if (!tip) {
+            tip = document.createElement("div");
+            tip.className = "ts-chart-tooltip";
+            tip.setAttribute("aria-hidden", "true");
+            host.appendChild(tip);
+          }
+          chart.subscribeCrosshairMove((param) => {
+            if (!param || param.time == null || !param.point || !candles.length) {
+              tip.style.display = "none";
+              return;
+            }
+            const tk = tsChartTimeKey(param.time);
+            const row = candles.find((r) => tsChartTimeKey(r.time) === tk);
+            if (!row || row.open == null) {
+              tip.style.display = "none";
+              return;
+            }
+            const dt = tsFormatChartTimeKo(param.time);
+            tip.innerHTML = [
+              `<div class="ts-chart-tooltip__dt">${escapeHtml(dt)}</div>`,
+              `<div class="ts-chart-tooltip__row"><span>시가</span><span>${escapeHtml(tsFmtChartPrice(row.open))}</span></div>`,
+              `<div class="ts-chart-tooltip__row"><span>고가</span><span>${escapeHtml(tsFmtChartPrice(row.high))}</span></div>`,
+              `<div class="ts-chart-tooltip__row"><span>저가</span><span>${escapeHtml(tsFmtChartPrice(row.low))}</span></div>`,
+              `<div class="ts-chart-tooltip__row"><span>종가</span><span>${escapeHtml(tsFmtChartPrice(row.close))}</span></div>`,
+              `<div class="ts-chart-tooltip__row"><span>거래량</span><span>${escapeHtml(tsFmtChartVol(row.volume))}</span></div>`,
+            ].join("");
+            tip.style.display = "block";
+            const hr = host.getBoundingClientRect();
+            const pad = 8;
+            let x = param.point.x + 14;
+            let y = param.point.y + 14;
+            tip.style.visibility = "hidden";
+            const tw = tip.offsetWidth || 150;
+            const th = tip.offsetHeight || 100;
+            tip.style.visibility = "visible";
+            if (x + tw + pad > hr.width) x = Math.max(pad, param.point.x - tw - 14);
+            if (y + th + pad > hr.height) y = Math.max(pad, param.point.y - th - 14);
+            tip.style.left = `${Math.max(pad, x)}px`;
+            tip.style.top = `${Math.max(pad, y)}px`;
+          });
+        }
+
         function tsLwChartColors() {
           const cs = getComputedStyle(document.documentElement);
           const pick = (name, fallback) => {
@@ -1040,6 +1162,8 @@
               borderUpColor: "#e24b4a", borderDownColor: "#2d7ff9",
               wickUpColor: "#e24b4a", wickDownColor: "#2d7ff9",
               priceScaleId: "right",
+              lastValueVisible: false,
+              priceLineVisible: false,
             });
             candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
             candleSeries.setData(candles);
@@ -1047,6 +1171,8 @@
             const volumeSeries = chart.addHistogramSeries({
               priceFormat: { type: "volume" },
               priceScaleId: "ts-vol",
+              lastValueVisible: false,
+              priceLineVisible: false,
             });
             volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
             volumeSeries.setData(
@@ -1066,6 +1192,9 @@
                 color: maColors[key],
                 lineWidth: key === "ma200" ? 2 : 1,
                 priceScaleId: "right",
+                lastValueVisible: false,
+                priceLineVisible: false,
+                crosshairMarkerVisible: false,
               });
               const points = candles
                 .map((c, i) => (series[i] != null ? { time: c.time, value: series[i] } : null))
@@ -1078,6 +1207,8 @@
               if (host.clientWidth > 0) chart.applyOptions({ width: host.clientWidth });
             });
             resizeObs.observe(host);
+
+            tsWireChartTooltip(host, chart, candles);
 
             if (msg) msg.remove();
             chartMountedCode.add(code);

@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-20 06:49 KST",
-    "from": "2026-07-20",
-    "to": "2026-08-03",
-    "historyFrom": "2026-04-21",
+    "lastUpdatedKst": "2026-07-21 06:58 KST",
+    "from": "2026-07-21",
+    "to": "2026-08-04",
+    "historyFrom": "2026-04-22",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -77,7 +77,7 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 2,
+      "evidenceCount": 5,
       "confirmed": false,
       "source": "manual"
     },
@@ -89,19 +89,31 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 2,
+      "evidenceCount": 6,
       "confirmed": false,
       "source": "manual"
     },
     {
-      "date": "2026-07-29",
+      "date": "2026-07-23",
+      "name": "삼성바이오로직스",
+      "sector": "바이오",
+      "code": "207940",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)",
+      "evidenceCount": 6,
+      "confirmed": false,
+      "source": "manual"
+    },
+    {
+      "date": "2026-07-24",
       "name": "SK하이닉스",
       "sector": "반도체",
       "code": "000660",
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 3,
+      "evidenceCount": 8,
       "confirmed": false,
       "source": "manual"
     },
@@ -113,7 +125,19 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 3,
+      "evidenceCount": 5,
+      "confirmed": false,
+      "source": "manual"
+    },
+    {
+      "date": "2026-07-31",
+      "name": "한화에어로스페이스",
+      "sector": "방산",
+      "code": "012450",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)",
+      "evidenceCount": 1,
       "confirmed": false,
       "source": "manual"
     }
@@ -122,37 +146,44 @@
     {
       "type": "macro",
       "date": "2026-07-23",
-      "title": "실업수당 청구건수 (Unemployment Claims)",
+      "title": "실업수당 청구건수",
       "expected": "예측 211K / 이전 208K",
-      "analysis": "예상 상회 시 미국 경제의 회복세가 더욱 강화되며 증시가 긍정적인 반응을 보일 가능성이 높습니다. 반면 예상 하회 시 고용 시장의 둔화가 우려되며 증시가 부정적인 영향을 받을 수 있습니다."
+      "analysis": "예상이 상회할 경우, 미국의 고용 시장이 더 견조하다는 신호로 해석되어 증시가 상승할 가능성이 높습니다. 반면 예상 하회 시, 고용 시장의 둔화 우려로 인해 증시가 하락하고, 안전 자산으로의 자금 이동이 발생할 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-23",
       "title": "신한지주 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 금융 섹터 전반에 긍정적인 영향을 미치며, 신한지주 주가 상승이 예상됩니다. 예상 하회 시 금융주 전반에 부정적인 영향을 미칠 수 있으며, KB금융 등 다른 금융주에도 악영향이 미칠 수 있습니다."
+      "analysis": "예상 상회 시, 금융 섹터 전반에 긍정적인 영향을 미치며, 특히 신한지주와 유사한 비즈니스 모델을 가진 기업들이 수혜를 받을 것입니다. 예상 하회 시, 금융주 전반에 부정적인 영향을 미치고, 특히 신한지주와 경쟁 관계에 있는 기업들의 주가가 하락할 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-23",
       "title": "KB금융 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 금융업계 전반에 긍정적인 신호로 작용하며, 특히 신한지주와 함께 주가 상승을 이끌 것으로 보입니다. 예상 하회 시 금융주 전반의 신뢰도 하락으로 이어질 수 있습니다."
+      "analysis": "예상 상회 시, KB금융의 긍정적인 실적이 금융 섹터의 신뢰도를 높이고, 다른 금융주에도 긍정적인 영향을 미칠 것입니다. 예상 하회 시, KB금융의 실적 부진이 금융주 전반에 부정적인 영향을 미치고, 특히 경쟁사들의 주가에도 악영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
-      "date": "2026-07-29",
+      "date": "2026-07-23",
+      "title": "삼성바이오로직스 실적발표",
+      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
+      "analysis": "예상 상회 시, 바이오 섹터의 긍정적인 신호로 작용하며, 삼성바이오로직스와 유사한 기업들이 수혜를 받을 것입니다. 예상 하회 시, 바이오 섹터 전반에 부정적인 영향을 미치고, 특히 삼성바이오로직스의 경쟁사들의 주가가 하락할 수 있습니다."
+    },
+    {
+      "type": "earnings",
+      "date": "2026-07-24",
       "title": "SK하이닉스 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 섹터의 긍정적인 전망을 강화하며, 관련 종목인 삼성전자에도 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 반도체 업계 전반에 부정적인 영향을 미치고, 주가 하락이 우려됩니다."
+      "analysis": "예상 상회 시, 반도체 섹터의 긍정적인 신호로 작용하며, SK하이닉스와 유사한 기업들이 수혜를 받을 것입니다. 예상 하회 시, 반도체 섹터 전반에 부정적인 영향을 미치고, 특히 SK하이닉스의 경쟁사들의 주가가 하락할 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-30",
       "title": "삼성전자 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 삼성전자의 주가 상승과 함께 반도체 섹터 전체에 긍정적인 영향을 미칠 것으로 보입니다. 예상 하회 시 삼성전자의 실적 부진이 반도체 업계 전반에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시, 반도체 및 전자기기 섹터에 긍정적인 영향을 미치며, 삼성전자의 실적이 다른 대기업에도 긍정적인 영향을 미칠 것입니다. 예상 하회 시, 삼성전자의 실적 부진이 반도체 및 전자기기 섹터 전반에 부정적인 영향을 미치고, 관련 기업들의 주가가 하락할 수 있습니다."
     }
   ]
 }

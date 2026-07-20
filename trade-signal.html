@@ -446,8 +446,24 @@
         margin-top: 12px;
       }
       .ts-detail__actions .ts-btn {
-        padding: 7px 12px;
-        font-size: 12px;
+        padding: 8px 14px;
+        font-size: 12.5px;
+        border-radius: 7px;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      }
+      .ts-detail__actions .ts-btn--ghost {
+        background: var(--card-bg, rgba(255,255,255,0.04));
+        border: 1.5px solid var(--accent-gold, var(--accent-brand));
+        color: var(--accent-gold, var(--accent-brand));
+        font-weight: 600;
+      }
+      .ts-detail__actions .ts-btn--ghost:hover {
+        background: var(--accent-gold, var(--accent-brand));
+        color: #1a1305;
+        transform: translateY(-1px);
+      }
+      .ts-detail__actions .ts-btn--ghost:active {
+        transform: translateY(0);
       }
       .ts-detail__chart {
         margin-top: 12px;
@@ -943,6 +959,21 @@
             </div>`;
         }
 
+        function tsLwChartColors() {
+          const cs = getComputedStyle(document.documentElement);
+          const pick = (name, fallback) => {
+            const v = cs.getPropertyValue(name).trim();
+            return v || fallback;
+          };
+          const isDark =
+            document.documentElement.getAttribute("data-theme") === "dark" ||
+            (document.body && document.body.classList.contains("dark"));
+          return {
+            text: pick("--text-muted-ui", isDark ? "#8a95a8" : "#555555"),
+            grid: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
+          };
+        }
+
         let lwChartsLoadPromise = null;
         function ensureLwCharts() {
           if (window.LightweightCharts) return Promise.resolve();
@@ -974,8 +1005,8 @@
             const chart = LC.createChart(host, {
               width: host.clientWidth || 300,
               height: 220,
-              layout: { background: { color: "transparent" }, textColor: "var(--text-muted-ui)" },
-              grid: { vertLines: { visible: false }, horzLines: { color: "rgba(128,128,128,0.12)" } },
+              layout: { background: { color: "transparent" }, textColor: tsLwChartColors().text },
+              grid: { vertLines: { visible: false }, horzLines: { color: tsLwChartColors().grid } },
               rightPriceScale: { borderVisible: false },
               timeScale: { borderVisible: false },
             });

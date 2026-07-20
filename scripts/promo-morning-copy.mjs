@@ -9,6 +9,17 @@
 import { readJson } from "./telegram-utils.mjs";
 import { summarizeToSentence } from "./promo-text-utils.mjs";
 
+// 조사/연결어미로 끝나면 문장이 안 끝난 것처럼 보인다 (마감 시황 코드와 동일한 안전장치).
+const DANGLING_ENDINGS = ["에서", "으로", "에", "로", "와", "과", "이", "가", "은", "는", "을", "를", "고", "며", "면서", "지만", "라서", "인데", "니까"];
+function looksComplete(text) {
+  const s = String(text || "").trim();
+  if (!s) return false;
+  if (/[.!?)"'」』%]$/.test(s)) return true;
+  if (/[다요임음함]$/.test(s)) return true;
+  if (DANGLING_ENDINGS.some((e) => s.endsWith(e))) return false;
+  return true;
+}
+
 const DATA_PATH = "./data/morning-briefing.json";
 const DAILY_MARKET_PATH = "./data/daily-market.json";
 
@@ -88,10 +99,34 @@ export async function buildMorningCardData(snapshot, { dateLabel, theme = "light
       pct: s.changePct,
     }));
 
+  const keyIssues = (ai.keyIssues || []).filter(Boolean);
+
   // keyIssues는 이미 완결된 짧은 문장으로 큐레이션돼 있어 헤드라인으로 쓰면 어중간하게 끊기지 않는다.
-  const headline = (ai.keyIssues || [])[0] ? summarizeToSentence(ai.keyIssues[0], 100) : summarizeToSentence(ai.summary, 100);
-  const aiComment = summarizeToSentence(ai.domesticImpact || ai.summary, 110);
-  const checkpoints = (ai.keyIssues || []).slice(0, 3);
+  // 다만 요약(summarizeToSentence)이 문장을 다시 자르면서 조사/어미로 끝나 미완성처럼 보일 수 있어,
+  // 마감 시황 카피와 동일한 looksComplete 안전장치로 한 번 더 걸러낸다.
+  const headlineCandidates = [
+    keyIssues[0] ? summarizeToSentence(keyIssues[0], 100) : "",
+    summarizeToSentence(ai.summary, 100),
+  ].filter(Boolean);
+  const headline = headlineCandidates.find(looksComplete) || headlineCandidates[0] || "오늘의 시장 요약";
+
+  // AI 판단(aiComment)이 커버(headline)와 같은 문장을 반복하지 않도록 domesticImpact → 다른 keyIssue → summary
+  // 순으로 후보를 두고, headline과 겹치거나(둘 다 summary로 떨어지는 경우) 문장이 안 끝난 것처럼 보이면 제외한다
+  // (마감 카드에서 실제로 발생했던 "1번 카드 4번 카드 내용 중복" 버그의 재발을 막기 위한 조치).
+  const aiCandidates = [
+    ai.domesticImpact ? summarizeToSentence(ai.domesticImpact, 110) : "",
+    keyIssues[1] ? summarizeToSentence(keyIssues[1], 110) : "",
+    summarizeToSentence(ai.summary, 110),
+  ].filter(Boolean);
+  const aiComment = aiCandidates.find((c) => c !== headline && looksComplete(c)) || "";
+
+  // 체크포인트가 헤드라인/AI 판단에 이미 쓴 keyIssue를 또 보여주지 않도록 뒤로 미루고, 문장이 안 끝난
+  // 것처럼 보이는 항목은 걸러낸다 (카드 간 내용 중복을 막기 위한 조치).
+  const usedInOtherCards = new Set([headline, aiComment].filter(Boolean));
+  const checkpointPool = keyIssues.length > 1 ? [...keyIssues.slice(1), keyIssues[0]] : keyIssues;
+  const checkpoints = checkpointPool
+    .filter((c) => looksComplete(c) && !usedInOtherCards.has(summarizeToSentence(c, 110)) && c !== aiComment)
+    .slice(0, 3);
 
   return {
     date: dateLabel,

@@ -35,18 +35,18 @@ function extractOutlookFallback(analysisText) {
 }
 
 function extractInvestorFlowFallback(analysisText) {
-  // 섹션 안에 [코스피]/[코스닥] 줄 사이사이 빈 줄이 끼어 있어 첫 "\n\n"에서 끊으면
-  // 정작 필요한 "핵심:" 줄에 도달하지 못한다. 다음 섹션(🎯) 시작 전까지 통째로 훑는다.
+  // "핵심:" 서술형 문장을 32자로 자르면 "동반 매도에"처럼 조사/어미에서 끊겨 문장이
+  // 안 끝난 것처럼 보인다 (사용자 피드백: "문장이 마무리 안됨"). 대신 숫자+괄호로 그 자체가
+  // 완결되는 구조화된 수급 데이터 줄([코스피] 외국인 .../ 기관 ...)을 그대로 사용한다.
   const text = String(analysisText || "");
-  const start = text.indexOf("투자자별 매매 동향");
-  if (start === -1) return "";
-  const nextSection = text.indexOf("🎯", start);
-  const block = nextSection === -1 ? text.slice(start) : text.slice(start, nextSection);
-  const core = block.match(/핵심:\s*([^\n]+)/);
-  return core ? summarizeToSentence(core[1].trim(), 32) : "";
+  const m = text.match(/\[코스피\]\s*([^\n]+)/);
+  if (!m) return "";
+  const parts = m[1].split("/").map((s) => s.trim()).filter(Boolean);
+  const picked = parts.slice(0, 2).join(" / ");
+  return picked ? `코스피 수급 ${picked}` : "";
 }
 
-function extractStrategyFallback(analysisText) {
+function extractStrategyFallback(analysisText, maxLen = 110) {
   const text = String(analysisText || "");
   const start = text.indexOf("향후 전략 및 총평");
   if (start === -1) return "";
@@ -57,7 +57,19 @@ function extractStrategyFallback(analysisText) {
     .slice(1)
     .map((s) => s.trim())
     .find(Boolean) || "";
-  return line ? summarizeToSentence(line, 32) : "";
+  return line ? summarizeToSentence(line, maxLen) : "";
+}
+
+// 조사/연결어미로 끝나면 문장이 안 끝난 것처럼 보인다 (사용자 피드백: "동반 매도에... 폭락하며..
+// 이렇게 문장이 마무리 안됨"). 억지로 자른 문구가 이런 꼴이면 아예 후보에서 제외한다.
+const DANGLING_ENDINGS = ["에서", "으로", "에", "로", "와", "과", "이", "가", "은", "는", "을", "를", "고", "며", "면서", "지만", "라서", "인데", "니까"];
+function looksComplete(text) {
+  const s = String(text || "").trim();
+  if (!s) return false;
+  if (/[.!?)"'」』%]$/.test(s)) return true;
+  if (/[다요임음함]$/.test(s)) return true;
+  if (DANGLING_ENDINGS.some((e) => s.endsWith(e))) return false;
+  return true;
 }
 
 function extractFlowCommentFallback(analysisText) {
@@ -90,18 +102,13 @@ function buildFallbackSummaryLines(snapshot, analysisText) {
   if (usdkrw?.rate) {
     lines.push(`원/달러 환율 ${Math.round(usdkrw.rate).toLocaleString()}원 기록`);
   }
-  // 커버(headline)·AI 판단(aiComment) 슬라이드가 이미 "왜 움직였는지" 원인을 다루므로,
-  // 시황 요약 슬라이드는 같은 문장을 복사하지 않고 수급 주체·전략 등 다른 포인트로 채운다
-  // (사용자 피드백: "전 페이지에 썼던 거 그대로 가져다 쓴다").
+  // 커버(headline)·AI 판단(aiComment) 슬라이드가 이미 "왜 움직였는지" 원인/전략을 다루므로,
+  // 시황 요약 슬라이드는 같은 문장을 복사하지 않고 수급 주체라는 새로운 포인트만 추가한다.
+  // (전략 코멘트는 aiComment가 전담 — 여기서도 쓰면 슬라이드 2·4가 또 겹친다.)
+  // 문장이 어중간하게 잘려 미완성처럼 보이면(looksComplete 실패) 억지로 넣지 않고 생략한다
+  // (사용자 피드백: "전 페이지에 썼던 거 그대로 가져다 쓴다", "문장이 마무리 안됨").
   const investorFlow = extractInvestorFlowFallback(analysisText);
-  if (investorFlow) lines.push(investorFlow);
-  const strategy = extractStrategyFallback(analysisText);
-  if (strategy) lines.push(strategy);
-  // 수급/전략 섹션이 리포트에 없을 때만 최후 수단으로 원인 코멘트를 재사용한다
-  if (lines.length < 5) {
-    const flow = extractFlowCommentFallback(analysisText);
-    if (flow) lines.push(trimToNaturalBreak(flow, 32));
-  }
+  if (investorFlow && looksComplete(investorFlow)) lines.push(investorFlow);
   return lines.slice(0, 5);
 }
 
@@ -123,15 +130,19 @@ export async function buildPromoCopy(snapshot) {
   const fallback = () => {
     // 커버 슬라이드(headline)는 화면에 이미 크게 표시되는 지수 등락률 숫자를 반복하지 않고,
     // "왜" 그렇게 움직였는지 원인을 담는다 (사용자 피드백 반영: 숫자 재언급 금지, 원인 코멘트 필수).
-    // (aiComment 쪽 결과-숫자 요약 문장은 자연스러운 조기 종결점이 없어 110자 제한에서 어색하게
-    //  잘리므로, 검증 결과 그대로 두고 원인 코멘트를 재사용한다.)
     const flowComment = extractFlowCommentFallback(analysisText);
     const resultLine = extractHeadlineFallback(analysisText);
+    const strategyComment = extractStrategyFallback(analysisText, 110);
     const headline = flowComment || resultLine || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
+    // AI 판단(aiComment)이 커버(headline)와 똑같은 문장을 반복하지 않도록 한다
+    // (사용자 피드백: "1번 카드 4번 카드 내용 중복"). 대체 후보도 억지로 잘라 문장이
+    // 안 끝난 것처럼 보이면(looksComplete 실패) 걸러내고, 마땅한 후보가 없으면 비워둔다.
+    const aiCandidates = [strategyComment, resultLine, flowComment];
+    const aiComment = aiCandidates.find((c) => c && c !== headline && looksComplete(c)) || "";
     return {
       headline,
       summaryLines: buildFallbackSummaryLines(snapshot, analysisText),
-      aiComment: flowComment || resultLine || "",
+      aiComment,
       checkpoints: extractOutlookFallback(analysisText),
       stockReasons: Object.fromEntries(gainers.map((g) => [g.name, g.reason || g.theme || "상승률 상위"])),
     };

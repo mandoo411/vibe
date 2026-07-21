@@ -1141,10 +1141,17 @@
           if (!host) return;
           try {
             await ensureLwCharts();
-            const res = await fetch(`/api/kis-realtime-data?action=candle&code=${encodeURIComponent(code)}&period=D`, { cache: "no-store" });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            const candles = Array.isArray(data.candles) ? data.candles : [];
+            let data = null;
+            let candles = [];
+            const maxAttempts = 2;
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              const res = await fetch(`/api/kis-realtime-data?action=candle&code=${encodeURIComponent(code)}&period=D`, { cache: "no-store" });
+              data = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+              candles = Array.isArray(data.candles) ? data.candles : [];
+              if (candles.length) break;
+              if (attempt < maxAttempts) await new Promise((r) => setTimeout(r, 500));
+            }
             if (!candles.length) throw new Error("차트 데이터가 없어요.");
 
             const LC = window.LightweightCharts;

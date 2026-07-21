@@ -1161,6 +1161,19 @@
     const candle = addCandleSeries(LC, chartCandle);
     const vol = addVolSeries(LC, chartVol);
     if (!candle || !vol) throw new Error("차트 시리즈를 초기화하지 못했습니다.");
+    /* 2026-07-20: 기본 scaleMargins(top:0.2/bottom:0.1)이 각 패널 안에 캔들/거래량
+       봉이 위아래로 붕 뜨게 만들어 두 패널 사이가 넓어 보이는 문제 -> 여백을 좁혀
+       캔들 영역이 패널을 더 채우도록 함. */
+    try {
+      candle.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.06 } });
+    } catch (e) {
+      /* noop */
+    }
+    try {
+      vol.priceScale().applyOptions({ scaleMargins: { top: 0.15, bottom: 0 } });
+    } catch (e) {
+      /* noop */
+    }
     const maSeries = addMaLineSeries(LC, chartCandle);
     linkLogicalRangeSync(chartCandle, chartVol);
     syncLwDualChartAxes(chartCandle, chartVol);
@@ -2745,23 +2758,39 @@
         bundle.fullCandles = applyLwChartSeriesData(bundle, cachedEntry.candles, barsLimit, cachedEntry.maData);
         panes.dataset.mountedKey = mountKey;
       } else {
-        const ctrl = new AbortController();
-        const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
-        try {
-          const res = await fetch(
-            `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodKey)}`,
-            { cache: "no-store", signal: ctrl.signal }
-          );
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-          const candles = Array.isArray(data.candles) ? data.candles : [];
-          if (!candles.length) throw new Error("차트 데이터가 없습니다.");
-          const maData = { ma20: data.ma20, ma60: data.ma60, ma120: data.ma120, ma200: data.ma200 };
-          bundle.fullCandles = applyLwChartSeriesData(bundle, candles, barsLimit, maData);
-          writeChartCandleCache(code6, periodKey, candles, maData);
-          panes.dataset.mountedKey = mountKey;
-        } finally {
-          clearTimeout(tid);
+        /* 2026-07-20: KIS 캔들 프록시가 콜드 상태에서 간헐적으로 candles: []를 반환하는
+           레이스가 있어(직후 재시도하면 정상 데이터가 옴), 자동으로 한 번 더 시도한다 —
+           수동으로 "차트 닫기 → 차트 보기"를 다시 누르면 되던 걸 자동화. */
+        const maxAttempts = 2;
+        let lastEmptyErr = null;
+        let done = false;
+        for (let attempt = 1; attempt <= maxAttempts && !done; attempt++) {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), CHART_FETCH_TIMEOUT_MS);
+          try {
+            const res = await fetch(
+              `${API}?action=candle&code=${encodeURIComponent(code6)}&period=${encodeURIComponent(periodKey)}`,
+              { cache: "no-store", signal: ctrl.signal }
+            );
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            const candles = Array.isArray(data.candles) ? data.candles : [];
+            if (!candles.length) {
+              lastEmptyErr = new Error("차트 데이터가 없습니다.");
+              if (attempt < maxAttempts) {
+                await new Promise((r) => setTimeout(r, 500));
+                continue;
+              }
+              throw lastEmptyErr;
+            }
+            const maData = { ma20: data.ma20, ma60: data.ma60, ma120: data.ma120, ma200: data.ma200 };
+            bundle.fullCandles = applyLwChartSeriesData(bundle, candles, barsLimit, maData);
+            writeChartCandleCache(code6, periodKey, candles, maData);
+            panes.dataset.mountedKey = mountKey;
+            done = true;
+          } finally {
+            clearTimeout(tid);
+          }
         }
       }
     } catch (e) {

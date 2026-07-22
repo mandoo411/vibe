@@ -24,10 +24,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29077.5,
+        "close": 29032.5,
         "previousClose": 28773.25,
-        "changePct": 1.06,
-        "changePoints": 304.25
+        "changePct": 0.9,
+        "changePoints": 259.25
       },
       {
         "id": "korea-etf",
@@ -43,63 +43,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 325.46,
-      "changePct": -0.7,
-      "changePoints": 2.28
+      "price": 325.56,
+      "changePct": -0.67,
+      "changePoints": 2.18
     },
     {
       "symbol": "MSFT",
-      "price": 386.82,
-      "changePct": -2.75,
-      "changePoints": 10.93
+      "price": 387.5,
+      "changePct": -2.58,
+      "changePoints": 10.25
     },
     {
       "symbol": "NVDA",
-      "price": 211.19,
-      "changePct": 1.88,
-      "changePoints": 3.9
+      "price": 210.96,
+      "changePct": 1.77,
+      "changePoints": 3.67
     },
     {
       "symbol": "AMZN",
-      "price": 240.76,
-      "changePct": -2.74,
-      "changePoints": 6.79
+      "price": 241.63,
+      "changePct": -2.39,
+      "changePoints": 5.92
     },
     {
       "symbol": "META",
-      "price": 620.8,
-      "changePct": -3.57,
-      "changePoints": 23.01
+      "price": 619,
+      "changePct": -3.85,
+      "changePoints": 24.81
     },
     {
       "symbol": "TSLA",
-      "price": 358.7,
-      "changePct": -5.34,
-      "changePoints": 20.23
+      "price": 357.77,
+      "changePct": -5.58,
+      "changePoints": 21.16
     },
     {
       "symbol": "GOOGL",
-      "price": 331.44,
-      "changePct": -4.53,
-      "changePoints": 15.71
+      "price": 329.68,
+      "changePct": -5.03,
+      "changePoints": 17.47
     },
     {
       "symbol": "AMD",
-      "price": 549.94,
-      "changePct": 1.01,
-      "changePoints": 5.51
+      "price": 549.99,
+      "changePct": 1.02,
+      "changePoints": 5.56
     },
     {
       "symbol": "PLTR",
-      "price": 125,
-      "changePct": -5.77,
-      "changePoints": 7.66
+      "price": 125.15,
+      "changePct": -5.66,
+      "changePoints": 7.51
     },
     {
       "symbol": "COIN",
-      "price": 166.97,
-      "changePct": -5.05,
-      "changePoints": 8.88
+      "price": 166.69,
+      "changePct": -5.21,
+      "changePoints": 9.16
     }
   ],
   "sectors": [
@@ -188,33 +188,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 87.91,
-        "changePct": 6.57,
-        "changePoints": 5.42
+        "price": 87.96,
+        "changePct": 6.63,
+        "changePoints": 5.47
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4126.7,
-        "changePct": 2.84,
-        "changePoints": 114
+        "price": 4121,
+        "changePct": 2.7,
+        "changePoints": 108.3
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 59.67,
-        "changePct": 6.48,
-        "changePoints": 3.63
+        "price": 59.7,
+        "changePct": 6.53,
+        "changePoints": 3.66
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.48,
-        "changePct": 4.18,
-        "changePoints": 0.26
+        "price": 6.47,
+        "changePct": 4.02,
+        "changePoints": 0.25
       },
       {
         "id": "sox",
@@ -231,23 +231,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 65993,
-        "changePct24h": -0.35,
-        "marketCapUsd": 1323817339258.12
+        "priceUsd": 65838,
+        "changePct24h": -0.67,
+        "marketCapUsd": 1320913614798.13
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1935.66,
-        "changePct24h": 0.93,
-        "marketCapUsd": 233683081922.01
+        "priceUsd": 1924.03,
+        "changePct24h": 0.29,
+        "marketCapUsd": 232221575278.88
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 77.93,
-        "changePct24h": 0.02,
-        "marketCapUsd": 45432663782.33
+        "priceUsd": 77.58,
+        "changePct24h": -0.29,
+        "marketCapUsd": 45227564942.77
       }
     ]
   },
@@ -295,6 +295,34 @@
       "summary": "박천휴 작가, 갤럭시 언팩 ‘크리에이티브 파트너’ 참여 발표세션 전체 내러티브 설계…서사 필름·무대 연출도 아이디어 삼성 “차갑게 느껴지는 AI, 사람의 일상 언어로 옮겼다”신제품.."
     },
     {
+      "title": "[클릭e종목]\"AI 관련 수익화 주목…LG유플러스, 32% 상승여력\"",
+      "url": "https://view.asiae.co.kr/article/2026072215191186941",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T10:00:00.000Z",
+      "summary": "미래에셋증권은 23일 LG유플러스에 대해 인공지능(AI) 서비스 수익화와 데이터센터 확장을 근거로 목표주가 1만9000원과 투자의견 '매수'를 유지했다. 21일 종가(1만4400원) 대비 31.9%의 상승 여력이 있다는 분석이다. 최유진 미래에셋증권 연구원은 LG유플러스의 2분기 매출액 3조9000억원(전분기 대비 1.6%, 전년 동기 대비 0.5% 증가), 영업이익 3403억원(전분기 대비 25.0%, 전년 동기 대비 11.7% 증가)으로 추정했다. 영업이"
+    },
+    {
+      "title": "SK스퀘어, 자사주 430억원 소각…\"주주가치 제고\"",
+      "url": "https://view.asiae.co.kr/article/2026072218175965559",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T09:17:59.000Z",
+      "summary": "SK스퀘어는 430억원 규모 자사주 3만4천388주를 소각하기로 이사회에서 의결했다고 22일 공시했다. 소각 예정인 주식은 전체 발행 주식의 0.026%에 해당한다. 소각일은 오는 31일이다. 회사는 \"본 주식소각은 이사회의 결의에 의해 배당가능이익 범위 내에서 취득한 자기주식을 소각하는 것\"이라며 \"발행주식총수는 감소하나, 자본금의 감소는 없다\"고 설명했다."
+    },
+    {
+      "title": "[클릭 e종목]\"하나머티리얼즈, 계단식 성장 예상…목표가↑\"",
+      "url": "https://view.asiae.co.kr/article/2026072215490961613",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T09:15:00.000Z",
+      "summary": "신한투자증권은 22일 하나머티리얼즈의 목표주가를 기존 5만8000원에서 8만3000원으로 상향하고 투자의견 '매수'를 유지했다. 2분기 주목할만한 국내 대표 부품 업체로 꼽기도 했다. 오강호 신한투자증권 연구원은 하나머티리얼즈에 대해 \"반도체 업황 개선으로 핵심 부품인 SiC, 링 등 수요 증가로 연결됐으며, 1분기 고성장에 성공하며 실적을 입증했다\"며 \"계산식 성장 구간에 진입할 것으로 예상한다\"며 이같이 밝혔다. 목표주"
+    },
+    {
+      "title": "\"AI 효율화의 역설…SK하이닉스 메모리 더 찾는다\"[클릭 e종목]",
+      "url": "https://view.asiae.co.kr/article/2026072215062906416",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T09:08:00.000Z",
+      "summary": "AI(인공지능) 모델의 효율성 개선이 오히려 메모리 반도체 수요를 폭발적으로 늘려 SK하이닉스의 장기 성장을 이끌 것이란 증권가 분석이 나왔다.B2B 매출 비중 확대…실적 안정성 강화22일 김동원 KB증권 연구원은 SK하이닉스에 대해 \"AI 모델과 반도체 효율 개선은 AI 투자 축소 요인이 아니라 서비스 가격 하락과 사용처 확대를 통해 메모리 수요를 더욱 자극하는 계기가 될 것\"이라며 투자의견 매수와 목표주가 420만원을 유지"
+    },
+    {
       "title": "[표] 외국환율고시표",
       "url": "https://www.mk.co.kr/news/economy/12104734",
       "source": "매일경제 증권",
@@ -337,6 +365,20 @@
       "summary": "'조사 전문가' 임광현 국세청장이 이끈 지난 1년간의 국세청은 한마디로 '세무조사의 유연화'로 요약된다. 과거 국세청은 '철저한 징수기관' 혹은 '기업의 저승사자'로 각인돼 왔으나.."
     },
     {
+      "title": "SK하이닉스, 청주 P&T7 생산시설에 7조931억원 투자",
+      "url": "https://view.asiae.co.kr/article/2026072217302855976",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T08:30:28.000Z",
+      "summary": "SK하이닉스는 글로벌 인공지능(AI) 메모리 수요 확대에 대응하기 위해 청주 P&T7 생산시설 건설에 7조931억원을 신규 투자하기로 결정했다고 22일 공시했다. 이번 투자는 기존 청주 P&T7 건설 계획에 클린룸 오픈 일정 등을 반영해 건설 투자 규모를 증액한 것으로, 투자 기간은 2025년 11월부터 2032년 12월까지다."
+    },
+    {
+      "title": "[클릭 e종목]신작 지연에도 모멘텀은 풍부한 'NC'",
+      "url": "https://view.asiae.co.kr/article/2026072215395064749",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-07-22T08:07:00.000Z",
+      "summary": "삼성증권은 22일 NC에 대해 일부 신작 지연에도 모멘텀은 풍부하다면서 투자의견 '매수'를 유지했다. 다만 실적 전망치 하향을 반영해 목표주가를 기존 35만원에서 29만원으로 내렸다. 오동환 삼성증권 연구원은 \"리니지 클래식 매출 호조로 2분기 NC의 매출은 전분기 대비 26.6% 증가한 7055억원을 기록하며 컨센서스를 7.2% 상회할 것\"이라며 \"영업이익은 매출 증가로 전분기 대비 16.6% 증가한 1321억원을 기록해 컨센서스에 부"
+    },
+    {
       "title": "[포토] \"꿈 잃지말렴\"… 하나금융, 학교 밖 청소년 장학금",
       "url": "https://www.mk.co.kr/news/economy/12104575",
       "source": "매일경제 증권",
@@ -349,48 +391,6 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-07-22T07:51:50.000Z",
       "summary": "가계 순자산 9% 늘어 1경4200조지난해 집값과 국내외 증시가 함께 오르면서 1인당 가계 순자산이 2억7475만원으로 9.1% 증가했다. 가계 전체 순자산도 9.0% 늘면서 20.."
-    },
-    {
-      "title": "“생활비 부담에 이사갔는데” … 이제 미국에 낙원은 없다",
-      "url": "https://www.mk.co.kr/news/world/12104462",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T20:07:00.000Z",
-      "summary": "집값 상승이 만든 신조어 Californication의 의미43세 미국인 테리 길리엄 씨는 샌프란시스코 베이 에어리어(Bay Area)에서 35년을 살았습니다. 그런데 2021년 .."
-    },
-    {
-      "title": "23일/임산부는 앞으로 이 나라 여행, 못 간다고?",
-      "url": "https://www.mk.co.kr/news/culture/12103712",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T20:00:00.000Z",
-      "summary": "딩동. 여행컬리 새벽배송 왔습니다. 이번 주 신선한 여행소식, 산지직송으로 보내드립니다. 1. 모닝 ‘여행혈당’ 체크 : 여행 혈당스파이크 주의보 * 인생샷 찍으려다 추락사…2주 .."
-    },
-    {
-      "title": "“비둘기가 너무 좋은데 저만 이상한가요” … 평화의 상징이 만든 역사",
-      "url": "https://www.mk.co.kr/news/culture/12104472",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T20:00:00.000Z",
-      "summary": "콜럼버, 비둘기파의 어원물도, 먹거리도, 희망도, 사랑도 사라진 절망의 나날. 40일 밤낮으로 퍼붓는 비 때문이었다. 거친 비에 생각도 함께 젖어버렸다. 모든 게 끝났다는 실의가 .."
-    },
-    {
-      "title": "트럼프 “홍해 막으면 어찌될지 두고봐라”…후티반군에 경고메시지",
-      "url": "https://www.mk.co.kr/news/world/12104907",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T14:48:36.000Z",
-      "summary": "이란, 핵시설 공격시 대응경고 亞 정유사, 수에즈 우회타진 미군 11일째 이란 공습단행도널드 트럼프 미국 대통령이 예멘의 친이란 무장세력 후티 반군의 홍해 봉쇄 선언과 관련해 “그.."
-    },
-    {
-      "title": "MBN, 방미통위 방송평가서 종편 1위",
-      "url": "https://www.mk.co.kr/news/it/12104904",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T14:11:38.000Z",
-      "summary": "MBN이 방송미디어통신위원회의 2024년도 방송평가에서 종합편성채널 가운데 가장 높은 점수를 받으며 1위에 올랐다. 방미통위는 22일 '2026년 제24차 전체회의'를 열고 153.."
-    },
-    {
-      "title": "“아저씨 다리털 보기 싫어”…반바지 출근에 뒤집힌 일본",
-      "url": "https://www.mk.co.kr/news/world/12104902",
-      "source": "매일경제",
-      "publishedAt": "2026-07-22T14:02:06.000Z",
-      "summary": "일본이 기록적인 무더위로 직장인 복장 규제를 완화하는 정책을 시행한 가운데, 예상치 못했던 논쟁이 벌어지고 있다. 남성의 다리털 노출이 불쾌하다는 불만부터 여성만 스타킹 착용을 강.."
     }
   ],
   "aiAnalysis": {

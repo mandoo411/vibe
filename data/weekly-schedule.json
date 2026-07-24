@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-24 07:02 KST",
-    "from": "2026-07-24",
-    "to": "2026-08-07",
-    "historyFrom": "2026-04-25",
+    "lastUpdatedKst": "2026-07-25 07:03 KST",
+    "from": "2026-07-25",
+    "to": "2026-08-08",
+    "historyFrom": "2026-04-26",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -67,88 +67,22 @@
       "previous": "208K",
       "estimate": "211K",
       "unit": ""
-    }
-  ],
-  "krIPO": [
+    },
     {
-      "date": "2026-07-24",
-      "name": "에이치엘지노믹스",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2301",
-      "code": ""
+      "date": "2026-07-25",
+      "event": "President Trump Speaks",
+      "country": "US",
+      "time": "09:55",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
     }
   ],
+  "krIPO": [],
   "krEarnings": [
-    {
-      "date": "2026-07-23",
-      "name": "현대차",
-      "sector": "",
-      "code": "005380",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-07-23",
-      "name": "신한지주",
-      "sector": "",
-      "code": "055550",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)(자회사의 주요경영사항)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-07-23",
-      "name": "KB금융",
-      "sector": "",
-      "code": "105560",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-07-23",
-      "name": "삼성바이오로직스",
-      "sector": "",
-      "code": "207940",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-07-24",
-      "name": "SK하이닉스",
-      "sector": "반도체",
-      "code": "000660",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 8,
-      "confirmed": false,
-      "source": "manual"
-    },
-    {
-      "date": "2026-07-24",
-      "name": "기아",
-      "sector": "자동차",
-      "code": "000270",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 2,
-      "confirmed": false,
-      "source": "manual"
-    },
     {
       "date": "2026-07-30",
       "name": "삼성전자",
@@ -201,45 +135,31 @@
   "eventAnalysis": [
     {
       "type": "earnings",
-      "date": "2026-07-24",
-      "title": "SK하이닉스 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 섹터 전반에 긍정적인 영향을 미치며, SK하이닉스 주가 상승이 예상됩니다. 예상 하회 시 반도체 업종의 부정적인 신호로 작용할 수 있으며, 관련 종목인 삼성전자에도 악영향을 미칠 수 있습니다."
-    },
-    {
-      "type": "earnings",
-      "date": "2026-07-24",
-      "title": "기아 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 자동차 섹터의 긍정적인 신호로 작용하며, 기아의 주가 상승과 함께 현대차에도 긍정적인 영향을 미칠 것입니다. 예상 하회 시 자동차 업종 전반에 부정적인 영향을 미치고, 관련 종목의 주가 하락이 우려됩니다."
-    },
-    {
-      "type": "earnings",
       "date": "2026-07-30",
       "title": "삼성전자 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 및 전자기기 섹터에 긍정적인 영향을 미치며, 삼성전자의 주가 상승이 예상됩니다. 예상 하회 시 글로벌 반도체 시장에 대한 우려가 커질 수 있으며, 관련 종목인 SK하이닉스와 LG전자의 주가에도 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 반도체 섹터 전반에 긍정적인 영향을 미치며, 삼성전자의 주가 상승이 다른 반도체 기업에도 긍정적인 영향을 줄 수 있습니다. 예상 하회 시 섹터 전반에 부정적인 신호로 작용할 수 있으며, SK하이닉스와 같은 경쟁사에도 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-31",
       "title": "한화에어로스페이스 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 방산 섹터에 긍정적인 신호로 작용하며, 한화에어로스페이스의 주가 상승과 함께 방산 관련 기업들의 주가에도 긍정적인 영향을 미칠 것입니다. 예상 하회 시 방산 업종의 부정적인 신호로 작용할 수 있습니다."
+      "analysis": "예상 상회 시 방산 섹터의 신뢰도를 높이고, 방산 관련 주식 전반에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 방산 분야의 성장 가능성에 의구심을 불러일으킬 수 있으며, 관련 기업인 LIG넥스원에도 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-06",
       "title": "카카오 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터 전반에 긍정적인 영향을 미치며, 카카오의 주가 상승이 예상됩니다. 예상 하회 시 플랫폼 업종의 부정적인 신호로 작용할 수 있으며, 관련 종목인 NAVER에도 악영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 플랫폼 섹터에서 카카오의 시장 지배력이 강화될 수 있으며, 관련 기업인 네이버에도 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 플랫폼 시장의 경쟁 심화로 인해 카카오의 성장 가능성에 대한 우려가 커질 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-07",
       "title": "NAVER 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터에 긍정적인 영향을 미치며, NAVER의 주가 상승과 함께 카카오에도 긍정적인 영향을 미칠 것입니다. 예상 하회 시 플랫폼 업종 전반에 부정적인 신호로 작용할 수 있습니다."
+      "analysis": "예상 상회 시 플랫폼 섹터 전반에 긍정적인 신호를 주며, 특히 광고 매출 증가가 기대될 수 있습니다. 예상 하회 시 네이버의 시장 점유율에 부정적인 영향을 미칠 수 있으며, 카카오와의 경쟁에서 불리한 위치에 놓일 수 있습니다."
     }
   ]
 }

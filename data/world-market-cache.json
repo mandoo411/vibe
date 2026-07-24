@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-07-24T02:47:28.154Z",
+  "updatedAt": "2026-07-24T08:30:09.716Z",
   "source": "companiesmarketcap.com",
   "symbolCount": 100,
   "withMarketCap": 100,
@@ -82,7 +82,7 @@
       "rank": 8,
       "name": "Saudi Aramco",
       "symbol": "2222.SR",
-      "marketCap": 1730304548181,
+      "marketCap": 1729751399861,
       "netIncome": 194993000000,
       "revenue": 459047318045,
       "price": null,
@@ -118,18 +118,8 @@
       "price": 319.69,
       "changePct": -14.52
     },
-    "SSNLF": {
-      "rank": 12,
-      "name": "Samsung",
-      "symbol": "SSNLF",
-      "marketCap": 1139280780641,
-      "netIncome": 67678400000,
-      "revenue": 270941248827,
-      "price": null,
-      "changePct": -5.93
-    },
     "MU": {
-      "rank": 13,
+      "rank": 12,
       "name": "Micron Technology",
       "symbol": "MU",
       "marketCap": 1118336450560,
@@ -137,6 +127,16 @@
       "revenue": 90270000000,
       "price": 990.21,
       "changePct": 3.2
+    },
+    "SSNLF": {
+      "rank": 13,
+      "name": "Samsung",
+      "symbol": "SSNLF",
+      "marketCap": 1117890256942,
+      "netIncome": 67678400000,
+      "revenue": 270941248827,
+      "price": 170.24,
+      "changePct": -7.59
     },
     "BRK-B": {
       "rank": 14,
@@ -168,18 +168,8 @@
       "price": 349.9,
       "changePct": 0.49
     },
-    "rank:17": {
-      "rank": 17,
-      "name": "SK Hynix",
-      "symbol": "000660.KS",
-      "marketCap": 880045564844,
-      "netIncome": 64209800000,
-      "revenue": 91713385660,
-      "price": 1239.75,
-      "changePct": -5.42
-    },
     "AMD": {
-      "rank": 18,
+      "rank": 17,
       "name": "AMD",
       "symbol": "AMD",
       "marketCap": 880018849792,
@@ -189,7 +179,7 @@
       "changePct": -2.29
     },
     "WMT": {
-      "rank": 19,
+      "rank": 18,
       "name": "Walmart",
       "symbol": "WMT",
       "marketCap": 862655741952,
@@ -197,6 +187,16 @@
       "revenue": 725305000000,
       "price": 108.4,
       "changePct": -0.85
+    },
+    "rank:19": {
+      "rank": 19,
+      "name": "SK Hynix",
+      "symbol": "000660.KS",
+      "marketCap": 851973149730,
+      "netIncome": 64209800000,
+      "revenue": 91713385660,
+      "price": 1200.21,
+      "changePct": -8.34
     },
     "ASML": {
       "rank": 20,
@@ -256,7 +256,7 @@
       "netIncome": 31105300000,
       "revenue": null,
       "price": 55.36,
-      "changePct": 0.65
+      "changePct": -0.32
     },
     "MA": {
       "rank": 26,
@@ -342,11 +342,11 @@
       "rank": 34,
       "name": "China Construction Bank",
       "symbol": "601939.SS",
-      "marketCap": 397963933033,
+      "marketCap": 396118535655,
       "netIncome": 52701900000,
       "revenue": 112108374360,
       "price": null,
-      "changePct": 0.49
+      "changePct": 0.2
     },
     "CVX": {
       "rank": 35,
@@ -388,8 +388,18 @@
       "price": 81.17,
       "changePct": -1.25
     },
-    "HSBC": {
+    "RO.SW": {
       "rank": 39,
+      "name": "Roche",
+      "symbol": "RO.SW",
+      "marketCap": 349022571236,
+      "netIncome": 21438700000,
+      "revenue": null,
+      "price": null,
+      "changePct": 0.73
+    },
+    "HSBC": {
+      "rank": 40,
       "name": "HSBC",
       "symbol": "HSBC",
       "marketCap": 348966060032,
@@ -397,16 +407,6 @@
       "revenue": 72400000000,
       "price": 101.75,
       "changePct": -1.32
-    },
-    "RO.SW": {
-      "rank": 40,
-      "name": "Roche",
-      "symbol": "RO.SW",
-      "marketCap": 346789048215,
-      "netIncome": 21438700000,
-      "revenue": null,
-      "price": null,
-      "changePct": 5.15
     },
     "ORCL": {
       "rank": 41,
@@ -422,11 +422,11 @@
       "rank": 42,
       "name": "Agricultural Bank of China",
       "symbol": "601288.SS",
-      "marketCap": 343044531171,
+      "marketCap": 344001719643,
       "netIncome": 46084400000,
       "revenue": 105696191688,
       "price": null,
-      "changePct": 0.61
+      "changePct": 1.06
     },
     "PG": {
       "rank": 43,
@@ -452,11 +452,11 @@
       "rank": 45,
       "name": "ICBC",
       "symbol": "1398.HK",
-      "marketCap": 326330252493,
+      "marketCap": 326803099408,
       "netIncome": 57509000000,
       "revenue": 120282964838,
       "price": null,
-      "changePct": 0.14
+      "changePct": 0.28
     },
     "HD": {
       "rank": 46,
@@ -552,11 +552,11 @@
       "rank": 55,
       "name": "Bank of China",
       "symbol": "601988.SS",
-      "marketCap": 285813982787,
+      "marketCap": 285795988683,
       "netIncome": 42979100000,
       "revenue": 95378587814,
       "price": null,
-      "changePct": 0.5
+      "changePct": 0.67
     },
     "KLAC": {
       "rank": 56,
@@ -622,11 +622,11 @@
       "rank": 62,
       "name": "CATL",
       "symbol": "300750.SZ",
-      "marketCap": 263784950083,
+      "marketCap": 261526816521,
       "netIncome": 13771100000,
       "revenue": 63650000000,
       "price": null,
-      "changePct": -0.09
+      "changePct": -0.77
     },
     "WFC": {
       "rank": 63,
@@ -672,21 +672,21 @@
       "rank": 67,
       "name": "LVMH",
       "symbol": "MC.PA",
-      "marketCap": 254663125384,
+      "marketCap": 253396648028,
       "netIncome": 19615600000,
       "revenue": 94926343761,
       "price": null,
-      "changePct": -4.31
+      "changePct": -0.45
     },
     "NESN.SW": {
       "rank": 68,
       "name": "Nestlé",
       "symbol": "NESN.SW",
-      "marketCap": 249771993248,
+      "marketCap": 253017097680,
       "netIncome": 13579600000,
       "revenue": 113534166189,
       "price": null,
-      "changePct": -7.98
+      "changePct": 1.39
     },
     "SHEL": {
       "rank": 69,
@@ -702,11 +702,11 @@
       "rank": 70,
       "name": "Kweichow Moutai",
       "symbol": "600519.SS",
-      "marketCap": 238777968392,
+      "marketCap": 239361918799,
       "netIncome": 17772500000,
       "revenue": 26440000000,
-      "price": 191.01,
-      "changePct": 0
+      "price": null,
+      "changePct": 0.42
     },
     "SNDK": {
       "rank": 71,
@@ -722,14 +722,24 @@
       "rank": 72,
       "name": "PetroChina",
       "symbol": "0857.HK",
-      "marketCap": 237827779404,
+      "marketCap": 238307961484,
       "netIncome": 35771900000,
       "revenue": 407253551390,
       "price": null,
-      "changePct": 0.79
+      "changePct": 0.99
+    },
+    "SIE.DE": {
+      "rank": 73,
+      "name": "Siemens",
+      "symbol": "SIE.DE",
+      "marketCap": 234179405790,
+      "netIncome": 12960000000,
+      "revenue": 93335552472,
+      "price": null,
+      "changePct": 0.58
     },
     "LIN": {
-      "rank": 73,
+      "rank": 74,
       "name": "Linde",
       "symbol": "LIN",
       "marketCap": 234095689728,
@@ -737,16 +747,6 @@
       "revenue": 34650000000,
       "price": 506.32,
       "changePct": -0.46
-    },
-    "SIE.DE": {
-      "rank": 74,
-      "name": "Siemens",
-      "symbol": "SIE.DE",
-      "marketCap": 232939847928,
-      "netIncome": 12960000000,
-      "revenue": 93335552472,
-      "price": null,
-      "changePct": -1.12
     },
     "AXP": {
       "rank": 75,
@@ -762,31 +762,31 @@
       "rank": 76,
       "name": "International Holding Company",
       "symbol": "IHC.AE",
-      "marketCap": 226365955841,
+      "marketCap": 226765526715,
       "netIncome": null,
       "revenue": null,
-      "price": 103.2,
-      "changePct": -0.26
+      "price": 103.38,
+      "changePct": 0.18
     },
     "rank:77": {
       "rank": 77,
       "name": "China Mobile",
       "symbol": "0941.HK",
-      "marketCap": 225506619819,
+      "marketCap": 225657314564,
       "netIncome": 24321400000,
       "revenue": 142724815105,
       "price": null,
-      "changePct": 0.37
+      "changePct": 0.43
     },
     "OR.PA": {
       "rank": 78,
       "name": "L'Oréal",
       "symbol": "OR.PA",
-      "marketCap": 223611303484,
+      "marketCap": 224479037255,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": -3.1
+      "changePct": 0.43
     },
     "ANET": {
       "rank": 79,
@@ -862,11 +862,11 @@
       "rank": 86,
       "name": "Commonwealth Bank",
       "symbol": "CBA.AX",
-      "marketCap": 201551980591,
+      "marketCap": 203041932082,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": 0.27
+      "changePct": 1
     },
     "AMGN": {
       "rank": 87,
@@ -898,8 +898,18 @@
       "price": 206.65,
       "changePct": 0.43
     },
-    "APH": {
+    "RMS.PA": {
       "rank": 90,
+      "name": "Hermès",
+      "symbol": "RMS.PA",
+      "marketCap": 193898579154,
+      "netIncome": null,
+      "revenue": null,
+      "price": 1851.24,
+      "changePct": 0.25
+    },
+    "APH": {
+      "rank": 91,
       "name": "Amphenol",
       "symbol": "APH",
       "marketCap": 193675804672,
@@ -907,16 +917,6 @@
       "revenue": 25900000000,
       "price": 157.43,
       "changePct": -0.05
-    },
-    "RMS.PA": {
-      "rank": 91,
-      "name": "Hermès",
-      "symbol": "RMS.PA",
-      "marketCap": 193509835677,
-      "netIncome": null,
-      "revenue": null,
-      "price": 1847.53,
-      "changePct": -3.39
     },
     "WDC": {
       "rank": 92,
@@ -928,18 +928,8 @@
       "price": 558.3,
       "changePct": 0.29
     },
-    "rank:93": {
-      "rank": 93,
-      "name": "SoftBank Group Corp.",
-      "symbol": "9984.T",
-      "marketCap": 191521870293,
-      "netIncome": null,
-      "revenue": null,
-      "price": null,
-      "changePct": -7
-    },
     "TTE": {
-      "rank": 94,
+      "rank": 93,
       "name": "TotalEnergies",
       "symbol": "TTE",
       "marketCap": 191455477760,
@@ -948,28 +938,28 @@
       "price": 86.23,
       "changePct": 1.55
     },
+    "rank:94": {
+      "rank": 94,
+      "name": "SoftBank Group Corp.",
+      "symbol": "9984.T",
+      "marketCap": 191323091101,
+      "netIncome": null,
+      "revenue": null,
+      "price": null,
+      "changePct": -7.06
+    },
     "ITX.MC": {
       "rank": 95,
       "name": "Inditex",
       "symbol": "ITX.MC",
-      "marketCap": 190942760244,
+      "marketCap": 190430620061,
       "netIncome": 8890000000,
       "revenue": 42500000000,
-      "price": 61.33,
-      "changePct": -1.36
-    },
-    "rank:96": {
-      "rank": 96,
-      "name": "MediaTek",
-      "symbol": "2454.TW",
-      "marketCap": 189989601278,
-      "netIncome": 4030000000.0000005,
-      "revenue": 19230000000,
       "price": null,
-      "changePct": -0.77
+      "changePct": -0.22
     },
     "SAN": {
-      "rank": 97,
+      "rank": 96,
       "name": "Santander",
       "symbol": "SAN",
       "marketCap": 189273964544,
@@ -979,7 +969,7 @@
       "changePct": -3.86
     },
     "MRVL": {
-      "rank": 98,
+      "rank": 97,
       "name": "Marvell Technology",
       "symbol": "MRVL",
       "marketCap": 187874017280,
@@ -989,7 +979,7 @@
       "changePct": -0.79
     },
     "NEE": {
-      "rank": 99,
+      "rank": 98,
       "name": "Nextera Energy",
       "symbol": "NEE",
       "marketCap": 187266514944,
@@ -997,6 +987,16 @@
       "revenue": 27860000000,
       "price": 89.79,
       "changePct": 0.43
+    },
+    "rank:99": {
+      "rank": 99,
+      "name": "KIOXIA Holdings Corporation",
+      "symbol": "285A.T",
+      "marketCap": 187092880546,
+      "netIncome": null,
+      "revenue": null,
+      "price": null,
+      "changePct": -9.49
     },
     "CRWD": {
       "rank": 100,

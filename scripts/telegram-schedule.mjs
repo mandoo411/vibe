@@ -55,6 +55,16 @@ function earningsForToday(data, ymd) {
     .slice(0, 8);
 }
 
+// 2026-07-25: weekly-schedule.mjs의 analyzeWithClaude()가 생성하는 이벤트별 AI 분석
+// ("일정분석" — 예상 상회/하회 시 증시·환율·섹터 영향 코멘트)을 오늘 날짜로 필터링해
+// 텔레그램 일간 메시지에도 그대로 포함시킨다. 지금까지는 data/weekly-schedule.json에
+// eventAnalysis 필드가 이미 존재했는데도 텔레그램 메시지에는 반영되지 않았었다.
+function analysisForToday(data, ymd) {
+  return (Array.isArray(data?.eventAnalysis) ? data.eventAnalysis : []).filter(
+    (row) => row?.date === ymd
+  );
+}
+
 function formatEstimate(value) {
   if (value == null || value === "") return "-";
   return fmtNumber(value, Number(value) % 1 === 0 ? 0 : 1);
@@ -87,6 +97,19 @@ function buildDailyMessage(data, ymd) {
   } else {
     lines.push("- 오늘 예정된 주요 실적발표 없음");
   }
+
+  const analysisRows = analysisForToday(data, ymd);
+  if (analysisRows.length) {
+    lines.push("", "🧠 *AI 일정분석*");
+    analysisRows.forEach((row) => {
+      const title = mdText(row?.title || "");
+      const expected = row?.expected ? ` (${mdText(row.expected)})` : "";
+      const analysis = mdText(row?.analysis || "");
+      lines.push(`- *${title}*${expected}`);
+      if (analysis) lines.push(`  ${analysis}`);
+    });
+  }
+
   lines.push("", `🔗 전체보기: ${SITE_URL}/weekly-market.html`);
   return lines.join("\n");
 }
@@ -130,6 +153,13 @@ async function main() {
     }
     for (const message of messages) await sendTelegramMessage(message);
     console.log(`Sent ${messages.length} breaking schedule Telegram message(s).`);
+    return;
+  }
+
+  const events = eventsForToday(data, ymd);
+  const earnings = earningsForToday(data, ymd);
+  if (!events.length && !earnings.length) {
+    console.log("오늘 HIGH 지표·실적 발표 없음 — 텔레그램 발송 생략.");
     return;
   }
 

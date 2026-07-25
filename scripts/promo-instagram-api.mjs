@@ -53,6 +53,37 @@ async function waitUntilFinished(containerId, accessToken, { maxAttempts = 15, i
   throw new Error(`미디어 컨테이너 처리 시간 초과 (id=${containerId})`);
 }
 
+function publicVideoUrl(fileName) {
+  const repo = process.env.GITHUB_REPOSITORY || "mandoo411/vibe";
+  const branch = process.env.PROMO_ASSET_BRANCH || process.env.GITHUB_REF_NAME || "main";
+  return `https://raw.githubusercontent.com/${repo}/${branch}/generated/${fileName}`;
+}
+
+/**
+ * 릴스(단일 영상) 발행 — 정지 이미지를 감싼 무음 mp4를 REELS 미디어 타입으로 올린다.
+ * 흐름: POST /media (media_type=REELS, video_url) -> status_code가 FINISHED 될 때까지 폴링
+ *       -> POST /media_publish. 영상 처리는 이미지보다 오래 걸릴 수 있어 폴링 시도 횟수를 늘린다.
+ * share_to_feed=true로 피드에도 노출되게 한다(계정 전체 도달 극대화).
+ */
+export async function postInstagramReel(videoFileName, caption) {
+  const accessToken = process.env.META_ACCESS_TOKEN;
+  const igUserId = process.env.INSTAGRAM_ACCOUNT_ID;
+
+  const container = await graphPost(`/${igUserId}/media`, {
+    media_type: "REELS",
+    video_url: publicVideoUrl(videoFileName),
+    caption,
+    share_to_feed: "true",
+    access_token: accessToken,
+  });
+  await waitUntilFinished(container.id, accessToken, { maxAttempts: 40, intervalMs: 5000 });
+
+  return graphPost(`/${igUserId}/media_publish`, {
+    creation_id: container.id,
+    access_token: accessToken,
+  });
+}
+
 function publicImageUrl(fileName) {
   const repo = process.env.GITHUB_REPOSITORY || "mandoo411/vibe";
   // 수동 workflow_dispatch를 다른 브랜치에서 실행했을 때, 발행 이미지가 실제로 렌더링된

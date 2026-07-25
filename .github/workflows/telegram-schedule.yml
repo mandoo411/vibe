@@ -1,9 +1,14 @@
 name: Telegram Daily Schedule
 
 on:
-  schedule:
-    # 매일 06:00 KST = 전날 21:00 UTC
-    - cron: "0 21 * * *"
+  # 2026-07-25: 기존에는 이 워크플로와 "Weekly Schedule Sync"가 둘 다 매일 06:00 KST에
+  # 독립적으로(cron) 실행되어, weekly-schedule.yml이 그날의 AI 일정분석(eventAnalysis)을
+  # 다 채우기 전에 이 워크플로가 먼저 실행되어 일정분석이 빠진 채로(혹은 전날 데이터로)
+  # 텔레그램이 발송되는 경쟁조건이 있었다. Weekly Schedule Sync가 완료된 "이후"에만
+  # 실행되도록 workflow_run으로 체이닝해 순서를 보장한다.
+  workflow_run:
+    workflows: ["Weekly Schedule Sync"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       mode:
@@ -25,6 +30,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # workflow_run 트리거는 체크아웃 기본 ref가 트리거 워크플로 "시작 시점" 커밋일
+          # 수 있어(그 사이 weekly-schedule.yml이 새 커밋을 push함), 항상 main 최신
+          # 커밋(=그날 새로 생성된 eventAnalysis 포함)을 명시적으로 체크아웃한다.
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -16,7 +16,10 @@
 import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData } from "./promo-market-copy.mjs";
 import { loadMorningSnapshot, buildMorningCardData } from "./promo-morning-copy.mjs";
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
-import { postInstagramCarousel } from "./promo-instagram-api.mjs";
+import { buildReelHTML, renderReelToPNG } from "./promo-render-reel.mjs";
+import { getReelBackground } from "./promo-gemini-background.mjs";
+import { imageToReelVideo } from "./promo-image-to-video.mjs";
+import { postInstagramCarousel, postInstagramReel } from "./promo-instagram-api.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { seoulYmd } from "./telegram-utils.mjs";
@@ -34,14 +37,19 @@ function parseArgs() {
   if (!["morning", "closing"].includes(slot)) {
     throw new Error(`알 수 없는 --slot 값: ${slot} (morning | closing 중 하나)`);
   }
-  const action = process.argv.includes("--publish") ? "publish" : "render";
+  let action = "render";
+  if (process.argv.includes("--publish")) action = "publish";
+  else if (process.argv.includes("--render-reel")) action = "render-reel";
+  else if (process.argv.includes("--publish-reel")) action = "publish-reel";
   return { slot, action };
 }
 
 function dirsFor(slot) {
   const generatedDir = join(process.cwd(), "generated", slot);
   const captionFile = join(generatedDir, "today-caption.txt");
-  return { generatedDir, captionFile };
+  const reelPngFile = join(generatedDir, "reel.png");
+  const reelMp4File = join(generatedDir, "reel.mp4");
+  return { generatedDir, captionFile, reelPngFile, reelMp4File };
 }
 
 async function buildCardDataForSlot(slot) {
@@ -157,11 +165,48 @@ async function publish(slot) {
   console.log("발행 완료:", result);
 }
 
+function heroDir(pct) {
+  return pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+}
+
+/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리 */
+async function renderReel(slot) {
+  console.log(`1) ${slot === "morning" ? "data/morning-briefing.json" : "data/daily-market.json"} 스냅샷 로딩...`);
+  const { cardData, caption } = await buildCardDataForSlot(slot);
+
+  console.log("2) Gemini로 배경 이미지 생성 중 (실패 시 대체 배경 사용)...");
+  const bgDataUri = await getReelBackground(heroDir(cardData.heroPct));
+
+  console.log(`3) 릴스 카드 HTML 빌드 중 (slot: ${slot})...`);
+  const html = buildReelHTML(cardData, bgDataUri);
+
+  console.log("4) PNG 스크린샷 캡처 중...");
+  const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor(slot);
+  mkdirSync(generatedDir, { recursive: true });
+  await renderReelToPNG(html, reelPngFile);
+
+  console.log("5) mp4(릴스용 무음 영상)로 변환 중...");
+  await imageToReelVideo(reelPngFile, reelMp4File);
+
+  writeFileSync(captionFile, caption, "utf8");
+  console.log(`완료: generated/${slot}/reel.png, reel.mp4, today-caption.txt`);
+}
+
+async function publishReel(slot) {
+  const { captionFile } = dirsFor(slot);
+  const caption = readFileSync(captionFile, "utf8");
+  console.log(`Meta Graph API로 릴스 발행 중 (slot: ${slot})...`);
+  const result = await postInstagramReel(`${slot}/reel.mp4`, caption);
+  console.log("발행 완료:", result);
+}
+
 const { slot, action } = parseArgs();
 
 try {
   if (action === "render") await render(slot);
-  else await publish(slot);
+  else if (action === "publish") await publish(slot);
+  else if (action === "render-reel") await renderReel(slot);
+  else await publishReel(slot);
 } catch (err) {
   console.error("❌ 실패:", err.message);
   process.exit(1);

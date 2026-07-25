@@ -78,11 +78,12 @@ jobs:
           sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji
           fc-cache -f
 
-      - name: Render 5 card images
+      - name: Render reel video (1-slide)
         if: steps.dupcheck.outputs.should_publish == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node scripts/instagram-card-post.mjs --slot=closing --render
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node scripts/instagram-card-post.mjs --slot=closing --render-reel
 
       - name: Commit and push generated images
         if: steps.dupcheck.outputs.should_publish == 'true'
@@ -104,9 +105,9 @@ jobs:
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: sleep 20
 
-      - name: Publish carousel via Meta Graph API
+      - name: Publish reel via Meta Graph API
         if: steps.dupcheck.outputs.should_publish == 'true'
-        run: node scripts/instagram-card-post.mjs --slot=closing --publish
+        run: node scripts/instagram-card-post.mjs --slot=closing --publish-reel
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}

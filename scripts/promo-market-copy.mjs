@@ -8,7 +8,7 @@
  * Claude 호출도 이미 만들어진 analysis 원문을 압축하는 용도로만 가볍게 1회 사용한다(Haiku).
  */
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
-import { summarizeToSentence, trimToNaturalBreak } from "./promo-text-utils.mjs";
+import { trimToNaturalBreak, firstCompleteSentence } from "./promo-text-utils.mjs";
 import { ensureJsonSafe, isClaudeUnavailableError, parseJsonFromAssistant, sanitizeUnicode } from "./claude-utils.mjs";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -18,7 +18,7 @@ const DATA_PATH = "./data/daily-market.json";
 function extractHeadlineFallback(analysisText) {
   const m = String(analysisText || "").match(/핵심 한 줄\s*\n([\s\S]*?)(?:\n\n|📈)/);
   const para = m ? m[1].trim() : "";
-  return para ? summarizeToSentence(para, 110) : "";
+  return para ? safeSummarize(para, 110) : "";
 }
 
 function extractOutlookFallback(analysisText) {
@@ -57,7 +57,7 @@ function extractStrategyFallback(analysisText, maxLen = 110) {
     .slice(1)
     .map((s) => s.trim())
     .find(Boolean) || "";
-  return line ? summarizeToSentence(line, maxLen) : "";
+  return line ? safeSummarize(line, maxLen) : "";
 }
 
 // 조사/연결어미로 끝나면 문장이 안 끝난 것처럼 보인다 (사용자 피드백: "동반 매도에... 폭락하며..
@@ -75,10 +75,22 @@ function looksComplete(text) {
   return false;
 }
 
+// summarizeToSentence(para, maxLen)는 완결된 첫 문장이 maxLen보다 길면 trimToNaturalBreak로
+// 다시 자르는데, 이 2차 절단이 문장을 미완성으로 만들 수 있다(looksComplete 실패의 근본 원인).
+// 그렇다고 그냥 버리면 AI 판단 박스가 통째로 비어버리는 새 버그가 생긴다(사용자 피드백:
+// "박스가 비어있음"). 절단본이 미완성이면 길이 제한을 포기하고 완결된 원문장을 그대로 쓴다 —
+// 조금 길어지더라도 미완성 문장이나 빈 박스보다 낫다.
+function safeSummarize(para, maxLen) {
+  const full = firstCompleteSentence(para);
+  if (!full) return "";
+  const trimmed = trimToNaturalBreak(full, maxLen);
+  return looksComplete(trimmed) ? trimmed : full;
+}
+
 function extractFlowCommentFallback(analysisText) {
   const m = String(analysisText || "").match(/(?:🔄\s*)?시장 흐름 분석\s*\n([\s\S]*?)(?:\n\n|$)/);
   const para = m ? m[1].trim() : "";
-  return para ? summarizeToSentence(para, 110) : "";
+  return para ? safeSummarize(para, 110) : "";
 }
 
 function buildIndexHeadline(snapshot) {

@@ -69,7 +69,10 @@ function looksComplete(text) {
   if (/[.!?)"'」』%]$/.test(s)) return true;
   if (/[다요임음함]$/.test(s)) return true;
   if (DANGLING_ENDINGS.some((e) => s.endsWith(e))) return false;
-  return true;
+  // 조사로 끝나지 않아도 마침표/'다·요·임·음·함'류 종결어미가 아니면
+  // 문장이 실제로 끝난 것인지 확신할 수 없다(예: trimToNaturalBreak가 명사에서 자른 "...연속").
+  // 애매하면 미완성으로 간주해 후보에서 제외한다(사용자 피드백: 문장이 중간에서 끊기면 안 됨).
+  return false;
 }
 
 function extractFlowCommentFallback(analysisText) {

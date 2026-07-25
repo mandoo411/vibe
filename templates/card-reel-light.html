@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--
+  릴스용 1장 요약 카드 (9:16, 1080x1920)
+  치환 변수: {{DATE}} {{SLOT_LABEL}} {{HERO_LABEL}} {{HERO_DIR}}(up|down|flat) {{HERO_ARROW}} {{HERO_PCT}}
+  {{HEADLINE}} {{AI_TITLE}} {{AI_COMMENT}} {{BG_DATA_URI}}
+  체크포인트는 <!--CHIP_TEMPLATE_START--> ~ <!--CHIP_TEMPLATE_END--> 블록을 checkBadgeRow 스타일로 반복 채움 (최대 2개)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared-light.css" />
+<style>
+  /* 릴스는 9:16(1080x1920) — 공통 CSS의 1080x1350 바디 크기를 여기서만 덮어쓴다 */
+  body {
+    height: 1920px;
+    background: #ffffff;
+    background-image: none;
+  }
+
+  .bg-art {
+    position: absolute;
+    inset: 0;
+    width: 1080px;
+    height: 1920px;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .bg-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg,
+      rgba(255,255,255,0.94) 0%,
+      rgba(255,255,255,0.80) 22%,
+      rgba(255,255,255,0.55) 46%,
+      rgba(255,255,255,0.86) 72%,
+      rgba(255,255,255,0.97) 100%);
+  }
+
+  .brand-lockup, .watermark, .reel-wrap { z-index: 2; }
+
+  .reel-wrap {
+    position: absolute;
+    top: 200px;
+    left: 64px;
+    right: 64px;
+    bottom: 100px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .reel-date { margin-bottom: 40px; }
+
+  .reel-title {
+    font-size: 66px;
+    font-weight: 800;
+    line-height: 1.28;
+    letter-spacing: -1px;
+    margin-bottom: 56px;
+  }
+
+  .hero-stat-card {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    padding: 40px 40px;
+    margin-bottom: 56px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(7,38,75,0.10);
+  }
+  .hero-stat-card.up { background: linear-gradient(135deg, rgba(226,75,74,0.14) 0%, rgba(226,75,74,0.03) 100%); }
+  .hero-stat-card.down { background: linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0.03) 100%); }
+  .hero-stat-card.flat { background: rgba(120,120,120,0.08); }
+  .hero-stat-card .label {
+    font-size: 38px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+  .hero-stat-card .value {
+    font-size: 104px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-stat-card .value svg { width: 68px; height: 68px; }
+
+  .reel-headline {
+    position: relative;
+    font-size: 44px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.72);
+    border-left: 7px solid var(--accent-gold);
+    padding: 34px 38px;
+    border-radius: 0 18px 18px 0;
+    line-height: 1.55;
+    margin-bottom: 44px;
+    box-shadow: 0 6px 20px rgba(7,38,75,0.06);
+  }
+
+  .reel-ai {
+    background: rgba(7,38,75,0.05);
+    border: 1px solid rgba(7,38,75,0.10);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px;
+    margin-bottom: auto;
+  }
+  .reel-ai .ai-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    margin-bottom: 14px;
+  }
+  .reel-ai .ai-text {
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text-primary);
+  }
+
+  .reel-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 44px;
+  }
+</style>
+</head>
+<body>
+  <img class="bg-art" src="{{BG_DATA_URI}}" />
+  <div class="bg-scrim"></div>
+
+  <div class="brand-lockup">
+    <div class="logo-box"><span>TM</span><span>AI</span></div>
+    <div>
+      <div class="brand-name">TotalMoney</div>
+      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
+    </div>
+  </div>
+
+  <div class="reel-wrap">
+    <div class="reel-date">
+      <span class="slot-badge"><span class="dot"></span>{{DATE}} {{SLOT_LABEL}}</span>
+    </div>
+    <div class="reel-title">{{COVER_TITLE_LINE1}}<br/>{{COVER_TITLE_LINE2}}</div>
+    <div class="hero-stat-card {{HERO_DIR}}">
+      <span class="label">{{HERO_LABEL}}</span>
+      <span class="value {{HERO_DIR}}">{{HERO_ARROW}} {{HERO_PCT}}%</span>
+    </div>
+    <div class="reel-headline">"{{HEADLINE}}"</div>
+    <div class="reel-ai">
+      <div class="ai-label">🤖 {{AI_TITLE}}</div>
+      <div class="ai-text">{{AI_COMMENT}}</div>
+    </div>
+    <div class="reel-chips">
+      <!--CHIP_TEMPLATE_START-->
+      <!--CHIP_TEMPLATE_END-->
+    </div>
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

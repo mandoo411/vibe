@@ -217,6 +217,9 @@ summaryLines는 정확히 5개를 배열로 반환해.`);
       if (!Array.isArray(parsed.summaryLines) || parsed.summaryLines.length === 0) {
         parsed.summaryLines = buildFallbackSummaryLines(snapshot, analysisText);
       }
+      if (!Array.isArray(parsed.checkpoints) || parsed.checkpoints.length === 0) {
+        parsed.checkpoints = extractOutlookFallback(analysisText);
+      }
       return parsed;
     } catch (error) {
       lastError = error;

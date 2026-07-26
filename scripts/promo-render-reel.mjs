@@ -6,6 +6,7 @@
 import puppeteer from "puppeteer";
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
+import { trimToNaturalBreak } from "./promo-text-utils.mjs";
 
 const TEMPLATES_DIR = join(process.cwd(), "templates");
 
@@ -60,7 +61,7 @@ export function buildReelHTML(cardData, bgDataUri) {
     BG_DATA_URI: bgDataUri,
   });
 
-  const chipBlock = checkpoints.slice(0, 2).map((c) => checkChip(c, checkColor)).join("\n");
+  const chipBlock = checkpoints.slice(0, 1).map((c) => checkChip(trimToNaturalBreak(c, 34), checkColor)).join("\n");
   html = html.replace(/<!--CHIP_TEMPLATE_START-->[\s\S]*?<!--CHIP_TEMPLATE_END-->/, chipBlock);
 
   return html;

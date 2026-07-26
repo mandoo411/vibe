@@ -83,13 +83,17 @@ jobs:
 
       # 아티팩트 다운로드 없이 Job Summary 페이지에서 바로 눈으로 확인하기 위한 진단 스텝
       # (base64 data URI로 인라인 <img> 삽입 — 확인 끝나면 제거)
+      # 원본 PNG(1080x1920, ~1.3MB)를 그대로 base64 인코딩하면 Step Summary의 1024KB 제한을
+      # 넘어서 업로드가 중단되므로, ffmpeg로 폭 300px 썸네일로 축소한 뒤 인코딩한다.
       - name: Preview rendered reel PNG in job summary (temp diagnostic)
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           echo "### Rendered reel.png preview" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          B64=$(base64 -w0 generated/closing/reel.png)
-          echo "<img src=\"data:image/png;base64,${B64}\" width=\"480\" />" >> "$GITHUB_STEP_SUMMARY"
+          ffmpeg -y -i generated/closing/reel.png -vf scale=300:-1 /tmp/reel-thumb.png
+          B64=$(base64 -w0 /tmp/reel-thumb.png)
+          echo "<img src=\"data:image/png;base64,${B64}\" width=\"300\" />" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Commit and push generated images
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: |

@@ -1,13 +1,14 @@
 /**
  * templates/card-manpyeong-light.html -> PNG 1장 렌더링 (Puppeteer).
- * card-reel-light.html(1장 요약 카드)을 대체하는 "마감 증시 만평" 포맷 —
- * 지수 듀얼 박스 + 종목 하이라이트 배지 + AI 판단 + 내일 주목할 변수를
- * AI가 그린 무드 삽화(개구리 마스코트) 위에 얹는다.
+ * card-reel-light.html(1장 요약 카드)을 대체하는 "마감 증시 만평" 포맷 v2 —
+ * 임팩트 우선으로 (1) 지수 등락 (2) 오늘 왜 움직였는지 (3) 오늘의 이슈 종목,
+ * 이 3가지만 크게 구성해 AI가 그린 무드 삽화(개구리 마스코트) 위에 얹는다.
+ * (v1에 있던 AI 판단 박스 / 내일 주목할 변수 박스는 화면이 복잡해진다는 피드백으로 제거)
  *
  * cardData는 promo-market-copy.mjs의 buildClosingCardData() 결과를 그대로 재사용한다
- * (date, heroPct, headline, indexRows, listItems, aiTitle/aiComment, checkpoints).
- * 숫자·종목명·문구는 전부 이 실데이터에서 오며, AI 이미지 생성 모델은 절대
- * 텍스트/숫자를 그리지 않는다(promo-gemini-background.mjs 설계 원칙과 동일).
+ * (date, heroPct, headline, indexRows, listItems 만 사용). 숫자·종목명·문구는 전부 이
+ * 실데이터에서 오며, AI 이미지 생성 모델은 절대 텍스트/숫자를 그리지 않는다
+ * (promo-gemini-background.mjs 설계 원칙과 동일).
  */
 import puppeteer from "puppeteer";
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
@@ -32,22 +33,20 @@ function findIndexRow(indexRows, name) {
   return (indexRows || []).find((r) => r?.name === name) || null;
 }
 
-function stockBadgeHTML(item) {
+/** 오늘의 이슈 종목 카드 — 이름/등락률은 크게, 이유는 최대 2줄까지 허용(말줄임 대신 줄바꿈) */
+function stockCardHTML(item) {
   const pctNum = Number(item.pct) || 0;
   const cls = dir(pctNum);
   const pctText = `${arrow(pctNum)} ${Math.abs(pctNum).toFixed(2)}%`;
-  const reason = trimToNaturalBreak(item.reason || "", 20);
+  const reason = trimToNaturalBreak(item.reason || "", 40);
   return `
-      <div class="stock-badge">
-        <span class="name">${item.name}</span>
-        <span class="pct ${cls}">${pctText}</span>
-        ${reason ? `<span class="reason">${reason}</span>` : ""}
+      <div class="stock-card">
+        <div class="row1">
+          <span class="name">${item.name}</span>
+          <span class="pct ${cls}">${pctText}</span>
+        </div>
+        ${reason ? `<div class="reason">${reason}</div>` : ""}
       </div>`;
-}
-
-function checkItemHTML(text) {
-  return `
-      <div class="cp-item"><span class="cp-dot"></span><span>${trimToNaturalBreak(text, 46)}</span></div>`;
 }
 
 /** cardData(buildClosingCardData 결과) + 배경 이미지(data URI) -> 만평 릴스 HTML 문자열 */
@@ -57,8 +56,6 @@ export function buildManpyeongHTML(cardData, bgDataUri) {
     heroLabel, heroPct,
     indexRows = [],
     headline,
-    aiTitle, aiComment,
-    checkpointsTitle, checkpoints = [],
     listItems = [],
     theme = "light",
   } = cardData;
@@ -80,19 +77,12 @@ export function buildManpyeongHTML(cardData, bgDataUri) {
     KOSDAQ_ARROW: arrow(kosdaqPct),
     KOSDAQ_PCT: Math.abs(kosdaqPct).toFixed(2),
     HEADLINE: headline,
-    AI_TITLE: aiTitle,
-    AI_COMMENT: aiComment,
-    CHECKPOINTS_TITLE: checkpointsTitle,
     BG_DATA_URI: bgDataUri,
   });
 
-  const badgeBlock = listItems.slice(0, 2).map(stockBadgeHTML).join("");
-  console.error("[manpyeong-debug] stockBadges=" + JSON.stringify(listItems.slice(0, 2).map((i) => i.name)) + " badgeBlockLen=" + badgeBlock.length);
-  html = html.replace(/<!--STOCKBADGE_START-->[\s\S]*?<!--STOCKBADGE_END-->/, badgeBlock);
-
-  const checkBlock = checkpoints.slice(0, 2).map(checkItemHTML).join("");
-  console.error("[manpyeong-debug] checkpoints=" + JSON.stringify(checkpoints.slice(0, 2)) + " checkBlockLen=" + checkBlock.length);
-  html = html.replace(/<!--CHECKITEM_START-->[\s\S]*?<!--CHECKITEM_END-->/, checkBlock);
+  const cardBlock = listItems.slice(0, 2).map(stockCardHTML).join("");
+  console.error("[manpyeong-debug] stockCards=" + JSON.stringify(listItems.slice(0, 2).map((i) => i.name)) + " cardBlockLen=" + cardBlock.length);
+  html = html.replace(/<!--STOCKBADGE_START-->[\s\S]*?<!--STOCKBADGE_END-->/, cardBlock);
 
   return html;
 }

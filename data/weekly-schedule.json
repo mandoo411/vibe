@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-26 06:52 KST",
-    "from": "2026-07-26",
-    "to": "2026-08-09",
-    "historyFrom": "2026-04-27",
+    "lastUpdatedKst": "2026-07-27 06:56 KST",
+    "from": "2026-07-27",
+    "to": "2026-08-10",
+    "historyFrom": "2026-04-28",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -45,10 +45,34 @@
       "unit": ""
     },
     {
-      "date": "2026-07-23",
-      "event": "President Trump Speaks",
+      "date": "2026-07-28",
+      "event": "CB Consumer Confidence",
       "country": "US",
-      "time": "04:00",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "91.2",
+      "estimate": "92.1",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
+      "event": "Federal Funds Rate",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "3.75%",
+      "estimate": "3.75%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
+      "event": "FOMC Statement",
+      "country": "US",
+      "time": "03:00",
       "impact": "high",
       "importance": 3,
       "actual": "",
@@ -57,26 +81,98 @@
       "unit": ""
     },
     {
-      "date": "2026-07-23",
+      "date": "2026-07-30",
+      "event": "FOMC Press Conference",
+      "country": "US",
+      "time": "03:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
+      "event": "Advance GDP q/q",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.0%",
+      "estimate": "2.3%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
+      "event": "Core PCE Price Index m/m",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.3%",
+      "estimate": "0.1%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
+      "event": "Advance GDP Price Index q/q",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "3.6%",
+      "estimate": "3.7%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-30",
       "event": "Unemployment Claims",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "208K",
-      "estimate": "211K",
+      "previous": "187K",
+      "estimate": "206K",
       "unit": ""
     },
     {
-      "date": "2026-07-25",
-      "event": "President Trump Speaks",
+      "date": "2026-07-31",
+      "event": "Employment Cost Index q/q",
       "country": "US",
-      "time": "09:55",
+      "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "",
+      "previous": "0.9%",
+      "estimate": "0.8%",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-31",
+      "event": "Revised UoM Consumer Sentiment",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "54.4",
+      "estimate": "54.2",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-31",
+      "event": "Revised UoM Inflation Expectations",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "4.2%",
       "estimate": "",
       "unit": ""
     }
@@ -134,32 +230,46 @@
   ],
   "eventAnalysis": [
     {
+      "type": "macro",
+      "date": "2026-07-28",
+      "title": "CB Consumer Confidence",
+      "expected": "예측 92.1 / 이전 91.2",
+      "analysis": "예상 상회 시 소비자 신뢰도가 높아져 증시가 긍정적인 반응을 보일 가능성이 큽니다. 예상 하회 시 소비자 신뢰도의 저하로 인해 증시가 부정적인 영향을 받을 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-07-30",
+      "title": "Advance GDP q/q",
+      "expected": "예측 2.3% / 이전 2.0%",
+      "analysis": "예상 상회 시 경제 성장률의 개선으로 증시가 상승할 것으로 보이며, 달러화 강세를 유도할 수 있습니다. 예상 하회 시 경제 둔화 우려로 인해 증시와 환율 모두 부정적인 영향을 받을 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-07-30",
+      "title": "Unemployment Claims",
+      "expected": "예측 206K / 이전 187K",
+      "analysis": "예상 상회 시 실업 청구 건수 증가로 인해 경제 불안감이 커져 증시가 하락할 수 있습니다. 예상 하회 시 고용 시장의 안정성을 반영하여 증시가 긍정적인 반응을 보일 가능성이 있습니다."
+    },
+    {
       "type": "earnings",
       "date": "2026-07-30",
       "title": "삼성전자 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 섹터 전반에 긍정적인 영향을 미치며, 삼성전자의 주가 상승이 다른 반도체 기업에도 긍정적인 영향을 줄 수 있다. 예상 하회 시 반도체 업계 전반에 부정적인 신호로 작용할 수 있으며, 관련 종목인 SK hynix와 같은 기업의 주가에도 악영향을 미칠 수 있다."
+      "analysis": "예상 상회 시 반도체 업종 전반에 긍정적인 영향을 미치며, 관련 종목인 SK하이닉스도 상승할 가능성이 있습니다. 예상 하회 시 업종 내 부정적인 파급 효과가 있을 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-31",
       "title": "한화에어로스페이스 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 방산 섹터의 긍정적인 분위기를 조성하며, 한화에어로스페이스의 주가 상승이 다른 방산 기업에도 긍정적인 영향을 미칠 수 있다. 예상 하회 시 방산 업계의 투자 심리를 위축시킬 수 있으며, 관련 종목인 LIG넥스원에도 부정적인 영향을 미칠 가능성이 있다."
+      "analysis": "예상 상회 시 방산 업종에 긍정적인 영향을 미치며, 관련 종목인 LIG넥스원도 상승할 가능성이 있습니다. 예상 하회 시 방산 업종 전반에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-06",
       "title": "카카오 실적발표",
       "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터의 성장 가능성을 강조하며, 카카오의 주가 상승이 다른 플랫폼 기업에도 긍정적인 영향을 미칠 수 있다. 예상 하회 시 플랫폼 업계 전반에 부정적인 신호로 작용할 수 있으며, 관련 종목인 쿠팡과 같은 기업의 주가에도 악영향을 미칠 수 있다."
-    },
-    {
-      "type": "earnings",
-      "date": "2026-08-07",
-      "title": "NAVER 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터의 긍정적인 전망을 강화하며, NAVER의 주가 상승이 다른 플랫폼 기업에도 긍정적인 영향을 미칠 수 있다. 예상 하회 시 플랫폼 업계의 투자 심리를 위축시킬 수 있으며, 관련 종목인 카카오와 같은 기업에도 부정적인 영향을 미칠 가능성이 있다."
+      "analysis": "예상 상회 시 플랫폼 업종 전반에 긍정적인 영향을 미치며, 관련 종목인 네이버도 상승할 가능성이 있습니다. 예상 하회 시 플랫폼 업종 내 부정적인 파급 효과가 있을 수 있습니다."
     }
   ]
 }

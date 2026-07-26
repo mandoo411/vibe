@@ -149,6 +149,11 @@ export async function buildPromoCopy(snapshot) {
     const resultLine = extractHeadlineFallback(analysisText);
     const strategyComment = extractStrategyFallback(analysisText, 110);
     const headline = flowComment || resultLine || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
+    // coreLine = "📌 핵심 한 줄" 섹션 원문(리포트가 직접 뽑아둔 그날의 핵심 한 줄 요약+원인).
+    // 만평 릴스의 "왜 움직였는지" 카드는 headline(간밤 뉴욕증시 recap 등 간접 원인)보다
+    // 이 핵심 한 줄을 우선 써야 한다 (사용자 피드백: "이 내용으로 만평을 해야하는데 엉뚱한게 써있음"
+    // — 릴스에 시장 흐름 분석 문장이 나가고 핵심 한 줄이 안 나간 문제).
+    const coreLine = resultLine || flowComment || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
     // AI 판단(aiComment)이 커버(headline)와 똑같은 문장을 반복하지 않도록 한다
     // (사용자 피드백: "1번 카드 4번 카드 내용 중복"). 대체 후보도 억지로 잘라 문장이
     // 안 끝난 것처럼 보이면(looksComplete 실패) 걸러내고, 마땅한 후보가 없으면 비워둔다.
@@ -156,6 +161,7 @@ export async function buildPromoCopy(snapshot) {
     const aiComment = aiCandidates.find((c) => c && c !== headline && looksComplete(c)) || "";
     return {
       headline,
+      coreLine,
       summaryLines: buildFallbackSummaryLines(snapshot, analysisText),
       aiComment,
       checkpoints: extractOutlookFallback(analysisText),
@@ -220,6 +226,9 @@ summaryLines는 정확히 5개를 배열로 반환해.`);
       if (!Array.isArray(parsed.checkpoints) || parsed.checkpoints.length === 0) {
         parsed.checkpoints = extractOutlookFallback(analysisText);
       }
+      // Claude가 만든 headline은 이미 "왜 움직였는지" 원인 설명 프롬프트로 생성된 문장이라
+      // 만평 릴스의 reason-card에도 그대로 재사용한다 (fallback 경로의 coreLine과 대응).
+      parsed.coreLine = parsed.coreLine || parsed.headline;
       return parsed;
     } catch (error) {
       lastError = error;
@@ -252,6 +261,7 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     heroLabel: "코스피",
     heroPct: kospi?.changePercent || 0,
     headline: copy.headline,
+    reasonLine: copy.coreLine || copy.headline,
     indexTitle: "오늘의 시황 요약",
     indexRows,
     summaryLines: copy.summaryLines || [],

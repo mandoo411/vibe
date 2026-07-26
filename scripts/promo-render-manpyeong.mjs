@@ -56,6 +56,7 @@ export function buildManpyeongHTML(cardData, bgDataUri) {
     heroLabel, heroPct,
     indexRows = [],
     headline,
+    reasonLine,
     listItems = [],
     theme = "light",
   } = cardData;
@@ -76,7 +77,7 @@ export function buildManpyeongHTML(cardData, bgDataUri) {
     KOSDAQ_DIR: dir(kosdaqPct),
     KOSDAQ_ARROW: arrow(kosdaqPct),
     KOSDAQ_PCT: Math.abs(kosdaqPct).toFixed(2),
-    HEADLINE: headline,
+    HEADLINE: reasonLine || headline,
     BG_DATA_URI: bgDataUri,
   });
 

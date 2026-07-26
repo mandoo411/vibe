@@ -102,7 +102,10 @@
   .sub-index .idx-value.down { color: #3b82f6; }
   .sub-index .idx-value.flat { color: var(--text-secondary); }
 
-  /* (2) 오늘 왜 움직였는지 — 크고 굵은 한 줄 요약 */
+  /* (2) 오늘 왜 움직였는지 — 크고 굵은 한 줄 요약.
+     리포트의 "핵심 한 줄"은 날마다 길이가 들쭉날쭉한 원문 문장이라, 길어도 카드가 화면을
+     넘어가 아래 종목 카드를 밀어내지 않도록 4줄로 고정 클램프하고 넘치면 말줄임표로 자른다
+     (사용자 피드백으로 발견: 문장이 길었던 날 종목 카드가 화면 밖으로 잘림). */
   .reason-card {
     position: relative;
     font-size: 58px;
@@ -116,6 +119,10 @@
     letter-spacing: -1px;
     margin-bottom: 48px;
     box-shadow: 0 8px 24px rgba(7,38,75,0.08);
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* (3) 오늘의 이슈 종목 — 큼직한 카드 */

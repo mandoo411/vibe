@@ -64,16 +64,22 @@ export function buildManpyeongHTML(cardData, bgDataUri) {
   const s = suffix(theme);
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}${s}.html`), "utf8");
 
+  const kospiRow = findIndexRow(indexRows, heroLabel) || findIndexRow(indexRows, "코스피");
   const kosdaqRow = findIndexRow(indexRows, "코스닥");
   const kosdaqPct = kosdaqRow?.pct ?? 0;
 
+  // 등락률(%)만 있으면 임팩트는 있지만 "진짜 데이터"라는 신뢰감이 약하다.
+  // 실제 언론/증권사 카드는 항상 "종가 + 등락률"을 함께 보여준다 — indexRows에 이미
+  // 있는 실제 종가(value)를 그대로 재사용해 추가한다 (신규 계산·AI 개입 없음, 코드 렌더).
   let html = fillSimpleVars(read("card-manpyeong"), {
     DATE: date,
     SLOT_LABEL: slotLabel,
     HERO_LABEL: heroLabel,
+    HERO_VALUE: kospiRow?.value ?? "—",
     HERO_DIR: dir(heroPct),
     HERO_ARROW: arrow(heroPct),
     HERO_PCT: Math.abs(heroPct).toFixed(2),
+    KOSDAQ_VALUE: kosdaqRow?.value ?? "—",
     KOSDAQ_DIR: dir(kosdaqPct),
     KOSDAQ_ARROW: arrow(kosdaqPct),
     KOSDAQ_PCT: Math.abs(kosdaqPct).toFixed(2),

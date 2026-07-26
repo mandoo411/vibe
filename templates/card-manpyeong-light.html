@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <!--
-  마감 증시 만평 릴스 (9:16, 1080x1920) — card-reel-light.html을 대체하는 신규 포맷.
+  마감 증시 만평 릴스 (9:16, 1080x1920) v2 — 임팩트 우선 재구성.
   치환 변수: DATE SLOT_LABEL HERO_LABEL HERO_DIR(up|down|flat) HERO_ARROW HERO_PCT
   KOSDAQ_DIR(up|down|flat) KOSDAQ_ARROW KOSDAQ_PCT
-  HEADLINE AI_TITLE AI_COMMENT CHECKPOINTS_TITLE BG_DATA_URI
-  종목 하이라이트는 STOCKBADGE_START ~ STOCKBADGE_END 사이 블록을 반복 채움 (최대 2개)
-  체크포인트는 CHECKITEM_START ~ CHECKITEM_END 사이 블록을 반복 채움 (최대 2개)
+  HEADLINE BG_DATA_URI
+  종목 하이라이트는 STOCKBADGE_START ~ STOCKBADGE_END 사이 블록을 반복 채움 (최대 2개, 크게 강조)
+  v1 대비 변경: AI 판단 박스, 내일 주목할 변수(체크포인트) 박스를 완전히 제거하고
+  (1) 지수 등락 (2) 오늘 왜 움직였는지 (3) 오늘의 이슈 종목, 이 3가지만 크게 구성한다.
 -->
 <html lang="ko">
 <head>
@@ -32,12 +33,12 @@
     z-index: 1;
     background: linear-gradient(180deg,
       rgba(255,255,255,0.92) 0%,
-      rgba(255,255,255,0.62) 16%,
-      rgba(255,255,255,0.22) 34%,
-      rgba(255,255,255,0.30) 52%,
-      rgba(255,255,255,0.72) 68%,
-      rgba(255,255,255,0.95) 84%,
-      rgba(255,255,255,0.97) 100%);
+      rgba(255,255,255,0.60) 16%,
+      rgba(255,255,255,0.18) 34%,
+      rgba(255,255,255,0.26) 52%,
+      rgba(255,255,255,0.74) 68%,
+      rgba(255,255,255,0.96) 84%,
+      rgba(255,255,255,0.98) 100%);
   }
 
   .brand-lockup, .watermark, .reel-wrap { z-index: 2; }
@@ -51,152 +52,116 @@
     flex-direction: column;
   }
 
-  .reel-date { margin-bottom: 28px; }
+  .reel-date { margin-bottom: 24px; }
 
-  .reel-title {
-    font-size: 54px;
+  .reel-eyebrow {
+    font-size: 34px;
     font-weight: 800;
-    line-height: 1.25;
-    letter-spacing: -1px;
-    margin-bottom: 28px;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    margin-bottom: 22px;
   }
 
-  /* 코스피/코스닥 나란히 배치하는 듀얼 인덱스 박스 */
-  .index-row {
+  /* (1) 지수 등락 — 코스피를 히어로로 크게, 코스닥은 보조 pill로 */
+  .hero-index {
     display: flex;
-    gap: 20px;
-    margin-bottom: 28px;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 18px;
   }
-  .index-box {
-    flex: 1;
+  .hero-index .idx-label {
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .hero-index .idx-value {
+    font-size: 92px;
+    font-weight: 800;
+    letter-spacing: -2px;
+  }
+  .hero-index .idx-value.up { color: #e24b4a; }
+  .hero-index .idx-value.down { color: #3b82f6; }
+  .hero-index .idx-value.flat { color: var(--text-secondary); }
+
+  .sub-index {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    background: rgba(120,120,120,0.12);
+    margin-bottom: 32px;
+  }
+  .sub-index.up { background: rgba(226,75,74,0.14); }
+  .sub-index.down { background: rgba(59,130,246,0.14); }
+  .sub-index .idx-label { font-size: 28px; font-weight: 700; color: var(--text-secondary); }
+  .sub-index .idx-value { font-size: 36px; font-weight: 800; }
+  .sub-index .idx-value.up { color: #e24b4a; }
+  .sub-index .idx-value.down { color: #3b82f6; }
+  .sub-index .idx-value.flat { color: var(--text-secondary); }
+
+  /* (2) 오늘 왜 움직였는지 — 크고 굵은 한 줄 요약 */
+  .reason-card {
     position: relative;
-    padding: 26px 28px;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(7,38,75,0.10);
-  }
-  .index-box.up { background: linear-gradient(135deg, rgba(226,75,74,0.16) 0%, rgba(226,75,74,0.04) 100%); }
-  .index-box.down { background: linear-gradient(135deg, rgba(59,130,246,0.16) 0%, rgba(59,130,246,0.04) 100%); }
-  .index-box.flat { background: rgba(120,120,120,0.10); }
-  .index-box .idx-label {
-    font-size: 26px;
+    font-size: 50px;
     font-weight: 700;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
-  }
-  .index-box .idx-value {
-    font-size: 40px;
-    font-weight: 800;
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.82);
+    border-left: 9px solid var(--accent-gold);
+    padding: 34px 36px;
+    border-radius: 0 20px 20px 0;
+    line-height: 1.42;
     letter-spacing: -1px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .index-box .idx-value svg { width: 28px; height: 28px; }
-
-  .reel-headline {
-    position: relative;
-    font-size: 38px;
-    font-weight: 600;
-    color: var(--text-primary);
-    background: rgba(255,255,255,0.78);
-    border-left: 7px solid var(--accent-gold);
-    padding: 28px 32px;
-    border-radius: 0 18px 18px 0;
-    line-height: 1.5;
-    margin-bottom: 28px;
-    box-shadow: 0 6px 20px rgba(7,38,75,0.06);
+    margin-bottom: 36px;
+    box-shadow: 0 8px 24px rgba(7,38,75,0.08);
   }
 
-  /* 종목 하이라이트 배지 — AI 삽화 위 고정 영역에 배치(캐릭터와 정밀 결합 아님) */
-  .stock-badges {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-  .stock-badge {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 24px;
-    border-radius: var(--radius-md);
-    background: rgba(255,255,255,0.85);
-    box-shadow: 0 6px 18px rgba(7,38,75,0.08);
-  }
-  .stock-badge .name {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--text-primary);
-    flex-shrink: 0;
-  }
-  .stock-badge .pct {
-    font-size: 28px;
-    font-weight: 800;
-    flex-shrink: 0;
-  }
-  .stock-badge .reason {
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .reel-ai {
-    background: rgba(7,38,75,0.05);
-    border: 1px solid rgba(7,38,75,0.10);
-    border-radius: var(--radius-lg);
-    padding: 26px 30px;
-    margin-bottom: 28px;
-  }
-  .reel-ai .ai-label {
+  /* (3) 오늘의 이슈 종목 — 큼직한 카드 */
+  .issue-label {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 24px;
+    font-size: 34px;
     font-weight: 800;
     color: var(--accent-gold);
+    margin-bottom: 22px;
+  }
+  .stock-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .stock-card {
+    background: rgba(255,255,255,0.88);
+    border-radius: var(--radius-lg);
+    padding: 32px 36px;
+    box-shadow: 0 10px 28px rgba(7,38,75,0.10);
+  }
+  .stock-card .row1 {
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
     margin-bottom: 12px;
   }
-  .reel-ai .ai-text {
-    font-size: 30px;
-    font-weight: 600;
-    line-height: 1.5;
-    color: var(--text-primary);
-  }
-
-  .checkpoints-box {
-    background: rgba(255,255,255,0.85);
-    border-radius: var(--radius-lg);
-    padding: 24px 30px;
-    box-shadow: 0 6px 18px rgba(7,38,75,0.08);
-  }
-  .checkpoints-box .cp-label {
-    font-size: 24px;
+  .stock-card .name {
+    font-size: 56px;
     font-weight: 800;
-    color: var(--accent-gold);
-    margin-bottom: 14px;
-  }
-  .checkpoints-box .cp-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: 26px;
-    font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.45;
-    margin-bottom: 10px;
+    letter-spacing: -1px;
   }
-  .checkpoints-box .cp-item:last-child { margin-bottom: 0; }
-  .checkpoints-box .cp-dot {
-    flex-shrink: 0;
-    width: 10px;
-    height: 10px;
-    margin-top: 10px;
-    border-radius: 50%;
-    background: var(--accent-gold);
+  .stock-card .pct {
+    font-size: 56px;
+    font-weight: 800;
+  }
+  .stock-card .reason {
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>
 </head>
@@ -216,35 +181,23 @@
     <div class="reel-date">
       <span class="slot-badge"><span class="dot"></span>{{DATE}} {{SLOT_LABEL}}</span>
     </div>
-    <div class="reel-title">AI가 그린<br/>마감 증시 만평</div>
+    <div class="reel-eyebrow">오늘의 마감 시황, 한눈에</div>
 
-    <div class="index-row">
-      <div class="index-box {{HERO_DIR}}">
-        <div class="idx-label">{{HERO_LABEL}}</div>
-        <div class="idx-value {{HERO_DIR}}">{{HERO_ARROW}} {{HERO_PCT}}%</div>
-      </div>
-      <div class="index-box {{KOSDAQ_DIR}}">
-        <div class="idx-label">코스닥</div>
-        <div class="idx-value {{KOSDAQ_DIR}}">{{KOSDAQ_ARROW}} {{KOSDAQ_PCT}}%</div>
-      </div>
+    <div class="hero-index">
+      <span class="idx-label">{{HERO_LABEL}}</span>
+      <span class="idx-value {{HERO_DIR}}">{{HERO_ARROW}} {{HERO_PCT}}%</span>
+    </div>
+    <div class="sub-index {{KOSDAQ_DIR}}">
+      <span class="idx-label">코스닥</span>
+      <span class="idx-value {{KOSDAQ_DIR}}">{{KOSDAQ_ARROW}} {{KOSDAQ_PCT}}%</span>
     </div>
 
-    <div class="reel-headline">"{{HEADLINE}}"</div>
+    <div class="reason-card">{{HEADLINE}}</div>
 
-    <div class="stock-badges">
+    <div class="issue-label">🔥 오늘의 이슈 종목</div>
+    <div class="stock-cards">
       <!--STOCKBADGE_START-->
       <!--STOCKBADGE_END-->
-    </div>
-
-    <div class="reel-ai">
-      <div class="ai-label">🤖 {{AI_TITLE}}</div>
-      <div class="ai-text">{{AI_COMMENT}}</div>
-    </div>
-
-    <div class="checkpoints-box">
-      <div class="cp-label">🔭 {{CHECKPOINTS_TITLE}}</div>
-      <!--CHECKITEM_START-->
-      <!--CHECKITEM_END-->
     </div>
   </div>
 

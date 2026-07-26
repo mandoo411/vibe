@@ -80,6 +80,16 @@ jobs:
           name: reel-png-${{ github.run_number }}
           path: generated/closing/reel.png
           retention-days: 3
+
+      # 아티팩트 다운로드 없이 Job Summary 페이지에서 바로 눈으로 확인하기 위한 진단 스텝
+      # (base64 data URI로 인라인 <img> 삽입 — 확인 끝나면 제거)
+      - name: Preview rendered reel PNG in job summary (temp diagnostic)
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          echo "### Rendered reel.png preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          B64=$(base64 -w0 generated/closing/reel.png)
+          echo "<img src=\"data:image/png;base64,${B64}\" width=\"480\" />" >> "$GITHUB_STEP_SUMMARY"
       - name: Commit and push generated images
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: |

@@ -7,12 +7,16 @@
  * 정확해야 하는 텍스트는 지금까지처럼 HTML/CSS로 코드가 직접 그리고, 여기서는 순수
  * 배경 비주얼(그라디언트·추상 패턴)만 생성해서 그 위에 얹는다.
  *
- * GEMINI_API_KEY가 없거나 API 호출이 실패해도 릴스 발행 자체가 막히면 안 되므로,
- * 실패 시 fallbackBackgroundDataUri()로 안전하게 대체한다.
+ * 우선순위: Gemini -> (실패 시) OpenAI GPT Image -> (그마저 실패 시) 순수 CSS 그라디언트.
+ * 어느 단계에서 실패하든 릴스 발행 자체가 막히면 안 되므로 항상 마지막엔
+ * fallbackBackgroundDataUri()로 안전하게 대체한다.
  */
 
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+const OPENAI_MODEL = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
+const OPENAI_API_URL = "https://api.openai.com/v1/images/generations";
 
 function buildPrompt(dir) {
   const moodMap = {
@@ -65,6 +69,43 @@ export async function generateReelBackground(dir = "flat") {
   return `data:${mime};base64,${imgPart.inlineData.data}`;
 }
 
+/** Gemini가 실패했을 때(무료 할당량 초과 등) 쓰는 2차 폴백: OpenAI GPT Image로 배경을 생성한다.
+ * 9:16에 가장 가까운 세로 규격(1024x1536)을 사용 — 어차피 .bg-art는 object-fit: cover라
+ * 정확히 1080x1920이 아니어도 화면을 꽉 채운다. */
+export async function generateOpenAIBackground(dir = "flat") {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY 환경변수가 설정되어 있지 않습니다.");
+  }
+
+  const res = await fetch(OPENAI_API_URL, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      prompt: buildPrompt(dir),
+      size: "1024x1536",
+      quality: "medium",
+      n: 1,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`OpenAI 이미지 생성 실패 (HTTP ${res.status}): ${errText.slice(0, 300)}`);
+  }
+
+  const data = await res.json();
+  const b64 = data?.data?.[0]?.b64_json;
+  if (!b64) {
+    throw new Error("OpenAI 응답에서 이미지 데이터를 찾지 못했습니다: " + JSON.stringify(data).slice(0, 300));
+  }
+  return `data:image/png;base64,${b64}`;
+}
+
 /** Gemini 우선(키 미설정, 요금 초과, 네트워크 오류 등) 시 안전하게 쓰는 순수 CSS 그라디언트 배경.
  * 기존 카드뉴스와 동일한 브랜드 컬러 톤을 사용해 최소한 톤앤매너는 어긋나지 않게 한다. */
 export function fallbackBackgroundDataUri(dir = "flat") {
@@ -85,12 +126,20 @@ export function fallbackBackgroundDataUri(dir = "flat") {
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 
-/** Gemini 우선 시도 -> 실패하면 조용히 폴백. 워크플로우 로그에 이유만 남긴다. */
+/** Gemini 우선 시도 -> 실패하면 OpenAI(GPT Image) 시도 -> 그마저 실패하면 조용히 CSS 폴백.
+ * 워크플로우 로그에 각 단계 실패 이유만 남긴다. */
 export async function getReelBackground(dir = "flat") {
   try {
     return await generateReelBackground(dir);
-  } catch (err) {
-    console.warn(`[promo-gemini-background] Gemini 생성 실패, 폴백 배경 사용: ${err.message}`);
-    return fallbackBackgroundDataUri(dir);
+  } catch (geminiErr) {
+    console.warn(`[promo-gemini-background] Gemini 생성 실패: ${geminiErr.message}`);
+    try {
+      const img = await generateOpenAIBackground(dir);
+      console.warn("[promo-gemini-background] OpenAI(GPT Image)로 폴백 생성 성공");
+      return img;
+    } catch (openaiErr) {
+      console.warn(`[promo-gemini-background] OpenAI 폴백도 실패, CSS 그라디언트 사용: ${openaiErr.message}`);
+      return fallbackBackgroundDataUri(dir);
+    }
   }
 }

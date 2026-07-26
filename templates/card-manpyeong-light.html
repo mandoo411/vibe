@@ -66,36 +66,38 @@
   .hero-index {
     display: flex;
     align-items: baseline;
-    gap: 24px;
-    margin-bottom: 18px;
+    gap: 26px;
+    margin-bottom: 24px;
   }
   .hero-index .idx-label {
-    font-size: 44px;
+    font-size: 50px;
     font-weight: 800;
     color: var(--text-primary);
   }
   .hero-index .idx-value {
-    font-size: 92px;
+    font-size: 116px;
     font-weight: 800;
-    letter-spacing: -2px;
+    letter-spacing: -3px;
   }
   .hero-index .idx-value.up { color: #e24b4a; }
   .hero-index .idx-value.down { color: #3b82f6; }
   .hero-index .idx-value.flat { color: var(--text-secondary); }
 
+  /* 코스닥 보조 지표 — 완전 불투명한 카드로 만들어 배경 삽화(코인 등)와 겹쳐도 항상 또렷하게 */
   .sub-index {
     display: inline-flex;
     align-items: baseline;
-    gap: 12px;
-    padding: 14px 28px;
+    gap: 14px;
+    padding: 18px 34px;
     border-radius: 999px;
-    background: rgba(120,120,120,0.12);
-    margin-bottom: 32px;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 8px 20px rgba(7,38,75,0.10);
+    margin-bottom: 40px;
   }
-  .sub-index.up { background: rgba(226,75,74,0.14); }
-  .sub-index.down { background: rgba(59,130,246,0.14); }
-  .sub-index .idx-label { font-size: 28px; font-weight: 700; color: var(--text-secondary); }
-  .sub-index .idx-value { font-size: 36px; font-weight: 800; }
+  .sub-index.up { background: rgba(255,235,234,0.94); }
+  .sub-index.down { background: rgba(231,241,255,0.94); }
+  .sub-index .idx-label { font-size: 32px; font-weight: 700; color: var(--text-secondary); }
+  .sub-index .idx-value { font-size: 42px; font-weight: 800; }
   .sub-index .idx-value.up { color: #e24b4a; }
   .sub-index .idx-value.down { color: #3b82f6; }
   .sub-index .idx-value.flat { color: var(--text-secondary); }
@@ -103,16 +105,16 @@
   /* (2) 오늘 왜 움직였는지 — 크고 굵은 한 줄 요약 */
   .reason-card {
     position: relative;
-    font-size: 50px;
+    font-size: 58px;
     font-weight: 700;
     color: var(--text-primary);
-    background: rgba(255,255,255,0.82);
-    border-left: 9px solid var(--accent-gold);
-    padding: 34px 36px;
-    border-radius: 0 20px 20px 0;
+    background: rgba(255,255,255,0.86);
+    border-left: 10px solid var(--accent-gold);
+    padding: 40px 42px;
+    border-radius: 0 22px 22px 0;
     line-height: 1.42;
     letter-spacing: -1px;
-    margin-bottom: 36px;
+    margin-bottom: 48px;
     box-shadow: 0 8px 24px rgba(7,38,75,0.08);
   }
 
@@ -121,40 +123,40 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 34px;
+    font-size: 38px;
     font-weight: 800;
     color: var(--accent-gold);
-    margin-bottom: 22px;
+    margin-bottom: 28px;
   }
   .stock-cards {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 28px;
   }
   .stock-card {
-    background: rgba(255,255,255,0.88);
+    background: rgba(255,255,255,0.90);
     border-radius: var(--radius-lg);
-    padding: 32px 36px;
+    padding: 40px 44px;
     box-shadow: 0 10px 28px rgba(7,38,75,0.10);
   }
   .stock-card .row1 {
     display: flex;
     align-items: baseline;
-    gap: 22px;
-    margin-bottom: 12px;
+    gap: 24px;
+    margin-bottom: 16px;
   }
   .stock-card .name {
-    font-size: 56px;
+    font-size: 64px;
     font-weight: 800;
     color: var(--text-primary);
     letter-spacing: -1px;
   }
   .stock-card .pct {
-    font-size: 56px;
+    font-size: 64px;
     font-weight: 800;
   }
   .stock-card .reason {
-    font-size: 30px;
+    font-size: 34px;
     font-weight: 500;
     color: var(--text-secondary);
     line-height: 1.4;

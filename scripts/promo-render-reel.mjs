@@ -61,7 +61,10 @@ export function buildReelHTML(cardData, bgDataUri) {
     BG_DATA_URI: bgDataUri,
   });
 
-  const chipBlock = checkpoints.slice(0, 1).map((c) => checkChip(trimToNaturalBreak(c, 34), checkColor)).join("\n");
+  const chipBlock = checkpoints.slice(0, 1).map((c) => checkChip(trimToNaturalBreak(c, 34), checkColor)).join("
+");
+  console.error("DEBUG_CHECKPOINTS=" + JSON.stringify(checkpoints));
+  console.error("DEBUG_CHIPBLOCK_LEN=" + chipBlock.length);
   html = html.replace(/<!--CHIP_TEMPLATE_START-->[\s\S]*?<!--CHIP_TEMPLATE_END-->/, chipBlock);
 
   return html;

@@ -125,10 +125,13 @@
   }
 
   .reel-chips {
+    position: absolute;
+    left: 64px;
+    right: 64px;
+    bottom: 90px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    margin-top: 44px;
   }
 </style>
 </head>
@@ -158,10 +161,11 @@
       <div class="ai-label">🤖 {{AI_TITLE}}</div>
       <div class="ai-text">{{AI_COMMENT}}</div>
     </div>
-    <div class="reel-chips">
-      <!--CHIP_TEMPLATE_START-->
-      <!--CHIP_TEMPLATE_END-->
-    </div>
+  </div>
+
+  <div class="reel-chips">
+    <!--CHIP_TEMPLATE_START-->
+    <!--CHIP_TEMPLATE_END-->
   </div>
 
   <div class="watermark">TotalMoney.kr</div>

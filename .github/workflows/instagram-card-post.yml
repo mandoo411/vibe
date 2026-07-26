@@ -70,6 +70,16 @@ jobs:
           md5sum generated/closing/reel.png || true
           git status --porcelain generated/ || true
           git diff --stat -- generated/ || true
+
+      # git diff 판정과 무관하게 실제 렌더링된 PNG를 직접 눈으로 확인하기 위한 임시 진단 스텝
+      # (칩 z-index 버그 검증용 — 확인 끝나면 제거)
+      - name: Upload rendered reel PNG (temp diagnostic)
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-png-${{ github.run_number }}
+          path: generated/closing/reel.png
+          retention-days: 3
       - name: Commit and push generated images
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: |

@@ -63,6 +63,13 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/instagram-card-post.mjs --slot=closing --render-reel
 
+            - name: Debug generated files
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          ls -la generated/closing/ || true
+          md5sum generated/closing/reel.png || true
+          git status --porcelain generated/ || true
+          git diff --stat -- generated/ || true
       - name: Commit and push generated images
         if: steps.dupcheck.outputs.should_publish == 'true'
         run: |

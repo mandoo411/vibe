@@ -261,7 +261,12 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     heroLabel: "코스피",
     heroPct: kospi?.changePercent || 0,
     headline: copy.headline,
-    reasonLine: copy.coreLine || copy.headline,
+    // reasonLine(copy.coreLine, "핵심 한 줄")은 원문이 쉼표로 이어지는 긴 복문이라 날마다
+    // 길이가 들쭉날쭉하다 (사용자 피드백: 만평에 엉뚱한 문장이 나가는 문제를 고친 뒤, 문장이
+    // 길었던 날 아래 종목 카드가 화면 밖으로 잘리는 새 문제 발견). 여기서는 극단적으로 긴
+    // 경우만 방지하는 여유 있는 상한을 걸고, 실제 화면 안 보장은 템플릿의 4줄 클램프(말줄임표)
+    // 가 맡는다 — 그래야 문장이 매번 정확히 몇 자에서 끊길지 걱정하지 않아도 된다.
+    reasonLine: trimToNaturalBreak(copy.coreLine || copy.headline || "", 150),
     indexTitle: "오늘의 시황 요약",
     indexRows,
     summaryLines: copy.summaryLines || [],

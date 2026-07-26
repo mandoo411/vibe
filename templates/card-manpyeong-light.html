@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
   마감 증시 만평 릴스 (9:16, 1080x1920) v2 — 임팩트 우선 재구성.
-  치환 변수: DATE SLOT_LABEL HERO_LABEL HERO_DIR(up|down|flat) HERO_ARROW HERO_PCT
-  KOSDAQ_DIR(up|down|flat) KOSDAQ_ARROW KOSDAQ_PCT
+  치환 변수: DATE SLOT_LABEL HERO_LABEL HERO_VALUE HERO_DIR(up|down|flat) HERO_ARROW HERO_PCT
+  KOSDAQ_VALUE KOSDAQ_DIR(up|down|flat) KOSDAQ_ARROW KOSDAQ_PCT
   HEADLINE BG_DATA_URI
   종목 하이라이트는 STOCKBADGE_START ~ STOCKBADGE_END 사이 블록을 반복 채움 (최대 2개, 크게 강조)
   v1 대비 변경: AI 판단 박스, 내일 주목할 변수(체크포인트) 박스를 완전히 제거하고
@@ -62,17 +62,30 @@
     margin-bottom: 22px;
   }
 
-  /* (1) 지수 등락 — 코스피를 히어로로 크게, 코스닥은 보조 pill로 */
+  /* (1) 지수 등락 — 코스피를 히어로로 크게, 코스닥은 보조 pill로.
+     등락률(%)만 있으면 강렬하지만 "진짜 시세 같다"는 신뢰감이 약해서, 실제 증권사/뉴스
+     카드처럼 종가 숫자를 라벨 아래 작게 병기한다 (지수 데이터는 그대로, 새 계산 없음). */
   .hero-index {
     display: flex;
     align-items: baseline;
     gap: 26px;
     margin-bottom: 24px;
   }
+  .hero-index .idx-label-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
   .hero-index .idx-label {
-    font-size: 50px;
+    font-size: 46px;
     font-weight: 800;
     color: var(--text-primary);
+  }
+  .hero-index .idx-close {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: -0.5px;
   }
   .hero-index .idx-value {
     font-size: 116px;
@@ -97,6 +110,7 @@
   .sub-index.up { background: rgba(255,235,234,0.94); }
   .sub-index.down { background: rgba(231,241,255,0.94); }
   .sub-index .idx-label { font-size: 32px; font-weight: 700; color: var(--text-secondary); }
+  .sub-index .idx-close { font-size: 28px; font-weight: 600; color: var(--text-secondary); opacity: 0.8; }
   .sub-index .idx-value { font-size: 42px; font-weight: 800; }
   .sub-index .idx-value.up { color: #e24b4a; }
   .sub-index .idx-value.down { color: #3b82f6; }
@@ -104,25 +118,33 @@
 
   /* (2) 오늘 왜 움직였는지 — 크고 굵은 한 줄 요약.
      리포트의 "핵심 한 줄"은 날마다 길이가 들쭉날쭉한 원문 문장이라, 길어도 카드가 화면을
-     넘어가 아래 종목 카드를 밀어내지 않도록 4줄로 고정 클램프하고 넘치면 말줄임표로 자른다
-     (사용자 피드백으로 발견: 문장이 길었던 날 종목 카드가 화면 밖으로 잘림). */
+     넘어가 아래 종목 카드를 밀어내지 않도록 3줄로 고정 클램프하고 넘치면 말줄임표로 자른다
+     (사용자 피드백으로 발견: 문장이 길었던 날 종목 카드가 화면 밖으로 잘림).
+     .reason-card는 .reel-wrap(flex-column)의 자식이라, -webkit-line-clamp를 이 카드
+     자체에 걸면 flex 자식의 높이 계산과 -webkit-box의 내재 높이가 충돌해 클램프 높이가
+     정확히 맞지 않고 말줄임표(…) 아래로 잘린 텍스트 한 줄이 삐져나오는 버그가 있었다
+     (실제 렌더링에서 확인됨). 그래서 카드는 순수 컨테이너(배경·테두리·패딩)만 담당하고,
+     실제 클램프는 flex 영향을 받지 않는 안쪽 .reason-text에서만 건다. */
   .reason-card {
     position: relative;
-    font-size: 58px;
-    font-weight: 700;
-    color: var(--text-primary);
     background: rgba(255,255,255,0.86);
     border-left: 10px solid var(--accent-gold);
     padding: 40px 42px;
     border-radius: 0 22px 22px 0;
-    line-height: 1.42;
-    letter-spacing: -1px;
     margin-bottom: 48px;
     box-shadow: 0 8px 24px rgba(7,38,75,0.08);
+    flex-shrink: 0;
+  }
+  .reason-card .reason-text {
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.42;
+    letter-spacing: -1px;
   }
 
   /* (3) 오늘의 이슈 종목 — 큼직한 카드 */
@@ -193,15 +215,19 @@
     <div class="reel-eyebrow">오늘의 마감 시황, 한눈에</div>
 
     <div class="hero-index">
-      <span class="idx-label">{{HERO_LABEL}}</span>
+      <span class="idx-label-col">
+        <span class="idx-label">{{HERO_LABEL}}</span>
+        <span class="idx-close">{{HERO_VALUE}}</span>
+      </span>
       <span class="idx-value {{HERO_DIR}}">{{HERO_ARROW}} {{HERO_PCT}}%</span>
     </div>
     <div class="sub-index {{KOSDAQ_DIR}}">
       <span class="idx-label">코스닥</span>
+      <span class="idx-close">{{KOSDAQ_VALUE}}</span>
       <span class="idx-value {{KOSDAQ_DIR}}">{{KOSDAQ_ARROW}} {{KOSDAQ_PCT}}%</span>
     </div>
 
-    <div class="reason-card">{{HEADLINE}}</div>
+    <div class="reason-card"><div class="reason-text">{{HEADLINE}}</div></div>
 
     <div class="issue-label">🔥 오늘의 이슈 종목</div>
     <div class="stock-cards">

@@ -20,18 +20,32 @@ const OPENAI_API_URL = "https://api.openai.com/v1/images/generations";
 
 function buildPrompt(dir) {
   const moodMap = {
-    up: "warm, energetic mood with subtle crimson-red glow accents, gentle upward-flowing abstract motion",
-    down: "cool, tense mood with subtle blue glow accents, gentle downward-flowing abstract motion",
-    flat: "calm, balanced mood with soft neutral abstract motion",
+    up: {
+      scene:
+        "the mascot beaming with an ecstatic, triumphant grin, both arms raised in celebration, eyes sparkling with joy, a couple of small hand-drawn gold coins and a simple upward arrow doodle floating near it",
+      glow: "warm golden-red glow",
+    },
+    down: {
+      scene:
+        "the mascot sweating anxiously with a nervous, worried frown, one hand wiping a sweat drop from its forehead, shoulders slumped, a simple downward arrow doodle and a couple of falling-coin sketches floating near it",
+      glow: "cool tense blue glow",
+    },
+    flat: {
+      scene:
+        "the mascot with a calm, neutral shrugging expression, arms held slightly out to the sides, looking thoughtfully at a simple flat-line doodle floating near it",
+      glow: "soft neutral glow",
+    },
   };
-  const mood = moodMap[dir] || moodMap.flat;
+  const m = moodMap[dir] || moodMap.flat;
   return [
-    "Abstract premium fintech background art, portrait 9:16 aspect ratio, for a Korean stock market AI news brand.",
-    "Deep navy (#07264b) and teal (#0f8387) as the two dominant colors, with small gold (#f59e0b) accent highlights.",
-    `${mood}.`,
-    "Abstract flowing lines and soft glowing particles loosely inspired by candlestick charts, cinematic depth, elegant and modern.",
-    "The bottom two-thirds of the image should be visually calmer and lower-contrast so white overlay text stays readable.",
-    "IMPORTANT: absolutely no text, no numbers, no letters, no words, no UI elements, no chart labels, no logos, no watermarks anywhere in the image — pure abstract background art only.",
+    "Satirical editorial-cartoon illustration (시사 만평 style), portrait 9:16 aspect ratio, for a Korean stock market AI news brand mascot.",
+    "Main subject: an original, brand-new cartoon frog mascot character — this is NOT Pepe the Frog and must not resemble any existing copyrighted meme character or franchise mascot. Design it from scratch: simple rounded body, smooth green skin, big round expressive eyes, wearing a small necktie, friendly and professional-looking but with an exaggerated caricature expression reacting to today's stock market news.",
+    `${m.scene}.`,
+    "Deep navy (#07264b) and teal (#0f8387) as the two dominant background colors, with small gold (#f59e0b) accents, matching a premium fintech brand look.",
+    `${m.glow} lighting around the character.`,
+    "Compose the mascot and its doodles in the upper half of the frame only — the lower two-thirds of the image must stay visually calm, empty, and low-contrast so white overlay text stays readable.",
+    "Clean flat-cartoon illustration style, bold outlines, simple cel shading, modern and playful yet professional — not photorealistic.",
+    "IMPORTANT: absolutely no text, no numbers, no letters, no words, no logos, no watermarks, no chart axis labels anywhere in the image — pure illustration only, no readable characters of any kind.",
   ].join(" ");
 }
 

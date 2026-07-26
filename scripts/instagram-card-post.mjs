@@ -7,6 +7,10 @@
  * 흐름: 스냅샷 읽기 → 카피 생성/변환 → 5장 PNG 렌더링 → generated/<slot>/ 저장
  *       → git commit·push (워크플로우가 처리) → Meta Graph API로 캐러셀 발행
  *
+ * 릴스(--render-reel/--publish-reel)는 "마감 증시 만평" 포맷(promo-render-manpyeong.mjs)을 사용한다 —
+ * 기존 1장 요약 카드(promo-render-reel.mjs)를 대체. 지수 듀얼 박스 + 종목 하이라이트 배지 +
+ * AI 판단 + 내일 주목할 변수를, AI가 그린 무드 삽화(개구리 마스코트) 위에 얹는다.
+ *
  * 사용:
  *   node scripts/instagram-card-post.mjs --slot=morning --render
  *   node scripts/instagram-card-post.mjs --slot=morning --publish
@@ -16,7 +20,7 @@
 import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData } from "./promo-market-copy.mjs";
 import { loadMorningSnapshot, buildMorningCardData } from "./promo-morning-copy.mjs";
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
-import { buildReelHTML, renderReelToPNG } from "./promo-render-reel.mjs";
+import { buildManpyeongHTML, renderManpyeongToPNG } from "./promo-render-manpyeong.mjs";
 import { getReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
 import { postInstagramCarousel, postInstagramReel } from "./promo-instagram-api.mjs";
@@ -169,21 +173,21 @@ function heroDir(pct) {
   return pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 }
 
-/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리 */
+/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> "마감 증시 만평" HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리 */
 async function renderReel(slot) {
   console.log(`1) ${slot === "morning" ? "data/morning-briefing.json" : "data/daily-market.json"} 스냅샷 로딩...`);
   const { cardData, caption } = await buildCardDataForSlot(slot);
 
-  console.log("2) Gemini로 배경 이미지 생성 중 (실패 시 대체 배경 사용)...");
+  console.log("2) Gemini로 배경 이미지 생성 중 (실패 시 OpenAI -> CSS 순으로 대체)...");
   const bgDataUri = await getReelBackground(heroDir(cardData.heroPct));
 
-  console.log(`3) 릴스 카드 HTML 빌드 중 (slot: ${slot})...`);
-  const html = buildReelHTML(cardData, bgDataUri);
+  console.log(`3) 만평 릴스 HTML 빌드 중 (slot: ${slot})...`);
+  const html = buildManpyeongHTML(cardData, bgDataUri);
 
   console.log("4) PNG 스크린샷 캡처 중...");
   const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor(slot);
   mkdirSync(generatedDir, { recursive: true });
-  await renderReelToPNG(html, reelPngFile);
+  await renderManpyeongToPNG(html, reelPngFile);
 
   console.log("5) mp4(릴스용 무음 영상)로 변환 중...");
   await imageToReelVideo(reelPngFile, reelMp4File);

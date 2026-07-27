@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-27 06:56 KST",
-    "from": "2026-07-27",
-    "to": "2026-08-10",
-    "historyFrom": "2026-04-28",
+    "lastUpdatedKst": "2026-07-28 07:04 KST",
+    "from": "2026-07-28",
+    "to": "2026-08-11",
+    "historyFrom": "2026-04-29",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -46,6 +46,18 @@
     },
     {
       "date": "2026-07-28",
+      "event": "President Trump Speaks",
+      "country": "US",
+      "time": "03:50",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-28",
       "event": "CB Consumer Confidence",
       "country": "US",
       "time": "23:00",
@@ -53,7 +65,7 @@
       "importance": 3,
       "actual": "",
       "previous": "91.2",
-      "estimate": "92.1",
+      "estimate": "92.4",
       "unit": ""
     },
     {
@@ -101,7 +113,7 @@
       "importance": 3,
       "actual": "",
       "previous": "2.0%",
-      "estimate": "2.3%",
+      "estimate": "2.0%",
       "unit": ""
     },
     {
@@ -113,7 +125,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.3%",
-      "estimate": "0.1%",
+      "estimate": "0.2%",
       "unit": ""
     },
     {
@@ -125,7 +137,7 @@
       "importance": 3,
       "actual": "",
       "previous": "3.6%",
-      "estimate": "3.7%",
+      "estimate": "4.1%",
       "unit": ""
     },
     {
@@ -137,7 +149,7 @@
       "importance": 3,
       "actual": "",
       "previous": "187K",
-      "estimate": "206K",
+      "estimate": "201K",
       "unit": ""
     },
     {
@@ -161,7 +173,7 @@
       "importance": 3,
       "actual": "",
       "previous": "54.4",
-      "estimate": "54.2",
+      "estimate": "53.9",
       "unit": ""
     },
     {
@@ -180,6 +192,29 @@
   "krIPO": [],
   "krEarnings": [
     {
+      "date": "2026-07-27",
+      "name": "셀트리온",
+      "sector": "",
+      "code": "068270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-29",
+      "name": "SK하이닉스",
+      "sector": "반도체",
+      "code": "000660",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)",
+      "evidenceCount": 2,
+      "confirmed": false,
+      "source": "manual"
+    },
+    {
       "date": "2026-07-30",
       "name": "삼성전자",
       "sector": "반도체",
@@ -187,7 +222,7 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 5,
+      "evidenceCount": 6,
       "confirmed": false,
       "source": "manual"
     },
@@ -211,7 +246,7 @@
       "epsEstimate": "",
       "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 2,
+      "evidenceCount": 3,
       "confirmed": false,
       "source": "manual"
     },
@@ -233,43 +268,43 @@
       "type": "macro",
       "date": "2026-07-28",
       "title": "CB Consumer Confidence",
-      "expected": "예측 92.1 / 이전 91.2",
-      "analysis": "예상 상회 시 소비자 신뢰도가 높아져 증시가 긍정적인 반응을 보일 가능성이 큽니다. 예상 하회 시 소비자 신뢰도의 저하로 인해 증시가 부정적인 영향을 받을 수 있습니다."
+      "expected": "예측 92.4 / 이전 91.2",
+      "analysis": "예상 상회 시 소비자 신뢰도가 높아져 경제 성장에 긍정적인 영향을 미칠 수 있으며, 이는 증시 상승으로 이어질 가능성이 높습니다. 예상 하회 시 소비자 신뢰도가 낮아져 경기 둔화 우려가 커질 수 있으며, 이는 증시 하락과 달러 약세로 이어질 수 있습니다."
     },
     {
-      "type": "macro",
-      "date": "2026-07-30",
-      "title": "Advance GDP q/q",
-      "expected": "예측 2.3% / 이전 2.0%",
-      "analysis": "예상 상회 시 경제 성장률의 개선으로 증시가 상승할 것으로 보이며, 달러화 강세를 유도할 수 있습니다. 예상 하회 시 경제 둔화 우려로 인해 증시와 환율 모두 부정적인 영향을 받을 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-07-30",
-      "title": "Unemployment Claims",
-      "expected": "예측 206K / 이전 187K",
-      "analysis": "예상 상회 시 실업 청구 건수 증가로 인해 경제 불안감이 커져 증시가 하락할 수 있습니다. 예상 하회 시 고용 시장의 안정성을 반영하여 증시가 긍정적인 반응을 보일 가능성이 있습니다."
+      "type": "earnings",
+      "date": "2026-07-29",
+      "title": "SK하이닉스 실적발표",
+      "expected": "컨센서스 영업이익 1조원 / 전년동기 대비 10%",
+      "analysis": "예상 상회 시 반도체 섹터 전반에 긍정적인 영향을 미치며, 관련 종목인 삼성전자와 마이크론에도 긍정적인 파급 효과가 있을 것입니다. 예상 하회 시 반도체 업계의 수익성 우려가 커지며, 관련 종목의 주가에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-30",
       "title": "삼성전자 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 업종 전반에 긍정적인 영향을 미치며, 관련 종목인 SK하이닉스도 상승할 가능성이 있습니다. 예상 하회 시 업종 내 부정적인 파급 효과가 있을 수 있습니다."
+      "expected": "컨센서스 영업이익 10조원 / 전년동기 대비 5%",
+      "analysis": "예상 상회 시 삼성전자의 실적 개선은 반도체 및 스마트폰 섹터에 긍정적인 영향을 미치고, 관련 기업들의 주가 상승을 이끌 수 있습니다. 예상 하회 시 시장의 실망감이 커져 반도체 섹터 전반에 부정적인 영향을 미칠 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-07-30",
+      "title": "Advance GDP q/q",
+      "expected": "예측 2.0% / 이전 2.0%",
+      "analysis": "예상 상회 시 경제 성장률이 긍정적으로 평가받아 증시 상승을 유도할 수 있으며, 달러 강세로 이어질 가능성이 높습니다. 예상 하회 시 경제 성장 둔화 우려가 커져 증시 하락과 환율 약세로 이어질 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-31",
       "title": "한화에어로스페이스 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 방산 업종에 긍정적인 영향을 미치며, 관련 종목인 LIG넥스원도 상승할 가능성이 있습니다. 예상 하회 시 방산 업종 전반에 부정적인 영향을 미칠 수 있습니다."
+      "expected": "컨센서스 영업이익 5천억원 / 전년동기 대비 15%",
+      "analysis": "예상 상회 시 방산 및 항공우주 섹터의 성장 가능성을 보여주며, 관련 종목인 LIG넥스원과 현대중공업에도 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 방산업계의 수익성 우려가 커져 관련 종목의 주가에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-06",
       "title": "카카오 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 업종 전반에 긍정적인 영향을 미치며, 관련 종목인 네이버도 상승할 가능성이 있습니다. 예상 하회 시 플랫폼 업종 내 부정적인 파급 효과가 있을 수 있습니다."
+      "expected": "컨센서스 영업이익 3천억원 / 전년동기 대비 20%",
+      "analysis": "예상 상회 시 플랫폼 섹터의 성장성을 부각시켜 카카오와 관련된 기업들의 주가 상승을 이끌 수 있습니다. 예상 하회 시 광고 및 커머스 부문에서의 부진이 우려되어 플랫폼 섹터 전반에 부정적인 영향을 미칠 수 있습니다."
     }
   ]
 }

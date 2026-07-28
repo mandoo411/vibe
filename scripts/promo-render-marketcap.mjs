@@ -61,12 +61,29 @@ function normalizeRankingRows(tabRows) {
   }));
 }
 
-/** "핵심 한 줄" 원문에서 완결된 첫 문장을 뽑고, 화면에 한 줄로 들어가도록(말줄임표 없이) 자연스럽게 자른다.
- * reel의 reason-card가 -webkit-line-clamp로 강제 절단되며 문장이 중간에 잘리던 과거 버그(만평 포맷)를
- * 반복하지 않기 위해, 애초에 코드 레벨에서 "한 줄에 확실히 들어가는 길이"로 자른다. */
-export function buildCommentLine(text, maxLen = 40) {
+// promo-market-copy.mjs의 safeSummarize()와 동일한 원칙: 이미 완결된 문장(firstCompleteSentence)을
+// 화면 폭에 맞춰 다시 자르면, 그 2차 절단이 문장을 중간(쉼표 등)에서 끊어 미완성처럼 보이게 만들 수 있다
+// (실제로 API 잔액 부족으로 fallback 경로가 상시 동작 중인 상태에서 발견된 버그 — "시장 흐름 분석"
+// 첫 문장이 70자 안팎으로 완결되어 있는데 40~58자로 재절단하면서 "나스닥지수(-2.15%)가 일제히
+// 하락했다" 결론부가 잘려나가 문장이 쉼표에서 뚝 끊긴 것처럼 보였다).
+// .comment-text는 line-clamp 없이 자연스럽게 줄바꿈되므로, 이미 완결된 문장이면 굳이 재절단하지 않고
+// 그대로 쓴다(2~3줄이 되어도 안전). maxLen은 "목표 길이"가 아니라 극단적으로 긴 경우를 위한 안전망이고,
+// 그 안전망 절단조차 문장을 미완성으로 만들면 차라리 완결된 원문을 그대로 쓴다(hardCap만 최후 방어선).
+function looksComplete(text) {
+  const s = String(text || "").trim();
+  if (!s) return false;
+  if (/[.!?)"'」』%]$/.test(s)) return true;
+  if (/[다요임음함]$/.test(s)) return true;
+  return false;
+}
+
+export function buildCommentLine(text, maxLen = 92, hardCap = 140) {
   const sentence = firstCompleteSentence(text);
-  return trimToNaturalBreak(sentence, maxLen);
+  if (sentence.length <= maxLen) return sentence;
+  const trimmed = trimToNaturalBreak(sentence, maxLen);
+  if (looksComplete(trimmed)) return trimmed;
+  if (sentence.length <= hardCap) return sentence;
+  return trimToNaturalBreak(sentence, hardCap);
 }
 
 function rankingRowHTML(row) {
@@ -102,14 +119,9 @@ export function buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri
   const mode = pickRankingMode(snapshot.ymd || cardData.date);
   const rows = normalizeRankingRows(realtimeTabs?.[mode.tab]);
 
-  // headline(copy.headline)은 promo-market-copy.mjs에서 이미 "완결된 문장, 35~55자"로 만들어지도록
-  // 설계된 필드다(AI 프롬프트 스펙 + fallback의 safeSummarize/looksComplete 검증 둘 다 이 조건을 보장).
-  // reasonLine("핵심 한 줄")은 최대 150자까지 허용되는 원인 설명용이라 40자로 다시 자르면 중간에
-  // 끊긴 문장이 되기 쉽다(실제로 이 버그를 로컬 테스트에서 발견함) — 대신 이미 짧고 완결된 headline을
-  // 그대로 쓰고, 혹시 모를 예외적으로 긴 경우에만 안전망으로 자연스러운 지점에서 자른다.
-  // .comment-text는 line-clamp 없이 자연스럽게 줄바꿈되므로 2줄이 되어도 잘리지 않는다.
+  // headline 우선, 없으면 reasonLine. 절단 로직은 buildCommentLine() 참고.
   const commentSource = cardData.headline || cardData.reasonLine || "";
-  const commentLine = buildCommentLine(commentSource, 58);
+  const commentLine = buildCommentLine(commentSource);
 
   let html = fillVars(read("card-marketcap-reel"), {
     DATE: cardData.date,

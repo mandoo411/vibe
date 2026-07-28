@@ -30,6 +30,7 @@ const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/morning-briefi
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", yahoo: "^NDX", cnbc: ".NDX" },
   { id: "sp500", name: "S&P 500", yahoo: "^GSPC", cnbc: ".SPX" },
+  { id: "dow", name: "다우지수", yahoo: "^DJI", cnbc: ".DJI" },
   { id: "nasdaq-futures", name: "나스닥 선물", yahoo: "NQ=F", cnbc: "@ND.1" },
   { id: "korea-etf", name: "한국 ETF(EWY)", yahoo: "EWY", cnbc: null },
 ];

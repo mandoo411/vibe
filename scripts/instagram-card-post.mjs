@@ -4,25 +4,30 @@
  *   --slot=morning (08:30 KST) — data/morning-briefing.json 기반, 간밤 미국장 + 오늘 전망
  *   --slot=closing (17:30 KST) — data/daily-market.json 기반, 코스피·코스닥 마감 + 특징주
  *
- * 흐름: 스냅샷 읽기 → 카피 생성/변환 → 5장 PNG 렌더링 → generated/<slot>/ 저장
- *       → git commit·push (워크플로우가 처리) → Meta Graph API로 캐러셀 발행
+ * 흐름(구 캐러셀, --render/--publish): 스냅샷 읽기 → 카피 생성/변환 → 5장 PNG 렌더링 →
+ *       generated/<slot>/ 저장 → git commit·push (워크플로우가 처리) → Meta Graph API로 캐러셀 발행
  *
- * 릴스(--render-reel/--publish-reel)는 "마감 시황 TOP10" 포맷(promo-render-marketcap.mjs)을 사용한다 —
- * 기존 "마감 증시 만평"(개구리 마스코트, promo-render-manpyeong.mjs)을 대체(2026-07-28).
- * 코스피/코스닥 듀얼 지수 카드(상승/하락에 따라 카드 배경색 자체가 바뀜) + 오늘 시황 한줄 논평 +
- * 종목 TOP10 리스트(시가총액→상승률→거래대금 순으로 날짜 기반 매일 로테이션)를,
- * AI가 그린 사이버+우주 컨셉 배경 위에 얹는다.
+ * 릴스(--render-reel/--publish-reel, 2026-07-28부터 캐러셀을 대체하는 신규 기본 포맷):
+ * - closing: "마감 시황 TOP10"(promo-render-marketcap.mjs) — 코스피/코스닥 듀얼 지수 카드
+ *   (상승/하락에 따라 카드 배경색 자체가 바뀜) + 오늘 시황 한줄 논평 + 종목 TOP10 리스트
+ *   (시가총액→상승률→거래대금 순으로 날짜 기반 매일 로테이션).
+ * - morning: "미국 증시 모닝 브리핑"(promo-render-usmarket.mjs) — 나스닥/S&P500/다우/나스닥선물/
+ *   한국ETF(EWY) 5개 지수 리스트 + 간밤 시황 한줄 논평 + 종목 TOP10(시가총액→거래대금→주요반도체
+ *   순으로 날짜 기반 매일 로테이션, 반도체 날은 9개 고정 티커).
+ * 두 슬롯 모두 AI(Gemini→OpenAI→SVG 폴백)가 그린 사이버+우주 컨셉 배경 위에, 숫자/종목명은
+ * 전부 코드가 직접 렌더링한 텍스트를 얹는다(할루시네이션 방지 원칙).
  *
  * 사용:
- *   node scripts/instagram-card-post.mjs --slot=morning --render
- *   node scripts/instagram-card-post.mjs --slot=morning --publish
- *   node scripts/instagram-card-post.mjs --slot=closing --render
- *   node scripts/instagram-card-post.mjs --slot=closing --publish
+ *   node scripts/instagram-card-post.mjs --slot=morning --render-reel
+ *   node scripts/instagram-card-post.mjs --slot=morning --publish-reel
+ *   node scripts/instagram-card-post.mjs --slot=closing --render-reel
+ *   node scripts/instagram-card-post.mjs --slot=closing --publish-reel
  */
 import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData } from "./promo-market-copy.mjs";
 import { loadMorningSnapshot, buildMorningCardData } from "./promo-morning-copy.mjs";
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
 import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./promo-render-marketcap.mjs";
+import { buildUsMarketHTML, renderUsMarketToPNG, pickUsRankingMode, loadRankingRowsForMode } from "./promo-render-usmarket.mjs";
 import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
 import { postInstagramCarousel, postInstagramReel } from "./promo-instagram-api.mjs";
@@ -175,13 +180,47 @@ function heroDir(pct) {
   return pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 }
 
-/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> "마감 시황 TOP10" HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리
- * (morning 슬롯은 아직 이 신규 포맷을 지원하지 않는다 — snapshot.ymd/indexes가 daily-market.json 전용이라
- * closing 슬롯에서만 사용. 필요해지면 morning용 데이터 어댑터를 별도로 만들 것.) */
-async function renderReel(slot) {
-  if (slot !== "closing") {
-    throw new Error(`renderReel은 현재 slot=closing만 지원합니다 (요청: ${slot})`);
-  }
+/** 아침 미증시 릴스: Gemini 배경 생성 -> "미국 증시 모닝 브리핑" HTML 채우기 -> PNG -> mp4 변환 */
+async function renderMorningReel() {
+  const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor("morning");
+  mkdirSync(generatedDir, { recursive: true });
+
+  console.log("1) data/morning-briefing.json 스냅샷 로딩...");
+  const snapshot = await loadMorningSnapshot();
+  // 캡션(발행 문구)은 기존 캐러셀 경로와 동일하게 buildMorningCardData의 headline/aiComment를 재사용한다.
+  const captionCardData = await buildMorningCardData(snapshot, { dateLabel: todayLabel(seoulYmd()), theme: THEME });
+  const caption = buildMorningCaption(captionCardData);
+
+  const ymd = seoulYmd();
+  const mode = pickUsRankingMode(ymd);
+  console.log(`2) 오늘의 TOP 로테이션 모드: ${mode.key}(${mode.label})`);
+  const rows = await loadRankingRowsForMode(mode);
+
+  console.log("3) Gemini로 사이버+우주 배경 이미지 생성 중 (실패 시 OpenAI -> SVG 순으로 대체)...");
+  const nasdaqPct = snapshot.usMarket?.indices?.find((i) => i.id === "nasdaq")?.changePct ?? 0;
+  const bgDataUri = await getMarketcapReelBackground(heroDir(nasdaqPct));
+
+  console.log("4) 아침 미증시 릴스 HTML 빌드 중...");
+  const html = buildUsMarketHTML({
+    cardData: { date: todayLabel(ymd), slotLabel: "모닝 브리핑" },
+    snapshot,
+    rows,
+    mode,
+    bgDataUri,
+  });
+
+  console.log("5) PNG 스크린샷 캡처 중...");
+  await renderUsMarketToPNG(html, reelPngFile);
+
+  console.log("6) mp4(릴스용 무음 영상)로 변환 중...");
+  await imageToReelVideo(reelPngFile, reelMp4File);
+
+  writeFileSync(captionFile, caption, "utf8");
+  console.log(`완료: generated/morning/reel.png, reel.mp4, today-caption.txt`);
+}
+
+/** 마감 시황 릴스: Gemini 배경 생성 -> "마감 시황 TOP10" HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리 */
+async function renderClosingReel() {
   console.log("1) data/daily-market.json 스냅샷 로딩...");
   const snapshot = await loadLatestSnapshot();
   console.log("2) Claude로 카드 문구 압축 생성...");
@@ -201,11 +240,11 @@ async function renderReel(slot) {
   console.log("4) data/kr-realtime.json 로딩 (시가총액/상승률/거래대금 TOP10 로테이션용)...");
   const realtimeTabs = await loadRealtimeTabs();
 
-  console.log(`5) 마감 시황 TOP10 릴스 HTML 빌드 중 (slot: ${slot})...`);
+  console.log(`5) 마감 시황 TOP10 릴스 HTML 빌드 중 (slot: closing)...`);
   const html = buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri });
 
   console.log("6) PNG 스크린샷 캡처 중...");
-  const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor(slot);
+  const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor("closing");
   mkdirSync(generatedDir, { recursive: true });
   await renderMarketcapToPNG(html, reelPngFile);
 
@@ -213,7 +252,12 @@ async function renderReel(slot) {
   await imageToReelVideo(reelPngFile, reelMp4File);
 
   writeFileSync(captionFile, caption, "utf8");
-  console.log(`완료: generated/${slot}/reel.png, reel.mp4, today-caption.txt`);
+  console.log(`완료: generated/closing/reel.png, reel.mp4, today-caption.txt`);
+}
+
+async function renderReel(slot) {
+  if (slot === "morning") return renderMorningReel();
+  return renderClosingReel();
 }
 
 async function publishReel(slot) {

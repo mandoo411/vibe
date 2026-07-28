@@ -40,6 +40,31 @@ function formatIndexLine(row) {
   return `${htmlText(name)} ${bold(value)} ${htmlText(change)}`;
 }
 
+// day.indexes는 두 가지 형태가 섞여 있다:
+//  - 구형(2026-07-01 이전): [{ name:"코스피", value:"6,690.62", change:1.23 }, ...] 배열
+//  - 신형(2026-07-02부터, daily-market-ai.mjs/Cowork 예약작업이 실제로 쓰는 형태 —
+//    promo-market-copy.mjs가 소비하는 형태와 동일): { kospi:{close,change,changePercent}, kosdaq:{...} } 객체
+// 이 함수가 신형(객체)을 못 읽고 배열만 기대해서, Array.isArray(day.indexes)가 항상 false가 되어
+// 실제로는 지수 데이터가 있는데도 텔레그램 상단 요약에 "지수 데이터 준비 중"이 찍히던 버그가 있었다
+// (2026-07-27 마감시황에서 실사용자가 발견: 본문엔 지수가 있는데 헤더엔 없음).
+function normalizeIndexRows(indexes) {
+  if (Array.isArray(indexes)) return indexes;
+  if (!indexes || typeof indexes !== "object") return [];
+  const rows = [];
+  const push = (name, row) => {
+    if (!row || row.close == null) return;
+    const close = Number(row.close);
+    rows.push({
+      name,
+      value: Number.isFinite(close) ? close.toLocaleString("ko-KR") : String(row.close),
+      change: row.changePercent,
+    });
+  };
+  push("코스피", indexes.kospi);
+  push("코스닥", indexes.kosdaq);
+  return rows;
+}
+
 function formatSupplyLine(supply) {
   if (!Array.isArray(supply) || !supply.length) return "수급 데이터 준비 중";
   const kospi = supply.find((r) => r.market === "코스피") || supply[0];
@@ -140,7 +165,7 @@ function truncateBodyLines(bodyLines, budget) {
 
 function buildMessage(data) {
   const { ymd, day } = pickTargetDay(data);
-  const indexes = Array.isArray(day.indexes) ? day.indexes : [];
+  const indexes = normalizeIndexRows(day.indexes);
   const kospi = indexes.find((r) => r && r.name === "코스피") || indexes[0];
   const kosdaq = indexes.find((r) => r && r.name === "코스닥") || indexes[1];
   const idxLine =

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<!--
+  아침 미증시 브리핑 릴스 — 마감 시황 릴스(card-marketcap-reel.html)와 동일한 톤/구조를 재사용해
+  간밤 미국장 결과를 다룬다. 지수가 5개(나스닥/S&P500/다우/나스닥선물/한국ETF)로 마감 릴스보다
+  많아서, 2개 카드 나란히 배치 대신 컴팩트한 가로 리스트 행(.usidx-row)으로 표시한다.
+
+  종목 TOP10도 마감 릴스처럼 매일 다른 기준으로 로테이션한다: 시가총액 -> 거래대금 -> 주요반도체 -> (반복).
+  숫자/종목명은 전부 코드가 직접 렌더링하고, 배경(우주+사이버 컨셉)만 AI가 그린다 — 동일 설계 원칙 유지.
+
+  치환 변수:
+  DATE, SLOT_LABEL
+  COMMENT_LINE (한줄 논평, 완결된 문장, 말줄임표 금지)
+  RANKING_LABEL (예: "시가총액 TOP10" / "거래대금 TOP10" / "주요반도체 TOP10")
+  BG_DATA_URI
+  지수 리스트는 IDXROW_START ~ IDXROW_END 사이 블록을 반복 채움 (5개)
+  종목 리스트는 MCAPROW_START ~ MCAPROW_END 사이 블록을 반복 채움 (TOP10)
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared.css" />
+<style>
+  body {
+    width: 1080px;
+    height: 1920px;
+    background: #050b16;
+  }
+
+  .bg-art {
+    position: absolute;
+    inset: 0;
+    width: 1080px;
+    height: 1920px;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .bg-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg,
+      rgba(5,11,22,0.20) 0%,
+      rgba(5,11,22,0.55) 30%,
+      rgba(5,11,22,0.72) 55%,
+      rgba(5,11,22,0.86) 100%);
+  }
+
+  .brand-lockup, .deco-ring, .page-wrap, .watermark { position: absolute; z-index: 2; }
+
+  .page-wrap {
+    position: absolute;
+    top: 140px;
+    left: 64px;
+    right: 64px;
+    bottom: 90px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- 타이틀 블록 ---------- */
+  .date-pill { margin-bottom: 18px; }
+
+  .hero-title {
+    font-size: 62px;
+    font-weight: 900;
+    line-height: 1.14;
+    letter-spacing: -1.5px;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+  }
+  .hero-title .accent { color: var(--accent-gold); }
+
+  .corner-chart {
+    position: absolute;
+    top: 148px;
+    right: 0px;
+    width: 250px;
+    height: 190px;
+    opacity: 0.9;
+  }
+
+  /* ---------- 섹션 라벨(공통) ---------- */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .section-label .icon-chip { width: 42px; height: 42px; border-radius: 12px; }
+  .section-label .icon-chip svg { width: 23px; height: 23px; }
+  .section-label .label-text { font-size: 32px; font-weight: 900; color: var(--text-primary); }
+
+  /* ---------- 미국 지수 리스트 (5개 — 카드 대신 컴팩트 행) ---------- */
+  .usidx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .usidx-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 24px;
+    border-radius: 16px;
+    border-left-width: 7px;
+    border-left-style: solid;
+  }
+  .usidx-row.up { background: linear-gradient(90deg, rgba(226,75,74,0.30) 0%, rgba(17,29,53,0.82) 62%), rgba(17,29,53,0.82); border-left-color: var(--up-color); }
+  .usidx-row.down { background: linear-gradient(90deg, rgba(59,130,246,0.30) 0%, rgba(17,29,53,0.82) 62%), rgba(17,29,53,0.82); border-left-color: var(--down-color); }
+  .usidx-row.flat { background: rgba(17,29,53,0.82); border: 1px solid rgba(255,255,255,0.10); }
+  .usidx-name-wrap { display: flex; flex-direction: column; gap: 1px; }
+  .usidx-name { font-size: 24px; font-weight: 900; color: var(--text-primary); }
+  .usidx-code { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+  .usidx-value-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .usidx-value { font-size: 32px; font-weight: 900; letter-spacing: -1px; white-space: nowrap; }
+  .usidx-value.up { color: var(--up-color); }
+  .usidx-value.down { color: var(--down-color); }
+  .usidx-value.flat { color: var(--text-secondary); }
+  .usidx-change { font-size: 18px; font-weight: 800; white-space: nowrap; }
+  .usidx-change.up { color: var(--up-color); }
+  .usidx-change.down { color: var(--down-color); }
+  .usidx-change.flat { color: var(--text-secondary); }
+
+  /* ---------- 한줄 논평 ---------- */
+  .comment-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(90deg, rgba(212,175,55,0.20) 0%, rgba(17,29,53,0.82) 45%), rgba(17,29,53,0.82);
+    border-left: 8px solid var(--accent-gold);
+    border-radius: 0 16px 16px 0;
+    padding: 14px 28px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.30);
+  }
+  .comment-bar .comment-icon { width: 32px; height: 32px; flex-shrink: 0; }
+  .comment-bar .comment-text {
+    font-size: 27px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.32;
+  }
+
+  /* ---------- TOP10 로테이션 리스트 (마감 릴스와 동일 스타일 재사용) ---------- */
+  .mcap-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mcap-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 8px 26px 8px 24px;
+    border-radius: 18px;
+    border-left-width: 8px;
+    border-left-style: solid;
+  }
+  .mcap-row.up { background: linear-gradient(90deg, rgba(226,75,74,0.28) 0%, rgba(17,29,53,0.80) 55%), rgba(17,29,53,0.80); border-left-color: var(--up-color); }
+  .mcap-row.down { background: linear-gradient(90deg, rgba(59,130,246,0.28) 0%, rgba(17,29,53,0.80) 55%), rgba(17,29,53,0.80); border-left-color: var(--down-color); }
+  .mcap-row .rank {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    flex-shrink: 0;
+  }
+  .mcap-row .rank.gold { background: linear-gradient(135deg, #ffd84d 0%, #ffb830 100%); color: #07264b; }
+  .mcap-row .stock-info { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; }
+  .mcap-row .stock-name {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mcap-row .stock-price {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mcap-row .stock-change {
+    font-size: 30px;
+    font-weight: 800;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mcap-row .stock-change.up { color: var(--up-color); }
+  .mcap-row .stock-change.down { color: var(--down-color); }
+  .mcap-row .stock-change.flat { color: var(--text-secondary); }
+  .mcap-row .stock-pct {
+    font-size: 30px;
+    font-weight: 800;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .mcap-row .stock-pct.up { color: var(--up-color); }
+  .mcap-row .stock-pct.down { color: var(--down-color); }
+  .mcap-row .stock-pct.flat { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+  <img class="bg-art" src="{{BG_DATA_URI}}" />
+  <div class="bg-scrim"></div>
+
+  <div class="brand-lockup">
+    <div class="logo-box"><span>TM</span><span>AI</span></div>
+    <div>
+      <div class="brand-name">TotalMoney</div>
+      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="date-pill">
+      <span class="slot-badge"><span class="dot"></span>{{DATE}} {{SLOT_LABEL}}</span>
+    </div>
+    <div class="hero-title">미국 증시<br/><span class="accent">모닝 브리핑</span></div>
+    <svg class="corner-chart" viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="120" width="26" height="55" rx="4" fill="#07264b" opacity="0.85"/>
+      <rect x="50" y="95" width="26" height="80" rx="4" fill="#0f8387" opacity="0.85"/>
+      <rect x="90" y="60" width="26" height="115" rx="4" fill="#07264b" opacity="0.55"/>
+      <rect x="130" y="105" width="26" height="70" rx="4" fill="#0f8387" opacity="0.55"/>
+    </svg>
+
+    <div class="section-label">
+      <div class="icon-chip">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 19V10M12 19V5M20 19V13" stroke="white" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="label-text">간밤 미국 지수</div>
+    </div>
+    <div class="usidx-list">
+      <!--IDXROW_START-->
+      <!--IDXROW_END-->
+    </div>
+
+    <div class="comment-bar">
+      <svg class="comment-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 5h16v11H8l-4 4V5z" stroke="#0f8387" stroke-width="2.2" stroke-linejoin="round"/>
+      </svg>
+      <span class="comment-text">{{COMMENT_LINE}}</span>
+    </div>
+
+    <div class="section-label">
+      <div class="icon-chip">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 21h18M5 21V9l4-3 4 3v12M13 21V5l4-2 4 2v16" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="label-text">{{RANKING_LABEL}}</div>
+    </div>
+    <div class="mcap-list">
+      <!--MCAPROW_START-->
+      <!--MCAPROW_END-->
+    </div>
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

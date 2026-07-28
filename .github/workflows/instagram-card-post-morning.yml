@@ -109,14 +109,14 @@ jobs:
         run: sleep 20
 
       - name: Publish reel via Meta Graph API
-        if: false # TEMP: main 반영 후 1회 렌더 검증 전까지 발행 보류 (검증 후 해제 예정)
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: node scripts/instagram-card-post.mjs --slot=morning --publish-reel
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: false # TEMP: main 반영 후 1회 렌더 검증 전까지 발행 보류 (검증 후 해제 예정)
+        if: steps.dupcheck.outputs.should_publish == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

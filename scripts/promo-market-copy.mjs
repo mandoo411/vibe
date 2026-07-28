@@ -8,7 +8,7 @@
  * Claude 호출도 이미 만들어진 analysis 원문을 압축하는 용도로만 가볍게 1회 사용한다(Haiku).
  */
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
-import { summarizeToSentence, trimToNaturalBreak } from "./promo-text-utils.mjs";
+import { trimToNaturalBreak, firstCompleteSentence } from "./promo-text-utils.mjs";
 import { ensureJsonSafe, isClaudeUnavailableError, parseJsonFromAssistant, sanitizeUnicode } from "./claude-utils.mjs";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -18,7 +18,7 @@ const DATA_PATH = "./data/daily-market.json";
 function extractHeadlineFallback(analysisText) {
   const m = String(analysisText || "").match(/핵심 한 줄\s*\n([\s\S]*?)(?:\n\n|📈)/);
   const para = m ? m[1].trim() : "";
-  return para ? summarizeToSentence(para, 110) : "";
+  return para ? safeSummarize(para, 110) : "";
 }
 
 function extractOutlookFallback(analysisText) {
@@ -57,7 +57,7 @@ function extractStrategyFallback(analysisText, maxLen = 110) {
     .slice(1)
     .map((s) => s.trim())
     .find(Boolean) || "";
-  return line ? summarizeToSentence(line, maxLen) : "";
+  return line ? safeSummarize(line, maxLen) : "";
 }
 
 // 조사/연결어미로 끝나면 문장이 안 끝난 것처럼 보인다 (사용자 피드백: "동반 매도에... 폭락하며..
@@ -69,13 +69,28 @@ function looksComplete(text) {
   if (/[.!?)"'」』%]$/.test(s)) return true;
   if (/[다요임음함]$/.test(s)) return true;
   if (DANGLING_ENDINGS.some((e) => s.endsWith(e))) return false;
-  return true;
+  // 조사로 끝나지 않아도 마침표/'다·요·임·음·함'류 종결어미가 아니면
+  // 문장이 실제로 끝난 것인지 확신할 수 없다(예: trimToNaturalBreak가 명사에서 자른 "...연속").
+  // 애매하면 미완성으로 간주해 후보에서 제외한다(사용자 피드백: 문장이 중간에서 끊기면 안 됨).
+  return false;
+}
+
+// summarizeToSentence(para, maxLen)는 완결된 첫 문장이 maxLen보다 길면 trimToNaturalBreak로
+// 다시 자르는데, 이 2차 절단이 문장을 미완성으로 만들 수 있다(looksComplete 실패의 근본 원인).
+// 그렇다고 그냥 버리면 AI 판단 박스가 통째로 비어버리는 새 버그가 생긴다(사용자 피드백:
+// "박스가 비어있음"). 절단본이 미완성이면 길이 제한을 포기하고 완결된 원문장을 그대로 쓴다 —
+// 조금 길어지더라도 미완성 문장이나 빈 박스보다 낫다.
+function safeSummarize(para, maxLen) {
+  const full = firstCompleteSentence(para);
+  if (!full) return "";
+  const trimmed = trimToNaturalBreak(full, maxLen);
+  return looksComplete(trimmed) ? trimmed : full;
 }
 
 function extractFlowCommentFallback(analysisText) {
   const m = String(analysisText || "").match(/(?:🔄\s*)?시장 흐름 분석\s*\n([\s\S]*?)(?:\n\n|$)/);
   const para = m ? m[1].trim() : "";
-  return para ? summarizeToSentence(para, 110) : "";
+  return para ? safeSummarize(para, 110) : "";
 }
 
 function buildIndexHeadline(snapshot) {
@@ -134,6 +149,11 @@ export async function buildPromoCopy(snapshot) {
     const resultLine = extractHeadlineFallback(analysisText);
     const strategyComment = extractStrategyFallback(analysisText, 110);
     const headline = flowComment || resultLine || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
+    // coreLine = "📌 핵심 한 줄" 섹션 원문(리포트가 직접 뽑아둔 그날의 핵심 한 줄 요약+원인).
+    // 만평 릴스의 "왜 움직였는지" 카드는 headline(간밤 뉴욕증시 recap 등 간접 원인)보다
+    // 이 핵심 한 줄을 우선 써야 한다 (사용자 피드백: "이 내용으로 만평을 해야하는데 엉뚱한게 써있음"
+    // — 릴스에 시장 흐름 분석 문장이 나가고 핵심 한 줄이 안 나간 문제).
+    const coreLine = resultLine || flowComment || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
     // AI 판단(aiComment)이 커버(headline)와 똑같은 문장을 반복하지 않도록 한다
     // (사용자 피드백: "1번 카드 4번 카드 내용 중복"). 대체 후보도 억지로 잘라 문장이
     // 안 끝난 것처럼 보이면(looksComplete 실패) 걸러내고, 마땅한 후보가 없으면 비워둔다.
@@ -141,6 +161,7 @@ export async function buildPromoCopy(snapshot) {
     const aiComment = aiCandidates.find((c) => c && c !== headline && looksComplete(c)) || "";
     return {
       headline,
+      coreLine,
       summaryLines: buildFallbackSummaryLines(snapshot, analysisText),
       aiComment,
       checkpoints: extractOutlookFallback(analysisText),
@@ -202,6 +223,12 @@ summaryLines는 정확히 5개를 배열로 반환해.`);
       if (!Array.isArray(parsed.summaryLines) || parsed.summaryLines.length === 0) {
         parsed.summaryLines = buildFallbackSummaryLines(snapshot, analysisText);
       }
+      if (!Array.isArray(parsed.checkpoints) || parsed.checkpoints.length === 0) {
+        parsed.checkpoints = extractOutlookFallback(analysisText);
+      }
+      // Claude가 만든 headline은 이미 "왜 움직였는지" 원인 설명 프롬프트로 생성된 문장이라
+      // 만평 릴스의 reason-card에도 그대로 재사용한다 (fallback 경로의 coreLine과 대응).
+      parsed.coreLine = parsed.coreLine || parsed.headline;
       return parsed;
     } catch (error) {
       lastError = error;
@@ -234,6 +261,12 @@ export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme
     heroLabel: "코스피",
     heroPct: kospi?.changePercent || 0,
     headline: copy.headline,
+    // reasonLine(copy.coreLine, "핵심 한 줄")은 원문이 쉼표로 이어지는 긴 복문이라 날마다
+    // 길이가 들쭉날쭉하다 (사용자 피드백: 만평에 엉뚱한 문장이 나가는 문제를 고친 뒤, 문장이
+    // 길었던 날 아래 종목 카드가 화면 밖으로 잘리는 새 문제 발견). 여기서는 극단적으로 긴
+    // 경우만 방지하는 여유 있는 상한을 걸고, 실제 화면 안 보장은 템플릿의 4줄 클램프(말줄임표)
+    // 가 맡는다 — 그래야 문장이 매번 정확히 몇 자에서 끊길지 걱정하지 않아도 된다.
+    reasonLine: trimToNaturalBreak(copy.coreLine || copy.headline || "", 150),
     indexTitle: "오늘의 시황 요약",
     indexRows,
     summaryLines: copy.summaryLines || [],

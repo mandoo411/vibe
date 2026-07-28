@@ -7,9 +7,11 @@
  * 흐름: 스냅샷 읽기 → 카피 생성/변환 → 5장 PNG 렌더링 → generated/<slot>/ 저장
  *       → git commit·push (워크플로우가 처리) → Meta Graph API로 캐러셀 발행
  *
- * 릴스(--render-reel/--publish-reel)는 "마감 증시 만평" 포맷(promo-render-manpyeong.mjs)을 사용한다 —
- * 기존 1장 요약 카드(promo-render-reel.mjs)를 대체. 지수 듀얼 박스 + 종목 하이라이트 배지 +
- * AI 판단 + 내일 주목할 변수를, AI가 그린 무드 삽화(개구리 마스코트) 위에 얹는다.
+ * 릴스(--render-reel/--publish-reel)는 "마감 시황 TOP10" 포맷(promo-render-marketcap.mjs)을 사용한다 —
+ * 기존 "마감 증시 만평"(개구리 마스코트, promo-render-manpyeong.mjs)을 대체(2026-07-28).
+ * 코스피/코스닥 듀얼 지수 카드(상승/하락에 따라 카드 배경색 자체가 바뀜) + 오늘 시황 한줄 논평 +
+ * 종목 TOP10 리스트(시가총액→상승률→거래대금 순으로 날짜 기반 매일 로테이션)를,
+ * AI가 그린 사이버+우주 컨셉 배경 위에 얹는다.
  *
  * 사용:
  *   node scripts/instagram-card-post.mjs --slot=morning --render
@@ -20,8 +22,8 @@
 import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData } from "./promo-market-copy.mjs";
 import { loadMorningSnapshot, buildMorningCardData } from "./promo-morning-copy.mjs";
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
-import { buildManpyeongHTML, renderManpyeongToPNG } from "./promo-render-manpyeong.mjs";
-import { getReelBackground } from "./promo-gemini-background.mjs";
+import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./promo-render-marketcap.mjs";
+import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
 import { postInstagramCarousel, postInstagramReel } from "./promo-instagram-api.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
@@ -173,23 +175,41 @@ function heroDir(pct) {
   return pct > 0 ? "up" : pct < 0 ? "down" : "flat";
 }
 
-/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> "마감 증시 만평" HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리 */
+/** 릴스 1장(9:16) 렌더링: Gemini 배경 생성 -> "마감 시황 TOP10" HTML 채우기 -> PNG -> mp4 변환까지 한 번에 처리
+ * (morning 슬롯은 아직 이 신규 포맷을 지원하지 않는다 — snapshot.ymd/indexes가 daily-market.json 전용이라
+ * closing 슬롯에서만 사용. 필요해지면 morning용 데이터 어댑터를 별도로 만들 것.) */
 async function renderReel(slot) {
-  console.log(`1) ${slot === "morning" ? "data/morning-briefing.json" : "data/daily-market.json"} 스냅샷 로딩...`);
-  const { cardData, caption } = await buildCardDataForSlot(slot);
+  if (slot !== "closing") {
+    throw new Error(`renderReel은 현재 slot=closing만 지원합니다 (요청: ${slot})`);
+  }
+  console.log("1) data/daily-market.json 스냅샷 로딩...");
+  const snapshot = await loadLatestSnapshot();
+  console.log("2) Claude로 카드 문구 압축 생성...");
+  const copy = await buildPromoCopy(snapshot);
+  const cardData = buildClosingCardData({
+    snapshot,
+    copy,
+    gainers: [],
+    dateLabel: todayLabel(snapshot.ymd),
+    theme: THEME,
+  });
+  const caption = buildClosingCaption(snapshot, copy);
 
-  console.log("2) Gemini로 배경 이미지 생성 중 (실패 시 OpenAI -> CSS 순으로 대체)...");
-  const bgDataUri = await getReelBackground(heroDir(cardData.heroPct));
+  console.log("3) Gemini로 사이버+우주 배경 이미지 생성 중 (실패 시 OpenAI -> SVG 순으로 대체)...");
+  const bgDataUri = await getMarketcapReelBackground(heroDir(cardData.heroPct));
 
-  console.log(`3) 만평 릴스 HTML 빌드 중 (slot: ${slot})...`);
-  const html = buildManpyeongHTML(cardData, bgDataUri);
+  console.log("4) data/kr-realtime.json 로딩 (시가총액/상승률/거래대금 TOP10 로테이션용)...");
+  const realtimeTabs = await loadRealtimeTabs();
 
-  console.log("4) PNG 스크린샷 캡처 중...");
+  console.log(`5) 마감 시황 TOP10 릴스 HTML 빌드 중 (slot: ${slot})...`);
+  const html = buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri });
+
+  console.log("6) PNG 스크린샷 캡처 중...");
   const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor(slot);
   mkdirSync(generatedDir, { recursive: true });
-  await renderManpyeongToPNG(html, reelPngFile);
+  await renderMarketcapToPNG(html, reelPngFile);
 
-  console.log("5) mp4(릴스용 무음 영상)로 변환 중...");
+  console.log("7) mp4(릴스용 무음 영상)로 변환 중...");
   await imageToReelVideo(reelPngFile, reelMp4File);
 
   writeFileSync(captionFile, caption, "utf8");

@@ -49,8 +49,10 @@ function buildPrompt(dir) {
   ].join(" ");
 }
 
-/** Gemini로 배경 이미지를 생성해 data URI(base64)로 반환한다. dir: 'up' | 'down' | 'flat' */
-export async function generateReelBackground(dir = "flat") {
+/** Gemini로 배경 이미지를 생성해 data URI(base64)로 반환한다.
+ * dir: 'up' | 'down' | 'flat'. promptText를 직접 넘기면 buildPrompt(만평 마스코트) 대신 그 프롬프트를 사용한다
+ * (마감 시황 릴스 포맷별로 다른 프롬프트를 쓸 수 있도록 — 예: 시가총액 TOP10 포맷은 buildCyberSpacePrompt 사용). */
+export async function generateReelBackground(dir = "flat", promptText) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY 환경변수가 설정되어 있지 않습니다.");
@@ -60,7 +62,7 @@ export async function generateReelBackground(dir = "flat") {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(dir) }] }],
+      contents: [{ parts: [{ text: promptText || buildPrompt(dir) }] }],
       generationConfig: {
         responseModalities: ["IMAGE"],
         imageConfig: { aspectRatio: "9:16" },
@@ -86,7 +88,7 @@ export async function generateReelBackground(dir = "flat") {
 /** Gemini가 실패했을 때(무료 할당량 초과 등) 쓰는 2차 폴백: OpenAI GPT Image로 배경을 생성한다.
  * 9:16에 가장 가까운 세로 규격(1024x1536)을 사용 — 어차피 .bg-art는 object-fit: cover라
  * 정확히 1080x1920이 아니어도 화면을 꽉 채운다. */
-export async function generateOpenAIBackground(dir = "flat") {
+export async function generateOpenAIBackground(dir = "flat", promptText) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY 환경변수가 설정되어 있지 않습니다.");
@@ -100,7 +102,7 @@ export async function generateOpenAIBackground(dir = "flat") {
     },
     body: JSON.stringify({
       model: OPENAI_MODEL,
-      prompt: buildPrompt(dir),
+      prompt: promptText || buildPrompt(dir),
       size: "1024x1536",
       quality: "medium",
       n: 1,
@@ -156,4 +158,117 @@ export async function getReelBackground(dir = "flat") {
       return fallbackBackgroundDataUri(dir);
     }
   }
+}
+
+/**
+ * "시가총액 TOP10" 마감 시황 릴스용 배경 — 사이버틱 + 우주 컨셉.
+ * 만평(개구리 마스코트) 포맷과 달리 캐릭터가 없다: 별/성운/고리 행성/사이버 그리드 같은
+ * 추상 비주얼만 생성한다 (원칙은 동일 — 텍스트/숫자/한글 절대 금지, 정확한 데이터는 코드가 그림).
+ */
+function buildCyberSpacePrompt(dir) {
+  const moodMap = {
+    up: { glow: "warm crimson-and-gold nebula glow, energetic upward-streaking light trails" },
+    down: { glow: "cool electric-blue nebula glow, tense downward-drifting light particles" },
+    flat: { glow: "balanced teal-and-violet nebula glow, calm drifting particles" },
+  };
+  const m = moodMap[dir] || moodMap.flat;
+  return [
+    "Abstract cyberpunk-meets-outer-space digital background illustration, portrait 9:16 aspect ratio, for a premium Korean fintech AI brand.",
+    "Deep space scene: a dark navy-to-teal gradient sky filled with a starfield of small twinkling stars, a few soft glowing nebula clouds, and one small distant ringed planet in the upper area.",
+    "A faint neon cyber grid horizon (thin glowing perspective grid lines) crosses the lower third of the frame, like a retro-futuristic digital landscape.",
+    `${m.glow}.`,
+    "Dominant palette: deep navy (#07264b), teal (#0f8387), with small gold (#d4af37) accents and the glow color described above — premium fintech, not garish.",
+    "The lower two-thirds of the frame must stay visually calm, low-contrast and uncluttered so white/light overlay text and UI cards stay easily readable on top of it.",
+    "Clean modern digital-art style, smooth gradients, subtle glow and bloom, no photorealistic textures.",
+    "IMPORTANT: absolutely no text, no numbers, no letters, no words, no logos, no watermarks, no UI elements, no characters or mascots of any kind — pure abstract background art only.",
+  ].join(" ");
+}
+
+/** Gemini 우선 -> OpenAI -> (JS로 직접 그리는) 사이버+우주 SVG 그라디언트 순으로 시도. */
+export async function getMarketcapReelBackground(dir = "flat") {
+  const prompt = buildCyberSpacePrompt(dir);
+  try {
+    return await generateReelBackground(dir, prompt);
+  } catch (geminiErr) {
+    console.warn(`[promo-gemini-background] (marketcap) Gemini 생성 실패: ${geminiErr.message}`);
+    try {
+      const img = await generateOpenAIBackground(dir, prompt);
+      console.warn("[promo-gemini-background] (marketcap) OpenAI(GPT Image)로 폴백 생성 성공");
+      return img;
+    } catch (openaiErr) {
+      console.warn(`[promo-gemini-background] (marketcap) OpenAI 폴백도 실패, SVG 사이버 배경 사용: ${openaiErr.message}`);
+      return fallbackCyberSpaceBackgroundDataUri(dir);
+    }
+  }
+}
+
+/** API가 전부 실패했을 때 쓰는 최종 폴백 — 코드로 직접 그리는 사이버+우주 SVG (별/성운/고리행성/그리드). */
+export function fallbackCyberSpaceBackgroundDataUri(dir = "flat") {
+  const glowMap = {
+    up: "#f2545b",
+    down: "#3b82f6",
+    flat: "#7c6bf2",
+  };
+  const glow = glowMap[dir] || glowMap.flat;
+
+  // 결정적(seeded) 의사난수 — 매번 같은 배치를 그리되 외부 라이브러리 의존 없이 구현.
+  let seed = 42;
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return (seed % 10000) / 10000;
+  };
+
+  const W = 1080, H = 1920;
+  let stars = "";
+  for (let i = 0; i < 180; i++) {
+    const x = (rand() * W).toFixed(1);
+    const y = (rand() * H).toFixed(1);
+    const r = (0.5 + rand() * 1.8).toFixed(2);
+    const op = (0.25 + rand() * 0.65).toFixed(2);
+    stars += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="${op}"/>`;
+  }
+
+  const horizonY = H * 0.62;
+  let grid = "";
+  for (let i = 0; i < 12; i++) {
+    const t = i / 11;
+    const y = horizonY + t * t * (H - horizonY) * 1.15;
+    const op = (0.2 * (1 - t) + 0.03).toFixed(3);
+    grid += `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="#5be3d8" stroke-width="1.2" opacity="${op}"/>`;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#020a17"/>
+        <stop offset="38%" stop-color="#07264b"/>
+        <stop offset="72%" stop-color="#0b3a52"/>
+        <stop offset="100%" stop-color="#0f8387"/>
+      </linearGradient>
+      <radialGradient id="glow1" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${glow}" stop-opacity="0.42"/>
+        <stop offset="100%" stop-color="${glow}" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="glowGold" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#d4af37" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#d4af37" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="planetBody" cx="35%" cy="32%" r="70%">
+        <stop offset="0%" stop-color="#bff4ec"/>
+        <stop offset="45%" stop-color="#28b3a6"/>
+        <stop offset="100%" stop-color="#052a3a"/>
+      </radialGradient>
+      <filter id="blurL"><feGaussianBlur stdDeviation="55"/></filter>
+    </defs>
+    <rect width="${W}" height="${H}" fill="url(#sky)"/>
+    <ellipse cx="120" cy="260" rx="360" ry="300" fill="url(#glow1)" filter="url(#blurL)"/>
+    <ellipse cx="950" cy="120" rx="300" ry="260" fill="url(#glowGold)" filter="url(#blurL)"/>
+    <ellipse cx="880" cy="1500" rx="380" ry="340" fill="url(#glow1)" filter="url(#blurL)"/>
+    ${stars}
+    <circle cx="945" cy="195" r="72" fill="url(#planetBody)" opacity="0.9"/>
+    <ellipse cx="945" cy="195" rx="118" ry="20" fill="none" stroke="#8be9e0" stroke-width="4" opacity="0.55" transform="rotate(-18 945 195)"/>
+    ${grid}
+    <line x1="0" y1="${horizonY.toFixed(1)}" x2="${W}" y2="${horizonY.toFixed(1)}" stroke="#5be3d8" stroke-width="1.6" opacity="0.28"/>
+  </svg>`;
+  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }

@@ -85,14 +85,14 @@ jobs:
         run: sleep 20
 
       - name: Publish reel via Meta Graph API
-        if: false # DRY RUN — publish disabled
+        if: steps.dupcheck.outputs.should_publish == 'true' # 1회 테스트 발행 — 완료 후 다시 if:false로 잠글 예정
         run: node scripts/instagram-card-post.mjs --slot=closing --publish-reel
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: false # DRY RUN — dedup stamp disabled
+        if: steps.dupcheck.outputs.should_publish == 'true' # 1회 테스트 발행 — 완료 후 다시 if:false로 잠글 예정
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

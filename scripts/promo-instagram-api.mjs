@@ -84,6 +84,28 @@ export async function postInstagramReel(videoFileName, caption) {
   });
 }
 
+/**
+ * 스토리 발행 — 릴스와 동일한 mp4를 STORIES 미디어 타입으로 한 번 더 올린다(별도 게시물).
+ * 스토리는 캡션 필드가 없다(피드/릴스처럼 텍스트가 노출되지 않고, 24시간 후 사라짐).
+ * 흐름은 릴스 발행과 동일: POST /media (media_type=STORIES, video_url) -> FINISHED 폴링 -> POST /media_publish.
+ */
+export async function postInstagramStory(videoFileName) {
+  const accessToken = process.env.META_ACCESS_TOKEN;
+  const igUserId = process.env.INSTAGRAM_ACCOUNT_ID;
+
+  const container = await graphPost(`/${igUserId}/media`, {
+    media_type: "STORIES",
+    video_url: publicVideoUrl(videoFileName),
+    access_token: accessToken,
+  });
+  await waitUntilFinished(container.id, accessToken, { maxAttempts: 40, intervalMs: 5000 });
+
+  return graphPost(`/${igUserId}/media_publish`, {
+    creation_id: container.id,
+    access_token: accessToken,
+  });
+}
+
 function publicImageUrl(fileName) {
   const repo = process.env.GITHUB_REPOSITORY || "mandoo411/vibe";
   // 수동 workflow_dispatch를 다른 브랜치에서 실행했을 때, 발행 이미지가 실제로 렌더링된

@@ -108,7 +108,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 9px 24px;
+    /* 글씨 2단계 확대(사용자 피드백)에 맞춰 세로 패딩을 줄여 박스 높이를 기존과 동일하게 유지 */
+    padding: 10px 24px;
     border-radius: 16px;
     border-left-width: 7px;
     border-left-style: solid;
@@ -117,14 +118,14 @@
   .usidx-row.down { background: linear-gradient(90deg, rgba(59,130,246,0.30) 0%, rgba(17,29,53,0.82) 62%), rgba(17,29,53,0.82); border-left-color: var(--down-color); }
   .usidx-row.flat { background: rgba(17,29,53,0.82); border: 1px solid rgba(255,255,255,0.10); }
   .usidx-name-wrap { display: flex; flex-direction: column; gap: 1px; }
-  .usidx-name { font-size: 24px; font-weight: 900; color: var(--text-primary); }
+  .usidx-name { font-size: 32px; font-weight: 900; color: var(--text-primary); line-height: 1.05; }
   .usidx-code { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
   .usidx-value-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-  .usidx-value { font-size: 32px; font-weight: 900; letter-spacing: -1px; white-space: nowrap; }
+  .usidx-value { font-size: 40px; font-weight: 900; letter-spacing: -1px; white-space: nowrap; line-height: 1.05; }
   .usidx-value.up { color: var(--up-color); }
   .usidx-value.down { color: var(--down-color); }
   .usidx-value.flat { color: var(--text-secondary); }
-  .usidx-change { font-size: 18px; font-weight: 800; white-space: nowrap; }
+  .usidx-change { font-size: 26px; font-weight: 800; white-space: nowrap; line-height: 1.05; }
   .usidx-change.up { color: var(--up-color); }
   .usidx-change.down { color: var(--down-color); }
   .usidx-change.flat { color: var(--text-secondary); }
@@ -143,7 +144,7 @@
   }
   .comment-bar .comment-icon { width: 32px; height: 32px; flex-shrink: 0; }
   .comment-bar .comment-text {
-    font-size: 27px;
+    font-size: 31px;
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1.32;

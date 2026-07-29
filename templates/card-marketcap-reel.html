@@ -48,34 +48,42 @@
 
   .page-wrap {
     position: absolute;
-    top: 140px;
+    top: 160px;
     left: 64px;
     right: 64px;
-    bottom: 90px;
+    bottom: 170px;
     display: flex;
     flex-direction: column;
   }
 
-  /* ---------- 타이틀 블록 ---------- */
-  .date-pill { margin-bottom: 28px; }
-
-  .hero-title {
-    font-size: 76px;
-    font-weight: 900;
-    line-height: 1.14;
-    letter-spacing: -1.5px;
-    color: var(--text-primary);
-    margin-bottom: 20px;
+  /* Reels 재생 시 하단 우측(음소거 아이콘)과 겹치지 않도록 워터마크를 안쪽으로 당김
+     (정적 카드뉴스용 위치 고정 규칙은 유지하되, 릴스 템플릿에서만 오버라이드) */
+  .watermark {
+    bottom: 120px;
+    right: 60px;
   }
-  .hero-title .accent { color: var(--accent-gold); }
 
-  .corner-chart {
-    position: absolute;
-    top: 148px;
-    right: 0px;
-    width: 250px;
-    height: 190px;
-    opacity: 0.9;
+  /* ---------- 타이틀 블록 — 날짜+슬롯 한 줄로 통일 (기존 "국내 증시/마감 시황" 2줄 대제목 +
+     코너 장식 제거. 사용자 피드백: "브리핑처럼 날짜 + 국내 증시 마감시황 이렇게 한줄로") ---------- */
+  .title-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .title-line .dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
+  }
+  .title-line .title-text {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
   }
 
   /* ---------- 시장 지수 ---------- */
@@ -236,16 +244,10 @@
   </div>
 
   <div class="page-wrap">
-    <div class="date-pill">
-      <span class="slot-badge"><span class="dot"></span>{{DATE}} {{SLOT_LABEL}}</span>
+    <div class="title-line">
+      <span class="dot"></span>
+      <span class="title-text">{{DATE}} 국내 증시 마감시황</span>
     </div>
-    <div class="hero-title">국내 증시<br/><span class="accent">마감 시황</span></div>
-    <svg class="corner-chart" viewBox="0 0 250 190" xmlns="http://www.w3.org/2000/svg">
-      <rect x="10" y="120" width="26" height="55" rx="4" fill="#07264b" opacity="0.85"/>
-      <rect x="50" y="95" width="26" height="80" rx="4" fill="#0f8387" opacity="0.85"/>
-      <rect x="90" y="60" width="26" height="115" rx="4" fill="#07264b" opacity="0.55"/>
-      <rect x="130" y="105" width="26" height="70" rx="4" fill="#0f8387" opacity="0.55"/>
-    </svg>
 
     <div class="section-label">
       <div class="icon-chip">

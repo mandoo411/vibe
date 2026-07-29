@@ -181,10 +181,36 @@ function rankingRowHTML(row) {
       </div>`;
 }
 
+// aiAnalysis.conclusion / todayOutlook.scenario는 관행적으로 "전일 회고 문장 + 오늘 전망 문장" 2문장
+// 구조로 작성된다. 첫 문장(전일 마감시황 회고)은 마감 릴스 쪽 논평과 내용이 겹치므로, 아침 릴스에는
+// 그 다음 문장(오늘 예상흐름/전략)을 우선 쓴다 — "전날 시황보다 오늘 예상흐름이나 간밤 미증시 시황
+// 위주로" 써야 한다는 피드백 반영. 문장이 하나뿐이면(둘째 문장이 없으면) 원문 전체로 폴백한다.
+function afterFirstSentence(text) {
+  const s = String(text || "").trim();
+  const m = s.match(/^[^.!?]*[.!?]+\s*/);
+  if (!m) return "";
+  return s.slice(m[0].length).trim();
+}
+
+/** 아침 릴스 한줄 논평 소스 선택: conclusion의 "오늘" 문장 -> todayOutlook의 "오늘" 문장 ->
+ * todayOutlook 전체 -> conclusion 전체 -> summary 순으로 폴백(항상 뭔가는 나오게). */
+function pickUsCommentSource(aiAnalysis) {
+  const conclusion = aiAnalysis?.conclusion || "";
+  const outlook = aiAnalysis?.todayOutlook?.scenario || "";
+  return (
+    afterFirstSentence(conclusion) ||
+    afterFirstSentence(outlook) ||
+    outlook ||
+    conclusion ||
+    aiAnalysis?.summary ||
+    ""
+  );
+}
+
 /**
  * snapshot(data/morning-briefing.json 원본) + cardData(date/slotLabel) + 랭킹 행 + 배경 -> HTML 문자열.
- * snapshot.usMarket.indices에서 INDEX_ORDER 순서대로 5개를 뽑고, snapshot.aiAnalysis.summary를
- * 한줄 논평 소스로 쓴다(이미 완결된 문장으로 구성된 필드 — 마감 릴스의 headline과 같은 역할).
+ * snapshot.usMarket.indices에서 INDEX_ORDER 순서대로 5개를 뽑고, 한줄 논평은 pickUsCommentSource()로
+ * "오늘 예상흐름/간밤 미증시 시황" 위주 문장을 골라 쓴다(전일 마감시황 회고는 마감 릴스 몫).
  */
 export function buildUsMarketHTML({ cardData, snapshot, rows, mode, bgDataUri }) {
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}.html`), "utf8");
@@ -199,7 +225,7 @@ export function buildUsMarketHTML({ cardData, snapshot, rows, mode, bgDataUri })
     return usIndexRowHTML(entry, idx);
   }).join("");
 
-  const commentSource = snapshot.aiAnalysis?.summary || "";
+  const commentSource = pickUsCommentSource(snapshot.aiAnalysis);
   const commentLine = buildCommentLine(commentSource);
 
   let html = fillVars(read("card-usmarket-reel"), {

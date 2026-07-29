@@ -39,7 +39,9 @@ import { trimToNaturalBreak } from "./promo-text-utils.mjs";
 const THEME = process.env.PROMO_CARD_THEME || "light"; // 'dark' | 'light' (기본: light — 사이트 기본 테마와 통일)
 
 function todayLabel(ymd) {
-  return ymd.replaceAll("-", ".");
+  // 사용자 피드백: 릴스 헤더 날짜를 "2026.07.29" 대신 "2026년 07월 29일" 형식으로.
+  const [y, m, d] = String(ymd).split("-");
+  return `${y}년 ${m}월 ${d}일`;
 }
 
 function parseArgs() {

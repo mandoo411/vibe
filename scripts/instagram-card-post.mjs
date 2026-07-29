@@ -30,7 +30,7 @@ import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./pr
 import { buildUsMarketHTML, renderUsMarketToPNG, pickUsRankingMode, loadRankingRowsForMode } from "./promo-render-usmarket.mjs";
 import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
-import { postInstagramCarousel, postInstagramReel } from "./promo-instagram-api.mjs";
+import { postInstagramCarousel, postInstagramReel, postInstagramStory } from "./promo-instagram-api.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { seoulYmd } from "./telegram-utils.mjs";
@@ -268,6 +268,17 @@ async function publishReel(slot) {
   console.log(`Meta Graph API로 릴스 발행 중 (slot: ${slot})...`);
   const result = await postInstagramReel(`${slot}/reel.mp4`, caption);
   console.log("발행 완료:", result);
+
+  // 같은 영상을 스토리에도 올린다. 릴스 발행이 이미 끝난 뒤의 부가 단계이므로,
+  // 여기서 실패해도(일시적 API 오류 등) 릴스 발행 자체나 아래 dedup 기록(last-published-date.txt)에
+  // 영향을 주지 않도록 별도로 감싸서 에러를 삼킨다 — 실패 시 다음 스케줄에서 릴스만 다시 안 나가면 된다.
+  try {
+    console.log(`Meta Graph API로 스토리 발행 중 (slot: ${slot})...`);
+    const storyResult = await postInstagramStory(`${slot}/reel.mp4`);
+    console.log("스토리 발행 완료:", storyResult);
+  } catch (err) {
+    console.warn("⚠️ 스토리 발행 실패 (릴스는 정상 발행됨, 무시하고 계속):", err.message);
+  }
 }
 
 const { slot, action } = parseArgs();

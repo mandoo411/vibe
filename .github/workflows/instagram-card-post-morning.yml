@@ -1,10 +1,13 @@
 name: Instagram Daily Card News (Morning)
 
-# 평일 08:30 KST(=전날 23:30 UTC) 자동 실행 — 아침 브리핑 카드뉴스.
+# 평일 08:12 KST(=전날 23:12 UTC) 자동 실행 — 아침 브리핑 카드뉴스.
+# (원래 08:30이었으나 GitHub Actions의 schedule 트리거가 혼잡한 정각/반각대에 몰려 최대 1.5~3시간까지 지연되는
+#  문제가 있어, 상대적으로 덜 혼잡한 분(:12)으로 이동해뒀다. 정확한 시각 발행은 Supabase pg_cron이 이 워크플로를
+#  workflow_dispatch로 직접 호출하는 방식으로 별도 보강한다 — 이 schedule은 그 백업 역할.)
 # morning-briefing.yml이 07:55 KST에 data/morning-briefing.json을 먼저 채워둔다.
 on:
   schedule:
-    - cron: "30 23 * * 0-4"
+    - cron: "12 23 * * 0-4"
   workflow_dispatch:
 
 permissions:

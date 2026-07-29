@@ -15,10 +15,32 @@ import Anthropic from "@anthropic-ai/sdk";
 const MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
 const DATA_PATH = "./data/daily-market.json";
 
+// 카드 상단에 이미 코스피/코스닥 지수 포인트·퍼센트·마감가가 크게 표시되므로, 한줄 논평에서
+// 그 수치를 또 반복하면 정보가 겹친다(사용자 피드백: "코스피 오르고 내리고 이런 내용 쓰지 말고
+// 지수 수치 이런거 쓰지 말고"). "숫자+포인트/%/원에 마감" 패턴이 들어간 절(clause)을 걸러낸다.
+function hasIndexFigures(text) {
+  return /\d[\d,]*(\.\d+)?\s*(포인트|p\)|%|원에\s*마감|에\s*마감)/.test(String(text || ""));
+}
+
 function extractHeadlineFallback(analysisText) {
   const m = String(analysisText || "").match(/핵심 한 줄\s*\n([\s\S]*?)(?:\n\n|📈)/);
   const para = m ? m[1].trim() : "";
-  return para ? safeSummarize(para, 110) : "";
+  if (!para) return "";
+  // "핵심 한 줄" 문단은 보통 [코스피 수치] [코스닥 수치] [그날 장중에 실제로 있었던 일(사이드카/
+  // 서킷브레이커 등) 요약] 순서로 이어진다. 문장(.) 단위가 아니라 절(., 쉼표) 단위로 잘게 쪼개서
+  // 지수 수치가 없는 절 — 즉 "오늘 장중 있었던 일" 자체를 설명하는 부분 — 을 우선 쓴다
+  // (사용자 피드백: "오늘 장중에 있었던 일들을 임팩트 있는 한줄로"). 전부 수치 포함 절뿐이면
+  // 기존처럼 문단 첫 문장으로 폴백한다.
+  const clauses = para.split(/(?<=[.,])\s+/).map((s) => s.trim()).filter(Boolean);
+  const eventClause = clauses.find((c) => !hasIndexFigures(c) && looksCompleteEnough(c));
+  const chosen = eventClause || clauses[0] || para;
+  return safeSummarize(chosen, 110);
+}
+
+// looksComplete()보다 앞서 정의가 필요해 절 후보 1차 필터용으로 가볍게 문장부호만 확인한다
+// (진짜 완결 판정은 safeSummarize 안의 looksComplete가 최종적으로 한 번 더 검증한다).
+function looksCompleteEnough(text) {
+  return /[.!?]$/.test(String(text || "").trim());
 }
 
 function extractOutlookFallback(analysisText) {
@@ -144,11 +166,15 @@ export async function buildPromoCopy(snapshot) {
 
   const fallback = () => {
     // 커버 슬라이드(headline)는 화면에 이미 크게 표시되는 지수 등락률 숫자를 반복하지 않고,
-    // "왜" 그렇게 움직였는지 원인을 담는다 (사용자 피드백 반영: 숫자 재언급 금지, 원인 코멘트 필수).
+    // "오늘 장중에 실제로 있었던 일"을 담는다 (사용자 피드백: "코스피 오르고 내리고 이런 내용
+    // 쓰지 말고 지수 수치 이런거 쓰지 말고", "오늘 장중에 있었던 일들을 임팩트 있는 한줄로").
+    // extractHeadlineFallback이 "핵심 한 줄" 섹션(오늘 KR 장중 이벤트, 리포트가 직접 뽑아둔
+    // 핵심 요약)에서 지수 수치가 없는 절을 우선 골라주므로, flowComment(간밤 뉴욕증시 recap 등
+    // 간접 원인 — "시장 흐름 분석" 섹션)보다 resultLine을 headline의 1순위로 쓴다.
     const flowComment = extractFlowCommentFallback(analysisText);
     const resultLine = extractHeadlineFallback(analysisText);
     const strategyComment = extractStrategyFallback(analysisText, 110);
-    const headline = flowComment || resultLine || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
+    const headline = resultLine || flowComment || buildIndexHeadline(snapshot) || "오늘의 시장 요약";
     // coreLine = "📌 핵심 한 줄" 섹션 원문(리포트가 직접 뽑아둔 그날의 핵심 한 줄 요약+원인).
     // 만평 릴스의 "왜 움직였는지" 카드는 headline(간밤 뉴욕증시 recap 등 간접 원인)보다
     // 이 핵심 한 줄을 우선 써야 한다 (사용자 피드백: "이 내용으로 만평을 해야하는데 엉뚱한게 써있음"
@@ -194,7 +220,7 @@ ${gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%`).join(",
 
 다음 JSON 스키마로만 응답:
 {
-  "headline": "커버 슬라이드용 한 줄 총평 (35~55자). 화면에 이미 표시되는 지수 등락률 숫자를 그대로 반복하지 말고, 오늘 시장이 왜 그렇게 움직였는지 핵심 원인과 의미를 임팩트 있게 설명. 완결된 문장으로 끝낼 것.",
+  "headline": "커버 슬라이드용 한 줄 총평 (35~55자). 화면에 이미 표시되는 지수 등락률 숫자·포인트·퍼센트를 그대로 반복하지 말고('코스피 올랐다/내렸다' 같은 방향성 서술도 금지), 오늘 장중에 실제로 있었던 일(수급 이벤트, 사이드카/서킷브레이커, 특징 흐름 등)을 임팩트 있게 설명. 간밤 미국 증시 등 전날/해외 요인 recap이 아니라 오늘 국내 장중 사건 위주로 쓸 것. 완결된 문장으로 끝낼 것.",
   "summaryLines": ["오늘 시황을 완결된 문장 5개로 요약(각 20~32자). 지수 흐름/주도 업종/수급 주체/환율·원자재/향후 변수 등 서로 다른 포인트를 다뤄서 정보 밀도를 높일 것. 원문에 없는 내용 금지."],
   "aiComment": "AI 오늘의 판단 (70~100자). 오늘 시황에서 가장 중요한 포인트 1~2개를 근거와 함께 설명하고 투자 유의사항을 짧게 포함. headline과 다른 문장/내용으로 쓸 것.",
   "checkpoints": ["내일 주목할 변수 1", "변수 2", "변수 3"],

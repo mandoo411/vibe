@@ -4,6 +4,7 @@ const FMP_BASE = "https://financialmodelingprep.com/api/v3";
 const FMP_STABLE_BASE = "https://financialmodelingprep.com/stable";
 const RANKED_COMPANIES = require("../lib/world-market-ranked.js");
 const KO_NAMES = require("../lib/world-market-names-ko.js");
+const { fetchKisDomesticQuote } = require("../lib/kis-domestic-quote.js");
 
 const CACHE_PATH = path.join(__dirname, "..", "data", "world-market-cache.json");
 let fileCache = { at: 0, data: null };
@@ -161,6 +162,12 @@ function chartSymbolFor(meta) {
 
 function isKrwStock(meta) {
   return /\.KS$/i.test(chartSymbolFor(meta));
+}
+
+/** ".KS" 국내 상장 종목의 6자리 코드 추출 (KIS 실시간 시세 조회용, 예: "005930.KS" → "005930") */
+function kisCode6For(meta) {
+  const m = /^(\d{6})\.KS$/i.exec(chartSymbolFor(meta));
+  return m ? m[1] : null;
 }
 
 async function fetchUsdKrwRate() {
@@ -522,7 +529,12 @@ function buildRow(meta, quote, type, rank, usdKrwRate) {
   const symbol = String(meta.symbol || meta.yahooSymbol || "").trim().toUpperCase();
   const q = mergeWithCache(meta, quote, rank) || {};
   const entry = cacheEntryFor(meta, rank);
-  const marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
+  let marketCap = toNum(q.marketCap) ?? toNum(entry?.marketCap);
+  // 삼성전자·SK하이닉스: KIS 실시간 시가총액(원)을 받아왔으면 캐시 값 대신 그걸 우선한다.
+  if (isKrwStock(meta) && q.marketCapWon != null) {
+    const liveUsd = krwToUsd(q.marketCapWon, usdKrwRate);
+    if (liveUsd != null) marketCap = liveUsd;
+  }
   const netIncome = toNum(q.netIncome) ?? toNum(entry?.netIncome);
   const revenue = toNum(q.revenue) ?? toNum(entry?.revenue);
   const value = metricAmount(type, { marketCap, netIncome, revenue });
@@ -621,10 +633,25 @@ async function rowsForCached(type, { includeSparks = true } = {}) {
     fetchUsdKrwRate(),
     Promise.all(
       krwMetas.map(async (meta) => {
+        // 삼성전자·SK하이닉스 등 국내 상장 종목은 KIS(한국투자증권) 실시간 시세를 우선 사용한다.
+        // 기존에는 marketCap을 companiesmarketcap.com 스크레이프 캐시(data/world-market-cache.json,
+        // 평일 4회 갱신)에서만 가져왔는데, 급등락 구간에서는 최대 반나절 가까이 뒤처진 값이 그대로
+        // 노출되는 문제가 있었다(예: 2026-07-29 SK하이닉스 폭락 당일에도 캐시는 7/24 시점 시총을 표시).
+        // KIS는 실시간 원본 데이터라 이 두 종목만큼은 가격뿐 아니라 시가총액도 덮어쓴다.
+        const code6 = kisCode6For(meta);
+        if (code6) {
+          const kis = await fetchKisDomesticQuote(code6);
+          if (kis && (kis.priceKrw != null || kis.marketCapWon != null)) {
+            return { priceKrw: kis.priceKrw, changePct: kis.changePct, marketCapWon: kis.marketCapWon };
+          }
+        }
+        // KIS 크리덴셜이 없거나 호출 실패 시 기존처럼 Yahoo 차트 시세로 폴백(가격만, 시총은 캐시 유지).
         const sym = chartSymbolFor(meta);
         if (!sym) return null;
         try {
-          return await fetchYahooChartQuote(sym);
+          const y = await fetchYahooChartQuote(sym);
+          if (!y) return null;
+          return { priceKrw: y.price, changePct: y.changesPercentage, marketCapWon: null };
         } catch {
           return null;
         }
@@ -642,7 +669,13 @@ async function rowsForCached(type, { includeSparks = true } = {}) {
     let quote = null;
     if (isKrwStock(meta)) {
       const live = krwQuoteMap.get(chartSymbolFor(meta).toUpperCase());
-      if (live) quote = { priceKrw: live.price, changesPercentage: live.changesPercentage };
+      if (live) {
+        quote = {
+          priceKrw: live.priceKrw,
+          changesPercentage: live.changePct,
+          marketCapWon: live.marketCapWon,
+        };
+      }
     }
     return buildRow(meta, quote, type, rank, usdKrwRate);
   });

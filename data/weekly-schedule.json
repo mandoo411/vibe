@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-07-30 06:58 KST",
-    "from": "2026-07-30",
-    "to": "2026-08-13",
-    "historyFrom": "2026-05-01",
+    "lastUpdatedKst": "2026-07-31 07:04 KST",
+    "from": "2026-07-31",
+    "to": "2026-08-14",
+    "historyFrom": "2026-05-02",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -210,6 +210,15 @@
       "offeringPrice": null,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2302",
       "code": ""
+    },
+    {
+      "date": "2026-08-14",
+      "name": "케이앤에스아이앤씨",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2299",
+      "code": ""
     }
   ],
   "krEarnings": [
@@ -237,13 +246,68 @@
     },
     {
       "date": "2026-07-30",
+      "name": "현대차",
+      "sector": "",
+      "code": "005380",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-30",
+      "name": "POSCO홀딩스",
+      "sector": "",
+      "code": "005490",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)(자회사의 주요경영사항)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-30",
       "name": "삼성전자",
-      "sector": "반도체",
+      "sector": "",
       "code": "005930",
       "epsEstimate": "",
       "previousQuarter": "",
+      "reportName": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-30",
+      "name": "삼성SDI",
+      "sector": "",
+      "code": "006400",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-30",
+      "name": "LG에너지솔루션",
+      "sector": "",
+      "code": "373220",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-07-31",
+      "name": "LG화학",
+      "sector": "화학",
+      "code": "051910",
+      "epsEstimate": "",
+      "previousQuarter": "",
       "reportName": "영업(잠정)실적(공정공시)",
-      "evidenceCount": 6,
+      "evidenceCount": 4,
       "confirmed": false,
       "source": "manual"
     },
@@ -287,45 +351,45 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-07-30",
-      "title": "Advance GDP q/q",
-      "expected": "예측 2.1% / 이전 2.0%",
-      "analysis": "예상 상회 시 미국 경제 성장에 대한 긍정적인 신호로 작용하여 증시가 상승할 가능성이 높습니다. 예상 하회 시 경제 둔화 우려로 인해 증시가 하락할 수 있으며, 이는 원화 약세로 이어질 수 있습니다."
+      "date": "2026-07-31",
+      "title": "Employment Cost Index q/q",
+      "expected": "예측 0.8% / 이전 0.9%",
+      "analysis": "예상 상회 시 미국의 고용 비용 증가가 예상보다 크다는 것은 인플레이션 압력이 지속되고 있음을 시사하며, 이는 금리 인상 가능성을 높여 증시에 부정적인 영향을 미칠 수 있습니다. 예상 하회 시 고용 비용 증가 둔화는 금리 인상 우려를 완화시켜 증시에 긍정적인 영향을 줄 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-07-30",
-      "title": "Core PCE Price Index m/m",
-      "expected": "예측 0.2% / 이전 0.3%",
-      "analysis": "예상 상회 시 인플레이션 압력이 지속되고 있다는 신호로 해석되어 금리 인상 우려가 커질 수 있어 증시에 부정적 영향을 미칠 수 있습니다. 예상 하회 시 금리 인상 속도가 완화될 것으로 기대되어 증시가 긍정적인 반응을 보일 수 있습니다."
+      "date": "2026-07-31",
+      "title": "Revised UoM Consumer Sentiment",
+      "expected": "예측 53.9 / 이전 54.4",
+      "analysis": "예상 상회 시 소비자 신뢰도가 개선되면 소비 지출 증가로 이어져 경제 성장에 긍정적인 영향을 미치고, 이는 증시에 호재로 작용할 수 있습니다. 예상 하회 시 소비자 신뢰도 저하는 경기 둔화 우려를 불러일으켜 증시에 부정적인 영향을 미칠 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-07-31",
+      "title": "Revised UoM Inflation Expectations",
+      "expected": "예측 없음 / 이전 4.2%",
+      "analysis": "인플레이션 기대치가 이전보다 높아질 경우, 이는 금리 인상 우려를 자극하여 증시에 부정적인 영향을 미칠 수 있습니다. 반대로 기대치가 낮아지면 금리 인상 압력이 완화되어 증시에 긍정적인 영향을 줄 수 있습니다."
     },
     {
       "type": "earnings",
-      "date": "2026-07-30",
-      "title": "삼성전자 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 반도체 섹터 전반에 긍정적인 영향을 미쳐 관련 기업들의 주가 상승을 이끌 수 있습니다. 예상 하회 시 반도체 업종의 부진이 우려되어 관련 종목들의 주가에 부정적인 영향을 미칠 수 있습니다."
+      "date": "2026-07-31",
+      "title": "LG화학 실적발표",
+      "expected": "컨센서스 영업이익 미제공",
+      "analysis": "LG화학의 실적이 예상보다 좋을 경우, 화학 섹터 전반에 긍정적인 영향을 미치고 관련 종목인 삼성SDI, SK이노베이션에도 긍정적인 파급 효과가 있을 것입니다. 반면, 실적이 예상보다 저조할 경우, 화학 섹터의 전반적인 신뢰도 하락과 함께 관련 종목에도 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-07-31",
       "title": "한화에어로스페이스 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 방산 섹터의 성장 가능성을 보여주어 관련 기업들의 주가에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 방산 업종의 성장 둔화 우려가 커져 관련 종목들의 주가에 부정적인 영향을 줄 수 있습니다."
+      "expected": "컨센서스 영업이익 미제공",
+      "analysis": "한화에어로스페이스의 실적이 예상보다 좋을 경우 방산 섹터의 긍정적인 신호로 작용하며, 관련 종목인 현대중공업, LIG넥스원에도 긍정적인 영향을 미칠 수 있습니다. 그러나 실적이 예상보다 낮을 경우 방산 섹터 전반에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-06",
       "title": "카카오 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터의 강세를 나타내어 카카오의 주가 상승을 이끌 수 있습니다. 예상 하회 시 플랫폼 업종의 경쟁 심화로 인한 실적 부진 우려가 커져 주가에 부정적인 영향을 미칠 수 있습니다."
-    },
-    {
-      "type": "earnings",
-      "date": "2026-08-07",
-      "title": "NAVER 실적발표",
-      "expected": "컨센서스 영업이익 X조원 / 전년동기 대비 Y%",
-      "analysis": "예상 상회 시 플랫폼 섹터 내에서 NAVER의 시장 지배력이 강화될 가능성이 높아져 주가에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 플랫폼 업종의 성장 둔화 우려로 인해 NAVER의 주가에 부정적인 영향을 미칠 수 있습니다."
+      "expected": "컨센서스 영업이익 미제공",
+      "analysis": "카카오의 실적이 예상보다 좋을 경우 플랫폼 섹터에 긍정적인 영향을 미치고, 관련 종목인 네이버, 쿠팡에도 긍정적인 파급 효과가 있을 것입니다. 반면, 실적이 예상보다 저조할 경우 플랫폼 섹터의 신뢰도 하락과 함께 관련 종목에도 부정적인 영향을 미칠 수 있습니다."
     }
   ]
 }

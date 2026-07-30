@@ -51,6 +51,32 @@ body.page-home-v2 {
   min-height: 100dvh;
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
   color: var(--text-primary, #111);
+  position: relative;
+  z-index: 1;
+}
+
+/* 2026-07-30: 콘텐츠 칼럼(max-width:1200px) 좌우로 남는 여백을 채우는 우주 배경 —
+   인스타 릴스 배경(promo-gemini-background.mjs의 buildCyberSpacePrompt)과 같은 톤으로
+   제작. body 배경이라 .tm-wrap/.home-wrap(불투명 배경) 뒤에서 좌우 여백에서만 보인다.
+   1200px보다 좁은 화면에서는 콘텐츠가 여백을 다 덮어 자연히 안 보임 — 별도 분기 불필요. */
+body.page-tm-v2,
+body.page-home-v2 {
+  background-image: url("./assets/bg-space-light.svg");
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+[data-theme="dark"] body.page-tm-v2,
+[data-theme="dark"] body.page-home-v2,
+body[data-theme="dark"].page-tm-v2,
+body[data-theme="dark"].page-home-v2 {
+  background-image: url("./assets/bg-space-dark.svg");
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
 .home-nav {
@@ -228,12 +254,15 @@ body.page-home-v2 {
      둘 때 그 주변 간격만 나머지 항목들과 달라 보인다는 피드백이 있었음. 이제 홈 버튼도
      .home-nav__menu의 다른 항목들과 똑같이 --home-nav-menu-gap(2ch)으로 균일하게
      떨어진다(아래 .home-nav__menu > .home-nav__home-btn 규칙). */
+  /* 2026-07-30: 메뉴가 나스닥선물 티커 열에 맞춰 오른쪽으로 크게 밀려있어(--home-nav-menu-inset,
+     160px) 로고와 메뉴 사이에 큰 빈 공백이 생긴다는 피드백 — 티커 정렬용 inset을 버리고
+     로고 옆으로 바짝 당긴다. */
   .page-home-v2 .home-nav__menu,
   .page-tm-v2 .home-nav__menu {
     flex: 1 1 auto;
     margin-left: 0;
     min-width: 0;
-    padding-left: max(8px, var(--home-nav-menu-inset));
+    padding-left: 8px;
     padding-right: 8px;
     gap: var(--home-nav-menu-gap);
     flex-wrap: nowrap;
@@ -1676,10 +1705,12 @@ body[data-theme="dark"] .home-ticker-bar__label {
   border: 1px solid var(--border-color);
 }
 
+/* 2026-07-30: background(shorthand)는 background-image까지 초기화해버려서 우주 배경이
+   지워지는 문제가 있었음 — background-color(longhand)로 바꿔 이미지는 유지한다. */
 [data-theme="dark"] body.page-tm-v2,
 [data-theme="dark"] body.page-home-v2,
 [data-theme="dark"] body {
-  background: var(--body-bg);
+  background-color: var(--body-bg);
   color: var(--text-primary);
 }
 
@@ -2555,10 +2586,11 @@ body[data-theme="dark"] .home-ticker-bar__label {
     color: #0f8387;
   }
 
+  /* 2026-07-30: 예전엔 라이트 데스크톱에서 배경 이미지를 아예 꺼뒀는데(background-image:none),
+     이제 우주 배경을 쓰므로 색상만 background-color로 통일하고 이미지는 건드리지 않는다. */
   html[data-theme="light"] body.page-tm-v2,
   html[data-theme="light"] body.page-home-v2 {
-    background: var(--bg-secondary);
-    background-image: none;
+    background-color: var(--bg-secondary);
   }
 
   html[data-theme="light"] .tm-wrap,

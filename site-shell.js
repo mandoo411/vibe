@@ -353,17 +353,15 @@
   // 이 숫자는 "좁을 때 누구부터 접을지"만 결정한다.
   // 2026-07-18: 사용자 지정 순서(홈 시장지표 브리핑 마감시황 일정 실시간시세 미국주식
   // 매매시그널 AI종목분석 더보기...)를 우선순위로 반영.
+  // 2026-07-30: 사용자 요청으로 상단 GNB를 "미국주식 · 매매시그널 · AI종목분석"만
+  // 항상 노출하는 구조로 단순화 — 나머지 7개(시장지표/브리핑/마감시황/일정/실시간시세/
+  // 암호화폐/글로벌랭킹)는 각 HTML의 #home-nav-more-panel에 정적으로 배치해 항상
+  // "더보기"에 들어있다(JS가 관리하는 #home-nav-links 풀에는 아예 없음 — 아래 3개뿐).
+  // 이 우선순위 숫자는 이제 "좁은 화면에서 이 3개 중 무엇부터 접을지"만 결정한다.
   const NAV_PRIORITY = {
-    "./market.html": 1,
-    "./briefing.html": 2,
-    "./daily-market.html": 3,
-    "./weekly-market.html": 4,
-    "./realtime.html": 5,
-    "./us-market.html": 6,
-    "./trade-signal.html": 7,
-    "./stock-analysis.html": 8,
-    "./crypto.html": 9,
-    "./world-market.html": 10,
+    "./us-market.html": 1,
+    "./trade-signal.html": 2,
+    "./stock-analysis.html": 3,
   };
 
   function bindNavPriorityMenu() {
@@ -374,6 +372,11 @@
     const moreBtn = document.getElementById("home-nav-more-btn");
     const morePanel = document.getElementById("home-nav-more-panel");
     if (!nav || !menu || !linksWrap || !moreWrap || !moreBtn || !morePanel) return;
+
+    // 2026-07-30: #home-nav-more-panel에 처음부터(HTML) 정적으로 들어있는 항목 개수를
+    // 한 번만 세어둔다 — 이후 JS가 동적 풀(#home-nav-links, 3개)에서 항목을 옮겨 붙여도
+    // 이 값은 그대로라, "더보기" 버튼이 정적 항목 때문에 항상 보여야 하는지 판단 가능.
+    const staticMoreCount = morePanel.children.length;
 
     const items = Array.from(linksWrap.querySelectorAll(":scope > .home-nav__link")).map((el) => ({
       el,
@@ -428,17 +431,22 @@
       function applyVisibility() {
         const hiddenCount = items.reduce((n, it, idx) => n + (visible.has(idx) ? 0 : 1), 0);
         if (hiddenCount > 0) {
-          moreWrap.classList.add("has-overflow");
-          // 더보기 패널 안은 항상 원래 링크 순서(DOM 순서)로 정리
+          // 더보기 패널 안은 항상 원래 링크 순서(DOM 순서)로 정리 — 정적 항목(7개) 뒤에 붙는다.
           items.forEach((it, idx) => {
             if (visible.has(idx)) linksWrap.appendChild(it.el);
             else morePanel.appendChild(it.el);
           });
         } else {
+          items.forEach((it) => linksWrap.appendChild(it.el));
+        }
+        // 2026-07-30: morePanel에는 이제 항상 정적 7개 항목이 들어있으므로(staticMoreCount),
+        // 동적 풀(3개)에 오버플로가 없어도 "더보기" 버튼 자체는 계속 보여야 한다.
+        if (hiddenCount > 0 || staticMoreCount > 0) {
+          moreWrap.classList.add("has-overflow");
+        } else {
           moreWrap.classList.remove("has-overflow");
           moreWrap.classList.remove("is-open");
           moreBtn.setAttribute("aria-expanded", "false");
-          items.forEach((it) => linksWrap.appendChild(it.el));
         }
       }
 

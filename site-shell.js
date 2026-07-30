@@ -353,15 +353,21 @@
   // 이 숫자는 "좁을 때 누구부터 접을지"만 결정한다.
   // 2026-07-18: 사용자 지정 순서(홈 시장지표 브리핑 마감시황 일정 실시간시세 미국주식
   // 매매시그널 AI종목분석 더보기...)를 우선순위로 반영.
-  // 2026-07-30: 사용자 요청으로 상단 GNB를 "미국주식 · 매매시그널 · AI종목분석"만
-  // 항상 노출하는 구조로 단순화 — 나머지 7개(시장지표/브리핑/마감시황/일정/실시간시세/
-  // 암호화폐/글로벌랭킹)는 각 HTML의 #home-nav-more-panel에 정적으로 배치해 항상
-  // "더보기"에 들어있다(JS가 관리하는 #home-nav-links 풀에는 아예 없음 — 아래 3개뿐).
-  // 이 우선순위 숫자는 이제 "좁은 화면에서 이 3개 중 무엇부터 접을지"만 결정한다.
+  // 2026-07-30: 사용자 지정 순서 — 시장지표/브리핑/마감시황/일정/실시간시세/미국주식/
+  // 매매시그널/AI종목분석 8개를 이 순서 그대로 GNB에 노출한다. 암호화폐/글로벌랭킹만
+  // 각 HTML의 #home-nav-more-panel에 정적으로 배치해 항상 "더보기"에 들어있다
+  // (JS가 관리하는 #home-nav-links 풀에는 아래 8개만 있음). 이 우선순위 숫자는
+  // 좁은 화면에서 8개가 다 안 들어갈 때 무엇부터 접을지를 지정 순서대로 결정한다
+  // (뒤쪽 — AI종목분석/매매시그널 — 부터 먼저 접힘).
   const NAV_PRIORITY = {
-    "./us-market.html": 1,
-    "./trade-signal.html": 2,
-    "./stock-analysis.html": 3,
+    "./market.html": 1,
+    "./briefing.html": 2,
+    "./daily-market.html": 3,
+    "./weekly-market.html": 4,
+    "./realtime.html": 5,
+    "./us-market.html": 6,
+    "./trade-signal.html": 7,
+    "./stock-analysis.html": 8,
   };
 
   function bindNavPriorityMenu() {

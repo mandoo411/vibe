@@ -49,7 +49,7 @@
 
   .page-wrap {
     position: absolute;
-    top: 160px;
+    top: 90px;
     left: 64px;
     right: 64px;
     bottom: 170px;
@@ -69,7 +69,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 26px;
+    margin-bottom: 100px;
   }
   .title-line .dot {
     width: 15px;
@@ -80,7 +80,7 @@
     box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
   }
   .title-line .title-text {
-    font-size: 44px;
+    font-size: 47px;
     font-weight: 900;
     letter-spacing: -0.5px;
     color: var(--text-primary);
@@ -91,18 +91,18 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
   }
   .section-label .icon-chip { width: 42px; height: 42px; border-radius: 12px; }
   .section-label .icon-chip svg { width: 23px; height: 23px; }
-  .section-label .label-text { font-size: 32px; font-weight: 900; color: var(--text-primary); }
+  .section-label .label-text { font-size: 35px; font-weight: 900; color: var(--text-primary); }
 
   /* ---------- 미국 지수 리스트 (5개 — 카드 대신 컴팩트 행) ---------- */
   .usidx-list {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
   }
   .usidx-row {
     display: flex;
@@ -118,14 +118,14 @@
   .usidx-row.down { background: linear-gradient(90deg, rgba(59,130,246,0.30) 0%, rgba(17,29,53,0.82) 62%), rgba(17,29,53,0.82); border-left-color: var(--down-color); }
   .usidx-row.flat { background: rgba(17,29,53,0.82); border: 1px solid rgba(255,255,255,0.10); }
   .usidx-name-wrap { display: flex; flex-direction: column; gap: 1px; }
-  .usidx-name { font-size: 32px; font-weight: 900; color: var(--text-primary); line-height: 1.05; }
+  .usidx-name { font-size: 35px; font-weight: 900; color: var(--text-primary); line-height: 1.05; }
   .usidx-code { font-size: 13px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
   .usidx-value-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-  .usidx-value { font-size: 40px; font-weight: 900; letter-spacing: -1px; white-space: nowrap; line-height: 1.05; }
+  .usidx-value { font-size: 43px; font-weight: 900; letter-spacing: -1px; white-space: nowrap; line-height: 1.05; }
   .usidx-value.up { color: var(--up-color); }
   .usidx-value.down { color: var(--down-color); }
   .usidx-value.flat { color: var(--text-secondary); }
-  .usidx-change { font-size: 26px; font-weight: 800; white-space: nowrap; line-height: 1.05; }
+  .usidx-change { font-size: 29px; font-weight: 800; white-space: nowrap; line-height: 1.05; }
   .usidx-change.up { color: var(--up-color); }
   .usidx-change.down { color: var(--down-color); }
   .usidx-change.flat { color: var(--text-secondary); }
@@ -139,15 +139,19 @@
     border-left: 8px solid var(--accent-gold);
     border-radius: 0 16px 16px 0;
     padding: 14px 28px;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
     box-shadow: 0 8px 22px rgba(0,0,0,0.30);
   }
   .comment-bar .comment-icon { width: 32px; height: 32px; flex-shrink: 0; }
   .comment-bar .comment-text {
-    font-size: 31px;
+    font-size: 34px;
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1.32;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
   }
 
   /* ---------- TOP10 로테이션 리스트 (마감 릴스와 동일 스타일 재사용) ---------- */
@@ -183,7 +187,7 @@
   .mcap-row .rank.gold { background: linear-gradient(135deg, #ffd84d 0%, #ffb830 100%); color: #07264b; }
   .mcap-row .stock-info { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; }
   .mcap-row .stock-name {
-    font-size: 30px;
+    font-size: 33px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
@@ -191,14 +195,14 @@
     text-overflow: ellipsis;
   }
   .mcap-row .stock-price {
-    font-size: 30px;
+    font-size: 33px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
     flex-shrink: 0;
   }
   .mcap-row .stock-change {
-    font-size: 30px;
+    font-size: 33px;
     font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
@@ -207,7 +211,7 @@
   .mcap-row .stock-change.down { color: var(--down-color); }
   .mcap-row .stock-change.flat { color: var(--text-secondary); }
   .mcap-row .stock-pct {
-    font-size: 30px;
+    font-size: 33px;
     font-weight: 800;
     flex-shrink: 0;
     text-align: right;
@@ -220,14 +224,6 @@
 <body>
   <img class="bg-art" src="{{BG_DATA_URI}}" />
   <div class="bg-scrim"></div>
-
-  <div class="brand-lockup">
-    <div class="logo-box"><span>TM</span><span>AI</span></div>
-    <div>
-      <div class="brand-name">TotalMoney</div>
-      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
-    </div>
-  </div>
 
   <div class="page-wrap">
     <div class="title-line">

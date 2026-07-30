@@ -55,30 +55,6 @@ body.page-home-v2 {
   z-index: 1;
 }
 
-/* 2026-07-30: 콘텐츠 칼럼(max-width:1200px) 좌우로 남는 여백을 채우는 우주 배경 —
-   인스타 릴스 배경(promo-gemini-background.mjs의 buildCyberSpacePrompt)과 같은 톤으로
-   제작. body 배경이라 .tm-wrap/.home-wrap(불투명 배경) 뒤에서 좌우 여백에서만 보인다.
-   1200px보다 좁은 화면에서는 콘텐츠가 여백을 다 덮어 자연히 안 보임 — 별도 분기 불필요. */
-body.page-tm-v2,
-body.page-home-v2 {
-  background-image: url("./assets/bg-space-light.svg");
-  background-repeat: no-repeat;
-  background-position: top center;
-  background-size: cover;
-  background-attachment: fixed;
-}
-
-[data-theme="dark"] body.page-tm-v2,
-[data-theme="dark"] body.page-home-v2,
-body[data-theme="dark"].page-tm-v2,
-body[data-theme="dark"].page-home-v2 {
-  background-image: url("./assets/bg-space-dark.svg");
-  background-repeat: no-repeat;
-  background-position: top center;
-  background-size: cover;
-  background-attachment: fixed;
-}
-
 .home-nav {
   display: flex;
   align-items: center;
@@ -432,19 +408,9 @@ body[data-theme="dark"].page-home-v2 {
 
 .home-nav__link[aria-current="page"] {
   position: relative;
-  background: transparent;
+  background: rgba(15, 131, 135, 0.12);
   color: var(--accent-brand, #0f8387);
-}
-
-.home-nav__link[aria-current="page"]::after {
-  content: "";
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 2px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--gradient-primary);
+  font-weight: 700;
 }
 
 .home-nav__auth-link {
@@ -460,33 +426,6 @@ body[data-theme="dark"].page-home-v2 {
 
 .home-nav__link--analysis-locked {
   cursor: pointer;
-  color: #b0b5bf;
-  opacity: 0.88;
-}
-
-.home-nav__link--analysis-locked:hover {
-  background: transparent;
-  color: #9ca3af;
-  opacity: 1;
-}
-
-.home-nav__link--analysis-locked[aria-current="page"] {
-  background: transparent;
-  color: #b0b5bf;
-}
-
-.home-nav__link--analysis-locked[aria-current="page"]::after {
-  display: none;
-}
-
-[data-theme="dark"] .home-nav__link--analysis-locked,
-body[data-theme="dark"] .home-nav__link--analysis-locked {
-  color: #6b7280;
-}
-
-[data-theme="dark"] .home-nav__link--analysis-locked:hover,
-body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
-  color: #9ca3af;
 }
 
 .tm-bottom-nav__item--analysis-locked {
@@ -495,13 +434,6 @@ body[data-theme="dark"] .home-nav__link--analysis-locked:hover {
 
 .tm-nav-sheet__cell.home-nav__link--analysis-locked {
   cursor: pointer;
-  color: #b0b5bf;
-  opacity: 0.88;
-}
-
-.tm-nav-sheet__cell.home-nav__link--analysis-locked:hover {
-  color: #9ca3af;
-  opacity: 1;
 }
 
 /* AI 종목분석 접근 제한 모달 */
@@ -1736,12 +1668,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
-  background: transparent;
+  background: rgba(212, 175, 55, 0.16);
   color: var(--accent-gold);
-}
-
-[data-theme="dark"] .home-nav__link[aria-current="page"]::after {
-  background: var(--gradient-primary);
+  font-weight: 700;
 }
 
 [data-theme="dark"] .home-nav__brand-name {

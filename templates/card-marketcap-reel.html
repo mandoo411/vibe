@@ -48,7 +48,7 @@
 
   .page-wrap {
     position: absolute;
-    top: 160px;
+    top: 90px;
     left: 64px;
     right: 64px;
     bottom: 170px;
@@ -69,7 +69,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 26px;
+    margin-bottom: 100px;
   }
   .title-line .dot {
     width: 15px;
@@ -80,7 +80,7 @@
     box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
   }
   .title-line .title-text {
-    font-size: 44px;
+    font-size: 47px;
     font-weight: 900;
     letter-spacing: -0.5px;
     color: var(--text-primary);
@@ -91,16 +91,16 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
   }
   .section-label .icon-chip { width: 52px; height: 52px; border-radius: 15px; }
   .section-label .icon-chip svg { width: 28px; height: 28px; }
-  .section-label .label-text { font-size: 42px; font-weight: 900; color: var(--text-primary); }
+  .section-label .label-text { font-size: 45px; font-weight: 900; color: var(--text-primary); }
 
   .index-row {
     display: flex;
     gap: 22px;
-    margin-bottom: 20px;
+    margin-bottom: 28px;
   }
   .index-card {
     flex: 1;
@@ -115,7 +115,7 @@
   .index-card.down { background: linear-gradient(150deg, rgba(59,130,246,0.38) 0%, rgba(17,29,53,0.82) 62%), rgba(17,29,53,0.82); border-left-color: var(--down-color); box-shadow: 0 8px 26px rgba(59,130,246,0.22); }
   .index-card.flat { background: rgba(17,29,53,0.82); border: 1px solid rgba(255,255,255,0.10); }
   .index-card .idx-name {
-    font-size: 33px;
+    font-size: 36px;
     font-weight: 900;
     color: var(--text-primary);
     margin-bottom: 4px;
@@ -128,7 +128,7 @@
     margin-bottom: 12px;
   }
   .index-card .idx-value {
-    font-size: 66px;
+    font-size: 69px;
     font-weight: 900;
     letter-spacing: -1.5px;
     margin-bottom: 10px;
@@ -137,7 +137,7 @@
   .index-card .idx-value.down { color: var(--down-color); }
   .index-card .idx-value.flat { color: var(--text-secondary); }
   .index-card .idx-change {
-    font-size: 33px;
+    font-size: 36px;
     font-weight: 800;
   }
   .index-card .idx-change.up { color: var(--up-color); }
@@ -153,15 +153,19 @@
     border-left: 9px solid var(--accent-gold);
     border-radius: 0 18px 18px 0;
     padding: 20px 32px;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
     box-shadow: 0 8px 22px rgba(0,0,0,0.30);
   }
   .comment-bar .comment-icon { width: 40px; height: 40px; flex-shrink: 0; }
   .comment-bar .comment-text {
-    font-size: 37px;
+    font-size: 40px;
     font-weight: 800;
     color: var(--text-primary);
     line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
   }
 
   /* ---------- 시가총액 TOP10 ---------- */
@@ -197,7 +201,7 @@
   .mcap-row .rank.gold { background: linear-gradient(135deg, #ffd84d 0%, #ffb830 100%); color: #07264b; }
   .mcap-row .stock-info { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 12px; }
   .mcap-row .stock-name {
-    font-size: 34px;
+    font-size: 37px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
@@ -205,14 +209,14 @@
     text-overflow: ellipsis;
   }
   .mcap-row .stock-price {
-    font-size: 34px;
+    font-size: 37px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
     flex-shrink: 0;
   }
   .mcap-row .stock-change {
-    font-size: 34px;
+    font-size: 37px;
     font-weight: 800;
     white-space: nowrap;
     flex-shrink: 0;
@@ -221,7 +225,7 @@
   .mcap-row .stock-change.down { color: var(--down-color); }
   .mcap-row .stock-change.flat { color: var(--text-secondary); }
   .mcap-row .stock-pct {
-    font-size: 34px;
+    font-size: 37px;
     font-weight: 800;
     flex-shrink: 0;
     text-align: right;
@@ -234,14 +238,6 @@
 <body>
   <img class="bg-art" src="{{BG_DATA_URI}}" />
   <div class="bg-scrim"></div>
-
-  <div class="brand-lockup">
-    <div class="logo-box"><span>TM</span><span>AI</span></div>
-    <div>
-      <div class="brand-name">TotalMoney</div>
-      <div class="brand-sub">powered by <span class="ai-badge">AI</span></div>
-    </div>
-  </div>
 
   <div class="page-wrap">
     <div class="title-line">

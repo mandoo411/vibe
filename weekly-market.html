@@ -1084,24 +1084,17 @@
             const info = KR_SECTOR_MAP[r.code] || {};
             const name = info.name || r.name || r.code;
             const sector = info.sector || r.sector || "";
-            const sc = getSectorColor(sector);
+            // 2026-07-31: CI 이미지가 원형 안에서 깨지고 겹쳐 보인다는 피드백으로
+            // 원래대로 되돌림 — 실제 CI 이미지 대신 회사 브랜드 컬러 배경 +
+            // 이니셜 한 글자로 표시한다(삼성전자 파란 배경 "삼", 네이버 초록 배경
+            // "N" 등). KR_BRAND_COLORS에 없는 종목은 섹터 색상으로 폴백.
+            const sc = KR_BRAND_COLORS[r.code] || getSectorColor(sector);
             const initial = (name || "?").slice(0, 1);
             const isUnconfirmed = r.confirmed === false;
             const rtype = isUnconfirmed ? "estimated" : cleanReportName(r.reportName || "잠정실적");
             const rtypeCls = isUnconfirmed ? "ec-rtype ec-rtype--estimated" : "ec-rtype";
             // 2026-07-31: 클릭 시 네이버 증권으로 이동하던 링크 제거 — 카드 자체를
             // 정보 표시용으로만 쓴다.
-            // CI 로고: FMP image-stock을 처음 썼는데 로고가 깨지거나 실제 CI와
-            // 다른 경우가 많다는 피드백을 받고, 사용자가 직접 모아둔 검증된 CI
-            // 이미지(assets/ci-logos/)로 교체했다. KR_CI_LOGO_CODES에 있는
-            // 종목만 로고를 시도하고, 없는 종목은 처음부터 이미지를 안 그려
-            // 컬러+이니셜 아바타를 그대로 보여준다(잘못된 로고보다 안전).
-            const logoUrl = KR_CI_LOGO_CODES.has(r.code)
-              ? `/assets/ci-logos/${encodeURIComponent(r.code)}.jpg`
-              : "";
-            const logoHtml = logoUrl
-              ? `<img class="ec-avatar__img" src="${logoUrl}" alt="" loading="lazy" onerror="this.remove()" />`
-              : "";
             // 2026-07-31: DART는 공시가 있었다는 사실만 알려주고 수치는 안 줘서,
             // 확정 공시 건은 weekly-schedule.mjs가 네이버금융 표에서 보강한
             // revenueEok/operatingProfitEok/netIncomeEok가 있을 때만 표시한다
@@ -1115,10 +1108,7 @@
                 </div>`
               : "";
             return `<div class="ec-card ec-card--kr" style="--sc:${sc}">
-              <div class="ec-avatar">
-                ${logoHtml}
-                <span class="ec-avatar__fallback">${escapeHtml(initial)}</span>
-              </div>
+              <div class="ec-avatar">${escapeHtml(initial)}</div>
               <div class="ec-info">
                 <span class="ec-name">${escapeHtml(name)}</span>
                 <div class="ec-tags">
@@ -1327,10 +1317,27 @@
           "051910": { name: "LG화학", sector: "화학" },
           "012450": { name: "한화에어로스페이스", sector: "방산" },
         };
-        // 2026-07-31: assets/ci-logos/{code}.jpg로 실제 CI를 확보해둔 종목 코드 목록.
-        // KR_SECTOR_MAP과 동일한 15종목 — 새 종목을 실적 카드에 추가할 때 로고도
-        // assets/ci-logos/에 넣고 같이 등록해야 한다.
-        const KR_CI_LOGO_CODES = new Set(Object.keys(KR_SECTOR_MAP));
+        // 2026-07-31: 실적 카드 아바타에 쓰는 회사별 실제 브랜드 컬러.
+        // 사용자가 제공한 CI 이미지에서 배경/로고 색을 그대로 뽑았다(삼성 계열
+        // 파란색, LG 계열 마젠타, 카카오 옐로, 네이버 그린 등). 여기 없는
+        // 종목은 KR_SECTOR_COLORS 섹터 색상으로 자동 대체된다.
+        const KR_BRAND_COLORS = {
+          "005930": "#1428a0", // 삼성전자
+          "207940": "#1428a0", // 삼성바이오로직스
+          "006400": "#1428a0", // 삼성SDI
+          "000660": "#e00229", // SK하이닉스
+          "373220": "#c3084f", // LG에너지솔루션
+          "051910": "#c3084f", // LG화학
+          "005380": "#002e6a", // 현대차
+          "000270": "#c62127", // 기아
+          "005490": "#005689", // POSCO홀딩스
+          "068270": "#00b604", // 셀트리온
+          "105560": "#fdaf17", // KB금융
+          "055550": "#0046fe", // 신한지주
+          "035720": "#ffdc04", // 카카오
+          "035420": "#01c73c", // NAVER
+          "012450": "#f47320", // 한화에어로스페이스
+        };
         const KR_SECTOR_COLORS = {
           "반도체": "#3b82f6", "자동차": "#f97316", "바이오": "#22c55e",
           "2차전지": "#8b5cf6", "IT플랫폼": "#06b6d4", "금융": "#eab308",

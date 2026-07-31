@@ -2326,9 +2326,9 @@ a:hover {
 /* 2026-07-31: 카드가 더 이상 네이버 증권 링크가 아니라서(클릭 불가) 클릭
    가능한 것처럼 보이던 hover 리프트/그림자 효과는 제거했다 */
 
-/* 아바타 — CI 로고 우선, 로드 실패 시 컬러+이니셜로 폴백(2026-07-31) */
+/* 아바타 — 회사 브랜드 컬러 배경 + 이니셜 한 글자 (2026-07-31: CI 이미지가
+   원 안에서 깨지고 겹쳐 보인다는 피드백으로 이미지 대신 이 방식으로 되돌림) */
 .ec-avatar {
-  position: relative;
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -2341,22 +2341,6 @@ a:hover {
   font-weight: 800;
   flex-shrink: 0;
   letter-spacing: -0.02em;
-  overflow: hidden;
-}
-.ec-avatar__img {
-  /* 2026-07-31: 제공된 CI 이미지가 여백 없는 정사각 배지(단색 배경 + 로고)라서
-     object-fit:contain + 흰 배경 + 패딩을 쓰면 로고가 원 안에서 작게 쪼그라들고
-     흰 테두리가 겹쳐 보였다. cover로 정사각 이미지를 원 전체에 꽉 채운다. */
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-.ec-avatar__fallback {
-  position: relative;
-  z-index: 0;
 }
 
 /* 정보 영역 */

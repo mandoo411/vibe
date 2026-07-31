@@ -8,6 +8,9 @@
  */
 import { readJson } from "./telegram-utils.mjs";
 import { summarizeToSentence } from "./promo-text-utils.mjs";
+import Anthropic from "@anthropic-ai/sdk";
+
+const MODEL = process.env.ANTHROPIC_SEARCH_MODEL || "claude-haiku-4-5-20251001";
 
 const DATA_PATH = "./data/morning-briefing.json";
 const DAILY_MARKET_PATH = "./data/daily-market.json";
@@ -51,6 +54,101 @@ async function loadPreviousUsdKrw() {
   } catch {
     return undefined;
   }
+}
+
+// ---------------------------------------------------------------------------
+// 모닝 브리핑 릴스 전용 "오늘의 한줄 논평" (2026-07-31 추가)
+// 기존 aiComment(domesticImpact/summary 요약)는 카드뉴스 전체용 범용 문구라 형식이 고정되어
+// 있지 않았다. 릴스의 한줄 논평은 "예측" 중심이어야 한다: 간밤 해외에서 실제로 있었던 일(원인) ->
+// 그 여파로 오늘 국내 증시가 어떤 방향을 보일지(예측)로 이어지는 완결된 문장 하나
+// (사용자 피드백: "브리핑은 예측의 영역... 말끝 흐리기 절대 안됨").
+// ---------------------------------------------------------------------------
+
+function looksComplete(text) {
+  const s = String(text || "").trim();
+  if (!s) return false;
+  if (/[.!?)"'」』%]$/.test(s)) return true;
+  if (/[다요임음함]$/.test(s)) return true;
+  return false;
+}
+
+function buildMorningReelFallback(snapshot) {
+  const ai = snapshot.aiAnalysis || {};
+  const indices = snapshot.usMarket?.indices || [];
+  const nasdaq = indices.find((i) => i.id === "nasdaq") || indices[0];
+  const dirWord = (pct) => (pct > 0 ? "강세" : pct < 0 ? "약세" : "보합");
+
+  const topStocks = [...(snapshot.topStocks || [])]
+    .filter((s) => Number.isFinite(s.changePct))
+    .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct));
+  const top = topStocks[0];
+
+  // 1순위: 간밤 최대 변동 종목 + 나스닥 방향으로 완결된 규칙 기반 예측 문장(수치 반복 없음).
+  if (top) {
+    const name = TICKER_NAME_KO[top.symbol] || top.symbol;
+    return `간밤 ${name} 등 미국 대형주 ${dirWord(top.changePct)} 여파로, 오늘 국내 증시는 장초반 ${dirWord(nasdaq?.changePct ?? 0)}가 예상된다.`;
+  }
+  // 2순위: 이미 완결형으로 큐레이션된 원문 필드가 있으면 그대로.
+  const candidate = ai.todayOutlook?.scenario || ai.conclusion || ai.summary || "";
+  if (candidate && looksComplete(candidate)) return summarizeToSentence(candidate, 100);
+  // 3순위(최후 수단): 방향만으로 완결된 일반 문장.
+  return `간밤 미국 증시 흐름을 반영해 오늘 국내 증시는 장초반 ${dirWord(nasdaq?.changePct ?? 0)}가 예상된다.`;
+}
+
+/** 모닝 브리핑 릴스용 한줄 논평을 전용 프롬프트로 생성. Claude 미가용 시 규칙 기반 폴백으로 항상 완결된 문장을 보장한다. */
+export async function buildMorningReelComment(snapshot) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const ai = snapshot.aiAnalysis || {};
+  const sourceText = [ai.summary, ai.conclusion, ai.todayOutlook?.scenario, ...(ai.keyIssues || [])]
+    .filter(Boolean)
+    .join("\n");
+
+  const fallback = () => buildMorningReelFallback(snapshot);
+  if (!apiKey || !sourceText) return fallback();
+
+  const indices = snapshot.usMarket?.indices || [];
+  const indexFacts = indices
+    .map((i) => (Number.isFinite(i.changePct) ? `${i.name || i.id} ${i.changePct > 0 ? "+" : ""}${i.changePct}%` : null))
+    .filter(Boolean)
+    .join(", ");
+
+  const userPrompt = `아래는 간밤 미국 증시·글로벌 브리핑 원문이야. 이걸 바탕으로 인스타 릴스에 들어갈 "오늘의 한줄 논평"을 정확히 한 문장으로 작성해줘.
+
+작성 원칙:
+1. 모닝 브리핑은 "예측"을 다루는 논평이다. 간밤 미국장·유럽장·해외 정세 등에서 실제로 있었던 핵심 이벤트를 원인으로 제시하고, 그 여파로 오늘 국내 증시가 어떤 방향(강세/약세)을 보일지 예측으로 이어서 서술해.
+2. 반드시 완결된 문장으로 끝내라. "~예상된다", "~전망된다"처럼 명확한 종결어미로 끝날 것. 쉼표나 "..."로 흐리는 것 절대 금지.
+3. 화면에 이미 지수 등락률 숫자가 표시되므로 숫자를 반복하지 마라. 대신 "왜" 그런 흐름이 예상되는지 사건 중심으로 설명해.
+4. 원문에 없는 사실은 지어내지 마라(할루시네이션 금지).
+5. 길이는 40~80자 내외.
+6. 참고할 문체 예시(그대로 베끼지 말고 이런 톤으로): "간밤 MS 어닝서프라이즈를 비롯한 메모리관련주들의 급등으로 인해, 장초반 강세가 예상된다."
+
+[간밤 지수 마감]
+${indexFacts || "데이터 없음"}
+
+[브리핑 원문]
+${sourceText.slice(0, 4000)}
+
+문장 하나만, 따옴표나 다른 부연설명 없이 출력해.`;
+
+  const client = new Anthropic({ apiKey });
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model: MODEL,
+        max_tokens: 200,
+        system: "TotalMoney AI 인스타 릴스 한줄 논평 작성자. 예측 중심, 명확한 종결어미, 과장·할루시네이션 금지. 문장 하나만 출력.",
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      const text = (res.content?.find((b) => b.type === "text")?.text || "").trim().replace(/^["']|["']$/g, "");
+      if (text && looksComplete(text) && text.length <= 140) return text;
+    } catch (error) {
+      console.warn(`[promo-morning-copy] 브리핑 릴스 코멘트 생성 시도 ${attempt}/${MAX_ATTEMPTS} 실패:`, error instanceof Error ? error.message : error);
+      if (attempt === MAX_ATTEMPTS) break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  return fallback();
 }
 
 export async function buildMorningCardData(snapshot, { dateLabel, theme = "light" } = {}) {

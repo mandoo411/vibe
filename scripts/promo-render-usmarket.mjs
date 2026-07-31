@@ -212,7 +212,7 @@ function pickUsCommentSource(aiAnalysis) {
  * snapshot.usMarket.indices에서 INDEX_ORDER 순서대로 5개를 뽑고, 한줄 논평은 pickUsCommentSource()로
  * "오늘 예상흐름/간밤 미증시 시황" 위주 문장을 골라 쓴다(전일 마감시황 회고는 마감 릴스 몫).
  */
-export function buildUsMarketHTML({ cardData, snapshot, rows, mode, bgDataUri }) {
+export function buildUsMarketHTML({ cardData, snapshot, rows, mode, bgDataUri, reelComment }) {
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}.html`), "utf8");
   const indices = snapshot.usMarket?.indices || [];
 
@@ -225,7 +225,9 @@ export function buildUsMarketHTML({ cardData, snapshot, rows, mode, bgDataUri })
     return usIndexRowHTML(entry, idx);
   }).join("");
 
-  const commentSource = pickUsCommentSource(snapshot.aiAnalysis);
+  // reelComment(buildMorningReelComment, 촉매→오늘 전망 형식 전용 생성)가 최우선. 구버전
+  // 호출부 호환을 위해 없으면 기존 conclusion/todayOutlook 추출 로직으로 폴백.
+  const commentSource = reelComment || pickUsCommentSource(snapshot.aiAnalysis);
   const commentLine = buildCommentLine(commentSource);
 
   let html = fillVars(read("card-usmarket-reel"), {

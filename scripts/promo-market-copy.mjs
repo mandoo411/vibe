@@ -271,6 +271,91 @@ summaryLines는 정확히 5개를 배열로 반환해.`);
   return fallback();
 }
 
+// ---------------------------------------------------------------------------
+// 마감 릴스 전용 "오늘의 한줄 논평" (2026-07-31 추가)
+// 기존 headline/coreLine은 5장짜리 카드뉴스 전체에서 재사용되는 범용 문구라 형식이 고정되어
+// 있지 않았다. 릴스의 한줄 논평 박스는 그보다 훨씬 좁고(3줄 클램프) 형식도 엄격해야 한다:
+// "결과" 중심 — 오늘 장중 실제로 있었던 사건(원인) -> 그로 인한 지수/수급 흐름(결과) 순서로,
+// 반드시 완결된 문장으로 끝나야 한다(사용자 피드백: "마감시황은 결과고... 끝을 맺어줘").
+// 그래서 범용 headline을 재활용하지 않고, 이 용도 하나만을 위한 전용 프롬프트로 별도 생성한다.
+// ---------------------------------------------------------------------------
+
+function buildClosingReelFallback(snapshot, analysisText) {
+  const { kospi } = snapshot.indexes || {};
+  const gainers = (snapshot.topGainers || []).filter((g) => g && g.name);
+  const top = gainers[0];
+  const dirWord = (pct) => (pct > 0 ? "강세" : pct < 0 ? "약세" : "보합");
+
+  // 1순위: 오늘의 특징주 1위 + 사유가 있으면 그걸로 완결된 규칙 기반 문장을 만든다(수치 반복 없음).
+  if (top && (top.reason || top.theme)) {
+    const reason = top.reason || top.theme;
+    return `${top.name} 등 ${reason} 관련주에 매수세가 몰리며, 코스피는 장 막판까지 ${dirWord(kospi?.changePercent ?? 0)} 흐름을 이어갔다.`;
+  }
+  // 2순위: 리포트 원문에서 완결된 문장 하나를 뽑는다(기존 추출 로직 재사용).
+  const resultLine = extractHeadlineFallback(analysisText) || extractFlowCommentFallback(analysisText);
+  if (resultLine && looksComplete(resultLine)) return resultLine;
+  // 3순위(최후 수단): 지수 방향만으로 완결된 일반 문장.
+  return `오늘 국내 증시는 업종별 수급이 엇갈리며 코스피가 ${dirWord(kospi?.changePercent ?? 0)} 흐름 속에 거래를 마쳤다.`;
+}
+
+/** 마감 릴스용 한줄 논평을 전용 프롬프트로 생성. Claude 미가용 시 규칙 기반 폴백으로 항상 완결된 문장을 보장한다. */
+export async function buildClosingReelComment(snapshot) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const analysisText = sanitizeUnicode(snapshot.analysis || "");
+  const { kospi, kosdaq } = snapshot.indexes || {};
+  const gainers = (snapshot.topGainers || []).slice(0, 3);
+
+  const fallback = () => buildClosingReelFallback(snapshot, analysisText);
+  if (!apiKey || !analysisText) return fallback();
+
+  const indexFacts = [
+    kospi?.close && Number.isFinite(kospi.changePercent) ? `코스피 ${kospi.close.toLocaleString()} (${kospi.changePercent > 0 ? "+" : ""}${kospi.changePercent}%)` : null,
+    kosdaq?.close && Number.isFinite(kosdaq.changePercent) ? `코스닥 ${kosdaq.close.toLocaleString()} (${kosdaq.changePercent > 0 ? "+" : ""}${kosdaq.changePercent}%)` : null,
+  ].filter(Boolean).join(", ");
+  const gainerFacts = gainers.map((g) => `${g.name} ${g.change > 0 ? "+" : ""}${g.change}%(${g.reason || g.theme || "사유 미상"})`).join(", ");
+
+  const userPrompt = ensureJsonSafe(`아래는 오늘 국내 증시 마감 리포트 원문이야. 이 리포트를 바탕으로 인스타 릴스에 들어갈 "오늘의 한줄 논평"을 정확히 한 문장으로 작성해줘.
+
+작성 원칙:
+1. 마감시황은 "결과"를 다루는 논평이다. 오늘 장중에 실제로 있었던 핵심 사건(실적 발표, 수급 변화, 이벤트 등)을 원인으로 제시하고, 그로 인해 시장이 어떻게 움직였는지 결과로 이어서 서술해.
+2. 반드시 완결된 문장으로 끝내라. "~했다", "~보였다", "~반납했다", "~마감했다"처럼 명확한 종결어미로 끝날 것. 쉼표나 "..."로 흐리는 것 절대 금지.
+3. 화면에 이미 코스피/코스닥 지수와 등락률 숫자가 크게 표시되므로, 그 숫자를 논평에서 반복하지 마라("코스피가 몇 % 올랐다/내렸다" 같은 서술 금지). 대신 "왜" 그렇게 됐는지 사건과 흐름을 설명해.
+4. 원문에 없는 사실은 지어내지 마라(할루시네이션 금지). 전달할 내용이 많아도 핵심 키워드만 살려서 과감하게 결론까지 도출할 것.
+5. 길이는 45~90자 내외.
+6. 참고할 문체 예시(그대로 베끼지 말고 이런 톤으로): "장초반 삼성전자의 역대급 실적 발표와 컨퍼런스콜로 급등했지만, 반등을 틈탄 차익실현 매물이 쏟아지고, 외국인 매도세도 강해지면서 상승폭을 대부분 반납했다."
+
+[오늘 지수 마감]
+${indexFacts || "데이터 없음"}
+
+[오늘의 특징주]
+${gainerFacts || "데이터 없음"}
+
+[리포트 원문]
+${analysisText.slice(0, 6000)}
+
+문장 하나만, 따옴표나 다른 부연설명 없이 출력해.`);
+
+  const client = new Anthropic({ apiKey });
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model: MODEL,
+        max_tokens: 200,
+        system: "TotalMoney AI 인스타 릴스 한줄 논평 작성자. 결과 중심, 명확한 종결어미, 과장·할루시네이션 금지. 문장 하나만 출력.",
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      const text = (res.content?.find((b) => b.type === "text")?.text || "").trim().replace(/^["']|["']$/g, "");
+      if (text && looksComplete(text) && text.length <= 160) return text;
+    } catch (error) {
+      console.warn(`[promo-market-copy] 마감 릴스 코멘트 생성 시도 ${attempt}/${MAX_ATTEMPTS} 실패:`, error instanceof Error ? error.message : error);
+      if (attempt === MAX_ATTEMPTS) break;
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+  }
+  return fallback();
+}
+
 export function buildClosingCardData({ snapshot, copy, gainers, dateLabel, theme = "light" }) {
   const { kospi, kosdaq, usdkrw } = snapshot.indexes || {};
   const indexRows = [

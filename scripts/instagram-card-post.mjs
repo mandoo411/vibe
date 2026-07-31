@@ -23,8 +23,8 @@
  *   node scripts/instagram-card-post.mjs --slot=closing --render-reel
  *   node scripts/instagram-card-post.mjs --slot=closing --publish-reel
  */
-import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData } from "./promo-market-copy.mjs";
-import { loadMorningSnapshot, buildMorningCardData } from "./promo-morning-copy.mjs";
+import { loadLatestSnapshot, buildPromoCopy, buildClosingCardData, buildClosingReelComment } from "./promo-market-copy.mjs";
+import { loadMorningSnapshot, buildMorningCardData, buildMorningReelComment } from "./promo-morning-copy.mjs";
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
 import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./promo-render-marketcap.mjs";
 import { buildUsMarketHTML, renderUsMarketToPNG, pickUsRankingMode, loadRankingRowsForMode } from "./promo-render-usmarket.mjs";
@@ -198,23 +198,27 @@ async function renderMorningReel() {
   console.log(`2) 오늘의 TOP 로테이션 모드: ${mode.key}(${mode.label})`);
   const rows = await loadRankingRowsForMode(mode);
 
-  console.log("3) Gemini로 사이버+우주 배경 이미지 생성 중 (실패 시 OpenAI -> SVG 순으로 대체)...");
+  console.log("3) 릴스 한줄 논평(촉매→오늘 전망) 생성 중...");
+  const reelComment = await buildMorningReelComment(snapshot);
+
+  console.log("4) Gemini로 사이버+우주 배경 이미지 생성 중 (실패 시 OpenAI -> SVG 순으로 대체)...");
   const nasdaqPct = snapshot.usMarket?.indices?.find((i) => i.id === "nasdaq")?.changePct ?? 0;
   const bgDataUri = await getMarketcapReelBackground(heroDir(nasdaqPct));
 
-  console.log("4) 아침 미증시 릴스 HTML 빌드 중...");
+  console.log("5) 아침 미증시 릴스 HTML 빌드 중...");
   const html = buildUsMarketHTML({
     cardData: { date: todayLabel(ymd), slotLabel: "모닝 브리핑" },
     snapshot,
     rows,
     mode,
     bgDataUri,
+    reelComment,
   });
 
-  console.log("5) PNG 스크린샷 캡처 중...");
+  console.log("6) PNG 스크린샷 캡처 중...");
   await renderUsMarketToPNG(html, reelPngFile);
 
-  console.log("6) mp4(릴스용 무음 영상)로 변환 중...");
+  console.log("7) mp4(릴스용 무음 영상)로 변환 중...");
   await imageToReelVideo(reelPngFile, reelMp4File);
 
   writeFileSync(captionFile, caption, "utf8");
@@ -236,6 +240,9 @@ async function renderClosingReel() {
   });
   const caption = buildClosingCaption(snapshot, copy);
 
+  console.log("2b) 릴스 한줄 논평(원인→결과) 생성 중...");
+  const reelComment = await buildClosingReelComment(snapshot);
+
   console.log("3) Gemini로 사이버+우주 배경 이미지 생성 중 (실패 시 OpenAI -> SVG 순으로 대체)...");
   const bgDataUri = await getMarketcapReelBackground(heroDir(cardData.heroPct));
 
@@ -243,7 +250,7 @@ async function renderClosingReel() {
   const realtimeTabs = await loadRealtimeTabs();
 
   console.log(`5) 마감 시황 TOP10 릴스 HTML 빌드 중 (slot: closing)...`);
-  const html = buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri });
+  const html = buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri, reelComment });
 
   console.log("6) PNG 스크린샷 캡처 중...");
   const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor("closing");

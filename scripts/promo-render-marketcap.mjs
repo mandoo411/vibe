@@ -77,13 +77,18 @@ function looksComplete(text) {
   return false;
 }
 
-export function buildCommentLine(text, maxLen = 92, hardCap = 140) {
+export function buildCommentLine(text, maxLen = 92) {
   const sentence = firstCompleteSentence(text);
+  if (!sentence) return String(text || "").trim();
   if (sentence.length <= maxLen) return sentence;
   const trimmed = trimToNaturalBreak(sentence, maxLen);
-  if (looksComplete(trimmed)) return trimmed;
-  if (sentence.length <= hardCap) return sentence;
-  return trimToNaturalBreak(sentence, hardCap);
+  // maxLen 안에서 자연스러운 지점(쉼표/공백)에 자른 결과가 완결된 문장처럼 보이지 않으면
+  // (예: "...뒀으나," 처럼 접속 조사에서 끊김), 억지로 더 잘라내지 않고 완결된 원문장을
+  // 그대로 반환한다 — 화면 안 보장은 CSS의 3줄 클램프(overflow:hidden)가 맡는다.
+  // 예전에는 여기서 hardCap(140자)으로 한 번 더 강제 절단했는데, 그 절단은 looksComplete
+  // 검증 없이 무조건 자르는 방식이라 문장이 쉼표에서 끊긴 채 그대로 나가는 버그의 원인이었다
+  // (사용자 피드백: "문단이 끝나지 않고 ... 아니면 ,로 끝나서 명쾌하지도 않고 눈에 들어오지도 않음").
+  return looksComplete(trimmed) ? trimmed : sentence;
 }
 
 function rankingRowHTML(row) {
@@ -110,7 +115,7 @@ function rankingRowHTML(row) {
  * cardData에서는 date/slotLabel/heroPct와, coreLine(핵심 한 줄, reasonLine으로 이미 다듬어진 값)을 쓴다.
  * 지수 포인트 변동(등락폭)은 indexRows에 없으므로 snapshot.indexes(raw)를 별도로 받는다.
  */
-export function buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri }) {
+export function buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri, reelComment }) {
   const s = "";
   void s;
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}.html`), "utf8");
@@ -119,8 +124,9 @@ export function buildMarketcapHTML({ cardData, snapshot, realtimeTabs, bgDataUri
   const mode = pickRankingMode(snapshot.ymd || cardData.date);
   const rows = normalizeRankingRows(realtimeTabs?.[mode.tab]);
 
-  // headline 우선, 없으면 reasonLine. 절단 로직은 buildCommentLine() 참고.
-  const commentSource = cardData.headline || cardData.reasonLine || "";
+  // reelComment(buildClosingReelComment, 원인→결과 형식 전용 생성)가 최우선. 구버전 호출부
+  // 호환을 위해 없으면 headline/reasonLine으로 폴백. 절단 로직은 buildCommentLine() 참고.
+  const commentSource = reelComment || cardData.headline || cardData.reasonLine || "";
   const commentLine = buildCommentLine(commentSource);
 
   let html = fillVars(read("card-marketcap-reel"), {

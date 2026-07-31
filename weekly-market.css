@@ -157,6 +157,36 @@ a:hover {
   border-radius: var(--radius);
 }
 
+/* 히어로 아래 알림 배너 래퍼 — 별도 박스 없이 좌우 여백만 셸과 맞춘다.
+   (2026-07-31: 일정/암호화폐 페이지의 "마지막 업데이트" 박스를 없애면서,
+   재고 시 필요한 데이터 지연 경고(.masthead__notice)만 남긴 래퍼) */
+.page-notice-wrap {
+  padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+  padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+}
+
+/* 페이지 맨 아래(푸터 바로 위) "마지막 업데이트" 표시 —
+   일정/암호화폐 페이지에서 히어로 아래 박스를 없애고 이쪽으로 옮겼다. */
+.page-footer-updated {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px 16px;
+  margin: 28px auto 0;
+  max-width: 720px;
+  padding: 14px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)) 0;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-dim, var(--text-muted));
+  text-align: center;
+}
+
+.page-footer-updated__poll {
+  color: var(--text-dim, var(--text-muted));
+}
+
 
 /* Tabs */
 .tabs {

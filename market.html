@@ -135,7 +135,8 @@
           { key: "ratesFx", en: "RATES & FX", ko: "금리 · 환율", sub: "미국채·달러·원달러" },
           { key: "commodities", en: "COMMODITIES", ko: "원자재", sub: "에너지·귀금속·농산물" },
           { key: "crypto", en: "CRYPTO", ko: "암호화폐", sub: "비트코인 · 이더리움 · 리플" },
-          { key: "sentiment", en: "SENTIMENT", ko: "투자 심리", sub: "VIX·공포탐욕·BTC 도미넌스" },
+          { key: "sentimentStock", en: "SENTIMENT · STOCK", ko: "투자심리 (주식)", sub: "VIX 변동성 지수" },
+          { key: "sentimentCrypto", en: "SENTIMENT · CRYPTO", ko: "투자심리 (암호화폐)", sub: "공포탐욕지수 · BTC 도미넌스" },
         ];
 
         function liveDotHtml(item) {
@@ -393,9 +394,9 @@
           </article>`;
         }
 
-        function sentimentSectionHtml(items) {
+        function sentimentSectionHtml(key, items) {
           if (!items?.length) return "";
-          const meta = SECTIONS.find((s) => s.key === "sentiment");
+          const meta = SECTIONS.find((s) => s.key === key);
           return `<section class="market-section">
             ${sectionHead(meta)}
             <div class="market-sentiment-grid">${items.map(sentimentCardHtml).join("")}</div>
@@ -460,7 +461,8 @@
             simpleSectionHtml("ratesFx", s.ratesFx),
             commoditiesSectionHtml(s.commodities),
             simpleSectionHtml("crypto", s.crypto),
-            sentimentSectionHtml(s.sentiment),
+            sentimentSectionHtml("sentimentStock", (s.sentiment || []).filter((it) => it.id === "vix")),
+            sentimentSectionHtml("sentimentCrypto", (s.sentiment || []).filter((it) => it.id === "fear-greed" || it.id === "btc-dominance")),
           ]
             .filter(Boolean)
             .join("");

@@ -1397,6 +1397,12 @@ a:hover {
   letter-spacing: 0.02em;
 }
 
+/* 2026-07-31: 수치 자체가 없는 이벤트(FOMC 성명서·기자회견 등)는 이전/예측/실제
+   라벨을 아예 안 보여주고 이 대시만 남긴다 */
+.schedule-metric--none {
+  color: var(--text-dim);
+}
+
 .schedule-table td {
   overflow-wrap: normal;
   word-break: keep-all;
@@ -2319,19 +2325,15 @@ a:hover {
 .ec-card--kr {
   border-left: 4px solid var(--sc, #94a3b8);
 }
-.ec-card--kr:hover,
 .ec-card--us:hover {
   text-decoration: none;
 }
-.ec-card--kr:hover {
-  background: var(--surface-hover, color-mix(in srgb, var(--sc, #94a3b8) 8%, var(--surface-raised)));
-  border-color: var(--sc, #94a3b8);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
+/* 2026-07-31: 카드가 더 이상 네이버 증권 링크가 아니라서(클릭 불가) 클릭
+   가능한 것처럼 보이던 hover 리프트/그림자 효과는 제거했다 */
 
-/* 아바타 */
+/* 아바타 — CI 로고 우선, 로드 실패 시 컬러+이니셜로 폴백(2026-07-31) */
 .ec-avatar {
+  position: relative;
   width: 38px;
   height: 38px;
   border-radius: 50%;
@@ -2344,6 +2346,22 @@ a:hover {
   font-weight: 800;
   flex-shrink: 0;
   letter-spacing: -0.02em;
+  overflow: hidden;
+}
+.ec-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 50%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.ec-avatar__fallback {
+  position: relative;
+  z-index: 0;
 }
 
 /* 정보 영역 */
@@ -2382,6 +2400,28 @@ a:hover {
   font-size: 11px;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text-muted);
+}
+
+/* 실적 수치(매출/영업이익/당기순이익) — 확정 공시 수치가 확보됐을 때만 표시 */
+.ec-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 2px;
+}
+.ec-figure {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.ec-figure__lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim, var(--text-muted));
 }
 .ec-meta {
   font-size: 11px;

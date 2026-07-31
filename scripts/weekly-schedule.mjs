@@ -12,6 +12,7 @@ import {
 } from "./economic-calendar-util.mjs";
 import { fetchEconomicCalendar } from "./investing-calendar.mjs";
 import { collectEarningsCalendar, writeEarningsCalendar } from "./earnings-calendar.mjs";
+import { fetchKrEarningsActual } from "./kr-earnings-actuals.mjs";
 const OUTPUT_PATH = path.resolve(process.env.OUTPUT_PATH || "data/weekly-schedule.json");
 const MANUAL_KR_EARNINGS_PATH = path.resolve("data/kr-earnings-manual.json");
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
@@ -205,6 +206,7 @@ function isReadableKoreanName(name) {
 }
 
 const IPO_DETAIL_SLEEP_MS = 220;
+const EARNINGS_ACTUAL_SLEEP_MS = 300;
 const IPO_LIST_INDEX_URLS = [
   "https://www.38.co.kr/html/fund/?o=r",
   "https://www.38.co.kr/html/fund/?o=k",
@@ -777,6 +779,29 @@ async function main() {
   console.log(
     `실적 병합: 네이버/KIND ${krEarnings.length}건 + DART ${earningsKrFallback.length}건 + 수동보충 ${manualToAdd.length}건 → 최종 ${krEarningsMerged.length}건`
   );
+
+  // 2026-07-31: DART 공시가 "확정 실적 발표가 있었다"는 사실만 알려주고 실제
+  // 매출액/영업이익/당기순이익 수치는 안 주기 때문에, 확정 공시(confirmed: true)
+  // 종목만 네이버금융 "기업실적분석" 표에서 해당 분기 확정치를 보강한다. 아직
+  // 네이버/FnGuide 쪽이 컨센서스 추정치("(E)")인 상태면 fetchKrEarningsActual이
+  // null을 반환하므로 그 경우 수치를 채우지 않는다(실데이터 없으면 표시 안 함 원칙).
+  for (const row of krEarningsMerged) {
+    if (!row.confirmed || !row.code) continue;
+    try {
+      const actual = await fetchKrEarningsActual(row.code, row.date);
+      if (actual) {
+        row.revenueEok = actual.revenueEok;
+        row.operatingProfitEok = actual.operatingProfitEok;
+        row.netIncomeEok = actual.netIncomeEok;
+        row.earningsPeriodLabel = actual.periodLabel;
+      }
+    } catch (error) {
+      console.log(`⚠️ 실적 수치 보강 실패 (${row.code} ${row.name}): ${error instanceof Error ? error.message : error}`);
+    }
+    await sleep(EARNINGS_ACTUAL_SLEEP_MS);
+  }
+  const withActual = krEarningsMerged.filter((r) => r.revenueEok != null || r.operatingProfitEok != null || r.netIncomeEok != null).length;
+  console.log(`실적 수치 보강: 확정 공시 ${krEarningsMerged.filter((r) => r.confirmed).length}건 중 ${withActual}건에 실제 수치 반영`);
 
   // 2026-07-10: economicCalendar와 달리 krEarnings는 이전까지 실패 시 안전망이 전혀
   // 없어서, 네이버/KIND·DART·수동보충이 같은 날 모두 실패하면(스크레이핑 차단,

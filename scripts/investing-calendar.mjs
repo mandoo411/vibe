@@ -317,6 +317,66 @@ export function parseForexFactoryRows(rows, fromYmd, toYmd) {
     .filter(Boolean);
 }
 
+/** TradingView 비공식 경제캘린더 — investing.com이 봇 차단(403)으로 계속 실패하고,
+ * ForexFactory 무료 피드는 애초에 "actual"(실제 발표치) 필드를 아예 안 주기 때문에
+ * "실제" 칸이 영원히 비어 있던 문제(2026-07-31)의 핵심 해결책. 인증 없이 동작하며
+ * 이미 지난 지표의 실제 발표치를 안정적으로 제공한다. */
+function tvImpactFromImportance(importance) {
+  const n = Number(importance);
+  if (Number.isFinite(n) && n >= 1) return { impact: "high", importance: 3 };
+  if (Number.isFinite(n) && n === 0) return { impact: "medium", importance: 2 };
+  return { impact: "low", importance: 1 };
+}
+
+function tvValue(raw) {
+  if (raw === null || raw === undefined) return "";
+  return String(raw).trim();
+}
+
+export async function fetchTradingViewEconomicCalendar(fromYmd, toYmd, countries = "US,KR") {
+  const url = `https://economic-calendar.tradingview.com/events?from=${fromYmd}T00:00:00.000Z&to=${toYmd}T23:59:00.000Z&countries=${countries}`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      origin: "https://kr.tradingview.com",
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`TradingView HTTP ${res.status}: ${text.slice(0, 160)}`);
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error(`TradingView invalid JSON: ${text.slice(0, 120)}`);
+  }
+  const rows = Array.isArray(payload?.result) ? payload.result : [];
+  const out = [];
+  for (const row of rows) {
+    const { date, time } = isoToKstParts(row.date);
+    if (!isYmdInRange(date, fromYmd, toYmd)) continue;
+    const event = String(row.title || "").trim();
+    if (!event) continue;
+    const { impact, importance } = tvImpactFromImportance(row.importance);
+    out.push({
+      date,
+      time,
+      event,
+      country: String(row.country || "").trim(),
+      impact,
+      importance,
+      actual: tvValue(row.actual),
+      estimate: tvValue(row.forecast),
+      previous: tvValue(row.previous),
+      unit: String(row.unit || "").trim(),
+    });
+  }
+  console.log(`✅ TradingView 경제캘린더 ${fromYmd}~${toYmd} (${out.length}건)`);
+  return out;
+}
+
 export async function fetchForexFactoryEconomicCalendar(fromYmd, toYmd) {
   const res = await fetch("https://nfs.faireconomy.media/ff_calendar_thisweek.json", {
     headers: { accept: "application/json", "user-agent": "TotalMoneyAI/1.0" },
@@ -445,6 +505,26 @@ function mergeEconomicRows(...lists) {
 }
 
 export async function fetchEconomicCalendar(fromYmd, toYmd) {
+  // TradingView(비공식, 무인증)를 1순위 소스로 쓴다: investing.com은 봇 차단으로
+  // 거의 항상 403이 나고, ForexFactory 무료 피드는 "actual"(실제 발표치) 필드
+  // 자체가 없어 "실제" 칸이 영원히 비어 있었다(2026-07-31 확인). TradingView는
+  // previous/estimate/actual을 모두 안정적으로 제공한다.
+  // 주의: 소스마다 지표 영문명 표기가 달라(예: "Federal Funds Rate" vs
+  // "Fed Interest Rate Decision") 여러 소스를 한꺼번에 병합하면 같은 지표가
+  // 중복 행으로 보인다. 그래서 TradingView가 성공하면 그것만 단독으로 쓰고,
+  // TradingView가 통채로 실패했을 때만 기존 FMP+Investing+ForexFactory 조합으로
+  // 폴백한다.
+  try {
+    const tvRows = await fetchTradingViewEconomicCalendar(fromYmd, toYmd);
+    if (tvRows.length) {
+      console.log(`✅ 경제캘린더: TradingView 단독 사용 (${tvRows.length}건)`);
+      return mergeEconomicRows(tvRows);
+    }
+    console.log("⚠️ TradingView 경제캘린더 결과 0건 — 폴백 소스로 전환");
+  } catch (error) {
+    console.log(`❌ TradingView 경제캘린더 실패: ${error.message} — 폴백 소스로 전환`);
+  }
+
   const batches = [];
   const fmpKey = process.env.FMP_API_KEY;
   if (fmpKey) {
@@ -468,7 +548,7 @@ export async function fetchEconomicCalendar(fromYmd, toYmd) {
   if (!merged.length) {
     console.log("❌ 경제캘린더: 모든 소스 실패");
   } else {
-    console.log(`✅ 경제캘린더 병합 ${fromYmd}~${toYmd} (${merged.length}건, 소스 ${batches.length}개)`);
+    console.log(`✅ 경제캘린더 병합(폴백) ${fromYmd}~${toYmd} (${merged.length}건, 소스 ${batches.length}개)`);
   }
   return merged;
 }

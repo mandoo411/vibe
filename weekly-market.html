@@ -384,6 +384,31 @@
           "U.S. President Trump Speaks": "트럼프 대통령 연설",
           "Unemployment Claims": "실업수당 청구건수",
           "Continuing Jobless Claims": "연속 실업수당 청구",
+          // 2026-07-31: TradingView 경제캘린더 소스 전환에 맞춰 추가(다른 표기 방식)
+          "Durable Goods Orders Ex Transp MoM": "내구재 주문 (운송 제외, 월간)",
+          "Dallas Fed Manufacturing Index": "댈러스 연준 제조업지수",
+          "Retail Inventories Ex Autos MoM Adv": "소매재고 (자동차 제외, 속보치)",
+          "Wholesale Inventories MoM Adv": "도매재고 (속보치)",
+          "S&P/Case-Shiller Home Price YoY": "S&P/케이스-실러 주택가격지수 (연간)",
+          "API Crude Oil Stock Change": "API 원유재고 변화",
+          "MBA 30-Year Mortgage Rate": "MBA 30년 모기지 금리",
+          "EIA Crude Oil Stocks Change": "EIA 원유재고 변화",
+          "EIA Gasoline Stocks Change": "EIA 휘발유재고 변화",
+          "PCE Price Index YoY": "PCE 물가지수 (연간)",
+          "GDP Price Index QoQ Adv": "GDP 물가지수 (분기, 속보치)",
+          "Employment Cost - Wages QoQ": "고용비용지수 - 임금 (분기)",
+          "Employment Cost - Benefits QoQ": "고용비용지수 - 복리후생 (분기)",
+          "Employment Cost Index QoQ": "고용비용지수 (분기)",
+          "Unit Labour Costs QoQ Prel": "단위노동비용 (분기, 속보치)",
+          "Nonfarm Productivity QoQ Prel": "비농업 생산성 (분기, 속보치)",
+          "Participation Rate": "경제활동참가율",
+          "CPI s.a": "소비자물가지수 (계절조정)",
+          "Monthly Budget Statement": "월간 재정수지",
+          "Retail Sales Control Group MoM": "소매판매 컨트롤그룹 (월간)",
+          "Business Inventories MoM": "기업재고 (월간)",
+          "Fed Press Conference": "연준 기자회견",
+          "Fed Interest Rate Decision Upper Bound": "연준 금리 결정 (상단)",
+          "Fed Interest Rate Decision Lower Bound": "연준 금리 결정 (하단)",
         };
         const INDICATOR_TOOLTIPS = {
           CPI: "소비자물가지수. 인플레이션 핵심 지표",
@@ -924,6 +949,15 @@
           return partial ? INDICATOR_KO[partial] : raw;
         }
 
+        function formatEokToKo(eok) {
+          if (eok === null || eok === undefined || !Number.isFinite(eok)) return "";
+          const jo = eok / 10000;
+          if (Math.abs(jo) >= 1) {
+            return `${jo.toLocaleString("ko-KR", { maximumFractionDigits: 1, minimumFractionDigits: 1 })}조원`;
+          }
+          return `${Math.round(eok).toLocaleString("ko-KR")}억원`;
+        }
+
         function fmtEconValue(v, unit) {
           if (v === null || v === undefined) return "—";
           if (typeof v === "string" && !v.trim()) return "—";
@@ -960,16 +994,23 @@
                 const prev = escapeHtml(fmtEconValue(r.previous, r.unit));
                 const est = escapeHtml(fmtEconValue(r.estimate, r.unit));
                 const act = `<span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span>`;
-                return `<tr class="${rowClass}">
-                  <td class="schedule-td-time" data-label="시간">${timeCellHtml(r)}</td>
-                  <td class="schedule-td-event" data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
-                  <td class="schedule-td-metrics">
-                    <div class="schedule-metrics-inline">
+                // 2026-07-31: FOMC 성명서·기자회견처럼 애초에 수치 자체가 없는 이벤트는
+                // 이전·예측·실제 칸이 전부 "—"로만 채워져 지저분해 보인다는 피드백에 따라,
+                // 세 값이 전부 비어 있으면 "이전/예측/실제" 라벨 자체를 렌더링하지 않는다.
+                const hasMetrics = [r.previous, r.estimate, r.actual].some(
+                  (v) => v !== null && v !== undefined && String(v).trim() !== ""
+                );
+                const metricsHtml = hasMetrics
+                  ? `<div class="schedule-metrics-inline">
                       <span class="schedule-metric"><span class="schedule-metric__lbl">이전</span>${prev}</span>
                       <span class="schedule-metric"><span class="schedule-metric__lbl">예측</span>${est}</span>
                       <span class="schedule-metric"><span class="schedule-metric__lbl">실제</span>${act}</span>
-                    </div>
-                  </td>
+                    </div>`
+                  : `<span class="schedule-metric schedule-metric--none">—</span>`;
+                return `<tr class="${rowClass}">
+                  <td class="schedule-td-time" data-label="시간">${timeCellHtml(r)}</td>
+                  <td class="schedule-td-event" data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
+                  <td class="schedule-td-metrics">${metricsHtml}</td>
                   <td class="schedule-td-impact" data-label="중요도">${impactBadgeHtml(impactKey)}</td>
                 </tr>`;
               })
@@ -1010,21 +1051,47 @@
             const sector = info.sector || r.sector || "";
             const sc = getSectorColor(sector);
             const initial = (name || "?").slice(0, 1);
-            const naverUrl = naverFinanceUrl(r.code, name);
             const isUnconfirmed = r.confirmed === false;
             const rtype = isUnconfirmed ? "estimated" : cleanReportName(r.reportName || "잠정실적");
             const rtypeCls = isUnconfirmed ? "ec-rtype ec-rtype--estimated" : "ec-rtype";
-            return `<a class="ec-card ec-card--kr" href="${escapeHtml(naverUrl)}" target="_blank" rel="noopener noreferrer" style="--sc:${sc}">
-              <div class="ec-avatar">${escapeHtml(initial)}</div>
+            // 2026-07-31: 클릭 시 네이버 증권으로 이동하던 링크 제거 — 카드 자체를
+            // 정보 표시용으로만 쓴다.
+            // CI 로고: FMP image-stock(KRX 종목은 "코드.KS")를 우선 시도하고,
+            // 로드 실패 시(비상장 폐지 등으로 로고가 없는 경우) JS로 이미지를
+            // 제거해 기존 컬러+이니셜 아바타가 그대로 드러나게 한다.
+            const logoUrl = r.code
+              ? `https://financialmodelingprep.com/image-stock/${escapeHtml(r.code)}.KS.png`
+              : "";
+            const logoHtml = logoUrl
+              ? `<img class="ec-avatar__img" src="${logoUrl}" alt="" loading="lazy" onerror="this.remove()" />`
+              : "";
+            // 2026-07-31: DART는 공시가 있었다는 사실만 알려주고 수치는 안 줘서,
+            // 확정 공시 건은 weekly-schedule.mjs가 네이버금융 표에서 보강한
+            // revenueEok/operatingProfitEok/netIncomeEok가 있을 때만 표시한다
+            // (아직 컨센서스 추정치 단계면 값이 없어 카드에 아무것도 안 뜬다).
+            const hasActual = r.revenueEok != null || r.operatingProfitEok != null || r.netIncomeEok != null;
+            const figuresHtml = hasActual
+              ? `<div class="ec-figures">
+                  ${r.revenueEok != null ? `<span class="ec-figure"><span class="ec-figure__lbl">매출</span>${escapeHtml(formatEokToKo(r.revenueEok))}</span>` : ""}
+                  ${r.operatingProfitEok != null ? `<span class="ec-figure"><span class="ec-figure__lbl">영업이익</span>${escapeHtml(formatEokToKo(r.operatingProfitEok))}</span>` : ""}
+                  ${r.netIncomeEok != null ? `<span class="ec-figure"><span class="ec-figure__lbl">당기순이익</span>${escapeHtml(formatEokToKo(r.netIncomeEok))}</span>` : ""}
+                </div>`
+              : "";
+            return `<div class="ec-card ec-card--kr" style="--sc:${sc}">
+              <div class="ec-avatar">
+                ${logoHtml}
+                <span class="ec-avatar__fallback">${escapeHtml(initial)}</span>
+              </div>
               <div class="ec-info">
                 <span class="ec-name">${escapeHtml(name)}</span>
                 <div class="ec-tags">
                   ${sector ? `<span class="ec-sector-tag">${escapeHtml(sector)}</span>` : ""}
                   <span class="ec-code">${escapeHtml(r.code || "")}</span>
                 </div>
+                ${figuresHtml}
               </div>
               <span class="${rtypeCls}">${escapeHtml(rtype)}</span>
-            </a>`;
+            </div>`;
           }).join("")}</div>`;
         }
 

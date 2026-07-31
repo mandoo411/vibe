@@ -1397,11 +1397,6 @@ a:hover {
   letter-spacing: 0.02em;
 }
 
-/* 2026-07-31: 수치 자체가 없는 이벤트(FOMC 성명서·기자회견 등)는 이전/예측/실제
-   라벨을 아예 안 보여주고 이 대시만 남긴다 */
-.schedule-metric--none {
-  color: var(--text-dim);
-}
 
 .schedule-table td {
   overflow-wrap: normal;

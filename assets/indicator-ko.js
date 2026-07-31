@@ -38,6 +38,10 @@ const INDICATOR_KO = {
   "Michigan Consumer Sentiment": "미시간 소비자심리지수",
   "Prelim UoM Consumer Sentiment": "미시간대 소비자심리지수 (예비치)",
   "Prelim UoM Inflation Expectations": "미시간대 기대인플레이션 (예비치)",
+  "Revised UoM Consumer Sentiment": "미시간대 소비자심리지수 (수정치)",
+  "Revised UoM Inflation Expectations": "미시간대 기대인플레이션 (수정치)",
+  "UoM Consumer Sentiment": "미시간대 소비자심리지수",
+  "UoM Inflation Expectations": "미시간대 기대인플레이션",
   "Philly Fed Manufacturing Index": "필라델피아 연준 제조업지수",
   "Philadelphia Fed Manufacturing Index": "필라델피아 연준 제조업지수",
   "New Home Sales": "신규 주택판매",
@@ -264,6 +268,30 @@ const INDICATOR_PATTERN_KO = [
   [/^([A-Za-z][A-Za-z.'-]*)\s+Speaks$/i, (m) => `${koPersonName(m[1])} 발언`],
   [/^([A-Za-z][A-Za-z.'-]*)\s+Speech$/i, (m) => `${koPersonName(m[1])} 연설`],
 ];
+function canonicalIndicatorKey(name) {
+  return String(name || "")
+    .toLowerCase()
+    .replace(/\bqoq\b/g, "qoq")
+    .replace(/\bq\/q\b/g, "qoq")
+    .replace(/\bmom\b/g, "mom")
+    .replace(/\bm\/m\b/g, "mom")
+    .replace(/\byoy\b/g, "yoy")
+    .replace(/\by\/y\b/g, "yoy")
+    .replace(/[^a-z0-9가-힣]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+let _indicatorKoCanonCache = null;
+function indicatorKoCanonMap() {
+  if (_indicatorKoCanonCache) return _indicatorKoCanonCache;
+  _indicatorKoCanonCache = new Map();
+  for (const key of Object.keys(INDICATOR_KO)) {
+    const ck = canonicalIndicatorKey(key);
+    if (!_indicatorKoCanonCache.has(ck)) _indicatorKoCanonCache.set(ck, INDICATOR_KO[key]);
+  }
+  return _indicatorKoCanonCache;
+}
+
 function translateIndicator(name) {
   const raw = String(name || "").trim();
   if (!raw) return raw;
@@ -280,6 +308,13 @@ function translateIndicator(name) {
   const lower = normalized.toLowerCase();
   const exactCi = Object.keys(INDICATOR_KO).find((k) => k.toLowerCase() === lower);
   if (exactCi) return INDICATOR_KO[exactCi];
+  // 2026-07-31: 소스마다 QoQ/MoM/YoY vs q/q/m/m/y/y 표기가 섞여 있어 사전에
+  // 둘 중 한 형태만 등록돼 있으면 나머지 형태는 매칭에 실패해 영어 그대로
+  // 노출되는 문제가 있었다. 두 표기를 모두 같은 캐노니컬 키로 접어서 비교한다.
+  const canonKey = canonicalIndicatorKey(normalized);
+  const canonHit = indicatorKoCanonMap().get(canonKey);
+  if (canonHit) return canonHit;
+
   for (const [re, ko] of INDICATOR_REGEX) {
     if (re.test(normalized)) return ko;
   }

@@ -244,6 +244,10 @@
           "Michigan Consumer Sentiment": "미시간 소비자심리지수",
           "Prelim UoM Consumer Sentiment": "미시간대 소비자심리지수 (예비치)",
           "Prelim UoM Inflation Expectations": "미시간대 기대인플레이션 (예비치)",
+          "Revised UoM Consumer Sentiment": "미시간대 소비자심리지수 (수정치)",
+          "Revised UoM Inflation Expectations": "미시간대 기대인플레이션 (수정치)",
+          "UoM Consumer Sentiment": "미시간대 소비자심리지수",
+          "UoM Inflation Expectations": "미시간대 기대인플레이션",
           "Philly Fed Manufacturing Index": "필라델피아 연준 제조업지수",
           "Philadelphia Fed Manufacturing Index": "필라델피아 연준 제조업지수",
           "New Home Sales": "신규 주택판매",
@@ -916,6 +920,30 @@
           return { ...data, economicCalendar: enrichEconomicPrevious(data.economicCalendar.map((r) => ({ ...r }))) };
         }
 
+        function canonicalIndicatorKey(name) {
+          return String(name || "")
+            .toLowerCase()
+            .replace(/\bqoq\b/g, "qoq")
+            .replace(/\bq\/q\b/g, "qoq")
+            .replace(/\bmom\b/g, "mom")
+            .replace(/\bm\/m\b/g, "mom")
+            .replace(/\byoy\b/g, "yoy")
+            .replace(/\by\/y\b/g, "yoy")
+            .replace(/[^a-z0-9가-힣]+/g, " ")
+            .trim()
+            .replace(/\s+/g, " ");
+        }
+        let _indicatorKoCanonCache = null;
+        function indicatorKoCanonMap() {
+          if (_indicatorKoCanonCache) return _indicatorKoCanonCache;
+          _indicatorKoCanonCache = new Map();
+          for (const key of Object.keys(INDICATOR_KO)) {
+            const ck = canonicalIndicatorKey(key);
+            if (!_indicatorKoCanonCache.has(ck)) _indicatorKoCanonCache.set(ck, INDICATOR_KO[key]);
+          }
+          return _indicatorKoCanonCache;
+        }
+
         function translateIndicator(name) {
           const raw = String(name || "").trim();
           if (!raw) return raw;
@@ -932,6 +960,13 @@
           const lower = normalized.toLowerCase();
           const exactCi = Object.keys(INDICATOR_KO).find((k) => k.toLowerCase() === lower);
           if (exactCi) return INDICATOR_KO[exactCi];
+          // 2026-07-31: 소스마다 QoQ/MoM/YoY vs q/q/m/m/y/y 표기가 섞여 있어 사전에
+          // 둘 중 한 형태만 등록돼 있으면 나머지 형태는 매칭에 실패해 영어 그대로
+          // 노출되는 문제가 있었다. 두 표기를 모두 같은 캐노니컬 키로 접어서 비교한다.
+          const canonKey = canonicalIndicatorKey(normalized);
+          const canonHit = indicatorKoCanonMap().get(canonKey);
+          if (canonHit) return canonHit;
+
           for (const [re, ko] of INDICATOR_REGEX) {
             if (re.test(normalized)) return ko;
           }
@@ -1006,7 +1041,7 @@
                       <span class="schedule-metric"><span class="schedule-metric__lbl">예측</span>${est}</span>
                       <span class="schedule-metric"><span class="schedule-metric__lbl">실제</span>${act}</span>
                     </div>`
-                  : `<span class="schedule-metric schedule-metric--none">—</span>`;
+                  : "";
                 return `<tr class="${rowClass}">
                   <td class="schedule-td-time" data-label="시간">${timeCellHtml(r)}</td>
                   <td class="schedule-td-event" data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
@@ -1056,11 +1091,13 @@
             const rtypeCls = isUnconfirmed ? "ec-rtype ec-rtype--estimated" : "ec-rtype";
             // 2026-07-31: 클릭 시 네이버 증권으로 이동하던 링크 제거 — 카드 자체를
             // 정보 표시용으로만 쓴다.
-            // CI 로고: FMP image-stock(KRX 종목은 "코드.KS")를 우선 시도하고,
-            // 로드 실패 시(비상장 폐지 등으로 로고가 없는 경우) JS로 이미지를
-            // 제거해 기존 컬러+이니셜 아바타가 그대로 드러나게 한다.
-            const logoUrl = r.code
-              ? `https://financialmodelingprep.com/image-stock/${escapeHtml(r.code)}.KS.png`
+            // CI 로고: FMP image-stock을 처음 썼는데 로고가 깨지거나 실제 CI와
+            // 다른 경우가 많다는 피드백을 받고, 사용자가 직접 모아둔 검증된 CI
+            // 이미지(assets/ci-logos/)로 교체했다. KR_CI_LOGO_CODES에 있는
+            // 종목만 로고를 시도하고, 없는 종목은 처음부터 이미지를 안 그려
+            // 컬러+이니셜 아바타를 그대로 보여준다(잘못된 로고보다 안전).
+            const logoUrl = KR_CI_LOGO_CODES.has(r.code)
+              ? `/assets/ci-logos/${encodeURIComponent(r.code)}.jpg`
               : "";
             const logoHtml = logoUrl
               ? `<img class="ec-avatar__img" src="${logoUrl}" alt="" loading="lazy" onerror="this.remove()" />`
@@ -1290,6 +1327,10 @@
           "051910": { name: "LG화학", sector: "화학" },
           "012450": { name: "한화에어로스페이스", sector: "방산" },
         };
+        // 2026-07-31: assets/ci-logos/{code}.jpg로 실제 CI를 확보해둔 종목 코드 목록.
+        // KR_SECTOR_MAP과 동일한 15종목 — 새 종목을 실적 카드에 추가할 때 로고도
+        // assets/ci-logos/에 넣고 같이 등록해야 한다.
+        const KR_CI_LOGO_CODES = new Set(Object.keys(KR_SECTOR_MAP));
         const KR_SECTOR_COLORS = {
           "반도체": "#3b82f6", "자동차": "#f97316", "바이오": "#22c55e",
           "2차전지": "#8b5cf6", "IT플랫폼": "#06b6d4", "금융": "#eab308",

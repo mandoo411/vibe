@@ -47,12 +47,16 @@
 
   .brand-lockup, .deco-ring, .page-wrap, .watermark { position: absolute; z-index: 2; }
 
+  /* 2026-07-31: 인스타 스토리/릴스는 상단(아바타·계정명·시간·닫기 버튼)과 하단(음소거·좋아요 등)에
+     자체 UI를 얹기 때문에, 그 안전영역을 피해서 콘텐츠를 배치해야 겹치지 않는다(사용자 피드백:
+     "날짜가 너무 위에 있어서 겹치는 거 보이지?", "하단에 워터마크랑도 겹침"). top을 90→170px로
+     넉넉히 내리고, bottom도 170→190px로 넓혀 워터마크와 마지막 종목 행 사이 여유를 확보한다. */
   .page-wrap {
     position: absolute;
-    top: 90px;
+    top: 170px;
     left: 64px;
     right: 64px;
-    bottom: 170px;
+    bottom: 190px;
     display: flex;
     flex-direction: column;
   }
@@ -65,11 +69,13 @@
   }
 
   /* ---------- 타이틀 블록 — 날짜+슬롯 한 줄로 통일 (기존 "미국 증시" 대제목 + 코너 장식 제거) ---------- */
+  /* 상단 여백을 top(90→170px)으로 확보했으니, 타이틀 아래 여백은 100px 그대로 유지할 필요가
+     없다 — 위아래로 여백이 몰려 밸런스가 깨지지 않도록 54px로 줄인다. */
   .title-line {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 100px;
+    margin-bottom: 54px;
   }
   .title-line .dot {
     width: 15px;
@@ -91,7 +97,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 11px;
   }
   .section-label .icon-chip { width: 42px; height: 42px; border-radius: 12px; }
   .section-label .icon-chip svg { width: 23px; height: 23px; }
@@ -101,8 +107,8 @@
   .usidx-list {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    margin-bottom: 18px;
+    gap: 4px;
+    margin-bottom: 14px;
   }
   .usidx-row {
     display: flex;
@@ -139,7 +145,7 @@
     border-left: 8px solid var(--accent-gold);
     border-radius: 0 16px 16px 0;
     padding: 14px 28px;
-    margin-bottom: 18px;
+    margin-bottom: 13px;
     box-shadow: 0 8px 22px rgba(0,0,0,0.30);
   }
   .comment-bar .comment-icon { width: 32px; height: 32px; flex-shrink: 0; }
@@ -158,7 +164,7 @@
   .mcap-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }
   .mcap-row {
     display: flex;

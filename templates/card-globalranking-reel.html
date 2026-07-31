@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<!--
+  글로벌 시가총액 TOP20 릴스 (주간, 매주 토요일 발행 예정) — 마감시황/브리핑 릴스와 동일한 배경·워터마크
+  규칙을 따르는 신규 포맷. companiesmarketcap.com 스타일 랭킹 테이블(순위/순위변동/로고/기업명/시총/
+  등락률/국가)을 세로 20행으로 배치한다.
+
+  ⚠️ 설계 원칙(기존 릴스와 동일): 숫자·기업명·국가는 전부 코드가 데이터에서 직접 채우고(할루시네이션 금지),
+  배경 이미지만 AI/SVG로 생성한다. 로고·국기는 실제 이미지(base64 data URI로 인라인)를 사용한다.
+
+  순위변동 배지(RANK_DELTA)는 "지난주 스냅샷"이 있을 때만 ▲/▼로 표시하고, 없으면 빈 문자열로 둔다
+  (임의로 지어내지 않는다 — 사용자 피드백 원칙과 동일하게 실데이터 없으면 표시 안 함).
+
+  치환 변수: DATE, ROW(GRANKROW_START~END 사이 20개 반복), BG_DATA_URI
+-->
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="./_shared.css" />
+<style>
+  body {
+    width: 1080px;
+    height: 1920px;
+    background: #050b16;
+  }
+
+  .bg-art {
+    position: absolute;
+    inset: 0;
+    width: 1080px;
+    height: 1920px;
+    object-fit: cover;
+    z-index: 0;
+  }
+  .bg-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg,
+      rgba(5,11,22,0.28) 0%,
+      rgba(5,11,22,0.62) 26%,
+      rgba(5,11,22,0.80) 55%,
+      rgba(5,11,22,0.90) 100%);
+  }
+
+  .page-wrap, .watermark { position: absolute; z-index: 2; }
+
+  /* 인스타 스토리/릴스 상단(아바타·계정명·시간)·하단(음소거 등) 안전영역 회피 — 기존 릴스 템플릿과 동일 규칙 */
+  .page-wrap {
+    position: absolute;
+    top: 170px;
+    left: 60px;
+    right: 60px;
+    bottom: 190px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .watermark {
+    bottom: 120px;
+    right: 56px;
+  }
+
+  .title-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .title-line .dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
+  }
+  .title-line .title-text {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+
+  .subtitle-line {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 26px;
+  }
+
+  /* 컬럼 헤더 */
+  .grank-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px 12px;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+  .grank-head .col-rank { width: 46px; flex-shrink: 0; }
+  .grank-head .col-logo { width: 34px; flex-shrink: 0; }
+  .grank-head .col-name { flex: 1; min-width: 0; }
+  .grank-head .col-cap { width: 180px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-chg { width: 110px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-country { width: 44px; flex-shrink: 0; text-align: center; }
+
+  .grank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1;
+  }
+  .grank-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 9px 24px;
+    border-radius: 16px;
+    background: rgba(17,29,53,0.72);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .grank-row.top3 {
+    background: linear-gradient(90deg, rgba(212,175,55,0.16) 0%, rgba(17,29,53,0.78) 45%), rgba(17,29,53,0.78);
+    border-color: rgba(212, 175, 55, 0.30);
+  }
+
+  .grank-rank {
+    width: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+  }
+  .grank-rank .num {
+    font-size: 29px;
+    font-weight: 900;
+    color: var(--text-primary);
+  }
+  .grank-row.top3 .grank-rank .num { color: var(--accent-gold); }
+  .grank-delta {
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .grank-delta.up { color: var(--up-color); }
+  .grank-delta.down { color: var(--down-color); }
+  .grank-delta.flat { color: var(--text-muted); }
+
+  .grank-logo-wrap {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .grank-logo-wrap img { width: 26px; height: 26px; object-fit: contain; }
+  .grank-logo-wrap.fallback { font-size: 19px; }
+
+  .grank-name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.15;
+  }
+  .grank-name .n {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .grank-name .sym {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .grank-cap {
+    width: 180px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 25px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  .grank-chg {
+    width: 110px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 23px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .grank-chg.up { color: var(--up-color); }
+  .grank-chg.down { color: var(--down-color); }
+  .grank-chg.flat { color: var(--text-secondary); }
+
+  .grank-country {
+    width: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .grank-flag-img {
+    width: 36px;
+    height: 25px;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+  }
+  .grank-flag-fallback {
+    font-size: 24px;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+  <img class="bg-art" src="{{BG_DATA_URI}}" />
+  <div class="bg-scrim"></div>
+
+  <div class="page-wrap">
+    <div class="title-line">
+      <span class="dot"></span>
+      <span class="title-text">글로벌 시가총액 TOP20</span>
+    </div>
+    <div class="subtitle-line">{{DATE}} 기준 · TotalMoney AI 주간 랭킹</div>
+
+    <div class="grank-head">
+      <span class="col-rank">순위</span>
+      <span class="col-logo"></span>
+      <span class="col-name">기업</span>
+      <span class="col-cap">시가총액</span>
+      <span class="col-chg">등락률</span>
+      <span class="col-country">국가</span>
+    </div>
+
+    <div class="grank-list">
+      <!--GRANKROW_START-->
+      <!--GRANKROW_END-->
+    </div>
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

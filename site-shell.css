@@ -2464,9 +2464,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
      (사용자 피드백: "노란색 pro 딱지가 없네... 있는게 그래픽적으로 더 나을듯"). */
   .tm-bottom-nav__pro-badge {
     position: absolute;
-    top: -5px;
-    right: -11px;
-    padding: 0 4px;
+    top: -9px;
+    right: -15px;
+    padding: 0 3px;
     border-radius: 3px;
     background: linear-gradient(135deg, #d4af37 0%, #f5d576 100%);
     color: #1a1305;

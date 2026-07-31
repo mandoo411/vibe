@@ -28,6 +28,7 @@ import { loadMorningSnapshot, buildMorningCardData, buildMorningReelComment } fr
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
 import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./promo-render-marketcap.mjs";
 import { buildUsMarketHTML, renderUsMarketToPNG, pickUsRankingMode, loadRankingRowsForMode } from "./promo-render-usmarket.mjs";
+import { buildTop20Rows, buildGlobalRankingHTML, renderGlobalRankingToPNG, saveHistorySnapshot } from "./promo-render-globalranking.mjs";
 import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
 import { postInstagramCarousel, postInstagramReel, postInstagramStory } from "./promo-instagram-api.mjs";
@@ -47,8 +48,8 @@ function todayLabel(ymd) {
 function parseArgs() {
   const slotArg = process.argv.find((a) => a.startsWith("--slot="));
   const slot = slotArg ? slotArg.split("=")[1] : "closing";
-  if (!["morning", "closing"].includes(slot)) {
-    throw new Error(`알 수 없는 --slot 값: ${slot} (morning | closing 중 하나)`);
+  if (!["morning", "closing", "globalranking"].includes(slot)) {
+    throw new Error(`알 수 없는 --slot 값: ${slot} (morning | closing | globalranking 중 하나)`);
   }
   let action = "render";
   if (process.argv.includes("--publish")) action = "publish";
@@ -149,6 +150,58 @@ function buildClosingCaption(snapshot, copy) {
     "#주식 #코스피 #코스닥 #AI주식분석 #오늘의특징주",
     "#주식투자 #주식공부 #재테크 #totalmoney",
   ].join("\n");
+}
+
+function buildGlobalRankingCaption(dateLabel) {
+  return [
+    `\ud83c\udf0e ${dateLabel} \uae30\uc900 \uae00\ub85c\ubc8c \uc2dc\uac00\ucd1d\uc561 TOP20`,
+    "",
+    "\uc804 \uc138\uacc4 \uc2dc\uac00\ucd1d\uc561 1\uc704\ubd80\ud130 20\uc704\uae4c\uc9c0, \ud55c\ub208\uc5d0 \uc815\ub9ac\ud574\ub4dc\ub9bd\ub2c8\ub2e4.",
+    "",
+    "\uc804\uccb4 \ub7ad\ud0b9(TOP100)\uc740 totalmoney.kr \uae00\ub85c\ubc8c\ub7ad\ud0b9 \ud398\uc774\uc9c0\uc5d0\uc11c \ubb34\ub8cc\ub85c \ud655\uc778\ud558\uc138\uc694.",
+    "\uc2e4\uc2dc\uac04 \uc54c\ub9bc \uad6c\ub3c5 \u2192 t.me/totalmoney_ai",
+    "",
+    "\u203b \ud22c\uc790 \ucc38\uace0\uc6a9 \uc815\ubcf4\uc774\uba70, \ud22c\uc790 \ud310\ub2e8 \ubc0f \uadf8 \uacb0\uacfc\uc5d0 \ub300\ud55c \ucc45\uc784\uc740 \ud22c\uc790\uc790 \ubcf8\uc778\uc5d0\uac8c \uc788\uc2b5\ub2c8\ub2e4.",
+    "",
+    "#\uae00\ub85c\ubc8c\ub7ad\ud0b9 #\uc2dc\uac00\ucd1d\uc561 #\uc560\ud50c #\uc5d4\ube44\ub514\uc544 #\ud14c\uc2ac\ub77c",
+    "#\uc8fc\uc2dd\ud22c\uc790 #\uc8fc\uc2dd\uacf5\ubd80 #\uc7ac\ud14c\ud06c #totalmoney",
+  ].join("\n");
+}
+
+/** \uae00\ub85c\ubc8c \uc2dc\uac00\ucd1d\uc561 TOP20 \ub9b4\uc2a4(\uc8fc\uac04, \ub9e4\uc8fc \ud1a0\uc694\uc77c): world-market-cache.json \uae30\ubc18
+ *  TOP20 \ud589 \ube4c\ub4dc(\ub85c\uace0/\uad6d\uae30 \uc774\ubbf8\uc9c0 \uc778\ub77c\uc778) -> HTML \ucc44\uc6b0\uae30 -> PNG -> mp4 \ubcc0\ud658.
+ *  \ub80c\ub354 \uc131\uacf5 \uc2dc \uc774\ubc88 \uc8fc top20 \uc21c\uc704\ub97c history\uc5d0 \uc800\uc7a5\ud574\ub450\uba74 \ub2e4\uc74c \uc8fc \uc21c\uc704\ubcc0\ub3d9(\u25b2/\u25bc) \ubc30\uc9c0\uac00 \uc790\ub3d9\uc73c\ub85c \ucc44\uc6cc\uc9c4\ub2e4. */
+async function renderGlobalRankingReel() {
+  const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor("globalranking");
+  mkdirSync(generatedDir, { recursive: true });
+
+  console.log("1) world-market-cache.json + \ub85c\uace0/\uad6d\uae30 \ub85c\ub529 \uc911...");
+  const rows = await buildTop20Rows();
+  console.log(`   ${rows.length}\uac1c \uc885\ubaa9 \ub85c\ub4dc \uc644\ub8cc (\ub85c\uace0 \uc131\uacf5: ${rows.filter((r) => r.logoDataUri).length}/${rows.length})`);
+
+  const upCount = rows.filter((r) => r.changePct > 0).length;
+  const downCount = rows.filter((r) => r.changePct < 0).length;
+  const bgDir = upCount > downCount ? "up" : downCount > upCount ? "down" : "flat";
+  console.log(`2) Gemini\ub85c \ubc30\uacbd \uc0dd\uc131 \uc911 (\ubc29\ud5a5: ${bgDir})...`);
+  const bgDataUri = await getMarketcapReelBackground(bgDir);
+
+  const dateLabel = todayLabel(seoulYmd());
+  console.log("3) \uae00\ub85c\ubc8c\ub7ad\ud0b9 \ub9b4\uc2a4 HTML \ube4c\ub4dc \uc911...");
+  const html = await buildGlobalRankingHTML({ dateLabel, rows, bgDataUri });
+
+  console.log("4) PNG \uc2a4\ud06c\ub9b0\uc0f7 \uce90\ucc98 \uc911...");
+  await renderGlobalRankingToPNG(html, reelPngFile);
+
+  console.log("5) mp4(\ub9b4\uc2a4\uc6a9 \ubb34\uc74c \uc601\uc0c1)\ub85c \ubcc0\ud658 \uc911...");
+  await imageToReelVideo(reelPngFile, reelMp4File);
+
+  const caption = buildGlobalRankingCaption(dateLabel);
+  writeFileSync(captionFile, caption, "utf8");
+
+  // \ub2e4\uc74c \uc8fc \uc21c\uc704\ubcc0\ub3d9 \ubc30\uc9c0\uc6a9 \uae30\uc900\uc810 \uc800\uc7a5 (\uc2e4\uc81c \ub370\uc774\ud130 \uc5c6\uc73c\uba74 \ubc30\uc9c0\ub97c \ube44\uc6cc\ub458 \ubfd0, \uc784\uc758\ub85c \uc9c0\uc5b4\ub0b4\uc9c0 \uc54a\ub294\ub2e4)
+  saveHistorySnapshot(rows, seoulYmd());
+
+  console.log(`\uc644\ub8cc: generated/globalranking/reel.png, reel.mp4, today-caption.txt`);
 }
 
 async function render(slot) {
@@ -266,6 +319,7 @@ async function renderClosingReel() {
 
 async function renderReel(slot) {
   if (slot === "morning") return renderMorningReel();
+  if (slot === "globalranking") return renderGlobalRankingReel();
   return renderClosingReel();
 }
 

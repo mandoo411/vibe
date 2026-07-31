@@ -58,6 +58,39 @@ async function checkClosing() {
   ok();
 }
 
+/** 글로벌랭킹(주간, 매주 토요일)은 요일 게이트가 없으므로 "데이터가 너무 오래되지 않았는지"만 확인한다.
+ * world-market-cache.json은 평일 4회(world-market-cache.yml) 갱신되고 주말엔 갱신되지 않으므로,
+ * 토요일 발행 시점 기준으로 최근 4일 이내 갱신이면 "금요일 마감 기준" 데이터로 보고 정상 처리한다. */
+async function checkGlobalRanking() {
+  let raw;
+  try {
+    raw = await readJson("./data/world-market-cache.json");
+  } catch (err) {
+    fail(`data/world-market-cache.json 읽기 실패: ${err.message}`);
+    return;
+  }
+
+  const entries = Object.values(raw?.entries || {});
+  if (entries.length < 20) {
+    fail(`world-market-cache.json entries 부족 (${entries.length}개, 20개 이상 필요)`);
+    return;
+  }
+
+  const updatedAt = raw?.updatedAt ? new Date(raw.updatedAt) : null;
+  if (!updatedAt || Number.isNaN(updatedAt.getTime())) {
+    fail("world-market-cache.json updatedAt 값이 없거나 유효하지 않음");
+    return;
+  }
+  const ageMs = Date.now() - updatedAt.getTime();
+  const ageDays = ageMs / (24 * 60 * 60 * 1000);
+  if (ageDays > 4) {
+    fail(`world-market-cache.json이 ${ageDays.toFixed(1)}일 전 데이터로 오래됨 (world-market-cache.yml 갱신 확인 필요)`);
+    return;
+  }
+
+  ok();
+}
+
 async function checkMorning() {
   const today = process.env.PROMO_FORCE_DATE || seoulYmd();
   let raw;
@@ -85,6 +118,7 @@ async function checkMorning() {
 
 try {
   if (slot === "morning") await checkMorning();
+  else if (slot === "globalranking") await checkGlobalRanking();
   else await checkClosing();
 } catch (err) {
   fail(`체크 중 오류: ${err instanceof Error ? err.message : err}`);

@@ -810,6 +810,19 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 2026-07-31: AI분석이 하단 4개 탭에 새로 들어오면서(베타 잠금 상태일 때 <button>으로 렌더링됨)
+   버튼 기본 UA 스타일(회색 배경 + outset 테두리)이 그대로 노출되는 버그 발견 — 위 --menu 버튼과
+   동일한 리셋을 적용해 다른 탭(홈/시세/매매시그널)과 동일한 투명 배경으로 맞춘다. */
+.tm-bottom-nav__item--analysis-locked {
+  margin: 0;
+  padding: 4px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .tm-nav-sheet {
   position: fixed;
   inset: 0;
@@ -867,6 +880,37 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   border-bottom: 1px solid #f0f2f8;
 }
 
+/* 2026-07-31: 로그인/마이페이지 버튼 + 닫기(X) 버튼을 헤더 오른쪽에 나란히 묶는 그룹
+   (사용자 요청: "로그인은 박스 위에 x표 왼쪽에 버튼 하나"). */
+.tm-nav-sheet__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tm-nav-sheet__account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--accent-brand, #0f8387);
+  color: #fff;
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tm-nav-sheet__account-btn i {
+  font-size: 15px;
+}
+
+.tm-nav-sheet__account-btn:hover {
+  opacity: 0.9;
+}
+
 .tm-nav-sheet__head h2 {
   margin: 0;
   font-size: 14px;
@@ -899,8 +943,8 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   gap: 6px;
 }
 
-.tm-nav-sheet__grid--9 {
-  grid-template-rows: repeat(3, minmax(0, auto));
+.tm-nav-sheet__grid--12 {
+  grid-template-rows: repeat(4, minmax(0, auto));
 }
 
 .tm-nav-sheet__cell {
@@ -2429,6 +2473,16 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   [data-theme="dark"] .tm-nav-sheet__head h2 {
+    color: var(--text-primary);
+  }
+
+  [data-theme="dark"] .tm-nav-sheet__account-btn {
+    background: var(--accent-gold);
+    color: #1a1305;
+  }
+
+  [data-theme="dark"] .tm-nav-sheet__close {
+    background: var(--accent-blue);
     color: var(--text-primary);
   }
 

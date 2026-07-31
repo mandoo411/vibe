@@ -14,6 +14,8 @@
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="3" x2="8" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="3" x2="16" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     analysis:
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="10" x2="17" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+    signal:
+      '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8C18 6.4087 17.3679 4.88258 16.2426 3.75736C15.1174 2.63214 13.5913 2 12 2C10.4087 2 8.88258 2.63214 7.75736 3.75736C6.63214 4.88258 6 6.4087 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21C13.5542 21.3031 13.3019 21.5547 12.9982 21.7295C12.6946 21.9044 12.3504 21.9965 12 21.9965C11.6496 21.9965 11.3054 21.9044 11.0018 21.7295C10.6982 21.5547 10.4458 21.3031 10.27 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
 
   const BOTTOM_NAV_LABELS = {
@@ -23,6 +25,7 @@
     us: "미국주식",
     crypto: "암호화폐",
     schedule: "일정",
+    signal: "매매시그널",
     analysis: "AI분석",
     menu: "전체보기",
   };
@@ -34,7 +37,9 @@
     '<rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/>' +
     '<rect x="13" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>';
 
-  const BOTTOM_NAV_PRIMARY = ["home", "market", "realtime", "us"];
+  // 2026-07-31: 사용자 지정 구성 — 홈/시세/매매시그널/AI분석 4개 + 전체보기.
+  // (예전 구성: 홈/지표/시세/미국주식 — 매매시그널·AI분석 접근성이 낮다는 피드백으로 교체)
+  const BOTTOM_NAV_PRIMARY = ["home", "realtime", "signal", "analysis"];
 
   /** AI 종목분석 접근 제한 (베타) */
   const ANALYSIS_PAGE_LOCKED = true;
@@ -76,13 +81,14 @@
     { id: "pricing", href: "./pricing.html", label: "요금제", icon: "ti-credit-card" },
   ];
 
-  /** 전체 메뉴 시트 (행 우선). "account"는 로그인 상태에 따라 로그인/마이페이지로 동적 표시. */
+  // 2026-07-31: 사용자 지정 순서 — 홈/매매시그널/AI분석/브리핑/마감시황/일정/시장지표/
+  // 실시간시세/미국주식/암호화폐/글로벌랭킹/요금제 이 순서 그대로. 로그인(계정)은 더 이상
+  // 그리드 안에 있지 않고 시트 상단 헤더(닫기 버튼 왼쪽)로 옮겼다(아래 ensureNavSheet 참고).
   const NAV_SHEET_GRID = [
-    ["home", "signal", "realtime"],
-    ["analysis", "schedule", "briefing"],
-    ["daily", "market", "us"],
-    ["crypto", "world", "account"],
-    ["pricing"],
+    ["home", "signal", "analysis"],
+    ["briefing", "daily", "schedule"],
+    ["market", "realtime", "us"],
+    ["crypto", "world", "pricing"],
   ];
 
   const NAV_SHEET_LABELS = {
@@ -575,12 +581,6 @@
     const accountIcon = st.isLoggedIn ? "ti-user-circle" : "ti-login";
     const cells = NAV_SHEET_GRID.flat()
       .map((id) => {
-        if (id === "account") {
-          return (
-            `<a class="tm-nav-sheet__cell" href="${accountHref}" data-tm-page="account" id="tm-nav-sheet-account">` +
-            `<i class="ti ${accountIcon}" aria-hidden="true"></i><span>${accountLabel}</span></a>`
-          );
-        }
         const p = pageById(id);
         if (!p) return "";
         const label = NAV_SHEET_LABELS[id] || p.label;
@@ -597,16 +597,22 @@
         );
       })
       .join("");
-    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--9">${cells}</div>`;
+    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--12">${cells}</div>`;
     const sheet = document.createElement("div");
     sheet.id = "tm-nav-sheet";
     sheet.className = "tm-nav-sheet";
     sheet.hidden = true;
+    // 2026-07-31: 로그인/마이페이지 버튼을 그리드에서 빼서 헤더(제목 오른쪽, 닫기 버튼 바로
+    // 왼쪽)로 옮겼다 — 사용자 요청: "로그인은 박스 위에 x표 왼쪽에 버튼 하나를 만들어줘".
     sheet.innerHTML =
       '<div class="tm-nav-sheet__backdrop" data-close-sheet tabindex="-1"></div>' +
       '<div class="tm-nav-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="tm-nav-sheet-title">' +
       '<header class="tm-nav-sheet__head"><h2 id="tm-nav-sheet-title">전체 메뉴</h2>' +
-      '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="닫기"><i class="ti ti-x"></i></button></header>' +
+      '<div class="tm-nav-sheet__head-actions">' +
+      `<a class="tm-nav-sheet__account-btn" href="${accountHref}" id="tm-nav-sheet-account">` +
+      `<i class="ti ${accountIcon}" aria-hidden="true"></i><span>${accountLabel}</span></a>` +
+      '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="닫기"><i class="ti ti-x"></i></button>' +
+      "</div></header>" +
       `<div class="tm-nav-sheet__body">${body}</div></div>`;
     document.body.appendChild(sheet);
   }
@@ -645,6 +651,7 @@
       }
       if (e.target.closest("[data-close-sheet]")) setNavSheetOpen(false);
       if (e.target.closest(".tm-nav-sheet__cell:not([data-analysis-locked])")) setNavSheetOpen(false);
+      if (e.target.closest(".tm-nav-sheet__account-btn")) setNavSheetOpen(false);
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") setNavSheetOpen(false);

@@ -1,0 +1,117 @@
+name: Instagram Global Ranking Reel (Weekly)
+
+# 매주 토요일 10:00 KST 자동 실행 — 글로벌 시가총액 TOP20 랭킹 릴스+스토리.
+# world-market-cache.yml이 평일 4회(09/15/21/03시 KST) 갱신하므로, 토요일 아침 시점엔
+# 금요일 마지막 갱신분(미국 금요일 마감 기준)을 사용하게 된다.
+on:
+  schedule:
+    - cron: "0 1 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-globalranking-post
+  cancel-in-progress: true
+
+env:
+  TZ: Asia/Seoul
+  SLOT: globalranking
+
+jobs:
+  render-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # 중복 발행(재시도 등)과 데이터 미준비(world-market-cache 갱신 실패 등)를 걸러서 should_publish 결정.
+      - name: Check if should publish (dedup / data-ready)
+        id: dupcheck
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
+
+          STAMP_FILE="generated/${SLOT}/last-published-date.txt"
+          if [ -z "${PROMO_FORCE_DATE:-}" ] && [ -f "$STAMP_FILE" ] && [ "$(cat "$STAMP_FILE")" = "$TODAY" ]; then
+            echo "::notice::오늘(${TODAY}) 이미 ${SLOT} 발행 완료 — 중복 실행 스킵"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! node scripts/check-promo-data-ready.mjs --slot="${SLOT}"; then
+            echo "::notice::${SLOT} 데이터 미준비 — 발행 스킵"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: npm ci
+
+      # 한글 + 국기/로고 이미지가 섞인 카드라 한글 폰트 + emoji 폰트(폴백용) + ffmpeg가 필요.
+      - name: Install Korean + emoji fonts
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji ffmpeg
+          fc-cache -f
+
+      - name: Render reel video (global ranking TOP20)
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/instagram-card-post.mjs --slot=globalranking --render-reel
+
+      - name: Commit and push generated images + ranking history
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/ data/world-ranking-history.json
+          if git diff --staged --quiet; then
+            echo "::notice::No image change, skipping commit"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')
+          git commit -m "chore(promo): globalranking instagram reel ${STAMP}"
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      # 방금 커밋한 영상이 raw.githubusercontent.com CDN에 반영될 시간 대기
+      - name: Wait for CDN
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: sleep 20
+
+      - name: Publish reel + story via Meta Graph API
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: node scripts/instagram-card-post.mjs --slot=globalranking --publish-reel
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+
+      - name: Record published date (dedup guard)
+        if: steps.dupcheck.outputs.should_publish == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p "generated/${SLOT}"
+          TZ=Asia/Seoul date '+%Y-%m-%d' > "generated/${SLOT}/last-published-date.txt"
+          git add "generated/${SLOT}/last-published-date.txt"
+          if git diff --staged --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(promo): mark ${SLOT} published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          git push origin HEAD:${GITHUB_REF_NAME}

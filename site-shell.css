@@ -401,9 +401,14 @@ body.page-home-v2 {
   transition: background 0.15s, color 0.15s;
 }
 
+/* 2026-07-31: weekly-market.css 등 일부 페이지 CSS(a:hover{text-decoration:underline})가
+   전역 <a> 태그에 밑줄을 넣는데, 여기서 text-decoration을 명시적으로 지정하지 않으면 그 규칙이
+   호버 시 네비 링크에도 그대로 적용돼 버린다(사용자 피드백: "다른페이지들도 밑줄 다 없애줘").
+   명시적으로 none을 선언해 페이지별 전역 규칙보다 우선하도록 한다. */
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
   color: var(--accent, var(--accent-brand));
+  text-decoration: none;
 }
 
 .home-nav__link[aria-current="page"] {
@@ -1709,6 +1714,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
 [data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
   background: transparent;
   color: var(--text-primary);
+  text-decoration: none;
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
@@ -2442,6 +2448,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__icon {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2450,6 +2457,24 @@ body[data-theme="dark"] .home-ticker-bar__label {
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item.is-active .tm-bottom-nav__icon {
     color: var(--accent-brand);
+  }
+
+  /* 2026-07-31: 하단 탭바에 매매시그널/AI분석(둘 다 유료 PRO 기능)이 새로 들어오면서, 데스크톱
+     GNB·전체보기 시트와 마찬가지로 골드 PRO 뱃지를 아이콘 위에 얹어 유료 기능임을 표시한다
+     (사용자 피드백: "노란색 pro 딱지가 없네... 있는게 그래픽적으로 더 나을듯"). */
+  .tm-bottom-nav__pro-badge {
+    position: absolute;
+    top: -5px;
+    right: -11px;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, #d4af37 0%, #f5d576 100%);
+    color: #1a1305;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(212, 175, 55, 0.45);
   }
 
   .tm-bottom-nav--v2 .tm-bottom-nav__item > i {
@@ -2556,6 +2581,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
 @media (min-width: 769px) {
   html[data-theme="light"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
     color: #0f8387;
+    text-decoration: none;
   }
 
   html[data-theme="light"] .home-nav__home-btn,

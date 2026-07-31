@@ -562,6 +562,14 @@
     iconWrap.className = "tm-bottom-nav__icon";
     iconWrap.setAttribute("aria-hidden", "true");
     iconWrap.innerHTML = isMenu ? BOTTOM_NAV_MENU_ICON : BOTTOM_NAV_ICONS[tabId] || "";
+    // 2026-07-31: 매매시그널·AI분석은 유료(PRO) 기능이라 하단 탭에도 골드 PRO 뱃지를 붙인다
+    // (데스크톱 GNB·전체보기 시트와 동일한 시각 언어 — 사용자 피드백: "노란색 pro 딱지가 없네").
+    if (tabId === "signal" || tabId === "analysis") {
+      const badge = document.createElement("span");
+      badge.className = "tm-bottom-nav__pro-badge";
+      badge.textContent = "PRO";
+      iconWrap.appendChild(badge);
+    }
     const label = document.createElement("span");
     label.textContent = BOTTOM_NAV_LABELS[tabId] || page?.label || tabId;
     el.append(iconWrap, label);

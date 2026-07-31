@@ -87190,16 +87190,19 @@
       ],
       "indexes": {
         "kospi": {
-          "value": "6,595.45",
-          "change": "+1,001.89",
-          "changePct": "+17.91%"
+          "close": 6595.45,
+          "change": 1001.89,
+          "changePercent": 17.91
         },
         "kosdaq": {
-          "value": "719.76",
-          "change": "+74.98",
-          "changePct": "+11.63%"
+          "close": 719.76,
+          "change": 74.98,
+          "changePercent": 11.63
         },
-        "usdkrw": "1,430원대"
+        "usdkrw": {
+          "rate": 1430,
+          "note": "31일 마감 기준 원/달러 환율은 장중 한때 1,420원선 아래로 내려갔다가 낙폭을 일부 되돌리며 1,430원대에서 마감했다"
+        }
       }
     }
   }

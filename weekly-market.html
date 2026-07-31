@@ -1091,8 +1091,10 @@
             const sc = KR_BRAND_COLORS[r.code] || getSectorColor(sector);
             const initial = (name || "?").slice(0, 1);
             const isUnconfirmed = r.confirmed === false;
-            const rtype = isUnconfirmed ? "estimated" : cleanReportName(r.reportName || "잠정실적");
-            const rtypeCls = isUnconfirmed ? "ec-rtype ec-rtype--estimated" : "ec-rtype";
+            // 2026-07-31: 미확정 건에 영어 "estimated" 배지가 떠서 지저분하다는
+            // 피드백 — 미확정 건은 배지 자체를 안 그린다(공시 확정된 건만 표시).
+            const rtype = isUnconfirmed ? "" : cleanReportName(r.reportName || "잠정실적");
+            const rtypeCls = "ec-rtype";
             // 2026-07-31: 클릭 시 네이버 증권으로 이동하던 링크 제거 — 카드 자체를
             // 정보 표시용으로만 쓴다.
             // 2026-07-31: DART는 공시가 있었다는 사실만 알려주고 수치는 안 줘서,
@@ -1117,7 +1119,7 @@
                 </div>
                 ${figuresHtml}
               </div>
-              <span class="${rtypeCls}">${escapeHtml(rtype)}</span>
+              ${rtype ? `<span class="${rtypeCls}">${escapeHtml(rtype)}</span>` : ""}
             </div>`;
           }).join("")}</div>`;
         }

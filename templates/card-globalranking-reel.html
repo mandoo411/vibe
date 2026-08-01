@@ -75,17 +75,17 @@
     box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
   }
   .title-line .title-text {
-    font-size: 44px;
+    font-size: 47px;
     font-weight: 900;
     letter-spacing: -0.5px;
     color: var(--text-primary);
   }
 
   .subtitle-line {
-    font-size: 26px;
+    font-size: 27px;
     font-weight: 700;
     color: var(--text-secondary);
-    margin-bottom: 26px;
+    margin-bottom: 18px;
   }
 
   /* 컬럼 헤더 */
@@ -93,30 +93,31 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 0 24px 12px;
-    font-size: 22px;
+    padding: 0 24px 9px;
+    font-size: 24px;
     font-weight: 800;
     color: var(--text-muted);
     letter-spacing: 0.3px;
   }
-  .grank-head .col-rank { width: 46px; flex-shrink: 0; }
-  .grank-head .col-logo { width: 34px; flex-shrink: 0; }
+  .grank-head .col-rank { width: 50px; flex-shrink: 0; }
+  .grank-head .col-logo { width: 38px; flex-shrink: 0; }
   .grank-head .col-name { flex: 1; min-width: 0; }
-  .grank-head .col-cap { width: 180px; flex-shrink: 0; text-align: right; }
-  .grank-head .col-chg { width: 110px; flex-shrink: 0; text-align: right; }
-  .grank-head .col-country { width: 44px; flex-shrink: 0; text-align: center; }
+  .grank-head .col-cap { width: 195px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-chg { width: 118px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-country { width: 48px; flex-shrink: 0; text-align: center; }
 
   .grank-list {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 8px;
     flex: 1;
+    justify-content: space-between;
   }
   .grank-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 9px 24px;
+    gap: 16px;
+    padding: 10px 25px;
     border-radius: 16px;
     background: rgba(17,29,53,0.72);
     border: 1px solid rgba(255,255,255,0.06);
@@ -127,20 +128,20 @@
   }
 
   .grank-rank {
-    width: 46px;
+    width: 50px;
     flex-shrink: 0;
     display: flex;
     align-items: baseline;
     gap: 3px;
   }
   .grank-rank .num {
-    font-size: 29px;
+    font-size: 32px;
     font-weight: 900;
     color: var(--text-primary);
   }
   .grank-row.top3 .grank-rank .num { color: var(--accent-gold); }
   .grank-delta {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
     white-space: nowrap;
   }
@@ -149,10 +150,10 @@
   .grank-delta.flat { color: var(--text-muted); }
 
   .grank-logo-wrap {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
-    border-radius: 9px;
+    border-radius: 10px;
     background: #ffffff;
     display: flex;
     align-items: center;
@@ -160,8 +161,8 @@
     overflow: hidden;
     box-shadow: 0 2px 6px rgba(0,0,0,0.25);
   }
-  .grank-logo-wrap img { width: 26px; height: 26px; object-fit: contain; }
-  .grank-logo-wrap.fallback { font-size: 19px; }
+  .grank-logo-wrap img { width: 28px; height: 28px; object-fit: contain; }
+  .grank-logo-wrap.fallback { font-size: 20px; }
 
   .grank-name {
     flex: 1;
@@ -172,7 +173,7 @@
     line-height: 1.15;
   }
   .grank-name .n {
-    font-size: 28px;
+    font-size: 31px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
@@ -180,26 +181,26 @@
     text-overflow: ellipsis;
   }
   .grank-name .sym {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--text-muted);
   }
 
   .grank-cap {
-    width: 180px;
+    width: 195px;
     flex-shrink: 0;
     text-align: right;
-    font-size: 25px;
+    font-size: 27px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
   }
 
   .grank-chg {
-    width: 110px;
+    width: 118px;
     flex-shrink: 0;
     text-align: right;
-    font-size: 23px;
+    font-size: 25px;
     font-weight: 800;
     white-space: nowrap;
   }
@@ -208,21 +209,21 @@
   .grank-chg.flat { color: var(--text-secondary); }
 
   .grank-country {
-    width: 44px;
+    width: 48px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .grank-flag-img {
-    width: 36px;
-    height: 25px;
+    width: 40px;
+    height: 28px;
     object-fit: cover;
     border-radius: 4px;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
   }
   .grank-flag-fallback {
-    font-size: 24px;
+    font-size: 27px;
     line-height: 1;
   }
 </style>

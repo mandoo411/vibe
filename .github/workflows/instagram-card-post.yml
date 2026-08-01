@@ -130,3 +130,4 @@ jobs:
           fi
           git commit -m "chore(promo): mark ${SLOT} published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
           git push origin HEAD:${GITHUB_REF_NAME}
+# test-trigger-check Sun Aug  2 05:58:55 KST 2026

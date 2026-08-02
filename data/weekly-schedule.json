@@ -1,37 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-02 06:52 KST",
-    "from": "2026-08-02",
-    "to": "2026-08-16",
-    "historyFrom": "2026-05-04",
+    "lastUpdatedKst": "2026-08-03 06:52 KST",
+    "from": "2026-08-03",
+    "to": "2026-08-17",
+    "historyFrom": "2026-05-05",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-04",
-      "event": "Factory Orders MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.5",
-      "previous": "0.3",
-      "estimate": "0.5",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-05",
-      "event": "Fed Williams Speech",
-      "country": "US",
-      "time": "01:50",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-05-05",
       "event": "Imports",
@@ -5227,6 +5203,30 @@
       "previous": "0.3",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-08-17",
+      "event": "NY Empire State Manufacturing Index",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "15.6",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-17",
+      "event": "NAHB Housing Market Index",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "34",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
@@ -5281,35 +5281,35 @@
       "date": "2026-08-03",
       "title": "S&P Global Manufacturing PMI",
       "expected": "예측 미제공 / 이전 52.1",
-      "analysis": "예상 상회 시 제조업 경기가 개선되고 있다는 신호로 해석되어 증시가 긍정적으로 반응할 수 있습니다. 예상 하회 시 경기 둔화 우려로 증시가 하락할 가능성이 높습니다."
+      "analysis": "이 지표가 예상보다 높게 나올 경우, 제조업의 확장 신호로 해석되어 증시가 긍정적인 반응을 보일 수 있습니다. 반면, 예상보다 낮게 나올 경우 제조업의 위축을 의미하며, 증시는 부정적인 영향을 받을 가능성이 큽니다."
     },
     {
       "type": "macro",
       "date": "2026-08-03",
       "title": "ISM Manufacturing PMI",
-      "expected": "예측 54 / 이전 53.3",
-      "analysis": "예상 상회 시 미국 제조업의 강세를 나타내어 원화 강세와 함께 증시가 상승할 수 있습니다. 예상 하회 시 경기 침체 우려로 환율이 상승하고 증시가 하락할 수 있습니다."
+      "expected": "54 / 이전 53.3",
+      "analysis": "예상치를 상회할 경우, 미국 제조업의 강세를 나타내며, 달러 강세와 함께 증시 상승을 이끌 수 있습니다. 반대로 예상치를 하회할 경우, 경제 성장 둔화 우려로 인해 증시와 환율 모두 부정적인 영향을 받을 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-04",
       "title": "Inflation Rate YoY",
       "expected": "예측 미제공 / 이전 3.2%",
-      "analysis": "예상 상회 시 인플레이션 압력이 커져 금리 인상 가능성이 높아지며 증시는 부정적인 영향을 받을 수 있습니다. 예상 하회 시 금리 인하 기대감으로 증시가 긍정적으로 반응할 수 있습니다."
+      "analysis": "인플레이션이 예상보다 높게 나올 경우, 금리 인상 우려로 인해 증시는 하락할 수 있으며, 원화도 약세를 보일 가능성이 있습니다. 반면, 예상보다 낮게 나올 경우 금리 동결 가능성이 높아져 증시와 원화에 긍정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-06",
       "title": "카카오 실적발표",
       "expected": "컨센서스 영업이익 미제공 / 전년동기 대비 미제공",
-      "analysis": "예상 상회 시 플랫폼 업종 전반에 긍정적인 영향을 미치며, 카카오의 주가 상승이 다른 플랫폼 기업에도 긍정적인 영향을 줄 수 있습니다. 예상 하회 시 업종 내 부정적인 파급 효과가 우려됩니다."
+      "analysis": "카카오의 실적이 예상보다 좋을 경우, 플랫폼 섹터 전반에 긍정적인 영향을 미치며, 관련 종목들이 상승할 가능성이 높습니다. 반면, 실적이 예상보다 저조할 경우, 플랫폼 섹터의 성장성에 대한 우려가 커지며, 관련 종목들이 하락할 수 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-07",
       "title": "NAVER 실적발표",
       "expected": "컨센서스 영업이익 미제공 / 전년동기 대비 미제공",
-      "analysis": "예상 상회 시 NAVER의 실적 호조가 플랫폼 섹터 전반에 긍정적인 영향을 미치며, 경쟁사인 카카오에도 긍정적인 시그널을 줄 수 있습니다. 예상 하회 시 플랫폼 업종 전반에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "NAVER의 실적이 시장의 기대를 초과할 경우, 플랫폼 섹터 내에서 긍정적인 파급 효과를 가져오며, 경쟁사인 카카오와 함께 주가 상승을 이끌 수 있습니다. 반면, 실적이 예상보다 낮을 경우, 플랫폼 업계 전반에 부정적인 영향을 미치고, 관련 주식들이 하락할 가능성이 있습니다."
     }
   ]
 }

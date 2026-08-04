@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29840.75,
+        "close": 29836.25,
         "previousClose": 28237.75,
-        "changePct": 5.68,
-        "changePoints": 1603
+        "changePct": 5.66,
+        "changePoints": 1598.5
       },
       {
         "id": "korea-etf",
@@ -52,21 +52,21 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 310.86,
-      "changePct": 2.45,
-      "changePoints": 7.44
+      "price": 310.53,
+      "changePct": 2.34,
+      "changePoints": 7.11
     },
     {
       "symbol": "MSFT",
-      "price": 491.04,
-      "changePct": 0.69,
-      "changePoints": 3.39
+      "price": 490.14,
+      "changePct": 0.51,
+      "changePoints": 2.49
     },
     {
       "symbol": "NVDA",
-      "price": 216.59,
-      "changePct": 4.82,
-      "changePoints": 9.95
+      "price": 216.5,
+      "changePct": 4.77,
+      "changePoints": 9.86
     },
     {
       "symbol": "AMZN",
@@ -76,39 +76,39 @@
     },
     {
       "symbol": "META",
-      "price": 588.88,
-      "changePct": -0.23,
-      "changePoints": 1.36
+      "price": 589.09,
+      "changePct": -0.19,
+      "changePoints": 1.15
     },
     {
       "symbol": "TSLA",
-      "price": 325.86,
-      "changePct": 1.17,
-      "changePoints": 3.78
+      "price": 325.62,
+      "changePct": 1.1,
+      "changePoints": 3.54
     },
     {
       "symbol": "GOOGL",
-      "price": 380.04,
-      "changePct": 1.75,
-      "changePoints": 6.53
+      "price": 379.08,
+      "changePct": 1.49,
+      "changePoints": 5.57
     },
     {
       "symbol": "AMD",
-      "price": 470.6,
-      "changePct": -2.9,
-      "changePoints": 14.04
+      "price": 472.18,
+      "changePct": -2.57,
+      "changePoints": 12.46
     },
     {
       "symbol": "PLTR",
-      "price": 159.56,
-      "changePct": 26.99,
-      "changePoints": 33.91
+      "price": 160.5,
+      "changePct": 27.73,
+      "changePoints": 34.85
     },
     {
       "symbol": "COIN",
-      "price": 151.2,
-      "changePct": 3.21,
-      "changePoints": 4.7
+      "price": 150.8,
+      "changePct": 2.94,
+      "changePoints": 4.3
     }
   ],
   "sectors": [
@@ -197,33 +197,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 75.34,
-        "changePct": -9.87,
-        "changePoints": -8.25
+        "price": 75.14,
+        "changePct": -10.11,
+        "changePoints": -8.45
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4129.5,
-        "changePct": 0.72,
-        "changePoints": 29.4
+        "price": 4124.6,
+        "changePct": 0.6,
+        "changePoints": 24.5
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 59.71,
-        "changePct": 1.51,
-        "changePoints": 0.89
+        "price": 59.63,
+        "changePct": 1.38,
+        "changePoints": 0.81
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.63,
-        "changePct": 2.95,
-        "changePoints": 0.19
+        "price": 6.62,
+        "changePct": 2.8,
+        "changePoints": 0.18
       },
       {
         "id": "sox",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 64444,
-        "changePct24h": 1.39,
-        "marketCapUsd": 1293211245308.08
+        "priceUsd": 64107,
+        "changePct24h": 1.07,
+        "marketCapUsd": 1286367454814.88
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1878.48,
-        "changePct24h": 1.12,
-        "marketCapUsd": 226699648286.97
+        "priceUsd": 1869.65,
+        "changePct24h": 0.71,
+        "marketCapUsd": 225633244252.69
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 74.2,
-        "changePct24h": 1.05,
-        "marketCapUsd": 43136619342.17
+        "priceUsd": 73.76,
+        "changePct24h": 0.43,
+        "marketCapUsd": 42882531618.48
       }
     ]
   },
@@ -266,7 +266,7 @@
       "url": "https://view.asiae.co.kr/article/2026080417483544050",
       "source": "아시아경제 증권",
       "publishedAt": "2026-08-04T21:00:00.000Z",
-      "summary": "지난달 우리나라 외환보유액이 6억달러 가까이 증가했다. 외환보유액 감소 요인인 국민연금과의 외환스와프 등 시장 안정화 조치가 있었지만, 정부의 17억달러 규모 유로화 표시 외국환평형기금채권(외평채) 신규 발행과 외환보유액 운용을 통해 발생한 수익 등에 증가세를 보였다는 분석이다. 5일 한국은행에 따르면 올해 7월 말 기준 우리나라 외환보유액은 4279억5000만달러로 전월 말(4273억6000만달러) 대비 5억9000만달러 늘"
+      "summary": "지난달 우리나라 외환보유액이 6억달러 가까이 증가했다. 외환보유액 감소 요인인 국민연금과의 외환스와프 등 시장 안정화 조치가 있었지만, 정부의 17억유로 규모 유로화 표시 외국환평형기금채권(외평채) 신규 발행과 외환보유액 운용을 통해 발생한 수익 등에 증가세를 보였다는 분석이다. 5일 한국은행에 따르면 올해 7월 말 기준 우리나라 외환보유액은 4279억5000만달러로 전월 말(4273억6000만달러) 대비 5억9000만달러"
     },
     {
       "title": "“개미들 실탄 다 떨어졌지만”…전문가가 꼽은 반전드라마 조건은",
@@ -290,11 +290,11 @@
       "summary": "매출 13.3조…고정환율 10% 성장 2개분기 연속적자…상반기 손실 1조 월가전망 웃돈 손실…EPS도 예상하회 개인정보 유출 과징금 2분기 반영쿠팡이 올해 2분기 13조원이 넘는 .."
     },
     {
-      "title": "스페이스X, 첫 실적서 매출 호조…AI 투자 부담에 주가는 하락",
+      "title": "스페이스X 상장 후 첫 실적 ‘서프라이즈’…‘보호예수 해제’ 변수에 주가는 뚝",
       "url": "https://www.mk.co.kr/news/it/12117041",
       "source": "매일경제",
       "publishedAt": "2026-08-04T20:23:24.000Z",
-      "summary": "IPO 이후 주가 급락 속 첫 성적표 공개 매출 78억달러, 시장 전망 14% 상회 AI 손실 12억6000만달러, 예상보다 적어 실적 발표 후 시간외 거래서 주가 3% 하락일론 .."
+      "summary": "IPO 이후 주가 급락 속 첫 성적표 매출 78억달러, 전망치 14% 상회 AI 손실 12.6억달러, 예상 밑돌아 보호예수 해제 우려에 주가 3%↓일론 머스크의 우주기업 스페이스X.."
     },
     {
       "title": "삼성전자, AI 메모리 승부수는 ‘3D’…D램도 낸드도 위로 쌓는다",
@@ -330,13 +330,6 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-08-04T13:47:51.000Z",
       "summary": "금융위원회가 한국이 투자 부적합 국가가 됐다는 내용의 외신 칼럼에 대해 정면 반박했다. 금융위는 4일 블룸버그 통신의 '한국도 투자 부적합할 수 있다(South Korea is Becoming Uninvestable, Too)' 칼럼에 대해 \"칼럼에 인용된 통계가 사실관계와 부합하지 않는 부분이 있으며 정확한 출처도 확인되지 않는다\"고 밝혔다. 4일(현지시간) 공개된 이 칼럼은 지난달 코스피가 27거래일 만에 40% 폭락한 사례를 들어 국내 증시의"
-    },
-    {
-      "title": "“볼보 비켜, 현대차 사야해”…까다로운 독일매체가 픽한 SUV 뭐길래",
-      "url": "https://www.mk.co.kr/news/business/12116878",
-      "source": "매일경제",
-      "publishedAt": "2026-08-04T12:58:28.000Z",
-      "summary": "獨아우토 모어 운트 슈로프트 전동화 럭셔리 SUV 비교평가 아이오닉9, 볼보 EX90 추월해현대자동차의 플래그십 전동화 럭셔리 스포츠유틸리티차량(SUV) ‘아이오닉9’(사진)이 독.."
     },
     {
       "title": "\"대우건설, 수주 목표 27조원으로 상향…목표가↑\"[클릭 e종목]",
@@ -400,6 +393,13 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-08-04T08:49:31.000Z",
       "summary": "앞으로 교통사고를 당한 경상환자가 8주 이상 입원 등 치료를 받으려면 전문 의료인의 검증을 받아야 한다. 이른바 '나이롱환자'에게 과도하게 나가는 보험금을 막기 위한 조치다. 국토.."
+    },
+    {
+      "title": "삼성發 성과급 분쟁에 노봉법 지침 내놓는다",
+      "url": "https://www.mk.co.kr/news/economy/12116477",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-08-04T08:40:44.000Z",
+      "summary": "삼성전자 성과급 지급과 호남 반도체 공장 등을 계기로 기업의 경영 판단이 어디까지 노동쟁의 대상이 될 수 있는지를 놓고 갈등이 커지자 고용노동부가 별도 지침을 내놓기로 했다. 또 .."
     }
   ],
   "aiAnalysis": {

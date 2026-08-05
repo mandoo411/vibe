@@ -1,73 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-05 07:08 KST",
-    "from": "2026-08-05",
-    "to": "2026-08-19",
-    "historyFrom": "2026-05-07",
+    "lastUpdatedKst": "2026-08-06 07:10 KST",
+    "from": "2026-08-06",
+    "to": "2026-08-20",
+    "historyFrom": "2026-05-08",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-07",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "200",
-      "previous": "190",
-      "estimate": "205",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-07",
-      "event": "Unit Labour Costs QoQ Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.3",
-      "previous": "4.6",
-      "estimate": "2.6",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-07",
-      "event": "Nonfarm Productivity QoQ Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.8",
-      "previous": "1.6",
-      "estimate": "1.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-08",
-      "event": "Fed Hammack Speech",
-      "country": "US",
-      "time": "03:05",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-08",
-      "event": "Fed Williams Speech",
-      "country": "US",
-      "time": "04:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-05-08",
       "event": "Fed Cook Speech",
@@ -4506,7 +4446,7 @@
       "actual": "6.81",
       "previous": "6.76",
       "estimate": "",
-      "unit": ""
+      "unit": "%"
     },
     {
       "date": "2026-08-05",
@@ -4516,7 +4456,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "44",
-      "previous": "98",
+      "previous": "95",
       "estimate": "70",
       "unit": ""
     },
@@ -4541,7 +4481,7 @@
       "importance": 3,
       "actual": "-1.643",
       "previous": "0.007",
-      "estimate": "",
+      "estimate": "-1.3",
       "unit": ""
     },
     {
@@ -4553,7 +4493,7 @@
       "importance": 3,
       "actual": "2.479",
       "previous": "-7.167",
-      "estimate": "",
+      "estimate": "-1.5",
       "unit": ""
     },
     {
@@ -4756,7 +4696,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "6.76",
+      "previous": "6.81",
       "estimate": "",
       "unit": ""
     },
@@ -4840,7 +4780,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "0.007",
+      "previous": "-1.643",
       "estimate": "",
       "unit": ""
     },
@@ -4852,7 +4792,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-7.167",
+      "previous": "2.479",
       "estimate": "",
       "unit": ""
     },
@@ -5164,7 +5104,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "6.76",
+      "previous": "6.81",
       "estimate": "",
       "unit": ""
     },
@@ -5176,7 +5116,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-7.167",
+      "previous": "2.479",
       "estimate": "",
       "unit": ""
     },
@@ -5188,7 +5128,43 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "0.007",
+      "previous": "-1.643",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-20",
+      "event": "FOMC Minutes",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-20",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "197",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-20",
+      "event": "Philadelphia Fed Manufacturing Index",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "41.4",
       "estimate": "",
       "unit": ""
     }
@@ -5294,31 +5270,38 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-08-05",
-      "title": "API 원유 재고 변화",
-      "expected": "-2 / 3.296 (백만 배럴)",
-      "analysis": "예상 상회 시 원유 가격 상승으로 인해 에너지 관련 주식이 긍정적인 영향을 받을 수 있습니다. 예상 하회 시 원유 공급 과잉 우려로 인해 증시 전반에 부정적인 영향을 미칠 가능성이 높습니다."
+      "date": "2026-08-06",
+      "title": "실업수당 청구건수",
+      "expected": "예측 202천건 / 이전 197천건",
+      "analysis": "예상 상회 시, 고용 시장의 개선을 반영하여 증시는 긍정적인 반응을 보일 가능성이 높고, 달러화 강세가 예상됩니다. 예상 하회 시, 고용 시장의 약세 신호로 해석되어 증시는 부정적인 영향을 받을 수 있으며, 환율은 불안정해질 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-05",
-      "title": "ADP 고용 변화",
-      "expected": "70 / 98 (천명)",
-      "analysis": "예상 상회 시 고용 증가로 인해 경제 성장에 대한 긍정적인 신호로 해석되어 증시가 상승할 가능성이 큽니다. 예상 하회 시 고용 둔화 우려로 인해 증시가 하락할 수 있습니다."
+      "date": "2026-08-06",
+      "title": "비농업 생산성",
+      "expected": "예측 0.6% / 이전 0.3%",
+      "analysis": "예상 상회 시, 생산성 증가로 기업의 이익 개선이 기대되어 증시가 상승할 수 있으며, 환율은 안정세를 보일 가능성이 큽니다. 예상 하회 시, 생산성 저하로 기업 이익에 부정적인 영향을 미쳐 증시는 하락할 수 있으며, 환율은 불안정해질 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-05",
-      "title": "ISM 서비스 PMI",
-      "expected": "54.5 / 54 (지수)",
-      "analysis": "예상 상회 시 서비스 부문 확장 신호로 해석되어 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 서비스 부문 위축 우려로 인해 증시가 부정적인 반응을 보일 가능성이 있습니다."
+      "date": "2026-08-06",
+      "title": "노동비용",
+      "expected": "예측 2.1% / 이전 1.8%",
+      "analysis": "예상 상회 시, 노동비용 상승이 인플레이션 압력을 높일 것으로 예상되어 증시는 하락할 수 있으며, 환율은 변동성이 커질 수 있습니다. 예상 하회 시, 인플레이션 우려가 줄어들어 증시는 긍정적인 반응을 보일 수 있으며, 환율은 안정세를 유지할 가능성이 있습니다."
     },
     {
       "type": "earnings",
       "date": "2026-08-07",
       "title": "NAVER 실적발표",
-      "expected": "컨센서스 영업이익 미제공 / 전년동기 대비 미제공",
-      "analysis": "예상 상회 시 플랫폼 섹터 전반에 긍정적인 영향을 미칠 수 있으며, NAVER의 주가 상승을 이끌 가능성이 있습니다. 예상 하회 시 플랫폼 섹터에 부정적인 영향을 미치고, NAVER의 경쟁력에 대한 우려가 커질 수 있습니다."
+      "expected": "컨센서스 영업이익 0조원 / 전년동기 대비 Y%",
+      "analysis": "예상 상회 시, 플랫폼 섹터 전반에 긍정적인 영향을 미치며, NAVER의 주가는 상승할 가능성이 높습니다. 예상 하회 시, 플랫폼 섹터에 부정적인 영향을 미치고, NAVER의 주가는 하락할 수 있으며, 경쟁사들도 영향을 받을 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-07",
+      "title": "비농업 고용지표",
+      "expected": "예측 80천건 / 이전 57천건",
+      "analysis": "예상 상회 시, 고용 증가가 경제 회복을 나타내어 증시는 긍정적인 반응을 보일 것이며, 환율은 안정세를 유지할 가능성이 높습니다. 예상 하회 시, 고용 증가 둔화가 경제 불안 요소로 작용하여 증시는 하락할 수 있으며, 환율은 변동성이 커질 수 있습니다."
     }
   ]
 }

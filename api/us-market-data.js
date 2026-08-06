@@ -587,9 +587,15 @@ async function fetchYahooIndexQuote(yahooSymbol) {
   });
   if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}`);
   const body = await res.json();
-  const meta = body?.chart?.result?.[0]?.meta;
+  const result = body?.chart?.result?.[0];
+  const meta = result?.meta;
   const price = round2(toNum(meta?.regularMarketPrice));
-  const previousClose = round2(toNum(meta?.chartPreviousClose ?? meta?.previousClose));
+  // chartPreviousClose는 "range(5d) 시작 이전 종가"라 어제 종가가 아니라 5~6거래일 전 종가가
+  // 나온다(2026-08-06 발견 — scripts/morning-briefing.mjs와 동일 버그). 실제 일별 종가
+  // 시계열의 마지막 값 바로 이전 값을 전일종가로 우선 사용한다.
+  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const validCloses = Array.isArray(closes) ? closes.filter((n) => n != null && Number.isFinite(Number(n))) : [];
+  const previousClose = round2(toNum(meta?.previousClose ?? validCloses.at(-2) ?? meta?.chartPreviousClose));
   if (price == null) throw new Error(`Yahoo empty: ${yahooSymbol}`);
   const changePoints = price != null && previousClose != null ? round2(price - previousClose) : null;
   const changePct =

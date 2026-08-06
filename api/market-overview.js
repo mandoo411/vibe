@@ -208,15 +208,21 @@ async function fetchKoreaIndex({ code, sparkSymbol, id, name }) {
   };
 }
 
-/** 전일 종가 대비 — market-ticker 와 동일 (range=2d, previousClose 우선) */
+/** 전일 종가 대비 — market-ticker 와 동일 (range=2d, 실제 일별종가 시계열 기준) */
 async function fetchYahooQuote(symbol) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
   const res = await fetch(url, { headers: { accept: "application/json" } });
   if (!res.ok) throw new Error(`Yahoo HTTP ${res.status}: ${symbol}`);
   const body = await res.json();
-  const meta = body?.chart?.result?.[0]?.meta || {};
+  const result = body?.chart?.result?.[0];
+  const meta = result?.meta || {};
   const price = toNum(meta.regularMarketPrice);
-  const previous = toNum(meta.previousClose ?? meta.chartPreviousClose);
+  // meta.chartPreviousClose는 range=2d에서도 실제로는 이틀 전(어제가 아님) 종가라 부정확할 수
+  // 있다(2026-08-06 발견 — scripts/morning-briefing.mjs와 동일 버그). 실제 일별 종가
+  // 시계열의 마지막 값 바로 이전 값을 전일종가로 우선 사용한다.
+  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const validCloses = Array.isArray(closes) ? closes.filter((n) => n != null && Number.isFinite(Number(n))) : [];
+  const previous = toNum(meta.previousClose ?? validCloses.at(-2) ?? meta.chartPreviousClose);
   let changePct = null;
   if (price != null && previous) changePct = roundN(((price - previous) / previous) * 100, 2);
   else {

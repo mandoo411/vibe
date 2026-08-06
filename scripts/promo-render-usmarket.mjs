@@ -83,7 +83,13 @@ async function fetchYahooQuote(symbol) {
   if (!result?.meta) throw new Error(`Yahoo ${symbol} empty`);
   const meta = result.meta;
   const price = meta.regularMarketPrice;
-  const prevClose = meta.chartPreviousClose ?? meta.previousClose;
+  // chartPreviousClose는 range(여기선 5d) 시작 이전 종가라 "어제 종가"가 아니다 — range=5d로
+  // 요청하면 5~6거래일 전 종가가 나와서 등락률이 크게 부풀려진다(2026-08-06 발견, scripts/
+  // morning-briefing.mjs의 fetchYahooQuote와 동일한 버그). 실제 일별 종가 시계열의
+  // "마지막 값 바로 이전 값"을 전일종가로 쓴다.
+  const closes = result.indicators?.quote?.[0]?.close || [];
+  const validCloses = Array.isArray(closes) ? closes.filter((n) => n != null && Number.isFinite(Number(n))) : [];
+  const prevClose = meta.previousClose ?? validCloses.at(-2) ?? meta.chartPreviousClose;
   if (price == null || prevClose == null) throw new Error(`Yahoo ${symbol} no price`);
   const changePoints = price - prevClose;
   const changePct = (changePoints / prevClose) * 100;

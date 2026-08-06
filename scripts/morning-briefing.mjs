@@ -312,7 +312,15 @@ async function fetchYahooQuote(symbol) {
   const closes = result.indicators?.quote?.[0]?.close || [];
   const validCloses = Array.isArray(closes) ? closes.filter((n) => n != null && Number.isFinite(Number(n))) : [];
   const price = round2(meta.regularMarketPrice ?? validCloses.at(-1));
-  const previousClose = round2(meta.chartPreviousClose ?? meta.previousClose ?? validCloses.at(-2));
+  // 전일종가: meta.chartPreviousClose는 "차트 조회 범위(range) 시작 이전 종가"를 뜻해서
+  // range=5d로 요청하면 실제로는 5~6거래일 전 종가가 반환된다(문서화 안 된 Yahoo 차트 API의
+  // 함정 — range=1d일 때만 우연히 어제 종가와 일치). 이 값을 그대로 쓰면 하루 등락률이
+  // 최근 며칠 누적 변동으로 부풀려진다(예: EWY 실제 하루 -1.17%인데 chartPreviousClose
+  // 기준으로는 +17.29%로 잘못 계산됨 — 2026-08-06 브리핑 지수 오류 사용자 피드백으로 발견).
+  // 대신 실제로 받아온 일별 종가 시계열의 "마지막 값 바로 이전 값"을 전일종가로 쓴다 —
+  // 어떤 range를 요청하든 항상 정확한 어제 종가다. meta.previousClose는 이 API 버전에서
+  // 관측상 항상 비어있지만, 혹시 나중에 채워질 경우를 대비해 최우선으로 남겨둔다.
+  const previousClose = round2(meta.previousClose ?? validCloses.at(-2) ?? meta.chartPreviousClose);
   const changePoints = price != null && previousClose != null ? round2(price - previousClose) : null;
   const changePct = price != null && previousClose ? round2((changePoints / previousClose) * 100) : null;
   return { symbol, price, previousClose, changePoints, changePct };
@@ -644,6 +652,26 @@ async function loadExistingBriefing() {
   }
 }
 
+// 2026-08-06 추가: chartPreviousClose가 range 시작 이전(최대 5~6거래일 전) 종가를 반환해서
+// 등락률이 며칠치 누적 변동으로 부풀려지는 버그가 있었다(EWY 실제 -1.17%인데 +17.29%로 표시
+// 됐던 사례). previousClose 계산 로직 자체를 고쳤지만, 앞으로 Yahoo API 응답 형식이 바뀌거나
+// 비슷한 종류의 버그가 재발했을 때 조용히 잘못된 숫자가 그대로 발행되는 걸 막기 위한 마지막
+// 방어선 — 하루 등락률이 비정상적으로 큰 값이면 콘솔에 크게 경고하고 errors 배열에도 남겨서
+// 화면/로그에서 바로 눈에 띄게 한다(값 자체를 지우거나 막지는 않는다 — 실제로 극단적인
+// 장이 설 수도 있으니 최종 판단은 사람이 하도록).
+const SANITY_THRESHOLDS = { index: 15, sector: 15, commodity: 20, stock: 50 };
+function sanityCheckChangePct(rows, kind, getLabel, errors) {
+  const threshold = SANITY_THRESHOLDS[kind];
+  for (const row of rows || []) {
+    const pct = Number(row?.changePct);
+    if (!Number.isFinite(pct) || Math.abs(pct) <= threshold) continue;
+    const label = getLabel(row);
+    const message = `⚠️ 등락률 이상치: ${label} ${pct}% (임계값 ±${threshold}% 초과) — 데이터 소스/전일종가 계산 확인 필요`;
+    console.warn("[morning-briefing]", message);
+    errors.push(message);
+  }
+}
+
 async function main() {
   const errors = [];
   const updatedAt = kstIso(seoulYmd(), "06:00");
@@ -664,6 +692,11 @@ async function main() {
   if (preservedAi !== EMPTY_AI_ANALYSIS) {
     console.log("[morning-briefing] preserving existing aiAnalysis");
   }
+
+  sanityCheckChangePct(usMarket.indices, "index", (r) => r.name || r.id, errors);
+  sanityCheckChangePct(sectors, "sector", (r) => r.name || r.symbol, errors);
+  sanityCheckChangePct(forex.commodities, "commodity", (r) => r.name || r.symbol, errors);
+  sanityCheckChangePct(topStocks, "stock", (r) => r.symbol, errors);
 
   const partial = {
     updatedAt,

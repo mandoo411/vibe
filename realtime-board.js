@@ -961,7 +961,10 @@
   const LW_VOL_H = 90;
 
   function lwChartHeights() {
-    if (isMobileLayout()) return { candle: 160, vol: 70 };
+    // 2026-08-06: 모바일 거래량 패널이 너무 커서 캔들이 상대적으로 작아 보인다는 피드백 —
+    // 거래량 높이를 기존의 80%(70 -> 56)로 줄이고, 줄어든 만큼(14px)을 캔들 패널에 더해
+    // 전체 차트 높이는 그대로 유지하면서 캔들 영역만 키운다.
+    if (isMobileLayout()) return { candle: 174, vol: 56 };
     return { candle: LW_CANDLE_H, vol: LW_VOL_H };
   }
 

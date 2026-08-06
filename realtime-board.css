@@ -1973,8 +1973,10 @@
       }
       .rt-chart-pane--candle {
         position: relative;
-        flex: 0 0 70%;
-        height: 70%;
+        /* 2026-08-06: 거래량 패널을 줄인 만큼(realtime-board.js lwChartHeights와 짝) 캔들
+           패널을 늘림 — 모바일 전용 230px 컨테이너 기준 174px(약 75.65%). */
+        flex: 0 0 174px;
+        height: 174px;
         min-height: 0;
         margin: 0;
         padding: 0;
@@ -1987,8 +1989,10 @@
       }
       .rt-chart-pane--vol {
         position: relative;
-        flex: 0 0 30%;
-        height: 30%;
+        /* 2026-08-06: 기존(30%=69px) 대비 80% 크기(56px)로 축소 — realtime-board.js
+           lwChartHeights의 모바일 vol:56과 맞춤. */
+        flex: 0 0 56px;
+        height: 56px;
         min-height: 0;
         margin: 0;
         padding: 0;

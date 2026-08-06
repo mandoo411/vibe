@@ -10,6 +10,8 @@ on:
     # 매일 08:00 KST ≈ 전날 23:00 UTC (KST = UTC+9)
     - cron: "0 23 * * *"
   workflow_dispatch:
+  push: # TEMP-TEST-TRIGGER: KIS 토큰 갱신 재시도용, 완료 후 제거 예정
+    branches: [main]
 
 concurrency:
   group: refresh-kis-token

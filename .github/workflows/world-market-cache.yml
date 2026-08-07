@@ -40,6 +40,11 @@ jobs:
         run: node scripts/world-market-cache.mjs
         env:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          # 2026-08-07: 삼성전자/SK하이닉스 시총을 KIS 실시간으로 덮어쓰기 위해 추가
+          # (world-market-cache.mjs의 applyKisMarketCapOverrides 참고).
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
 
       - name: Commit data/world-market-cache.json
         run: |

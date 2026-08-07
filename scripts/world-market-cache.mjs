@@ -10,6 +10,58 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
+const { fetchKisDomesticQuote } = require("../lib/kis-domestic-quote.js");
+
+// 2026-08-07: 삼성전자/SK하이닉스는 companiesmarketcap.com 스크레이프가 부정확할 때가 많다.
+// API가 살아있는 동안엔 api/world-market.js가 KIS 실시간으로 덮어써서 화면엔 정상 표시되지만,
+// KIS 토큰/연결이 잠깐이라도 끊기면 이 캐시 파일 값이 그대로 노출된다 — 사용자가 실제로
+// 이 경로로 새어나온 부정확한 시총을 봤다(삼성 $1.07T / SK하이닉스 $710B로 과다 표시).
+// "최후의 폴백"인 이 캐시조차 KIS 실시간 기준으로 정확하게 만들어 두면, KIS가 일시적으로
+// 끊겨도 하루 4번(평일) 갱신되는 이 캐시가 크게 틀리지 않는다.
+const KIS_OVERRIDE_YAHOO_SYMBOLS = { "005930.KS": "005930", "000660.KS": "000660" };
+
+async function fetchUsdKrwRate() {
+  try {
+    const res = await fetch("https://query1.finance.yahoo.com/v8/finance/chart/KRW=X?interval=1d&range=5d", {
+      headers: { "user-agent": "Mozilla/5.0 (compatible; TotalMoneyAI/1.0)" },
+    });
+    const body = await res.json().catch(() => ({}));
+    const rate = Number(body?.chart?.result?.[0]?.meta?.regularMarketPrice);
+    if (Number.isFinite(rate) && rate > 500 && rate < 3000) return rate;
+  } catch {
+    // fallback below
+  }
+  return 1380; // 환율 조회 실패 시 안전한 근사값
+}
+
+async function applyKisMarketCapOverrides(entries, RANKED) {
+  const usdKrwRate = await fetchUsdKrwRate();
+  for (let index = 0; index < RANKED.length; index++) {
+    const meta = RANKED[index];
+    const code6 = KIS_OVERRIDE_YAHOO_SYMBOLS[meta.yahooSymbol];
+    if (!code6) continue;
+    const rank = index + 1;
+    const key = cacheKey(meta, rank);
+    const entry = entries[key];
+    if (!entry) continue;
+    try {
+      const kis = await fetchKisDomesticQuote(code6);
+      if (kis?.marketCapWon > 0 && usdKrwRate > 0) {
+        const marketCapUsd = kis.marketCapWon / usdKrwRate;
+        console.log(
+          `KIS override: #${rank} ${meta.name} marketCap ${entry.marketCap} -> ${marketCapUsd} (KRW ${kis.marketCapWon} / ${usdKrwRate})`
+        );
+        entry.marketCap = marketCapUsd;
+        if (kis.priceKrw != null) entry.price = kis.priceKrw / usdKrwRate;
+        if (kis.changePct != null) entry.changePct = kis.changePct;
+      } else {
+        console.warn(`KIS override skipped (no data): #${rank} ${meta.name} — keeping scraped cache value`);
+      }
+    } catch (error) {
+      console.warn(`KIS override failed: #${rank} ${meta.name}: ${error.message}`);
+    }
+  }
+}
 
 async function loadRankedList() {
   try {
@@ -323,6 +375,9 @@ async function main() {
     };
     withCap += 1;
   }
+
+  console.log("Applying KIS live overrides (Samsung/SK Hynix)…");
+  await applyKisMarketCapOverrides(entries, RANKED);
 
   const payload = {
     updatedAt: new Date().toISOString(),

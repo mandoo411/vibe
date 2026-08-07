@@ -6,6 +6,8 @@ on:
     # 평일 4회 (UTC 0,6,12,18 ≈ KST 09,15,21,03)
     - cron: "0 0,6,12,18 * * 1-5"
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: write

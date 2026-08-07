@@ -7,6 +7,8 @@ on:
   schedule:
     - cron: "5 * * * *" # 매시 5분 (KST/UTC 무관, 매시간)
   workflow_dispatch: {}
+  push:
+    branches: [main]
 
 permissions:
   contents: write

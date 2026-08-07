@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T07:18:44.916Z",
+  "updatedAt": "2026-08-07T08:26:44.168Z",
   "source": "companiesmarketcap.com",
   "symbolCount": 100,
   "withMarketCap": 100,
@@ -132,10 +132,10 @@
       "rank": 13,
       "name": "Samsung",
       "symbol": "SSNLF",
-      "marketCap": 1068064715942,
+      "marketCap": 952874802438.4738,
       "netIncome": 67678400000,
       "revenue": 270941248827,
-      "price": null,
+      "price": 162.98825920072252,
       "changePct": 0.22
     },
     "LLY": {
@@ -192,10 +192,10 @@
       "rank": 19,
       "name": "SK Hynix",
       "symbol": "000660.KS",
-      "marketCap": 710749614953,
+      "marketCap": 732925110069.9933,
       "netIncome": 64209800000,
       "revenue": 91713385660,
-      "price": 1001.26,
+      "price": 1003.3303228719801,
       "changePct": -4.88
     },
     "V": {
@@ -412,11 +412,11 @@
       "rank": 41,
       "name": "Roche",
       "symbol": "RO.SW",
-      "marketCap": 369763102573,
+      "marketCap": 370155418261,
       "netIncome": 21438700000,
       "revenue": null,
-      "price": 464.08,
-      "changePct": 2.33
+      "price": null,
+      "changePct": 2.44
     },
     "UNH": {
       "rank": 42,
@@ -612,11 +612,11 @@
       "rank": 61,
       "name": "LVMH",
       "symbol": "MC.PA",
-      "marketCap": 274086089169,
+      "marketCap": 274057687215,
       "netIncome": 19615600000,
       "revenue": 94926343761,
       "price": null,
-      "changePct": 0.17
+      "changePct": 0.16
     },
     "GEV": {
       "rank": 62,
@@ -652,11 +652,11 @@
       "rank": 65,
       "name": "Nestlé",
       "symbol": "NESN.SW",
-      "marketCap": 257361309960,
+      "marketCap": 257076350657,
       "netIncome": 13579600000,
       "revenue": 113534166189,
       "price": null,
-      "changePct": 0.2
+      "changePct": 0.09
     },
     "TXN": {
       "rank": 66,
@@ -708,18 +708,8 @@
       "price": 89.6,
       "changePct": 2.1
     },
-    "SIE.DE": {
+    "rank:71": {
       "rank": 71,
-      "name": "Siemens",
-      "symbol": "SIE.DE",
-      "marketCap": 243390394076,
-      "netIncome": 12960000000,
-      "revenue": 93335552472,
-      "price": null,
-      "changePct": 1.37
-    },
-    "rank:72": {
-      "rank": 72,
       "name": "Kweichow Moutai",
       "symbol": "600519.SS",
       "marketCap": 242604149230,
@@ -729,7 +719,7 @@
       "changePct": 0.05
     },
     "ANET": {
-      "rank": 73,
+      "rank": 72,
       "name": "Arista Networks",
       "symbol": "ANET",
       "marketCap": 242558746624,
@@ -738,15 +728,25 @@
       "price": 192.32,
       "changePct": -2.53
     },
+    "SIE.DE": {
+      "rank": 73,
+      "name": "Siemens",
+      "symbol": "SIE.DE",
+      "marketCap": 242027704579,
+      "netIncome": 12960000000,
+      "revenue": 93335552472,
+      "price": null,
+      "changePct": 0.81
+    },
     "OR.PA": {
       "rank": 74,
       "name": "L'Oréal",
       "symbol": "OR.PA",
-      "marketCap": 239229866610,
+      "marketCap": 241101468514,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": -0.14
+      "changePct": 0.64
     },
     "AXP": {
       "rank": 75,
@@ -772,11 +772,11 @@
       "rank": 77,
       "name": "International Holding Company",
       "symbol": "IHC.AE",
-      "marketCap": 228641822182,
+      "marketCap": 228104263039,
       "netIncome": null,
       "revenue": null,
-      "price": 104.23,
-      "changePct": -0.23
+      "price": 103.99,
+      "changePct": -0.47
     },
     "LIN": {
       "rank": 78,
@@ -792,11 +792,11 @@
       "rank": 79,
       "name": "China Mobile",
       "symbol": "0941.HK",
-      "marketCap": 225560091794,
+      "marketCap": 225835997501,
       "netIncome": 24321400000,
       "revenue": 142724815105,
       "price": null,
-      "changePct": -0.79
+      "changePct": -0.67
     },
     "C": {
       "rank": 80,
@@ -832,11 +832,11 @@
       "rank": 83,
       "name": "PetroChina",
       "symbol": "0857.HK",
-      "marketCap": 221990527248,
+      "marketCap": 221757227945,
       "netIncome": 35771900000,
       "revenue": 407253551390,
       "price": null,
-      "changePct": 1.06
+      "changePct": 0.96
     },
     "IBM": {
       "rank": 84,
@@ -868,15 +868,15 @@
       "price": 580.02,
       "changePct": 0.38
     },
-    "ITX.MC": {
+    "PRX.AS": {
       "rank": 87,
-      "name": "Inditex",
-      "symbol": "ITX.MC",
-      "marketCap": 211218023984,
-      "netIncome": 8890000000,
-      "revenue": 42500000000,
+      "name": "Prosus",
+      "symbol": "PRX.AS",
+      "marketCap": 213940705309,
+      "netIncome": null,
+      "revenue": null,
       "price": null,
-      "changePct": 0.1
+      "changePct": 3.16
     },
     "CRWD": {
       "rank": 88,
@@ -888,8 +888,18 @@
       "price": 207.39,
       "changePct": -1.18
     },
-    "APH": {
+    "ITX.MC": {
       "rank": 89,
+      "name": "Inditex",
+      "symbol": "ITX.MC",
+      "marketCap": 211146263728,
+      "netIncome": 8890000000,
+      "revenue": 42500000000,
+      "price": null,
+      "changePct": 0.07
+    },
+    "APH": {
+      "rank": 90,
       "name": "Amphenol",
       "symbol": "APH",
       "marketCap": 210359304192,
@@ -897,16 +907,6 @@
       "revenue": 25900000000,
       "price": 170.61,
       "changePct": -0.95
-    },
-    "PRX.AS": {
-      "rank": 90,
-      "name": "Prosus",
-      "symbol": "PRX.AS",
-      "marketCap": 209533969971,
-      "netIncome": null,
-      "revenue": null,
-      "price": null,
-      "changePct": 1.03
     },
     "CBA.AX": {
       "rank": 91,
@@ -968,8 +968,18 @@
       "price": null,
       "changePct": -2.51
     },
-    "MCD": {
+    "RMS.PA": {
       "rank": 97,
+      "name": "Hermès",
+      "symbol": "RMS.PA",
+      "marketCap": 196779482747,
+      "netIncome": null,
+      "revenue": null,
+      "price": 1878.75,
+      "changePct": 0.25
+    },
+    "MCD": {
+      "rank": 98,
       "name": "McDonald",
       "symbol": "MCD",
       "marketCap": 196284350464,
@@ -978,35 +988,25 @@
       "price": 276.26,
       "changePct": 0.82
     },
-    "RMS.PA": {
-      "rank": 98,
-      "name": "Hermès",
-      "symbol": "RMS.PA",
-      "marketCap": 196175865686,
-      "netIncome": null,
-      "revenue": null,
-      "price": 1872.98,
-      "changePct": -0.06
-    },
     "SU.PA": {
       "rank": 99,
       "name": "Schneider Electric",
       "symbol": "SU.PA",
-      "marketCap": 195824618116,
+      "marketCap": 196246946109,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": 0.27
+      "changePct": 0.48
     },
-    "VZ": {
+    "AIR.PA": {
       "rank": 100,
-      "name": "Verizon",
-      "symbol": "VZ",
-      "marketCap": 195232890880,
-      "netIncome": 22983000000,
-      "revenue": 139146000000,
-      "price": 46.99,
-      "changePct": 1.12
+      "name": "Airbus",
+      "symbol": "AIR.PA",
+      "marketCap": 195407011194,
+      "netIncome": 7860000000,
+      "revenue": 85020000000,
+      "price": null,
+      "changePct": 0.82
     }
   }
 }

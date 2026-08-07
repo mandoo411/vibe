@@ -38,6 +38,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: DEBUG bot identity (temp)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: |
+          curl -s "https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe" | python3 -c "import json,sys; d=json.load(sys.stdin); print('BOT_USERNAME:', d.get('result',{}).get('username'))"
+
       - name: Run health check
         run: node scripts/health-check.mjs
         env:

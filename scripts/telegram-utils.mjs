@@ -164,9 +164,11 @@ function truncateToTelegramLimit(text) {
   return cut + notice;
 }
 
-export async function sendTelegramMessage(text, { parseMode = "Markdown" } = {}) {
+export async function sendTelegramMessage(text, { parseMode = "Markdown", chatId: chatIdOverride } = {}) {
   const token = requireEnv("TELEGRAM_TOKEN");
-  const chatId = requireEnv("TELEGRAM_CHANNEL_ID");
+  // 2026-08-07: 헬스체크 등 "운영자 개인 DM"으로만 보내야 하는 발송을 위해 chatId를
+  // 옵션으로 덮어쓸 수 있게 함. 기본값은 기존과 동일하게 공개 채널(TELEGRAM_CHANNEL_ID).
+  const chatId = chatIdOverride || requireEnv("TELEGRAM_CHANNEL_ID");
   const safeText = truncateToTelegramLimit(String(text || ""));
   if (safeText.length !== String(text || "").length) {
     console.warn(

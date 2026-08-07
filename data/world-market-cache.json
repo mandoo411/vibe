@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-07T08:26:44.168Z",
+  "updatedAt": "2026-08-07T08:28:04.827Z",
   "source": "companiesmarketcap.com",
   "symbolCount": 100,
   "withMarketCap": 100,
@@ -132,10 +132,10 @@
       "rank": 13,
       "name": "Samsung",
       "symbol": "SSNLF",
-      "marketCap": 952874802438.4738,
+      "marketCap": 952773964146.3776,
       "netIncome": 67678400000,
       "revenue": 270941248827,
-      "price": 162.98825920072252,
+      "price": 162.9710109141192,
       "changePct": 0.22
     },
     "LLY": {
@@ -192,10 +192,10 @@
       "rank": 19,
       "name": "SK Hynix",
       "symbol": "000660.KS",
-      "marketCap": 732925110069.9933,
+      "marketCap": 732847548027.063,
       "netIncome": 64209800000,
       "revenue": 91713385660,
-      "price": 1003.3303228719801,
+      "price": 1003.2241451076949,
       "changePct": -4.88
     },
     "V": {
@@ -398,8 +398,18 @@
       "price": 86.85,
       "changePct": 0.02
     },
-    "CVX": {
+    "RO.SW": {
       "rank": 40,
+      "name": "Roche",
+      "symbol": "RO.SW",
+      "marketCap": 371332365326,
+      "netIncome": 21438700000,
+      "revenue": null,
+      "price": 466.05,
+      "changePct": 2.77
+    },
+    "CVX": {
+      "rank": 41,
       "name": "Chevron",
       "symbol": "CVX",
       "marketCap": 371269238784,
@@ -407,16 +417,6 @@
       "revenue": 185887000000,
       "price": 189.23,
       "changePct": 1.51
-    },
-    "RO.SW": {
-      "rank": 41,
-      "name": "Roche",
-      "symbol": "RO.SW",
-      "marketCap": 370155418261,
-      "netIncome": 21438700000,
-      "revenue": null,
-      "price": null,
-      "changePct": 2.44
     },
     "UNH": {
       "rank": 42,
@@ -612,11 +612,11 @@
       "rank": 61,
       "name": "LVMH",
       "symbol": "MC.PA",
-      "marketCap": 274057687215,
+      "marketCap": 273688254086,
       "netIncome": 19615600000,
       "revenue": 94926343761,
       "price": null,
-      "changePct": 0.16
+      "changePct": 0.02
     },
     "GEV": {
       "rank": 62,
@@ -652,11 +652,11 @@
       "rank": 65,
       "name": "Nestlé",
       "symbol": "NESN.SW",
-      "marketCap": 257076350657,
+      "marketCap": 257013001717,
       "netIncome": 13579600000,
       "revenue": 113534166189,
       "price": null,
-      "changePct": 0.09
+      "changePct": 0.06
     },
     "TXN": {
       "rank": 66,
@@ -732,21 +732,21 @@
       "rank": 73,
       "name": "Siemens",
       "symbol": "SIE.DE",
-      "marketCap": 242027704579,
+      "marketCap": 242247479806,
       "netIncome": 12960000000,
       "revenue": 93335552472,
-      "price": null,
-      "changePct": 0.81
+      "price": 317.6,
+      "changePct": 0.9
     },
     "OR.PA": {
       "rank": 74,
       "name": "L'Oréal",
       "symbol": "OR.PA",
-      "marketCap": 241101468514,
+      "marketCap": 241009426543,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": 0.64
+      "changePct": 0.6
     },
     "AXP": {
       "rank": 75,
@@ -872,11 +872,11 @@
       "rank": 87,
       "name": "Prosus",
       "symbol": "PRX.AS",
-      "marketCap": 213940705309,
+      "marketCap": 213965886653,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": 3.16
+      "changePct": 3.17
     },
     "CRWD": {
       "rank": 88,
@@ -972,14 +972,24 @@
       "rank": 97,
       "name": "Hermès",
       "symbol": "RMS.PA",
-      "marketCap": 196779482747,
+      "marketCap": 196598401406,
       "netIncome": null,
       "revenue": null,
-      "price": 1878.75,
-      "changePct": 0.25
+      "price": 1877.02,
+      "changePct": 0.15
+    },
+    "SU.PA": {
+      "rank": 98,
+      "name": "Schneider Electric",
+      "symbol": "SU.PA",
+      "marketCap": 196376888825,
+      "netIncome": null,
+      "revenue": null,
+      "price": null,
+      "changePct": 0.55
     },
     "MCD": {
-      "rank": 98,
+      "rank": 99,
       "name": "McDonald",
       "symbol": "MCD",
       "marketCap": 196284350464,
@@ -988,25 +998,15 @@
       "price": 276.26,
       "changePct": 0.82
     },
-    "SU.PA": {
-      "rank": 99,
-      "name": "Schneider Electric",
-      "symbol": "SU.PA",
-      "marketCap": 196246946109,
-      "netIncome": null,
-      "revenue": null,
-      "price": null,
-      "changePct": 0.48
-    },
     "AIR.PA": {
       "rank": 100,
       "name": "Airbus",
       "symbol": "AIR.PA",
-      "marketCap": 195407011194,
+      "marketCap": 195543846672,
       "netIncome": 7860000000,
       "revenue": 85020000000,
       "price": null,
-      "changePct": 0.82
+      "changePct": 0.89
     }
   }
 }

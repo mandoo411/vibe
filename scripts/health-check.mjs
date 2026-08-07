@@ -170,6 +170,11 @@ async function main() {
   checkDailyMarketIndexes();
   checkInstagramPublishStamps();
 
+  // 배포 직후 1회성 발송 테스트용(수동 트리거 시에만 사용, 정상 운영에는 영향 없음).
+  if (process.env.HEALTH_CHECK_TEST_ALERT === "true") {
+    fail("test-alert", "[테스트] 헬스체크 텔레그램 알림 연결 테스트입니다 — 정상 도착했으면 이 알림은 무시하세요.");
+  }
+
   const state = loadState();
   const nowIso = new Date().toISOString();
 

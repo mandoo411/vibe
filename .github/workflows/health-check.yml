@@ -6,7 +6,12 @@ name: Health Check (Site Monitor)
 on:
   schedule:
     - cron: "5 * * * *" # 매시 5분 (KST/UTC 무관, 매시간)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: "테스트 알림 강제 발송 (텔레그램 연결 확인용)"
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -38,6 +43,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          HEALTH_CHECK_TEST_ALERT: "true" # TEMP-TEST override
 
       - name: Commit state file
         if: always()

@@ -12,8 +12,6 @@ on:
         description: "테스트 알림 강제 발송 (텔레그램 연결 확인용)"
         type: boolean
         default: false
-  push:
-    branches: [main]
 
 permissions:
   contents: write
@@ -43,7 +41,7 @@ jobs:
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
-          HEALTH_CHECK_TEST_ALERT: "true" # TEMP-TEST override
+          HEALTH_CHECK_TEST_ALERT: ${{ github.event.inputs.test_alert || 'false' }}
 
       - name: Commit state file
         if: always()

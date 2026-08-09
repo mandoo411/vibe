@@ -224,3 +224,16 @@ async function main() {
                 await sendTelegramMessage(text, { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID });
                 saveState({ lastSignature: signature, lastAlertAt: nowIso });
         } catch (error) {
+                console.error("[health-check] Telegram 알림 발송 실패:", error.message);
+                // 발송 실패해도 state는 갱신하지 않아 다음 실행에서 재시도되게 한다.
+          process.exitCode = 1;
+        }
+  } else {
+        console.log("[health-check] 동일 문제 지속 중 — 리마인더 주기 전이라 알림 생략");
+  }
+}
+
+main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+});

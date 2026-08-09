@@ -19,7 +19,6 @@
     "create-session": "node scripts/create-telegram-session.mjs",
     "post:instagram-render": "node scripts/instagram-card-post.mjs --render",
     "post:instagram-publish": "node scripts/instagram-card-post.mjs --publish",
-    "post:twitter": "node scripts/twitter-post.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

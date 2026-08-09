@@ -1,37 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-09 06:26 KST",
-    "from": "2026-08-09",
-    "to": "2026-08-23",
-    "historyFrom": "2026-05-11",
+    "lastUpdatedKst": "2026-08-10 06:28 KST",
+    "from": "2026-08-10",
+    "to": "2026-08-24",
+    "historyFrom": "2026-05-12",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-11",
-      "event": "Existing Home Sales",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4.02",
-      "previous": "4.01",
-      "estimate": "4.05",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-11",
-      "event": "Existing Home Sales MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.2",
-      "previous": "-2.9",
-      "estimate": "",
-      "unit": "%"
-    },
     {
       "date": "2026-05-12",
       "event": "Fed Williams Speech",
@@ -5095,6 +5071,18 @@
       "previous": "54.5",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-08-24",
+      "event": "Chicago Fed National Activity Index",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-0.02",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
@@ -5133,30 +5121,53 @@
       "offeringPrice": null,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2305",
       "code": ""
+    },
+    {
+      "date": "2026-08-24",
+      "name": "니어스랩",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2303",
+      "code": ""
     }
   ],
   "krEarnings": [],
   "eventAnalysis": [
     {
       "type": "macro",
+      "date": "2026-08-11",
+      "title": "ADP 고용 변화",
+      "expected": "예측 미제공 / 이전 15",
+      "analysis": "예상 상회 시 미국의 고용 시장이 강세를 보이며 증시가 상승할 가능성이 높습니다. 예상 하회 시 고용 둔화 우려로 인해 증시가 하락할 수 있으며, 달러화도 약세를 보일 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-11",
+      "title": "기존 주택 판매",
+      "expected": "예측 4.07 / 이전 4.09",
+      "analysis": "예상 상회 시 주택 시장의 회복세가 확인되며, 관련 주식들이 긍정적인 반응을 보일 수 있습니다. 예상 하회 시 주택 시장의 침체 우려가 커져 증시와 환율에 부정적인 영향을 미칠 수 있습니다."
+    },
+    {
+      "type": "macro",
       "date": "2026-08-12",
-      "title": "실업률 (UR)",
-      "expected": "예측 2.7% / 이전 2.7%",
-      "analysis": "예상 상회 시 고용 시장의 개선을 나타내며, 이는 소비 증가로 이어져 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 고용 시장의 부진을 반영하여 증시에 부정적인 영향을 줄 수 있습니다."
+      "title": "실업률",
+      "expected": "예측 미제공 / 이전 2.7%",
+      "analysis": "예상 상회 시 실업률 증가로 경제 불안감이 커져 증시가 하락할 수 있습니다. 예상 하회 시 고용 시장의 개선이 나타나며 증시와 원화 강세로 이어질 가능성이 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-11",
-      "title": "기존 주택 판매 (EHS)",
-      "expected": "예측 4.07M / 이전 4.09M",
-      "analysis": "예상 상회 시 주택 시장의 회복세를 나타내며, 이는 관련 업종에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 시장의 둔화를 반영하여 부동산 관련 주식에 부정적인 영향을 줄 수 있습니다."
+      "date": "2026-08-12",
+      "title": "CPI",
+      "expected": "예측 미제공 / 이전 332.568",
+      "analysis": "예상 상회 시 인플레이션 압력이 커져 금리 인상 우려가 증대되며 증시가 하락할 수 있습니다. 예상 하회 시 인플레이션 안정세가 확인되어 증시가 긍정적인 반응을 보일 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-11",
-      "title": "ADP 고용 변화 (ADP)",
-      "expected": "예측 미제공 / 이전 15K",
-      "analysis": "예상 상회 시 고용 증가를 나타내어 경제 회복에 대한 긍정적인 신호로 작용할 수 있으며, 이는 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 고용 시장의 부진을 반영하여 증시에 부정적인 영향을 줄 수 있습니다."
+      "date": "2026-08-12",
+      "title": "인플레이션율",
+      "expected": "예측 3.4% / 이전 3.5%",
+      "analysis": "예상 상회 시 인플레이션 우려가 커져 금리 인상 가능성이 높아지며 증시가 하락할 수 있습니다. 예상 하회 시 인플레이션 안정세가 확인되어 경제에 대한 긍정적인 전망이 이어질 수 있습니다."
     }
   ]
 }

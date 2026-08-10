@@ -24,16 +24,42 @@ jobs:
           python-version: "3.11"
 
       - name: Download KOSPI/KOSDAQ lists
+        id: download
         run: |
-          set -euo pipefail
-          curl -fsSL "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=stockMkt" -o kospi.xls
-          curl -fsSL "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=kosdaqMkt" -o kosdaq.xls
+          set -uo pipefail
+          UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+
+          fetch_with_retry() {
+            local url="$1" out="$2"
+            local attempt
+            for attempt in 1 2 3 4 5; do
+              if curl -fsSL -A "$UA" --connect-timeout 15 --max-time 60 "$url" -o "$out"; then
+                return 0
+              fi
+              echo "::warning::KIND download attempt $attempt/5 failed for $out"
+              sleep $((attempt * 10))
+            done
+            return 1
+          }
+
+          ok=true
+          fetch_with_retry "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=stockMkt" kospi.xls || ok=false
+          fetch_with_retry "https://kind.krx.co.kr/corpgeneral/corpList.do?method=download&searchType=13&marketType=kosdaqMkt" kosdaq.xls || ok=false
+
+          if [ "$ok" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::KRX KIND site did not respond after 5 retries (likely a transient IP/rate block). Skipping today's stock-list update; next scheduled run will retry."
+          fi
 
       - name: Build assets/stock-list.json
+        if: steps.download.outputs.ok == 'true'
         run: |
           python scripts/update_stock_list.py kospi.xls kosdaq.xls assets/stock-list.json
 
       - name: Commit and push if changed
+        if: steps.download.outputs.ok == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -45,4 +71,3 @@ jobs:
           git add assets/stock-list.json
           git commit -m "Update assets/stock-list.json"
           git push
-

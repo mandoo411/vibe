@@ -2265,6 +2265,39 @@
     renderThead();
   }
 
+  /** 2026-08-10: 랭킹이 바뀌어 tbody를 문자열째로 다시 그려야 할 때, 현재 펼쳐진
+   * 종목의 <tr>(캔들/거래량 LightweightCharts 인스턴스와 클릭 리스너가 붙어 있는 실제
+   * DOM 노드)을 문자열로 직렬화해 복제하지 않고 그대로 떼어내 재사용한다.
+   * detailRowHtml()의 outerHTML 재사용 최적화는 마크업(및 data-wired-chart 같은
+   * "이미 연결됨" 표시용 data 속성)만 복제할 뿐 실제 캔버스 픽셀이나 addEventListener로
+   * 붙인 리스너는 전혀 옮겨지지 않는다 — 그 결과 새로 만들어진 버튼은 겉보기엔 이미
+   * "연결됨" 상태라 재연결 로직이 스킵되면서 클릭해도 반응 없는 채로 남고, 차트 캔버스는
+   * 빈 채로 다시 그려진다. 실제 DOM 노드를 그대로 재사용하면 이 문제 자체가 발생하지
+   * 않는다. */
+  function detachOpenRowForPreserve(body, openCodeNorm) {
+    if (!openCodeNorm) return null;
+    const stockTr = Array.from(body.querySelectorAll("tr.rt-stock-row")).find(
+      (tr) => rowStockCode({ code: tr.getAttribute("data-code") }) === openCodeNorm
+    );
+    if (!stockTr) return null;
+    const detailTr = body.querySelector(`tr.rt-detail-row[data-detail-for="${openCodeNorm}"]`);
+    stockTr.remove();
+    if (detailTr) detailTr.remove();
+    return { stockTr, detailTr };
+  }
+
+  function reattachPreservedOpenRow(body, preserved, openCodeNorm, matchRow) {
+    if (!preserved) return;
+    if (matchRow) applyRowToTr(preserved.stockTr, matchRow);
+    const placeholder = body.querySelector(`tr[data-live-row-placeholder="${openCodeNorm}"]`);
+    if (placeholder) {
+      placeholder.replaceWith(preserved.stockTr);
+    } else {
+      body.appendChild(preserved.stockTr);
+    }
+    if (preserved.detailTr) preserved.stockTr.after(preserved.detailTr);
+  }
+
   function renderTable() {
     const body = $("rt-tbody");
     const title = $("rt-table-title");
@@ -2291,13 +2324,24 @@
             applyRowToTr(stockRows[i], rows[i]);
           }
         } else {
-          disposePanelChartsInRoot(body);
+          const openCodeNorm = code6Maybe(state.openChartCode || "");
+          const stillOnPage = rows.some((r) => rowStockCode(r) === openCodeNorm);
+          const preserved = stillOnPage ? detachOpenRowForPreserve(body, openCodeNorm) : null;
+          disposePanelChartsInRoot(body); // 남아있을 수 있는 다른 차트만 정리(보존 대상은 이미 떼어냄)
           const parts = [];
           for (const r of rows) {
-            parts.push(stockRowHtml(r));
-            if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
+            const rc = rowStockCode(r);
+            if (preserved && rc === openCodeNorm) {
+              parts.push(`<tr data-live-row-placeholder="${escapeHtml(openCodeNorm)}" hidden></tr>`);
+            } else {
+              parts.push(stockRowHtml(r));
+              if (!preserved && state.openChartCode === rc) parts.push(detailRowHtml(rc));
+            }
           }
           body.innerHTML = parts.join("");
+          if (preserved) {
+            reattachPreservedOpenRow(body, preserved, openCodeNorm, rows.find((r) => rowStockCode(r) === openCodeNorm));
+          }
         }
       }
       syncNameChartButtonsAria(body);
@@ -2324,12 +2368,23 @@
         applyRowToTr(stockRows[i], rows[i]);
       }
     } else {
+      const openCodeNorm = code6Maybe(state.openChartCode || "");
+      const stillOnPage = rows.some((r) => rowStockCode(r) === openCodeNorm);
+      const preserved = stillOnPage ? detachOpenRowForPreserve(body, openCodeNorm) : null;
       const parts = [];
       for (const r of rows) {
-        parts.push(stockRowHtml(r));
-        if (state.openChartCode === rowStockCode(r)) parts.push(detailRowHtml(rowStockCode(r)));
+        const rc = rowStockCode(r);
+        if (preserved && rc === openCodeNorm) {
+          parts.push(`<tr data-live-row-placeholder="${escapeHtml(openCodeNorm)}" hidden></tr>`);
+        } else {
+          parts.push(stockRowHtml(r));
+          if (!preserved && state.openChartCode === rc) parts.push(detailRowHtml(rc));
+        }
       }
       body.innerHTML = parts.join("");
+      if (preserved) {
+        reattachPreservedOpenRow(body, preserved, openCodeNorm, rows.find((r) => rowStockCode(r) === openCodeNorm));
+      }
     }
     syncDetailDomAfterRows(body, rows);
   }

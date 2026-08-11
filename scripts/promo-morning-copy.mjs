@@ -72,18 +72,73 @@ function looksComplete(text) {
   return false;
 }
 
-function buildMorningReelFallback(snapshot) {
+// ---------------------------------------------------------------------------
+// "미국 대형주"라고 부를 수 있는 종목 판정 (2026-08-11 추가)
+// 배경: morning-briefing.mjs의 TOP_STOCKS 감시 목록에는 애플·마이크로소프트 같은 진짜
+// 대형주 외에 코인베이스(COIN)·팔란티어(PLTR)처럼 시총은 훨씬 작지만 등락폭이 큰 종목도
+// 섞여 있다. 아래 buildMorningReelFallback()의 "간밤 최대 변동 종목" 로직이 이 구분 없이
+// 등락폭 1위 종목을 그대로 "미국 대형주"라고 소개해버려서, 코인베이스가 그냥 그날 밤
+// 변동폭이 가장 컸다는 이유만으로 "미국 대형주 약세/강세"로 잘못 소개되는 문제가 있었다
+// (코인베이스는 세계 시총 TOP100에도 들지 못한다 — data/world-market-cache.json 기준).
+// 이제는 실제 미국 시총 상위 20위 안에 드는 종목만 "대형주" 프레이밍에 쓴다.
+// ---------------------------------------------------------------------------
+const WORLD_MARKET_CACHE_PATH = "./data/world-market-cache.json";
+
+// world-market-cache.json은 전세계 시총 랭킹이라 미국 외 기업(TSM·삼성·SK하이닉스·ASML·
+// 텐센트·Saudi Aramco·중국건설은행 등, 일부는 실제 티커 없이 "rank:N" placeholder 키로
+// 저장됨)이 섞여 있다 — "미국 대형주" 판정 시 이들은 제외한다.
+const NON_US_MARKET_CAP_SYMBOLS = new Set(["TSM", "SPCX", "SSNLF", "TCEHY", "ASML", "CXMT"]);
+const VALID_US_TICKER_RE = /^[A-Z][A-Z.\-]{0,5}$/;
+
+let cachedUsMegaCapSet = null;
+/** 실제 미국 시총 상위 20개 티커 집합. world-market-cache.json에서 매번 새로 계산하므로
+ * 시총 순위가 바뀌어도(예: AMD가 20위 밖으로 밀려남) 수동 갱신 없이 자동으로 반영된다. */
+async function loadUsMegaCapSet() {
+  if (cachedUsMegaCapSet) return cachedUsMegaCapSet;
+  try {
+    const raw = await readJson(WORLD_MARKET_CACHE_PATH);
+    const top20 = Object.entries(raw?.entries || {})
+      .filter(
+        ([sym, e]) =>
+          VALID_US_TICKER_RE.test(sym) &&
+          !NON_US_MARKET_CAP_SYMBOLS.has(sym) &&
+          Number.isFinite(e?.marketCap)
+      )
+      .sort((a, b) => b[1].marketCap - a[1].marketCap)
+      .slice(0, 20)
+      .map(([sym]) => sym);
+    if (top20.length >= 10) {
+      cachedUsMegaCapSet = new Set(top20);
+      return cachedUsMegaCapSet;
+    }
+  } catch {
+    /* world-market-cache.json이 없거나 파싱 실패 — 아래 폴백 사용 */
+  }
+  // 최후 폴백(2026-08-11 실데이터 스냅샷 기준). world-market-cache.json을 못 읽을 때만 쓰이며,
+  // 시총 순위는 시간이 지나며 바뀌므로 주기적으로 재검토가 필요하다.
+  cachedUsMegaCapSet = new Set([
+    "NVDA", "AAPL", "GOOG", "GOOGL", "MSFT", "AMZN", "AVGO", "META", "TSLA",
+    "BRK-B", "LLY", "MU", "JPM", "WMT", "AMD", "V", "XOM", "JNJ", "MA", "INTC", "CSCO",
+  ]);
+  return cachedUsMegaCapSet;
+}
+
+async function buildMorningReelFallback(snapshot) {
   const ai = snapshot.aiAnalysis || {};
   const indices = snapshot.usMarket?.indices || [];
   const nasdaq = indices.find((i) => i.id === "nasdaq") || indices[0];
   const dirWord = (pct) => (pct > 0 ? "강세" : pct < 0 ? "약세" : "보합");
 
+  const megaCapSet = await loadUsMegaCapSet();
   const topStocks = [...(snapshot.topStocks || [])]
     .filter((s) => Number.isFinite(s.changePct))
     .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct));
-  const top = topStocks[0];
+  // "미국 대형주 ○○ 여파" 문장은 실제 시총 상위 20위 안에 드는 종목이 최대 변동 종목일 때만
+  // 쓴다 — 코인베이스·팔란티어처럼 등락폭은 커도 대형주가 아닌 종목이 1위였다는 이유만으로
+  // "대형주"라고 잘못 소개하지 않기 위함.
+  const top = topStocks.find((s) => megaCapSet.has(s.symbol));
 
-  // 1순위: 간밤 최대 변동 종목 + 나스닥 방향으로 완결된 규칙 기반 예측 문장(수치 반복 없음).
+  // 1순위: 간밤 최대 변동 "대형주" + 나스닥 방향으로 완결된 규칙 기반 예측 문장(수치 반복 없음).
   if (top) {
     const name = TICKER_NAME_KO[top.symbol] || top.symbol;
     return `간밤 ${name} 등 미국 대형주 ${dirWord(top.changePct)} 여파로, 오늘 국내 증시는 장초반 ${dirWord(nasdaq?.changePct ?? 0)}가 예상된다.`;
@@ -91,7 +146,8 @@ function buildMorningReelFallback(snapshot) {
   // 2순위: 이미 완결형으로 큐레이션된 원문 필드가 있으면 그대로.
   const candidate = ai.todayOutlook?.scenario || ai.conclusion || ai.summary || "";
   if (candidate && looksComplete(candidate)) return summarizeToSentence(candidate, 100);
-  // 3순위(최후 수단): 방향만으로 완결된 일반 문장.
+  // 3순위(최후 수단): 방향만으로 완결된 일반 문장. 대형주 변동이 없었던 날(또는 대형주가 아닌
+  // 종목만 크게 움직인 날)은 특정 종목명을 지어내지 않고 지수 방향만 언급한다.
   return `간밤 미국 증시 흐름을 반영해 오늘 국내 증시는 장초반 ${dirWord(nasdaq?.changePct ?? 0)}가 예상된다.`;
 }
 

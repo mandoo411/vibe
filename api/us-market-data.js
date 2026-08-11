@@ -302,6 +302,21 @@ function resolveRowTradingValue(row) {
   return Math.round(Math.max(...candidates));
 }
 
+/** 2026-08-11: 등락폭(전일종가 기반)과 등락률이 서로 말이 안 되게 어긋나는지 검증한다.
+ * 여러 거래소(NAS/NYS)·심볼 변형으로 KIS 상세시세를 순회 조회하는 enrichRowFromUsDetail()이
+ * 종목 동일성 검증 없이 "거래대금이 큰 후보"를 그대로 채택하는 구조라, 잘못된 거래소로 조회돼
+ * 엉뚱한 종목의 전일종가가 섞여 들어오는 경우가 있다(실제 사례: META를 NYS로 잘못 조회 →
+ * 현재가는 정상인데 전일종가만 무관한 종목 값이 섞여 "등락률 0%인데 등락폭 +575.18"처럼
+ * 두 필드가 서로 모순되는 표시가 나옴). 등락률이 이미 신뢰 가능한 값으로 있다면, 그 값과
+ * 크게 어긋나는 전일종가 기반 등락폭은 버리고 등락률 기반으로 재계산한다. */
+function changePointsAgreesWithPct(price, prev, changePct) {
+  if (!Number.isFinite(price) || !Number.isFinite(prev) || prev === 0) return false;
+  if (changePct == null || !Number.isFinite(changePct)) return true; // 대조할 등락률이 없으면 그대로 신뢰
+  const impliedPct = ((price - prev) / prev) * 100;
+  const tolerance = Math.max(2, Math.abs(changePct) * 0.5 + 1);
+  return Math.abs(impliedPct - changePct) <= tolerance;
+}
+
 function resolveChangePoints(row, price, changePct) {
   const prev = round2(
     toNum(
@@ -317,7 +332,7 @@ function resolveChangePoints(row, price, changePct) {
       ])
     )
   );
-  if (price != null && prev != null) {
+  if (price != null && prev != null && changePointsAgreesWithPct(price, prev, changePct)) {
     return round2(price - prev);
   }
   if (price != null && changePct != null && Number.isFinite(changePct)) {

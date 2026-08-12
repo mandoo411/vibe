@@ -28,7 +28,7 @@ import { loadMorningSnapshot, buildMorningCardData, buildMorningReelComment } fr
 import { buildCardsHTML, renderCardsToPNG } from "./promo-render-cards.mjs";
 import { buildMarketcapHTML, renderMarketcapToPNG, loadRealtimeTabs } from "./promo-render-marketcap.mjs";
 import { buildUsMarketHTML, renderUsMarketToPNG, pickUsRankingMode, loadRankingRowsForMode } from "./promo-render-usmarket.mjs";
-import { buildTop20Rows, buildGlobalRankingHTML, renderGlobalRankingToPNG, saveHistorySnapshot } from "./promo-render-globalranking.mjs";
+import { buildRankingData, buildGlobalRankingHTML, renderGlobalRankingToPNG } from "./promo-render-globalranking.mjs";
 import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 import { imageToReelVideo } from "./promo-image-to-video.mjs";
 import { postInstagramCarousel, postInstagramReel, postInstagramStory } from "./promo-instagram-api.mjs";
@@ -154,9 +154,9 @@ function buildClosingCaption(snapshot, copy) {
 
 function buildGlobalRankingCaption(dateLabel) {
   return [
-    `\ud83c\udf0e ${dateLabel} \uae30\uc900 \uae00\ub85c\ubc8c \uc2dc\uac00\ucd1d\uc561 TOP20`,
+    `\ud83c\udf0e ${dateLabel} \uae30\uc900 \uae00\ub85c\ubc8c \uc2dc\uac00\ucd1d\uc561 TOP10`,
     "",
-    "\uc804 \uc138\uacc4 \uc2dc\uac00\ucd1d\uc561 1\uc704\ubd80\ud130 20\uc704\uae4c\uc9c0, \ud55c\ub208\uc5d0 \uc815\ub9ac\ud574\ub4dc\ub9bd\ub2c8\ub2e4.",
+    "전 세계 시가총액 1위부터 10위와, 그 안에 든 국내기업 순위까지 한눈에 정리해드립니다.",
     "",
     "\uc804\uccb4 \ub7ad\ud0b9(TOP100)\uc740 totalmoney.kr \uae00\ub85c\ubc8c\ub7ad\ud0b9 \ud398\uc774\uc9c0\uc5d0\uc11c \ubb34\ub8cc\ub85c \ud655\uc778\ud558\uc138\uc694.",
     "\uc2e4\uc2dc\uac04 \uc54c\ub9bc \uad6c\ub3c5 \u2192 t.me/totalmoney_ai",
@@ -168,40 +168,37 @@ function buildGlobalRankingCaption(dateLabel) {
   ].join("\n");
 }
 
-/** \uae00\ub85c\ubc8c \uc2dc\uac00\ucd1d\uc561 TOP20 \ub9b4\uc2a4(\uc8fc\uac04, \ub9e4\uc8fc \ud1a0\uc694\uc77c): world-market-cache.json \uae30\ubc18
- *  TOP20 \ud589 \ube4c\ub4dc(\ub85c\uace0/\uad6d\uae30 \uc774\ubbf8\uc9c0 \uc778\ub77c\uc778) -> HTML \ucc44\uc6b0\uae30 -> PNG -> mp4 \ubcc0\ud658.
- *  \ub80c\ub354 \uc131\uacf5 \uc2dc \uc774\ubc88 \uc8fc top20 \uc21c\uc704\ub97c history\uc5d0 \uc800\uc7a5\ud574\ub450\uba74 \ub2e4\uc74c \uc8fc \uc21c\uc704\ubcc0\ub3d9(\u25b2/\u25bc) \ubc30\uc9c0\uac00 \uc790\ub3d9\uc73c\ub85c \ucc44\uc6cc\uc9c4\ub2e4. */
+/** 글로벌 시가총액 TOP10 + 국내기업 릴스(주간, 매주 토요일): world-market-cache.json(TOP100) 기반
+ *  TOP10 행 + TOP10 밖의 국내(한국) 기업 빌드(로고/국기 이미지 인라인) -> HTML 채우기 -> PNG -> mp4 변환. */
 async function renderGlobalRankingReel() {
   const { generatedDir, captionFile, reelPngFile, reelMp4File } = dirsFor("globalranking");
   mkdirSync(generatedDir, { recursive: true });
 
-  console.log("1) world-market-cache.json + \ub85c\uace0/\uad6d\uae30 \ub85c\ub529 \uc911...");
-  const rows = await buildTop20Rows();
-  console.log(`   ${rows.length}\uac1c \uc885\ubaa9 \ub85c\ub4dc \uc644\ub8cc (\ub85c\uace0 \uc131\uacf5: ${rows.filter((r) => r.logoDataUri).length}/${rows.length})`);
+  console.log("1) world-market-cache.json + 로고/국기 로딩...");
+  const { topRows, krRows } = await buildRankingData();
+  const allRows = [...topRows, ...krRows];
+  console.log(`   글로벌 TOP10: ${topRows.length}개, 국내기업: ${krRows.length}개 (로고 성공: ${allRows.filter((r) => r.logoDataUri).length}/${allRows.length})`);
 
-  const upCount = rows.filter((r) => r.changePct > 0).length;
-  const downCount = rows.filter((r) => r.changePct < 0).length;
+  const upCount = topRows.filter((r) => r.changePct > 0).length;
+  const downCount = topRows.filter((r) => r.changePct < 0).length;
   const bgDir = upCount > downCount ? "up" : downCount > upCount ? "down" : "flat";
-  console.log(`2) Gemini\ub85c \ubc30\uacbd \uc0dd\uc131 \uc911 (\ubc29\ud5a5: ${bgDir})...`);
+  console.log(`2) Gemini로 배경 생성 중 (방향: ${bgDir})...`);
   const bgDataUri = await getMarketcapReelBackground(bgDir);
 
   const dateLabel = todayLabel(seoulYmd());
-  console.log("3) \uae00\ub85c\ubc8c\ub7ad\ud0b9 \ub9b4\uc2a4 HTML \ube4c\ub4dc \uc911...");
-  const html = await buildGlobalRankingHTML({ dateLabel, rows, bgDataUri });
+  console.log("3) 글로벌랭킹 릴스 HTML 빌드 중...");
+  const html = await buildGlobalRankingHTML({ dateLabel, topRows, krRows, bgDataUri });
 
-  console.log("4) PNG \uc2a4\ud06c\ub9b0\uc0f7 \uce90\ucc98 \uc911...");
+  console.log("4) PNG 스크린샷 캡처 중...");
   await renderGlobalRankingToPNG(html, reelPngFile);
 
-  console.log("5) mp4(\ub9b4\uc2a4\uc6a9 \ubb34\uc74c \uc601\uc0c1)\ub85c \ubcc0\ud658 \uc911...");
+  console.log("5) mp4(릴스용 무음 영상)로 변환 중...");
   await imageToReelVideo(reelPngFile, reelMp4File);
 
   const caption = buildGlobalRankingCaption(dateLabel);
   writeFileSync(captionFile, caption, "utf8");
 
-  // \ub2e4\uc74c \uc8fc \uc21c\uc704\ubcc0\ub3d9 \ubc30\uc9c0\uc6a9 \uae30\uc900\uc810 \uc800\uc7a5 (\uc2e4\uc81c \ub370\uc774\ud130 \uc5c6\uc73c\uba74 \ubc30\uc9c0\ub97c \ube44\uc6cc\ub458 \ubfd0, \uc784\uc758\ub85c \uc9c0\uc5b4\ub0b4\uc9c0 \uc54a\ub294\ub2e4)
-  saveHistorySnapshot(rows, seoulYmd());
-
-  console.log(`\uc644\ub8cc: generated/globalranking/reel.png, reel.mp4, today-caption.txt`);
+  console.log(`완료: generated/globalranking/reel.png, reel.mp4, today-caption.txt`);
 }
 
 async function render(slot) {

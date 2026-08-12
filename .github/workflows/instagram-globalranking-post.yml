@@ -1,12 +1,17 @@
 name: Instagram Global Ranking Reel (Weekly)
 
-# 매주 토요일 10:00 KST 자동 실행 — 글로벌 시가총액 TOP20 랭킹 릴스+스토리.
+# 매주 토요일 10:00 KST 자동 실행 — 글로벌 시가총액 TOP10 + 국내기업 랭킹 릴스+스토리.
 # world-market-cache.yml이 평일 4회(09/15/21/03시 KST) 갱신하므로, 토요일 아침 시점엔
 # 금요일 마지막 갱신분(미국 금요일 마감 기준)을 사용하게 된다.
 on:
   schedule:
     - cron: "0 1 * * 6"
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "실제 Meta Graph API 발행까지 진행할지 (false면 렌더링 + 커밋까지만 하고 실제 발행은 스킵 — 디자인 변경 검수용)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -67,7 +72,7 @@ jobs:
           sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji ffmpeg
           fc-cache -f
 
-      - name: Render reel video (global ranking TOP20)
+      - name: Render reel video (global ranking TOP10 + KR)
         if: steps.dupcheck.outputs.should_publish == 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -80,7 +85,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add generated/ data/world-ranking-history.json
+          git add generated/
           if git diff --staged --quiet; then
             echo "::notice::No image change, skipping commit"
             exit 0
@@ -95,14 +100,14 @@ jobs:
         run: sleep 20
 
       - name: Publish reel + story via Meta Graph API
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: steps.dupcheck.outputs.should_publish == 'true' && github.event.inputs.publish != 'false'
         run: node scripts/instagram-card-post.mjs --slot=globalranking --publish-reel
         env:
           META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
 
       - name: Record published date (dedup guard)
-        if: steps.dupcheck.outputs.should_publish == 'true'
+        if: steps.dupcheck.outputs.should_publish == 'true' && github.event.inputs.publish != 'false'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

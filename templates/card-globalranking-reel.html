@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <!--
-  글로벌 시가총액 TOP20 릴스 (주간, 매주 토요일 발행 예정) — 마감시황/브리핑 릴스와 동일한 배경·워터마크
-  규칙을 따르는 신규 포맷. companiesmarketcap.com 스타일 랭킹 테이블(순위/순위변동/로고/기업명/시총/
-  등락률/국가)을 세로 20행으로 배치한다.
+  글로벌 시가총액 TOP10 릴스 (주간, 매주 토요일 발행) — 마감시황/브리핑 릴스와 동일한 배경·워터마크
+  규칙을 따르는 포맷. companiesmarketcap.com 스타일 랭킹 테이블(순위/로고/기업명/시총/등락률/국가)을
+  세로 10행으로 배치하고, 아래에 TOP10 밖에 있는 국내(한국) 기업 섹션을 별도로 붙인다.
 
   ⚠️ 설계 원칙(기존 릴스와 동일): 숫자·기업명·국가는 전부 코드가 데이터에서 직접 채우고(할루시네이션 금지),
   배경 이미지만 AI/SVG로 생성한다. 로고·국기는 실제 이미지(base64 data URI로 인라인)를 사용한다.
 
-  순위변동 배지(RANK_DELTA)는 "지난주 스냅샷"이 있을 때만 ▲/▼로 표시하고, 없으면 빈 문자열로 둔다
-  (임의로 지어내지 않는다 — 사용자 피드백 원칙과 동일하게 실데이터 없으면 표시 안 함).
+  2026-08-13 개편: TOP20 -> TOP10, 순위변동(▲/▼) 배지는 "지저분해 보인다"는 피드백으로 완전히 제거.
+  국내기업(삼성전자/SK하이닉스 등, TOP10 밖에 있는 경우)은 KRROW 블록으로 별도 표시, 국내순위 배지 +
+  "글로벌 N위" 텍스트 배지만 붙인다(화살표 없음). 국내기업 데이터가 하나도 없으면 KRSECTION 블록째로 숨김.
 
-  치환 변수: DATE, ROW(GRANKROW_START~END 사이 20개 반복), BG_DATA_URI
+  치환 변수: DATE, ROW(GRANKROW_START~END 사이 10개 반복), KRROW(KRROW_START~END 사이 0~N개 반복), BG_DATA_URI
 -->
 <html lang="ko">
 <head>
@@ -62,30 +63,38 @@
 
   .title-line {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 16px;
   }
-  .title-line .dot {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    background: var(--accent-gold);
-    flex-shrink: 0;
-    box-shadow: 0 0 0 6px rgba(212, 175, 55, 0.18);
+  .title-line .kicker {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--accent-gold);
   }
-  .title-line .title-text {
-    font-size: 47px;
+  .title-block { margin-bottom: 20px; }
+  .title-block .title-text {
+    display: block;
+    font-size: 50px;
     font-weight: 900;
     letter-spacing: -0.5px;
     color: var(--text-primary);
+    line-height: 1.22;
+  }
+  .title-block .title-text .top-n {
+    background: linear-gradient(90deg, #fff6da 0%, #f2d27a 30%, #d4af37 55%, #f5d576 75%, #d4af37 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 1.18em;
   }
 
   .subtitle-line {
-    font-size: 27px;
+    font-size: 26px;
     font-weight: 700;
     color: var(--text-secondary);
-    margin-bottom: 18px;
+    margin-bottom: 22px;
   }
 
   /* 컬럼 헤더 */
@@ -93,76 +102,69 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 0 24px 9px;
-    font-size: 24px;
+    padding: 0 26px 10px;
+    font-size: 23px;
     font-weight: 800;
     color: var(--text-muted);
     letter-spacing: 0.3px;
   }
-  .grank-head .col-rank { width: 50px; flex-shrink: 0; }
-  .grank-head .col-logo { width: 38px; flex-shrink: 0; }
+  .grank-head .col-rank { width: 58px; flex-shrink: 0; }
+  .grank-head .col-logo { width: 44px; flex-shrink: 0; }
   .grank-head .col-name { flex: 1; min-width: 0; }
-  .grank-head .col-cap { width: 195px; flex-shrink: 0; text-align: right; }
-  .grank-head .col-chg { width: 118px; flex-shrink: 0; text-align: right; }
-  .grank-head .col-country { width: 48px; flex-shrink: 0; text-align: center; }
+  .grank-head .col-cap { width: 210px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-chg { width: 128px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-country { width: 52px; flex-shrink: 0; text-align: center; }
 
   .grank-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    flex: 1;
-    justify-content: space-between;
+    gap: 12px;
   }
   .grank-row {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px 25px;
-    border-radius: 16px;
+    padding: 16px 26px;
+    border-radius: 20px;
     background: rgba(17,29,53,0.72);
     border: 1px solid rgba(255,255,255,0.06);
   }
   .grank-row.top3 {
-    background: linear-gradient(90deg, rgba(212,175,55,0.16) 0%, rgba(17,29,53,0.78) 45%), rgba(17,29,53,0.78);
-    border-color: rgba(212, 175, 55, 0.30);
+    background: linear-gradient(90deg, rgba(212,175,55,0.20) 0%, rgba(17,29,53,0.80) 48%), rgba(17,29,53,0.80);
+    border-color: rgba(212, 175, 55, 0.38);
+    box-shadow: 0 6px 18px rgba(212, 175, 55, 0.08);
   }
 
   .grank-rank {
-    width: 50px;
+    width: 58px;
     flex-shrink: 0;
     display: flex;
-    align-items: baseline;
-    gap: 3px;
+    align-items: center;
   }
   .grank-rank .num {
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 900;
     color: var(--text-primary);
   }
-  .grank-row.top3 .grank-rank .num { color: var(--accent-gold); }
-  .grank-delta {
-    font-size: 15px;
-    font-weight: 800;
-    white-space: nowrap;
+  .grank-rank .medal {
+    font-size: 42px;
+    line-height: 1;
   }
-  .grank-delta.up { color: var(--up-color); }
-  .grank-delta.down { color: var(--down-color); }
-  .grank-delta.flat { color: var(--text-muted); }
 
   .grank-logo-wrap {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     flex-shrink: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28);
   }
-  .grank-logo-wrap img { width: 28px; height: 28px; object-fit: contain; }
-  .grank-logo-wrap.fallback { font-size: 20px; }
+  .grank-logo-wrap img { width: 34px; height: 34px; object-fit: contain; }
+  .grank-logo-wrap.fallback { font-size: 22px; }
 
   .grank-name {
     flex: 1;
@@ -173,34 +175,29 @@
     line-height: 1.15;
   }
   .grank-name .n {
-    font-size: 31px;
+    font-size: 33px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .grank-name .sym {
-    font-size: 17px;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
 
   .grank-cap {
-    width: 195px;
+    width: 210px;
     flex-shrink: 0;
     text-align: right;
-    font-size: 27px;
+    font-size: 29px;
     font-weight: 800;
     color: var(--text-primary);
     white-space: nowrap;
   }
 
   .grank-chg {
-    width: 118px;
+    width: 128px;
     flex-shrink: 0;
     text-align: right;
-    font-size: 25px;
+    font-size: 26px;
     font-weight: 800;
     white-space: nowrap;
   }
@@ -209,22 +206,110 @@
   .grank-chg.flat { color: var(--text-secondary); }
 
   .grank-country {
-    width: 48px;
+    width: 52px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   .grank-flag-img {
-    width: 40px;
-    height: 28px;
+    width: 42px;
+    height: 30px;
     object-fit: cover;
     border-radius: 4px;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
   }
   .grank-flag-fallback {
-    font-size: 27px;
+    font-size: 28px;
     line-height: 1;
+  }
+
+  /* 국내기업 섹션 */
+  .kr-section {
+    margin-top: 30px;
+  }
+  .kr-divider {
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #c60c30 0%, #c60c30 50%, #003478 50%, #003478 100%);
+    opacity: 0.85;
+    margin-bottom: 20px;
+  }
+  .kr-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .kr-head .title-text {
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+  .kr-head .badge {
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+
+  .kr-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .kr-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 26px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, rgba(198,12,48,0.10) 0%, rgba(17,29,53,0.82) 40%, rgba(0,52,120,0.14) 100%), rgba(17,29,53,0.82);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .kr-rank-badge {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c60c30 0%, #7a0a20 100%);
+    color: #ffffff;
+    font-size: 24px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(198,12,48,0.35);
+  }
+  .kr-name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    line-height: 1.15;
+  }
+  .kr-name .n {
+    font-size: 33px;
+    font-weight: 800;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .kr-global-badge {
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    background: rgba(212, 175, 55, 0.14);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    padding: 5px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
   }
 </style>
 </head>
@@ -234,8 +319,11 @@
 
   <div class="page-wrap">
     <div class="title-line">
-      <span class="dot"></span>
-      <span class="title-text">글로벌 시가총액 TOP20</span>
+      <span class="kicker">WEEKLY GLOBAL RANKING</span>
+    </div>
+    <div class="title-block">
+      <span class="title-text">글로벌 시가총액</span>
+      <span class="title-text"><span class="top-n">TOP 10</span></span>
     </div>
     <div class="subtitle-line">{{DATE}} 기준 · TotalMoney AI 주간 랭킹</div>
 
@@ -252,6 +340,20 @@
       <!--GRANKROW_START-->
       <!--GRANKROW_END-->
     </div>
+
+    <!--KRSECTION_START-->
+    <div class="kr-section">
+      <div class="kr-divider"></div>
+      <div class="kr-head">
+        <span class="title-text">🇰🇷 국내기업 시가총액</span>
+        <span class="badge">TOP100 내</span>
+      </div>
+      <div class="kr-list">
+        <!--KRROW_START-->
+        <!--KRROW_END-->
+      </div>
+    </div>
+    <!--KRSECTION_END-->
   </div>
 
   <div class="watermark">TotalMoney.kr</div>

@@ -1,26 +1,27 @@
 /**
- * 글로벌 시가총액 TOP20 릴스(주간, 매주 토요일) — templates/card-globalranking-reel.html 렌더링.
+ * 글로벌 시가총액 TOP10 + 국내기업 랭킹 릴스(주간, 매주 토요일) — templates/card-globalranking-reel.html 렌더링.
  *
  * 데이터 출처:
- *  - data/world-market-cache.json (world-market.html 페이지와 동일한 캐시, companiesmarketcap.com 기반)
+ *  - data/world-market-cache.json (world-market.html 페이지와 동일한 캐시, companiesmarketcap.com 기반, TOP100)
  *  - lib/world-market-ranked.js (심볼 -> 국가/야후심볼 메타, generate-world-market-ranked.mjs가 생성)
  *  - 로고: FMP image-stock(미국 심볼) / companiesmarketcap.com company-logos(해외 심볼, yahooSymbol 기준)
  *    — 렌더 시점에 fetch해서 base64 data URI로 인라인(외부 이미지 로드 실패로 릴스가 깨지는 것 방지).
- *  - 국기: 이모지(색상 이모지 폰트로 렌더링됨, api/world-market.js의 countryFlag()와 동일 매핑을 재사용).
- *  - 순위변동(▲/▼): data/world-ranking-history.json에 저장된 "지난 주 스냅샷"이 있을 때만 계산.
- *    스냅샷이 없으면(첫 실행) 임의로 지어내지 않고 배지를 비워둔다.
+ *  - 국기: flagcdn.com 실제 국기 이미지(ISO 3166-1 alpha-2 코드 기반).
+ *
+ * 2026-08-13 개편: TOP20 → TOP10으로 축소하고, 캐시(TOP100) 안에서 국가가 한국인 종목(삼성전자,
+ * SK하이닉스 등)을 별도 "국내기업" 섹션으로 분리해 국내 순위 + 글로벌 순위 배지로 보여준다.
+ * 기존의 순위변동(▲/▼) 배지는 사용자 피드백("지저분해 보임")으로 완전히 제거했다.
  */
 import puppeteer from "puppeteer";
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { getMarketcapReelBackground } from "./promo-gemini-background.mjs";
 
 const TEMPLATES_DIR = join(process.cwd(), "templates");
 const CACHE_PATH = join(process.cwd(), "data", "world-market-cache.json");
 const RANKED_PATH = join(process.cwd(), "lib", "world-market-ranked.js");
-const HISTORY_PATH = join(process.cwd(), "data", "world-ranking-history.json");
 
-const TOP_N = 20;
+const GLOBAL_TOP_N = 10;
 
 function fillVars(html, vars) {
   let out = html;
@@ -31,8 +32,7 @@ function fillVars(html, vars) {
 }
 
 // 사용자 요청: 시가총액을 달러가 아니라 원화(한화)로 표시.
-// 조(兆) 단위가 절대다수(TOP20 전부 조 단위)라서 "조" 기준으로만 포맷하고,
-// 소수점 아래는 "억" 단위까지 붙여 정밀도를 살린다 (예: 6,819.4조원, 950.1조원).
+// 조(兆) 단위가 절대다수라서 "조" 기준으로만 포맷하고, 소수점 아래는 "억" 단위까지 붙여 정밀도를 살린다.
 function fmtWon(usdAmount, usdKrwRate) {
   const usd = Number(usdAmount);
   const rate = Number(usdKrwRate) || 1380;
@@ -63,7 +63,7 @@ const arrow = (pct) => (pct > 0 ? "▲" : pct < 0 ? "▼" : "—");
 
 // 이모지 국기는 Puppeteer 렌더 환경(GitHub Actions 등)에 컬러 이모지 폰트가 없으면
 // 빈 네모(□□)로 깨진다 — 실제 국기 이미지(flagcdn.com, ISO 3166-1 alpha-2 코드 기반)를 써서
-// 렌더 환경에 상관없이 항상 정확하게 보이도록 한다(사용자 요청: "국가(국기이미지)").
+// 렌더 환경에 상관없이 항상 정확하게 보이도록 한다.
 function countryIso2(country) {
   const text = String(country || "").toLowerCase();
   if (/united states|usa|^us$/.test(text)) return "us";
@@ -134,17 +134,36 @@ async function fetchLogoDataUri(url) {
   }
 }
 
-function loadHistory() {
-  if (!existsSync(HISTORY_PATH)) return null;
-  try {
-    return JSON.parse(readFileSync(HISTORY_PATH, "utf8"));
-  } catch {
-    return null;
-  }
+function metaFor(e, bySymbol, metas) {
+  const key = String(e.symbol || "").toUpperCase();
+  return bySymbol.get(key) || metas.find((m) => m.name === e.name) || {};
 }
 
-/** world-market-cache.json + world-market-ranked.js -> top20 표준 행 (로고 data URI 포함) */
-export async function buildTop20Rows() {
+async function enrichRow(e, { bySymbol, metas, KO_NAMES, usdKrwRate }) {
+  const meta = metaFor(e, bySymbol, metas);
+  const country = meta.country || "United States";
+  const logoUrl = logoUrlFor(meta.symbol || meta.yahooSymbol ? meta : { symbol: e.symbol });
+  const logoDataUri = await fetchLogoDataUri(logoUrl);
+  const flagDataUri = await fetchFlagDataUri(country);
+  // 사용자 요청: 기업명은 한글로 표기 (cmcSlug 기준 KO_NAMES 매핑, 없으면 영문명 그대로 폴백).
+  const nameKo = (meta.cmcSlug && KO_NAMES[meta.cmcSlug]) || e.name;
+  return {
+    rank: e.rank,
+    name: nameKo,
+    nameEn: e.name,
+    symbol: e.symbol || meta.yahooSymbol || "",
+    marketCap: e.marketCap,
+    marketCapWon: fmtWon(e.marketCap, usdKrwRate),
+    changePct: Number(e.changePct) || 0,
+    country,
+    flagDataUri,
+    logoDataUri,
+  };
+}
+
+/** world-market-cache.json(TOP100) + world-market-ranked.js ->
+ *  { topRows: 글로벌 TOP10, krRows: TOP10 밖에 있는 국내(한국) 기업 목록(국내순위 오름차순) } */
+export async function buildRankingData() {
   const cache = JSON.parse(readFileSync(CACHE_PATH, "utf8"));
   // lib/*.js는 .mjs가 아닌 CommonJS(module.exports)라 require로 읽는다.
   const { createRequire } = await import("node:module");
@@ -158,56 +177,34 @@ export async function buildTop20Rows() {
     if (m.yahooSymbol) bySymbol.set(m.yahooSymbol.toUpperCase(), m);
   }
 
-  const entries = Object.values(cache.entries || {}).sort((a, b) => a.rank - b.rank).slice(0, TOP_N);
-  const history = loadHistory();
-  const prevRankBySymbol = new Map();
-  if (history?.rows) {
-    for (const r of history.rows) prevRankBySymbol.set(String(r.symbol || r.name).toUpperCase(), r.rank);
-  }
+  const allEntries = Object.values(cache.entries || {}).sort((a, b) => a.rank - b.rank);
 
   console.log("   USD/KRW 환율 조회 중...");
   const usdKrwRate = await fetchUsdKrwRate();
   console.log(`   USD/KRW ≈ ${usdKrwRate}`);
 
-  const rows = [];
-  for (const e of entries) {
-    const key = String(e.symbol || "").toUpperCase();
-    const meta = bySymbol.get(key) || metas.find((m) => m.name === e.name) || {};
-    const country = meta.country || "United States";
-    const logoUrl = logoUrlFor(meta.symbol || meta.yahooSymbol ? meta : { symbol: e.symbol });
-    const logoDataUri = await fetchLogoDataUri(logoUrl);
-    const flagDataUri = await fetchFlagDataUri(country);
-    const historyKey = (e.symbol || e.name || "").toUpperCase();
-    const prevRank = prevRankBySymbol.has(historyKey) ? prevRankBySymbol.get(historyKey) : null;
-    const delta = prevRank != null ? prevRank - e.rank : null;
-    // 사용자 요청: 기업명은 한글로 표기 (cmcSlug 기준 KO_NAMES 매핑, 없으면 영문명 그대로 폴백).
-    const nameKo = (meta.cmcSlug && KO_NAMES[meta.cmcSlug]) || e.name;
-    rows.push({
-      rank: e.rank,
-      name: nameKo,
-      nameEn: e.name,
-      symbol: e.symbol || meta.yahooSymbol || "",
-      marketCap: e.marketCap,
-      marketCapWon: fmtWon(e.marketCap, usdKrwRate),
-      changePct: Number(e.changePct) || 0,
-      country,
-      flagDataUri,
-      logoDataUri,
-      delta,
-    });
-  }
-  return rows;
-}
+  const ctx = { bySymbol, metas, KO_NAMES, usdKrwRate };
 
-function rankDeltaHTML(delta) {
-  if (delta == null) return "";
-  if (delta === 0) return `<span class="grank-delta flat">–</span>`;
-  if (delta > 0) return `<span class="grank-delta up">▲${delta}</span>`;
-  return `<span class="grank-delta down">▼${Math.abs(delta)}</span>`;
+  const topSlice = allEntries.slice(0, GLOBAL_TOP_N);
+  const topRows = [];
+  for (const e of topSlice) topRows.push(await enrichRow(e, ctx));
+
+  // TOP10 밖에 있는 국내(한국) 기업만 별도 섹션으로 — 실데이터에 있는 만큼만 표시(임의로 지어내지 않음).
+  const krCandidates = allEntries.filter((e, idx) => {
+    if (idx < GLOBAL_TOP_N) return false;
+    const meta = metaFor(e, bySymbol, metas);
+    return /korea/i.test(meta.country || "");
+  });
+  const krRowsRaw = [];
+  for (const e of krCandidates) krRowsRaw.push(await enrichRow(e, ctx));
+  const krRows = krRowsRaw
+    .sort((a, b) => a.rank - b.rank)
+    .map((r, i) => ({ ...r, domesticRank: i + 1, globalRank: r.rank }));
+
+  return { topRows, krRows };
 }
 
 function rowHTML(row) {
-  const top3Cls = row.rank <= 3 ? "top3" : "";
   const cls = dirCls(row.changePct);
   const logoCell = row.logoDataUri
     ? `<div class="grank-logo-wrap"><img src="${row.logoDataUri}" alt="" /></div>`
@@ -216,9 +213,14 @@ function rowHTML(row) {
     ? `<img class="grank-flag-img" src="${row.flagDataUri}" alt="" title="${row.country}" />`
     : `<span class="grank-flag-fallback" title="${row.country}">🌐</span>`;
   const pctText = `${arrow(row.changePct)} ${Math.abs(row.changePct).toFixed(2)}%`;
+  const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : "";
+  const top3Cls = row.rank <= 3 ? "top3" : "";
+  const rankCell = medal
+    ? `<span class="medal">${medal}</span>`
+    : `<span class="num">${row.rank}</span>`;
   return `
       <div class="grank-row ${top3Cls}">
-        <div class="grank-rank"><span class="num">${row.rank}</span>${rankDeltaHTML(row.delta)}</div>
+        <div class="grank-rank">${rankCell}</div>
         ${logoCell}
         <div class="grank-name">
           <span class="n" title="${row.name}">${row.name}</span>
@@ -229,14 +231,41 @@ function rowHTML(row) {
       </div>`;
 }
 
-export async function buildGlobalRankingHTML({ dateLabel, rows, bgDataUri }) {
+function krRowHTML(row) {
+  const cls = dirCls(row.changePct);
+  const logoCell = row.logoDataUri
+    ? `<div class="grank-logo-wrap"><img src="${row.logoDataUri}" alt="" /></div>`
+    : `<div class="grank-logo-wrap fallback">🌐</div>`;
+  const pctText = `${arrow(row.changePct)} ${Math.abs(row.changePct).toFixed(2)}%`;
+  return `
+      <div class="kr-row">
+        <div class="kr-rank-badge">${row.domesticRank}</div>
+        ${logoCell}
+        <div class="kr-name">
+          <span class="n" title="${row.name}">${row.name}</span>
+          <span class="kr-global-badge">글로벌 ${row.globalRank}위</span>
+        </div>
+        <div class="grank-cap">${row.marketCapWon}</div>
+        <div class="grank-chg ${cls}">${pctText}</div>
+      </div>`;
+}
+
+export async function buildGlobalRankingHTML({ dateLabel, topRows, krRows, bgDataUri }) {
   const read = (name) => readFileSync(join(TEMPLATES_DIR, `${name}.html`), "utf8");
   let html = fillVars(read("card-globalranking-reel"), {
     DATE: dateLabel,
     BG_DATA_URI: bgDataUri,
   });
-  const rowsBlock = rows.map(rowHTML).join("");
+  const rowsBlock = topRows.map(rowHTML).join("");
   html = html.replace(/<!--GRANKROW_START-->[\s\S]*?<!--GRANKROW_END-->/, rowsBlock);
+
+  const krBlock = krRows.map(krRowHTML).join("");
+  html = html.replace(/<!--KRROW_START-->[\s\S]*?<!--KRROW_END-->/, krBlock);
+  // 국내기업 데이터가 없으면(캐시 TOP100 안에 한국 기업이 하나도 없는 예외적인 경우) 섹션 자체를 숨긴다
+  // — "데이터 없으면 지어내지 않고 표시를 생략한다" 원칙.
+  if (krRows.length === 0) {
+    html = html.replace(/<!--KRSECTION_START-->[\s\S]*?<!--KRSECTION_END-->/, "");
+  }
   return html;
 }
 
@@ -260,16 +289,6 @@ export async function renderGlobalRankingToPNG(html, outPath) {
   return outPath;
 }
 
-/** data/world-ranking-history.json에 이번 주 top20 스냅샷 저장 (다음 주 순위변동 계산용) */
-export function saveHistorySnapshot(rows, weekYmd) {
-  const payload = {
-    savedAt: new Date().toISOString(),
-    weekYmd,
-    rows: rows.map((r) => ({ rank: r.rank, symbol: r.symbol, name: r.name })),
-  };
-  writeFileSync(HISTORY_PATH, JSON.stringify(payload, null, 2));
-}
-
 function todayLabel() {
   const d = new Date();
   const kst = new Date(d.getTime() + 9 * 3600 * 1000);
@@ -281,18 +300,18 @@ function todayLabel() {
 
 async function main() {
   const outPath = process.argv.find((a) => a.startsWith("--out="))?.split("=")[1] || "./generated/globalranking-test.png";
-  console.log("1) top20 데이터 + 로고 로딩...");
-  const rows = await buildTop20Rows();
-  console.log(`   ${rows.length}개 종목 로드 완료 (로고 성공: ${rows.filter((r) => r.logoDataUri).length}/${rows.length})`);
+  console.log("1) top10 + 국내기업 데이터 + 로고 로딩...");
+  const { topRows, krRows } = await buildRankingData();
+  console.log(`   글로벌 TOP10: ${topRows.length}개, 국내기업: ${krRows.length}개 (로고 성공: ${[...topRows, ...krRows].filter((r) => r.logoDataUri).length}/${topRows.length + krRows.length})`);
 
-  const upCount = rows.filter((r) => r.changePct > 0).length;
-  const downCount = rows.filter((r) => r.changePct < 0).length;
+  const upCount = topRows.filter((r) => r.changePct > 0).length;
+  const downCount = topRows.filter((r) => r.changePct < 0).length;
   const dir = upCount > downCount ? "up" : downCount > upCount ? "down" : "flat";
   console.log(`2) 배경 생성 중 (방향: ${dir})...`);
   const bgDataUri = await getMarketcapReelBackground(dir);
 
   console.log("3) HTML 빌드 중...");
-  const html = await buildGlobalRankingHTML({ dateLabel: todayLabel(), rows, bgDataUri });
+  const html = await buildGlobalRankingHTML({ dateLabel: todayLabel(), topRows, krRows, bgDataUri });
 
   console.log("4) PNG 렌더 중...");
   await renderGlobalRankingToPNG(html, outPath);

@@ -540,12 +540,17 @@
       }
 
       .bf-date-trigger:hover {
-        background: var(--bg-secondary);
-        border-color: var(--border);
+        background: color-mix(in srgb, var(--accent-bright, #0f8387) 10%, var(--bg-secondary));
+        border-color: color-mix(in srgb, var(--accent-bright, #0f8387) 45%, var(--border));
+      }
+
+      .bf-date-trigger:hover .bf-date-trigger__icon,
+      .bf-date-trigger:hover .briefing-today__full {
+        color: var(--accent-bright, #0f8387);
       }
 
       .bf-date-trigger.is-active {
-        background: var(--bg-secondary);
+        background: color-mix(in srgb, var(--accent-bright, #0f8387) 10%, var(--bg-secondary));
         border-color: var(--accent-bright, #0f8387);
       }
 

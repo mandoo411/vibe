@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29806.5,
+        "close": 29808,
         "previousClose": 29626,
         "changePct": 0.61,
-        "changePoints": 180.5
+        "changePoints": 182
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 301.68,
-      "changePct": -1.06,
-      "changePoints": 3.23
+      "price": 302.25,
+      "changePct": -0.87,
+      "changePoints": -2.66
     },
     {
       "symbol": "MSFT",
-      "price": 490.15,
-      "changePct": -2.71,
-      "changePoints": 13.66
+      "price": 492.43,
+      "changePct": -2.26,
+      "changePoints": -11.38
     },
     {
       "symbol": "NVDA",
-      "price": 223.84,
-      "changePct": 2.91,
-      "changePoints": 6.34
+      "price": 224.09,
+      "changePct": 3.03,
+      "changePoints": 6.59
     },
     {
       "symbol": "AMZN",
-      "price": 267.59,
-      "changePct": -1.72,
-      "changePoints": 4.68
+      "price": 267.28,
+      "changePct": -1.83,
+      "changePoints": -4.99
     },
     {
       "symbol": "META",
-      "price": 579.19,
-      "changePct": -3.33,
-      "changePoints": 19.93
+      "price": 578.85,
+      "changePct": -3.38,
+      "changePoints": -20.27
     },
     {
       "symbol": "TSLA",
-      "price": 327.2,
-      "changePct": -1.69,
-      "changePoints": 5.61
+      "price": 327.51,
+      "changePct": -1.59,
+      "changePoints": -5.3
     },
     {
       "symbol": "GOOGL",
-      "price": 343.5,
-      "changePct": -0.09,
-      "changePoints": 0.3
+      "price": 343.54,
+      "changePct": -0.08,
+      "changePoints": -0.26
     },
     {
       "symbol": "AMD",
-      "price": 482.4,
-      "changePct": 1.7,
-      "changePoints": 8.08
+      "price": 482.93,
+      "changePct": 1.82,
+      "changePoints": 8.61
     },
     {
       "symbol": "PLTR",
-      "price": 170.35,
-      "changePct": -2.63,
-      "changePoints": 4.59
+      "price": 171.04,
+      "changePct": -2.23,
+      "changePoints": -3.9
     },
     {
       "symbol": "COIN",
-      "price": 149.2,
-      "changePct": 0.42,
-      "changePoints": 0.62
+      "price": 149.04,
+      "changePct": 0.31,
+      "changePoints": 0.46
     }
   ],
   "sectors": [
@@ -180,7 +180,7 @@
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 44.49,
-      "changePct": 0.93
+      "changePct": 0.2
     }
   ],
   "forex": {
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 82.71,
-        "changePct": -0.59,
-        "changePoints": -0.49
+        "price": 82.73,
+        "changePct": -0.56,
+        "changePoints": -0.47
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4464.1,
-        "changePct": 1.85,
-        "changePoints": 81.1
+        "price": 4466.2,
+        "changePct": 1.9,
+        "changePoints": 83.2
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.36,
-        "changePct": 0.91,
-        "changePoints": 0.59
+        "price": 65.4,
+        "changePct": 0.97,
+        "changePoints": 0.63
       },
       {
         "id": "copper",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 63350,
-        "changePct24h": -0.23,
-        "marketCapUsd": 1271398858741.86
+        "priceUsd": 63341,
+        "changePct24h": -0.31,
+        "marketCapUsd": 1270957343055.22
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1874.98,
-        "changePct24h": -0.13,
-        "marketCapUsd": 226276335664.26
+        "priceUsd": 1874.22,
+        "changePct24h": -0.26,
+        "marketCapUsd": 226191881628.53
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 75.4,
-        "changePct24h": -0.98,
-        "marketCapUsd": 43920097839.63
+        "priceUsd": 75.39,
+        "changePct24h": -1.09,
+        "marketCapUsd": 43908981066.18
       }
     ]
   },

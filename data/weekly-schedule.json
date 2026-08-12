@@ -1,169 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-12 06:42 KST",
-    "from": "2026-08-12",
-    "to": "2026-08-26",
-    "historyFrom": "2026-05-14",
+    "lastUpdatedKst": "2026-08-13 06:41 KST",
+    "from": "2026-08-13",
+    "to": "2026-08-27",
+    "historyFrom": "2026-05-15",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-14",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "211",
-      "previous": "199",
-      "estimate": "205",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Retail Sales MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.5",
-      "previous": "1.6",
-      "estimate": "0.5",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Import Prices MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.9",
-      "previous": "0.9",
-      "estimate": "1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Export Prices MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "3.3",
-      "previous": "1.5",
-      "estimate": "1.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Retail Sales Ex Autos MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.7",
-      "previous": "1.9",
-      "estimate": "0.6",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Retail Sales Control Group MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.5",
-      "previous": "0.8",
-      "estimate": "0.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Business Inventories MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.9",
-      "previous": "0.4",
-      "estimate": "0.8",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-14",
-      "event": "Fed Schmid Speech",
-      "country": "US",
-      "time": "23:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-14",
-      "event": "코스피200 옵션 만기일",
-      "country": "KR",
-      "time": "15:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-15",
-      "event": "Fed Hammack Speech",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-15",
-      "event": "Fed Bowman Speech",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-15",
-      "event": "Fed Williams Speech",
-      "country": "US",
-      "time": "06:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-15",
-      "event": "Fed Barr Speech",
-      "country": "US",
-      "time": "08:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-05-15",
       "event": "NY Empire State Manufacturing Index",
@@ -4311,7 +4155,7 @@
       "time": "08:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "2.8",
       "previous": "2.7",
       "estimate": "",
       "unit": "%"
@@ -4326,7 +4170,7 @@
       "actual": "6.77",
       "previous": "6.81",
       "estimate": "",
-      "unit": ""
+      "unit": "%"
     },
     {
       "date": "2026-08-12",
@@ -4336,7 +4180,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "332.81",
-      "previous": "332.568",
+      "previous": "332.57",
       "estimate": "",
       "unit": ""
     },
@@ -4397,7 +4241,7 @@
       "importance": 3,
       "actual": "333.92",
       "previous": "333.95",
-      "estimate": "",
+      "estimate": "333.99",
       "unit": ""
     },
     {
@@ -4409,7 +4253,7 @@
       "importance": 3,
       "actual": "-0.968",
       "previous": "-1.643",
-      "estimate": "-1.58",
+      "estimate": "-1.2",
       "unit": ""
     },
     {
@@ -4421,7 +4265,7 @@
       "importance": 3,
       "actual": "17.422",
       "previous": "2.479",
-      "estimate": "-0.5",
+      "estimate": "-1.4",
       "unit": ""
     },
     {
@@ -4431,7 +4275,7 @@
       "time": "03:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-432",
       "previous": "-120",
       "estimate": "-346",
       "unit": "$"
@@ -4744,7 +4588,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "6.81",
+      "previous": "6.77",
       "estimate": "",
       "unit": ""
     },
@@ -4756,7 +4600,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "2.479",
+      "previous": "17.422",
       "estimate": "",
       "unit": ""
     },
@@ -4768,7 +4612,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-1.643",
+      "previous": "-0.968",
       "estimate": "",
       "unit": ""
     },
@@ -4960,7 +4804,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "6.81",
+      "previous": "6.77",
       "estimate": "",
       "unit": ""
     },
@@ -5092,7 +4936,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "2.479",
+      "previous": "17.422",
       "estimate": "",
       "unit": ""
     },
@@ -5104,21 +4948,84 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-1.643",
+      "previous": "-0.968",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Jackson Hole Symposium",
+      "country": "US",
+      "time": "09:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Interest Rate Decision",
+      "country": "KR",
+      "time": "10:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.75",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "199",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Goods Trade Balance Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-101.4",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Wholesale Inventories MoM Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.2",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Retail Inventories Ex Autos MoM Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-0.2",
       "estimate": "",
       "unit": ""
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-08-12",
-      "name": "딜리셔스",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2302",
-      "code": ""
-    },
     {
       "date": "2026-08-13",
       "name": "케이앤에스아이앤씨",
@@ -5169,31 +5076,45 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-08-12",
-      "title": "실업률 (UR)",
-      "expected": "예측 미제공 / 이전 2.7%",
-      "analysis": "실업률이 예상보다 낮을 경우, 경제가 회복되고 있다는 신호로 해석되어 증시가 상승할 가능성이 높습니다. 반면, 예상보다 높을 경우 경제 불황 우려가 커져 증시가 하락할 수 있습니다."
+      "date": "2026-08-13",
+      "title": "PPI MoM",
+      "expected": "예측 0.2% / 이전 -0.3%",
+      "analysis": "예상 상회 시 물가 상승 압력이 커져 금리 인상 우려로 증시가 하락할 수 있으며, 달러 강세가 나타날 가능성이 높습니다. 예상 하회 시 물가 안정 신호로 증시가 상승할 수 있으며, 환율은 약세를 보일 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-12",
-      "title": "CPI (소비자물가지수)",
-      "expected": "예측 332.568 / 이전 332.568",
-      "analysis": "CPI가 예상치를 상회할 경우, 인플레이션 우려가 커져 금리가 상승할 가능성이 있어 증시는 하락할 수 있습니다. 반대로 예상치를 하회할 경우, 통화정책 완화 기대감으로 증시가 상승할 수 있습니다."
+      "date": "2026-08-13",
+      "title": "Core PPI MoM",
+      "expected": "예측 0.3% / 이전 0.2%",
+      "analysis": "예상 상회 시 인플레이션 우려로 인해 증시가 부정적인 반응을 보일 수 있으며, 달러가 강세를 보일 가능성이 높습니다. 예상 하회 시 물가 안정 신호로 증시가 긍정적인 반응을 보일 수 있으며, 환율은 약세를 보일 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-12",
-      "title": "인플레이션율 (YoY)",
-      "expected": "예측 3.4% / 이전 3.5%",
-      "analysis": "인플레이션율이 예상보다 낮을 경우, 소비자 지출이 증가할 가능성이 높아져 증시가 긍정적인 반응을 보일 수 있습니다. 반면, 예상보다 높을 경우 금리 인상 우려로 증시가 하락할 수 있습니다."
+      "date": "2026-08-13",
+      "title": "Initial Jobless Claims",
+      "expected": "예측 202 / 이전 199",
+      "analysis": "예상 상회 시 고용 시장의 약세 신호로 증시가 하락할 수 있으며, 달러 약세가 예상됩니다. 예상 하회 시 고용 시장의 개선 신호로 증시가 상승할 수 있으며, 환율은 강세를 보일 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-12",
-      "title": "원유 재고 변화 (API)",
-      "expected": "예측 -0.5 / 이전 2.69",
-      "analysis": "원유 재고가 예상보다 감소할 경우, 유가 상승으로 이어져 에너지 관련 주식이 상승할 수 있습니다. 반대로 예상보다 증가할 경우, 유가 하락으로 에너지 섹터에 부정적인 영향을 미칠 수 있습니다."
+      "date": "2026-08-14",
+      "title": "Retail Sales Ex Autos MoM",
+      "expected": "예측 0.2% / 이전 -0.2%",
+      "analysis": "예상 상회 시 소비 증가로 인해 증시가 긍정적인 반응을 보일 수 있으며, 달러 강세가 예상됩니다. 예상 하회 시 소비 부진 신호로 증시가 하락할 수 있으며, 환율은 약세를 보일 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-13",
+      "title": "Monthly Budget Statement",
+      "expected": "예측 -346 / 이전 -120 ($)",
+      "analysis": "예상 상회 시 재정 적자 확대 우려로 증시가 부정적인 반응을 보일 수 있으며, 달러 약세가 예상됩니다. 예상 하회 시 재정 건전성 신호로 증시가 긍정적인 반응을 보일 수 있으며, 환율은 강세를 보일 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-13",
+      "title": "코스피200 옵션 만기일",
+      "expected": "예측 없음 / 이전 없음",
+      "analysis": "옵션 만기일에는 변동성이 커질 수 있으며, 투자자들의 포지션 조정으로 인해 증시가 크게 움직일 가능성이 있습니다. 특히, 대형주에 대한 집중 매매가 발생할 수 있습니다."
     }
   ]
 }

@@ -481,6 +481,45 @@
         }
       }
 
+      .bf-day-nav-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+      }
+
+      .bf-day-nav-btn {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+        color: var(--text);
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .bf-day-nav-btn:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--accent-bright, #0f8387) 40%, var(--border));
+        color: var(--accent-bright, #0f8387);
+      }
+
+      .bf-day-nav-btn:disabled {
+        opacity: 0.32;
+        cursor: not-allowed;
+      }
+
+      .bf-date-trigger__icon {
+        font-size: 15px;
+        color: var(--accent-bright, #0f8387);
+        margin-right: -2px;
+      }
+
       .bf-date-nav {
         position: relative;
         flex: 0 0 auto;
@@ -1027,27 +1066,36 @@
         </div>
       </header>
       <div class="page-meta-bar briefing-meta-bar" aria-live="polite">
-        <div class="bf-date-nav">
-          <button type="button" class="briefing-today bf-date-trigger" id="bf-date-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="bf-date-picker" aria-label="브리핑 날짜 선택">
-            <span class="briefing-today__day" id="briefing-today-dow">—</span>
-            <div class="briefing-today__text">
-              <strong class="briefing-today__full" id="briefing-today-full">—</strong>
-              <span class="briefing-today__weekday" id="briefing-today-weekday">—</span>
-            </div>
-            <i class="ti ti-chevron-down bf-date-trigger__chevron" aria-hidden="true"></i>
+        <div class="bf-day-nav-group">
+          <button type="button" class="bf-day-nav-btn" id="bf-day-prev" aria-label="이전 브리핑">
+            <i class="ti ti-chevron-left" aria-hidden="true"></i>
           </button>
-          <div class="bf-date-picker" id="bf-date-picker" role="dialog" aria-label="브리핑 날짜 선택" hidden>
-            <div class="bf-date-picker__head">
-              <button type="button" class="bf-date-picker__nav" id="bf-cal-prev" aria-label="이전 달"><span aria-hidden="true">‹</span></button>
-              <span class="bf-date-picker__month" id="bf-cal-month" aria-live="polite"></span>
-              <button type="button" class="bf-date-picker__nav" id="bf-cal-next" aria-label="다음 달"><span aria-hidden="true">›</span></button>
+          <div class="bf-date-nav">
+            <button type="button" class="briefing-today bf-date-trigger" id="bf-date-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="bf-date-picker" aria-label="달력에서 브리핑 날짜 선택">
+              <i class="ti ti-calendar bf-date-trigger__icon" aria-hidden="true"></i>
+              <span class="briefing-today__day" id="briefing-today-dow">—</span>
+              <div class="briefing-today__text">
+                <strong class="briefing-today__full" id="briefing-today-full">—</strong>
+                <span class="briefing-today__weekday" id="briefing-today-weekday">—</span>
+              </div>
+              <i class="ti ti-chevron-down bf-date-trigger__chevron" aria-hidden="true"></i>
+            </button>
+            <div class="bf-date-picker" id="bf-date-picker" role="dialog" aria-label="브리핑 날짜 선택" hidden>
+              <div class="bf-date-picker__head">
+                <button type="button" class="bf-date-picker__nav" id="bf-cal-prev" aria-label="이전 달"><span aria-hidden="true">‹</span></button>
+                <span class="bf-date-picker__month" id="bf-cal-month" aria-live="polite"></span>
+                <button type="button" class="bf-date-picker__nav" id="bf-cal-next" aria-label="다음 달"><span aria-hidden="true">›</span></button>
+              </div>
+              <div class="bf-date-picker__weekdays" aria-hidden="true">
+                <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+              </div>
+              <div class="bf-date-picker__grid" id="bf-cal-grid" role="grid" aria-label="브리핑 날짜"></div>
+              <button type="button" class="bf-date-picker__today" id="bf-cal-today-btn" hidden>오늘 브리핑으로 이동</button>
             </div>
-            <div class="bf-date-picker__weekdays" aria-hidden="true">
-              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
-            </div>
-            <div class="bf-date-picker__grid" id="bf-cal-grid" role="grid" aria-label="브리핑 날짜"></div>
-            <button type="button" class="bf-date-picker__today" id="bf-cal-today-btn" hidden>오늘 브리핑으로 이동</button>
           </div>
+          <button type="button" class="bf-day-nav-btn" id="bf-day-next" aria-label="다음 브리핑">
+            <i class="ti ti-chevron-right" aria-hidden="true"></i>
+          </button>
         </div>
         <span class="bf-archive-badge" id="bf-archive-badge" hidden><i class="ti ti-history" aria-hidden="true"></i>지난 브리핑</span>
         <span class="briefing-meta__updated" id="briefing-updated">미국 마감, 환율, 시장 지표</span>
@@ -1595,12 +1643,48 @@
         return bf.index.includes(ymd);
       }
 
+      function selectableDatesSorted() {
+        const set = new Set(bf.index);
+        if (bf.todayYmd) set.add(bf.todayYmd);
+        return [...set].sort();
+      }
+
+      function shiftDay(delta) {
+        const dates = selectableDatesSorted();
+        if (!dates.length) return;
+        const cur = bf.selectedYmd || bf.todayYmd;
+        let idx = dates.indexOf(cur);
+        if (idx === -1) {
+          // 선택된 날짜가 목록에 없으면(방금 아카이브 안 된 날 등) 위치를 임시로 끼워넣어 기준을 잡는다
+          const withCur = [...dates, cur].sort();
+          idx = withCur.indexOf(cur);
+          const nextIdx = idx + delta;
+          if (nextIdx < 0 || nextIdx >= withCur.length) return;
+          void selectDate(withCur[nextIdx]);
+          return;
+        }
+        const nextIdx = idx + delta;
+        if (nextIdx < 0 || nextIdx >= dates.length) return;
+        void selectDate(dates[nextIdx]);
+      }
+
+      function updateDayNavButtons() {
+        const dates = selectableDatesSorted();
+        const cur = bf.selectedYmd || bf.todayYmd;
+        const idx = dates.indexOf(cur);
+        const prevBtn = $("bf-day-prev");
+        const nextBtn = $("bf-day-next");
+        if (prevBtn) prevBtn.disabled = idx <= 0;
+        if (nextBtn) nextBtn.disabled = idx === -1 || idx >= dates.length - 1;
+      }
+
       function renderDateBadge(ymd) {
         const { y, m, d } = ymdParts(ymd);
         const wd = weekdayOf(ymd);
         $("briefing-today-dow").textContent = KST_WEEKDAYS[wd] ?? "—";
         $("briefing-today-full").textContent = `${y}년 ${m}월 ${d}일`;
         $("briefing-today-weekday").textContent = KST_WEEKDAYS_FULL[wd] ?? "—";
+        updateDayNavButtons();
       }
 
       function closeDatePicker() {
@@ -1745,6 +1829,11 @@
       }
 
       function bindDatePickerEvents() {
+        const dayPrevBtn = $("bf-day-prev");
+        if (dayPrevBtn) dayPrevBtn.addEventListener("click", (e) => { e.stopPropagation(); closeDatePicker(); shiftDay(-1); });
+        const dayNextBtn = $("bf-day-next");
+        if (dayNextBtn) dayNextBtn.addEventListener("click", (e) => { e.stopPropagation(); closeDatePicker(); shiftDay(1); });
+
         const trigger = $("bf-date-trigger");
         if (trigger) {
           trigger.addEventListener("click", (e) => {

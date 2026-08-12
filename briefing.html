@@ -549,18 +549,6 @@
         border-color: var(--accent-bright, #0f8387);
       }
 
-      .bf-date-trigger__chevron {
-        font-size: 15px;
-        color: var(--text-muted, var(--text-secondary));
-        transition: transform 0.15s ease;
-        margin-left: 2px;
-      }
-
-      .bf-date-trigger.is-active .bf-date-trigger__chevron {
-        transform: rotate(180deg);
-        color: var(--accent-bright, #0f8387);
-      }
-
       .bf-archive-badge {
         display: inline-flex;
         align-items: center;
@@ -1078,7 +1066,6 @@
                 <strong class="briefing-today__full" id="briefing-today-full">—</strong>
                 <span class="briefing-today__weekday" id="briefing-today-weekday">—</span>
               </div>
-              <i class="ti ti-chevron-down bf-date-trigger__chevron" aria-hidden="true"></i>
             </button>
             <div class="bf-date-picker" id="bf-date-picker" role="dialog" aria-label="브리핑 날짜 선택" hidden>
               <div class="bf-date-picker__head">

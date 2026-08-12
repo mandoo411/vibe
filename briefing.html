@@ -481,6 +481,223 @@
         }
       }
 
+      .bf-date-nav {
+        position: relative;
+        flex: 0 0 auto;
+      }
+
+      .bf-date-trigger {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid transparent;
+        background: transparent;
+        padding: 4px 6px;
+        border-radius: 12px;
+        cursor: pointer;
+        font: inherit;
+        text-align: left;
+        transition: background 0.15s ease, border-color 0.15s ease;
+      }
+
+      .bf-date-trigger:hover {
+        background: var(--bg-secondary);
+        border-color: var(--border);
+      }
+
+      .bf-date-trigger.is-active {
+        background: var(--bg-secondary);
+        border-color: var(--accent-bright, #0f8387);
+      }
+
+      .bf-date-trigger__chevron {
+        font-size: 15px;
+        color: var(--text-muted, var(--text-secondary));
+        transition: transform 0.15s ease;
+        margin-left: 2px;
+      }
+
+      .bf-date-trigger.is-active .bf-date-trigger__chevron {
+        transform: rotate(180deg);
+        color: var(--accent-bright, #0f8387);
+      }
+
+      .bf-archive-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent-bright, #0f8387) 14%, transparent);
+        color: var(--accent-bright, #0f8387);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .bf-date-picker {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        z-index: 40;
+        width: 296px;
+        box-sizing: border-box;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--bg-primary, var(--bg));
+        box-shadow: 0 12px 32px rgba(7, 38, 75, 0.18);
+      }
+
+      [data-theme="dark"] .bf-date-picker,
+      .dark-mode .bf-date-picker {
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      }
+
+      .bf-date-picker__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .bf-date-picker__month {
+        flex: 1 1 auto;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .bf-date-picker__nav {
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+        color: var(--text);
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      }
+
+      .bf-date-picker__nav:hover:not(:disabled) {
+        border-color: color-mix(in srgb, var(--accent-bright, #0f8387) 40%, var(--border));
+        color: var(--accent-bright, #0f8387);
+      }
+
+      .bf-date-picker__nav:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .bf-date-picker__weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+        margin-bottom: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted, var(--text-secondary));
+        text-align: center;
+      }
+
+      .bf-date-picker__weekdays span:first-child {
+        color: #e5484d;
+      }
+
+      .bf-date-picker__grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+      }
+
+      .bf-date-picker__cell {
+        box-sizing: border-box;
+        min-height: 34px;
+        margin: 0;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        line-height: 1;
+      }
+
+      button.bf-date-picker__cell {
+        cursor: pointer;
+        transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+      }
+
+      button.bf-date-picker__cell:hover {
+        border-color: color-mix(in srgb, var(--accent-bright, #0f8387) 40%, transparent);
+        background: color-mix(in srgb, var(--accent-bright, #0f8387) 10%, transparent);
+      }
+
+      .bf-date-picker__cell--blank {
+        background: transparent;
+        border-color: transparent;
+      }
+
+      .bf-date-picker__cell--disabled {
+        opacity: 0.32;
+        background: transparent;
+        color: var(--text-muted, var(--text-secondary));
+        cursor: default;
+      }
+
+      .bf-date-picker__cell--sun:not(.bf-date-picker__cell--disabled) {
+        color: #e5484d;
+      }
+
+      .bf-date-picker__cell--today:not(.bf-date-picker__cell--active) {
+        border-color: color-mix(in srgb, var(--accent-bright, #0f8387) 55%, transparent);
+      }
+
+      .bf-date-picker__cell--active {
+        background: linear-gradient(145deg, var(--accent-bright, #0f8387), color-mix(in srgb, var(--accent-bright, #0f8387) 70%, #07264b));
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 1px 4px rgba(7, 38, 75, 0.28);
+      }
+
+      .bf-date-picker__today {
+        width: 100%;
+        margin-top: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px dashed var(--border);
+        background: transparent;
+        color: var(--accent-bright, #0f8387);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .bf-date-picker__today:hover {
+        background: color-mix(in srgb, var(--accent-bright, #0f8387) 8%, transparent);
+      }
+
+      @media (max-width: 768px) {
+        .bf-date-picker {
+          width: min(296px, calc(100vw - 32px));
+        }
+      }
+
       #ai-analysis {
         min-width: 0;
         overflow-wrap: anywhere;
@@ -806,13 +1023,29 @@
         </div>
       </header>
       <div class="page-meta-bar briefing-meta-bar" aria-live="polite">
-        <div class="briefing-today" id="briefing-today-date" aria-label="오늘 날짜">
-          <span class="briefing-today__day" id="briefing-today-dow">—</span>
-          <div class="briefing-today__text">
-            <strong class="briefing-today__full" id="briefing-today-full">—</strong>
-            <span class="briefing-today__weekday" id="briefing-today-weekday">—</span>
+        <div class="bf-date-nav">
+          <button type="button" class="briefing-today bf-date-trigger" id="bf-date-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="bf-date-picker" aria-label="브리핑 날짜 선택">
+            <span class="briefing-today__day" id="briefing-today-dow">—</span>
+            <div class="briefing-today__text">
+              <strong class="briefing-today__full" id="briefing-today-full">—</strong>
+              <span class="briefing-today__weekday" id="briefing-today-weekday">—</span>
+            </div>
+            <i class="ti ti-chevron-down bf-date-trigger__chevron" aria-hidden="true"></i>
+          </button>
+          <div class="bf-date-picker" id="bf-date-picker" role="dialog" aria-label="브리핑 날짜 선택" hidden>
+            <div class="bf-date-picker__head">
+              <button type="button" class="bf-date-picker__nav" id="bf-cal-prev" aria-label="이전 달"><span aria-hidden="true">‹</span></button>
+              <span class="bf-date-picker__month" id="bf-cal-month" aria-live="polite"></span>
+              <button type="button" class="bf-date-picker__nav" id="bf-cal-next" aria-label="다음 달"><span aria-hidden="true">›</span></button>
+            </div>
+            <div class="bf-date-picker__weekdays" aria-hidden="true">
+              <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+            </div>
+            <div class="bf-date-picker__grid" id="bf-cal-grid" role="grid" aria-label="브리핑 날짜"></div>
+            <button type="button" class="bf-date-picker__today" id="bf-cal-today-btn" hidden>오늘 브리핑으로 이동</button>
           </div>
         </div>
+        <span class="bf-archive-badge" id="bf-archive-badge" hidden><i class="ti ti-history" aria-hidden="true"></i>지난 브리핑</span>
         <span class="briefing-meta__updated" id="briefing-updated">미국 마감, 환율, 시장 지표</span>
       </div>
       <main class="briefing-grid" aria-live="polite">
@@ -1004,21 +1237,6 @@
 
       const KST_WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
       const KST_WEEKDAYS_FULL = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
-
-      function renderTodayDate() {
-        const now = new Date();
-        const tz = "Asia/Seoul";
-        const y = now.toLocaleString("en-US", { timeZone: tz, year: "numeric" });
-        const m = now.toLocaleString("en-US", { timeZone: tz, month: "numeric" });
-        const day = now.toLocaleString("en-US", { timeZone: tz, day: "numeric" });
-        const wd = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(now);
-        const wdIdx = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
-        const dow = KST_WEEKDAYS[wdIdx] ?? "—";
-        const dowFull = KST_WEEKDAYS_FULL[wdIdx] ?? "—";
-        $("briefing-today-dow").textContent = dow;
-        $("briefing-today-full").textContent = `${y}년 ${m}월 ${day}일`;
-        $("briefing-today-weekday").textContent = dowFull;
-      }
 
       const US_INDEX_ORDER = ["nasdaq", "sp500", "nasdaq-futures", "korea-etf"];
 
@@ -1312,9 +1530,279 @@
         }
       }
 
-      layoutBriefingGrid();
-      renderTodayDate();
-      loadBriefing();
+      // ---- 브리핑 날짜 캘린더(과거 브리핑 조회) ----
+      const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+      const bf = { index: [], todayYmd: null, selectedYmd: null, calMonthYmd: null, open: false };
+
+      function seoulYmdNow() {
+        return new Intl.DateTimeFormat("sv-SE", {
+          timeZone: "Asia/Seoul",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date());
+      }
+
+      function ymdParts(ymd) {
+        const [y, m, d] = ymd.split("-").map(Number);
+        return { y, m, d };
+      }
+
+      function weekdayOf(ymd) {
+        const { y, m, d } = ymdParts(ymd);
+        return new Date(y, m - 1, d).getDay();
+      }
+
+      function monthLabelKo(ymd) {
+        const { y, m } = ymdParts(ymd);
+        return `${y}년 ${m}월`;
+      }
+
+      function shortDateLabel(ymd) {
+        const { y, m, d } = ymdParts(ymd);
+        return `${y}년 ${m}월 ${d}일`;
+      }
+
+      /** data/briefing/*.json — 서브폴더 경로라 tmFetchJson(단일 파일 전용)을 못 쓰므로
+       * daily-market.js의 fetchArchiveDayJson과 동일하게 동일출처 → raw.githubusercontent 순으로 시도 */
+      async function fetchSubpathJson(relPath) {
+        const t = Date.now();
+        const urls = [`./${relPath}?t=${t}`, `${window.TM_RAW_BASE}/${relPath}?t=${t}`];
+        for (const url of urls) {
+          try {
+            const res = await fetch(url, { cache: "no-store" });
+            if (res.ok) return await res.json();
+          } catch (_) {
+            /* try next */
+          }
+        }
+        return null;
+      }
+
+      async function loadBfIndex() {
+        const idx = await fetchSubpathJson("data/briefing/index.json");
+        bf.index = Array.isArray(idx?.dates) ? idx.dates.filter((d) => YMD_RE.test(d)) : [];
+      }
+
+      function isBfSelectable(ymd) {
+        if (!YMD_RE.test(ymd) || !bf.todayYmd) return false;
+        if (ymd > bf.todayYmd) return false;
+        if (ymd === bf.todayYmd) return true;
+        return bf.index.includes(ymd);
+      }
+
+      function renderDateBadge(ymd) {
+        const { y, m, d } = ymdParts(ymd);
+        const wd = weekdayOf(ymd);
+        $("briefing-today-dow").textContent = KST_WEEKDAYS[wd] ?? "—";
+        $("briefing-today-full").textContent = `${y}년 ${m}월 ${d}일`;
+        $("briefing-today-weekday").textContent = KST_WEEKDAYS_FULL[wd] ?? "—";
+      }
+
+      function closeDatePicker() {
+        bf.open = false;
+        const panel = $("bf-date-picker");
+        if (panel) panel.hidden = true;
+        const trigger = $("bf-date-trigger");
+        if (trigger) {
+          trigger.setAttribute("aria-expanded", "false");
+          trigger.classList.remove("is-active");
+        }
+      }
+
+      function calMonthYmd() {
+        if (bf.calMonthYmd && YMD_RE.test(bf.calMonthYmd)) return bf.calMonthYmd;
+        return `${(bf.selectedYmd || bf.todayYmd).slice(0, 7)}-01`;
+      }
+
+      function setCalMonth(ymd) {
+        if (!YMD_RE.test(ymd)) return;
+        bf.calMonthYmd = `${ymd.slice(0, 7)}-01`;
+      }
+
+      function renderCalendar() {
+        const grid = $("bf-cal-grid");
+        if (!grid || !bf.open) return;
+        const monthStart = calMonthYmd();
+        const { y, m } = ymdParts(monthStart);
+        $("bf-cal-month").textContent = monthLabelKo(monthStart);
+
+        const selected = bf.selectedYmd || bf.todayYmd;
+        const firstDow = weekdayOf(monthStart);
+        const daysInMonth = new Date(y, m, 0).getDate();
+
+        const earliest = bf.index[0] || bf.todayYmd;
+        const earliestMonth = earliest.slice(0, 7);
+        const todayMonth = bf.todayYmd.slice(0, 7);
+        const curMonth = monthStart.slice(0, 7);
+        const prevBtn = $("bf-cal-prev");
+        const nextBtn = $("bf-cal-next");
+        if (prevBtn) prevBtn.disabled = curMonth <= earliestMonth;
+        if (nextBtn) nextBtn.disabled = curMonth >= todayMonth;
+
+        const cells = [];
+        for (let i = 0; i < firstDow; i++) {
+          cells.push('<span class="bf-date-picker__cell bf-date-picker__cell--blank" role="presentation"></span>');
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dd = String(day).padStart(2, "0");
+          const ymd = `${y}-${String(m).padStart(2, "0")}-${dd}`;
+          const isSun = weekdayOf(ymd) === 0;
+          const selectable = isBfSelectable(ymd);
+          const isSelected = ymd === selected;
+          const isToday = ymd === bf.todayYmd;
+          let cls = "bf-date-picker__cell";
+          if (isSun) cls += " bf-date-picker__cell--sun";
+          if (isToday) cls += " bf-date-picker__cell--today";
+          if (isSelected) cls += " bf-date-picker__cell--active";
+          if (!selectable) cls += " bf-date-picker__cell--disabled";
+          if (selectable) {
+            cells.push(
+              `<button type="button" class="${cls}" data-ymd="${ymd}" role="gridcell" aria-label="${shortDateLabel(ymd)}"${isSelected ? ' aria-current="date"' : ""}>${day}</button>`
+            );
+          } else {
+            cells.push(`<span class="${cls}" role="presentation">${day}</span>`);
+          }
+        }
+        grid.innerHTML = cells.join("");
+        const todayBtn = $("bf-cal-today-btn");
+        if (todayBtn) todayBtn.hidden = selected === bf.todayYmd;
+      }
+
+      function toggleDatePicker() {
+        if (bf.open) {
+          closeDatePicker();
+          return;
+        }
+        setCalMonth(bf.selectedYmd || bf.todayYmd);
+        bf.open = true;
+        const panel = $("bf-date-picker");
+        if (panel) panel.hidden = false;
+        const trigger = $("bf-date-trigger");
+        if (trigger) {
+          trigger.setAttribute("aria-expanded", "true");
+          trigger.classList.add("is-active");
+        }
+        renderCalendar();
+      }
+
+      function shiftCalMonth(delta) {
+        const cur = calMonthYmd();
+        const { y, m } = ymdParts(cur);
+        const dt = new Date(y, m - 1 + delta, 1);
+        bf.calMonthYmd = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-01`;
+        renderCalendar();
+      }
+
+      function syncHash(ymd) {
+        const nextHash = ymd && ymd !== bf.todayYmd ? `#${ymd}` : "";
+        const cur = location.hash || "";
+        if (cur !== nextHash) {
+          const page = location.pathname.split("/").pop() || "briefing.html";
+          history.replaceState(null, "", nextHash ? `${page}${nextHash}` : page);
+        }
+      }
+
+      async function loadArchiveDate(ymd) {
+        try {
+          const data = await fetchSubpathJson(`data/briefing/${ymd}.json`);
+          if (!data || !data.aiAnalysis) throw new Error("no archive data");
+          $("briefing-updated").textContent = data.updatedAt
+            ? `${shortDateLabel(ymd)} 브리핑 · ${fmtUpdatedAtKst(data.updatedAt)} 발행`
+            : `${shortDateLabel(ymd)} 브리핑`;
+          renderAnalysis(data.aiAnalysis || {});
+          renderUsMarketIndices(data.usMarket?.indices || [], "지난 브리핑 데이터");
+          renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
+          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
+          renderMacroList(data, null);
+        } catch (error) {
+          console.warn("[briefing] archive load failed", error);
+          $("ai-analysis").innerHTML = '<p class="empty-text">해당 날짜의 브리핑 데이터를 찾을 수 없습니다.</p>';
+        } finally {
+          layoutBriefingGrid();
+        }
+      }
+
+      async function selectDate(ymd) {
+        if (!isBfSelectable(ymd)) return;
+        closeDatePicker();
+        if (ymd === bf.selectedYmd) return;
+        bf.selectedYmd = ymd;
+        renderDateBadge(ymd);
+        syncHash(ymd);
+        const badge = $("bf-archive-badge");
+        if (ymd === bf.todayYmd) {
+          if (badge) badge.hidden = true;
+          await loadBriefing();
+        } else {
+          if (badge) badge.hidden = false;
+          await loadArchiveDate(ymd);
+        }
+      }
+
+      function bindDatePickerEvents() {
+        const trigger = $("bf-date-trigger");
+        if (trigger) {
+          trigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleDatePicker();
+          });
+        }
+        const grid = $("bf-cal-grid");
+        if (grid) {
+          grid.addEventListener("click", (e) => {
+            const cell = e.target.closest("[data-ymd]");
+            if (cell && cell.dataset.ymd) void selectDate(cell.dataset.ymd);
+          });
+        }
+        const prevBtn = $("bf-cal-prev");
+        if (prevBtn) prevBtn.addEventListener("click", (e) => { e.stopPropagation(); shiftCalMonth(-1); });
+        const nextBtn = $("bf-cal-next");
+        if (nextBtn) nextBtn.addEventListener("click", (e) => { e.stopPropagation(); shiftCalMonth(1); });
+        const todayBtn = $("bf-cal-today-btn");
+        if (todayBtn) todayBtn.addEventListener("click", (e) => { e.stopPropagation(); void selectDate(bf.todayYmd); });
+
+        document.addEventListener("click", (e) => {
+          if (!bf.open) return;
+          if (trigger && trigger.contains(e.target)) return;
+          const panel = $("bf-date-picker");
+          if (panel && panel.contains(e.target)) return;
+          closeDatePicker();
+        });
+
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && bf.open) closeDatePicker();
+        });
+
+        window.addEventListener("hashchange", () => {
+          const h = (location.hash || "").replace("#", "");
+          if (YMD_RE.test(h) && isBfSelectable(h) && h !== bf.selectedYmd) {
+            void selectDate(h);
+          } else if (!h && bf.selectedYmd && bf.selectedYmd !== bf.todayYmd) {
+            void selectDate(bf.todayYmd);
+          }
+        });
+      }
+
+      async function initBriefingPage() {
+        bf.todayYmd = seoulYmdNow();
+        bindDatePickerEvents();
+        layoutBriefingGrid();
+        await loadBfIndex();
+        const hash = (location.hash || "").replace("#", "");
+        const initial = YMD_RE.test(hash) && isBfSelectable(hash) ? hash : bf.todayYmd;
+        bf.selectedYmd = initial;
+        renderDateBadge(initial);
+        if (initial === bf.todayYmd) {
+          await loadBriefing();
+        } else {
+          const badge = $("bf-archive-badge");
+          if (badge) badge.hidden = false;
+          await loadArchiveDate(initial);
+        }
+      }
+
+      initBriefingPage();
     </script>
   </body>
 </html>

@@ -134,7 +134,31 @@ function checkPackageJsonSyntax() {
     }
 }
 
-// 6) 인스타 발행 스탬프 — 평일 발행 시각을 한참 지났는데 오늘 발행 기록이 없으면 경고
+// 6) 모닝브리핑 AI 분석 발행 스탬프 — 평일 08:03 KST Cowork 예약작업이 D:\vibe 마운트
+// 누락 등으로 실패하면 aiAnalysis가 갱신되지 않고 텔레그램도 발송되지 않는데, 조용히
+// 실패해서 발견이 며칠씩 늦어진 사고가 있었다(2026-08-12). Cowork 작업이 aiAnalysis를
+// 커밋할 때 이 스탬프 파일도 같은 커밋에 함께 기록하므로, 스탬프가 없거나 오늘 날짜가
+// 아니면 발행이 안 된 것으로 보고 발행 예정 시각+1시간부터 알림을 보낸다.
+function checkMorningBriefingPublishStamp() {
+    const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+    const weekday = kst.getUTCDay(); // 0=일 6=토
+  if (weekday === 0 || weekday === 6) return; // 주말은 발행 없음
+  const hour = kst.getUTCHours();
+    if (hour < 9) return; // 08:03 발행 예정 + 여유 1시간 전엔 스킵
+  const today = seoulYmd();
+    const stampPath = path.resolve("generated/morning-briefing/last-published-date.txt");
+    if (!existsSync(stampPath)) {
+          fail("morning-briefing-not-published", `장전 브리핑 AI 분석이 오늘(${today}) 아직 발행되지 않음(발행 기록 파일 없음) — Cowork 예약작업(totalmoney-morning-briefing) 로그 확인 필요`);
+          return;
+  }
+    const stamped = readFileSync(stampPath, "utf8").trim();
+    if (stamped !== today) {
+          fail("morning-briefing-not-published", `장전 브리핑 AI 분석이 오늘(${today}) 아직 발행되지 않음(마지막 발행: ${stamped || "기록 없음"}) — Cowork 예약작업(totalmoney-morning-briefing) 로그 확인 필요`);
+    }
+}
+
+// 7) 인스타 발행 스탬프 — 평일 발행 시각을 한참 지났는데 오늘 발행 기록이 없으면 경고
 function checkInstagramPublishStamps() {
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 3600 * 1000);
@@ -182,6 +206,7 @@ async function main() {
     await Promise.all([checkWorldMarket(), checkRealtimeQuote()]);
     checkMorningBriefingErrors();
     checkDailyMarketIndexes();
+    checkMorningBriefingPublishStamp();
     checkInstagramPublishStamps();
     checkPackageJsonSyntax();
 

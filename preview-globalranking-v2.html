@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @font-face {
+    font-family: 'Pretendard';
+    src: local('Apple SD Gothic Neo'), local('Malgun Gothic');
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1080px;
+    height: 1920px;
+    background:
+      radial-gradient(circle at 18% 8%, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0) 32%),
+      radial-gradient(circle at 88% 92%, rgba(15,131,135,0.28) 0%, rgba(15,131,135,0) 40%),
+      linear-gradient(160deg, #050b16 0%, #0a1730 55%, #050b16 100%);
+    font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+    position: relative;
+    overflow: hidden;
+    color: #f5f7fb;
+  }
+  /* 별빛 파티클 느낌 */
+  .stars {
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 10% 15%, rgba(255,255,255,0.55) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 32% 6%, rgba(255,255,255,0.4) 50%, transparent 50%),
+      radial-gradient(2px 2px at 68% 10%, rgba(255,255,255,0.5) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 85% 22%, rgba(255,255,255,0.35) 50%, transparent 50%),
+      radial-gradient(2px 2px at 92% 60%, rgba(255,255,255,0.4) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 6% 55%, rgba(255,255,255,0.3) 50%, transparent 50%),
+      radial-gradient(1.5px 1.5px at 22% 85%, rgba(255,255,255,0.35) 50%, transparent 50%),
+      radial-gradient(2px 2px at 78% 88%, rgba(255,255,255,0.4) 50%, transparent 50%);
+    opacity: 0.8;
+  }
+
+  .page-wrap { position: relative; z-index: 2; padding: 96px 60px 60px; display: flex; flex-direction: column; height: 100%; }
+
+  .kicker { display:flex; align-items:center; gap: 12px; margin-bottom: 6px; }
+  .kicker .bolt { font-size: 30px; }
+  .kicker .kicker-text { font-size: 24px; font-weight: 800; letter-spacing: 4px; color: #d4af37; text-transform: uppercase; }
+
+  .title-text {
+    font-size: 76px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.08;
+    background: linear-gradient(95deg, #ffe9a8 0%, #d4af37 40%, #fff6dc 60%, #d4af37 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 22px rgba(212,175,55,0.45));
+    margin-bottom: 10px;
+  }
+  .subtitle-line { font-size: 27px; font-weight: 700; color: rgba(245,247,251,0.62); margin-bottom: 30px; }
+
+  .grank-head {
+    display: flex; align-items: center; gap: 16px; padding: 0 26px 12px;
+    font-size: 22px; font-weight: 800; color: rgba(245,247,251,0.4); letter-spacing: 0.5px;
+  }
+  .grank-head .col-rank { width: 74px; flex-shrink: 0; }
+  .grank-head .col-logo { width: 52px; flex-shrink: 0; }
+  .grank-head .col-name { flex: 1; min-width: 0; }
+  .grank-head .col-cap { width: 220px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-chg { width: 140px; flex-shrink: 0; text-align: right; }
+  .grank-head .col-country { width: 56px; flex-shrink: 0; text-align: center; }
+
+  .grank-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .grank-row {
+    display: flex; align-items: center; gap: 16px; padding: 20px 26px;
+    border-radius: 22px;
+    background: rgba(20,32,58,0.62);
+    border: 1px solid rgba(255,255,255,0.07);
+    backdrop-filter: blur(2px);
+  }
+  .grank-row.top3 {
+    background: linear-gradient(90deg, rgba(212,175,55,0.22) 0%, rgba(20,32,58,0.75) 55%), rgba(20,32,58,0.75);
+    border: 1.5px solid rgba(212,175,55,0.55);
+    box-shadow: 0 0 26px rgba(212,175,55,0.18), inset 0 0 20px rgba(212,175,55,0.06);
+  }
+
+  .grank-rank { width: 74px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-start; }
+  .grank-rank .num { font-size: 40px; font-weight: 900; color: #f5f7fb; }
+  .grank-rank .medal { font-size: 50px; line-height: 1; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4)); }
+
+  .grank-logo-wrap {
+    width: 60px; height: 60px; flex-shrink: 0; border-radius: 16px; background: #ffffff;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  }
+  .grank-logo-wrap img { width: 46px; height: 46px; object-fit: contain; }
+
+  .grank-name { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+  .grank-name .n {
+    font-size: 36px; font-weight: 800; color: #f5f7fb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .grank-cap { width: 220px; flex-shrink: 0; text-align: right; font-size: 31px; font-weight: 800; color: #f5f7fb; white-space: nowrap; }
+
+  .grank-chg { width: 140px; flex-shrink: 0; text-align: right; font-size: 29px; font-weight: 800; white-space: nowrap; }
+  .grank-chg.up { color: #ff5a5f; }
+  .grank-chg.down { color: #3d8bff; }
+  .grank-chg.flat { color: rgba(245,247,251,0.6); }
+
+  .grank-country { width: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .flag { width: 46px; height: 32px; object-fit: cover; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,0.2); }
+
+  /* 국내기업 섹션 */
+  .kr-section { margin-top: 40px; }
+  .kr-divider { display:flex; align-items:center; gap: 16px; margin-bottom: 22px; }
+  .kr-divider .taegeuk { width: 40px; height: 40px; border-radius: 50%; background: conic-gradient(#c60c30 0deg 180deg, #003478 180deg 360deg); box-shadow: 0 0 18px rgba(198,12,48,0.4); flex-shrink:0; }
+  .kr-divider .kr-title { font-size: 40px; font-weight: 900; color: #f5f7fb; letter-spacing: -0.5px; }
+  .kr-divider .kr-sub { font-size: 22px; font-weight: 700; color: rgba(245,247,251,0.5); margin-left: auto; }
+
+  .kr-list { display:flex; flex-direction: column; gap: 14px; }
+  .kr-row {
+    display: flex; align-items: center; gap: 18px; padding: 22px 26px;
+    border-radius: 22px;
+    background: linear-gradient(90deg, rgba(198,12,48,0.14) 0%, rgba(0,52,120,0.18) 100%), rgba(20,32,58,0.68);
+    border: 1.5px solid rgba(255,255,255,0.12);
+  }
+  .kr-rank {
+    width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%;
+    background: linear-gradient(160deg, #c60c30 0%, #003478 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 900; color: #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  }
+  .kr-logo { width: 60px; height: 60px; }
+  .global-badge {
+    display: inline-block; margin-top: 4px; font-size: 19px; font-weight: 700;
+    color: #ffd97a; background: rgba(212,175,55,0.16); border: 1px solid rgba(212,175,55,0.4);
+    border-radius: 999px; padding: 3px 12px; width: fit-content;
+  }
+
+  .watermark { position: absolute; z-index: 3; bottom: 116px; right: 56px; font-size: 24px; font-weight: 700; color: rgba(245,247,251,0.5); letter-spacing: 0.3px; }
+  .disclaimer { position:absolute; z-index:3; bottom: 60px; left: 60px; right: 60px; font-size: 18px; color: rgba(245,247,251,0.35); }
+</style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="page-wrap">
+    <div class="kicker"><span class="bolt">⚡</span><span class="kicker-text">WEEKLY GLOBAL RANKING</span></div>
+    <div class="title-text">글로벌 시가총액<br/>TOP 10</div>
+    <div class="subtitle-line">2026년 08월 12일 기준 · TotalMoney AI 주간 랭킹</div>
+
+    <div class="grank-head">
+      <span class="col-rank">순위</span>
+      <span class="col-logo"></span>
+      <span class="col-name">기업</span>
+      <span class="col-cap">시가총액</span>
+      <span class="col-chg">등락률</span>
+      <span class="col-country">국가</span>
+    </div>
+
+    <div class="grank-list">
+      
+      <div class="grank-row top3">
+        <div class="grank-rank"><span class="medal">🥇</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/NVDA.png" alt="" /></div>
+        <div class="grank-name"><span class="n">엔비디아</span></div>
+        <div class="grank-cap">7,464.6조원</div>
+        <div class="grank-chg down">▼ 0.02%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row top3">
+        <div class="grank-rank"><span class="medal">🥈</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/AAPL.png" alt="" /></div>
+        <div class="grank-name"><span class="n">애플</span></div>
+        <div class="grank-cap">6,305.3조원</div>
+        <div class="grank-chg down">▼ 1.09%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row top3">
+        <div class="grank-rank"><span class="medal">🥉</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/GOOG.png" alt="" /></div>
+        <div class="grank-name"><span class="n">알파벳(구글)</span></div>
+        <div class="grank-cap">5,943.9조원</div>
+        <div class="grank-chg down">▼ 3.61%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">4</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/MSFT.png" alt="" /></div>
+        <div class="grank-name"><span class="n">마이크로소프트</span></div>
+        <div class="grank-cap">5,300.9조원</div>
+        <div class="grank-chg down">▼ 0.44%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">5</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/AMZN.png" alt="" /></div>
+        <div class="grank-name"><span class="n">아마존</span></div>
+        <div class="grank-cap">4,161.3조원</div>
+        <div class="grank-chg down">▼ 2.09%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">6</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/TSM.png" alt="" /></div>
+        <div class="grank-name"><span class="n">TSMC</span></div>
+        <div class="grank-cap">3,101.7조원</div>
+        <div class="grank-chg up">▲ 0.86%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/tw.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">7</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/AVGO.png" alt="" /></div>
+        <div class="grank-name"><span class="n">브로드컴</span></div>
+        <div class="grank-cap">2,804.9조원</div>
+        <div class="grank-chg down">▼ 1.50%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">8</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/SPCX.png" alt="" /></div>
+        <div class="grank-name"><span class="n">SpaceX</span></div>
+        <div class="grank-cap">2,488.1조원</div>
+        <div class="grank-chg down">▼ 3.93%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">9</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/2222.SR.png" alt="" /></div>
+        <div class="grank-name"><span class="n">사우디 아람코</span></div>
+        <div class="grank-cap">2,428.5조원</div>
+        <div class="grank-chg flat">— 0.00%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/sa.png" alt="" /></div>
+      </div>
+      <div class="grank-row ">
+        <div class="grank-rank"><span class="num">10</span></div>
+        <div class="grank-logo-wrap"><img src="https://financialmodelingprep.com/image-stock/META.png" alt="" /></div>
+        <div class="grank-name"><span class="n">메타</span></div>
+        <div class="grank-cap">2,162.6조원</div>
+        <div class="grank-chg up">▲ 0.71%</div>
+        <div class="grank-country"><img class="flag" src="https://flagcdn.com/w80/us.png" alt="" /></div>
+      </div>
+    </div>
+
+    <div class="kr-section">
+      <div class="kr-divider">
+        <span class="taegeuk"></span>
+        <span class="kr-title">국내기업 시가총액</span>
+        <span class="kr-sub">TOP100 內</span>
+      </div>
+      <div class="kr-list">
+        
+      <div class="kr-row">
+        <div class="kr-rank">1</div>
+        <div class="grank-logo-wrap kr-logo"><img src="https://financialmodelingprep.com/image-stock/SSNLF.png" alt="" /></div>
+        <div class="grank-name"><span class="n">삼성전자</span><span class="global-badge">글로벌 12위</span></div>
+        <div class="grank-cap">1,496.8조원</div>
+        <div class="grank-chg up">▲ 6.68%</div>
+      </div>
+      <div class="kr-row">
+        <div class="kr-rank">2</div>
+        <div class="grank-logo-wrap kr-logo"><img src="https://financialmodelingprep.com/image-stock/000660.KS.png" alt="" /></div>
+        <div class="grank-name"><span class="n">SK하이닉스</span><span class="global-badge">글로벌 19위</span></div>
+        <div class="grank-cap">1,100.9조원</div>
+        <div class="grank-chg up">▲ 5.54%</div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="watermark">TotalMoney.kr</div>
+</body>
+</html>

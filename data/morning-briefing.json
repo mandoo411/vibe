@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 30206,
+        "close": 30216.5,
         "previousClose": 29853.25,
-        "changePct": 1.18,
-        "changePoints": 352.75
+        "changePct": 1.22,
+        "changePoints": 363.25
       },
       {
         "id": "korea-etf",
@@ -52,57 +52,57 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 304.98,
-      "changePct": 0.9,
-      "changePoints": 2.73
+      "price": 304.9,
+      "changePct": 0.88,
+      "changePoints": 2.65
     },
     {
       "symbol": "MSFT",
-      "price": 495.94,
-      "changePct": 0.71,
-      "changePoints": 3.51
+      "price": 495.7,
+      "changePct": 0.66,
+      "changePoints": 3.27
     },
     {
       "symbol": "NVDA",
-      "price": 225.95,
-      "changePct": 0.83,
-      "changePoints": 1.86
+      "price": 225.83,
+      "changePct": 0.78,
+      "changePoints": 1.74
     },
     {
       "symbol": "AMZN",
-      "price": 265.4,
-      "changePct": -0.7,
-      "changePoints": 1.88
+      "price": 265.44,
+      "changePct": -0.69,
+      "changePoints": 1.84
     },
     {
       "symbol": "META",
-      "price": 594.4,
-      "changePct": 2.69,
-      "changePoints": 15.55
+      "price": 593.69,
+      "changePct": 2.56,
+      "changePoints": 14.84
     },
     {
       "symbol": "TSLA",
-      "price": 341.28,
-      "changePct": 4.21,
-      "changePoints": 13.77
+      "price": 341.21,
+      "changePct": 4.18,
+      "changePoints": 13.7
     },
     {
       "symbol": "GOOGL",
-      "price": 346.65,
-      "changePct": 0.91,
-      "changePoints": 3.11
+      "price": 346.7,
+      "changePct": 0.92,
+      "changePoints": 3.16
     },
     {
       "symbol": "AMD",
-      "price": 485.97,
-      "changePct": 0.63,
-      "changePoints": 3.04
+      "price": 486.44,
+      "changePct": 0.73,
+      "changePoints": 3.51
     },
     {
       "symbol": "PLTR",
-      "price": 177.82,
-      "changePct": 3.96,
-      "changePoints": 6.78
+      "price": 177.95,
+      "changePct": 4.04,
+      "changePoints": 6.91
     },
     {
       "symbol": "COIN",
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 81.13,
-        "changePct": -2.57,
-        "changePoints": -2.14
+        "price": 81.14,
+        "changePct": -2.56,
+        "changePoints": -2.13
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4410,
-        "changePct": 0.02,
-        "changePoints": 1.1
+        "price": 4413.6,
+        "changePct": 0.11,
+        "changePoints": 4.7
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 64.59,
-        "changePct": -1.48,
-        "changePoints": -0.97
+        "price": 64.69,
+        "changePct": -1.33,
+        "changePoints": -0.87
       },
       {
         "id": "copper",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 63423,
-        "changePct24h": 0.09,
-        "marketCapUsd": 1272887251266.43
+        "priceUsd": 63405,
+        "changePct24h": 0.07,
+        "marketCapUsd": 1272800122023.61
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1885.02,
-        "changePct24h": 0.53,
-        "marketCapUsd": 227487094003.6
+        "priceUsd": 1884.45,
+        "changePct24h": 0.48,
+        "marketCapUsd": 227419448877.22
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 76.13,
-        "changePct24h": 0.96,
-        "marketCapUsd": 44354888856.35
+        "priceUsd": 76.09,
+        "changePct24h": 0.92,
+        "marketCapUsd": 44350683330.29
       }
     ]
   },
@@ -281,6 +281,13 @@
       "source": "매일경제",
       "publishedAt": "2026-08-13T12:23:37.000Z",
       "summary": "방송인 최화정이 ‘주식 고수’로 알려진 것과 달리 홍진경, 엄정화와 함께 투자한 종목에서 큰 손실을 보고 있다고 털어놨다. 13일 최정화 유튜브에는 “잘못된 정보로 ‘몇십억’ 손해.."
+    },
+    {
+      "title": "\"이건 아닙니다 회장님\"…SK하이닉스 '5단 중복상장' 추진에 쏟아진 비판",
+      "url": "https://view.asiae.co.kr/article/2026081321100228351",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T12:10:02.000Z",
+      "summary": "한국기업거버넌스포럼이 SK하이닉스의 미국 자회사 솔리다임 상장 추진을 두고 전 세계에서도 유례가 없는 5단 중복상장 시도라며 비판했다. 13일 거버넌스포럼은 논평을 통해 최태원 SK그룹 회장과 고승범 SK하이닉스 이사회 의장을 직접 거론하며 \"국내 공정거래법의 3단 제한 규제를 피하려 해외 법인을 통해 지배구조 피라미드를 확장하는 것은 '코리아 디스카운트'를 수출하는 행위\"라고 지적했다. 5단 중복상장, 코리아디스카"
     },
     {
       "title": "엔화 구출작전 백약이 무효…아베의 유령이 내린 저주 [백석현의 환율노트]",
@@ -325,6 +332,48 @@
       "summary": ""
     },
     {
+      "title": "거래소, 부산 동구 'KRX 지역아동센터' 개소식",
+      "url": "https://view.asiae.co.kr/article/2026081316180134017",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T07:18:01.000Z",
+      "summary": "한국거래소가 13일 부산 동구 'KRX 지역아동센터' 개소식을 열었다. 이번 행사에는 정은보 거래소 이사장, 강철호 부산 동구청장, 김재헌 동구의회 의장, 김철기 기아대책 본부장 등 주요 관계자들이 참석했다. 기존 미사용 창고 공간의 벽체를 철거해 학년별 학습실을 대폭 확장했다. 또한 도배 및 바닥 교체, 화장실 시설 개선 등으로 아동 친화 공간으로 새롭게 조성했다. 거래소는 2014년부터 부산 2"
+    },
+    {
+      "title": "반도체 랠리 지속…코스피 3.56% 올라 6800선 마감",
+      "url": "https://view.asiae.co.kr/article/2026081316071142399",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T07:07:12.000Z",
+      "summary": "코스피 지수가 13일 전기·전자 등 반도체 대형주 강세와 외국인·기관의 동반 매수세에 힘입어 상승 마감했다. 이날 코스피지수는 전 거래일 대비 234.30포인트(3.56%) 오른 6813.34에 거래를 마쳤다. 지수는 전 거래일보다 194.88포인트(2.96%) 오른 6773.92로 출발해 장중 상승 흐름을 이어갔다. 투자주체별로는 외국인과 기관이 각각 2조1094억원, 6798억원어치를 순매수하며 지수 상승을 이끌었다. 개인은 2조7220억원어치를"
+    },
+    {
+      "title": "재영솔루텍, 상반기 영업익 171억 전년 대비 59배 급증…\"5년 선제 투자 결실 본격화\"",
+      "url": "https://view.asiae.co.kr/article/2026081315353939884",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T06:35:40.000Z",
+      "summary": "재영솔루텍이 생산라인 확대와 자동화 등에 대한 선제 투자가 본격적인 실적 개선으로 이어지면서 상반기 영업이익이 전년 대비 59배가량 급증했다. 재영솔루텍은 올해 상반기 연결 기준 매출액 1070억원, 영업이익 171억원을 기록했다고 13일 밝혔다. 매출은 전년 동기 대비 49% 증가했으며 영업이익은 5800% 급증했다. 당기순이익은 158억원으로 지난해 상반기 30억원 순손실에서 흑자로 돌아섰다. 특히 상반기 영업이익은 지난해"
+    },
+    {
+      "title": "코스닥, 2.46P 오른 861.37 마감(0.29%↑)",
+      "url": "https://view.asiae.co.kr/article/2026081315351132912",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T06:35:11.000Z",
+      "summary": "코스닥, 2.46P 오른 861.37 마감(0.29%↑)"
+    },
+    {
+      "title": "코스피, 234.30P 오른 6813.34 마감(3.56%↑)",
+      "url": "https://view.asiae.co.kr/article/2026081315345124818",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T06:34:52.000Z",
+      "summary": "코스피, 234.30P 오른 6813.34 마감(3.56%↑)"
+    },
+    {
+      "title": "다올투자증권, 상반기 순익 322억…6개 분기 연속 흑자",
+      "url": "https://view.asiae.co.kr/article/2026081315301202937",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-13T06:30:13.000Z",
+      "summary": "다올투자증권이 사업 다각화와 계열사 실적 개선에 힘입어 올해 상반기 300억원대 순이익을 기록하며 실적 안정화에 속도를 내고 있다. 다올투자증권은 올해 상반기 연결 기준 영업이익 263억원, 당기순이익 322억원을 기록했다고 13일 밝혔다. 2분기 당기순이익은 171억원으로, 2025년 1분기 이후 6개 분기 연속 흑자를 이어갔다. 실적 개선은 트레이딩과 법인영업 등 기존 사업의 안정적인 수익 창출과 사업 다각화가 맞물린 결과"
+    },
+    {
       "title": "“스타벅스가 부진할 줄은”...창고형 할인점 선전에도 웃지 못한 이마트",
       "url": "https://www.mk.co.kr/news/business/12127464",
       "source": "매일경제",
@@ -351,55 +400,6 @@
       "source": "매일경제",
       "publishedAt": "2026-08-13T19:00:00.000Z",
       "summary": "퇴직연금 디폴트옵션 대해부 2>퇴직연금 디폴트옵션(사전지정운용제도)은 위험도를 어떻게 선택하느냐에 따라 장기 수익률이 크게 달라지는 것으로 나타났다. 최근 3년 수익률을 비교한 결.."
-    },
-    {
-      "title": "'mRNA 치료제 수명' 3배 되나…김빛내리 단장, 작동원리 규명",
-      "url": "https://www.mk.co.kr/news/it/12127268",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T15:00:00.000Z",
-      "summary": "김빛내리 기초과학연구원(IBS) RNA연구단장(서울대 생명과학부 석좌교수·사진)이 메신저 리보핵산(mRNA) 백신과 치료제의 성능을 대폭 늘릴 단초를 발견했다. mRNA 치료제는 .."
-    },
-    {
-      "title": "‘mRNA 치료제’ 수명 3배 됐네...김빛내리 단장, 또 성과 냈다",
-      "url": "https://www.mk.co.kr/news/it/12126926",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T15:00:00.000Z",
-      "summary": "체내에서 금방 분해되던 mRNA 수명 3배로 늘려 치료효과 개선 mRNA 치료제 시장 탄력 붙을 듯김빛내리 기초과학연구원(IBS) RNA 연구단장(서울대 생명과학부 석좌교수)이 메.."
-    },
-    {
-      "title": "美 7월 생산자물가 전망치 하회",
-      "url": "https://www.mk.co.kr/news/world/12127274",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T14:12:59.000Z",
-      "summary": "미국의 7월 생산자물가가 에너지 가격 급등세 진정 등의 이유로 시장 예상을 밑돌면서 인플레이션 우려가 다소 완화됐다. 소비자물가에 이어 생산자물가도 안정적인 모습을 보이자 미 국채.."
-    },
-    {
-      "title": "이란 “호르무즈 완전 통제는 가짜 정보”…트럼프 주장 정면 반박",
-      "url": "https://www.mk.co.kr/news/world/12127260",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T13:56:13.000Z",
-      "summary": "이란은 호르무즈 해협을 미국이 완전히 장악하고 있다는 도널드 트럼프 미국 대통령의 주장에 정면으로 반박했다. 이란 외무장관은 이를 ‘가짜 정보’라고 일축했고, 군부 역시 “새빨간 .."
-    },
-    {
-      "title": "“왜 재탕한 음식 주냐”…항의한 직원에 망치 던진 치킨집 사장",
-      "url": "https://www.mk.co.kr/news/society/12127227",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T13:45:05.000Z",
-      "summary": "직원들에게 먹다 남은 음식을 다시 제공했다가 항의를 받자 50대 직원을 망치로 폭행한 치킨집 사장이 1심에서 징역형의 집행유예를 선고받았다. 지난 12일 JTBC ‘사건반장’에 따.."
-    },
-    {
-      "title": "모텔 가두고 ‘나체사진’ 요구…67억 빼앗은 피싱 조직",
-      "url": "https://www.mk.co.kr/news/society/12127225",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T13:37:53.000Z",
-      "summary": "경찰과 금융감독원 직원을 사칭해 수십억 원을 뜯어낸 전화사기 조직원들이 경찰에 대거 붙잡혔다. 수용 절차에 필요한 신체검사용이라고 피해자들을 속여 나체 사진까지 받아낸 것으로 드러.."
-    },
-    {
-      "title": "美 7월 PPI 4.7% 상승…유가 진정에 상승세 ‘뚝’",
-      "url": "https://www.mk.co.kr/news/world/12127223",
-      "source": "매일경제",
-      "publishedAt": "2026-08-13T13:37:02.000Z",
-      "summary": "미국의 7월 도매물가 상승률이 둔화했다. 이란전쟁 여파로 치솟았던 휘발유 가격 상승세가 한풀 꺾이고 각종 비용 부담도 완화된 영향이다. 이에 따라 앞으로 몇 달 동안 소비자물가 상.."
     }
   ],
   "aiAnalysis": {

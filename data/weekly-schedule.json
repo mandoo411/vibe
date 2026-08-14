@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-14 06:42 KST",
-    "from": "2026-08-14",
-    "to": "2026-08-28",
-    "historyFrom": "2026-05-16",
+    "lastUpdatedKst": "2026-08-15 06:21 KST",
+    "from": "2026-08-15",
+    "to": "2026-08-29",
+    "historyFrom": "2026-05-17",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -4360,7 +4360,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "-0.4",
-      "previous": "0.5",
+      "previous": "0.4",
       "estimate": "0.3",
       "unit": "%"
     },
@@ -4396,7 +4396,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "0",
-      "previous": "0.3",
+      "previous": "0.4",
       "estimate": "0.1",
       "unit": "%"
     },
@@ -4409,7 +4409,7 @@
       "importance": 3,
       "actual": "",
       "previous": "15.6",
-      "estimate": "",
+      "estimate": "10.2",
       "unit": ""
     },
     {
@@ -4421,7 +4421,7 @@
       "importance": 3,
       "actual": "",
       "previous": "34",
-      "estimate": "",
+      "estimate": "33",
       "unit": ""
     },
     {
@@ -4469,7 +4469,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.427",
-      "estimate": "1.34",
+      "estimate": "1.35",
       "unit": ""
     },
     {
@@ -4481,7 +4481,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.3",
-      "estimate": "",
+      "estimate": "0.1",
       "unit": "%"
     },
     {
@@ -4493,7 +4493,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.374",
-      "estimate": "",
+      "estimate": "1.37",
       "unit": ""
     },
     {
@@ -4517,7 +4517,7 @@
       "importance": 3,
       "actual": "",
       "previous": "-0.6",
-      "estimate": "",
+      "estimate": "-0.2",
       "unit": "%"
     },
     {
@@ -4541,7 +4541,7 @@
       "importance": 3,
       "actual": "",
       "previous": "-5.4",
-      "estimate": "",
+      "estimate": "0.5",
       "unit": "%"
     },
     {
@@ -4625,7 +4625,7 @@
       "importance": 3,
       "actual": "",
       "previous": "209",
-      "estimate": "",
+      "estimate": "210",
       "unit": ""
     },
     {
@@ -4637,7 +4637,7 @@
       "importance": 3,
       "actual": "",
       "previous": "41.4",
-      "estimate": "",
+      "estimate": "25.3",
       "unit": ""
     },
     {
@@ -4649,7 +4649,7 @@
       "importance": 3,
       "actual": "",
       "previous": "54.6",
-      "estimate": "",
+      "estimate": "53.9",
       "unit": ""
     },
     {
@@ -4661,7 +4661,7 @@
       "importance": 3,
       "actual": "",
       "previous": "53.9",
-      "estimate": "",
+      "estimate": "53.7",
       "unit": ""
     },
     {
@@ -5045,7 +5045,7 @@
       "importance": 3,
       "actual": "",
       "previous": "55.2",
-      "estimate": "",
+      "estimate": "51",
       "unit": ""
     },
     {
@@ -5057,6 +5057,18 @@
       "importance": 3,
       "actual": "",
       "previous": "-911",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-29",
+      "event": "Jackson Hole Symposium",
+      "country": "US",
+      "time": "09:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
       "estimate": "",
       "unit": ""
     }
@@ -5099,83 +5111,35 @@
       "code": ""
     }
   ],
-  "krEarnings": [
-    {
-      "date": "2026-08-13",
-      "name": "POSCO홀딩스",
-      "sector": "",
-      "code": "005490",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "반기보고서 (2026.06)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-08-13",
-      "name": "카카오",
-      "sector": "",
-      "code": "035720",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "반기보고서 (2026.06)",
-      "confirmed": true,
-      "source": "dart"
-    },
-    {
-      "date": "2026-08-13",
-      "name": "LG에너지솔루션",
-      "sector": "",
-      "code": "373220",
-      "epsEstimate": "",
-      "previousQuarter": "",
-      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
-      "confirmed": true,
-      "source": "dart"
-    }
-  ],
+  "krEarnings": [],
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-08-14",
-      "title": "소매판매(자동차 제외) MoM",
-      "expected": "예측 0.2% / 이전 -0.2%",
-      "analysis": "예상 상회 시 소비자 지출 증가로 인해 증시가 긍정적인 반응을 보일 수 있으며, 달러 강세로 이어질 가능성이 높습니다. 예상 하회 시 소비자 신뢰도 저하로 증시가 하락하고, 달러 약세가 나타날 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-08-14",
-      "title": "소매판매 MoM",
-      "expected": "예측 0.1% / 이전 0.2%",
-      "analysis": "예상 상회 시 소비자 지출이 증가함에 따라 증시가 상승할 것으로 보이며, 환율도 안정세를 보일 가능성이 큽니다. 예상 하회 시 소비자 지출 감소로 인해 증시가 하락하고, 환율이 불안정해질 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-08-14",
-      "title": "소매판매 통제 그룹 MoM",
-      "expected": "예측 0.3% / 이전 0.5%",
-      "analysis": "예상 상회 시 경제의 기초적인 소비가 강세를 보이며 증시가 긍정적인 반응을 보일 수 있습니다. 예상 하회 시 소비자 신뢰도 저하로 인해 증시가 하락할 수 있으며, 환율도 영향을 받을 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-08-14",
-      "title": "미시간 소비자 신뢰 지수(예비)",
-      "expected": "예측 54.5 / 이전 55.2",
-      "analysis": "예상 상회 시 소비자 신뢰도가 높아져 증시가 상승할 가능성이 있으며, 달러 강세로 이어질 수 있습니다. 예상 하회 시 소비자 신뢰도 저하로 인해 증시가 하락하고, 환율이 불안정해질 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-08-14",
-      "title": "사업 재고 MoM",
-      "expected": "예측 0.1% / 이전 0.3%",
-      "analysis": "예상 상회 시 기업의 재고 관리가 잘 되고 있다는 신호로 증시가 긍정적인 반응을 보일 수 있습니다. 예상 하회 시 재고 증가로 인한 수익성 악화 우려로 증시가 하락할 수 있습니다."
+      "date": "2026-08-17",
+      "title": "NY Empire State Manufacturing Index",
+      "expected": "예측 10.2 / 이전 15.6",
+      "analysis": "예상 상회 시 제조업 경기가 긍정적으로 평가되어 증시가 상승할 가능성이 높습니다. 예상 하회 시 제조업 부진으로 인해 증시는 하락할 수 있으며, 달러화는 약세를 보일 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-17",
-      "title": "NY 엠파이어 주(state) 제조업 지수",
-      "expected": "예측 없음 / 이전 15.6",
-      "analysis": "지수가 예상보다 높게 나오면 제조업의 회복세가 긍정적으로 작용하여 증시가 상승할 수 있습니다. 반대로 지수가 낮게 나오면 제조업 부진으로 증시가 하락할 수 있습니다."
+      "title": "NAHB Housing Market Index",
+      "expected": "예측 33 / 이전 34",
+      "analysis": "예상 상회 시 주택 시장에 대한 긍정적인 신호로 해석되어 증시가 상승할 수 있습니다. 예상 하회 시 주택 시장의 둔화가 우려되어 증시와 환율 모두 부정적인 영향을 받을 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-18",
+      "title": "Housing Starts",
+      "expected": "예측 1.35 / 이전 1.427",
+      "analysis": "예상 상회 시 주택 건설 증가로 인해 건설 관련 주식이 상승할 수 있으며, 경제 전반에 긍정적인 영향을 미칠 것입니다. 예상 하회 시 건설업체들의 실적 부진이 우려되어 증시가 하락할 가능성이 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-18",
+      "title": "Import Prices MoM",
+      "expected": "예측 0.1% / 이전 0.3%",
+      "analysis": "예상 상회 시 수입 물가 상승으로 인플레이션 우려가 커져 증시가 하락할 수 있습니다. 예상 하회 시 인플레이션 압력이 완화되어 증시가 긍정적인 반응을 보일 수 있습니다."
     }
   ]
 }

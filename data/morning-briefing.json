@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 30209,
+        "close": 30202.5,
         "previousClose": 30141.75,
-        "changePct": 0.22,
-        "changePoints": 67.25
+        "changePct": 0.2,
+        "changePoints": 60.75
       },
       {
         "id": "korea-etf",
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 82.4,
-        "changePct": 0,
-        "changePoints": 0
+        "price": 82.38,
+        "changePct": -0.02,
+        "changePoints": -0.02
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4439.4,
-        "changePct": 1.35,
-        "changePoints": 59
+        "price": 4441.8,
+        "changePct": 1.4,
+        "changePoints": 61.4
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.32,
-        "changePct": 0.51,
-        "changePoints": 0.33
+        "price": 65.38,
+        "changePct": 0.6,
+        "changePoints": 0.39
       },
       {
         "id": "copper",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 62901,
-        "changePct24h": -0.28,
-        "marketCapUsd": 1262803767105.5
+        "priceUsd": 62890,
+        "changePct24h": -0.3,
+        "marketCapUsd": 1262280366633.86
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1874.9,
+        "priceUsd": 1874.64,
         "changePct24h": -0.42,
-        "marketCapUsd": 226314933075.82
+        "marketCapUsd": 226234954431.99
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 74.5,
-        "changePct24h": -1.31,
-        "marketCapUsd": 43434748977.85
+        "priceUsd": 74.46,
+        "changePct24h": -1.35,
+        "marketCapUsd": 43391438673.91
       }
     ]
   },
@@ -323,6 +323,13 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-08-16T08:55:40.000Z",
       "summary": "김정관 산업통상부 장관이 대미 투자 프로젝트 협의를 위해 긴급 방미에 나섰다. 여한구 산업부 통상교섭본부장이 경질된 가운데 한국의 투자 속도가 느리다는 미국의 불만을 직접 잠재우기.."
+    },
+    {
+      "title": "'빚내서 경제성장' 日다카이치…금리가 복병[주末머니]",
+      "url": "https://view.asiae.co.kr/article/2026081314403385796",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-08-16T06:55:00.000Z",
+      "summary": "일본 정부가 확장재정을 앞세워 경제 덩치 자체를 키우는 '사나에노믹스'에 승부를 걸고 있지만, 30년 만의 장기금리 상승과 중소기업 도산 증가가 복병으로 떠올랐다는 분석이 나온다.\"아베노믹스와 다르다\"…명목 GDP 700조엔 노리는 다카이치 내각최근 이승재 iM증권 연구원은 \"아베노믹스와 사나에노믹스의 다른 점은 명목 GDP(국내총생산)에 있다. 다카이치 내각은 경제의 규모 자체를 늘리고 싶어한다\"며 이같이 분석했다. 과"
     },
     {
       "title": "수도권 의대수시 합격선 … 전과목 1.0등급 시대의 의미",
@@ -393,13 +400,6 @@
       "source": "매일경제",
       "publishedAt": "2026-08-16T12:15:14.000Z",
       "summary": "지방선거 앞둔 5월에만 367개…전체 81.7% “정부 지지·비판 성향 모두 포함”구글이 올해 2분기 한국 관련 콘텐츠를 다루며 조직적으로 여론에 영향을 미치려 한 것으로 판단한 .."
-    },
-    {
-      "title": "[속보] 임미애, 與최고위원 후보 사퇴…“김용 최고위원 만들어달라”",
-      "url": "https://www.mk.co.kr/news/politics/12129151",
-      "source": "매일경제",
-      "publishedAt": "2026-08-16T11:54:31.000Z",
-      "summary": ""
     }
   ],
   "aiAnalysis": {

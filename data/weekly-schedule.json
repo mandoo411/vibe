@@ -1,85 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-18 06:22 KST",
-    "from": "2026-08-18",
-    "to": "2026-09-01",
-    "historyFrom": "2026-05-20",
+    "lastUpdatedKst": "2026-08-19 06:20 KST",
+    "from": "2026-08-19",
+    "to": "2026-09-02",
+    "historyFrom": "2026-05-21",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-20",
-      "event": "MBA 30-Year Mortgage Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.56",
-      "previous": "6.46",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-20",
-      "event": "Fed Paulson Speech",
-      "country": "US",
-      "time": "21:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-20",
-      "event": "Fed Barr Speech",
-      "country": "US",
-      "time": "23:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-20",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-1.548",
-      "previous": "-4.084",
-      "estimate": "-2.1",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-20",
-      "event": "EIA Crude Oil Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-7.864",
-      "previous": "-4.306",
-      "estimate": "-2.9",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "FOMC Minutes",
-      "country": "US",
-      "time": "03:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-05-21",
       "event": "Initial Jobless Claims",
@@ -4348,7 +4276,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "-12.4",
-      "previous": "19",
+      "previous": "19.7",
       "estimate": "",
       "unit": "%"
     },
@@ -4360,7 +4288,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "1.239",
-      "previous": "1.427",
+      "previous": "1.415",
       "estimate": "1.35",
       "unit": ""
     },
@@ -4372,7 +4300,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "-0.4",
-      "previous": "0.3",
+      "previous": "-0.3",
       "estimate": "0.1",
       "unit": "%"
     },
@@ -4408,7 +4336,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "-1.3",
-      "previous": "-0.6",
+      "previous": "-0.7",
       "estimate": "0.2",
       "unit": "%"
     },
@@ -4420,7 +4348,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "0.2",
-      "previous": "0.1",
+      "previous": "0.3",
       "estimate": "0.3",
       "unit": "%"
     },
@@ -4432,8 +4360,8 @@
       "impact": "high",
       "importance": 3,
       "actual": "-2.3",
-      "previous": "-5.4",
-      "estimate": "0.2",
+      "previous": "-4.8",
+      "estimate": "0.3",
       "unit": "%"
     },
     {
@@ -4455,7 +4383,7 @@
       "time": "05:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-3.28",
       "previous": "9.072",
       "estimate": "",
       "unit": ""
@@ -4517,7 +4445,7 @@
       "importance": 3,
       "actual": "",
       "previous": "209",
-      "estimate": "212",
+      "estimate": "210",
       "unit": ""
     },
     {
@@ -4553,7 +4481,7 @@
       "importance": 3,
       "actual": "",
       "previous": "53.9",
-      "estimate": "53.8",
+      "estimate": "53.9",
       "unit": ""
     },
     {
@@ -4600,7 +4528,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "8.25",
+      "previous": "9.5",
       "estimate": "",
       "unit": ""
     },
@@ -4660,7 +4588,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "9.072",
+      "previous": "-3.28",
       "estimate": "",
       "unit": ""
     },
@@ -5035,18 +4963,93 @@
       "previous": "7.359",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "API Crude Oil Stock Change",
+      "country": "US",
+      "time": "05:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-3.28",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "Inflation Rate YoY",
+      "country": "KR",
+      "time": "08:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.8",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "MBA 30-Year Mortgage Rate",
+      "country": "US",
+      "time": "20:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "6.77",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "ADP Employment Change",
+      "country": "US",
+      "time": "21:15",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "44",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "Factory Orders MoM",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-0.3",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-02",
+      "event": "EIA Crude Oil Stocks Change",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "17.422",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-02",
+      "event": "EIA Gasoline Stocks Change",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-0.968",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-08-18",
-      "name": "인제니아테라퓨틱스",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": null,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2298",
-      "code": ""
-    },
     {
       "date": "2026-08-21",
       "name": "기도산업",
@@ -5079,38 +5082,45 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-08-18",
-      "title": "Net Long-term TIC Flows",
-      "expected": "예측 151.4억 / 이전 231.2억 ($)",
-      "analysis": "예상 상회 시 미국 달러 강세와 함께 증시 상승이 예상됩니다. 예상 하회 시 달러 약세와 증시 하락이 우려됩니다."
+      "date": "2026-08-19",
+      "title": "API 원유 재고 변화",
+      "expected": "예측 없음 / 이전 9.072 (백만 배럴)",
+      "analysis": "예상 상회 시 원유 재고가 감소하여 유가 상승을 촉발할 수 있으며, 이는 에너지 관련 주식에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 유가 하락으로 이어질 수 있으며, 이는 에너지 섹터의 주가에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-18",
-      "title": "Housing Starts",
-      "expected": "예측 1.35백만 / 이전 1.427백만",
-      "analysis": "예상 상회 시 주택 시장의 회복 신호로 해석되어 건설 관련 주식이 상승할 수 있습니다. 예상 하회 시 주택 시장 둔화 우려로 관련 주식이 하락할 수 있습니다."
+      "date": "2026-08-19",
+      "title": "EIA 원유 재고 변화",
+      "expected": "예측 없음 / 이전 17.422 (백만 배럴)",
+      "analysis": "예상 상회 시 원유 재고가 증가하여 유가 하락을 초래할 수 있으며, 이는 에너지 관련 주식에 부정적인 영향을 미칠 수 있습니다. 예상 하회 시 유가 상승으로 이어져 에너지 섹터의 주가에 긍정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-18",
-      "title": "Import Prices MoM",
-      "expected": "예측 0.1% / 이전 0.3%",
-      "analysis": "예상 상회 시 인플레이션 우려가 커져 금리가 상승할 수 있으며, 이는 증시에 부정적 영향을 미칠 수 있습니다. 예상 하회 시 인플레이션 안정 신호로 증시가 긍정적으로 반응할 수 있습니다."
+      "date": "2026-08-20",
+      "title": "FOMC 의사록",
+      "expected": "예측 없음 / 이전 없음",
+      "analysis": "FOMC 의사록에서 금리 인상 신호가 강하게 나타날 경우, 증시는 하락할 가능성이 높습니다. 반면, 금리 동결 또는 완화적 통화정책 신호가 나타날 경우 증시 상승을 이끌 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-18",
-      "title": "Building Permits MoM Prel",
-      "expected": "예측 - / 이전 -2.6%",
-      "analysis": "예상 상회 시 건설업체의 긍정적인 전망으로 증시가 상승할 수 있습니다. 예상 하회 시 건설업체의 부정적인 전망으로 증시 하락이 우려됩니다."
+      "date": "2026-08-20",
+      "title": "주간 실업수당 청구",
+      "expected": "예측 210 / 이전 209 (천 건)",
+      "analysis": "예상 상회 시 실업률 증가로 경제 불안이 커져 증시 하락을 초래할 수 있습니다. 예상 하회 시 고용 시장의 개선을 반영하여 증시 상승을 이끌 수 있습니다."
     },
     {
       "type": "macro",
-      "date": "2026-08-18",
-      "title": "Export Prices MoM",
-      "expected": "예측 0.2% / 이전 -0.6%",
-      "analysis": "예상 상회 시 수출 증가로 인한 경제 성장 기대감이 커져 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 수출 둔화 우려로 증시에 부정적인 영향을 미칠 수 있습니다."
+      "date": "2026-08-20",
+      "title": "필라델피아 연준 제조업 지수",
+      "expected": "예측 25 / 이전 41.4",
+      "analysis": "예상 상회 시 제조업의 강세를 나타내어 증시 상승을 유도할 수 있습니다. 예상 하회 시 제조업 부진을 반영하여 증시 하락을 초래할 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-21",
+      "title": "S&P 글로벌 서비스 PMI 플래시",
+      "expected": "예측 54 / 이전 54.6",
+      "analysis": "예상 상회 시 서비스 부문 성장세를 나타내어 증시 상승을 이끌 수 있습니다. 예상 하회 시 서비스 부문 둔화를 반영하여 증시 하락을 초래할 수 있습니다."
     }
   ]
 }

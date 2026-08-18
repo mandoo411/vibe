@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29521.75,
+        "close": 29529,
         "previousClose": 30096,
-        "changePct": -1.91,
-        "changePoints": -574.25
+        "changePct": -1.88,
+        "changePoints": -567
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 310,
-      "changePct": 1.44,
-      "changePoints": 4.41
+      "price": 309.97,
+      "changePct": 1.43,
+      "changePoints": 4.38
     },
     {
       "symbol": "MSFT",
-      "price": 481.15,
+      "price": 481.18,
       "changePct": 0.17,
-      "changePoints": 0.8
+      "changePoints": 0.83
     },
     {
       "symbol": "NVDA",
-      "price": 219.11,
-      "changePct": -2.62,
-      "changePoints": 5.9
+      "price": 218.97,
+      "changePct": -2.68,
+      "changePoints": 6.04
     },
     {
       "symbol": "AMZN",
-      "price": 259.6,
-      "changePct": -0.65,
-      "changePoints": 1.71
+      "price": 259.64,
+      "changePct": -0.64,
+      "changePoints": 1.67
     },
     {
       "symbol": "META",
-      "price": 544.8,
-      "changePct": -4.25,
-      "changePoints": 24.17
+      "price": 544.76,
+      "changePct": -4.26,
+      "changePoints": 24.21
     },
     {
       "symbol": "TSLA",
-      "price": 336,
-      "changePct": -0.97,
-      "changePoints": 3.3
+      "price": 335.85,
+      "changePct": -1.02,
+      "changePoints": 3.45
     },
     {
       "symbol": "GOOGL",
-      "price": 343.8,
-      "changePct": -0.06,
-      "changePoints": 0.2
+      "price": 343.83,
+      "changePct": -0.05,
+      "changePoints": 0.17
     },
     {
       "symbol": "AMD",
-      "price": 479.05,
-      "changePct": -5.33,
-      "changePoints": 26.95
+      "price": 478.6,
+      "changePct": -5.42,
+      "changePoints": 27.4
     },
     {
       "symbol": "PLTR",
-      "price": 170.85,
-      "changePct": -0.99,
-      "changePoints": 1.7
+      "price": 170.75,
+      "changePct": -1.04,
+      "changePoints": 1.8
     },
     {
       "symbol": "COIN",
-      "price": 146.46,
-      "changePct": -2.72,
-      "changePoints": 4.09
+      "price": 146.3,
+      "changePct": -2.82,
+      "changePoints": 4.25
     }
   ],
   "sectors": [
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 84.47,
-        "changePct": -0.04,
-        "changePoints": -0.03
+        "price": 84.49,
+        "changePct": -0.01,
+        "changePoints": -0.01
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4388.8,
-        "changePct": -0.66,
-        "changePoints": -29
+        "price": 4387.4,
+        "changePct": -0.69,
+        "changePoints": -30.4
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 63.32,
-        "changePct": -4.23,
-        "changePoints": -2.8
+        "price": 63.19,
+        "changePct": -4.43,
+        "changePoints": -2.93
       },
       {
         "id": "copper",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 64633,
-        "changePct24h": 0.52,
-        "marketCapUsd": 1297307749543.7
+        "priceUsd": 64667,
+        "changePct24h": 0.51,
+        "marketCapUsd": 1297854057553.92
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 1914.32,
-        "changePct24h": 0.48,
-        "marketCapUsd": 231028290964.26
+        "priceUsd": 1915.97,
+        "changePct24h": 0.39,
+        "marketCapUsd": 231188818775.51
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 76.99,
-        "changePct24h": 1.64,
-        "marketCapUsd": 44876865444.36
+        "priceUsd": 77.03,
+        "changePct24h": 1.61,
+        "marketCapUsd": 44902767281.6
       }
     ]
   },
@@ -346,18 +346,18 @@
       "summary": "개인별 보유세 계산법 시뮬레이션8월13일 정부의 세제개편안이 발표된 후 각 언론에는 수많은 숫자가 등장했습니다. 종합부동산세율이 얼마나 달라지는지, 공정시장가액비율은 어떻게 조정되.."
     },
     {
-      "title": "“버티다 바닥서 팔고, 반등 때 못 샀다”…20년간 딱 30일 놓치자 생긴 일",
-      "url": "https://www.mk.co.kr/news/stock/12130224",
-      "source": "매일경제",
-      "publishedAt": "2026-08-18T19:00:00.000Z",
-      "summary": "변동성 심화 장세 대응법올해 투자자들은 사상 유례없이 변동성이 큰 시장을 겪으며 투자에 어려움을 겪고 있다. 특히 지난 7월에는 1년에 한두 번 경험하기 어려운 서킷 브레이커가 연.."
-    },
-    {
       "title": "“성수동 놓쳤다면 여기?” … 공장지대 확 바뀌는 영등포 ‘18억 재건축의 셈법’",
       "url": "https://www.mk.co.kr/news/realestate/12130229",
       "source": "매일경제",
       "publishedAt": "2026-08-18T19:00:00.000Z",
       "summary": "8·13 공급 대책 효과 주목정부의 8·13 공급대책으로 서울 영등포구 양평·문래·당산 일대 준공업지역이 다시 주목받고 있다. 공장과 창고 부지의 복합개발이 쉬워지면 일자리와 상권.."
+    },
+    {
+      "title": "“버티다 바닥서 팔고, 반등 때 못 샀다”…20년간 딱 30일 놓치자 생긴 일",
+      "url": "https://www.mk.co.kr/news/stock/12130224",
+      "source": "매일경제",
+      "publishedAt": "2026-08-18T19:00:00.000Z",
+      "summary": "변동성 심화 장세 대응법올해 투자자들은 사상 유례없이 변동성이 큰 시장을 겪으며 투자에 어려움을 겪고 있다. 특히 지난 7월에는 1년에 한두 번 경험하기 어려운 서킷 브레이커가 연.."
     },
     {
       "title": "가업승계에 ‘2세 네트워크’까지 초고액자산가 맞춤서비스",

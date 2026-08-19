@@ -1,133 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-19 06:20 KST",
-    "from": "2026-08-19",
-    "to": "2026-09-02",
-    "historyFrom": "2026-05-21",
+    "lastUpdatedKst": "2026-08-20 06:21 KST",
+    "from": "2026-08-20",
+    "to": "2026-09-03",
+    "historyFrom": "2026-05-22",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-21",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "209",
-      "previous": "212",
-      "estimate": "210",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "Building Permits Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.442",
-      "previous": "1.363",
-      "estimate": "1.39",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "Housing Starts",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.465",
-      "previous": "1.507",
-      "estimate": "1.41",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "Philadelphia Fed Manufacturing Index",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.4",
-      "previous": "26.7",
-      "estimate": "18",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "Building Permits MoM Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "5.8",
-      "previous": "-11.5",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-21",
-      "event": "Housing Starts MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-2.8",
-      "previous": "12",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-05-21",
-      "event": "S&P Global Composite PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "S&P Global Services PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "51.1",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-21",
-      "event": "S&P Global Manufacturing PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "53.8",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-22",
-      "event": "Consumer Confidence",
-      "country": "KR",
-      "time": "06:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "106.1",
-      "previous": "99.2",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-05-22",
       "event": "Michigan Consumer Sentiment Final",
@@ -4380,7 +4260,7 @@
       "date": "2026-08-19",
       "event": "API Crude Oil Stock Change",
       "country": "US",
-      "time": "05:30",
+      "time": "06:00",
       "impact": "high",
       "importance": 3,
       "actual": "-3.28",
@@ -4398,7 +4278,7 @@
       "actual": "6.77",
       "previous": "6.77",
       "estimate": "",
-      "unit": ""
+      "unit": "%"
     },
     {
       "date": "2026-08-19",
@@ -4409,7 +4289,7 @@
       "importance": 3,
       "actual": "4.405",
       "previous": "17.422",
-      "estimate": "",
+      "estimate": "-0.6",
       "unit": ""
     },
     {
@@ -4421,7 +4301,7 @@
       "importance": 3,
       "actual": "0.688",
       "previous": "-0.968",
-      "estimate": "",
+      "estimate": "-1.2",
       "unit": ""
     },
     {
@@ -4744,7 +4624,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "17.422",
+      "previous": "4.405",
       "estimate": "",
       "unit": ""
     },
@@ -4756,7 +4636,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-0.968",
+      "previous": "0.688",
       "estimate": "",
       "unit": ""
     },
@@ -5032,7 +4912,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "17.422",
+      "previous": "4.405",
       "estimate": "",
       "unit": ""
     },
@@ -5044,7 +4924,67 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-0.968",
+      "previous": "0.688",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-03",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "209",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-03",
+      "event": "Imports",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "388",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-09-03",
+      "event": "Exports",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "314.7",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-09-03",
+      "event": "Balance of Trade",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-73.3",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-09-03",
+      "event": "ISM Services PMI",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "54.1",
       "estimate": "",
       "unit": ""
     }
@@ -5082,45 +5022,45 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-08-19",
-      "title": "API 원유 재고 변화",
-      "expected": "예측 없음 / 이전 9.072 (백만 배럴)",
-      "analysis": "예상 상회 시 원유 재고가 감소하여 유가 상승을 촉발할 수 있으며, 이는 에너지 관련 주식에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 유가 하락으로 이어질 수 있으며, 이는 에너지 섹터의 주가에 부정적인 영향을 미칠 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-08-19",
-      "title": "EIA 원유 재고 변화",
-      "expected": "예측 없음 / 이전 17.422 (백만 배럴)",
-      "analysis": "예상 상회 시 원유 재고가 증가하여 유가 하락을 초래할 수 있으며, 이는 에너지 관련 주식에 부정적인 영향을 미칠 수 있습니다. 예상 하회 시 유가 상승으로 이어져 에너지 섹터의 주가에 긍정적인 영향을 미칠 수 있습니다."
-    },
-    {
-      "type": "macro",
       "date": "2026-08-20",
-      "title": "FOMC 의사록",
+      "title": "FOMC Minutes",
       "expected": "예측 없음 / 이전 없음",
-      "analysis": "FOMC 의사록에서 금리 인상 신호가 강하게 나타날 경우, 증시는 하락할 가능성이 높습니다. 반면, 금리 동결 또는 완화적 통화정책 신호가 나타날 경우 증시 상승을 이끌 수 있습니다."
+      "analysis": "FOMC 회의록 발표는 미국의 통화정책 방향에 대한 중요한 단서를 제공할 수 있습니다. 만약 회의록이 매파적이라면 증시는 하락할 가능성이 높고, 달러화는 강세를 보일 수 있습니다. 반대로 비둘기적인 내용이 포함된다면 증시는 상승하고 환율은 하락할 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-20",
-      "title": "주간 실업수당 청구",
-      "expected": "예측 210 / 이전 209 (천 건)",
-      "analysis": "예상 상회 시 실업률 증가로 경제 불안이 커져 증시 하락을 초래할 수 있습니다. 예상 하회 시 고용 시장의 개선을 반영하여 증시 상승을 이끌 수 있습니다."
+      "title": "Initial Jobless Claims",
+      "expected": "예측 210 / 이전 209",
+      "analysis": "실업수당 청구 건수가 예상보다 낮아지면 노동 시장의 개선을 나타내며 증시는 긍정적인 반응을 보일 수 있습니다. 반면, 청구 건수가 예상보다 높으면 경기 둔화를 우려하게 되어 증시가 하락하고 달러화도 약세를 보일 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-20",
-      "title": "필라델피아 연준 제조업 지수",
+      "title": "Philadelphia Fed Manufacturing Index",
       "expected": "예측 25 / 이전 41.4",
-      "analysis": "예상 상회 시 제조업의 강세를 나타내어 증시 상승을 유도할 수 있습니다. 예상 하회 시 제조업 부진을 반영하여 증시 하락을 초래할 수 있습니다."
+      "analysis": "필라델피아 연준 제조업 지수가 예상보다 높게 나오면 제조업의 회복세를 반영하여 증시는 상승할 수 있습니다. 반대로 예상보다 낮게 나오면 경기 침체 우려가 커져 증시 하락과 함께 환율도 영향을 받을 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-21",
-      "title": "S&P 글로벌 서비스 PMI 플래시",
+      "title": "S&P Global Services PMI Flash",
       "expected": "예측 54 / 이전 54.6",
-      "analysis": "예상 상회 시 서비스 부문 성장세를 나타내어 증시 상승을 이끌 수 있습니다. 예상 하회 시 서비스 부문 둔화를 반영하여 증시 하락을 초래할 수 있습니다."
+      "analysis": "서비스 PMI가 예상보다 높으면 서비스 부문의 강세를 나타내며 증시가 긍정적인 반응을 보일 수 있습니다. 반면, 예상보다 낮으면 서비스 부문에 대한 우려가 커져 증시가 하락할 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-21",
+      "title": "S&P Global Manufacturing PMI Flash",
+      "expected": "예측 53.9 / 이전 53.9",
+      "analysis": "제조업 PMI가 예상과 일치하거나 상회하면 제조업의 안정성을 나타내며 증시에 긍정적인 영향을 미칠 수 있습니다. 그러나 예상보다 낮으면 경기 둔화 우려가 커져 증시가 부정적인 반응을 보일 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-08-25",
+      "title": "Consumer Confidence",
+      "expected": "예측 없음 / 이전 106.8",
+      "analysis": "소비자 신뢰지수가 예상보다 높으면 소비 증가 기대감으로 증시가 상승할 수 있습니다. 반면, 신뢰지수가 낮아지면 소비 위축 우려로 증시가 하락할 수 있습니다."
     }
   ]
 }

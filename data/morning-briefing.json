@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29319.5,
+        "close": 29318.5,
         "previousClose": 29512.75,
-        "changePct": -0.65,
-        "changePoints": -193.25
+        "changePct": -0.66,
+        "changePoints": -194.25
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 312.55,
-      "changePct": -1.35,
-      "changePoints": 4.28
+      "price": 311.3,
+      "changePct": -1.75,
+      "changePoints": -5.53
     },
     {
       "symbol": "MSFT",
-      "price": 481.14,
-      "changePct": -0.47,
-      "changePoints": 2.26
+      "price": 481.15,
+      "changePct": -0.65,
+      "changePoints": -3.16
     },
     {
       "symbol": "NVDA",
-      "price": 217.16,
-      "changePct": -0.18,
-      "changePoints": 0.4
+      "price": 216.85,
+      "changePct": -0.33,
+      "changePoints": -0.71
     },
     {
       "symbol": "AMZN",
-      "price": 260.85,
-      "changePct": -1.88,
-      "changePoints": 4.99
+      "price": 260.11,
+      "changePct": -2.16,
+      "changePoints": -5.73
     },
     {
       "symbol": "META",
-      "price": 545.89,
-      "changePct": -0.03,
-      "changePoints": 0.14
+      "price": 545.83,
+      "changePct": -0.04,
+      "changePoints": -0.2
     },
     {
       "symbol": "TSLA",
-      "price": 346.2,
-      "changePct": -1.4,
-      "changePoints": 4.92
+      "price": 345.13,
+      "changePct": -1.71,
+      "changePoints": -5.99
     },
     {
       "symbol": "GOOGL",
-      "price": 341,
-      "changePct": -1.08,
-      "changePoints": 3.72
+      "price": 340.67,
+      "changePct": -1.17,
+      "changePoints": -4.05
     },
     {
       "symbol": "AMD",
-      "price": 468.75,
-      "changePct": 0.5,
-      "changePoints": 2.33
+      "price": 469.46,
+      "changePct": 0.65,
+      "changePoints": 3.04
     },
     {
       "symbol": "PLTR",
-      "price": 173.91,
-      "changePct": -0.73,
-      "changePoints": 1.28
+      "price": 173.96,
+      "changePct": -0.7,
+      "changePoints": -1.23
     },
     {
       "symbol": "COIN",
-      "price": 172.2,
-      "changePct": 7.49,
-      "changePoints": 12
+      "price": 172.35,
+      "changePct": 7.58,
+      "changePoints": 12.15
     }
   ],
   "sectors": [
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 86.27,
-        "changePct": 0.51,
-        "changePoints": 0.44
+        "price": 86.3,
+        "changePct": 0.55,
+        "changePoints": 0.47
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4585.1,
-        "changePct": 2.13,
-        "changePoints": 95.7
+        "price": 4583.2,
+        "changePct": 2.09,
+        "changePoints": 93.8
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 68.4,
-        "changePct": 4.06,
-        "changePoints": 2.67
+        "price": 68.36,
+        "changePct": 4,
+        "changePoints": 2.63
       },
       {
         "id": "copper",
@@ -240,34 +240,27 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 72842,
-        "changePct24h": 5.05,
-        "marketCapUsd": 1461971541256.65
+        "priceUsd": 72927,
+        "changePct24h": 5.13,
+        "marketCapUsd": 1463836282662.47
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2318.95,
-        "changePct24h": 3.12,
-        "marketCapUsd": 279826086798.3
+        "priceUsd": 2324.43,
+        "changePct24h": 3.41,
+        "marketCapUsd": 280463990653.18
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 87.4,
-        "changePct24h": 2.35,
-        "marketCapUsd": 50954650899.27
+        "priceUsd": 87.41,
+        "changePct24h": 2.33,
+        "marketCapUsd": 50966780682.94
       }
     ]
   },
   "news": [
-    {
-      "title": "외국인, 국내주식 7개월 연속 '팔자'…7월 32조 순매도",
-      "url": "https://view.asiae.co.kr/article/2026082017071366625",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T21:00:00.000Z",
-      "summary": "외국인이 국내 주식에 대한 매도 우위를 7개월 연속 이어가고 있다. 21일 금융감독원의 '2026년 7월 외국인 증권투자 동향'에 따르면 지난달 외국인은 국내 상장주식을 7개월 연속 순매도한 것으로 나타났다. 지난달 순매도 규모는 31조6640억원으로 전월(49조3360억원)보단 소폭 줄었다. 외국인은 코스피에선 30조7760억원, 코스닥에선 8890억원 순매도했다. 외국인의 국내주식 보유량은 2255조5000억원으로 전체 시가총액의 35."
-    },
     {
       "title": "李, 최태원과 비공개 만찬…반도체 메가투자 논의",
       "url": "https://www.mk.co.kr/news/business/12132785",
@@ -346,41 +339,6 @@
       "summary": "금융당국·관련 공공기관 이전설에 내부 동요 금감원 노조, 전 직원 대상 ‘퇴사’ 설문조사도 노조 없는 금융위 실무급 직원들도 이탈 우려금융당국과 주요 금융기관의 지방 이전이 유력시.."
     },
     {
-      "title": "원·달러 환율, 이틀 연속 1300원대…수출업체 달러 매도·弱달러 지속",
-      "url": "https://view.asiae.co.kr/article/2026082016124008332",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T07:12:40.000Z",
-      "summary": "원·달러 환율이 이틀 연속 1300원대에 머물며 거래를 이어가고 있다. 20일 서울 외환시장에서 원·달러 환율은 전 거래일 대비 5.1원 하락한 1392.6원에 주간 거래(오후 3시30분)를 마쳤다. 전날 10개월 반 만에 장중 1400원선이 깨진 데 이어 이날도 1300원대를 유지한 것이다. 이날 환율은 오전 9시 1398.3원에서 거래돼 장 초반 1384.1원까지 내려갔다. 이는 지난해 9월18일(1380.0원) 이후 가장 낮은 수준이다. 환율이 하락"
-    },
-    {
-      "title": "코스피, 삼전닉스 급등하며 5%대 상승 마감",
-      "url": "https://view.asiae.co.kr/article/2026082015554856874",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T06:55:48.000Z",
-      "summary": "SK하이닉스의 주주환원 정책에 대한 시장의 기대감이 삼성전자에도 반영되며 두 종목 모두 주가가 10% 내외로 올랐다. 두 대장주의 주가 상승에 힘입어 코스피 지수 역시 5%대 상승률을 기록했다. 20일 코스피 지수는 전 거래일 대비 381.41포인트(5.89%) 오른 6852.58에 거래를 마쳤다. 투자자별로는 외국인이 2조2703억500만원 순매수하면서 주가 상승을 이끌었다. 개인과 기관은 각각 2조6546억4400만원, 6618억2900만원 순매도"
-    },
-    {
-      "title": "거래소, 발달장애인 금융교육 후원금 5000만원 전달",
-      "url": "https://view.asiae.co.kr/article/2026082015455237258",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T06:45:52.000Z",
-      "summary": "한국거래소가 부산지역 발달장애인 금융교육을 위한 후원금 5000만원을 피치마켓(장애인교육전문기관)에 전달했다. 20일 거래소에 따르면 올해는 부산지역 복지관 및 발달장애인 고용기업 등 24개 기관의 발달장애인 300여명을 대상으로 전문강사가 각 기관을 방문해 총 8회기에 걸쳐 교육을 실시할 예정이다. 거래소는 2024년부터 금융정보에 대한 접근성이 상대적으로 낮은 발달장애인이 일상생활에서 필요한 금융지식을 습득"
-    },
-    {
-      "title": "코스닥, 16.43P 오른 840.89 마감(1.99%↑)",
-      "url": "https://view.asiae.co.kr/article/2026082015353587889",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T06:35:35.000Z",
-      "summary": "코스닥, 16.43P 오른 840.89 마감(1.99%↑)"
-    },
-    {
-      "title": "코스피, 381.41P 오른 6852.58 마감(5.89%↑)",
-      "url": "https://view.asiae.co.kr/article/2026082015344968443",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-20T06:34:49.000Z",
-      "summary": "코스피, 381.41P 오른 6852.58 마감(5.89%↑)"
-    },
-    {
       "title": "“가슴에 혹이” “시술하시죠”…무조건 제거하자는 병원에 제동건다",
       "url": "https://www.mk.co.kr/news/it/12132860",
       "source": "매일경제",
@@ -400,6 +358,48 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-08-20T20:30:00.000Z",
       "summary": "정부, 청년 ‘추납 기회’ 격차 해소 추진“우리 아이 직장 없는데, 국민연금에 가입할 수 있나요?” 최근 기자에게 이런 질문을 하는 부모들이 부쩍 늘었다. 자녀가 취업하기 전인 만.."
+    },
+    {
+      "title": "런린이도 카본화 필요한가요? … 의사가 신발 고르는 방법은",
+      "url": "https://www.mk.co.kr/news/culture/12132171",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T20:30:00.000Z",
+      "summary": "나에게 맞는 러닝화 고르는 방법달리기를 시작하는 사람들이 가장 먼저 고민하는 장비가 있다. 바로 러닝화다. 진료실에서도 자주 듣는 질문이다. “원장님, 어떤 신발을 신어야 할까요?.."
+    },
+    {
+      "title": "“물려받은 건 집 아닌 세금” 시장서 벌어질 일 … 부동산 세금 100(4)",
+      "url": "https://www.mk.co.kr/news/realestate/12132241",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T19:30:00.000Z",
+      "summary": "부동산 세금 집중 분석 (66~100)부동산 세금에서 사람들이 가장 크게 잃는 지점은 세율이 아니다. 날짜와 요건이다. 하루 차이로 중과가 붙고, 서류 한 장이 없어서 공제가 날아.."
+    },
+    {
+      "title": "LNG선으로 1조 벌더니 AI·원전까지 … ‘세계 1위 조선사’의 다음 10년",
+      "url": "https://www.mk.co.kr/news/business/12132616",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T19:30:00.000Z",
+      "summary": "HD현대중공업, 원전 수혜주로 놀라운 변신HD현대중공업은 오랫동안 ‘세계 1위 조선사’라는 타이틀로 소개돼 왔다. 그런데 최근 1년 새 이 회사를 부르는 수식어가 눈에 띄게 늘었다.."
+    },
+    {
+      "title": "메모리 전쟁, 새 전장 열린다 … HBF 세글자가 중요한 이유",
+      "url": "https://www.mk.co.kr/news/business/12132360",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T19:00:00.000Z",
+      "summary": "기억의 전쟁, LSTM에서 HBF까지2년 전 한 AI(인공지능) 포럼에서 위르겐 슈미트후버(Jürgen Schmidhuber) 교수와 대담을 나눌 기회가 있었다. 그는 1997년 .."
+    },
+    {
+      "title": "신임 靑춘추관장에 김회승",
+      "url": "https://www.mk.co.kr/news/politics/12132777",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T14:24:02.000Z",
+      "summary": "이재명 대통령이 20일 청와대 춘추관장에 김회승 전 한겨레신문 논설위원(사진)을 임명했다. 김상호 전 춘추관장에 이어 언론인 출신을 재차 발탁했다. 이날 청와대에 따르면 이 대통령.."
+    },
+    {
+      "title": "靑 '조희대 제청' 손봉기 후보 반려 검토",
+      "url": "https://www.mk.co.kr/news/politics/12132775",
+      "source": "매일경제",
+      "publishedAt": "2026-08-20T14:16:45.000Z",
+      "summary": "청와대가 20일 손봉기 대구지법 부장판사에 대한 대법관 제청을 반려하는 방안을 검토하고 있다. 앞서 조희대 대법원장은 대통령과 면담 후 대법관을 제청하는 관례를 깨고 손 부장판사를.."
     }
   ],
   "aiAnalysis": {

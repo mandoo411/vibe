@@ -521,7 +521,7 @@
 
         function formatOfferingPrice(value) {
           const n = Number(value);
-          if (!Number.isFinite(n) || (n >= 2000 && n <= 2100)) return "";
+          if (!Number.isFinite(n) || n <= 0 || (n >= 2000 && n <= 2100)) return "";
           return `${n.toLocaleString("ko-KR")}원`;
         }
 

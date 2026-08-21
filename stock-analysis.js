@@ -199,6 +199,43 @@
       .replace(/주식회사|㈜/g, "");
   }
 
+  /** 공식 상장명과 실제 검색어(약칭·구 사명·영문표기 등)가 달라서 매칭이 안 되는
+   * 케이스 보정용 별칭 테이블. realtime-board.js(실시간 시세)에서 "현대차"로 검색해도
+   * 상장명이 "현대자동차"라 안 걸리던 문제를 고치면서 추가한 것과 동일한 테이블 —
+   * AI 종목분석 검색창은 별도 구현이라 여기도 똑같이 반영해야 한다(2026-08-21).
+   * key: 별칭, value: 실제 stock-list.json name과 정확히 일치해야 하는 문자열 배열. */
+  const STOCK_NAME_ALIASES = {
+    현대차: ["현대자동차"],
+    기아자동차: ["기아"],
+    네이버: ["NAVER"],
+    엔씨소프트: ["NC"],
+    엔씨: ["NC"],
+    포스코: ["POSCO홀딩스"],
+    포스코홀딩스: ["POSCO홀딩스"],
+    KT: ["케이티"],
+    한전: ["한국전력공사"],
+    신한금융지주: ["신한지주"],
+    신한금융: ["신한지주"],
+    LG생건: ["LG생활건강"],
+    삼전: ["삼성전자"],
+    하이닉스: ["SK하이닉스"],
+    두산중공업: ["두산에너빌리티"],
+    빅히트: ["하이브"],
+    빅히트엔터테인먼트: ["하이브"],
+    다음카카오: ["카카오"],
+  };
+  const STOCK_NAME_ALIAS_TARGETS = (() => {
+    const map = new Map();
+    for (const [alias, targets] of Object.entries(STOCK_NAME_ALIASES)) {
+      const key = normalizeNameKey(alias);
+      if (!key) continue;
+      const set = map.get(key) || new Set();
+      for (const t of targets) set.add(normalizeNameKey(t));
+      map.set(key, set);
+    }
+    return map;
+  })();
+
   function code6Maybe(s) {
     const digits = String(s || "").replace(/\D/g, "");
     if (!digits) return "";
@@ -239,6 +276,11 @@
     const key = normalizeNameKey(q);
     const exact = stockList.find((x) => normalizeNameKey(x.name) === key);
     if (exact) return { code: exact.code, name: exact.name, market: "KR" };
+    const aliasTargets = STOCK_NAME_ALIAS_TARGETS.get(key);
+    if (aliasTargets) {
+      const aliasHit = stockList.find((x) => aliasTargets.has(normalizeNameKey(x.name)));
+      if (aliasHit) return { code: aliasHit.code, name: aliasHit.name, market: "KR" };
+    }
     const partial = stockList.filter((x) => {
       const nk = normalizeNameKey(x.name);
       return nk.includes(key) || key.includes(nk);
@@ -309,11 +351,21 @@
 
   function filterStocksForAutocomplete(q) {
     const lc = q.toLowerCase();
-    const kr = (stockList || []).filter((x) => {
+    const key = normalizeNameKey(q);
+    const aliasTargets = STOCK_NAME_ALIAS_TARGETS.get(key);
+    let kr = (stockList || []).filter((x) => {
       const name = String(x.name || "").toLowerCase();
       const code = String(x.code || "");
       return name.includes(lc) || code.includes(q) || code.includes(lc);
     });
+    if (aliasTargets) {
+      const existingCodes = new Set(kr.map((x) => x.code));
+      const aliasHits = (stockList || []).filter(
+        (x) => aliasTargets.has(normalizeNameKey(x.name)) && !existingCodes.has(x.code)
+      );
+      // 별칭으로 매칭된 실제 종목("현대차" → 현대자동차)을 목록 맨 위로 노출.
+      kr = aliasHits.concat(kr);
+    }
     const nonKr = [];
     for (const x of CRYPTO_ALIASES) {
       if (x.symbol.toLowerCase().includes(lc) || x.aliases.some((a) => a.includes(lc))) {

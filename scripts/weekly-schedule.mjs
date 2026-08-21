@@ -280,7 +280,28 @@ function parse38DetailTableFields(html) {
   return { listingDate, market };
 }
 
+// 38커뮤니케이션즈 상세페이지는 "확정공모가" 라벨과 실제 금액이 서로 다른
+// <td> 셀에 나뉘어 있다 (라벨 셀 </td> 뒤에 값 셀이 이어짐). 예전 정규식은
+// 라벨 뒤 텍스트에 숫자가 바로 붙어있다고 가정해서, 셀이 분리된 페이지에서는
+// 항상 매치 실패 → offeringPrice가 null로 빠지고 화면엔 공란(구 버전은 0원)으로
+// 표시되는 버그가 있었다 (2026-08-21, 기도산업/니어스랩/해치텍에서 확인).
+// parseHtmlRows로 <tr>을 셀 단위로 쪼갠 뒤 라벨 셀 다음 셀에서 값을 읽어야 한다.
 function parse38ConfirmedPrice(html) {
+  const rows = parseHtmlRows(html);
+  for (const cells of rows) {
+    for (let i = 0; i < cells.length - 1; i++) {
+      const label = cells[i].replace(/\s+/g, "");
+      if (label !== "확정공모가") continue;
+      const value = cells[i + 1] || "";
+      const m = value.match(/([\d,]{3,})/);
+      if (!m) continue;
+      const n = Number(m[1].replace(/,/g, ""));
+      if (Number.isFinite(n) && n >= 500 && n <= 500_000) return n;
+    }
+  }
+
+  // 표 구조가 다른 예외 페이지를 위한 백업: 라벨과 값이 같은 텍스트 조각에
+  // 붙어 나오는 경우.
   const text = String(html || "");
   const patterns = [
     /확정공모가\s*(?:&nbsp;|\s)*([\d,]+)/i,

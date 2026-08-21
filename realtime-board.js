@@ -266,6 +266,43 @@
   let stockList = [];
   const acState = { open: false, items: [], active: -1 };
 
+  /** 공식 상장명과 실제 검색어(약칭·구 사명·영문표기 등)가 달라서 매칭이 안 되는
+   * 케이스 보정용 별칭 테이블. "현대차"로 검색해도 상장명이 "현대자동차"라
+   * 부분일치에 걸리지 않던 문제(2026-08-21)를 계기로 자주 쓰이는 별칭들을 추가했다.
+   * key: 별칭(정규화 전 그대로 적어도 됨), value: 실제 stock-list.json name과
+   * 정확히 일치해야 하는 문자열 배열. */
+  const STOCK_NAME_ALIASES = {
+    현대차: ["현대자동차"],
+    기아자동차: ["기아"],
+    네이버: ["NAVER"],
+    엔씨소프트: ["NC"],
+    엔씨: ["NC"],
+    포스코: ["POSCO홀딩스"],
+    포스코홀딩스: ["POSCO홀딩스"],
+    KT: ["케이티"],
+    한전: ["한국전력공사"],
+    신한금융지주: ["신한지주"],
+    신한금융: ["신한지주"],
+    LG생건: ["LG생활건강"],
+    삼전: ["삼성전자"],
+    하이닉스: ["SK하이닉스"],
+    두산중공업: ["두산에너빌리티"],
+    빅히트: ["하이브"],
+    빅히트엔터테인먼트: ["하이브"],
+    다음카카오: ["카카오"],
+  };
+  const STOCK_NAME_ALIAS_TARGETS = (() => {
+    const map = new Map();
+    for (const [alias, targets] of Object.entries(STOCK_NAME_ALIASES)) {
+      const key = normalizeNameKey(alias);
+      if (!key) continue;
+      const set = map.get(key) || new Set();
+      for (const t of targets) set.add(normalizeNameKey(t));
+      map.set(key, set);
+    }
+    return map;
+  })();
+
   function $(id) {
     return document.getElementById(id);
   }
@@ -314,6 +351,7 @@
     const key = normalizeNameKey(q);
     if (!key) return [];
     const lc = q.toLowerCase();
+    const aliasTargets = STOCK_NAME_ALIAS_TARGETS.get(key);
     const scored = list
       .map((x) => {
         if (!x || !x.name) return null;
@@ -321,6 +359,7 @@
         const nk = normalizeNameKey(name);
         let score = 0;
         if (nk === key) score = 100;
+        else if (aliasTargets && aliasTargets.has(nk)) score = 100;
         else if (name.toLowerCase() === lc) score = 95;
         else if (nk.startsWith(key)) score = 80;
         else if (name.toLowerCase().startsWith(lc)) score = 75;

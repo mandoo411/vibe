@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-22 06:20 KST",
-    "from": "2026-08-22",
-    "to": "2026-09-05",
-    "historyFrom": "2026-05-24",
+    "lastUpdatedKst": "2026-08-23 06:18 KST",
+    "from": "2026-08-23",
+    "to": "2026-09-06",
+    "historyFrom": "2026-05-25",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -4323,8 +4323,8 @@
       "time": "22:45",
       "impact": "high",
       "importance": 3,
-      "actual": "56",
-      "previous": "54.5",
+      "actual": "",
+      "previous": "",
       "estimate": "",
       "unit": ""
     },
@@ -4335,8 +4335,8 @@
       "time": "22:45",
       "impact": "high",
       "importance": 3,
-      "actual": "53.2",
-      "previous": "53.9",
+      "actual": "",
+      "previous": "",
       "estimate": "53.9",
       "unit": ""
     },
@@ -4347,8 +4347,8 @@
       "time": "22:45",
       "impact": "high",
       "importance": 3,
-      "actual": "56.8",
-      "previous": "54.6",
+      "actual": "",
+      "previous": "",
       "estimate": "54",
       "unit": ""
     },
@@ -4678,15 +4678,15 @@
     },
     {
       "date": "2026-08-27",
-      "event": "Goods Trade Balance Adv",
+      "event": "Wholesale Inventories MoM Adv",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-101.4",
-      "estimate": "-99",
-      "unit": "$"
+      "previous": "0.2",
+      "estimate": "0.1",
+      "unit": "%"
     },
     {
       "date": "2026-08-27",
@@ -4702,18 +4702,6 @@
     },
     {
       "date": "2026-08-27",
-      "event": "Wholesale Inventories MoM Adv",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "0.2",
-      "estimate": "0.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-27",
       "event": "Retail Inventories Ex Autos MoM Adv",
       "country": "US",
       "time": "21:30",
@@ -4723,6 +4711,18 @@
       "previous": "-0.4",
       "estimate": "",
       "unit": "%"
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Goods Trade Balance Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-101.4",
+      "estimate": "-99",
+      "unit": "$"
     },
     {
       "date": "2026-08-28",
@@ -5098,44 +5098,44 @@
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "소비자 신뢰지수 (CC)",
+      "title": "소비자 신뢰지수 (Consumer Confidence)",
       "expected": "예측 미제공 / 이전 106.8",
-      "analysis": "예상 상회 시 소비자 신뢰가 높아져 소비 증가로 이어질 가능성이 있어 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 소비 위축 우려로 증시에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 소비자 신뢰가 높아져 증시가 긍정적인 반응을 보일 수 있으며, 원화 강세로 이어질 가능성이 있습니다. 예상 하회 시 소비자 신뢰 저하로 인해 증시가 부정적인 영향을 받을 수 있으며, 원화 약세가 우려됩니다."
     },
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "ADP 고용 변화 (ADP)",
+      "title": "ADP 고용 변화 (ADP Employment Change)",
       "expected": "예측 미제공 / 이전 9.5",
-      "analysis": "예상 상회 시 고용 증가가 긍정적으로 작용해 증시가 상승할 가능성이 높습니다. 예상 하회 시 고용 둔화 우려로 인해 증시에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 고용 증가가 긍정적으로 작용하여 증시 상승과 달러 강세를 유도할 수 있습니다. 예상 하회 시 고용 부진이 우려되며, 증시 하락과 환율 변동성이 커질 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "S&P/케이스-실러 주택 가격 YoY (SPH)",
+      "title": "S&P/Case-Shiller 주택 가격 지수 (S&P/Case-Shiller Home Price YoY)",
       "expected": "예측 1.7% / 이전 1.6%",
-      "analysis": "예상 상회 시 주택 시장의 회복세가 강화되어 부동산 관련 주식에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 시장의 둔화 우려로 부동산 관련 주식에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 주택 시장의 안정성을 나타내어 증시와 원화에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 가격 하락 우려로 인해 증시에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "CB 소비자 신뢰지수 (CBCC)",
+      "title": "CB 소비자 신뢰지수 (CB Consumer Confidence)",
       "expected": "예측 91.2 / 이전 90.8",
-      "analysis": "예상 상회 시 소비자 신뢰가 증가해 경제 성장에 긍정적인 영향을 미쳐 증시가 상승할 가능성이 있습니다. 예상 하회 시 소비자 신뢰 저하로 인해 증시에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 소비자 신뢰가 개선되어 증시가 상승할 가능성이 있으며, 원화 강세로 이어질 수 있습니다. 예상 하회 시 소비자 신뢰 저하로 인해 증시가 하락하고 원화 약세가 우려됩니다."
     },
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "신규 주택 판매 (NHS)",
+      "title": "신규 주택 판매 (New Home Sales)",
       "expected": "예측 0.62 / 이전 0.628",
-      "analysis": "예상 상회 시 신규 주택 판매 증가로 주택 시장의 활성화를 기대할 수 있어 관련 주식에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 시장의 둔화 우려로 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 신규 주택 판매 증가가 주택 시장의 회복을 나타내어 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 시장의 부진이 우려되어 증시 하락으로 이어질 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-08-25",
-      "title": "신규 주택 판매 MoM (NHS MoM)",
+      "title": "신규 주택 판매 월간 변동률 (New Home Sales MoM)",
       "expected": "예측 미제공 / 이전 1.6%",
-      "analysis": "예상 상회 시 신규 주택 판매 증가로 주택 시장의 회복세가 강화될 가능성이 있어 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 주택 시장의 둔화 우려로 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 신규 주택 판매 증가가 주택 시장에 긍정적인 신호를 주어 증시 상승과 원화 강세를 유도할 수 있습니다. 예상 하회 시 주택 시장의 부진이 우려되며, 증시 하락과 원화 약세가 우려됩니다."
     }
   ]
 }

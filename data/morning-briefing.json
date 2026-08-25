@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29281.75,
+        "close": 29277.5,
         "previousClose": 29105.75,
-        "changePct": 0.6,
-        "changePoints": 176
+        "changePct": 0.59,
+        "changePoints": 171.75
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 309.65,
-      "changePct": -0.22,
-      "changePoints": 0.69
+      "price": 309.9,
+      "changePct": -0.14,
+      "changePoints": -0.44
     },
     {
       "symbol": "MSFT",
-      "price": 490.71,
-      "changePct": 0.7,
-      "changePoints": 3.4
+      "price": 491.71,
+      "changePct": 0.9,
+      "changePoints": 4.4
     },
     {
       "symbol": "NVDA",
-      "price": 213.97,
-      "changePct": 2.63,
-      "changePoints": 5.49
+      "price": 213.05,
+      "changePct": 2.19,
+      "changePoints": 4.57
     },
     {
       "symbol": "AMZN",
-      "price": 261.1,
-      "changePct": -0.37,
-      "changePoints": 0.97
+      "price": 261.06,
+      "changePct": -0.39,
+      "changePoints": -1.01
     },
     {
       "symbol": "META",
-      "price": 568.3,
-      "changePct": 1.66,
-      "changePoints": 9.28
+      "price": 570.05,
+      "changePct": 1.97,
+      "changePoints": 11.03
     },
     {
       "symbol": "TSLA",
-      "price": 350.86,
-      "changePct": 0.55,
-      "changePoints": 1.91
+      "price": 350.25,
+      "changePct": 0.37,
+      "changePoints": 1.3
     },
     {
       "symbol": "GOOGL",
-      "price": 347.04,
-      "changePct": -0.29,
-      "changePoints": 1.02
+      "price": 346.96,
+      "changePct": -0.32,
+      "changePoints": -1.1
     },
     {
       "symbol": "AMD",
-      "price": 480.9,
-      "changePct": 5.29,
-      "changePoints": 24.16
+      "price": 479.18,
+      "changePct": 4.91,
+      "changePoints": 22.43
     },
     {
       "symbol": "PLTR",
-      "price": 172.46,
-      "changePct": -1.95,
-      "changePoints": 3.43
+      "price": 172.73,
+      "changePct": -1.8,
+      "changePoints": -3.16
     },
     {
       "symbol": "COIN",
-      "price": 186.79,
-      "changePct": 4.07,
-      "changePoints": 7.31
+      "price": 187.16,
+      "changePct": 4.28,
+      "changePoints": 7.68
     }
   ],
   "sectors": [
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 80.99,
-        "changePct": -4.73,
-        "changePoints": -4.02
+        "price": 81,
+        "changePct": -4.72,
+        "changePoints": -4.01
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4729.1,
-        "changePct": 1.9,
-        "changePoints": 88.3
+        "price": 4726,
+        "changePct": 1.84,
+        "changePoints": 85.2
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 69.05,
-        "changePct": 0.74,
-        "changePoints": 0.51
+        "price": 68.99,
+        "changePct": 0.66,
+        "changePoints": 0.45
       },
       {
         "id": "copper",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78846,
-        "changePct24h": 0.17,
-        "marketCapUsd": 1583714804683.11
+        "priceUsd": 78912,
+        "changePct24h": 0.19,
+        "marketCapUsd": 1584365925997.37
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2453.2,
-        "changePct24h": -0.95,
-        "marketCapUsd": 296007211175
+        "priceUsd": 2454.39,
+        "changePct24h": -0.96,
+        "marketCapUsd": 296220824391.15
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 97.03,
-        "changePct24h": -0.61,
-        "marketCapUsd": 56605037635.02
+        "priceUsd": 97.2,
+        "changePct24h": -0.34,
+        "marketCapUsd": 56702197606.98
       }
     ]
   },
@@ -276,11 +276,11 @@
       "summary": "향후 주가영향 관전포인트 27일 새벽, 젠슨 황이 발표 고마진 지속 가늠자 총이익률 중국향 AI칩 매출 등 주목글로벌 인공지능(AI) 반도체 대장주인 엔비디아의 2분기 실적 발표.."
     },
     {
-      "title": "유가·채권금리 하락에 美 증시 상승...미·이란 재휴전? [월가월부]",
+      "title": "미·이란 재휴전설에 뉴욕증시 ‘안도’…유가 4% 급락, 반도체주 반등 [월가월부]",
       "url": "https://www.mk.co.kr/news/economy/12136313",
       "source": "매일경제 증권",
       "publishedAt": "2026-08-25T20:51:48.000Z",
-      "summary": "유가하락·정부 개입에 채권패닉 진정 美 경제봉쇄 전환뒤 유가압력 완화 러시아 언론 “미·이란 휴전 합의” 보도국제유가 하락에 따른 채권금리 안정으로 미국 증시가 반등했다. 미국이.."
+      "summary": "美 경제봉쇄 전환뒤 유가압력 완화 정부 개입으로 채권 패닉도 진정세 러시아 언론 “미·이란 휴전 합의”국제유가 하락에 따른 채권금리 안정으로 미국 증시가 반등했다. 미국이 대이란.."
     },
     {
       "title": "“레버리지 투자의 종착지는 실패뿐” … 평범한 직장인이 부자 되는 비결",

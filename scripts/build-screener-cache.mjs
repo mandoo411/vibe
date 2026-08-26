@@ -7,8 +7,9 @@
  * RSI/이동평균/다이버전스는 일봉 기준이라 장중에는 어차피 값이 바뀌지 않으므로(당일 캔들이
  * 확정되기 전까지) 장마감 후 하루 1회 실행으로 충분하다.
  *
- * 종목당 3~4회의 KIS 일봉 조회(inquire-daily-itemchartprice)가 필요해서(약 260봉을
- * ~100봉씩 페이지네이션) 전종목(~2,650개) 기준 총 8,000~10,000회 가까운 API 호출이
+ * 종목당 3~4회의 KIS 일봉 조회(inquire-daily-itemchartprice, 약 270봉을 ~100봉씩
+ * 페이지네이션) + 시세조회(inquire-price) 1회 + 2026-08-26 추가된 수급조회(inquire-investor)
+ * 1회 = 종목당 총 5~6회. 전종목(~2,650개) 기준 총 13,000~16,000회 가까운 API 호출이
  * 발생한다 — 이 프로젝트 sandbox에는 실제 KIS 자격증명이 없어 실행 시간/성공률을 직접
  * 검증하지 못했다. GAP_MS/재시도 파라미터는 실제 GitHub Actions 실행 로그를 보고
  * 조정이 필요할 수 있다.
@@ -32,13 +33,14 @@ const {
   computeStochastic,
   computeADX,
   fetchMarketSnapshot,
+  fetchInvestorFlow,
   computePeriodReturns,
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries } = require("../lib/trade-condition-eval.js");
 const STOCK_LIST = require("../assets/stock-list.json");
 
 const GAP_MS = Number(process.env.SCREENER_GAP_MS || 220);
-const TARGET_BARS = Number(process.env.SCREENER_TARGET_BARS || 260);
+const TARGET_BARS = Number(process.env.SCREENER_TARGET_BARS || 270); // 2026-08-26: 240일선(MA240) 계산에 여유를 두기 위해 260 -> 270으로 상향
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1500;
 const PROGRESS_EVERY = 200;
@@ -69,6 +71,7 @@ async function buildOne(stock) {
         60: computeMaSeries(closes, 60, false),
         120: computeMaSeries(closes, 120, false),
         200: computeMaSeries(closes, 200, false),
+        240: computeMaSeries(closes, 240, false), // 2026-08-26: 이격도/이평돌파 240일선 지원
       };
       const rsiSeries = computeRsiSeries(closes);
       const divergence = detectDivergence(closes, rsiSeries);
@@ -77,6 +80,8 @@ async function buildOne(stock) {
       const stochastic = computeStochastic(highs, lows, closes);
       const adx = computeADX(highs, lows, closes);
       const market = await fetchMarketSnapshot(stock.code);
+      // 2026-08-26: 매매시그널 HTS급 확장 — 외국인/기관 순매수는 별도 엔드포인트 호출 필요.
+      const investorFlow = await fetchInvestorFlow(stock.code);
       const periodReturns = computePeriodReturns(closes);
       const snapshot = buildSnapshotFromSeries({
         closes,
@@ -94,6 +99,13 @@ async function buildOne(stock) {
         marketCapEok: market.marketCapEok,
         tradingValueEok: market.tradingValueEok,
         periodReturns,
+        per: market.per,
+        pbr: market.pbr,
+        eps: market.eps,
+        foreignHoldRate: market.foreignHoldRate,
+        volTurnoverRate: market.volTurnoverRate,
+        foreignNetBuy: investorFlow.foreignNetBuy,
+        institutionNetBuy: investorFlow.institutionNetBuy,
       });
 
       const n = closes.length;

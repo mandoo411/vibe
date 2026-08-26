@@ -27,6 +27,7 @@ const {
   computeStochastic,
   computeADX,
   fetchMarketSnapshot,
+  fetchInvestorFlow,
   computePeriodReturns,
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries, evaluateCondition } = require("../lib/trade-condition-eval.js");
@@ -92,7 +93,10 @@ function alreadyTriggeredToday(lastTriggeredAt) {
 }
 
 async function buildSeriesForStock(stockCode) {
-  const candles = await fetchChartCandles(stockCode, "D");
+  // 2026-08-26: 240일선 지원 위해 기본 봉수(약 100봉)로는 부족 — 270봉 명시 요청
+  // (scripts/build-screener-cache.mjs와 동일 값으로 맞춰서 "저장 감시"와 "즉시검색"의
+  // 판정 결과가 어긋나지 않게 한다).
+  const candles = await fetchChartCandles(stockCode, "D", 270);
   if (!candles.length) return null;
   const closes = candles.map((c) => c.close);
   const highs = candles.map((c) => c.high);
@@ -105,6 +109,7 @@ async function buildSeriesForStock(stockCode) {
     60: computeMaSeries(closes, 60, false),
     120: computeMaSeries(closes, 120, false),
     200: computeMaSeries(closes, 200, false),
+    240: computeMaSeries(closes, 240, false),
   };
   const rsiSeries = computeRsiSeries(closes);
   const divergence = detectDivergence(closes, rsiSeries);
@@ -113,12 +118,20 @@ async function buildSeriesForStock(stockCode) {
   const stochastic = computeStochastic(highs, lows, closes);
   const adx = computeADX(highs, lows, closes);
   const market = await fetchMarketSnapshot(stockCode);
+  const investorFlow = await fetchInvestorFlow(stockCode);
   const periodReturns = computePeriodReturns(closes);
   return {
     closes, highs, lows, volumes, ma, rsiSeries, divergence, candles, macd, bollinger, stochastic, adx,
     marketCapEok: market.marketCapEok,
     tradingValueEok: market.tradingValueEok,
     periodReturns,
+    per: market.per,
+    pbr: market.pbr,
+    eps: market.eps,
+    foreignHoldRate: market.foreignHoldRate,
+    volTurnoverRate: market.volTurnoverRate,
+    foreignNetBuy: investorFlow.foreignNetBuy,
+    institutionNetBuy: investorFlow.institutionNetBuy,
   };
 }
 

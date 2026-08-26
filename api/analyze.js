@@ -2187,6 +2187,40 @@ function tsFindStockCandidates(text) {
   return partial.slice(0, 8);
 }
 
+/**
+ * 2026-08-26: 매매시그널 HTS급 확장 — leaf 조건 하나(type + 관련 필드)뿐 아니라
+ * {type:"group", logic:"AND"|"OR", clauses:[...]} 형태의 중첩 그룹도 표현할 수 있게
+ * 확장했다. TS_PARSE_TOOL(단일 종목 저장)과 TS_SCREEN_PARSE_TOOL(즉시검색) 둘 다 같은
+ * clause item 스키마를 쓰므로 하나로 공유한다.
+ */
+const CLAUSE_ITEM_SCHEMA = {
+              type: "object",
+              required: ["type"],
+              properties: {
+                type: { type: "string", description: "leaf 조건 타입 또는 중첩 그룹이면 'group'" },
+                logic: { type: "string", enum: ["AND", "OR"], description: "type='group'일 때만 사용: 하위 clauses를 AND/OR로 결합" },
+                clauses: { type: "array", items: {}, description: "type='group'일 때만 사용: 하위 조건 배열(leaf 또는 다시 group, 재귀 가능)" },
+                negate: { type: "boolean", description: "true면 이 leaf 또는 group의 판정 결과를 반전(NOT, 키움식 '!')" },
+                within: {
+                  type: "object",
+                  properties: { bars: { type: "number" } },
+                  description: "ma_cross/price_cross_ma/macd_cross/di_cross/stochastic_cross/gap 전용: {bars:N} — 오늘 막 발생이 아니라 최근 N봉 이내 1회 이상 발생",
+                },
+                fast: { type: "number" },
+                slow: { type: "number" },
+                period: { type: "number" },
+                direction: { type: "string" },
+                op: { type: "string" },
+                value: { type: "number" },
+                position: { type: "string", description: "bollinger 전용: upper_break|lower_break|upper_touch|lower_touch" },
+                line: { type: "string", description: "stochastic 전용: k|d" },
+                pattern: { type: "string", description: "candle_pattern 전용: bullish_engulfing|bearish_engulfing|hammer|shooting_star|doji" },
+                count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
+                withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
+                windowBars: { type: "number", description: "high_breakout_n/low_breakdown_n/volume_record_high_n 전용: 20|60|120|240" },
+              },
+            };
+
 const TS_PARSE_TOOL = {
   name: "parse_trade_condition",
   description: "자연어 매매 조건을 종목 + 구조화 조건으로 변환",
@@ -2202,14 +2236,22 @@ const TS_PARSE_TOOL = {
         type: "object",
         required: ["logic", "clauses"],
         properties: {
-          logic: { type: "string", enum: ["AND"] },
+          logic: { type: "string", enum: ["AND", "OR"] },
           clauses: {
             type: "array",
             items: {
               type: "object",
               required: ["type"],
               properties: {
-                type: { type: "string" },
+                type: { type: "string", description: "leaf 조건 타입 또는 중첩 그룹이면 'group'" },
+                logic: { type: "string", enum: ["AND", "OR"], description: "type='group'일 때만 사용: 하위 clauses를 AND/OR로 결합" },
+                clauses: { type: "array", items: {}, description: "type='group'일 때만 사용: 하위 조건 배열(leaf 또는 다시 group, 재귀 가능)" },
+                negate: { type: "boolean", description: "true면 이 leaf 또는 group의 판정 결과를 반전(NOT, 키움식 '!')" },
+                within: {
+                  type: "object",
+                  properties: { bars: { type: "number" } },
+                  description: "ma_cross/price_cross_ma/macd_cross/di_cross/stochastic_cross/gap 전용: {bars:N} — 오늘 막 발생이 아니라 최근 N봉 이내 1회 이상 발생",
+                },
                 fast: { type: "number" },
                 slow: { type: "number" },
                 period: { type: "number" },
@@ -2221,6 +2263,7 @@ const TS_PARSE_TOOL = {
                 pattern: { type: "string", description: "candle_pattern 전용: bullish_engulfing|bearish_engulfing|hammer|shooting_star|doji" },
                 count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
                 withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
+                windowBars: { type: "number", description: "high_breakout_n/low_breakdown_n/volume_record_high_n 전용: 20|60|120|240" },
               },
             },
           },
@@ -2364,7 +2407,7 @@ async function tsParseWithOpenAI(text, candidates) {
   return tsSafeJsonParse(text2);
 }
 
-function tsNormalizeClause(raw) {
+function tsNormalizeLeafClause(raw) {
   if (!raw || typeof raw !== "object") return null;
   const type = sanitizeStr(raw.type);
   if (!TS_ALLOWED_CLAUSE_TYPES.includes(type)) return null;
@@ -2381,7 +2424,30 @@ function tsNormalizeClause(raw) {
   if (raw.pattern) out.pattern = sanitizeStr(raw.pattern);
   if (raw.count != null) out.count = Number(raw.count);
   if (raw.withinPct != null) out.withinPct = Number(raw.withinPct);
+  // 2026-08-26: HTS급 확장 — 커스텀 봉수 신고가/신저가/신고거래량, negate(NOT), within(최근
+  // N봉 이내 발생) 필드. within은 bars가 유효한 양수일 때만 싣는다(잘못된 값이면 조용히
+  // 무시하고 evaluateClauseOnSnapshot의 기존 "직전봉→오늘봉" 로직으로 폴백됨).
+  if (raw.windowBars != null) out.windowBars = Number(raw.windowBars);
+  if (raw.negate === true) out.negate = true;
+  if (raw.within && Number(raw.within.bars) > 0) out.within = { bars: Number(raw.within.bars) };
   return out;
+}
+
+/** 2026-08-26: leaf 조건 또는 {type:"group", logic, clauses:[...]} 중첩 그룹을 재귀적으로
+ * 정규화한다. group은 자식이 하나도 유효하지 않게 필터링되면 통째로 버린다(빈 그룹은 의미가
+ * 없으므로). 최상위 tsNormalizeParseResult/tsNormalizeScreenCondition의 clauses.map()이
+ * 바로 이 함수를 호출한다. */
+function tsNormalizeClause(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  if (sanitizeStr(raw.type) === "group") {
+    const logic = sanitizeStr(raw.logic) === "OR" ? "OR" : "AND";
+    const children = Array.isArray(raw.clauses) ? raw.clauses.map(tsNormalizeClause).filter(Boolean) : [];
+    if (!children.length) return null;
+    const out = { type: "group", logic, clauses: children };
+    if (raw.negate === true) out.negate = true;
+    return out;
+  }
+  return tsNormalizeLeafClause(raw);
 }
 
 /** OpenAI가 가끔 "tool_name"/"arguments" 같은 가짜 함수호출 래퍼로 감싸서 반환할 때가
@@ -2420,7 +2486,7 @@ function tsNormalizeParseResult(rawInput, candidates) {
     stockCode: validCandidate.code,
     stockName: validCandidate.name,
     alertType,
-    condition: { logic: "AND", clauses },
+    condition: { logic: sanitizeStr(raw?.condition?.logic) === "OR" ? "OR" : "AND", clauses },
     summary: sanitizeStr(raw.summary) || `${validCandidate.name} 조건 충족 시 ${alertType === "buy" ? "매수" : "매도"} 알림`,
     rawText: "",
   };
@@ -2428,7 +2494,7 @@ function tsNormalizeParseResult(rawInput, candidates) {
 
 async function tsHandleParse(req, res, user) {
   const body = await readBody(req);
-  const text = sanitizeStr(body.text).slice(0, 300);
+  const text = sanitizeStr(body.text).slice(0, 4000) /* 2026-08-26: 키움 HTS 조건표+수식 붙여넣기 지원 위해 300 -> 4000 */;
   if (!text) return tsJson(res, 400, { error: "조건 문장을 입력해주세요." });
 
   const candidates = tsFindStockCandidates(text);
@@ -2482,27 +2548,10 @@ const TS_SCREEN_PARSE_TOOL = {
         type: "object",
         required: ["logic", "clauses"],
         properties: {
-          logic: { type: "string", enum: ["AND"] },
+          logic: { type: "string", enum: ["AND", "OR"] },
           clauses: {
             type: "array",
-            items: {
-              type: "object",
-              required: ["type"],
-              properties: {
-                type: { type: "string" },
-                fast: { type: "number" },
-                slow: { type: "number" },
-                period: { type: "number" },
-                direction: { type: "string" },
-                op: { type: "string" },
-                value: { type: "number" },
-                position: { type: "string", description: "bollinger 전용: upper_break|lower_break|upper_touch|lower_touch" },
-                line: { type: "string", description: "stochastic 전용: k|d" },
-                pattern: { type: "string", description: "candle_pattern 전용: bullish_engulfing|bearish_engulfing|hammer|shooting_star|doji" },
-                count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
-                withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
-              },
-            },
+            items: CLAUSE_ITEM_SCHEMA,
           },
         },
       },
@@ -2587,7 +2636,7 @@ function tsNormalizeScreenCondition(rawInput) {
   }
   return {
     understood: true,
-    condition: { logic: "AND", clauses },
+    condition: { logic: sanitizeStr(raw?.condition?.logic) === "OR" ? "OR" : "AND", clauses },
     summary: sanitizeStr(raw.summary) || "조건에 맞는 종목",
   };
 }
@@ -2599,7 +2648,7 @@ async function tsHandleScreen(req, res, user) {
   let rawText = "";
 
   if (!condition || !tsIsValidConditionShared(condition)) {
-    const text = sanitizeStr(body.text).slice(0, 300);
+    const text = sanitizeStr(body.text).slice(0, 4000) /* 2026-08-26: 키움 HTS 조건표+수식 붙여넣기 지원 위해 300 -> 4000 */;
     if (!text) return tsJson(res, 400, { error: "검색할 조건 문장을 입력해주세요." });
     rawText = text;
 

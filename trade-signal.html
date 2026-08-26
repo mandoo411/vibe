@@ -734,15 +734,17 @@
         function clauseText(c) {
           const dirText = c.direction === "down" ? "하향" : "상향";
           const cmp = (op) => (op === "lt" || op === "lte" ? "≤" : "≥");
-          if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파`;
-          if (c.type === "price_cross_ma") return `현재가가 ${c.period}일선을 ${dirText} 돌파`;
+          // 2026-08-26: within(최근 N봉 이내 발생)이 있으면 크로스/갭류 문구 뒤에 덧붙인다.
+          const withinSuffix = c.within && Number(c.within.bars) > 0 ? ` (최근 ${c.within.bars}봉 이내)` : "";
+          if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파${withinSuffix}`;
+          if (c.type === "price_cross_ma") return `현재가가 ${c.period}일선을 ${dirText} 돌파${withinSuffix}`;
           if (c.type === "rsi") return `RSI ${cmp(c.op)} ${c.value}`;
           if (c.type === "volume_ratio") return `거래량 20일평균 대비 ${c.value}% 이상`;
           if (c.type === "high52w_breakout") return "52주 신고가 갱신";
           if (c.type === "low52w_breakdown") return "52주 신저가 갱신";
           if (c.type === "price_change_pct") return `당일 등락률 ${c.op === "lte" ? "≤" : "≥"} ${c.value}%`;
           if (c.type === "rsi_divergence") return c.direction === "bearish" ? "RSI 약세 다이버전스" : "RSI 강세 다이버전스";
-          if (c.type === "macd_cross") return `MACD ${dirText} 크로스(${c.direction === "down" ? "데드" : "골든"})`;
+          if (c.type === "macd_cross") return `MACD ${dirText} 크로스(${c.direction === "down" ? "데드" : "골든"})${withinSuffix}`;
           if (c.type === "macd_histogram_turn") return `MACD 히스토그램 ${c.direction === "down" ? "매도" : "매수"} 전환`;
           if (c.type === "bollinger") {
             const map = {
@@ -754,11 +756,11 @@
             return map[c.position] || "볼린저밴드 조건";
           }
           if (c.type === "stochastic") return `스토캐스틱 %${(c.line || "k").toUpperCase()} ${cmp(c.op)} ${c.value}`;
-          if (c.type === "stochastic_cross") return `스토캐스틱 %K가 %D ${dirText} 교차`;
+          if (c.type === "stochastic_cross") return `스토캐스틱 %K가 %D ${dirText} 교차${withinSuffix}`;
           if (c.type === "ma_alignment") return c.direction === "bearish" ? "이동평균 역배열" : "이동평균 정배열";
           if (c.type === "disparity") return `${c.period}일 이격도 ${cmp(c.op)} ${c.value}%`;
           if (c.type === "adx") return `ADX ${c.op === "gt" ? ">" : "≥"} ${c.value} (추세 강도)`;
-          if (c.type === "di_cross") return `+DI가 -DI ${dirText} 교차`;
+          if (c.type === "di_cross") return `+DI가 -DI ${dirText} 교차${withinSuffix}`;
           if (c.type === "candle_pattern") {
             const map = {
               bullish_engulfing: "상승장악형 캔들",
@@ -769,7 +771,7 @@
             };
             return map[c.pattern] || "캔들패턴";
           }
-          if (c.type === "gap") return c.direction === "down" ? "갭하락 발생" : "갭상승 발생";
+          if (c.type === "gap") return `${c.direction === "down" ? "갭하락" : "갭상승"} 발생${withinSuffix}`;
           if (c.type === "consecutive_candles") return `${c.count || 3}일 연속 ${c.direction === "down" ? "음봉" : "양봉"}`;
           if (c.type === "high52w_near") return `52주 신고가 대비 ${c.withinPct || 5}% 이내 근접`;
           if (c.type === "market_cap") return `시가총액 ${cmp(c.op)} ${c.value}억`;
@@ -778,12 +780,41 @@
             const periodLabel = { 5: "1주", 21: "1개월", 63: "3개월", 126: "6개월", 252: "1년" }[c.days] || `${c.days}거래일`;
             return `최근 ${periodLabel}간 등락률 ${cmp(c.op)} ${c.value}%`;
           }
+          // 2026-08-26 신규 타입
+          if (c.type === "price") return `현재가 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}원`;
+          if (c.type === "per") return `PER ${cmp(c.op)} ${c.value}`;
+          if (c.type === "pbr") return `PBR ${cmp(c.op)} ${c.value}`;
+          if (c.type === "eps") return `EPS ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}원`;
+          if (c.type === "foreign_hold_rate") return `외국인 보유율 ${cmp(c.op)} ${c.value}%`;
+          if (c.type === "volume_turnover_rate") return `거래량 회전율 ${cmp(c.op)} ${c.value}%`;
+          if (c.type === "foreign_net_buy") return `외국인 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          if (c.type === "institution_net_buy") return `기관 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          if (c.type === "high_breakout_n") return `${c.windowBars}봉중 신고가`;
+          if (c.type === "low_breakdown_n") return `${c.windowBars}봉중 신저가`;
+          if (c.type === "volume_record_high_n") return `${c.windowBars}봉중 신고거래량`;
           return c.type;
+        }
+
+        // 2026-08-26: leaf 조건 또는 {type:"group", logic, clauses:[...]} 중첩 그룹을 재귀적으로
+        // 사람이 읽는 문구로 변환. negate가 있으면 앞에 "~아님:"을 붙이고, group은 괄호로 묶어
+        // logic에 맞는 접속사(그리고/또는)로 이어붙인다.
+        function nodeText(node) {
+          if (!node) return "";
+          let text;
+          if (node.type === "group") {
+            const children = Array.isArray(node.clauses) ? node.clauses : [];
+            const joiner = node.logic === "OR" ? " 또는 " : " 그리고 ";
+            text = `(${children.map(nodeText).join(joiner)})`;
+          } else {
+            text = clauseText(node);
+          }
+          return node.negate ? `~아님: ${text}` : text;
         }
 
         function conditionText(condition) {
           if (!condition || !Array.isArray(condition.clauses)) return "";
-          return condition.clauses.map(clauseText).join(" 그리고 ");
+          const joiner = condition.logic === "OR" ? " 또는 " : " 그리고 ";
+          return condition.clauses.map(nodeText).join(joiner);
         }
 
         async function authToken() {

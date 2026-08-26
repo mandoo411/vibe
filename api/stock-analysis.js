@@ -364,6 +364,10 @@ function normalizeNameKey(name) {
 }
 
 function normalizeCode6(raw) {
+  // 우선주(예: 02826K) 등 6자리 영숫자 종목코드는 숫자만 남기면 잘못된 코드로 뭉개지므로
+  // 이미 6자리 영숫자 형태면 그대로 통과시킨다.
+  const up = String(raw || "").trim().toUpperCase();
+  if (/^[0-9A-Z]{6}$/.test(up)) return up;
   const digits = String(raw || "").replace(/\D/g, "");
   if (!digits) return "";
   if (digits.length === 6) return digits;
@@ -472,7 +476,7 @@ function findNameByCode(code6) {
 function resolveStock(queryRaw) {
   const q = sanitizeStr(queryRaw);
   const code6 = normalizeCode6(q);
-  if (/^\d{6}$/.test(code6)) {
+  if (/^[0-9A-Z]{6}$/.test(code6)) {
     const name = findNameByCode(code6) || q;
     return { stockName: name, stockCode: code6, resolvedBy: "code" };
   }
@@ -489,6 +493,18 @@ function resolveStock(queryRaw) {
       stockName: sanitizeStr(exact.name),
       stockCode: normalizeCode6(exact.code),
       resolvedBy: "list",
+    };
+  }
+
+  // 우선주는 보통주 이름 + "우" 형태라(예: 삼성물산 -> 삼성물산우B), 아래 양방향 includes만
+  // 쓰면 "삼성물산우"를 입력했을 때 "삼성물산"(보통주)과 "삼성물산우B"(우선주) 둘 다 걸려
+  // 후보가 2개가 되어 못 찾은 것으로 처리된다. startsWith로 먼저 좁혀서 유일하면 그걸 채택한다.
+  const startsWithHits = list.filter((x) => x && x.name && normalizeNameKey(x.name).startsWith(key));
+  if (startsWithHits.length === 1) {
+    return {
+      stockName: sanitizeStr(startsWithHits[0].name),
+      stockCode: normalizeCode6(startsWithHits[0].code),
+      resolvedBy: "list-startswith",
     };
   }
 

@@ -469,11 +469,8 @@
   }
 
   function normalizeCode6ForQuote(raw) {
-    const digits = String(raw || "").replace(/\D/g, "");
-    if (!digits) return "";
-    if (digits.length === 6) return digits;
-    if (digits.length < 6) return digits.padStart(6, "0");
-    return digits.slice(-6);
+    // 우선주(예: 02826K)는 6자리 영숫자 코드라 숫자만 남기면 엉뚱한 코드로 뭉개진다.
+    return code6Maybe(raw);
   }
 
   function enrichPanelFromTableRow(panel, code6) {
@@ -486,7 +483,7 @@
 
   async function fetchStockQuoteDetail(q, opts) {
     const code6 = normalizeCode6ForQuote(q);
-    if (!/^\d{6}$/.test(code6)) throw new Error("종목을 찾을 수 없습니다.");
+    if (!isValidStockCode(code6)) throw new Error("종목을 찾을 수 없습니다.");
     const fetchOpts = { cache: "no-store" };
     if (opts && opts.signal) fetchOpts.signal = opts.signal;
     const res = await fetch(
@@ -2258,7 +2255,7 @@
   function syncDetailDomAfterRows(body, rows) {
     if (!state.openChartCode) return;
     const code = code6Maybe(state.openChartCode);
-    if (!/^\d{6}$/.test(code)) {
+    if (!isValidStockCode(code)) {
       state.openChartCode = null;
       return;
     }
@@ -2590,7 +2587,7 @@
 
   async function mountTableDetailAccordion(body) {
     const code = code6Maybe(state.openChartCode || "");
-    if (!/^\d{6}$/.test(code)) return;
+    if (!isValidStockCode(code)) return;
     const row = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
     if (!row) return;
     const host = row.querySelector(".rt-detail-acc");
@@ -3384,7 +3381,7 @@
       const btn = ev.target.closest(".rt-name-chart-btn");
       if (!btn || !body.contains(btn)) return;
       const code = stockCodeFromChartBtn(btn);
-      if (!/^\d{6}$/.test(code)) return;
+      if (!isValidStockCode(code)) return;
       if (code6Maybe(state.openChartCode) === code) {
         abortDetailFetch();
         state.openChartCode = null;

@@ -26,6 +26,10 @@ function toNum(v) {
 }
 
 function normalizeCode6(raw) {
+  // 우선주(예: 02826K) 등 6자리 영숫자 종목코드는 숫자만 남기면 잘못된 코드로 뭉개지므로
+  // 이미 6자리 영숫자 형태면 그대로 통과시킨다.
+  const up = String(raw || "").trim().toUpperCase();
+  if (/^[0-9A-Z]{6}$/.test(up)) return up;
   const digits = String(raw || "").replace(/\D/g, "");
   if (!digits) return "";
   if (digits.length === 6) return digits;
@@ -702,7 +706,7 @@ module.exports = async (req, res) => {
     const isChart =
       isChartPath || url.searchParams.get("chart") === "1" || url.searchParams.get("mode") === "chart";
 
-    if (!/^\d{6}$/.test(code6)) {
+    if (!/^[0-9A-Z]{6}$/.test(code6)) {
       return json(res, 400, { error: "code(6자리)가 필요합니다." });
     }
 

@@ -237,6 +237,11 @@
   })();
 
   function code6Maybe(s) {
+    // 우선주(예: 삼성물산우B=02826K, SK우=03473K)는 6자리 영숫자 코드를 쓴다.
+    // 숫자만 남기고 깎으면 실제로 존재하지 않는 엉뚱한 코드로 뭉개지므로,
+    // 이미 6자리 영숫자 형태면 그대로 통과시킨다(realtime-board.js와 동일 로직).
+    const raw = String(s || "").trim().toUpperCase();
+    if (/^[0-9A-Z]{6}$/.test(raw)) return raw;
     const digits = String(s || "").replace(/\D/g, "");
     if (!digits) return "";
     if (digits.length === 6) return digits;
@@ -257,7 +262,7 @@
             name: String(x.name || "").trim(),
             market: String(x.market || "").toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI",
           }))
-          .filter((x) => /^\d{6}$/.test(x.code) && x.name);
+          .filter((x) => /^[0-9A-Z]{6}$/.test(x.code) && x.name);
       }
     } catch (err) {
       console.error("[AI분석] stock-list 로드 실패", err);
@@ -269,7 +274,7 @@
     const q = String(qRaw || "").trim();
     if (!q) return null;
     const code6 = code6Maybe(q);
-    if (/^\d{6}$/.test(code6)) {
+    if (/^[0-9A-Z]{6}$/.test(code6)) {
       const hit = stockList.find((x) => x.code === code6);
       return { code: code6, name: hit ? hit.name : code6, market: "KR" };
     }
@@ -281,6 +286,12 @@
       const aliasHit = stockList.find((x) => aliasTargets.has(normalizeNameKey(x.name)));
       if (aliasHit) return { code: aliasHit.code, name: aliasHit.name, market: "KR" };
     }
+    // 우선주는 보통주 이름 + "우" 형태라(예: 삼성물산 -> 삼성물산우B), 아래 양방향 includes만
+    // 쓰면 "삼성물산우"를 입력했을 때 "삼성물산"(보통주)과 "삼성물산우B"(우선주) 둘 다 부분
+    // 일치로 걸려 개수가 2개가 되어버려 못 찾은 것으로 처리됐다. startsWith로 먼저 더 좁혀서
+    // 유일하게 하나만 남으면 그걸 우선 채택한다.
+    const startsWithHits = stockList.filter((x) => normalizeNameKey(x.name).startsWith(key));
+    if (startsWithHits.length === 1) return { code: startsWithHits[0].code, name: startsWithHits[0].name, market: "KR" };
     const partial = stockList.filter((x) => {
       const nk = normalizeNameKey(x.name);
       return nk.includes(key) || key.includes(nk);
@@ -418,7 +429,7 @@
     const params = new URLSearchParams(window.location.search);
     const urlCode = code6Maybe(params.get("code") || "");
     const urlName = String(params.get("name") || "").trim();
-    if (/^\d{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
+    if (/^[0-9A-Z]{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
       return { code: urlCode, name: urlName || q, market: "KR" };
     }
 
@@ -871,7 +882,9 @@
   }
 
   function isDomesticCode(code) {
-    const digits = String(code || "").replace(/\D/g, "");
+    const raw = String(code || "").trim().toUpperCase();
+    if (/^[0-9A-Z]{6}$/.test(raw)) return true;
+    const digits = raw.replace(/\D/g, "");
     return /^\d{6}$/.test(digits.length <= 6 ? digits.padStart(6, "0") : digits.slice(-6));
   }
 
@@ -1315,8 +1328,9 @@
   }
 
   function tradingViewSymbol(stockCode, stockName, market) {
-    const code = String(stockCode || "").replace(/\D/g, "");
-    if (/^\d{6}$/.test(code) && market !== "US" && market !== "CRYPTO") return `KRX:${code}`;
+    const rawCode = String(stockCode || "").trim().toUpperCase();
+    const code = /^[0-9A-Z]{6}$/.test(rawCode) ? rawCode : String(stockCode || "").replace(/\D/g, "");
+    if (/^[0-9A-Z]{6}$/.test(code) && market !== "US" && market !== "CRYPTO") return `KRX:${code}`;
     const ticker = String(stockCode || stockName || "")
       .trim()
       .toUpperCase()

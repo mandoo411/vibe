@@ -53,10 +53,31 @@ jobs:
             echo "::warning::KRX KIND site did not respond after 5 retries (likely a transient IP/rate block). Skipping today's stock-list update; next scheduled run will retry."
           fi
 
+      - name: Download KIS 종목마스터 (우선주 포함용)
+        if: steps.download.outputs.ok == 'true'
+        id: download_mst
+        run: |
+          set -uo pipefail
+          ok=true
+          curl -fsSL --connect-timeout 15 --max-time 60 "https://new.real.download.dws.co.kr/common/master/kospi_code.mst.zip" -o kospi_code.mst.zip || ok=false
+          curl -fsSL --connect-timeout 15 --max-time 60 "https://new.real.download.dws.co.kr/common/master/kosdaq_code.mst.zip" -o kosdaq_code.mst.zip || ok=false
+          if [ "$ok" = "true" ]; then
+            unzip -o kospi_code.mst.zip -d mst_kospi
+            unzip -o kosdaq_code.mst.zip -d mst_kosdaq
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::KIS 종목마스터 다운로드 실패 — 우선주 병합 없이 진행합니다."
+          fi
+
       - name: Build assets/stock-list.json
         if: steps.download.outputs.ok == 'true'
         run: |
-          python scripts/update_stock_list.py kospi.xls kosdaq.xls assets/stock-list.json
+          if [ "${{ steps.download_mst.outputs.ok }}" = "true" ]; then
+            python scripts/update_stock_list.py kospi.xls kosdaq.xls assets/stock-list.json mst_kospi/kospi_code.mst mst_kosdaq/kosdaq_code.mst
+          else
+            python scripts/update_stock_list.py kospi.xls kosdaq.xls assets/stock-list.json
+          fi
 
       - name: Commit and push if changed
         if: steps.download.outputs.ok == 'true'

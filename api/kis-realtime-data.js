@@ -638,11 +638,14 @@ function parseNaverMarketValueKorean(raw) {
 }
 
 async function fetchNaverStockMcapWonFromIntegration(code6) {
-  const code = String(code6 || "")
-    .replace(/\D/g, "")
-    .padStart(6, "0")
-    .slice(-6);
-  if (!/^\d{6}$/.test(code)) return "";
+  const rawCode = String(code6 || "").trim().toUpperCase();
+  const code = /^[0-9A-Z]{6}$/.test(rawCode)
+    ? rawCode
+    : String(code6 || "")
+        .replace(/\D/g, "")
+        .padStart(6, "0")
+        .slice(-6);
+  if (!/^[0-9A-Z]{6}$/.test(code)) return "";
   const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/integration`;
   const res = await fetch(url, {
     headers: {
@@ -687,7 +690,11 @@ async function getNaverMcapBulkMap() {
 }
 
 async function lookupMcapForCodes(codes) {
-  const uniq = [...new Set((codes || []).map((c) => String(c || "").replace(/\D/g, "").padStart(6, "0").slice(-6)).filter((c) => /^\d{6}$/.test(c)))].slice(
+  const uniq = [...new Set((codes || []).map((c) => {
+    const raw = String(c || "").trim().toUpperCase();
+    if (/^[0-9A-Z]{6}$/.test(raw)) return raw;
+    return String(c || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  }).filter((c) => /^[0-9A-Z]{6}$/.test(c)))].slice(
     0,
     60
   );
@@ -824,8 +831,9 @@ async function fetchNaverMarketCapTop100() {
 
 /** NAVER 종목 시세 — 정규장+NXT 통합 누적거래량 (stock-analysis·종목검색과 동일) */
 async function fetchNaverStockPriceSnapshot(code6) {
-  const code = String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-  if (!/^\d{6}$/.test(code)) return null;
+  const rawCode = String(code6 || "").trim().toUpperCase();
+  const code = /^[0-9A-Z]{6}$/.test(rawCode) ? rawCode : String(code6 || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+  if (!/^[0-9A-Z]{6}$/.test(code)) return null;
   const url = `https://m.stock.naver.com/api/stock/${encodeURIComponent(code)}/price?pageSize=1&page=1`;
   const res = await fetch(url, {
     headers: {
@@ -904,11 +912,14 @@ async function buildNxtIntegratedTvTop100(candidateByCode) {
 
 function quoteOverlayNeeded(row) {
   if (row && row.volumeNxtIntegrated) return false;
-  const code = String(row?.code || "")
-    .replace(/\D/g, "")
-    .padStart(6, "0")
-    .slice(-6);
-  return /^\d{6}$/.test(code);
+  const raw = String(row?.code || "").trim().toUpperCase();
+  const code = /^[0-9A-Z]{6}$/.test(raw)
+    ? raw
+    : String(row?.code || "")
+        .replace(/\D/g, "")
+        .padStart(6, "0")
+        .slice(-6);
+  return /^[0-9A-Z]{6}$/.test(code);
 }
 
 /** 페이지 종목 시세 보강 — 거래대금 = 현재가×NXT통합 거래량 (청크 단위) */
@@ -922,8 +933,9 @@ async function overlayNaverPriceLive(rows, { limit } = {}) {
       skip.push(base);
       continue;
     }
-    const code = String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
-    if (!/^\d{6}$/.test(code)) {
+    const rawCode = String(r.code || "").trim().toUpperCase();
+    const code = /^[0-9A-Z]{6}$/.test(rawCode) ? rawCode : String(r.code || "").replace(/\D/g, "").padStart(6, "0").slice(-6);
+    if (!/^[0-9A-Z]{6}$/.test(code)) {
       skip.push(base);
       continue;
     }

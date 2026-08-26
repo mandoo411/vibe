@@ -484,10 +484,15 @@ function sanitizeStr(v) {
  * white-space:pre-line CSS로 그대로 렌더링되는데, 모델 응답이 아주 드물게 문장이 아니라
  * 글자/단어 단위로 개행되어 오면 그 개행이 그대로 세로 줄바꿈으로 보인다. 조각들의 평균
  * 길이가 비정상적으로 짧으면 애초에 문단 구분이 아니었다고 보고 개행을 제거한다. */
+// 2026-08-26 재수정: "\n"(LF)만 검사하던 게 원인 — 모델 응답이 드물게 \r(CR) 단독이나
+// 유니코드 줄바꿈(U+2028/U+2029)으로 오면 개행으로 인식을 못 해 원문을 그대로 통과시켰고,
+// 프론트도 같은 사각지대라 세로깨짐이 라이브에서 재발했다. 개행으로 볼 수 있는 문자를
+// 모두 잡도록 정규식을 넓힌다(프론트 stock-analysis.js의 동일 함수와 동기화 유지할 것).
+const ONE_LINE_BREAK_RE = /\r\n|[\r\n\u2028\u2029]+/;
 function sanitizeOneLineText(v) {
   const s = sanitizeStr(v);
-  if (!s.includes("\n")) return s;
-  const parts = s.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  if (!ONE_LINE_BREAK_RE.test(s)) return s;
+  const parts = s.split(ONE_LINE_BREAK_RE).map((p) => p.trim()).filter(Boolean);
   if (!parts.length) return "";
   const avgLen = parts.reduce((sum, p) => sum + p.length, 0) / parts.length;
   return avgLen <= 2 ? parts.join("") : parts.join(" ");

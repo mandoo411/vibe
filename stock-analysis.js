@@ -557,10 +557,16 @@
   // 2026-08-26: ai-summary-desc는 formatProseText를 거치지 않고 white-space:pre-line
   // CSS로 그대로 렌더링되는 필드라(요약 카드 디자인상 짧은 한 문단이어야 함), 서버가
   // sanitizeOneLineText로 이미 정리해서 내려주지만 프론트에서도 한 번 더 방어한다.
+  // 2026-08-26 재수정: 기존엔 "\n"(LF)만 검사해서, 모델/네트워크 경로에서 드물게
+  // \r(CR) 단독이나 유니코드 줄바꿈(U+2028/U+2029)으로 개행이 오면 감지를 못 하고
+  // 원문을 그대로 통과시켰다 — 실제 라이브에서 이 경로로 세로깨짐이 재발한 걸 확인
+  // (avgLen 로직 자체는 정상 동작했지만애초에 개행으로 인식을 못 했음). 개행으로 볼
+  // 수 있는 문자를 모두 잡도록 정규식을 넓혔다.
+  const ONE_LINE_BREAK_RE = /\r\n|[\r\n\u2028\u2029]+/;
   function sanitizeOneLineText(raw) {
     const s = String(raw || "").trim();
-    if (!s.includes("\n")) return s;
-    const parts = s.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+    if (!ONE_LINE_BREAK_RE.test(s)) return s;
+    const parts = s.split(ONE_LINE_BREAK_RE).map((p) => p.trim()).filter(Boolean);
     if (!parts.length) return "";
     const avgLen = parts.reduce((sum, p) => sum + p.length, 0) / parts.length;
     return avgLen <= 2 ? parts.join("") : parts.join(" ");

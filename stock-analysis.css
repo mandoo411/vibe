@@ -459,6 +459,63 @@
   color: var(--text-title, #f3f4f6);
 }
 
+.ai-score-card {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
+}
+
+.ai-score-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ai-score-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(156, 163, 175, 0.18);
+  color: var(--color-text-secondary);
+}
+
+.ai-score-chip__k {
+  opacity: 0.75;
+}
+
+.ai-score-chip--pos {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.ai-score-chip--neg {
+  background: rgba(226, 75, 74, 0.15);
+  color: #e24b4a;
+}
+
+.ai-score-chip--neu {
+  background: rgba(234, 179, 8, 0.15);
+  color: #a16207;
+}
+
+.ai-score-chip--total {
+  background: var(--color-background-tertiary, rgba(156, 163, 175, 0.28));
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.ai-score-card__note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
 .ai-summary-prob__note {
   font-size: 11px;
   color: var(--color-text-secondary);
@@ -689,6 +746,59 @@
 .ai-mat-strength--low {
   background: rgba(156, 163, 175, 0.25);
   color: #6b7280;
+}
+
+/* 2026-08-26: 재료 확정성 배지 + 반영도 근거 — GPT 리포트가 지적한 "85%의 근거가 없다" 보완 */
+.ai-mat-card__badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ai-mat-certainty {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-background-tertiary, rgba(156, 163, 175, 0.18));
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.ai-mat-certainty--확정 {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.ai-mat-certainty--진행중 {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.ai-mat-certainty--예상 {
+  background: rgba(234, 179, 8, 0.18);
+  color: #a16207;
+}
+
+.ai-mat-certainty--루머,
+.ai-mat-certainty--AI추정 {
+  background: rgba(156, 163, 175, 0.22);
+  color: #6b7280;
+}
+
+.ai-mat-card__basis {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.ai-mat-card__basis-label {
+  display: inline-block;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-right: 6px;
 }
 
 .ai-mat-reflect {
@@ -1119,9 +1229,21 @@
 .ai-scenario__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px 8px;
   margin-bottom: 10px;
+}
+
+/* 2026-08-26: 손익비(R:R) 배지 — 서버가 entry/stop/target으로 직접 계산한 검증 가능한 숫자 */
+.ai-scenario__rr {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(156, 163, 175, 0.18);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .ai-scenario__label {

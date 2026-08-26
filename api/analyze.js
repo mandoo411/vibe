@@ -81,6 +81,14 @@ const STOCK_ANALYSIS_TOOL = {
                 name: { type: "string" },
                 strength: { type: "string" },
                 reflectionPct: { type: "number" },
+                reflectionBasis: {
+                  type: "string",
+                  description: "reflectionPct를 매긴 구체적 정량 근거 1개 이상 (경과일수/공개 후 등락률/컨센서스 괴리율 등)",
+                },
+                certainty: {
+                  type: "string",
+                  description: "확정|진행중|예상|루머|AI추정 중 하나",
+                },
                 comment: { type: "string" },
               },
             },
@@ -112,29 +120,37 @@ const STOCK_ANALYSIS_TOOL = {
           target: { type: "number" },
           scenarioA: {
             type: "object",
-            required: ["condition", "entry", "target", "stopLoss", "probability"],
+            required: ["condition", "entry", "target", "stopLoss", "probability", "basis"],
             properties: {
               condition: { type: "string" },
               entry: { type: "number" },
               target: { type: "number" },
               stopLoss: { type: "number" },
               probability: { type: "number" },
+              basis: {
+                type: "string",
+                description: "이 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)",
+              },
             },
           },
           scenarioB: {
             type: "object",
-            required: ["condition", "entry", "target", "stopLoss", "probability"],
+            required: ["condition", "entry", "target", "stopLoss", "probability", "basis"],
             properties: {
               condition: { type: "string" },
               entry: { type: "number" },
               target: { type: "number" },
               stopLoss: { type: "number" },
               probability: { type: "number" },
+              basis: {
+                type: "string",
+                description: "이 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)",
+              },
             },
           },
           scenarioC: {
             type: "object",
-            required: ["condition", "entry", "stopLoss", "strategy", "downTarget", "probability"],
+            required: ["condition", "entry", "stopLoss", "strategy", "downTarget", "probability", "basis"],
             properties: {
               condition: { type: "string" },
               entry: { type: "number" },
@@ -142,6 +158,10 @@ const STOCK_ANALYSIS_TOOL = {
               strategy: { type: "string" },
               downTarget: { type: "number" },
               probability: { type: "number" },
+              basis: {
+                type: "string",
+                description: "이 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)",
+              },
             },
           },
           aiComment: { type: "string" },
@@ -232,6 +252,12 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - 각 섹션(스토리, 수급, 재료, 차트, 총평)은 따로따로 나열된 사실이 아니라 하나의 기승전결 있는 이야기로 이어지게 쓴다. 앞 섹션에서 나온 근거(예: 밸류에이션 부담, 수급 엇갈림, 미반영 재료)를 뒤 섹션(차트 해석, 총평)에서 다시 연결해서 언급하고, 총평은 앞의 모든 근거를 하나의 결론으로 묶어낸다.
 - 지표·사실을 건조하게 나열하지 않는다 (예: "이동평균선: ~, RSI: ~" 식의 항목 나열형 문장 금지). 왜 그 정보가 지금 중요한지, 다른 정보와 어떻게 연결되는지를 자연스러운 문장으로 풀어서 설명한다.
 - 고객이 "아, 이런 식으로도 보는구나" 하고 느낄 수 있는 통찰(다른 데서 보기 힘든 연결·비교·해석)을 리포트당 최소 1개 이상 반드시 포함한다. 월 5만원을 내는 고객에게 그냥 숫자 재탕이 아니라 이 돈 값을 한다는 인상을 줘야 한다.
+- [자사주 매입/소각과 수급(외국인·기관 순매수)을 절대 혼동하지 않는다] 자사주 매입·소각은 회사 자기자금 집행이지 외국인/기관의 시장 매매 수급이 아니다. 3번 수급 분석(supplyDemand)에는 절대 자사주 매입/소각을 근거로 넣지 않는다 — 그 내용은 반드시 5번 재료 분석(materials)에 별도 항목으로 넣는다. 자사주 매입/소각 재료를 다룰 때는 web_search로 그 목적이 "임직원 성과보상용(주식 그대로 유지되어 잠재 물량으로 남음)"인지 "소각을 통한 주주환원용(발행주식 수가 실제로 줄어듦)"인지 반드시 구분해서 명시한다 — 이 둘은 주주가치에 미치는 영향이 전혀 다르므로 뭉뚱그려 "자사주 매입 = 주가 하방 지지"처럼 단순화하지 않는다. 목적이 확인 안 되면 "목적은 아직 확정 발표되지 않았다"고 있는 그대로 서술한다(이는 얼버무리는 헤지가 아니라 그 자체가 사실이므로 괜찮다).
+- [재료의 확정성 구분] materials 각 항목에는 certainty를 반드시 "확정"(이미 집행·완료된 사실) / "진행중"(공시·발표되어 절차가 진행 중) / "예상"(아직 실현되지 않은 기대) / "루머"(비공식 보도) / "AI추정"(구체적 근거 없이 정황상 추정) 중 하나로 명확히 분류한다. 이미 결정되고 실행 중인 사실(예: 이사회 의결·공시된 자사주 취득 신탁계약 체결)을 "예상"으로 두루뭉술하게 표현하지 않는다.
+- [반영도(reflectionPct)의 근거 명시] 각 재료의 reflectionBasis 필드에는 그 비율을 매긴 구체적 정량 근거를 최소 하나 숫자로 명시한다 — 예: "정보 공개 후 8거래일 경과, 그 사이 주가 +6.2% 상승", "증권사 평균 목표주가 대비 현재가 괴리율 3%로 이미 근접". 숫자만 던지고 근거를 생략하지 않는다.
+- [상승확률/시나리오 확률의 근거] 상단 요약과 시나리오 A/B/C의 probability는 과거 패턴 통계나 백테스트 결과가 아니라, 애널리스트가 여러 근거를 종합한 정성적 판단 수치라는 것을 스스로 인지한다. 실제로 없는 "표본 O건", "적중률 O%" 같은 통계를 지어내지 않는다. 대신 시나리오별 basis 필드에 그 확률을 매긴 구체적 근거(추세/이동평균 위치, RSI 수준, 수급 방향, 재료 반영도, 밸류에이션 부담 중 최소 2개 이상)를 조합해서 명시해, 숫자가 근거 없이 던져진 것처럼 보이지 않게 한다.
+- [밸류에이션은 트레일링 PER 하나로 단정하지 않는다] 반도체·조선·화학·해운처럼 이익 사이클이 큰 업종은 현재 이익 기준 PER이 사이클 저점(이익 급감 구간)에서 오히려 높게 나타나는 착시가 흔하다. PER·PBR 숫자만으로 "고평가/저평가"를 단정하지 말고, 그 업종이 지금 업황 사이클의 어느 국면(개선/피크/둔화)에 있는지 또는 최근 실적 추세(이익이 늘고 있는지 줄고 있는지)를 함께 한 문장으로 짚어준 뒤에 밸류에이션 부담 여부를 판단한다.
+- [진입가는 반드시 구체적 앵커에 근거] entryPrice(및 시나리오별 entry)가 현재가와 다른 숫자라면, 그 값을 고른 구체적 기술적 근거(예: 20일선, 최근 지지선, 전일 종가 대비 되돌림 비율 등 실제로 제공된 수치)를 총평(comment)에 명시한다. 데이터에 없는 임의의 "적당해 보이는 숫자"를 만들지 않는다.
 - 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).`;
 
 function buildSystemPrompt(today, quote) {
@@ -288,7 +314,9 @@ function buildSystemPrompt(today, quote) {
   · 실적 모멘텀: 다음 실적발표 예상치 기반
   · 업종 트렌드: 해당 업종 현재 흐름
 - strength는 반드시 '강'/'중'/'하' 중 하나.
-- reflectionPct는 반드시 0-100 사이 숫자.
+- reflectionPct는 반드시 0-100 사이 숫자, reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 중 최소 하나, 숫자 포함)를 반드시 채울 것.
+- certainty는 반드시 '확정'(이미 집행·완료)/'진행중'(공시·발표되어 절차 진행 중)/'예상'(아직 미실현)/'루머'(비공식)/'AI추정'(근거 없는 정황 추정) 중 하나로 채울 것.
+- 자사주 매입/소각 재료는 반드시 목적(임직원 성과보상용 vs 소각을 통한 주주환원용)을 구분해서 서술하고, 절대 3번 수급 분석의 근거로 쓰지 말 것.
 - aiComment: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
     "",
     `6번 차트 흐름 분석 — 제공된 실제 수치만 사용(추정 금지). 아래 항목 전부 수치와 근거 포함:
@@ -321,11 +349,12 @@ function buildSystemPrompt(today, quote) {
     - scenarioB(중립).entry/target/stopLoss: 현재가 근방 진입, target=entry+5~8%, stopLoss=entry-3~5%
     - scenarioC(약세).entry/stopLoss: 이탈 후 반등을 노리는 재진입가 개념으로, entry=downTarget 근방, stopLoss=entry-3% 근방 (target은 downTarget으로 대체)
   · scenarioA/B/C: probability 합계 반드시 100
+  · scenarioA/B/C 각각 basis(그 확률을 매긴 구체적 근거 — 추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것. 없는 통계("표본 O건" 등)를 지어내지 말고, 실제 입력 데이터를 조합한 논리로 서술할 것.
   · aiComment: 반드시 3문장 이상, entryPrice가 현재가·시나리오B entry와 다르면 그 이유 포함
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
-- 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률%
-- 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% (entry/target/stopLoss 절대 0으로 두지 말 것)
-- 시나리오 C (약세): 조건 / 진입가 / 대응전략 / 목표 하단 / 손절가 / 확률% (entry/stopLoss도 반드시 채울 것)
+- 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거
+- 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거 (entry/target/stopLoss 절대 0으로 두지 말 것)
+- 시나리오 C (약세): 조건 / 진입가 / 대응전략 / 목표 하단 / 손절가 / 확률% / 근거 (entry/stopLoss도 반드시 채울 것)
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
@@ -352,6 +381,8 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "strength": "상|중|하",
         "reflectionPct": 30,
         "reflectionNote": "30% 반영 — 아직 미반영 구간 큼",
+        "reflectionBasis": "reflectionPct 근거 (경과일수/공개 후 등락률/컨센서스 괴리율 등 숫자 포함)",
+        "certainty": "확정|진행중|예상|루머|AI추정",
         "judgment": "한줄 판단"
       }
     ],
@@ -375,7 +406,8 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "entry": 0,
         "target": 0,
         "stop": 0,
-        "probability": 40
+        "probability": 40,
+        "basis": "확률 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)"
       },
       {
         "label": "B",
@@ -384,7 +416,8 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "entry": 0,
         "target": 0,
         "stop": 0,
-        "probability": 35
+        "probability": 35,
+        "basis": "확률 근거"
       },
       {
         "label": "C",
@@ -394,7 +427,8 @@ const CLAUDE_RESPONSE_SCHEMA = `{
         "stop": 0,
         "strategy": "대응 전략",
         "targetLow": 0,
-        "probability": 25
+        "probability": 25,
+        "basis": "확률 근거"
       }
     ]
   }
@@ -719,6 +753,60 @@ function findSwingPoints(candles, lookback, maxPoints) {
   };
 }
 
+/** 2026-08-26: "ICT(스마트머니) 관점"이 실제로는 아무 근거 없이 전문용어만 붙인 것처럼
+ * 보인다는 지적에 대한 수정 — 오더블록/FVG처럼 탐지 로직이 없는 개념을 지어내는 대신,
+ * 실제 스윙 고점/저점 대비 최근 캔들에서 계산으로 확인 가능한 두 가지 구조적 사실만 찾는다:
+ * (1) 유동성 스윕 — 직전 스윙 레벨을 꼬리로 찍고 종가는 다시 안으로 들어온 캔들
+ * (2) BOS(구조 돌파) — 종가 기준으로 직전 스윙 레벨을 확정적으로 돌파한 캔들
+ * 좌표 비교만으로 계산되는 결정론적 로직이라 할루시네이션 여지가 없다. 감지된 게 없으면
+ * null을 반환하고, 프롬프트는 이 경우 ICT 관련 서술 자체를 생략하도록 지시받는다. */
+function detectStructureEvent(candles, swing, lookbackBars) {
+  if (!Array.isArray(candles) || !candles.length || !swing) return null;
+  const resistances = Array.isArray(swing.resistances) ? swing.resistances : [];
+  const supports = Array.isArray(swing.supports) ? swing.supports : [];
+  const lastResistance = resistances.length ? resistances[resistances.length - 1] : null;
+  const lastSupport = supports.length ? supports[supports.length - 1] : null;
+  if (lastResistance == null && lastSupport == null) return null;
+
+  const recent = candles.slice(-(lookbackBars || 6));
+  let event = null; // 최근 캔들 순서대로 훑어서 가장 최신 이벤트로 덮어쓴다.
+  for (const c of recent) {
+    if (lastSupport != null && c.low < lastSupport && c.close >= lastSupport) {
+      event = {
+        type: "저점 유동성 스윕",
+        level: Math.round(lastSupport),
+        time: c.time,
+        desc: "직전 저점을 일시적으로 하회했다가 종가는 그 위로 회복",
+      };
+    }
+    if (lastResistance != null && c.high > lastResistance && c.close <= lastResistance) {
+      event = {
+        type: "고점 유동성 스윕",
+        level: Math.round(lastResistance),
+        time: c.time,
+        desc: "직전 고점을 일시적으로 상회했다가 종가는 그 아래로 마감",
+      };
+    }
+    if (lastResistance != null && c.close > lastResistance) {
+      event = {
+        type: "상방 구조 돌파(BOS)",
+        level: Math.round(lastResistance),
+        time: c.time,
+        desc: "직전 고점을 종가 기준으로 확정 돌파",
+      };
+    }
+    if (lastSupport != null && c.close < lastSupport) {
+      event = {
+        type: "하방 구조 붕괴(BOS)",
+        level: Math.round(lastSupport),
+        time: c.time,
+        desc: "직전 저점을 종가 기준으로 확정 붕괴",
+      };
+    }
+  }
+  return event;
+}
+
 /** 종목 고유의 실제 주봉/월봉 데이터를 KIS에서 가져와 이동평균·스윙 고점/저점을 계산한다.
  * 실패해도 전체 분석 응답을 막지 않도록 null을 반환하고 조용히 넘어간다 — 이 데이터가
  * 없으면 프롬프트에서 장기/단기 다중 타임프레임 지시를 건너뛰도록 처리한다(추정 금지 원칙 유지). */
@@ -768,6 +856,7 @@ async function fetchKisWeeklyMonthly(code6) {
         ma60: maLast(wCloses, 60),
         resistances: wSwing.resistances,
         supports: wSwing.supports,
+        structure: detectStructureEvent(weekly, wSwing, 6),
       },
       monthly: {
         count: monthly.length,
@@ -775,6 +864,7 @@ async function fetchKisWeeklyMonthly(code6) {
         ma24: maLast(mCloses, 24),
         resistances: mSwing.resistances,
         supports: mSwing.supports,
+        structure: detectStructureEvent(monthly, mSwing, 4),
       },
     };
   } catch (e) {
@@ -789,10 +879,22 @@ function wmJsonFields(wm) {
   if (!wm) return { weeklyIndicators: null, monthlyIndicators: null };
   return {
     weeklyIndicators: wm.weekly
-      ? { ma20: wm.weekly.ma20, ma60: wm.weekly.ma60, resistances: wm.weekly.resistances, supports: wm.weekly.supports }
+      ? {
+          ma20: wm.weekly.ma20,
+          ma60: wm.weekly.ma60,
+          resistances: wm.weekly.resistances,
+          supports: wm.weekly.supports,
+          structureEvent: wm.weekly.structure || null,
+        }
       : null,
     monthlyIndicators: wm.monthly
-      ? { ma12: wm.monthly.ma12, ma24: wm.monthly.ma24, resistances: wm.monthly.resistances, supports: wm.monthly.supports }
+      ? {
+          ma12: wm.monthly.ma12,
+          ma24: wm.monthly.ma24,
+          resistances: wm.monthly.resistances,
+          supports: wm.monthly.supports,
+          structureEvent: wm.monthly.structure || null,
+        }
       : null,
   };
 }
@@ -807,10 +909,18 @@ function formatWmTextBlock(wm, unit) {
   if (wm.weekly) {
     lines.push(`[주봉] 20주선: ${fmt(wm.weekly.ma20)}${u} / 60주선: ${fmt(wm.weekly.ma60)}${u}`);
     lines.push(`[주봉] 스윙 저항: ${fmtList(wm.weekly.resistances)} / 스윙 지지: ${fmtList(wm.weekly.supports)}`);
+    if (wm.weekly.structure) {
+      const st = wm.weekly.structure;
+      lines.push(`[주봉] 구조 이벤트(실계산, ICT 서술 근거로만 사용): ${st.type} — 기준가 ${fmt(st.level)}${u} (${st.desc})`);
+    }
   }
   if (wm.monthly) {
     lines.push(`[월봉] 12개월선: ${fmt(wm.monthly.ma12)}${u} / 24개월선: ${fmt(wm.monthly.ma24)}${u}`);
     lines.push(`[월봉] 스윙 저항: ${fmtList(wm.monthly.resistances)} / 스윙 지지: ${fmtList(wm.monthly.supports)}`);
+    if (wm.monthly.structure) {
+      const st = wm.monthly.structure;
+      lines.push(`[월봉] 구조 이벤트(실계산, ICT 서술 근거로만 사용): ${st.type} — 기준가 ${fmt(st.level)}${u} (${st.desc})`);
+    }
   }
   return lines.join("\n");
 }
@@ -978,6 +1088,7 @@ async function fetchUsWeeklyMonthly(symbol, exchange) {
         ma60: maLast(wCloses, 60),
         resistances: wSwing.resistances,
         supports: wSwing.supports,
+        structure: detectStructureEvent(weekly, wSwing, 6),
       },
       monthly: {
         count: monthly.length,
@@ -985,6 +1096,7 @@ async function fetchUsWeeklyMonthly(symbol, exchange) {
         ma24: maLast(mCloses, 24),
         resistances: mSwing.resistances,
         supports: mSwing.supports,
+        structure: detectStructureEvent(monthly, mSwing, 4),
       },
     };
   } catch (e) {
@@ -1176,6 +1288,90 @@ function mapScenarioRaw(raw, label, type) {
     strategy: sanitizeStr(raw.strategy),
     targetLow: toNum(raw.downTarget ?? raw.targetLow),
     probability: toNum(raw.probability),
+    basis: sanitizeStr(raw.basis),
+  };
+}
+
+/** 재료 certainty(확정성) 값을 다섯 개 허용 값으로만 제한 — 그 외 값(빈 문자열 포함)은
+ * 프론트가 배지를 그리지 않도록 빈 문자열로 정규화한다(없는 걸 지어내지 않는다). */
+function normalizeCertainty(raw) {
+  const s = sanitizeStr(raw);
+  return ["확정", "진행중", "예상", "루머", "AI추정"].includes(s) ? s : "";
+}
+
+/** 진입가/손절가/목표가로 손익비(Reward:Risk)를 계산. 방향이 안 맞거나(손절이 진입보다 위 등)
+ * 값이 없으면 null — 억지로 숫자를 만들지 않는다. 소수 첫째자리까지만(예: 2.2). */
+function computeRR(entry, stop, target) {
+  const e = toNum(entry);
+  const s = toNum(stop);
+  const t = toNum(target);
+  if (e == null || s == null || t == null) return null;
+  const risk = e - s;
+  const reward = t - e;
+  if (risk <= 0 || reward <= 0) return null;
+  return Math.round((reward / risk) * 10) / 10;
+}
+
+/** 1차 목표가(target1)보다 높은 실제 주봉/월봉 스윙 저항이 있으면 2차 목표가로 제시한다.
+ * AI가 지어낸 숫자가 아니라 KIS 실데이터에서 뽑은 스윙 고점이므로 할루시네이션 위험이 없다.
+ * 해당하는 저항이 없으면 null(단계화된 목표가를 억지로 만들지 않는다). */
+function computeTarget2(target1, wm) {
+  const t1 = toNum(target1);
+  if (t1 == null || !wm) return null;
+  const pool = []
+    .concat((wm.weekly && wm.weekly.resistances) || [])
+    .concat((wm.monthly && wm.monthly.resistances) || [])
+    .map((n) => toNum(n))
+    .filter((n) => n != null && n > t1)
+    .sort((a, b) => a - b);
+  return pool.length ? Math.round(pool[0]) : null;
+}
+
+/** 이동평균 위치·RSI·거래량·수급으로 계산하는 기계적 참고 점수(-2~+2, 4개 항목 합산).
+ * AI의 정성적 판단과는 별개로, 실제 숫자만으로 재현 가능한 값을 함께 보여줘서
+ * "AI가 그냥 던진 숫자"처럼 보이는 문제를 보완한다. 데이터가 부족한 항목은 null로 두고
+ * 억지로 채우지 않는다 — 모든 항목이 null이면 스코어카드 자체를 생략한다. */
+function computeScoreCard(quote, indicators) {
+  const price = toNum(quote && quote.currentPrice);
+  const ind = indicators && typeof indicators === "object" ? indicators : {};
+  const mas = [toNum(ind.ma20), toNum(ind.ma60), toNum(ind.ma120), toNum(ind.ma200)].filter((v) => v != null);
+  const rsi = toNum(ind.rsi14);
+  const vol = toNum(quote && quote.volume);
+  const prevVol = toNum(quote && quote.prevVolume);
+  const fNet = toNum(quote && quote.foreignNetBuy);
+  const iNet = toNum(quote && quote.institutionNetBuy);
+
+  let trend = null;
+  if (price != null && mas.length) {
+    const aboveRatio = mas.filter((m) => price > m).length / mas.length;
+    trend = Math.round(aboveRatio * 4) - 2; // 0/4→-2, 1/4→-1(반올림 보정), ... 4/4→+2
+  }
+
+  let momentum = null;
+  if (rsi != null) {
+    momentum = rsi >= 70 ? 2 : rsi >= 55 ? 1 : rsi <= 30 ? -2 : rsi <= 45 ? -1 : 0;
+  }
+
+  let volumeScore = null;
+  if (vol != null && prevVol != null && prevVol > 0) {
+    const ratio = vol / prevVol;
+    volumeScore = ratio >= 2 ? 2 : ratio >= 1.3 ? 1 : ratio <= 0.5 ? -2 : ratio <= 0.8 ? -1 : 0;
+  }
+
+  let supplyScore = null;
+  if ((fNet != null && fNet !== 0) || (iNet != null && iNet !== 0)) {
+    const net = (fNet || 0) + (iNet || 0);
+    const bigMove = vol ? Math.abs(net) > vol * 0.02 : Math.abs(net) > 0;
+    supplyScore = net > 0 ? (bigMove ? 2 : 1) : net < 0 ? (bigMove ? -2 : -1) : 0;
+  }
+
+  const parts = { trend, momentum, volume: volumeScore, supply: supplyScore };
+  const filled = Object.values(parts).filter((v) => v != null);
+  if (!filled.length) return null;
+  return {
+    ...parts,
+    total: filled.reduce((sum, v) => sum + v, 0),
+    note: "이동평균 위치·RSI·거래량·수급으로 기계적으로 계산한 참고용 점수(-2~+2, 데이터 없는 항목은 제외). AI의 정성적 판단과는 별개입니다.",
   };
 }
 
@@ -1298,6 +1494,8 @@ function mapToolInputToLegacy(input) {
             reflectionPct:
               reflectionPctRaw == null ? null : Math.max(0, Math.min(100, Math.round(reflectionPctRaw))),
             reflectionNote: "",
+            reflectionBasis: sanitizeStr(it && it.reflectionBasis),
+            certainty: sanitizeStr(it && it.certainty),
             judgment: stripCitations(sanitizeStr(it && (it.comment || it.judgment))),
           };
         })
@@ -1384,7 +1582,7 @@ function normalizeSignal(v) {
   return "관망";
 }
 
-function normalizeAnalysis(raw, quote) {
+function normalizeAnalysis(raw, quote, wm, indicators) {
   const price = toNum(quote && quote.currentPrice) || 0;
   if (!raw || typeof raw !== "object") {
     return {
@@ -1449,6 +1647,8 @@ function normalizeAnalysis(raw, quote) {
             strength: strengthNorm,
             reflectionPct,
             reflectionNote: sanitizeStr(it.reflectionNote ?? it.reflection_note),
+            reflectionBasis: stripCitations(sanitizeStr(it.reflectionBasis ?? it.reflection_basis)),
+            certainty: normalizeCertainty(it.certainty),
             judgment: stripCitations(sanitizeStr(it.judgment)),
           };
         })
@@ -1472,12 +1672,17 @@ function normalizeAnalysis(raw, quote) {
           strategy: sanitizeStr(s.strategy),
           targetLow: toNum(s.targetLow ?? s.target_low),
           probability: toNum(s.probability),
+          basis: stripCitations(sanitizeStr(s.basis)),
         }))
         .filter((s) => s.condition || s.strategy)
         // AI가 스키마 예시값(0)을 그대로 남겨서 entry/target/stop이 비는 경우를 방지하는 안전망.
         .map((s) => {
           const resolved = resolveScenarioPrices(s, price, prices);
-          return { ...s, ...resolved };
+          const merged = { ...s, ...resolved };
+          // 2026-08-26: 손익비(R:R)는 AI가 아니라 확정된 entry/stop/target으로 코드가 직접
+          // 계산한다 — "그럴듯한 확률"이 아니라 최소 하나는 검증 가능한 숫자를 붙여준다.
+          merged.rr = computeRR(merged.entry, merged.stop, merged.target);
+          return merged;
         })
     : [];
 
@@ -1538,9 +1743,15 @@ function normalizeAnalysis(raw, quote) {
       entry: prices.entry,
       stop: prices.stop,
       target: prices.target,
+      // 2026-08-26: target2(2차 목표가)는 AI가 아니라 실제 주봉/월봉 스윙 저항(KIS 실데이터)에서
+      // target보다 높은 다음 저항을 코드가 그대로 찾아 붙인 것 — 없으면 null(지어내지 않음).
+      target2: computeTarget2(prices.target, wm),
+      rr: computeRR(prices.entry, prices.stop, prices.target),
       comment: stripCitations(sanitizeStr(opinion.comment)),
       scenarios,
     },
+    // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.
+    scoreCard: computeScoreCard(quote, indicators),
   };
 }
 
@@ -1642,9 +1853,10 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - materialAnalysis.materials는 반드시 2개 이상 채울 것.
 - 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
 - 재료가 없으면 기본 재료로 채울 것: 실적 모멘텀(다음 실적발표 예상치), 업종 트렌드(해당 업종 흐름).
-- strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자.`,
+- strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자, reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 등 숫자 포함)를 채울 것.
+- certainty는 '확정'/'진행중'/'예상'/'루머'/'AI추정' 중 하나. 자사주 매입/소각은 목적(임직원 보상용 vs 소각 주주환원용)을 구분하고 절대 수급(supplyDemand) 근거로 쓰지 말 것.`,
     "",
-    `6번 차트 — 제공된 실제 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일. weeklyIndicators/monthlyIndicators가 있으면 주봉·월봉 MA/스윙 지지·저항으로 장기 추세·멀티 타임프레임 정합성·엘리어트 파동·ICT 유동성 관점까지 서술. 근거가 부족한 세부 항목(예: 정확한 파동 번호)은 "미확보/판단 보류" 같은 문구로 고객에게 노출하지 말고 조용히 생략하거나 정성적 표현으로 대체할 것. 숫자 추정 금지.
+    `6번 차트 — 제공된 실제 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일. weeklyIndicators/monthlyIndicators가 있으면 주봉·월봉 MA/스윙 지지·저항으로 장기 추세·멀티 타임프레임 정합성·엘리어트 파동까지 서술. 매물대·유동성(ICT 스타일) 서술은 weeklyIndicators/monthlyIndicators의 structureEvent가 실제로 있을 때만 그 사실(유형·기준가)로 짧게 언급하고, 없으면 생략할 것 — "오더블록"/"FVG"/"CHoCH" 같은 세부 용어는 structureEvent가 없는 한 쓰지 말 것. 근거가 부족한 세부 항목(예: 정확한 파동 번호)은 "미확보/판단 보류" 같은 문구로 고객에게 노출하지 말고 조용히 생략하거나 정성적 표현으로 대체할 것. 숫자 추정 금지.
 【형식】 chart는 각 항목을 반드시 줄바꿈(개행문자 \n)으로 구분해서 "제목: 내용" 형태로 작성할 것 (예: "이동평균선(일봉): …\nRSI: …\n일목균형표: …"). 한 문단으로 이어 쓰지 말 것.`,
     "",
     `7번 AI 주관적 판단 (aiJudgment 필수 — 하위 필드 절대 누락 금지):
@@ -1654,7 +1866,8 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - scenarioA/B/C 모두 entry(진입가)/stopLoss(손절가)를 숫자로 반드시 채울 것(0 금지):
   scenarioB.entry는 현재가 근방, target=entry+5~8%, stopLoss=entry-3~5%
   scenarioC.entry는 downTarget 근방 재진입가 개념, stopLoss=entry-3% 근방
-- scenarioA/B/C probability 합 100, aiComment 3문장 이상(entryPrice가 현재가·시나리오B entry와 다른 이유 포함)
+- scenarioA/B/C probability 합 100, 각각 basis(확률 근거 — 추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합, 없는 통계 지어내지 말 것)를 반드시 채울 것
+- aiComment 3문장 이상(entryPrice가 현재가·시나리오B entry와 다른 이유 포함)
 - 5번 재료 반영 필수`,
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
@@ -1723,7 +1936,7 @@ async function claudeAnalyze(quote, stockName, indicators, wm) {
         console.error("[analyze] raw response (500 chars):", String(fallbackText || "").slice(0, 500));
         throw new Error(ANALYSIS_PARSE_ERROR_MSG);
       }
-      const normalized = normalizeAnalysis(parsed, quote);
+      const normalized = normalizeAnalysis(parsed, quote, wm, indicators);
       if (normalized._error) {
         throw new Error("Claude JSON parse failed");
       }
@@ -1831,7 +2044,8 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
 - B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
 - C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
-- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
+- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
+- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.`,
     "",
     `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
@@ -1977,7 +2191,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
 - A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
 - B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
 - C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
-- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).`,
+- entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
+- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.`,
       "",
       `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
@@ -2054,7 +2269,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
 
   const parsed = safeParseJSON(text);
   if (parsed == null) throw new Error("OpenAI returned non-JSON");
-  const normalized = normalizeAnalysis(parsed, quote);
+  const normalized = normalizeAnalysis(parsed, quote, wm, indicators);
   if (normalized._error) throw new Error("OpenAI JSON parse failed");
   return normalized;
 }
@@ -3132,7 +3347,7 @@ module.exports = async function handler(req, res) {
       e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";
     analysisError = openaiErrMsg;
     console.error("[analyze] OpenAI 실패", openaiErrMsg);
-    analysis = normalizeAnalysis(null, quote);
+    analysis = normalizeAnalysis(null, quote, wm, indicators);
     if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
       analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
     }

@@ -1391,6 +1391,32 @@
     return renderChartShell(stockCode, stockName, chartText, useTv, market);
   }
 
+  /** 2026-08-26: GPT 리포트 지적사항 "상승확률 40%의 산출 방법이 없다"에 대한 보완 —
+   * AI의 정성적 확률과는 별개로, 이동평균 위치·RSI·거래량·수급만으로 서버가 기계적으로
+   * 계산한 참고 점수(-2~+2 x 4항목)를 함께 보여준다. scoreCard가 없으면(데이터 부족) 생략. */
+  function renderScoreCard(scoreCard) {
+    if (!scoreCard || typeof scoreCard !== "object") return "";
+    const labels = { trend: "추세", momentum: "모멘텀", volume: "거래량", supply: "수급" };
+    const chips = Object.keys(labels)
+      .filter((k) => scoreCard[k] != null)
+      .map((k) => {
+        const v = scoreCard[k];
+        const sign = v > 0 ? "+" : "";
+        const cls = v > 0 ? "ai-score-chip--pos" : v < 0 ? "ai-score-chip--neg" : "ai-score-chip--neu";
+        return `<span class="ai-score-chip ${cls}"><span class="ai-score-chip__k">${escapeHtml(labels[k])}</span><span class="ai-score-chip__v">${sign}${v}</span></span>`;
+      })
+      .join("");
+    if (!chips) return "";
+    const totalV = toNum(scoreCard.total);
+    const totalSign = totalV > 0 ? "+" : "";
+    return (
+      `<div class="ai-score-card">` +
+      `<div class="ai-score-card__chips">${chips}<span class="ai-score-chip ai-score-chip--total">종합 ${totalV != null ? totalSign + totalV : "—"}</span></div>` +
+      `<p class="ai-score-card__note">${escapeHtml(scoreCard.note || "")}</p>` +
+      `</div>`
+    );
+  }
+
   function scenarioCardClass(label, type) {
     const t = String(type || label || "").toUpperCase();
     if (label === "A" || t.includes("강")) return "ai-scenario--bull";
@@ -1415,10 +1441,19 @@
             const note = it.reflectionNote || (pct ? `${pct}% 반영` : "");
             const borderCls = materialBorderClass(strength);
             const barCls = reflectBarClass(pct);
+            // 2026-08-26: certainty(확정성 배지)·reflectionBasis(반영도 근거) — GPT 리포트 지적사항
+            // "40%라는 숫자의 근거가 없다"에 대한 대응. 값이 없으면 그냥 생략(지어내지 않음).
+            const certaintyBadge = it.certainty
+              ? `<span class="ai-mat-certainty ai-mat-certainty--${escapeHtml(it.certainty)}">${escapeHtml(it.certainty)}</span>`
+              : "";
+            const basisLine = it.reflectionBasis
+              ? `<p class="ai-mat-card__basis"><span class="ai-mat-card__basis-label">근거</span>${escapeHtml(it.reflectionBasis)}</p>`
+              : "";
             return (
               `<article class="ai-mat-card ${borderCls}">` +
-              `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strengthLabel(it.strength))}</span></div>` +
+              `<div class="ai-mat-card__head"><strong class="ai-mat-card__name">${escapeHtml(it.name)}</strong><span class="ai-mat-card__badges"><span class="ai-mat-strength ${strengthCls}">${escapeHtml(strengthLabel(it.strength))}</span>${certaintyBadge}</span></div>` +
               `<div class="ai-mat-reflect"><div class="ai-mat-reflect__track"><div class="ai-mat-reflect__bar ${barCls}" style="width:${pct}%"></div></div><span class="ai-mat-reflect__label">${escapeHtml(note)}</span></div>` +
+              basisLine +
               `<p class="ai-mat-card__judgment">${escapeHtml(it.judgment || "")}</p>` +
               `</article>`
             );
@@ -1446,6 +1481,10 @@
     // 2026-07-10: 약세(C) 시나리오의 "목표가"는 지지선 붕괴 후 재진입을 노리는 반등 목표가이고
     // "목표 하단"은 지지선이 추가로 무너졌을 때의 하방 목표라 성격이 다르다. 둘 다 "목표가"로만
     // 표기하면 약세 시나리오인데 상방 숫자만 보이는 것처럼 오해할 수 있어 라벨을 구분한다.
+    // 2026-08-26: 손익비(R:R)는 서버(api/analyze.js)가 확정된 entry/stop/target으로 직접
+    // 계산해서 내려준 값 — AI가 던진 숫자가 아니라 검증 가능한 산수 결과다.
+    const rr = toNum(s.rr);
+    const rrText = rr != null ? `R:R ${rr}` : "";
     const lines = [
       ["조건", s.condition],
       ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null],
@@ -1453,6 +1492,7 @@
       ["손절가", s.stop != null ? fmtPrice(s.stop, assetType) : null],
       isBear && s.targetLow != null ? ["추가 하락 시 목표 하단", fmtPrice(s.targetLow, assetType)] : null,
       isBear ? ["대응전략", s.strategy] : null,
+      s.basis ? ["확률 근거", s.basis] : null,
     ]
       .filter(Boolean)
       .filter(([, v]) => v)
@@ -1461,7 +1501,8 @@
           `<div class="ai-scenario-row"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
       )
       .join("");
-    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span></header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
+    const rrBadge = rrText ? `<span class="ai-scenario__rr">${escapeHtml(rrText)}</span>` : "";
+    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span>${rrBadge}</header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
   function renderOpinion(op, currentPrice, assetType) {
@@ -1478,14 +1519,21 @@
           `<div class="ai-outlook-card"><span class="ai-outlook-card__label">${escapeHtml(label)}</span>${formatProseText(text)}</div>`
       )
       .join("");
+    // 2026-08-26: target2(2차 목표가)·rr(손익비)는 서버가 실제 주봉/월봉 스윙 저항과
+    // 확정된 entry/stop/target으로 계산해서 내려준 값 — AI가 지어낸 숫자가 아니다.
+    const target2 = toNum(o.target2);
+    const rrVal = toNum(o.rr);
     const priceRows = [
-      ["진입가", prices.entry],
-      ["손절가", prices.stop],
-      ["목표가", prices.target],
+      ["진입가", fmtPrice(prices.entry, assetType)],
+      ["손절가", fmtPrice(prices.stop, assetType)],
+      [target2 != null ? "목표가(1차)" : "목표가", fmtPrice(prices.target, assetType)],
+      target2 != null ? ["목표가(2차)", fmtPrice(target2, assetType)] : null,
+      rrVal != null ? ["손익비", `${rrVal}R`] : null,
     ]
+      .filter(Boolean)
       .map(
         ([label, val]) =>
-          `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(fmtPrice(val, assetType))}</span></div>`
+          `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(String(val))}</span></div>`
       )
       .join("");
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
@@ -1553,7 +1601,7 @@
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p></div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p>${renderScoreCard(analysis.scoreCard)}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>

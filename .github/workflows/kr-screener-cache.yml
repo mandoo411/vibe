@@ -21,6 +21,11 @@ concurrency:
 
 env:
   TZ: Asia/Seoul
+  # 2026-08-26: 이 워크플로우의 Deploy 스텝에 아래 두 값이 빠져 있어서 .vercel/(gitignore됨)이
+  # 없는 CI 체크아웃에서 vercel CLI가 프로젝트를 못 찾고 체크아웃 디렉터리명("vibe")으로
+  # 매번 새 프로젝트를 만들어 배포하던 게 원인이었던 중복 프로젝트 문제 재발방지.
+  VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
+  VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
 
 jobs:
   build:

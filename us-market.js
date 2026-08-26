@@ -998,6 +998,8 @@
     state.acIndex = -1;
   }
 
+  const AC_DISPLAY_LIMIT = 50; // 드롭다운에 스크롤로 노출할 최대 개수(기존 8 하드컷 폐지, realtime-board.js/stock-analysis.js와 동일하게 유지)
+
   function renderAutocomplete(items) {
     const ac = $("us-ac");
     const input = $("us-stock-search-input");
@@ -1007,8 +1009,10 @@
       return;
     }
     ac.hidden = false;
+    // 2026-08-26: 8개로 하드컷하던 걸 스크롤 가능한 목록으로 전환(realtime-board.js/
+    // stock-analysis.js와 동일한 사용자 제보 — 목록 밖으로 밀린 종목은 선택 자체가 불가능했음).
     ac.innerHTML = items
-      .slice(0, 8)
+      .slice(0, AC_DISPLAY_LIMIT)
       .map((row, i) => {
         const active = i === state.acIndex ? " is-active" : "";
         return `<div class="rt-ac-item${active}" data-ticker="${escapeHtml(row.ticker)}" role="option">
@@ -1019,17 +1023,46 @@
         </div>`;
       })
       .join("");
+    const activeEl = ac.querySelector(".rt-ac-item.is-active");
+    if (activeEl && typeof activeEl.scrollIntoView === "function") {
+      activeEl.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  // 2026-08-26: 관련성 순위 없이 allKnownRows()/원격 검색 결과를 순서 그대로 이어붙이기만
+  // 하던 방식이라, 짧은 티커/이름을 검색해도 우연히 먼저 로드된 행이 앞서 나오는 문제가 있었음
+  // (realtime-board.js/stock-analysis.js와 같은 종류의 버그, 같은 날 같이 발견해 수정).
+  // 정확일치 > 시작일치 > 포함 순 점수 체계로 통일한다.
+  function scoreUsMatch(row, raw) {
+    const ticker = String(row.ticker || "").toUpperCase();
+    const name = String(row.name || "");
+    const upper = raw.toUpperCase();
+    const lower = raw.toLowerCase();
+    const nameLower = name.toLowerCase();
+    if (!ticker) return null;
+    if (ticker === upper) return 100;
+    if (nameLower === lower) return 95;
+    if (ticker.startsWith(upper)) return 80;
+    if (nameLower.startsWith(lower)) return 75;
+    if (ticker.includes(upper)) return 60;
+    if (nameLower.includes(lower)) return 55;
+    return null;
+  }
+
+  function rankUsMatches(rows, raw) {
+    return rows
+      .map((row) => {
+        const score = scoreUsMatch(row, raw);
+        return score == null ? null : { row, score, len: String(row.name || row.ticker || "").length };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score || a.len - b.len)
+      .map((entry) => entry.row);
   }
 
   function filterLocalRows(q) {
     const raw = normalizeQuery(q);
-    const lower = raw.toLowerCase();
-    const upper = raw.toUpperCase();
-    return allKnownRows().filter((row) => {
-      const ticker = String(row.ticker || "").toUpperCase();
-      const name = String(row.name || "").toLowerCase();
-      return ticker.includes(upper) || name.includes(lower);
-    });
+    return rankUsMatches(allKnownRows(), raw);
   }
 
   function filterAutocomplete(q) {
@@ -1051,13 +1084,16 @@
         if (!input || normalizeQuery(input.value) !== raw) return;
         const remote = pack.results || [];
         const seen = new Set();
-        const merged = [];
+        const combined = [];
         for (const row of [...local, ...remote]) {
           const ticker = String(row.ticker || "").toUpperCase();
           if (!ticker || seen.has(ticker)) continue;
           seen.add(ticker);
-          merged.push(row);
+          combined.push(row);
         }
+        // 로컬+원격을 이어붙인 순서 그대로 두지 않고 동일한 점수 체계로 다시 정렬 —
+        // 원격 검색 결과가 로컬보다 더 정확한 일치를 줄 수도 있으므로 병합 후 재정렬 필요.
+        const merged = rankUsMatches(combined, raw);
         state.acIndex = merged.length ? 0 : -1;
         renderAutocomplete(merged);
       } catch (e) {

@@ -516,6 +516,99 @@
   color: var(--color-text-muted);
 }
 
+/* GPT 리포트 지적사항 대응 — "사실(KIS 데이터)"과 "AI 해석"을 시각적으로 분리 */
+.ai-fact-badge,
+.ai-interp-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.ai-fact-badge {
+  background: rgba(59, 130, 246, 0.14);
+  color: #2563eb;
+}
+
+[data-theme="dark"] .ai-fact-badge {
+  background: rgba(96, 165, 250, 0.18);
+  color: #93c5fd;
+}
+
+.ai-interp-badge {
+  background: rgba(234, 179, 8, 0.16);
+  color: #92660a;
+}
+
+[data-theme="dark"] .ai-interp-badge {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+.ai-supply-fact {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
+}
+
+.ai-supply-fact__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.ai-supply-fact__label {
+  min-width: 40px;
+  font-weight: 600;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-supply-fact__label {
+  color: var(--text-title, #f3f4f6);
+}
+
+.ai-supply-fact__cell {
+  color: var(--color-text-secondary);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+}
+
+.ai-supply-fact__cell em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-right: 4px;
+}
+
+.ai-supply-fact__cell small {
+  font-family: inherit;
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
+
+.ai-supply-fact__warn {
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+[data-theme="dark"] .ai-supply-fact__warn {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.14);
+}
+
 .ai-summary-prob__note {
   font-size: 11px;
   color: var(--color-text-secondary);

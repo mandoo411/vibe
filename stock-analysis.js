@@ -527,10 +527,38 @@
     );
   }
 
+  // 2026-08-26: 드물게 모델 응답이 문장 단위가 아니라 단어/글자 단위로 개행되어 와서
+  // (제보: "수급 분석" 카드가 세로로 한 글자씩 쪼개져 렌더링됨) <p> 태그가 글자 수만큼
+  // 생겨 화면이 깨지는 문제가 있었다. 문장부호로 끝나지 않았거나 너무 짧은 조각은 진짜
+  // 문단 구분이 아니라고 보고 이전 조각에 이어붙여서 방어한다.
+  const PROSE_SENTENCE_END = /[.!?)\]"'」』〉》]$|[다요음임함됨슴갔음]\.?$/;
+  function mergeFragmentedParagraphs(rawParas) {
+    // 글자/음절 단위로 통째로 쪼개진 극단적인 경우(평균 조각 길이가 2자 이하)엔 애초에
+    // 문단 구분이 아니었을 가능성이 높으므로 구분자 없이 그대로 이어붙인다 — 그렇지 않고
+    // 아래 문장부호 기반 병합을 쓰면 글자 사이마다 공백이 끼어 어색해진다.
+    if (rawParas.length > 1) {
+      const avgLen = rawParas.reduce((sum, s) => sum + s.length, 0) / rawParas.length;
+      if (avgLen <= 2) return [rawParas.join("")];
+    }
+    const paras = [];
+    for (const frag of rawParas) {
+      const prevIdx = paras.length - 1;
+      const prev = prevIdx >= 0 ? paras[prevIdx] : null;
+      const shouldMerge = prev != null && (frag.length <= 6 || !PROSE_SENTENCE_END.test(prev));
+      if (shouldMerge) {
+        paras[prevIdx] = /\s$/.test(prev) ? prev + frag : `${prev} ${frag}`;
+      } else {
+        paras.push(frag);
+      }
+    }
+    return paras;
+  }
+
   function formatProseText(text, emptyMsg) {
     const raw = String(text || "").trim();
     if (!raw) return `<p class="ai-prose-empty">${escapeHtml(emptyMsg || "내용이 없습니다.")}</p>`;
-    const paras = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    const rawParas = raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+    const paras = mergeFragmentedParagraphs(rawParas);
     return paras
       .map((p) => `<p class="ai-prose-p">${emphasizeMetrics(escapeHtml(p))}</p>`)
       .join("");
@@ -1411,8 +1439,8 @@
   function renderScoreCard(scoreCard) {
     if (!scoreCard || typeof scoreCard !== "object") return "";
     const labels = { trend: "추세", momentum: "모멘텀", volume: "거래량", supply: "수급" };
-    const chips = Object.keys(labels)
-      .filter((k) => scoreCard[k] != null)
+    const activeKeys = Object.keys(labels).filter((k) => scoreCard[k] != null);
+    const chips = activeKeys
       .map((k) => {
         const v = scoreCard[k];
         const sign = v > 0 ? "+" : "";
@@ -1423,10 +1451,64 @@
     if (!chips) return "";
     const totalV = toNum(scoreCard.total);
     const totalSign = totalV > 0 ? "+" : "";
+    // GPT 리포트 지적사항 — "종합 +3"만 보면 상단 "상승확률 35%"와 같은 척도처럼 오해할 수
+    // 있어, 이게 몇 점 만점 중 몇 점인지(-8~+8처럼 항목 수×2) 분모를 같이 보여준다.
+    const maxAbs = activeKeys.length * 2;
     return (
       `<div class="ai-score-card">` +
-      `<div class="ai-score-card__chips">${chips}<span class="ai-score-chip ai-score-chip--total">종합 ${totalV != null ? totalSign + totalV : "—"}</span></div>` +
+      `<div class="ai-score-card__chips">${chips}<span class="ai-score-chip ai-score-chip--total">종합 ${totalV != null ? `${totalSign}${totalV}/${maxAbs}` : "—"}</span></div>` +
       `<p class="ai-score-card__note">${escapeHtml(scoreCard.note || "")}</p>` +
+      `</div>`
+    );
+  }
+
+  // GPT 리포트 지적사항 — "AI가 지어낸 말"과 실제 KIS 데이터를 한눈에 구분하고 싶다는
+  // 요청 + "하루 수급만으론 부족하다"는 지적에 대응. 1일/5일/20일 순매수는 서버가 KIS
+  // 실데이터를 그대로 집계한 값(analysis.supplyFlow)이라 여기서는 절대 가공/추정하지
+  // 않고 그대로 표로 보여준다. 그 아래 AI 해석(analysis.supply, 프로즈)과 시각적으로
+  // 분리해서 "사실"과 "AI 해석"을 헷갈리지 않게 한다.
+  function fmtSharesSigned(n) {
+    if (n == null) return "—";
+    const v = Math.round(n);
+    const sign = v > 0 ? "+" : "";
+    return `${sign}${v.toLocaleString("ko-KR")}주`;
+  }
+
+  function fmtWonEokSigned(n) {
+    if (n == null) return "";
+    const eok = n / 1e8;
+    const sign = eok > 0 ? "+" : "";
+    return `${sign}${eok.toFixed(1)}억원`;
+  }
+
+  function renderSupplyFlowFact(supplyFlow) {
+    if (!supplyFlow || typeof supplyFlow !== "object") return "";
+    const rows = [
+      ["외국인", supplyFlow.foreign, supplyFlow.foreignDivergent],
+      ["기관", supplyFlow.institution, supplyFlow.institutionDivergent],
+    ].filter(([, v]) => v && (v.d1 != null || v.d5 != null || v.d20 != null));
+    if (!rows.length) return "";
+    const body = rows
+      .map(([label, v, divergent]) => {
+        const eok = fmtWonEokSigned(v.d1WonApprox);
+        const warn = divergent
+          ? `<span class="ai-supply-fact__warn">오늘·20일 추세 반대</span>`
+          : "";
+        return (
+          `<div class="ai-supply-fact__row">` +
+          `<span class="ai-supply-fact__label">${escapeHtml(label)}</span>` +
+          `<span class="ai-supply-fact__cell"><em>1일</em>${escapeHtml(fmtSharesSigned(v.d1))}${eok ? `<small>(현재가 기준 환산 약 ${escapeHtml(eok)})</small>` : ""}</span>` +
+          `<span class="ai-supply-fact__cell"><em>5일</em>${escapeHtml(fmtSharesSigned(v.d5))}</span>` +
+          `<span class="ai-supply-fact__cell"><em>20일</em>${escapeHtml(fmtSharesSigned(v.d20))}</span>` +
+          warn +
+          `</div>`
+        );
+      })
+      .join("");
+    return (
+      `<div class="ai-supply-fact">` +
+      `<span class="ai-fact-badge">사실 · KIS 시세데이터</span>` +
+      body +
       `</div>`
     );
   }
@@ -1536,12 +1618,15 @@
     // 2026-08-26: target2(2차 목표가)·rr(손익비)는 서버가 실제 주봉/월봉 스윙 저항과
     // 확정된 entry/stop/target으로 계산해서 내려준 값 — AI가 지어낸 숫자가 아니다.
     const target2 = toNum(o.target2);
+    const target2IsLongTerm = !!o.target2IsLongTerm;
     const rrVal = toNum(o.rr);
     const priceRows = [
       ["진입가", fmtPrice(prices.entry, assetType)],
       ["손절가", fmtPrice(prices.stop, assetType)],
       [target2 != null ? "목표가(1차)" : "목표가", fmtPrice(prices.target, assetType)],
-      target2 != null ? ["목표가(2차)", fmtPrice(target2, assetType)] : null,
+      // GPT 리포트 지적사항 — target1과 15% 이상 떨어진 target2를 "2차 목표"로 나란히
+      // 보여주면 단기에 도달 가능한 목표처럼 오인될 수 있어 "장기 잠재 목표"로 구분한다.
+      target2 != null ? [target2IsLongTerm ? "장기 잠재 목표" : "목표가(2차)", fmtPrice(target2, assetType)] : null,
       rrVal != null ? ["손익비", `${rrVal}R`] : null,
     ]
       .filter(Boolean)
@@ -1617,7 +1702,7 @@
       `<div class="ai-analysis-cards">
         <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p>${renderScoreCard(analysis.scoreCard)}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
-        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
+        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div></article>

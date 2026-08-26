@@ -247,7 +247,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - materialAnalysis(재료 분석)에는 주가에 유리한 재료만 나열하지 않는다. web_search로 확인되는 재료 중 리스크·부정적 재료(예: 경쟁사의 신제품·증설로 인한 경쟁 심화, 규제·정책 리스크, 실적 눈높이 부담, 공급 축소·원가 상승 등)가 하나라도 확인되면 반드시 최소 1개는 materials 배열에 포함한다 — 지금까지의 강세 스토리와 배치되는 내용이라도 숨기지 않는다. 여러 관점을 균형 있게 짚어야 돈값을 하는 유료 리포트가 된다.
 - 다가오는 이벤트는 해당 종목 자체 일정에만 국한하지 않는다. 같은 업종 경쟁사의 실적발표, 업황에 영향을 주는 정책·규제 발표, 주가에 실질적 영향을 줄 매크로 일정(예: 미국 금리 결정, 핵심 경쟁사 실적) 중 확인되는 것이 있으면 함께 포함한다.
 - entryPrice(진입가)가 현재가와 차이가 나면(예: 눌림목 매수를 노리는 경우) 그 이유를 opinion 총평(comment)에 반드시 한 문장으로 설명한다. entryPrice가 시나리오 B(중립)의 entry와 다르면 왜 다른지도 명시한다 — 숫자만 던지지 말고 왜 그 가격을 골랐는지 반드시 설명한다.
-- 재료 분석의 reflectionPct(반영도)는 "이 재료가 완전히 현실화됐을 때 기대되는 주가 임팩트 대비, 현재 주가에 이미 선반영된 비율"로 정의한다. 각 재료의 judgment(한줄 판단)에는 그 비율을 매긴 근거를 최소 하나 구체적으로 언급한다 — 예: 정보가 공개된 지 얼마나 됐는지, 공개 이후 주가가 이미 얼마나 움직였는지, 증권가 컨센서스·목표주가에 이미 얼마나 반영됐는지. 근거 없이 숫자만 제시하지 않는다.
+- 재료 분석의 reflectionPct(반영도)는 "이 재료가 완전히 현실화됐을 때 기대되는 주가 임팩트 대비, 현재 주가에 이미 선반영된 비율"로 정의한다. 각 재료의 judgment(한줄 판단)에는 그 비율을 매긴 근거를 최소 하나 구체적으로 언급한다 — 예: 정보가 공개된 지 얼마나 됐는지, 공개 이후 주가가 이미 얼마나 움직였는지, 증권가 컨센서스·목표주가에 이미 얼마나 반영됐는지. 근거 없이 숫자만 제시하지 않는다. 이 비율은 통계로 계산되는 값이 아니라 애널리스트의 정성적 어림값이므로, 62%처럼 세밀한 숫자로 제시하지 말고 10% 단위(10/20/.../90)로만 어림잡아 제시한다 — 어차피 서버에서 10% 단위로 반올림되니, 처음부터 그 단위로 판단하면 근거와 숫자가 더 자연스럽게 맞는다.
 - 분석 대상이 벤처캐피탈(VC)·사모펀드(PE)·지주회사처럼 지분투자가 핵심 사업인 회사라면, 재료 분석에서 "벤처투자 회수 기대" 같은 뭉뚱그린 표현으로 끝내지 않는다. 반드시 web_search로 "[종목명] 대표 포트폴리오" "[종목명] 투자 기업"을 검색해서, 특히 최근 기업가치가 급등했거나 IPO(상장)를 준비 중인 대표 피투자기업이 있으면 그 기업명과 투자 회수 규모·멀티플을 구체적으로 명시한다. 이런 대표 피투자기업이야말로 재료의 핵심이므로 일반론으로 대체하지 않는다.
 - 각 섹션(스토리, 수급, 재료, 차트, 총평)은 따로따로 나열된 사실이 아니라 하나의 기승전결 있는 이야기로 이어지게 쓴다. 앞 섹션에서 나온 근거(예: 밸류에이션 부담, 수급 엇갈림, 미반영 재료)를 뒤 섹션(차트 해석, 총평)에서 다시 연결해서 언급하고, 총평은 앞의 모든 근거를 하나의 결론으로 묶어낸다.
 - 지표·사실을 건조하게 나열하지 않는다 (예: "이동평균선: ~, RSI: ~" 식의 항목 나열형 문장 금지). 왜 그 정보가 지금 중요한지, 다른 정보와 어떻게 연결되는지를 자연스러운 문장으로 풀어서 설명한다.
@@ -272,7 +272,10 @@ function buildSystemPrompt(today, quote) {
     ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - 입력 데이터의 foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값을 우선 사용할 것.
 - 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
-- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.`
+- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.
+- 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
+- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : assetType === "CRYPTO"
       ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
@@ -291,6 +294,10 @@ function buildSystemPrompt(today, quote) {
     "web_search 결과는 2번(story), 3번(supplyDemand), 4번(events), 5번(materials 재료 분석)에 반드시 반영하세요.",
     priceSourceLine,
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.",
+    "",
+    `2번 story(왜 지금 이 가격인가) 작성 규칙 (반드시 준수):
+- 이미 알려진 재료(지난 실적발표, 과거 공시 등)는 "기존에 알려진 내용"으로 한두 문장에 짧게 요약만 하고, 그 다음 오늘/최근 새로 확인된 변화(수급 움직임, 주가 반응 등)를 중심으로 서술한다.
+- "기존 재료"와 "오늘의 변화"를 뒤섞어 나열하지 말고, 이 순서(과거에 이미 알려진 것 → 최근에 새로 벌어진 것)로 자연스럽게 이어서 쓴다.`,
     "",
     supplyDemandRule,
     "",
@@ -314,7 +321,7 @@ function buildSystemPrompt(today, quote) {
   · 실적 모멘텀: 다음 실적발표 예상치 기반
   · 업종 트렌드: 해당 업종 현재 흐름
 - strength는 반드시 '강'/'중'/'하' 중 하나.
-- reflectionPct는 반드시 0-100 사이 숫자, reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 중 최소 하나, 숫자 포함)를 반드시 채울 것.
+- reflectionPct는 반드시 0-100 사이 숫자이되 10% 단위(예: 60, 70)로만 제시할 것(62처럼 세밀한 값 금지 — 통계가 아닌 정성적 어림값이므로). reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 중 최소 하나, 숫자 포함)를 반드시 채울 것.
 - certainty는 반드시 '확정'(이미 집행·완료)/'진행중'(공시·발표되어 절차 진행 중)/'예상'(아직 미실현)/'루머'(비공식)/'AI추정'(근거 없는 정황 추정) 중 하나로 채울 것.
 - 자사주 매입/소각 재료는 반드시 목적(임직원 성과보상용 vs 소각을 통한 주주환원용)을 구분해서 서술하고, 절대 3번 수급 분석의 근거로 쓰지 말 것.
 - aiComment: AI 재료 종합 판단 3~5문장, 실제 트레이더 말투`,
@@ -328,7 +335,7 @@ function buildSystemPrompt(today, quote) {
 ⑥ 주봉 흐름 — 입력에 weeklyIndicators가 있으면: 20주선/60주선 대비 현재가 위치, 주봉 스윙 저항·지지(resistances/supports) 수치를 지지·저항 구조로 해석
 ⑦ 월봉 흐름 — 입력에 monthlyIndicators가 있으면: 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열) 판단, 월봉 스윙 저항·지지를 장기 지지·저항으로 해석
 ⑧ 멀티 타임프레임 정합성: 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단 (예: "일봉·주봉은 상승 정배열이나 월봉은 아직 24개월선 아래")
-⑨ 엘리어트 파동: weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서가 있으면 그 근거로 현재 추정 파동 구간을 서술. 스윙 데이터가 불충분해 파동 번호를 특정하기 어려우면, "데이터 미확보"나 "판단 보류" 같은 내부 사정을 고객에게 노출하지 말고, 파동 번호 언급 없이 "장기 상승 추세 안에서의 조정 국면" 같은 정성적 표현으로 자연스럽게 넘어갈 것. 임의의 파동 번호·가격은 지어내지 말 것.
+⑨ 엘리어트 파동: 파동 번호("3파", "5파" 등)는 어떤 경우에도 단정적으로 쓰지 않는다 — 같은 차트도 분석자마다 카운팅이 달라지는 주관적 해석이라, AI가 특정 파동 번호를 단정하면 오히려 신뢰도를 떨어뜨린다. weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서를 근거로 "장기 상승 추세 안에서의 조정/되돌림 국면" 같은 정성적 표현만 쓰고, 굳이 엘리어트를 언급하려면 반드시 "엘리어트 참고 해석:"으로 시작해 약한 보조 의견임을 표시할 것. 임의의 파동 번호·가격은 지어내지 말 것.
 ⑩ ICT(스마트머니) 관점: 제공된 지지·저항 구간을 유동성(liquidity) 구간 개념으로 짧게 해석. 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말고 반드시 제공된 실제 스윙 레벨 범위 안에서만 언급
 - weeklyIndicators/monthlyIndicators가 모두 없으면 ⑥~⑩ 내용은 억지로 채우지 말고 그 부분 언급 자체를 생략한 채 ①~⑤(일봉 중심 분석)만으로 자연스럽게 문단을 마무리할 것. "데이터가 없어서" 같은 문구는 절대 고객에게 노출하지 말 것.
 【형식】 chartAnalysis는 각 항목(①~⑩)을 반드시 줄바꿈(개행문자 \n)으로 구분해서 작성할 것. 한 문단으로 이어 쓰지 말 것. 예시:
@@ -347,14 +354,14 @@ function buildSystemPrompt(today, quote) {
   · scenarioA/B/C 전부 entry(진입가)와 stopLoss(손절가)를 반드시 숫자로 채울 것 (0 금지, 절대 비워두지 말 것):
     - scenarioA(강세).entry/target/stopLoss: entryPrice 근방에서 강세 시나리오에 맞게 계산
     - scenarioB(중립).entry/target/stopLoss: 현재가 근방 진입, target=entry+5~8%, stopLoss=entry-3~5%
-    - scenarioC(약세).entry/stopLoss: 이탈 후 반등을 노리는 재진입가 개념으로, entry=downTarget 근방, stopLoss=entry-3% 근방 (target은 downTarget으로 대체)
+    - scenarioC(약세).entry/stopLoss: "지지 붕괴 = 즉시 매수 기회"로 포장하지 않는다. condition에서 말한 이탈 가격(지지선)이 깨지면 ①신규 매수 금지·관망이 1차 대응이고, ②그보다 더 아래의 "진짜" 다음 지지선에서 종가 기준 지지가 재확인된 뒤에만 재진입한다는 순서로 짠다. entry(재진입가)는 condition의 이탈 가격보다 최소 3% 이상 낮아야 하고(거의 같은 가격에 바로 재진입하는 식으로 쓰지 말 것), 그 가격을 고른 실제 근거(이전 저점, 더 아래 이동평균, 피보나치 되돌림 등)가 있어야 한다. stopLoss=entry-3% 근방(target은 downTarget으로 대체).
   · scenarioA/B/C: probability 합계 반드시 100
   · scenarioA/B/C 각각 basis(그 확률을 매긴 구체적 근거 — 추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것. 없는 통계("표본 O건" 등)를 지어내지 말고, 실제 입력 데이터를 조합한 논리로 서술할 것.
-  · aiComment: 반드시 3문장 이상, entryPrice가 현재가·시나리오B entry와 다르면 그 이유 포함
+  · aiComment: 반드시 3문장 이상, entryPrice가 현재가·시나리오B entry와 다르면 그 이유 포함. "눌림목 매수"/"조정 시 매수" 같은 표현을 쓸 거면 그 가격이 scenarioB.entry와 반드시 일치해야 한다 — 총평과 시나리오 필드에서 서로 다른 진입 전략을 동시에 제시하지 않는다.
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
 - 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거
 - 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거 (entry/target/stopLoss 절대 0으로 두지 말 것)
-- 시나리오 C (약세): 조건 / 진입가 / 대응전략 / 목표 하단 / 손절가 / 확률% / 근거 (entry/stopLoss도 반드시 채울 것)
+- 시나리오 C (약세): 조건(지지 이탈) / 대응(신규 매수 금지·관망) / 재진입 조건(다음 지지 재확인) / 재진입가(entry) / 손절가 / 확률% / 근거 — "이탈=매수 기회"처럼 쓰지 말 것
 - 5번 재료 분석 결과를 반드시 반영 (예: '재료 미반영 구간이 크므로 A시나리오 확률 높게 책정')`,
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
@@ -476,6 +483,16 @@ function toNum(v) {
   if (v === "" || v == null) return null;
   const n = Number(String(v).replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
+}
+
+/** GPT 리포트 지적사항 — "62%"처럼 실제로는 존재하지 않는 산식을 암시하는 과도한
+ * 정밀도를 피하기 위해, 재료 반영도는 항상 10% 단위로 버킷팅한다(예: 62 -> 60).
+ * AI의 정성적 판단이라는 사실을 값 자체의 "정밀도"로도 드러내기 위한 코드 강제 규칙. */
+function bucketReflectionPct(raw) {
+  const n = toNum(raw);
+  if (n == null) return null;
+  const clamped = Math.max(0, Math.min(100, n));
+  return Math.round(clamped / 10) * 10;
 }
 
 function normalizeCode6(raw) {
@@ -632,13 +649,42 @@ async function fetchKisInvestorFlow(code6) {
     });
     const rows = Array.isArray(res && res.output) ? res.output : [];
     const latest = rows[0] || {};
+    // 2026-08-26: GPT 리포트 지적사항 — "하루 수급만으로는 부족하다"에 대응. 이 TR은
+    // output이 최근 영업일부터 역순으로 여러 행을 내려주므로(보통 30영업일 안팎), 추가
+    // 호출 없이도 최근 N영업일 누적 순매수를 계산할 수 있다. 실제 KIS 데이터로 계산한
+    // 값이므로 AI에게 "사실"로 그대로 제공하고, AI는 이 숫자를 해석만 하게 한다.
+    const sumField = (n, field) => {
+      const slice = rows.slice(0, n);
+      if (!slice.length) return null;
+      let sum = 0;
+      let any = false;
+      for (const r of slice) {
+        const v = toNum(r && r[field]);
+        if (v != null) {
+          sum += v;
+          any = true;
+        }
+      }
+      return any ? Math.round(sum) : null;
+    };
     return {
       foreignNetBuy: toNum(latest.frgn_ntby_qty),
       institutionNetBuy: toNum(latest.orgn_ntby_qty),
+      foreignNetBuy5d: sumField(5, "frgn_ntby_qty"),
+      institutionNetBuy5d: sumField(5, "orgn_ntby_qty"),
+      foreignNetBuy20d: sumField(20, "frgn_ntby_qty"),
+      institutionNetBuy20d: sumField(20, "orgn_ntby_qty"),
     };
   } catch (e) {
     console.warn("[analyze] investor flow fetch failed", code6, e && e.message);
-    return { foreignNetBuy: null, institutionNetBuy: null };
+    return {
+      foreignNetBuy: null,
+      institutionNetBuy: null,
+      foreignNetBuy5d: null,
+      institutionNetBuy5d: null,
+      foreignNetBuy20d: null,
+      institutionNetBuy20d: null,
+    };
   }
 }
 
@@ -672,6 +718,10 @@ async function fetchKisQuote(code6) {
   const institutionNetBuy = investorFlow.institutionNetBuy;
 
   return {
+    foreignNetBuy5d: investorFlow.foreignNetBuy5d,
+    institutionNetBuy5d: investorFlow.institutionNetBuy5d,
+    foreignNetBuy20d: investorFlow.foreignNetBuy20d,
+    institutionNetBuy20d: investorFlow.institutionNetBuy20d,
     stockCode: code6,
     stockName: sanitizeStr(o1.hts_kor_isnm || o1.prdt_abrv_name || o1.isnm || o2.hts_kor_isnm || ""),
     market: marketLabelFromRow(o1) || marketLabelFromRow(o2),
@@ -1335,6 +1385,32 @@ function computeTarget2(target1, wm) {
  * AI의 정성적 판단과는 별개로, 실제 숫자만으로 재현 가능한 값을 함께 보여줘서
  * "AI가 그냥 던진 숫자"처럼 보이는 문제를 보완한다. 데이터가 부족한 항목은 null로 두고
  * 억지로 채우지 않는다 — 모든 항목이 null이면 스코어카드 자체를 생략한다. */
+/** GPT 리포트 지적사항 — 수급을 "오늘 하루"만 보여주면 왜곡될 수 있다(예: 오늘은 순매수
+ * 지만 20일 누적으론 아직 순매도 우위). 1일/5일/20일 순매수를 코드가 그대로 집계해
+ * "사실" 표로 제공한다 — AI는 이 숫자를 해석만 하고(supply 문단), 숫자 자체는 이 함수가
+ * KIS 실데이터로 보장한다(할루시네이션 여지 없음). */
+function buildSupplyFlowFact(quote) {
+  const price = toNum(quote && quote.currentPrice);
+  const pick = (field) => toNum(quote && quote[field]);
+  const foreign = { d1: pick("foreignNetBuy"), d5: pick("foreignNetBuy5d"), d20: pick("foreignNetBuy20d") };
+  const institution = { d1: pick("institutionNetBuy"), d5: pick("institutionNetBuy5d"), d20: pick("institutionNetBuy20d") };
+  const hasAny = [foreign.d1, foreign.d5, foreign.d20, institution.d1, institution.d5, institution.d20].some(
+    (v) => v != null
+  );
+  if (!hasAny) return null;
+  const wonAmount = (qty) => (qty == null || price == null ? null : Math.round(qty * price));
+  const divergent = (a, b) =>
+    a != null && b != null && Math.sign(a) !== 0 && Math.sign(b) !== 0 && Math.sign(a) !== Math.sign(b);
+  return {
+    foreign: { ...foreign, d1WonApprox: wonAmount(foreign.d1) },
+    institution: { ...institution, d1WonApprox: wonAmount(institution.d1) },
+    // 오늘(1일)과 20일 누적의 방향이 다르면(divergent) 프론트에서 "단기·중기 방향 엇갈림"
+    // 안내를 보여줄 때 쓴다.
+    foreignDivergent: divergent(foreign.d1, foreign.d20),
+    institutionDivergent: divergent(institution.d1, institution.d20),
+  };
+}
+
 function computeScoreCard(quote, indicators) {
   const price = toNum(quote && quote.currentPrice);
   const ind = indicators && typeof indicators === "object" ? indicators : {};
@@ -1491,12 +1567,10 @@ function mapToolInputToLegacy(input) {
         .slice(0, 4)
         .map((it) => {
           const strengthNorm = normalizeStrength(it && it.strength);
-          const reflectionPctRaw = toNum(it && it.reflectionPct);
           return {
             name: sanitizeStr(it && it.name),
             strength: strengthNorm,
-            reflectionPct:
-              reflectionPctRaw == null ? null : Math.max(0, Math.min(100, Math.round(reflectionPctRaw))),
+            reflectionPct: bucketReflectionPct(it && it.reflectionPct),
             reflectionNote: "",
             reflectionBasis: sanitizeStr(it && it.reflectionBasis),
             certainty: sanitizeStr(it && it.certainty),
@@ -1641,11 +1715,7 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
         .slice(0, 4)
         .map((it) => {
           const strengthNorm = normalizeStrength(it.strength);
-          const reflectionPctRaw = toNum(it.reflectionPct ?? it.reflection_pct);
-          const reflectionPct =
-            reflectionPctRaw == null
-              ? null
-              : Math.max(0, Math.min(100, Math.round(reflectionPctRaw)));
+          const reflectionPct = bucketReflectionPct(it.reflectionPct ?? it.reflection_pct);
           return {
             name: sanitizeStr(it.name),
             strength: strengthNorm,
@@ -1750,12 +1820,25 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-08-26: target2(2차 목표가)는 AI가 아니라 실제 주봉/월봉 스윙 저항(KIS 실데이터)에서
       // target보다 높은 다음 저항을 코드가 그대로 찾아 붙인 것 — 없으면 null(지어내지 않음).
       target2: computeTarget2(prices.target, wm),
+      // GPT 리포트 지적사항 — target1과 너무 멀리 떨어진 target2를 "2차 목표"처럼 나란히
+      // 보여주면 단기에 도달 가능한 목표처럼 오인시킨다. target1 대비 15% 이상 위면
+      // "장기 잠재 목표"로 구분 표기하도록 플래그만 계산해서 붙인다(프론트에서 라벨링에 사용).
+      target2IsLongTerm: (() => {
+        const t1 = toNum(prices.target);
+        const t2 = computeTarget2(prices.target, wm);
+        if (t1 == null || t2 == null || t1 <= 0) return false;
+        return (t2 - t1) / t1 >= 0.15;
+      })(),
       rr: computeRR(prices.entry, prices.stop, prices.target),
       comment: stripCitations(sanitizeStr(opinion.comment)),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.
     scoreCard: computeScoreCard(quote, indicators),
+    // GPT 리포트 지적사항 — "하루 수급만으로는 부족하다", "사실과 AI 해석을 구분해야 한다".
+    // 1일/5일/20일 순매수는 AI가 서술하는 게 아니라 KIS 실데이터를 코드가 그대로 집계한
+    // 값이므로, supply(AI 해석 문단)와 별개로 "사실" 표로 프론트에 그대로 넘긴다.
+    supplyFlow: buildSupplyFlowFact(quote),
   };
 }
 
@@ -1825,7 +1908,10 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값이 입력 데이터에 있으면 그 수치로 서술.
 - 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
-- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
+- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
+- 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
+- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
 - 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
@@ -1843,6 +1929,10 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     "- 검색 결과를 2번 story, 3번 supplyDemand, 4번 events, 5번 materials(재료 분석)에 반드시 반영.",
     "- 학습데이터·과거 기억 금지. web_search 확인 정보만 사용.",
     "",
+    `story(왜 지금 이 가격인가) 작성 규칙 — 반드시 준수:
+- 이미 알려진 재료(지난 실적발표, 과거 공시 등)는 "기존에 알려진 내용"으로 한두 문장만 짧게 요약하고, 그 다음 오늘/최근 새로 확인된 변화(수급 움직임, 주가 반응 등)를 중심으로 서술한다.
+- "기존 재료"와 "오늘의 변화"를 뒤섞어 나열하지 말고, 이 순서(과거→최근)로 자연스럽게 이어서 쓴다.`,
+    "",
     supplyDemandRule2,
     "",
     `4번 다가오는 이벤트 규칙 (반드시 준수):
@@ -1857,10 +1947,10 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - materialAnalysis.materials는 반드시 2개 이상 채울 것.
 - 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
 - 재료가 없으면 기본 재료로 채울 것: 실적 모멘텀(다음 실적발표 예상치), 업종 트렌드(해당 업종 흐름).
-- strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자, reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 등 숫자 포함)를 채울 것.
+- strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자이되 10% 단위로만 어림잡아 제시(통계가 아닌 정성적 판단이므로 62 같은 세밀한 값 금지), reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 등 숫자 포함)를 채울 것.
 - certainty는 '확정'/'진행중'/'예상'/'루머'/'AI추정' 중 하나. 자사주 매입/소각은 목적(임직원 보상용 vs 소각 주주환원용)을 구분하고 절대 수급(supplyDemand) 근거로 쓰지 말 것.`,
     "",
-    `6번 차트 — 제공된 실제 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일. weeklyIndicators/monthlyIndicators가 있으면 주봉·월봉 MA/스윙 지지·저항으로 장기 추세·멀티 타임프레임 정합성·엘리어트 파동까지 서술. 매물대·유동성(ICT 스타일) 서술은 weeklyIndicators/monthlyIndicators의 structureEvent가 실제로 있을 때만 그 사실(유형·기준가)로 짧게 언급하고, 없으면 생략할 것 — "오더블록"/"FVG"/"CHoCH" 같은 세부 용어는 structureEvent가 없는 한 쓰지 말 것. 근거가 부족한 세부 항목(예: 정확한 파동 번호)은 "미확보/판단 보류" 같은 문구로 고객에게 노출하지 말고 조용히 생략하거나 정성적 표현으로 대체할 것. 숫자 추정 금지.
+    `6번 차트 — 제공된 실제 수치만 사용. MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일. weeklyIndicators/monthlyIndicators가 있으면 주봉·월봉 MA/스윙 지지·저항으로 장기 추세·멀티 타임프레임 정합성을 서술하고, 엘리어트는 언급하더라도 파동 번호 단정 없이 "엘리어트 참고 해석:"으로 약하게만 곁들일 것. 매물대·유동성(ICT 스타일) 서술은 weeklyIndicators/monthlyIndicators의 structureEvent가 실제로 있을 때만 그 사실(유형·기준가)로 짧게 언급하고, 없으면 생략할 것 — "오더블록"/"FVG"/"CHoCH" 같은 세부 용어는 structureEvent가 없는 한 쓰지 말 것. 근거가 부족한 세부 항목(예: 정확한 파동 번호)은 "미확보/판단 보류" 같은 문구로 고객에게 노출하지 말고 조용히 생략하거나 정성적 표현으로 대체할 것. 숫자 추정 금지.
 【형식】 chart는 각 항목을 반드시 줄바꿈(개행문자 \n)으로 구분해서 "제목: 내용" 형태로 작성할 것 (예: "이동평균선(일봉): …\nRSI: …\n일목균형표: …"). 한 문단으로 이어 쓰지 말 것.`,
     "",
     `7번 AI 주관적 판단 (aiJudgment 필수 — 하위 필드 절대 누락 금지):
@@ -1869,9 +1959,9 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
   entryPrice=현재가±1~2%, stopLoss=entry-3~5%, target=entry+10~20%
 - scenarioA/B/C 모두 entry(진입가)/stopLoss(손절가)를 숫자로 반드시 채울 것(0 금지):
   scenarioB.entry는 현재가 근방, target=entry+5~8%, stopLoss=entry-3~5%
-  scenarioC.entry는 downTarget 근방 재진입가 개념, stopLoss=entry-3% 근방
+  scenarioC.entry는 "지지 붕괴=매수 기회"가 아니라, 이탈 즉시 관망하고 그보다 최소 3% 이상 낮은 실제 다음 지지 근거가 있는 재진입가 개념(downTarget 활용), stopLoss=entry-3% 근방
 - scenarioA/B/C probability 합 100, 각각 basis(확률 근거 — 추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합, 없는 통계 지어내지 말 것)를 반드시 채울 것
-- aiComment 3문장 이상(entryPrice가 현재가·시나리오B entry와 다른 이유 포함)
+- aiComment 3문장 이상(entryPrice가 현재가·시나리오B entry와 다른 이유 포함). "눌림목 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것.
 - 5번 재료 반영 필수`,
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
@@ -1903,6 +1993,10 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
       pbr: quote.pbr,
       foreignNetBuy: quote.foreignNetBuy,
       institutionNetBuy: quote.institutionNetBuy,
+      foreignNetBuy5d: quote.foreignNetBuy5d,
+      institutionNetBuy5d: quote.institutionNetBuy5d,
+      foreignNetBuy20d: quote.foreignNetBuy20d,
+      institutionNetBuy20d: quote.institutionNetBuy20d,
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
       ...wmJsonFields(wm),
@@ -2027,11 +2121,18 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     "검색 없이 학습된 과거 지식만으로 답하지 마세요. 아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지. 답변 텍스트 안에 URL·도메인명·출처 표기도 절대 포함하지 말 것.",
     "",
+    `story(왜 지금 이 가격인가) 작성 규칙 — 반드시 준수:
+- 이미 알려진 재료(지난 실적발표, 과거 공시 등)는 "기존에 알려진 내용"으로 한두 문장만 짧게 요약하고, 그 다음 오늘/최근 새로 확인된 변화(수급 움직임, 주가 반응 등)를 중심으로 서술한다.
+- "기존 재료"와 "오늘의 변화"를 뒤섞어 나열하지 말고, 이 순서(과거→최근)로 자연스럽게 이어서 쓴다.`,
+    "",
     isKr
       ? `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - 입력 데이터에 foreignNetBuy/institutionNetBuy 값이 있으면 그 수치로 서술.
 - 값이 null이면 web_search로 "[종목명] 외국인 기관 순매수 오늘" 등을 검색해서 실제 데이터를 찾아 확정적으로 서술.
-- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.`
+- "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
+- 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
+- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
       : `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
 - 캔들·거래량 데이터로 저점 매집/고점 소진 등 거래량 기반 기술적 수급을 확정적으로 해석해서 서술.
@@ -2047,16 +2148,17 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     `opinion.scenarios 작성 규칙 — 반드시 준수:
 - A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
 - B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
-- C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
+- C(약세)는 "지지 붕괴=매수 기회"로 포장하지 말 것 — 이탈 시 신규 매수 금지·관망이 우선이고, targetLow(다음 지지) 근방에서 지지가 재확인된 뒤에만 재진입한다는 순서로 쓸 것. entry는 그 재진입가이며 이탈 가격보다 최소 3% 이상 낮아야 한다. stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
-- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.`,
+- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.
+- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.`,
     "",
     `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
 - 입력 데이터에 weeklyIndicators가 있으면 20주선/60주선 대비 현재가 위치와 주봉 스윙 저항·지지(resistances/supports)를 지지·저항 구조로 서술할 것.
 - 입력 데이터에 monthlyIndicators가 있으면 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열)를 판단하고 월봉 스윙 저항·지지를 장기 지지·저항으로 서술할 것.
 - 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단할 것.
-- 엘리어트 파동은 weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서가 있으면 그 근거로 서술하고, 데이터가 불충분해 파동 번호를 특정하기 어려우면 "미확보"나 "판단 보류" 같은 내부 사정을 고객에게 노출하지 말고 파동 번호 언급 없이 정성적 표현으로 자연스럽게 넘어갈 것 (임의의 파동 번호·가격 금지).
+- 엘리어트 파동 번호("3파" 등)는 어떤 경우에도 단정하지 말 것 — 분석자마다 카운팅이 갈리는 주관적 해석이라 AI가 단정하면 신뢰도가 떨어진다. 스윙 저항·지지 순서를 근거로 정성적 표현("조정/되돌림 국면")만 쓰고, 굳이 쓸 땐 "엘리어트 참고 해석:"으로 시작해 약한 보조 의견임을 표시할 것 (임의의 파동 번호·가격 금지).
 - ICT(스마트머니) 관점은 제공된 지지·저항 구간을 유동성(liquidity) 구간으로만 짧게 해석하고, 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말 것.
 - weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 언급 자체를 생략하고 일봉 중심 분석만으로 자연스럽게 마무리할 것 ("데이터 없음" 같은 문구를 고객에게 노출하지 말 것).
 【형식】 chart는 각 항목을 반드시 줄바꿈(개행문자 \n)으로 구분해서 "제목: 내용" 형태로 작성할 것 (예: "이동평균선(일봉): …\nRSI: …\n일목균형표: …"). 한 문단으로 이어 쓰지 말 것.`,
@@ -2086,6 +2188,10 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       pbr: quote.pbr,
       foreignNetBuy: quote.foreignNetBuy,
       institutionNetBuy: quote.institutionNetBuy,
+      foreignNetBuy5d: quote.foreignNetBuy5d,
+      institutionNetBuy5d: quote.institutionNetBuy5d,
+      foreignNetBuy20d: quote.foreignNetBuy20d,
+      institutionNetBuy20d: quote.institutionNetBuy20d,
       ma20: toNum(ind.ma20),
       ma60: toNum(ind.ma60),
       ma120: toNum(ind.ma120),
@@ -2179,10 +2285,21 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
       "아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
       "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지. 답변 텍스트 안에 URL·도메인명·출처 표기도 절대 포함하지 말 것.",
       "",
+      `story(왜 지금 이 가격인가) 작성 규칙 — 반드시 준수:
+- 이미 알려진 재료(지난 실적발표, 과거 공시 등)는 "기존에 알려진 내용"으로 한두 문장만 짧게 요약하고, 그 다음 오늘/최근 새로 확인된 변화(수급 움직임, 주가 반응 등)를 중심으로 서술한다.
+- "기존 재료"와 "오늘의 변화"를 뒤섞어 나열하지 말고, 이 순서(과거→최근)로 자연스럽게 이어서 쓴다.`,
+      "",
       `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - foreignNetBuy/institutionNetBuy 값이 있으면 그 수치로 서술.
 - 값이 null이면 거래량·가격 흐름 등 제공된 다른 데이터로 수급 상황을 확정적으로 해석해서 서술할 것.
-- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.`,
+- "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것.${
+        quote.assetType === "KR"
+          ? `
+- 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것.
+- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다.
+- 이 섹션은 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
+          : ""
+      }`,
       "",
       `events(다가오는 이벤트) 작성 규칙 — 반드시 준수:
 - 오늘은 ${today}이다. 뉴스로 날짜·사실관계가 명확히 확인된, 이 날짜 이후(오늘 포함)에 아직 일어나지 않은 일정만 포함할 것.
@@ -2194,16 +2311,17 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
       `opinion.scenarios 작성 규칙 — 반드시 준수:
 - A/B/C 시나리오 전부 entry와 stop을 반드시 숫자로 채울 것. 0이나 빈 값 금지.
 - B(중립).entry는 현재가 근방, target=entry의 +5~8%, stop=entry의 -3~5%로 계산.
-- C(약세).entry는 targetLow 근방의 재진입 고려가, stop=entry의 -3% 근방으로 계산.
+- C(약세)는 "지지 붕괴=매수 기회"로 포장하지 말 것 — 이탈 시 신규 매수 금지·관망이 우선이고, targetLow(다음 지지) 근방에서 지지가 재확인된 뒤에만 재진입한다는 순서로 쓸 것. entry는 그 재진입가이며 이탈 가격보다 최소 3% 이상 낮아야 한다. stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
-- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.`,
+- 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.
+- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.`,
       "",
       `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
 - 입력 데이터에 weeklyIndicators가 있으면 20주선/60주선 대비 현재가 위치와 주봉 스윙 저항·지지를 지지·저항 구조로 서술할 것.
 - 입력 데이터에 monthlyIndicators가 있으면 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열)를 판단하고 월봉 스윙 저항·지지를 장기 지지·저항으로 서술할 것.
 - 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단할 것.
-- 엘리어트 파동은 weeklyIndicators/monthlyIndicators의 스윙 저항·지지 순서가 있으면 그 근거로 서술하고, 데이터가 불충분해 파동 번호를 특정하기 어려우면 "미확보"나 "판단 보류" 같은 내부 사정을 고객에게 노출하지 말고 파동 번호 언급 없이 정성적 표현으로 자연스럽게 넘어갈 것 (임의의 파동 번호·가격 금지).
+- 엘리어트 파동 번호("3파" 등)는 어떤 경우에도 단정하지 말 것 — 분석자마다 카운팅이 갈리는 주관적 해석이라 AI가 단정하면 신뢰도가 떨어진다. 스윙 저항·지지 순서를 근거로 정성적 표현("조정/되돌림 국면")만 쓰고, 굳이 쓸 땐 "엘리어트 참고 해석:"으로 시작해 약한 보조 의견임을 표시할 것 (임의의 파동 번호·가격 금지).
 - ICT(스마트머니) 관점은 제공된 지지·저항 구간을 유동성(liquidity) 구간으로만 짧게 해석하고, 데이터에 없는 오더블록/FVG 가격을 새로 만들어내지 말 것.
 - weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 언급 자체를 생략하고 일봉 중심 분석만으로 자연스럽게 마무리할 것 ("데이터 없음" 같은 문구를 고객에게 노출하지 말 것).
 【형식】 chart는 각 항목을 반드시 줄바꿈(개행문자 \n)으로 구분해서 "제목: 내용" 형태로 작성할 것 (예: "이동평균선(일봉): …\nRSI: …\n일목균형표: …"). 한 문단으로 이어 쓰지 말 것.`,
@@ -2233,6 +2351,10 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         pbr: quote.pbr,
         foreignNetBuy: quote.foreignNetBuy,
         institutionNetBuy: quote.institutionNetBuy,
+        foreignNetBuy5d: quote.foreignNetBuy5d,
+        institutionNetBuy5d: quote.institutionNetBuy5d,
+        foreignNetBuy20d: quote.foreignNetBuy20d,
+        institutionNetBuy20d: quote.institutionNetBuy20d,
         ma20: toNum(ind.ma20),
         ma60: toNum(ind.ma60),
         ma120: toNum(ind.ma120),

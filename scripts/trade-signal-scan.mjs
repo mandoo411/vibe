@@ -132,6 +132,8 @@ async function buildSeriesForStock(stockCode) {
     volTurnoverRate: market.volTurnoverRate,
     foreignNetBuy: investorFlow.foreignNetBuy,
     institutionNetBuy: investorFlow.institutionNetBuy,
+    tempStopYn: market.tempStopYn,
+    settlementTradeYn: market.settlementTradeYn,
   };
 }
 

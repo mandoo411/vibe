@@ -2841,6 +2841,11 @@ async function tsHandleScreen(req, res, user) {
     matches = (cache.stocks || []).slice();
   }
 
+  // 2026-08-26: 거래중지/정리매매 종목은 매매 자체가 불가능하므로 즉시검색 결과에서 제외한다
+  // (사용자 제보: "거래중지 종목도 나오는데 안 나오게 해줘"). 필드가 없는 구버전 캐시는
+  // undefined -> falsy 이므로 기존 동작 그대로 유지된다(필터 no-op).
+  matches = matches.filter((row) => !(row.snapshot && (row.snapshot.tempStopYn || row.snapshot.settlementTradeYn)));
+
   if (sort) {
     matches = matches
       .map((row) => ({ row, value: tsSortValue(row, sort) }))

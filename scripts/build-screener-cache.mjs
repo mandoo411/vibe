@@ -106,6 +106,8 @@ async function buildOne(stock) {
         volTurnoverRate: market.volTurnoverRate,
         foreignNetBuy: investorFlow.foreignNetBuy,
         institutionNetBuy: investorFlow.institutionNetBuy,
+        tempStopYn: market.tempStopYn,
+        settlementTradeYn: market.settlementTradeYn,
       });
 
       const n = closes.length;

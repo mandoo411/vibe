@@ -479,6 +479,20 @@ function sanitizeStr(v) {
   return String(v).trim();
 }
 
+/** 2026-08-26: "수급 분석 카드가 세로로 한 글자씩 깨져서 나온다"는 제보의 실제 원인.
+ * summary.description은 formatProseText를 거치지 않고 프론트에서 escapeHtml만 거쳐
+ * white-space:pre-line CSS로 그대로 렌더링되는데, 모델 응답이 아주 드물게 문장이 아니라
+ * 글자/단어 단위로 개행되어 오면 그 개행이 그대로 세로 줄바꿈으로 보인다. 조각들의 평균
+ * 길이가 비정상적으로 짧으면 애초에 문단 구분이 아니었다고 보고 개행을 제거한다. */
+function sanitizeOneLineText(v) {
+  const s = sanitizeStr(v);
+  if (!s.includes("\n")) return s;
+  const parts = s.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  if (!parts.length) return "";
+  const avgLen = parts.reduce((sum, p) => sum + p.length, 0) / parts.length;
+  return avgLen <= 2 ? parts.join("") : parts.join(" ");
+}
+
 function toNum(v) {
   if (v === "" || v == null) return null;
   const n = Number(String(v).replace(/,/g, ""));
@@ -1594,7 +1608,7 @@ function mapToolInputToLegacy(input) {
     summary: {
       signal: mapDirectionToSignal(summary.direction || summary.signal),
       probability: toNum(summary.confidence ?? summary.probability),
-      description: sanitizeStr(summary.reason || summary.description),
+      description: sanitizeOneLineText(summary.reason || summary.description),
     },
     story: stripCitations(sanitizeStr(input.priceReason || input.story)),
     supply: stripCitations(sanitizeStr(input.supplyDemand || input.supply)),
@@ -1799,7 +1813,7 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
     summary: {
       signal: normalizeSignal(summary.signal),
       probability: finalProbability,
-      description: sanitizeStr(summary.description) || "요약 정보가 없습니다.",
+      description: sanitizeOneLineText(summary.description) || "요약 정보가 없습니다.",
     },
     story: stripCitations(sanitizeStr(raw.story)),
     supply: stripCitations(sanitizeStr(raw.supply)),

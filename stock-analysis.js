@@ -554,6 +554,18 @@
     return paras;
   }
 
+  // 2026-08-26: ai-summary-desc는 formatProseText를 거치지 않고 white-space:pre-line
+  // CSS로 그대로 렌더링되는 필드라(요약 카드 디자인상 짧은 한 문단이어야 함), 서버가
+  // sanitizeOneLineText로 이미 정리해서 내려주지만 프론트에서도 한 번 더 방어한다.
+  function sanitizeOneLineText(raw) {
+    const s = String(raw || "").trim();
+    if (!s.includes("\n")) return s;
+    const parts = s.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+    if (!parts.length) return "";
+    const avgLen = parts.reduce((sum, p) => sum + p.length, 0) / parts.length;
+    return avgLen <= 2 ? parts.join("") : parts.join(" ");
+  }
+
   function formatProseText(text, emptyMsg) {
     const raw = String(text || "").trim();
     if (!raw) return `<p class="ai-prose-empty">${escapeHtml(emptyMsg || "내용이 없습니다.")}</p>`;
@@ -1700,7 +1712,7 @@
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</span></div></div><p class="ai-summary-desc">${escapeHtml(summary.description || "")}</p>${renderScoreCard(analysis.scoreCard)}</div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</span></div></div><p class="ai-summary-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${renderScoreCard(analysis.scoreCard)}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>

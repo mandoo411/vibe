@@ -2589,8 +2589,17 @@ const TS_SCREEN_SORT_GUIDE = `정렬/순위 요청 처리 (스크리닝 전용, 
 - by가 disparity면 period도 함께: 5|10|20|60|120|200|240
 - direction: "높은/많이 오른"=desc, "낮은/많이 내린"=asc (생략하면 desc로 처리됨)
 - 특정 임계값 없이 순위만 요청했으면(예: "1년 상승률 TOP 20", "거래대금 많은 순으로 30개") condition.clauses는
-  빈 배열 []로 둬도 된다 — 이 경우 전체 종목을 대상으로 sort 기준만으로 순위를 매긴다. 이때도 understood는 true.
-- 사용자가 "20종목", "30개" 처럼 개수를 명시했으면 최상위 limit 필드에 그 숫자를 담을 것(최대 100, 언급 없으면 생략).`;
+  빈 배열 []로 둬도 된다 — 이 경우 전체 종목을 대상으로 sort 기준만으로 순위를 매긴다. **주의: 이때도
+  understood는 반드시 true여야 한다. clauses가 비어 있는 것은 오류나 "이해 못함"이 아니라 정상적인
+  "필터 없이 순위만" 요청이다 — clauses를 채울 게 없다고 understood=false로 처리하면 안 된다.**
+- 사용자가 "20종목", "30개" 처럼 개수를 명시했으면 최상위 limit 필드에 그 숫자를 담을 것(최대 100, 언급 없으면 생략).
+
+예시 (그대로 참고할 것, 다른 종목/조건 문장에도 같은 구조를 적용):
+입력: "1년동안 상승률 높은 순서대로 20종목 보여줘"
+출력: {"understood":true,"condition":{"logic":"AND","clauses":[]},"sort":{"by":"period_return","days":252,"direction":"desc"},"limit":20,"summary":"최근 1년간 수익률 상위 20종목"}
+
+입력: "거래대금 많은 순으로 30개 보여줘"
+출력: {"understood":true,"condition":{"logic":"AND","clauses":[]},"sort":{"by":"trading_value","direction":"desc"},"limit":30,"summary":"거래대금 상위 30종목"}`;
 
 function tsBuildScreenPrompt(text) {
   return [

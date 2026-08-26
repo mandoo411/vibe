@@ -395,7 +395,11 @@
 /* ① 요약 */
 .ai-card--summary .ai-card__body {
   display: flex;
-  flex-wrap: nowrap;
+  /* 2026-08-26: nowrap이면 한글 텍스트는 글자 사이마다 줄바꿈이 가능해서(UAX#14),
+     3열이 좁은 공간에 억지로 들어가야 할 때 .ai-score-card가 min-content(글자 1개
+     너비)까지 짜부라져 세로 한 글자씩 깨지는 버그가 있었다. wrap으로 바꿔 공간이
+     부족하면 다음 줄로 자연스럽게 내려가게 한다. */
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 20px;
 }
@@ -463,6 +467,11 @@
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
+  /* 2026-08-26: min-width 보호가 없으면 플렉스가 좁아질 때 이 박스가 한글 min-content
+     (글자 1개 너비)까지 줄어들어 .ai-score-card__note가 세로로 한 글자씩 깨져
+     렌더링되는 버그가 있었다(사용자 스크린샷 제보). 최소 너비를 못박아 방지. */
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .ai-score-card__chips {
@@ -630,8 +639,12 @@
 }
 
 .ai-summary-desc {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 240px;
+  /* 2026-08-26: min-width:0이면 옆의 .ai-score-card가 자기 최소너비(220px)를 지키는
+     대신 이쪽이 한글 min-content(글자 1개 너비)까지 짜부라져 세로로 깨지는 새 증상이
+     나타났다(재현 확인). 이 문단도 최소 너비를 지키게 하고, 그래도 안 맞으면
+     flex-wrap이 다음 줄로 내려가게 둔다. */
+  min-width: 240px;
   margin: 0;
   white-space: pre-line;
 }

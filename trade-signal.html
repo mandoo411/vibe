@@ -386,6 +386,11 @@
       .ts-result-row__change--down {
         color: #2d7ff9;
       }
+      .ts-result-row__rank {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--accent-color, #2d7ff9);
+      }
       .ts-result-row__right {
         display: flex;
         align-items: center;
@@ -722,6 +727,54 @@
           const v = Number(n);
           const sign = v > 0 ? "+" : "";
           return `${sign}${v.toFixed(2)}%`;
+        }
+
+        const TS_SORT_BY_LABEL = {
+          period_return: "수익률",
+          price_change_pct: "당일등락률",
+          price: "현재가",
+          rsi: "RSI",
+          volume_ratio: "거래량비율",
+          market_cap: "시가총액",
+          trading_value: "거래대금",
+          disparity: "이격도",
+          per: "PER",
+          pbr: "PBR",
+          eps: "EPS",
+          foreign_hold_rate: "외국인보유율",
+          volume_turnover_rate: "거래회전율",
+          foreign_net_buy: "외국인순매수",
+          institution_net_buy: "기관순매수",
+          adx: "ADX",
+        };
+        const TS_SORT_PERIOD_LABEL = { 5: "1주", 21: "1개월", 63: "3개월", 126: "6개월", 252: "1년" };
+
+        // 2026-08-26: 스크리닝 결과가 sort 기준으로 정렬됐을 때, 결과 리스트에 실제로 그
+        // 지표 값을 보여주기 위한 포맷터. 정렬 기준 없이 단순 필터 검색이면 이 함수 자체를
+        // 호출하지 않고 기존처럼 당일등락률만 표시한다(하위호환).
+        function fmtSortValue(sort, value) {
+          if (!sort || value == null || Number.isNaN(Number(value))) return "";
+          const v = Number(value);
+          const label =
+            sort.by === "period_return"
+              ? `${TS_SORT_PERIOD_LABEL[sort.days] || `${sort.days}거래일`} 수익률`
+              : sort.by === "disparity"
+                ? `${sort.period}일 이격도`
+                : TS_SORT_BY_LABEL[sort.by] || sort.by;
+          const isPct = ["period_return", "price_change_pct", "volume_ratio", "disparity", "foreign_hold_rate", "volume_turnover_rate"].includes(sort.by);
+          const isEok = ["market_cap", "trading_value", "foreign_net_buy", "institution_net_buy"].includes(sort.by);
+          let valueText;
+          if (isPct) {
+            const sign = v > 0 ? "+" : "";
+            valueText = `${sign}${v.toFixed(2)}%`;
+          } else if (isEok) {
+            valueText = `${v.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}억`;
+          } else if (sort.by === "price") {
+            valueText = `${v.toLocaleString("ko-KR")}원`;
+          } else {
+            valueText = v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+          }
+          return `${label} ${valueText}`;
         }
 
         function fmtCacheDate(ymd) {
@@ -1310,11 +1363,22 @@
           }
           openDetailCode.clear();
           chartMountedCode.clear();
+          const sortSpec = currentScreen.sort || null;
           wrap.innerHTML = currentScreen.stocks
-            .map((s) => {
+            .map((s, idx) => {
               const up = Number(s.changePct) > 0;
               const down = Number(s.changePct) < 0;
               const saved = savedRowCodes.has(s.code);
+              // 2026-08-26: sort 기준으로 검색됐을 때(예: "1년 상승률 높은 순서대로 20종목")는
+              // 항상 보여주던 당일등락률 대신, 실제로 순위를 매긴 지표 값을 순위번호와 함께
+              // 보여준다 — 예전엔 정렬 자체가 거래대금 순으로 고정이라 사용자가 요청한 지표와
+              // 화면에 뜬 숫자가 아예 달랐던(당일등락률만 표시) 문제 수정.
+              const sortValueText = sortSpec ? fmtSortValue(sortSpec, s.sortValue) : "";
+              const statsHtml = sortSpec
+                ? `<div class="ts-result-row__rank">${idx + 1}위</div>
+                   <div class="ts-result-row__price">${escapeHtml(sortValueText)}</div>`
+                : `<div class="ts-result-row__price">${fmtPrice(s.close)}</div>
+                   <div class="ts-result-row__change ${up ? "ts-result-row__change--up" : down ? "ts-result-row__change--down" : ""}">${fmtChangePct(s.changePct)}</div>`;
               return `<div class="ts-result-item" data-item-code="${escapeHtml(s.code)}">
                 <div class="ts-result-row" role="button" tabindex="0" aria-expanded="false" data-toggle-code="${escapeHtml(s.code)}" data-toggle-name="${escapeHtml(s.name)}">
                   <div class="ts-result-row__main">
@@ -1322,8 +1386,7 @@
                     <div class="ts-result-row__meta">${escapeHtml(s.code)} · ${escapeHtml(s.market || "")}</div>
                   </div>
                   <div class="ts-result-row__stats">
-                    <div class="ts-result-row__price">${fmtPrice(s.close)}</div>
-                    <div class="ts-result-row__change ${up ? "ts-result-row__change--up" : down ? "ts-result-row__change--down" : ""}">${fmtChangePct(s.changePct)}</div>
+                    ${statsHtml}
                   </div>
                   <div class="ts-result-row__right">
                     <button type="button" class="ts-save-mini ${saved ? "ts-save-mini--saved" : ""}" data-save-code="${escapeHtml(s.code)}" data-save-name="${escapeHtml(s.name)}" ${saved ? "disabled" : ""}>
@@ -1450,7 +1513,10 @@
             currentScreen = result;
             savedRowCodes.clear();
             $("ts-results-summary").textContent = conditionText(result.condition) || result.summary;
-            $("ts-results-count").textContent = `총 ${result.count}개 종목 (최대 100개 표시)`;
+            const shownCount = Array.isArray(result.stocks) ? result.stocks.length : 0;
+            $("ts-results-count").textContent = result.sort
+              ? `총 ${result.count}개 종목 중 상위 ${shownCount}개`
+              : `총 ${result.count}개 종목 (최대 100개 표시)`;
             $("ts-freshness").textContent = result.cacheUpdatedAt
               ? `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 데이터`
               : "아직 스크리닝 데이터가 준비되지 않았어요 (곧 준비됩니다).";

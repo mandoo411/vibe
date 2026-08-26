@@ -2560,9 +2560,37 @@ const TS_SCREEN_PARSE_TOOL = {
       },
       summary: { type: "string", description: "사용자에게 보여줄 한 줄 요약 (예: 'RSI 30 이하 + 강세 다이버전스 발생 종목')" },
       clarifyMessage: { type: "string", description: "understood=false일 때 사용자에게 보여줄 안내 문구" },
+      sort: {
+        type: "object",
+        description: "사용자가 '높은/많이 오른 순서대로', 'TOP N', '순위대로'처럼 특정 지표 기준 정렬·랭킹을 원할 때만 채울 것. 단순 임계값 필터 요청이면 생략.",
+        properties: {
+          by: {
+            type: "string",
+            description:
+              "정렬 기준: period_return|price_change_pct|price|rsi|volume_ratio|market_cap|trading_value|disparity|per|pbr|eps|foreign_hold_rate|volume_turnover_rate|foreign_net_buy|institution_net_buy|adx",
+          },
+          days: { type: "number", description: "by가 period_return일 때만: 5|21|63|126|252" },
+          period: { type: "number", description: "by가 disparity일 때만: 5|10|20|60|120|200|240" },
+          direction: { type: "string", enum: ["asc", "desc"], description: "높은/많이 오른=desc, 낮은/많이 내린=asc" },
+        },
+      },
+      limit: { type: "number", description: "사용자가 명시한 표시 개수(예: '20종목'→20). 언급 없으면 생략(기본 100개)." },
     },
   },
 };
+
+const TS_SCREEN_SORT_GUIDE = `정렬/순위 요청 처리 (스크리닝 전용, condition과 별개인 최상위 sort 필드):
+사용자가 "높은/많이 오른 순서대로", "TOP N", "순위대로", "제일 많이 상승한" 처럼 특정 지표 기준 정렬·랭킹을 원하면
+최상위 sort 필드에 {by, days?, period?, direction} 형태로 담을 것. 단순 임계값 필터만 요청했으면(예: "RSI 30 이하인
+종목") sort는 생략 — 이때는 기존처럼 거래대금 내림차순으로 표시됨.
+- by: period_return|price_change_pct|price|rsi|volume_ratio|market_cap|trading_value|disparity|per|pbr|eps|
+  foreign_hold_rate|volume_turnover_rate|foreign_net_buy|institution_net_buy|adx 중 하나
+- by가 period_return이면 days도 함께: 1주≈5, 1개월≈21, 3개월≈63, 6개월≈126, 1년≈252 (condition 가이드와 동일 환산)
+- by가 disparity면 period도 함께: 5|10|20|60|120|200|240
+- direction: "높은/많이 오른"=desc, "낮은/많이 내린"=asc (생략하면 desc로 처리됨)
+- 특정 임계값 없이 순위만 요청했으면(예: "1년 상승률 TOP 20", "거래대금 많은 순으로 30개") condition.clauses는
+  빈 배열 []로 둬도 된다 — 이 경우 전체 종목을 대상으로 sort 기준만으로 순위를 매긴다. 이때도 understood는 true.
+- 사용자가 "20종목", "30개" 처럼 개수를 명시했으면 최상위 limit 필드에 그 숫자를 담을 것(최대 100, 언급 없으면 생략).`;
 
 function tsBuildScreenPrompt(text) {
   return [
@@ -2573,6 +2601,8 @@ function tsBuildScreenPrompt(text) {
     `사용자 입력: "${text}"`,
     "",
     TS_CONDITION_GUIDE,
+    "",
+    TS_SCREEN_SORT_GUIDE,
     "",
     "조건을 전혀 파악할 수 없으면(예: 기술적 조건이 아닌 요청) understood=false, clarifyMessage에 이유를 설명할 것.",
   ].join("\n");
@@ -2623,13 +2653,66 @@ async function tsParseScreenWithOpenAI(text) {
   return tsSafeJsonParse(text2);
 }
 
+const TS_SORT_BY_OPTIONS = [
+  "period_return",
+  "price_change_pct",
+  "price",
+  "rsi",
+  "volume_ratio",
+  "market_cap",
+  "trading_value",
+  "disparity",
+  "per",
+  "pbr",
+  "eps",
+  "foreign_hold_rate",
+  "volume_turnover_rate",
+  "foreign_net_buy",
+  "institution_net_buy",
+  "adx",
+];
+const TS_PERIOD_RETURN_DAYS = [5, 21, 63, 126, 252];
+const TS_DISPARITY_PERIODS = [5, 10, 20, 60, 120, 200, 240];
+
+/** 2026-08-26: 스크리닝(즉시검색) 전용 정렬/랭킹 스펙 정규화. 원 리포트 버그("1년동안 상승률
+ * 높은 순서대로 20종목" 검색 시 정렬이 전혀 안 먹히고 항상 거래대금 순으로만 나오던 문제)
+ * 해결을 위해 신규 추가. AI가 유효하지 않은 by/days/period를 보내면 조용히 무시(null 반환)하고
+ * tsHandleScreen이 기존 거래대금 정렬로 폴백한다. */
+function tsNormalizeSort(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const by = sanitizeStr(raw.by);
+  if (!TS_SORT_BY_OPTIONS.includes(by)) return null;
+  const out = { by, direction: sanitizeStr(raw.direction) === "asc" ? "asc" : "desc" };
+  if (by === "period_return") {
+    const days = Number(raw.days);
+    if (!TS_PERIOD_RETURN_DAYS.includes(days)) return null;
+    out.days = days;
+  }
+  if (by === "disparity") {
+    const period = Number(raw.period);
+    if (!TS_DISPARITY_PERIODS.includes(period)) return null;
+    out.period = period;
+  }
+  return out;
+}
+
+function tsNormalizeLimit(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.min(Math.floor(n), 100);
+}
+
 function tsNormalizeScreenCondition(rawInput) {
   const raw = tsUnwrapToolCallShape(rawInput);
   const understood = raw && raw.understood === true;
   const clauses = Array.isArray(raw?.condition?.clauses)
     ? raw.condition.clauses.map(tsNormalizeClause).filter(Boolean)
     : [];
-  if (!understood || !clauses.length) {
+  const sort = tsNormalizeSort(raw && raw.sort);
+  const limit = tsNormalizeLimit(raw && raw.limit);
+  // 2026-08-26: 임계값 조건이 하나도 없어도(clauses.length === 0) 유효한 sort가 있으면
+  // "전체 종목 중 이 지표로 순위만 매겨달라"는 요청으로 인정한다(예: "1년 상승률 TOP 20").
+  if (!understood || (!clauses.length && !sort)) {
     return {
       understood: false,
       clarifyMessage:
@@ -2640,8 +2723,57 @@ function tsNormalizeScreenCondition(rawInput) {
   return {
     understood: true,
     condition: { logic: sanitizeStr(raw?.condition?.logic) === "OR" ? "OR" : "AND", clauses },
+    sort,
+    limit,
     summary: sanitizeStr(raw.summary) || "조건에 맞는 종목",
   };
+}
+
+/** 2026-08-26: sort 스펙 기준으로 한 종목(row)에서 정렬용 숫자값을 뽑아낸다. 캐시 row 최상위엔
+ * marketCapEok/tradingValueEok/changePct/close가, row.snapshot엔 나머지 지표가 들어있다.
+ * null/undefined/NaN이면 "이 지표로는 순위를 매길 수 없는 종목"으로 보고 tsHandleScreen에서
+ * 결과에서 제외한다(0으로 취급해 순위 왜곡하지 않기 위함 — 예: 신규상장이라 1년 수익률이 없는
+ * 종목을 0%로 오인해 순위에 끼워넣지 않음). */
+function tsSortValue(row, sort) {
+  const snap = row.snapshot || {};
+  switch (sort.by) {
+    case "period_return":
+      return snap.periodReturns ? snap.periodReturns[sort.days] : null;
+    case "price_change_pct":
+      return row.changePct;
+    case "price":
+      return snap.closeCur != null ? snap.closeCur : row.close;
+    case "rsi":
+      return snap.rsiCur;
+    case "volume_ratio":
+      return snap.volumeRatio;
+    case "market_cap":
+      return row.marketCapEok != null ? row.marketCapEok : snap.marketCapEok;
+    case "trading_value":
+      return row.tradingValueEok != null ? row.tradingValueEok : snap.tradingValueEok;
+    case "disparity": {
+      const ma = snap[`ma${sort.period}Cur`];
+      return ma ? (snap.closeCur / ma) * 100 : null;
+    }
+    case "per":
+      return snap.per;
+    case "pbr":
+      return snap.pbr;
+    case "eps":
+      return snap.eps;
+    case "foreign_hold_rate":
+      return snap.foreignHoldRate;
+    case "volume_turnover_rate":
+      return snap.volTurnoverRate;
+    case "foreign_net_buy":
+      return snap.foreignNetBuy;
+    case "institution_net_buy":
+      return snap.institutionNetBuy;
+    case "adx":
+      return snap.adxCur;
+    default:
+      return null;
+  }
 }
 
 async function tsHandleScreen(req, res, user) {
@@ -2649,6 +2781,8 @@ async function tsHandleScreen(req, res, user) {
   let condition = body.condition && typeof body.condition === "object" ? body.condition : null;
   let summary = sanitizeStr(body.summary);
   let rawText = "";
+  let sort = null;
+  let limit = null;
 
   if (!condition || !tsIsValidConditionShared(condition)) {
     const text = sanitizeStr(body.text).slice(0, 4000) /* 2026-08-26: 키움 HTS 조건표+수식 붙여넣기 지원 위해 300 -> 4000 */;
@@ -2670,33 +2804,62 @@ async function tsHandleScreen(req, res, user) {
     }
     condition = normalized.condition;
     summary = normalized.summary;
+    sort = normalized.sort;
+    limit = normalized.limit;
+  } else {
+    // 클라이언트가 이미 구조화된 condition을 직접 보낸 경우(예: 저장된 전략 재검색)에도
+    // sort/limit을 함께 넘겼으면 동일하게 반영한다.
+    sort = tsNormalizeSort(body.sort);
+    limit = tsNormalizeLimit(body.limit);
   }
 
   const cache = tsLoadScreenerCache();
-  const matches = [];
-  for (const row of cache.stocks || []) {
-    try {
-      if (tsEvaluateCondition(condition, row.snapshot)) matches.push(row);
-    } catch {
-      // 개별 종목 판정 실패는 건너뛰고 계속 진행
+  const hasClauses = Array.isArray(condition.clauses) && condition.clauses.length > 0;
+  // 2026-08-26: 임계값 조건 없이 순위만 요청한 경우(clauses가 빈 배열) evaluateCondition은
+  // 항상 false를 반환하므로(빈 조건 = "아무것도 매치 안 함") 그 경로를 타지 않고 전체 종목을
+  // 그대로 후보로 삼는다 — null/미보유 지표는 아래 정렬 단계에서 자연히 제외된다.
+  let matches;
+  if (hasClauses) {
+    matches = [];
+    for (const row of cache.stocks || []) {
+      try {
+        if (tsEvaluateCondition(condition, row.snapshot)) matches.push(row);
+      } catch {
+        // 개별 종목 판정 실패는 건너뛰고 계속 진행
+      }
     }
+  } else {
+    matches = (cache.stocks || []).slice();
   }
-  matches.sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0));
+
+  if (sort) {
+    matches = matches
+      .map((row) => ({ row, value: tsSortValue(row, sort) }))
+      .filter((x) => x.value != null && Number.isFinite(Number(x.value)))
+      .sort((a, b) => (sort.direction === "asc" ? a.value - b.value : b.value - a.value))
+      .map((x) => Object.assign({}, x.row, { __sortValue: x.value }));
+  } else {
+    matches.sort((a, b) => (b.tradingValue || 0) - (a.tradingValue || 0));
+  }
+
+  const sliceCount = limit || 100;
 
   return tsJson(res, 200, {
     matched: true,
     condition,
+    sort,
     summary: summary || "조건에 맞는 종목",
     rawText,
     cacheUpdatedAt: cache.updatedAt || null,
     cacheAsOfDate: cache.asOfDate || null,
     count: matches.length,
-    stocks: matches.slice(0, 100).map((r) => ({
+    stocks: matches.slice(0, sliceCount).map((r) => ({
       code: r.code,
       name: r.name,
       market: r.market,
       close: r.close,
       changePct: r.changePct,
+      sortValue: sort ? r.__sortValue : undefined,
     })),
   });
 }

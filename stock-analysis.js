@@ -596,9 +596,9 @@
     return "중";
   }
   function signalBadgeClass(signal) {
-    if (signal === "매수") return "ai-summary-badge--buy";
-    if (signal === "회피") return "ai-summary-badge--avoid";
-    return "ai-summary-badge--hold";
+    if (signal === "매수") return "buy";
+    if (signal === "회피") return "avoid";
+    return "hold";
   }
 
   function setButtonLoading(on) {
@@ -1453,31 +1453,37 @@
 
   /** 2026-08-26: GPT 리포트 지적사항 "상승확률 40%의 산출 방법이 없다"에 대한 보완 —
    * AI의 정성적 확률과는 별개로, 이동평균 위치·RSI·거래량·수급만으로 서버가 기계적으로
-   * 계산한 참고 점수(-2~+2 x 4항목)를 함께 보여준다. scoreCard가 없으면(데이터 부족) 생략. */
-  function renderScoreCard(scoreCard) {
-    if (!scoreCard || typeof scoreCard !== "object") return "";
+   * 계산한 참고 점수(-2~+2 x 4항목)를 함께 보여준다. scoreCard가 없으면(데이터 부족) 생략.
+   * 2026-08-26 UI 리디자인: 우측 2x2 필 그리드(pillsHtml)와 하단 종합점수+설명 풋터
+   * (footerHtml)를 분리해서 반환 — 카드1 템플릿에서 서로 다른 위치(grid 안 / grid 밖
+   * 카드 전체 폭)에 각각 배치한다. */
+  function buildScoreCardParts(scoreCard) {
+    const empty = { pillsHtml: "", footerHtml: "" };
+    if (!scoreCard || typeof scoreCard !== "object") return empty;
     const labels = { trend: "추세", momentum: "모멘텀", volume: "거래량", supply: "수급" };
     const activeKeys = Object.keys(labels).filter((k) => scoreCard[k] != null);
-    const chips = activeKeys
+    if (!activeKeys.length) return empty;
+    const pills = activeKeys
       .map((k) => {
         const v = scoreCard[k];
         const sign = v > 0 ? "+" : "";
-        const cls = v > 0 ? "ai-score-chip--pos" : v < 0 ? "ai-score-chip--neg" : "ai-score-chip--neu";
-        return `<span class="ai-score-chip ${cls}"><span class="ai-score-chip__k">${escapeHtml(labels[k])}</span><span class="ai-score-chip__v">${sign}${v}</span></span>`;
+        const cls = v > 0 ? "sum2-pill--pos" : v < 0 ? "sum2-pill--neg" : "sum2-pill--neu";
+        return `<div class="sum2-pill ${cls}"><span class="k">${escapeHtml(labels[k])}</span><span class="v">${sign}${v}</span></div>`;
       })
       .join("");
-    if (!chips) return "";
     const totalV = toNum(scoreCard.total);
     const totalSign = totalV > 0 ? "+" : "";
     // GPT 리포트 지적사항 — "종합 +3"만 보면 상단 "상승확률 35%"와 같은 척도처럼 오해할 수
     // 있어, 이게 몇 점 만점 중 몇 점인지(-8~+8처럼 항목 수×2) 분모를 같이 보여준다.
     const maxAbs = activeKeys.length * 2;
-    return (
-      `<div class="ai-score-card">` +
-      `<div class="ai-score-card__chips">${chips}<span class="ai-score-chip ai-score-chip--total">종합 ${totalV != null ? `${totalSign}${totalV}/${maxAbs}` : "—"}</span></div>` +
-      `<p class="ai-score-card__note">${escapeHtml(scoreCard.note || "")}</p>` +
-      `</div>`
-    );
+    return {
+      pillsHtml: `<div class="sum2-pills">${pills}</div>`,
+      footerHtml:
+        `<div class="sum2-footer">` +
+        `<span class="sum2-total">종합 ${totalV != null ? `${totalSign}${totalV}/${maxAbs}` : "—"}</span>` +
+        `<p class="sum2-footnote">${escapeHtml(scoreCard.note || "")}</p>` +
+        `</div>`,
+    };
   }
 
   // GPT 리포트 지적사항 — "AI가 지어낸 말"과 실제 KIS 데이터를 한눈에 구분하고 싶다는
@@ -1713,15 +1719,21 @@
         ? `<div class="ai-analysis-error" style="margin-bottom:12px">${escapeHtml(data.analysisError)}</div>`
         : "";
 
+    // 2026-08-26 UI 리디자인: 카드1(한눈에 요약)을 grid 기반 3분할(좌 신호카드 /
+    // 중앙 본문 / 우 2x2 지표 필) + 하단 종합점수 풋터로 재구성. buildScoreCardParts가
+    // pillsHtml(grid 안)과 footerHtml(카드 전체 폭, grid 밖)을 분리해서 반환한다.
+    const signalCls = signalBadgeClass(signal);
+    const scoreParts = buildScoreCardParts(analysis.scoreCard);
+
     panel.hidden = false;
     panel.innerHTML =
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="ai-summary-left"><span class="ai-summary-badge ${signalBadgeClass(signal)}">${escapeHtml(signal)}</span><div class="ai-summary-prob"><span class="ai-summary-prob__label">상승 확률</span><span class="ai-summary-prob__value">${escapeHtml(probText)}</span><span class="ai-summary-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</span></div></div><p class="ai-summary-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${renderScoreCard(analysis.scoreCard)}</div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
-        <article class="ai-card"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
+        <article class="ai-card ai-card--events"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
         <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
         <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div></article>
         <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div></article>

@@ -328,6 +328,12 @@
   border-radius: 12px;
   padding: 24px 28px;
   margin-bottom: 14px;
+  /* 2026-08-26 UI 리디자인: 같은 grid row에 나란히 놓인 카드끼리(②③ 등) 높이를
+     맞출 때, 바깥 테두리만 늘어나고 안쪽 배경 박스는 텍스트 길이만큼만 채워져
+     빈 여백이 남는 문제가 있었다 — 카드 자체를 세로 flex로 만들어 .ai-card__body가
+     flex:1로 남는 공간을 꽉 채우게 한다. */
+  display: flex;
+  flex-direction: column;
 }
 
 .ai-card__title {
@@ -360,6 +366,7 @@
 }
 
 .ai-card__body {
+  flex: 1;
   font-size: var(--ai-body-size);
   line-height: var(--ai-body-lh);
   font-weight: 400;
@@ -392,138 +399,206 @@
   font-weight: 500;
 }
 
-/* ① 요약 */
-.ai-card--summary .ai-card__body {
-  display: flex;
-  /* 2026-08-26: nowrap이면 한글 텍스트는 글자 사이마다 줄바꿈이 가능해서(UAX#14),
-     3열이 좁은 공간에 억지로 들어가야 할 때 .ai-score-card가 min-content(글자 1개
-     너비)까지 짜부라져 세로 한 글자씩 깨지는 버그가 있었다. wrap으로 바꿔 공간이
-     부족하면 다음 줄로 자연스럽게 내려가게 한다. */
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 20px;
+/* ① 한눈에 요약 — 좌: 신호 카드 / 중앙: 본문 / 우: 2x2 지표 필, 하단: 종합점수+설명 풋터
+   2026-08-26 UI 리디자인: 기존엔 좌/중앙/우 3열이 flex-wrap 한 줄에 뒤엉켜 있어서(과거
+   세로텍스트 버그의 근본 원인이기도 했음) 배치가 어색했다. grid로 재구성 + 각 영역을
+   독립된 서브카드/풋터로 분리. */
+.sum2-grid {
+  display: grid;
+  grid-template-columns: 188px 1fr 240px;
+  gap: 28px;
+  align-items: center;
 }
 
-.ai-summary-left {
-  flex-shrink: 0;
-  min-width: 80px;
+.sum2-left {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 18px;
+  border-radius: 12px;
+  background: var(--color-background-secondary);
+  border-left: 3px solid var(--color-text-muted);
 }
 
-.ai-summary-badge {
+.sum2-left--buy {
+  border-left-color: var(--color-up);
+}
+
+.sum2-left--hold {
+  border-left-color: #eab308;
+}
+
+.sum2-left--avoid {
+  border-left-color: #6b7280;
+}
+
+.sum2-signal {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 56px;
+  width: fit-content;
   height: 32px;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: 999px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
   color: #fff;
 }
 
-.ai-summary-badge--buy {
-  background: #e24b4a;
+.sum2-signal--buy {
+  background: var(--color-up);
 }
 
-.ai-summary-badge--hold {
+.sum2-signal--hold {
   background: #eab308;
   color: #111;
 }
 
-.ai-summary-badge--avoid {
+.sum2-signal--avoid {
   background: #6b7280;
 }
 
-.ai-summary-prob {
+.sum2-prob {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.ai-summary-prob__label {
+.sum2-prob__label {
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-text-secondary);
 }
 
-.ai-summary-prob__value {
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1.2;
+.sum2-prob__value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
   color: var(--text-primary, #131722);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
-[data-theme="dark"] .ai-summary-prob__value {
+[data-theme="dark"] .sum2-prob__value {
   color: var(--text-title, #f3f4f6);
 }
 
-.ai-score-card {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
-  /* 2026-08-26: min-width 보호가 없으면 플렉스가 좁아질 때 이 박스가 한글 min-content
-     (글자 1개 너비)까지 줄어들어 .ai-score-card__note가 세로로 한 글자씩 깨져
-     렌더링되는 버그가 있었다(사용자 스크린샷 제보). 최소 너비를 못박아 방지. */
-  flex: 1 1 240px;
-  min-width: 220px;
+.sum2-prob__note {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
 }
 
-.ai-score-card__chips {
+.sum2-desc {
+  height: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
+  align-items: center;
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: var(--text-primary, #131722);
+  /* 2026-08-26 사고 재발방지: 이 필드는 "한 줄 요약"이라 개행을 보존할 이유가 없다.
+     서버/프론트 sanitizeOneLineText가 개행을 제거해서 내려주지만, 어떤 경로로든
+     개행성 문자가 새어들어와도 CSS 단에서 공백으로 접히도록 white-space:normal을
+     명시해 세로깨짐 재발을 원천 차단한다. */
+  white-space: normal;
 }
 
-.ai-score-chip {
-  display: inline-flex;
+[data-theme="dark"] .sum2-desc {
+  color: var(--text-title, #f3f4f6);
+}
+
+.sum2-pills {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  height: 100%;
+}
+
+.sum2-pill {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: rgba(156, 163, 175, 0.18);
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: rgba(156, 163, 175, 0.14);
+}
+
+.sum2-pill .k {
+  font-size: 11px;
+  font-weight: 600;
   color: var(--color-text-secondary);
 }
 
-.ai-score-chip__k {
-  opacity: 0.75;
+.sum2-pill .v {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
-.ai-score-chip--pos {
-  background: rgba(34, 197, 94, 0.15);
+.sum2-pill--pos {
+  background: rgba(34, 197, 94, 0.13);
+}
+
+.sum2-pill--pos .v {
   color: #16a34a;
 }
 
-.ai-score-chip--neg {
-  background: rgba(226, 75, 74, 0.15);
+.sum2-pill--neg {
+  background: rgba(226, 75, 74, 0.13);
+}
+
+.sum2-pill--neg .v {
   color: #e24b4a;
 }
 
-.ai-score-chip--neu {
-  background: rgba(234, 179, 8, 0.15);
+.sum2-pill--neu {
+  background: rgba(234, 179, 8, 0.13);
+}
+
+.sum2-pill--neu .v {
   color: #a16207;
 }
 
-.ai-score-chip--total {
-  background: var(--color-background-tertiary, rgba(156, 163, 175, 0.28));
-  color: var(--color-text-primary);
-  font-weight: 600;
+.sum2-footer {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
-.ai-score-card__note {
-  margin: 0;
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
+.sum2-total {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--color-background-tertiary, rgba(156, 163, 175, 0.28));
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-text-primary);
 }
+
+.sum2-footnote {
+  margin: 0;
+  flex: 1;
+  min-width: 220px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  white-space: normal;
+}
+
 
 /* GPT 리포트 지적사항 대응 — "사실(KIS 데이터)"과 "AI 해석"을 시각적으로 분리 */
 .ai-fact-badge,
@@ -618,12 +693,6 @@
   background: rgba(248, 113, 113, 0.14);
 }
 
-.ai-summary-prob__note {
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  opacity: 0.8;
-}
-
 .ai-disclaimer {
   margin-top: 14px;
   padding: 10px 14px;
@@ -638,23 +707,6 @@
   color: var(--text-primary, #131722);
 }
 
-.ai-summary-desc {
-  flex: 1 1 240px;
-  /* 2026-08-26: min-width:0이면 옆의 .ai-score-card가 자기 최소너비(220px)를 지키는
-     대신 이쪽이 한글 min-content(글자 1개 너비)까지 짜부라져 세로로 깨지는 새 증상이
-     나타났다(재현 확인). 이 문단도 최소 너비를 지키게 하고, 그래도 안 맞으면
-     flex-wrap이 다음 줄로 내려가게 둔다. */
-  min-width: 240px;
-  margin: 0;
-  /* 2026-08-26 재수정: white-space:pre-line이 근본 원인이었다 — 이 필드는 이름 그대로
-     "한 줄 요약"이라 서버/프론트 sanitizeOneLineText가 개행을 전부 제거해서 내려줘야
-     정상인데, 실제 라이브에서 \r 단독처럼 두 sanitize 함수가 놓치는 개행 문자가 한 번
-     더 새어나온 사례가 확인됐다(위 JS 쪽 정규식도 같이 넓혔지만, 이 필드 자체가 애초에
-     개행을 보존할 이유가 없으므로 CSS에서도 이중 방어한다 — 앞으로 어떤 이유로 개행
-     문자가 섞여 와도 공백으로 접혀서 세로깨짐이 원천적으로 재발하지 않는다). */
-  white-space: normal;
-}
-
 /* ②③ 2열 카드 */
 .ai-card--half .ai-card__body {
   padding: 20px 22px;
@@ -662,7 +714,8 @@
   background: var(--color-background-secondary);
 }
 
-/* ④ 이벤트 */
+/* ④ 이벤트 — 2026-08-26: 밋밋한 구분선 리스트에서 카드1-3과 톤을 맞춘
+   둥근 리스트 카드 형태로 정리(옅은 배경 + 여백 확대) */
 .ai-event-list {
   list-style: none;
   margin: 0;
@@ -676,17 +729,20 @@
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 8px 10px;
+  gap: 8px 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--color-background-secondary);
 }
 
 .ai-event__badge {
   display: inline-flex;
   align-items: center;
   height: 22px;
-  padding: 0 8px;
-  border-radius: 6px;
+  padding: 0 10px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: #fff;
   flex-shrink: 0;
 }
@@ -798,9 +854,9 @@
 }
 
 .ai-mat-card {
-  padding: 12px 14px;
+  padding: 16px 18px;
   margin-bottom: 10px;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 12px 12px 0;
   background: var(--color-background-secondary);
   border-left: 3px solid #eab308;
 }
@@ -958,16 +1014,16 @@
 
 .ai-mat-unreflected {
   margin-top: 10px;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
   background: rgba(234, 179, 8, 0.08);
   border: 1px solid rgba(234, 179, 8, 0.25);
 }
 
 .ai-mat-summary {
   margin-top: 10px;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
   background: var(--color-background-secondary);
 }
 
@@ -1110,8 +1166,8 @@
  * 기존엔 밑줄 구분선 하나짜리 리스트라 촘촘한 서술형처럼 보였던 문제를
  * 카드형 박스 + 좌측 컬러바 + 소제목 헤더로 정리. */
 .ai-chart-box {
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border-radius: 0 12px 12px 0;
   background: var(--color-background-secondary);
   border-left: 3px solid #9ca3af;
   font-size: var(--ai-body-size);
@@ -1247,7 +1303,7 @@
 
 .ai-outlook-card {
   padding: 16px 18px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--color-background-secondary);
 }
 
@@ -1277,8 +1333,8 @@
 }
 
 .ai-opinion-price {
-  padding: 12px 10px;
-  border-radius: 8px;
+  padding: 14px 10px;
+  border-radius: 12px;
   background: var(--color-background-secondary);
   text-align: center;
 }
@@ -1303,8 +1359,8 @@
 }
 
 .ai-opinion-comment {
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 16px 18px;
+  border-radius: 12px;
   background: var(--color-background-secondary);
   font-size: 15px;
   font-weight: 400;
@@ -1320,7 +1376,7 @@
 }
 
 .ai-scenario {
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 12px 12px 0;
   padding: 16px 18px;
   background: var(--color-background-secondary);
   border-left: 4px solid #eab308;
@@ -1476,9 +1532,13 @@
   }
 
   .ai-card--summary,
+  .ai-card--events,
   .ai-card--materials,
   .ai-card--chart,
   .ai-card--opinion {
+    /* 2026-08-26: 카드4(다가오는 이벤트)에 원래 전체폭 지정이 빠져 있어서
+       2열 그리드에서 반쪽 너비로 렌더링되고 옆에 빈 공간이 남던 버그를
+       같이 수정 — 나머지 단독형 카드들과 동일하게 전체 폭으로 통일. */
     grid-column: 1 / -1;
   }
 
@@ -1520,16 +1580,21 @@
     padding: 18px 20px;
   }
 
-  .ai-card--summary .ai-card__body {
-    flex-wrap: wrap;
+  .sum2-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
-  .ai-summary-left {
+  .sum2-left {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px 16px;
-    min-width: 100%;
+  }
+
+  .sum2-desc {
+    height: auto;
   }
 
   .ai-card--half .ai-card__body {

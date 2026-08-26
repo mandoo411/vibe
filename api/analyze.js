@@ -274,7 +274,7 @@ function buildSystemPrompt(today, quote) {
 - 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : assetType === "CRYPTO"
       ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
@@ -331,7 +331,7 @@ function buildSystemPrompt(today, quote) {
 ② RSI: 제공된 RSI(14) 값 + 과매수/과매도 해석
 ③ 일목균형표: 전환선/기준선/구름대 위아래 여부
 ④ 지지선/저항선(단기, 일봉 기준): 1차·2차 수치 명시
-⑤ 전고점/전저점: 수치와 의미 (high52w/low52w 활용)
+⑤ 전고점/전저점: 수치와 의미 (high52w/low52w 활용). 단, 52주 고점 대비 하락폭(또는 저점 대비 상승폭)이 크다는 사실 자체를 저평가·고평가의 근거로 쓰지 말 것 — 52주 고점은 과거 가격일 뿐 적정가치가 아니다. 괴리율은 사실로 언급하되, 밸류에이션 판단은 반드시 PER/PBR·이익 추세 등 별도 근거로 한다.
 ⑥ 주봉 흐름 — 입력에 weeklyIndicators가 있으면: 20주선/60주선 대비 현재가 위치, 주봉 스윙 저항·지지(resistances/supports) 수치를 지지·저항 구조로 해석
 ⑦ 월봉 흐름 — 입력에 monthlyIndicators가 있으면: 12개월선/24개월선 대비 현재가 위치로 장기 추세(정배열/역배열) 판단, 월봉 스윙 저항·지지를 장기 지지·저항으로 해석
 ⑧ 멀티 타임프레임 정합성: 일봉·주봉·월봉 추세가 같은 방향인지 한 문장으로 비교 판단 (예: "일봉·주봉은 상승 정배열이나 월봉은 아직 24개월선 아래")
@@ -358,6 +358,7 @@ function buildSystemPrompt(today, quote) {
   · scenarioA/B/C: probability 합계 반드시 100
   · scenarioA/B/C 각각 basis(그 확률을 매긴 구체적 근거 — 추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것. 없는 통계("표본 O건" 등)를 지어내지 말고, 실제 입력 데이터를 조합한 논리로 서술할 것.
   · aiComment: 반드시 3문장 이상, entryPrice가 현재가·시나리오B entry와 다르면 그 이유 포함. "눌림목 매수"/"조정 시 매수" 같은 표현을 쓸 거면 그 가격이 scenarioB.entry와 반드시 일치해야 한다 — 총평과 시나리오 필드에서 서로 다른 진입 전략을 동시에 제시하지 않는다.
+  · target(목표가)·stopLoss(손절가) 가격의 근거: 왜 그 숫자로 정했는지 최소 하나의 구체적 기술적 레벨(직전 고점/저점, 이동평균선, 주봉·월봉 스윙 저항·지지, 매물대, 피보나치 되돌림 중 하나)을 basis 또는 aiComment에 명시할 것 — 근거 없이 비율(예: entry+15%)만 적용한 숫자처럼 보이면 안 된다.
 - 단기(1-2주) / 중기(1-3개월) / 장기(6개월-1년) 전망 각각 상세히
 - 시나리오 A (강세): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거
 - 시나리오 B (중립): 조건 / 진입가 / 목표가 / 손절가 / 확률% / 근거 (entry/target/stopLoss 절대 0으로 두지 말 것)
@@ -1430,6 +1431,29 @@ function buildSupplyFlowFact(quote) {
   };
 }
 
+/** 순매수 수량(1일/5일/20일, 외국인/기관)을 현재가 기준 금액(억원)으로 코드가 직접
+ * 환산한 값. 예전엔 AI가 프롬프트 안에서 이 곱셈(수량×현재가)을 직접 계산해서 문장에
+ * 썼는데, 실제로 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 10배 축소해서
+ * 서술)가 발생했다 — LLM은 큰 수의 곱셈에 약하다. 이제 이 계산은 AI에게 맡기지 않고
+ * 여기서 코드가 미리 정확히 계산해서 프롬프트 입력 데이터에 그대로 실어 보내고,
+ * AI는 이 숫자를 인용만 하도록 프롬프트에서 강제한다(할루시네이션/계산오류 원천 차단). */
+function supplyWonEokFields(quote) {
+  const price = toNum(quote && quote.currentPrice);
+  const eok = (qty) => {
+    const q = toNum(qty);
+    if (q == null || price == null) return null;
+    return Math.round(((q * price) / 1e8) * 10) / 10; // 억원, 소수 1자리
+  };
+  return {
+    foreignNetBuyWonEok1d: eok(quote && quote.foreignNetBuy),
+    foreignNetBuyWonEok5d: eok(quote && quote.foreignNetBuy5d),
+    foreignNetBuyWonEok20d: eok(quote && quote.foreignNetBuy20d),
+    institutionNetBuyWonEok1d: eok(quote && quote.institutionNetBuy),
+    institutionNetBuyWonEok5d: eok(quote && quote.institutionNetBuy5d),
+    institutionNetBuyWonEok20d: eok(quote && quote.institutionNetBuy20d),
+  };
+}
+
 function computeScoreCard(quote, indicators) {
   const price = toNum(quote && quote.currentPrice);
   const ind = indicators && typeof indicators === "object" ? indicators : {};
@@ -1472,6 +1496,31 @@ function computeScoreCard(quote, indicators) {
     total: filled.reduce((sum, v) => sum + v, 0),
     note: "이동평균 위치·RSI·거래량·수급으로 기계적으로 계산한 참고용 점수(-2~+2, 데이터 없는 항목은 제외). AI의 정성적 판단과는 별개입니다.",
   };
+}
+
+/** GPT 리포트 지적사항 — "268,704원" 같은 실제 호가단위와 무관한 비현실적 숫자가 나오면
+ * AI가 그냥 비율(예: entry*1.15)만 곱해서 만든 숫자처럼 보여 신뢰도를 깎는다. 국내주식은
+ * 한국거래소(KRX) 실제 호가단위로, 미국주식은 센트 단위로 반올림해서 항상 실제 거래
+ * 가능한 가격으로 보정한다. 코인은 규제된 호가단위가 없어 그대로 둔다. */
+function roundToTick(priceRaw, assetType) {
+  const p = toNum(priceRaw);
+  if (p == null || p <= 0) return p;
+  if (assetType === "US") {
+    return Math.round(p * 100) / 100;
+  }
+  if (assetType === "CRYPTO") {
+    return p;
+  }
+  // 코스피/코스닥 공통 호가단위(2024년 개정 기준)
+  let tick;
+  if (p < 2000) tick = 1;
+  else if (p < 5000) tick = 5;
+  else if (p < 20000) tick = 10;
+  else if (p < 50000) tick = 50;
+  else if (p < 200000) tick = 100;
+  else if (p < 500000) tick = 500;
+  else tick = 1000;
+  return Math.round(p / tick) * tick;
 }
 
 function resolveOpinionPrices(entryRaw, stopRaw, targetRaw, currentPrice) {
@@ -1751,6 +1800,10 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
   const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
 
   const prices = resolveOpinionPrices(opinion.entry, opinion.stop, opinion.target, price);
+  // 실제 호가단위로 보정 — 268,704원 같은 비현실적 숫자 방지.
+  prices.entry = roundToTick(prices.entry, quote.assetType) ?? prices.entry;
+  prices.stop = roundToTick(prices.stop, quote.assetType) ?? prices.stop;
+  prices.target = roundToTick(prices.target, quote.assetType) ?? prices.target;
 
   const scenarios = Array.isArray(opinion.scenarios)
     ? opinion.scenarios
@@ -1771,6 +1824,10 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
         // AI가 스키마 예시값(0)을 그대로 남겨서 entry/target/stop이 비는 경우를 방지하는 안전망.
         .map((s) => {
           const resolved = resolveScenarioPrices(s, price, prices);
+          resolved.entry = roundToTick(resolved.entry, quote.assetType) ?? resolved.entry;
+          resolved.stop = roundToTick(resolved.stop, quote.assetType) ?? resolved.stop;
+          resolved.target = roundToTick(resolved.target, quote.assetType) ?? resolved.target;
+          resolved.targetLow = roundToTick(resolved.targetLow, quote.assetType) ?? resolved.targetLow;
           const merged = { ...s, ...resolved };
           // 2026-08-26: 손익비(R:R)는 AI가 아니라 확정된 entry/stop/target으로 코드가 직접
           // 계산한다 — "그럴듯한 확률"이 아니라 최소 하나는 검증 가능한 숫자를 붙여준다.
@@ -1838,13 +1895,13 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
       target: prices.target,
       // 2026-08-26: target2(2차 목표가)는 AI가 아니라 실제 주봉/월봉 스윙 저항(KIS 실데이터)에서
       // target보다 높은 다음 저항을 코드가 그대로 찾아 붙인 것 — 없으면 null(지어내지 않음).
-      target2: computeTarget2(prices.target, wm),
+      target2: roundToTick(computeTarget2(prices.target, wm), quote.assetType),
       // GPT 리포트 지적사항 — target1과 너무 멀리 떨어진 target2를 "2차 목표"처럼 나란히
       // 보여주면 단기에 도달 가능한 목표처럼 오인시킨다. target1 대비 15% 이상 위면
       // "장기 잠재 목표"로 구분 표기하도록 플래그만 계산해서 붙인다(프론트에서 라벨링에 사용).
       target2IsLongTerm: (() => {
         const t1 = toNum(prices.target);
-        const t2 = computeTarget2(prices.target, wm);
+        const t2 = roundToTick(computeTarget2(prices.target, wm), quote.assetType);
         if (t1 == null || t2 == null || t1 <= 0) return false;
         return (t2 - t1) / t1 >= 0.15;
       })(),
@@ -1929,7 +1986,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
@@ -2016,6 +2073,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
       institutionNetBuy5d: quote.institutionNetBuy5d,
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
+      ...supplyWonEokFields(quote),
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
       ...wmJsonFields(wm),
@@ -2150,7 +2208,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - 값이 null이면 web_search로 "[종목명] 외국인 기관 순매수 오늘" 등을 검색해서 실제 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다 — 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값이 아니라는 걸 스스로 인지한다.
+- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
       : `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
@@ -2170,7 +2228,8 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - C(약세)는 "지지 붕괴=매수 기회"로 포장하지 말 것 — 이탈 시 신규 매수 금지·관망이 우선이고, targetLow(다음 지지) 근방에서 지지가 재확인된 뒤에만 재진입한다는 순서로 쓸 것. entry는 그 재진입가이며 이탈 가격보다 최소 3% 이상 낮아야 한다. stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
 - 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.
-- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.`,
+- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.
+- target/stopLoss 가격의 근거: 왜 그 숫자로 정했는지 최소 하나의 구체적 기술적 레벨(직전 고점/저점, 이동평균, 스윙 저항·지지, 매물대, 피보나치 되돌림 중 하나)을 basis에 명시할 것 — 비율만 적용한 숫자처럼 보이면 안 된다.`,
     "",
     `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
@@ -2211,6 +2270,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       institutionNetBuy5d: quote.institutionNetBuy5d,
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
+      ...supplyWonEokFields(quote),
       ma20: toNum(ind.ma20),
       ma60: toNum(ind.ma60),
       ma120: toNum(ind.ma120),
@@ -2315,7 +2375,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         quote.assetType === "KR"
           ? `
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것.
-- 순매수 수량을 금액(원)으로 환산해 언급할 때는 반드시 "현재가 기준 환산액"이라고 표현한다.
+- 순매수 금액(원)을 언급할 때는 직접 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(억원 단위, 이미 계산됨)를 그대로 인용해 "현재가 기준 환산액 약 OOO억원"으로 표현할 것.
 - 이 섹션은 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
           : ""
       }`,
@@ -2333,7 +2393,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
 - C(약세)는 "지지 붕괴=매수 기회"로 포장하지 말 것 — 이탈 시 신규 매수 금지·관망이 우선이고, targetLow(다음 지지) 근방에서 지지가 재확인된 뒤에만 재진입한다는 순서로 쓸 것. entry는 그 재진입가이며 이탈 가격보다 최소 3% 이상 낮아야 한다. stop=entry의 -3% 근방으로 계산.
 - entry/target/stop은 반드시 현재가와 스토리에 맞는 합리적인 숫자로 채울 것 (스키마의 0은 예시일 뿐, 실제 값을 계산해서 넣을 것).
 - 각 시나리오의 basis에는 확률을 매긴 구체적 근거(추세/RSI/수급/재료반영도/밸류에이션 중 2개 이상 조합)를 반드시 채울 것 — 없는 통계를 지어내지 말 것.
-- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.`,
+- aiComment/comment에서 "눌림목 매수"·"조정 시 매수" 같은 표현을 쓰면 그 가격은 반드시 scenarioB.entry와 일치시킬 것 — 총평과 시나리오가 서로 다른 진입 전략을 제시하지 않는다.
+- target/stopLoss 가격의 근거: 왜 그 숫자로 정했는지 최소 하나의 구체적 기술적 레벨(직전 고점/저점, 이동평균, 스윙 저항·지지, 매물대, 피보나치 되돌림 중 하나)을 basis에 명시할 것 — 비율만 적용한 숫자처럼 보이면 안 된다.`,
       "",
       `chart(차트 흐름 분석) 작성 규칙 — 반드시 준수:
 - MA20/60/120/200, RSI, 일목, 지지·저항 1·2차, 52주 고저는 기존과 동일하게 작성할 것.
@@ -2374,6 +2435,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         institutionNetBuy5d: quote.institutionNetBuy5d,
         foreignNetBuy20d: quote.foreignNetBuy20d,
         institutionNetBuy20d: quote.institutionNetBuy20d,
+      ...supplyWonEokFields(quote),
         ma20: toNum(ind.ma20),
         ma60: toNum(ind.ma60),
         ma120: toNum(ind.ma120),

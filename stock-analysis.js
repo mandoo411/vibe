@@ -1622,8 +1622,10 @@
     // 표기하면 약세 시나리오인데 상방 숫자만 보이는 것처럼 오해할 수 있어 라벨을 구분한다.
     // 2026-08-26: 손익비(R:R)는 서버(api/analyze.js)가 확정된 entry/stop/target으로 직접
     // 계산해서 내려준 값 — AI가 던진 숫자가 아니라 검증 가능한 산수 결과다.
+    // 사용자 피드백 — "R:R 2"는 무슨 뜻인지 바로 안 와닿으니 "손익비 1:2"처럼 위험 1에
+    // 대한 기대수익 배수로 읽히게 표기한다.
     const rr = toNum(s.rr);
-    const rrText = rr != null ? `R:R ${rr}` : "";
+    const rrText = rr != null ? `손익비 1:${rr}` : "";
     const lines = [
       ["조건", s.condition],
       ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null],
@@ -1670,7 +1672,7 @@
       // GPT 리포트 지적사항 — target1과 15% 이상 떨어진 target2를 "2차 목표"로 나란히
       // 보여주면 단기에 도달 가능한 목표처럼 오인될 수 있어 "장기 잠재 목표"로 구분한다.
       target2 != null ? [target2IsLongTerm ? "장기 잠재 목표" : "목표가(2차)", fmtPrice(target2, assetType)] : null,
-      rrVal != null ? ["손익비", `${rrVal}R`] : null,
+      rrVal != null ? ["손익비", `1:${rrVal}`] : null,
     ]
       .filter(Boolean)
       .map(

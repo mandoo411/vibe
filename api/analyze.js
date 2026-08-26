@@ -2218,6 +2218,7 @@ const CLAUSE_ITEM_SCHEMA = {
                 count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
                 withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
                 windowBars: { type: "number", description: "high_breakout_n/low_breakdown_n/volume_record_high_n 전용: 20|60|120|240" },
+                days: { type: "number", description: "period_return 전용: 5|21|63|126|252 (거래일 기준 구간수익률 일수)" },
               },
             };
 
@@ -2264,6 +2265,7 @@ const TS_PARSE_TOOL = {
                 count: { type: "number", description: "consecutive_candles 전용: 연속 일수" },
                 withinPct: { type: "number", description: "high52w_near 전용: 신고가 대비 근접 퍼센트" },
                 windowBars: { type: "number", description: "high_breakout_n/low_breakdown_n/volume_record_high_n 전용: 20|60|120|240" },
+                days: { type: "number", description: "period_return 전용: 5|21|63|126|252 (거래일 기준 구간수익률 일수)" },
               },
             },
           },
@@ -2428,6 +2430,7 @@ function tsNormalizeLeafClause(raw) {
   // N봉 이내 발생) 필드. within은 bars가 유효한 양수일 때만 싣는다(잘못된 값이면 조용히
   // 무시하고 evaluateClauseOnSnapshot의 기존 "직전봉→오늘봉" 로직으로 폴백됨).
   if (raw.windowBars != null) out.windowBars = Number(raw.windowBars);
+  if (raw.days != null) out.days = Number(raw.days); // period_return 전용 — 2026-08-26 HTS 확장 때 정규화 누락되어 있던 필드 복구
   if (raw.negate === true) out.negate = true;
   if (raw.within && Number(raw.within.bars) > 0) out.within = { bars: Number(raw.within.bars) };
   return out;

@@ -334,6 +334,10 @@
         })
         .join("") +
       (total > items.length ? `<div class="rt-ac-more">외 ${escapeHtml(String(total - items.length))}개 더 있습니다</div>` : "");
+    const activeEl = host.querySelector(".rt-ac-item.is-active");
+    if (activeEl && typeof activeEl.scrollIntoView === "function") {
+      activeEl.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function moveAutocomplete(delta) {
@@ -349,23 +353,42 @@
     return idx >= 0 && idx < acState.items.length ? acState.items[idx] : null;
   }
 
+  const AC_DISPLAY_LIMIT = 50; // 드롭다운에 스크롤로 노출할 최대 개수(기존 8 하드컷 폐지)
+
   function filterStocksForAutocomplete(q) {
     const lc = q.toLowerCase();
     const key = normalizeNameKey(q);
     const aliasTargets = STOCK_NAME_ALIAS_TARGETS.get(key);
-    let kr = (stockList || []).filter((x) => {
-      const name = String(x.name || "").toLowerCase();
-      const code = String(x.code || "");
-      return name.includes(lc) || code.includes(q) || code.includes(lc);
-    });
-    if (aliasTargets) {
-      const existingCodes = new Set(kr.map((x) => x.code));
-      const aliasHits = (stockList || []).filter(
-        (x) => aliasTargets.has(normalizeNameKey(x.name)) && !existingCodes.has(x.code)
-      );
-      // 별칭으로 매칭된 실제 종목("현대차" → 현대자동차)을 목록 맨 위로 노출.
-      kr = aliasHits.concat(kr);
-    }
+    // 2026-08-26: 관련성 순위 없이 stockList 원본 순서대로 substring 필터만 하던 방식이라
+    // "삼성전자" 검색 시 이름에 "삼성전자"가 포함된 파생상품(예: OOO삼성전자SK하이닉스채권혼합50
+    // 같은 채권혼합형 ETF)이 실제 삼성전자(005930)보다 먼저 노출되고, 정작 삼성전자는 8개 슬라이스
+    // 밖으로 밀려 드롭다운에서 선택조차 안 되던 문제(사용자 제보). realtime-board.js의
+    // findStockMatches와 동일한 점수 체계(정확일치>시작일치>포함)로 통일한다 — 두 파일이 검색
+    // 로직을 각자 구현하고 있어(normalizeNameKey 주석 참고) 반드시 같이 맞춰야 함.
+    const scored = (stockList || [])
+      .map((x) => {
+        if (!x || !x.name) return null;
+        const name = String(x.name);
+        const nameLc = name.toLowerCase();
+        const code = String(x.code || "");
+        const nk = normalizeNameKey(name);
+        let score = 0;
+        if (nk === key) score = 100;
+        else if (aliasTargets && aliasTargets.has(nk)) score = 100;
+        else if (nameLc === lc) score = 95;
+        else if (code === q) score = 90;
+        else if (nk.startsWith(key)) score = 80;
+        else if (nameLc.startsWith(lc)) score = 75;
+        else if (code.startsWith(q)) score = 70;
+        else if (nk.includes(key)) score = 60;
+        else if (nameLc.includes(lc)) score = 55;
+        else if (code.includes(q) || code.includes(lc)) score = 50;
+        else return null;
+        return { item: x, score, len: name.length };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score || a.len - b.len || a.item.code.localeCompare(b.item.code));
+    const kr = scored.map((row) => row.item);
     const nonKr = [];
     for (const x of CRYPTO_ALIASES) {
       if (x.symbol.toLowerCase().includes(lc) || x.aliases.some((a) => a.includes(lc))) {
@@ -1887,7 +1910,9 @@
         }
         await loadStockList();
         const matches = filterStocksForAutocomplete(q);
-        renderAutocomplete(matches.slice(0, 8), matches.length);
+        // 2026-08-26: 8개로 하드컷하고 '외 N개 더 있습니다'로 막던 걸 스크롤 가능한 목록으로 전환
+        // (사용자 제보: 선택하고 싶어도 목록 밖으로 밀린 종목은 고를 수가 없었음).
+        renderAutocomplete(matches.slice(0, AC_DISPLAY_LIMIT), matches.length);
       });
 
       input.addEventListener("keydown", (e) => {

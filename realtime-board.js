@@ -339,6 +339,8 @@
     return "KOSPI";
   }
 
+  const AC_DISPLAY_LIMIT = 50; // 드롭다운에 스크롤로 노출할 최대 개수(기존 8 하드컷 폐지, stock-analysis.js와 동일하게 유지)
+
   function findStockMatches(qRaw, limit = 8) {
     const q = normalizeQuery(qRaw);
     if (!q) return [];
@@ -436,6 +438,10 @@
         })
         .join("") +
       (total > items.length ? `<div class="rt-ac-more">외 ${escapeHtml(String(total - items.length))}개 더 있습니다</div>` : "");
+    const activeEl = host.querySelector(".rt-ac-item.is-active");
+    if (activeEl && typeof activeEl.scrollIntoView === "function") {
+      activeEl.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function moveAutocomplete(delta) {
@@ -2932,10 +2938,12 @@
       await loadStockListOnce();
       let code6 = resolveCodeFromQuery(q) || "";
       if (!isValidStockCode(code6)) {
-        const matches = findStockMatches(q, 12);
+        const matches = findStockMatches(q, AC_DISPLAY_LIMIT);
         if (matches.length > 1) {
           panel.innerHTML = `<p class="rt-lw-chart-err">검색 결과가 ${matches.length}건입니다. 목록에서 종목을 선택해 주세요.</p>`;
-          renderAutocomplete(matches.slice(0, 8), matches.length);
+          // 2026-08-26: 8개로 하드컷하던 걸 스크롤 가능한 목록으로 전환(사용자 제보: 목록 밖으로
+          // 밀린 종목은 선택 자체가 불가능했음).
+          renderAutocomplete(matches, matches.length);
           return;
         }
         code6 = matches[0] ? matches[0].code : "";
@@ -3436,8 +3444,8 @@
           return;
         }
         await loadStockListOnce();
-        const matches = findStockMatches(q, 200);
-        renderAutocomplete(matches.slice(0, 8), matches.length);
+        const matches = findStockMatches(q, AC_DISPLAY_LIMIT);
+        renderAutocomplete(matches, matches.length);
       });
       searchInput.addEventListener("keydown", (e) => {
         if (e.key === "ArrowDown") {

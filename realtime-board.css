@@ -152,7 +152,13 @@
         border: 1px solid var(--border-strong);
         border-radius: 10px;
         box-shadow: var(--sheet-shadow);
-        overflow: hidden;
+        /* 2026-08-26: 예전엔 8개로 잘라서 overflow:hidden으로 숨기고 "외 N개 더 있습니다"만
+           보여줬는데, 그 이상은 스크롤도 클릭도 안 돼서 실제로 원하는 종목을 못 고르는 문제가
+           있었음(사용자 제보). 목록을 스크롤 가능하게 열어서 끝까지 선택할 수 있게 한다. */
+        max-height: min(360px, 60vh);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
       }
       .rt-ac[hidden] {
         display: none;

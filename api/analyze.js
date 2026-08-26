@@ -258,7 +258,9 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - [상승확률/시나리오 확률의 근거] 상단 요약과 시나리오 A/B/C의 probability는 과거 패턴 통계나 백테스트 결과가 아니라, 애널리스트가 여러 근거를 종합한 정성적 판단 수치라는 것을 스스로 인지한다. 실제로 없는 "표본 O건", "적중률 O%" 같은 통계를 지어내지 않는다. 대신 시나리오별 basis 필드에 그 확률을 매긴 구체적 근거(추세/이동평균 위치, RSI 수준, 수급 방향, 재료 반영도, 밸류에이션 부담 중 최소 2개 이상)를 조합해서 명시해, 숫자가 근거 없이 던져진 것처럼 보이지 않게 한다.
 - [밸류에이션은 트레일링 PER 하나로 단정하지 않는다] 반도체·조선·화학·해운처럼 이익 사이클이 큰 업종은 현재 이익 기준 PER이 사이클 저점(이익 급감 구간)에서 오히려 높게 나타나는 착시가 흔하다. PER·PBR 숫자만으로 "고평가/저평가"를 단정하지 말고, 그 업종이 지금 업황 사이클의 어느 국면(개선/피크/둔화)에 있는지 또는 최근 실적 추세(이익이 늘고 있는지 줄고 있는지)를 함께 한 문장으로 짚어준 뒤에 밸류에이션 부담 여부를 판단한다.
 - [진입가는 반드시 구체적 앵커에 근거] entryPrice(및 시나리오별 entry)가 현재가와 다른 숫자라면, 그 값을 고른 구체적 기술적 근거(예: 20일선, 최근 지지선, 전일 종가 대비 되돌림 비율 등 실제로 제공된 수치)를 총평(comment)에 명시한다. 데이터에 없는 임의의 "적당해 보이는 숫자"를 만들지 않는다.
-- 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).`;
+- 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).
+- [어조 통일 — 반드시 준수] 리포트 전체(요약·스토리·수급·재료·차트·총평 모든 섹션)를 하나의 통일된 문체로 쓴다. 문장 종결은 "-다/-했다/-이다/-보인다/-전망이다" 같은 표준 애널리스트 리포트체로 통일하고, 같은 리포트 안에서 "-습니다"(정중체), "-음/-임"(명사형 개조식), 존댓말과 반말을 섞어 쓰지 않는다. "~함", "~됨"처럼 딱딱하고 사무적으로 끊어지는 개조식 나열도 쓰지 않는다 — 자연스럽게 이어 읽히는 매끄러운 문장으로 쓴다. 한 문단 안에서 문장 종결 스타일이 바뀌면(예: "상승했다"와 "상승했습니다"가 같이 나오면) 잘못 쓴 것이다.
+- [큰 금액 표기 — 반드시 준수] 수급 금액 외에도 시가총액·자사주 매입 규모 등 억원 단위를 넘는 금액을 언급할 때는 항상 한국식 "조/억" 단위로 변환해서 쓰고 소수점은 절대 붙이지 않는다 — 예: "20,397.1억원"(오답) 대신 "2조 397억원"(정답), "5,230억원"(억 단위가 1만 미만이면 조 없이 억만). 만원 미만 잔돈은 반올림해서 버린다.`;
 
 function buildSystemPrompt(today, quote) {
   const assetType = (quote && quote.assetType) || "KR";
@@ -274,7 +276,7 @@ function buildSystemPrompt(today, quote) {
 - 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
+- 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : assetType === "CRYPTO"
       ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
@@ -1437,20 +1439,49 @@ function buildSupplyFlowFact(quote) {
  * 서술)가 발생했다 — LLM은 큰 수의 곱셈에 약하다. 이제 이 계산은 AI에게 맡기지 않고
  * 여기서 코드가 미리 정확히 계산해서 프롬프트 입력 데이터에 그대로 실어 보내고,
  * AI는 이 숫자를 인용만 하도록 프롬프트에서 강제한다(할루시네이션/계산오류 원천 차단). */
+/** 큰 원화 금액을 "2조 397억원"처럼 한국식 조/억 단위 문자열로 변환(소수점 없음).
+ * "20,397.1억원"처럼 억 단위가 만 단위를 넘어가거나 소수점이 붙은 어색한 표기가
+ * 실제로 리포트에 나온 적이 있어(GPT 리포트 지적사항) — AI에게 단위 변환을 맡기지 않고
+ * 코드가 항상 이 형태의 완성된 문자열을 만들어 프롬프트에 실어 보낸다. */
+function formatKoreanWon(wonRaw) {
+  const won = toNum(wonRaw);
+  if (won == null) return null;
+  const sign = won < 0 ? "-" : "+";
+  const abs = Math.abs(won);
+  const JO = 1e12;
+  const EOK = 1e8;
+  const MAN = 1e4;
+  if (abs < EOK) {
+    const man = Math.round(abs / MAN);
+    if (man <= 0) return null;
+    return `${sign}${man.toLocaleString("ko-KR")}만원`;
+  }
+  let jo = Math.floor(abs / JO);
+  let eok = Math.round((abs % JO) / EOK);
+  if (eok >= 10000) {
+    jo += 1;
+    eok -= 10000;
+  }
+  const parts = [];
+  if (jo > 0) parts.push(`${jo.toLocaleString("ko-KR")}조`);
+  parts.push(`${eok.toLocaleString("ko-KR")}억`);
+  return `${sign}${parts.join(" ")}원`;
+}
+
 function supplyWonEokFields(quote) {
   const price = toNum(quote && quote.currentPrice);
-  const eok = (qty) => {
+  const wonText = (qty) => {
     const q = toNum(qty);
     if (q == null || price == null) return null;
-    return Math.round(((q * price) / 1e8) * 10) / 10; // 억원, 소수 1자리
+    return formatKoreanWon(q * price);
   };
   return {
-    foreignNetBuyWonEok1d: eok(quote && quote.foreignNetBuy),
-    foreignNetBuyWonEok5d: eok(quote && quote.foreignNetBuy5d),
-    foreignNetBuyWonEok20d: eok(quote && quote.foreignNetBuy20d),
-    institutionNetBuyWonEok1d: eok(quote && quote.institutionNetBuy),
-    institutionNetBuyWonEok5d: eok(quote && quote.institutionNetBuy5d),
-    institutionNetBuyWonEok20d: eok(quote && quote.institutionNetBuy20d),
+    foreignNetBuyWonText1d: wonText(quote && quote.foreignNetBuy),
+    foreignNetBuyWonText5d: wonText(quote && quote.foreignNetBuy5d),
+    foreignNetBuyWonText20d: wonText(quote && quote.foreignNetBuy20d),
+    institutionNetBuyWonText1d: wonText(quote && quote.institutionNetBuy),
+    institutionNetBuyWonText5d: wonText(quote && quote.institutionNetBuy5d),
+    institutionNetBuyWonText20d: wonText(quote && quote.institutionNetBuy20d),
   };
 }
 
@@ -1986,7 +2017,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
+- 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
     : `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
@@ -2208,7 +2239,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - 값이 null이면 web_search로 "[종목명] 외국인 기관 순매수 오늘" 등을 검색해서 실제 데이터를 찾아 확정적으로 서술.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
-- 순매수 금액(원)을 언급할 때는 절대 직접 곱셈(수량×현재가)으로 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(단위: 억원, 코드가 현재가 기준으로 이미 정확히 계산해 둔 값)를 그대로 인용만 한다. 직접 계산하면 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 잘못 쓰는 식)가 실제로 발생했다. 표현은 반드시 "현재가 기준 환산액 약 OOO억원" 형태를 쓰고, 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
+- 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
       : `supply(수급 분석) 작성 규칙 — 반드시 준수:
 - "외국인", "기관", "코스피", "코스닥", "KRX"라는 단어 자체를 이 섹션에서 절대 쓰지 말 것(비교·대조 목적이어도 금지). 전제 설명 없이 첫 문장부터 바로 실질적인 수급 해석으로 시작할 것.
@@ -2375,7 +2406,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         quote.assetType === "KR"
           ? `
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것.
-- 순매수 금액(원)을 언급할 때는 직접 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonEok1d/5d/20d, institutionNetBuyWonEok1d/5d/20d(억원 단위, 이미 계산됨)를 그대로 인용해 "현재가 기준 환산액 약 OOO억원"으로 표현할 것.
+- 순매수 금액을 언급할 때는 직접 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(이미 "+2조 397억원" 형태의 완성된 문자열, 소수점 없음)를 그대로 문장에 붙여넣을 것.
 - 이 섹션은 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
           : ""
       }`,

@@ -1498,11 +1498,28 @@
     return `${sign}${v.toLocaleString("ko-KR")}주`;
   }
 
+  // 서버(api/analyze.js)의 formatKoreanWon()과 동일한 로직 — "20,397.1억원" 같은
+  // 어색한 소수점 표기 대신 "2조 397억원" 형태의 한국식 조/억 단위로 통일한다.
   function fmtWonEokSigned(n) {
     if (n == null) return "";
-    const eok = n / 1e8;
-    const sign = eok > 0 ? "+" : "";
-    return `${sign}${eok.toFixed(1)}억원`;
+    const sign = n < 0 ? "-" : "+";
+    const abs = Math.abs(n);
+    const JO = 1e12, EOK = 1e8, MAN = 1e4;
+    if (abs < EOK) {
+      const man = Math.round(abs / MAN);
+      if (man <= 0) return "";
+      return `${sign}${man.toLocaleString("ko-KR")}만원`;
+    }
+    let jo = Math.floor(abs / JO);
+    let eok = Math.round((abs % JO) / EOK);
+    if (eok >= 10000) {
+      jo += 1;
+      eok -= 10000;
+    }
+    const parts = [];
+    if (jo > 0) parts.push(`${jo.toLocaleString("ko-KR")}조`);
+    parts.push(`${eok.toLocaleString("ko-KR")}억`);
+    return `${sign}${parts.join(" ")}원`;
   }
 
   function renderSupplyFlowFact(supplyFlow) {

@@ -502,8 +502,10 @@
     return s;
   }
 
+  // 사용자 피드백 — 차트 축/십자선 가격이 "24만"처럼 만원 단위로 뭉개져서 표시되면
+  // 아래 분석 수치(진입가·목표가 등 원 단위 정확한 숫자)와 대조해서 보기 어렵다.
+  // 항상 원 단위 그대로, 쉼표만 넣어서 정확히 표시한다(예: 253,950).
   function lwChartPriceFormatter(price) {
-    if (price >= 10000) return `${(price / 10000).toFixed(0)}만`;
     return Math.round(price).toLocaleString("ko-KR");
   }
 
@@ -1747,7 +1749,7 @@
       errBanner +
       renderStockHeader(data) +
       `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준 — AI의 정성적 종합판단(통계적 백테스트 아님)</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div></article>
+        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
         <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
         <article class="ai-card ai-card--events"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>

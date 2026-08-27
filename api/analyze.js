@@ -266,6 +266,72 @@ function looksLikeScheduledFutureEvent(content, dateStr, todayISO) {
   return hasFutureKeyword;
 }
 
+/** DART(전자공시) 기반 KR 종목 "다가오는 이벤트" 캐시.
+ * 2026-08-27: AI/web_search가 만드는 이벤트가 이미 지난 뉴스를 미래 일정처럼
+ * 보여주는 사고가 반복돼서, KR 종목은 이제 AI가 이벤트를 만들지 않고
+ * scripts/dart-events.mjs가 매일 수집해 둔 DART 공식 공시 기반 데이터만 그대로
+ * 쓴다(normalizeAnalysis 하단에서 이 값으로 완전히 덮어씀 — 워치리스트 밖 종목은
+ * 빈 배열이 되고, 그러면 프론트가 자동으로 "현재 확인된 예정 이벤트 없음"을 보여준다).
+ * data/dart-events.json은 vercel.json의 ignoreCommand가 data/ 변경만으로는 재배포를
+ * 트리거하지 않게 해뒀기 때문에, 여기서도 api/repo-data.js와 동일하게 GitHub
+ * Contents API로 매 요청 시(짧은 캐시를 두고) fresh하게 읽어온다 — require()로 번들에
+ * 박아두면 배치가 매일 갱신해도 다음 실배포 전까지 계속 옛날 값을 보게 된다. */
+let __dartEventsCache = null;
+let __dartEventsCacheAt = 0;
+const DART_EVENTS_CACHE_TTL_MS = 30 * 60 * 1000;
+
+function githubTokenForDartEvents() {
+  return (
+    process.env.GITHUB_TOKEN ||
+    process.env.GH_TOKEN ||
+    process.env.GH_PAT_REPO_SECRETS_WRITE ||
+    process.env.GITHUB_PAT ||
+    ""
+  ).trim();
+}
+
+async function fetchDartEventsMap() {
+  const now = Date.now();
+  if (__dartEventsCache && now - __dartEventsCacheAt < DART_EVENTS_CACHE_TTL_MS) {
+    return __dartEventsCache;
+  }
+  const token = githubTokenForDartEvents();
+  if (!token) return __dartEventsCache || {};
+  try {
+    const url = "https://api.github.com/repos/mandoo411/vibe/contents/data/dart-events.json?ref=main";
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github.raw",
+        "User-Agent": "totalmoney-ai",
+        Authorization: `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return __dartEventsCache || {};
+    const parsed = JSON.parse(await res.text());
+    __dartEventsCache = (parsed && parsed.events && typeof parsed.events === "object") ? parsed.events : {};
+    __dartEventsCacheAt = now;
+    return __dartEventsCache;
+  } catch {
+    return __dartEventsCache || {};
+  }
+}
+
+/** DART 캐시 항목({type,content,date,source,certainty})을 기존 legacy 이벤트
+ * 형태({type,content,date})로 변환. 날짜/본문이 비정상인 항목은 여기서 걸러낸다 —
+ * 실데이터가 없으면 지어내지 않고 생략한다는 프로젝트 규칙을 이 마지막 관문에서도 지킨다. */
+function dartEventsToLegacyEvents(list, todayISO) {
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((e) => ({
+      type: normalizeEventType(e && e.type),
+      content: sanitizeStr(e && e.content),
+      date: sanitizeStr(e && e.date),
+    }))
+    .filter((e) => e.content && e.date)
+    .filter((e) => !isPastEventDate(e.date, todayISO));
+}
+
 const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널리스트이고, 고객이 돈을 내고 구독하는 유료 리포트를 씁니다.
 그래서 아래는 절대 규칙입니다:
 - 할루시네이션(추정을 사실처럼 서술) 금지. 확인 안 된 것을 확인된 것처럼 쓰지 않는다.
@@ -1848,7 +1914,7 @@ function deriveFinalSignal(aiSignal, scoreCard, scenarios) {
   return "관망";
 }
 
-function normalizeAnalysis(raw, quote, wm, indicators) {
+async function normalizeAnalysis(raw, quote, wm, indicators) {
   const price = toNum(quote && quote.currentPrice) || 0;
   if (!raw || typeof raw !== "object") {
     return {
@@ -1882,7 +1948,7 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
     probRaw == null ? 50 : Math.max(0, Math.min(100, Math.round(probRaw)));
 
   const todayISO = seoulTodayISO();
-  const events = Array.isArray(raw.events)
+  let events = Array.isArray(raw.events)
     ? raw.events
         .filter((e) => e && typeof e === "object")
         .map((e) => ({
@@ -1906,6 +1972,21 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
         // 표현이 있거나 날짜 자체가 오늘보다 뒤여야만 진짜 이벤트로 인정한다.
         .filter((e) => looksLikeScheduledFutureEvent(e.content, e.date, todayISO))
     : [];
+
+  // KR 종목은 이벤트를 더 이상 AI에게 맡기지 않는다 — DART 공식 공시 기반 캐시로
+  // 완전히 덮어쓴다(워치리스트 밖 종목이거나 캐시를 못 읽으면 빈 배열 = "예정된 주요
+  // 일정 없음" 그대로 유지, 뉴스로 억지로 채우지 않는다).
+  const isKrAsset = (quote && quote.assetType ? quote.assetType : "KR") === "KR";
+  if (isKrAsset) {
+    const stockCode = sanitizeStr(quote && quote.stockCode);
+    try {
+      const dartMap = await fetchDartEventsMap();
+      const dartList = stockCode ? dartMap[stockCode] : null;
+      events = dartEventsToLegacyEvents(dartList, todayISO);
+    } catch {
+      events = [];
+    }
+  }
 
   const materialsRaw = raw.materials && typeof raw.materials === "object" ? raw.materials : {};
   const materialItems = Array.isArray(materialsRaw.items)
@@ -2249,7 +2330,7 @@ async function claudeAnalyze(quote, stockName, indicators, wm) {
         console.error("[analyze] raw response (500 chars):", String(fallbackText || "").slice(0, 500));
         throw new Error(ANALYSIS_PARSE_ERROR_MSG);
       }
-      const normalized = normalizeAnalysis(parsed, quote, wm, indicators);
+      const normalized = await normalizeAnalysis(parsed, quote, wm, indicators);
       if (normalized._error) {
         throw new Error("Claude JSON parse failed");
       }
@@ -2625,7 +2706,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
 
   const parsed = safeParseJSON(text);
   if (parsed == null) throw new Error("OpenAI returned non-JSON");
-  const normalized = normalizeAnalysis(parsed, quote, wm, indicators);
+  const normalized = await normalizeAnalysis(parsed, quote, wm, indicators);
   if (normalized._error) throw new Error("OpenAI JSON parse failed");
   return normalized;
 }
@@ -3703,7 +3784,7 @@ module.exports = async function handler(req, res) {
       e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";
     analysisError = openaiErrMsg;
     console.error("[analyze] OpenAI 실패", openaiErrMsg);
-    analysis = normalizeAnalysis(null, quote, wm, indicators);
+    analysis = await normalizeAnalysis(null, quote, wm, indicators);
     if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
       analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;
     }

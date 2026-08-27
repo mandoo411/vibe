@@ -1,0 +1,51 @@
+name: DART Events Sync
+
+on:
+  schedule:
+    # 매일 06:10 KST = 전날 21:10 UTC (weekly-schedule 배치 직후)
+    - cron: "10 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dart-events
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect DART events
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: node scripts/dart-events.mjs
+
+      - name: Commit and push updated events
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data/dart-events.json data/dart-corp-codes.json; then
+            echo "::notice::No DART events changes to commit"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+          git add data/dart-events.json data/dart-corp-codes.json
+          git commit -m "chore(data): sync DART events ${STAMP}"
+          git pull --rebase origin main
+          git push

@@ -16,7 +16,7 @@ const US_CORE_TICKERS = new Set([
   "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA",
 ]);
 
-const KR_CODES = {
+export const KR_CODES = {
   "005930": "삼성전자",
   "000660": "SK하이닉스",
   "207940": "삼성바이오로직스",

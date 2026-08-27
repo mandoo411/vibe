@@ -71,47 +71,81 @@ async function dartFetchBuffer(url, timeoutMs = 30000) {
 
 // ---------------- corp_code (고유번호) 매핑 ----------------
 
+/** corp_code(DART 고유번호) 매핑 — 워치리스트(KR_CODES)만 필요.
+ *
+ * 원래는 DART가 제공하는 전체 법인 목록(corpCode.xml, 8만7천개 법인 zip)을
+ * 통째로 받아서 매핑을 만들려고 했으나, 실제 GitHub Actions 환경에서 이
+ * 대용량 엔드포인트가 120초를 줘도 계속 타임아웃났다(2회 확인) — list.json 같은
+ * 작은 JSON API는 같은 환경에서 이미 weekly-schedule.mjs가 매일 문제없이 쓰고
+ * 있어서, DART 쪽에서 대용량 zip 엔드포인트만 유독 느리거나 제한을 거는 것으로
+ * 보인다. 우리는 어차피 워치리스트 15종목만 있으면 되므로, corp_code가 없어도
+ * 쓸 수 있는 list.json(공시검색)을 넉넉한 기간으로 스캔해서 각 종목이 낸 아무
+ * 공시에서나 corp_code를 뽑아내는 방식으로 우회한다 — corp_code는 한 번 알아내면
+ * 절대 안 바뀌는 값이라 로컬 캐시(30일)로 재사용한다. */
 async function loadOrRefreshCorpCodeMap() {
   try {
     const raw = await fs.readFile(CORP_CODE_CACHE_PATH, "utf8");
     const cached = JSON.parse(raw);
     const age = Date.now() - new Date(cached.fetchedAt).getTime();
-    if (age < 30 * 24 * 3600 * 1000 && cached.map && Object.keys(cached.map).length > 1000) {
-      console.log(`corp_code 캐시 재사용 (${Object.keys(cached.map).length}건, ${Math.round(age / 86400000)}일 전 다운로드)`);
+    const wanted = Object.keys(KR_CODES);
+    const have = cached.map ? wanted.filter((c) => cached.map[c]) : [];
+    if (age < 30 * 24 * 3600 * 1000 && have.length === wanted.length) {
+      console.log(`corp_code 캐시 재사용 (워치리스트 ${have.length}/${wanted.length}건, ${Math.round(age / 86400000)}일 전)`);
       return cached.map;
     }
   } catch {
     // 캐시 없음/손상 — 새로 받는다
   }
 
-  console.log("corp_code 마스터(corpCode.xml) 다운로드 중...");
-  const url = new URL("https://opendart.fss.or.kr/api/corpCode.xml");
-  url.searchParams.set("crtfc_key", API_KEY);
-  // 전체 상장/비상장 법인(수만 건)이 들어있는 큰 파일이라 30초로는 부족한 경우가
-  // 실제로 있었다(GitHub Actions 첫 실행에서 타임아웃 확인) — 120초로 늘리고,
-  // 그래도 실패하면 5초 쉬었다 한 번 더 시도한다.
-  let zipBuf;
-  try {
-    zipBuf = await dartFetchBuffer(url, 120000);
-  } catch (error) {
-    console.log(`  ⚠️ corpCode.xml 1차 다운로드 실패(${error.message}) — 5초 후 재시도`);
-    await sleep(5000);
-    zipBuf = await dartFetchBuffer(url, 120000);
-  }
-  const entries = readZipEntries(zipBuf);
-  const xmlName = Object.keys(entries)[0];
-  if (!xmlName) throw new Error("corpCode.xml zip 안에 파일이 없음");
-  const xml = entries[xmlName].toString("utf8");
-
+  console.log("corp_code 매핑 — list.json 스캔으로 워치리스트만 알아내는 중...");
   const map = {};
-  const blocks = xml.split("<list>").slice(1);
-  for (const block of blocks) {
-    const corpCodeM = block.match(/<corp_code>\s*(\d+)\s*<\/corp_code>/);
-    const stockCodeM = block.match(/<stock_code>\s*(\d{6})\s*<\/stock_code>/);
-    if (corpCodeM && stockCodeM) map[stockCodeM[1]] = corpCodeM[1];
+  const wanted = new Set(Object.keys(KR_CODES));
+  const today = seoulYmd();
+  // 3개월씩 구간을 넓혀가며(최대 12개월) 워치리스트 15종목 corp_code를 전부 찾을
+  // 때까지 스캔한다 — 대형주라 보통 최근 3개월 안에 뭔가 하나는 공시가 있다.
+  for (const monthsBack of [3, 6, 12]) {
+    if (wanted.size === 0) break;
+    const bgn = ymdCompact(addDaysYmd(today, -monthsBack * 30));
+    const end = ymdCompact(today);
+    console.log(`  스캔 구간 최근 ${monthsBack}개월 (남은 종목 ${wanted.size}개: ${[...wanted].join(",")})`);
+    let page = 1;
+    let totalPage = 1;
+    while (page <= totalPage && page <= 60 && wanted.size > 0) {
+      const url = new URL("https://opendart.fss.or.kr/api/list.json");
+      url.searchParams.set("crtfc_key", API_KEY);
+      url.searchParams.set("bgn_de", bgn);
+      url.searchParams.set("end_de", end);
+      url.searchParams.set("page_no", String(page));
+      url.searchParams.set("page_count", "100");
+      let payload;
+      try {
+        payload = await dartFetchJson(url);
+      } catch (error) {
+        console.log(`    ⚠️ list.json page=${page} 실패: ${error.message}`);
+        break;
+      }
+      if (payload.status === "013") break;
+      if (payload.status !== "000") {
+        console.log(`    ⚠️ list.json status=${payload.status}: ${payload.message || ""}`);
+        break;
+      }
+      totalPage = Number(payload.total_page) || 1;
+      for (const row of payload.list || []) {
+        const stockCode = String(row.stock_code || "").trim();
+        if (stockCode && wanted.has(stockCode) && row.corp_code) {
+          map[stockCode] = String(row.corp_code).trim();
+          wanted.delete(stockCode);
+        }
+      }
+      page += 1;
+    }
   }
-  if (Object.keys(map).length < 1000) {
-    throw new Error(`corp_code 매핑 결과가 비정상적으로 적음(${Object.keys(map).length}건) — 파싱 실패 의심`);
+
+  if (wanted.size > 0) {
+    console.log(`  ⚠️ corp_code를 못 찾은 워치리스트 종목: ${[...wanted].map((c) => `${KR_CODES[c]}(${c})`).join(", ")} — 이 종목들은 이번 실행에서 이벤트 skip`);
+  }
+  if (Object.keys(map).length === 0) {
+    throw new Error("corp_code 매핑 결과가 0건 — list.json 스캔 실패 의심");
   }
 
   await fs.mkdir(path.dirname(CORP_CODE_CACHE_PATH), { recursive: true });
@@ -120,7 +154,7 @@ async function loadOrRefreshCorpCodeMap() {
     JSON.stringify({ fetchedAt: new Date().toISOString(), count: Object.keys(map).length, map }),
     "utf8"
   );
-  console.log(`corp_code 매핑 ${Object.keys(map).length}건 저장`);
+  console.log(`corp_code 매핑 ${Object.keys(map).length}/${Object.keys(KR_CODES).length}건 저장`);
   return map;
 }
 
@@ -212,7 +246,7 @@ async function fetchDocumentText(rceptNo) {
   const url = new URL("https://opendart.fss.or.kr/api/document.xml");
   url.searchParams.set("crtfc_key", API_KEY);
   url.searchParams.set("rcept_no", rceptNo);
-  const buf = await dartFetchBuffer(url);
+  const buf = await dartFetchBuffer(url, 45000);
   const entries = readZipEntries(buf);
   return Object.values(entries)
     .map((b) => b.toString("utf8"))

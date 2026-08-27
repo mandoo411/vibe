@@ -273,7 +273,7 @@ function buildSystemPrompt(today, quote) {
   const supplyDemandRule = isKr
     ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - 입력 데이터의 foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값을 우선 사용할 것.
-- 이 값이 없거나 null이면, web_search로 "[종목명] 외국인 기관 순매수 [오늘 날짜]"를 검색해서 당일(장중이라 당일 데이터가 없으면 직전 거래일) 실제 수급 데이터를 찾아 그 수치로 서술할 것.
+- 입력 데이터의 investorFlowIsToday가 true면 foreignNetBuy/institutionNetBuy는 오늘 장중 누적 기준 값이다 — "오늘 장중 기준(가장 최근 집계, 마감까지 변동 가능)"이라고 명확히 밝히고 확정적으로 서술한다. investorFlowIsToday가 false인데 investorFlowDate가 있으면 그 값은 가장 최근 확정 거래일(investorFlowDate, YYYYMMDD)의 수급이고 오늘 장중분은 아직 집계 전이라는 뜻이다 — "오늘 장중 수급은 아직 집계 전이며, 가장 최근 확정 거래일(YYYY-MM-DD) 기준으로는 ~"처럼 그 날짜를 밝혀서 확정적으로 서술한다(값이 있는데 숨기거나 얼버무리지 않는다). foreignNetBuy/institutionNetBuy와 investorFlowDate가 모두 없을 때만 web_search로 서술한다.
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
 - 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
@@ -659,10 +659,16 @@ function marketLabelFromRow(row) {
   return hint || "";
 }
 
-/** 외국인/기관 순매수 수량 조회 (당일 데이터는 장 종료 후 제공되는 KIS 특성상,
- * 장중에는 최근 영업일 값이 나올 수 있음). 실패해도 전체 응답을 막지 않도록
- * null/null을 반환하고 조용히 넘어간다 — inquire-price 응답에는 이 필드가 없어서
- * 별도 엔드포인트(inquire-investor)를 호출해야 한다. */
+/** 외국인/기관 순매수 수량 조회. 장중에는 이 TR의 최신 행(rows[0])이 "오늘 장중
+ * 누적치"인 경우도, 아직 갱신 전이라 "가장 최근 확정 거래일" 값인 경우도 있어서
+ * 하나로 단정할 수 없다 — 그래서 rows[0]의 실제 영업일자(stck_bsop_date)를 오늘
+ * 날짜와 비교해서 어느 쪽인지 코드가 판정하고, 그 사실(investorFlowIsToday/Date)을
+ * 그대로 프롬프트에 실어 보낸다. 사용자 피드백 — 장중에 AI가 수급을 "정보 없음"처럼
+ * 얼버무리는 문제가 있었는데, null이라서가 아니라 이 최신치가 오늘 것인지 애매해서
+ * AI가 자신 없어했던 것 — 이제 날짜를 명확히 알려주므로 "오늘 장중 기준(잠정,
+ * 마감까지 변동 가능)" 또는 "전일 확정 기준"으로 항상 확정적으로 서술할 수 있다.
+ * 실패해도 전체 응답을 막지 않도록 전부 null을 반환하고 조용히 넘어간다 —
+ * inquire-price 응답에는 이 필드가 없어서 별도 엔드포인트를 호출해야 한다. */
 async function fetchKisInvestorFlow(code6) {
   try {
     const res = await kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-investor", "FHKST01010900", {
@@ -689,6 +695,7 @@ async function fetchKisInvestorFlow(code6) {
       }
       return any ? Math.round(sum) : null;
     };
+    const latestDate = sanitizeStr(latest.stck_bsop_date || latest.STCK_BSOP_DATE) || null;
     return {
       foreignNetBuy: toNum(latest.frgn_ntby_qty),
       institutionNetBuy: toNum(latest.orgn_ntby_qty),
@@ -696,6 +703,8 @@ async function fetchKisInvestorFlow(code6) {
       institutionNetBuy5d: sumField(5, "orgn_ntby_qty"),
       foreignNetBuy20d: sumField(20, "frgn_ntby_qty"),
       institutionNetBuy20d: sumField(20, "orgn_ntby_qty"),
+      investorFlowDate: latestDate,
+      investorFlowIsToday: !!latestDate && latestDate === ymdKst(),
     };
   } catch (e) {
     console.warn("[analyze] investor flow fetch failed", code6, e && e.message);
@@ -706,6 +715,8 @@ async function fetchKisInvestorFlow(code6) {
       institutionNetBuy5d: null,
       foreignNetBuy20d: null,
       institutionNetBuy20d: null,
+      investorFlowDate: null,
+      investorFlowIsToday: false,
     };
   }
 }
@@ -744,6 +755,8 @@ async function fetchKisQuote(code6) {
     institutionNetBuy5d: investorFlow.institutionNetBuy5d,
     foreignNetBuy20d: investorFlow.foreignNetBuy20d,
     institutionNetBuy20d: investorFlow.institutionNetBuy20d,
+    investorFlowDate: investorFlow.investorFlowDate,
+    investorFlowIsToday: investorFlow.investorFlowIsToday,
     stockCode: code6,
     stockName: sanitizeStr(o1.hts_kor_isnm || o1.prdt_abrv_name || o1.isnm || o2.hts_kor_isnm || ""),
     market: marketLabelFromRow(o1) || marketLabelFromRow(o2),
@@ -2014,7 +2027,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
   const supplyDemandRule2 = isKr
     ? `3번 수급 분석(supplyDemand) 규칙 (반드시 준수):
 - foreignNetBuy(외국인 순매수), institutionNetBuy(기관 순매수) 값이 입력 데이터에 있으면 그 수치로 서술.
-- 값이 null이면 web_search로 당일(장중이면 직전 거래일) 실제 수급 데이터를 찾아 확정적으로 서술.
+- 입력 데이터의 investorFlowIsToday가 true면 foreignNetBuy/institutionNetBuy는 오늘 장중 누적 기준 값이다 — "오늘 장중 기준(가장 최근 집계, 마감까지 변동 가능)"이라고 명확히 밝히고 확정적으로 서술한다. investorFlowIsToday가 false인데 investorFlowDate가 있으면 그 값은 가장 최근 확정 거래일(investorFlowDate, YYYYMMDD)의 수급이고 오늘 장중분은 아직 집계 전이라는 뜻이다 — "오늘 장중 수급은 아직 집계 전이며, 가장 최근 확정 거래일(YYYY-MM-DD) 기준으로는 ~"처럼 그 날짜를 밝혀서 확정적으로 서술한다(값이 있는데 숨기거나 얼버무리지 않는다). foreignNetBuy/institutionNetBuy와 investorFlowDate가 모두 없을 때만 web_search로 서술한다.
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것 — 예: 오늘은 순매수지만 20일 누적으로는 아직 순매도 우위라면 그 괴리를 반드시 명시한다.
 - 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
@@ -2105,6 +2118,8 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      investorFlowDate: quote.investorFlowDate,
+      investorFlowIsToday: quote.investorFlowIsToday,
       foreignHoldRate: quote.foreignHoldRate,
       volTurnoverRate: quote.volTurnoverRate,
       ...wmJsonFields(wm),
@@ -2217,7 +2232,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     "이미 끝난 일을 절대 '예정'이나 '기대'로 서술하지 마세요 (예: 실적발표가 이미 나왔다면 그 결과를 반영하고,\n" +
     "다음 분기 실적발표만 새로운 다가오는 이벤트로 표기).\n" +
     (isKr
-      ? "입력 데이터의 foreignNetBuy/institutionNetBuy가 null이면 web_search로 당일(또는 직전 거래일) 실제 외국인/기관 순매수 데이터를 찾아서 사용하세요 — 정보 없다고 얼버무리지 마세요.\n"
+      ? "investorFlowIsToday가 true면 foreignNetBuy/institutionNetBuy는 오늘 장중 누적치이니 \"오늘 장중 기준(잠정)\"으로 확정적으로 서술하고, false인데 investorFlowDate가 있으면 \"가장 최근 확정 거래일(investorFlowDate) 기준\"이라고 날짜를 밝혀 확정적으로 서술하세요 — 둘 다 없을 때만 web_search로 찾아서 사용하세요. 정보 있는데 없다고 얼버무리지 마세요.\n"
       : "\"외국인\", \"기관\", \"코스피\", \"코스닥\", \"KRX\"라는 단어 자체를 쓰지 말고, 캔들·거래량 데이터로 저점 매집/추세 소진 등 거래량 기반 기술적 수급을 확정적으로 해석하고, web_search로 최근 자금 흐름 관련 뉴스도 찾아서 반영하세요 — 정보 없다고 얼버무리지 마세요.\n") +
     (isKr ? "" : "통화 단위는 항상 달러($)로 표기하세요.\n") +
     "일반 투자자도 이해할 수 있는 언어로 작성하세요.\n" +
@@ -2302,6 +2317,8 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      investorFlowDate: quote.investorFlowDate,
+      investorFlowIsToday: quote.investorFlowIsToday,
       ma20: toNum(ind.ma20),
       ma60: toNum(ind.ma60),
       ma120: toNum(ind.ma120),
@@ -2406,6 +2423,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         quote.assetType === "KR"
           ? `
 - 입력 데이터에 foreignNetBuy5d/institutionNetBuy5d(최근 5영업일 누적), foreignNetBuy20d/institutionNetBuy20d(최근 20영업일 누적) 값이 있으면 반드시 함께 언급해서 "오늘 하루"와 "중기 추세"가 같은 방향인지 다른 방향인지 비교 서술할 것.
+- investorFlowIsToday가 true면 "오늘 장중 기준(잠정)"으로, false인데 investorFlowDate가 있으면 "가장 최근 확정 거래일(investorFlowDate) 기준"이라고 날짜를 밝혀서 확정적으로 서술할 것.
 - 순매수 금액을 언급할 때는 직접 계산하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(이미 "+2조 397억원" 형태의 완성된 문자열, 소수점 없음)를 그대로 문장에 붙여넣을 것.
 - 이 섹션은 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
           : ""
@@ -2467,6 +2485,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         foreignNetBuy20d: quote.foreignNetBuy20d,
         institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      investorFlowDate: quote.investorFlowDate,
+      investorFlowIsToday: quote.investorFlowIsToday,
         ma20: toNum(ind.ma20),
         ma60: toNum(ind.ma60),
         ma120: toNum(ind.ma120),

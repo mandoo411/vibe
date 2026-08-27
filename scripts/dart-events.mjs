@@ -268,37 +268,51 @@ function stripTags(xmlOrHtml) {
 }
 
 function findDateNear(plainText, anchorRe, windowChars, todayISO, maxISO, debugLabel) {
-  const idx = plainText.search(anchorRe);
-  if (idx < 0) {
+  // 앵커 문구(예: "배당기준일")가 문서 안에 여러 번 나올 수 있다 — 실제로 SK하이닉스
+  // 사례에서 첫 번째 등장은 "배당기준일 확정을 위한 건임"처럼 날짜 없는 설명문이고,
+  // 진짜 날짜는 뒤쪽에 따로 나오는 걸 로그로 확인했다. 첫 매치에서 포기하지 않고
+  // 모든 등장 위치를 순서대로 시도해서, 유효한(미래+범위 내) 날짜를 주는 첫 번째
+  // 위치를 채택한다.
+  const globalRe = new RegExp(anchorRe.source, anchorRe.flags.includes("g") ? anchorRe.flags : `${anchorRe.flags}g`);
+  const positions = [...plainText.matchAll(globalRe)].map((m) => m.index);
+  if (positions.length === 0) {
     if (debugLabel) console.log(`    [debug:${debugLabel}] 앵커 문구 자체를 원문에서 못 찾음`);
     return null;
   }
-  const windowText = plainText.slice(idx, idx + windowChars);
-  const m = windowText.match(/(\d{4})\s*[.\-년]\s*(\d{1,2})\s*[.\-월]\s*(\d{1,2})/);
-  if (!m) {
-    if (debugLabel) console.log(`    [debug:${debugLabel}] 앵커는 찾았지만 날짜 패턴 매칭 실패. 주변 텍스트: ${JSON.stringify(windowText.slice(0, 90))}`);
-    return null;
+  let lastFailReason = "";
+  for (const idx of positions) {
+    const windowText = plainText.slice(idx, idx + windowChars);
+    const m = windowText.match(/(\d{4})\s*[.\-년]\s*(\d{1,2})\s*[.\-월]\s*(\d{1,2})/);
+    if (!m) {
+      lastFailReason = `날짜 패턴 매칭 실패. 주변 텍스트: ${JSON.stringify(windowText.slice(0, 90))}`;
+      continue;
+    }
+    const iso = `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
+    if (iso <= todayISO || iso > maxISO) {
+      lastFailReason = `날짜는 뽑았지만(${iso}) 범위 밖(오늘=${todayISO}, 상한=${maxISO})`;
+      continue;
+    }
+    if (debugLabel) {
+      console.log(`    [debug:${debugLabel}] 성공(${positions.indexOf(idx) + 1}/${positions.length}번째 등장) → ${iso}. 주변 텍스트: ${JSON.stringify(windowText.slice(0, 90))}`);
+    }
+    return iso;
   }
-  const iso = `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
-  if (iso <= todayISO || iso > maxISO) {
-    if (debugLabel) console.log(`    [debug:${debugLabel}] 날짜는 뽑았지만(${iso}) 범위 밖(오늘=${todayISO}, 상한=${maxISO})`);
-    return null;
-  }
-  return iso;
+  if (debugLabel) console.log(`    [debug:${debugLabel}] 앵커 ${positions.length}곳 등장했지만 전부 실패. 마지막 사유: ${lastFailReason}`);
+  return null;
 }
 
 function extractAgmDate(rawText, todayISO, maxISO) {
   const plain = stripTags(rawText);
   return (
-    findDateNear(plain, /회의\s*일시/, 120, todayISO, maxISO, "agm:회의일시") ||
-    findDateNear(plain, /개최\s*일시/, 120, todayISO, maxISO, "agm:개최일시") ||
-    findDateNear(plain, /주주총회\s*일시/, 120, todayISO, maxISO, "agm:주주총회일시")
+    findDateNear(plain, /회의\s*일시/, 40, todayISO, maxISO, "agm:회의일시") ||
+    findDateNear(plain, /개최\s*일시/, 40, todayISO, maxISO, "agm:개최일시") ||
+    findDateNear(plain, /주주총회\s*일시/, 40, todayISO, maxISO, "agm:주주총회일시")
   );
 }
 
 function extractDividendRecordDate(rawText, todayISO, maxISO) {
   const plain = stripTags(rawText);
-  return findDateNear(plain, /배당\s*기준\s*일/, 100, todayISO, maxISO, "dividend:배당기준일");
+  return findDateNear(plain, /배당\s*기준\s*일/, 40, todayISO, maxISO, "dividend:배당기준일");
 }
 
 // ---------------- 실적발표 예상 시기 (제출기한 규정 기반 계산) ----------------

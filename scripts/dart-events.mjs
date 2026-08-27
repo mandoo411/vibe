@@ -57,10 +57,10 @@ async function dartFetchJson(url) {
   return JSON.parse(text);
 }
 
-async function dartFetchBuffer(url) {
+async function dartFetchBuffer(url, timeoutMs = 30000) {
   const res = await fetch(url, {
     headers: { "user-agent": "TotalMoneyAI/1.0" },
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const t = await res.text().catch(() => "");
@@ -87,7 +87,17 @@ async function loadOrRefreshCorpCodeMap() {
   console.log("corp_code 마스터(corpCode.xml) 다운로드 중...");
   const url = new URL("https://opendart.fss.or.kr/api/corpCode.xml");
   url.searchParams.set("crtfc_key", API_KEY);
-  const zipBuf = await dartFetchBuffer(url);
+  // 전체 상장/비상장 법인(수만 건)이 들어있는 큰 파일이라 30초로는 부족한 경우가
+  // 실제로 있었다(GitHub Actions 첫 실행에서 타임아웃 확인) — 120초로 늘리고,
+  // 그래도 실패하면 5초 쉬었다 한 번 더 시도한다.
+  let zipBuf;
+  try {
+    zipBuf = await dartFetchBuffer(url, 120000);
+  } catch (error) {
+    console.log(`  ⚠️ corpCode.xml 1차 다운로드 실패(${error.message}) — 5초 후 재시도`);
+    await sleep(5000);
+    zipBuf = await dartFetchBuffer(url, 120000);
+  }
   const entries = readZipEntries(zipBuf);
   const xmlName = Object.keys(entries)[0];
   if (!xmlName) throw new Error("corpCode.xml zip 안에 파일이 없음");

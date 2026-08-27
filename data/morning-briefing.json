@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29599.25,
+        "close": 29546,
         "previousClose": 29276.75,
-        "changePct": 1.1,
-        "changePoints": 322.5
+        "changePct": 0.92,
+        "changePoints": 269.25
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 311.99,
-      "changePct": 0.67,
-      "changePoints": 2.09
+      "price": 313.45,
+      "changePct": 1.15,
+      "changePoints": 3.55
     },
     {
       "symbol": "MSFT",
-      "price": 496.45,
-      "changePct": 0.96,
-      "changePoints": 4.74
+      "price": 496.37,
+      "changePct": 0.95,
+      "changePoints": 4.66
     },
     {
       "symbol": "NVDA",
-      "price": 218.47,
-      "changePct": 2.54,
-      "changePoints": 5.42
+      "price": 209.66,
+      "changePct": -1.59,
+      "changePoints": -3.39
     },
     {
       "symbol": "AMZN",
-      "price": 261.71,
-      "changePct": 0.25,
-      "changePoints": 0.65
+      "price": 260.28,
+      "changePct": -0.3,
+      "changePoints": -0.78
     },
     {
       "symbol": "META",
-      "price": 579.15,
-      "changePct": 1.6,
-      "changePoints": 9.1
+      "price": 576.14,
+      "changePct": 1.07,
+      "changePoints": 6.09
     },
     {
       "symbol": "TSLA",
-      "price": 347.18,
-      "changePct": -0.88,
-      "changePoints": 3.07
+      "price": 345.82,
+      "changePct": -1.26,
+      "changePoints": -4.43
     },
     {
       "symbol": "GOOGL",
-      "price": 342.7,
-      "changePct": -1.23,
-      "changePoints": 4.26
+      "price": 342,
+      "changePct": -1.43,
+      "changePoints": -4.96
     },
     {
       "symbol": "AMD",
-      "price": 482.76,
-      "changePct": 0.75,
-      "changePoints": 3.58
+      "price": 480.93,
+      "changePct": 0.37,
+      "changePoints": 1.75
     },
     {
       "symbol": "PLTR",
-      "price": 177.85,
-      "changePct": 2.96,
-      "changePoints": 5.12
+      "price": 177.5,
+      "changePct": 2.76,
+      "changePoints": 4.77
     },
     {
       "symbol": "COIN",
-      "price": 182.8,
-      "changePct": -2.33,
-      "changePoints": 4.36
+      "price": 181.78,
+      "changePct": -2.87,
+      "changePoints": -5.38
     }
   ],
   "sectors": [
@@ -185,45 +185,45 @@
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1383.12,
-      "USD/JPY": 159.25,
+      "USD/KRW": 1384.61,
+      "USD/JPY": 159.23,
       "USD/CNY": 6.74,
       "EUR/USD": 1.17
     },
     "base": "USD",
-    "updatedAt": "Wed, 26 Aug 2026 00:02:31 +0000",
+    "updatedAt": "Thu, 27 Aug 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 81.83,
-        "changePct": -0.64,
-        "changePoints": -0.53
+        "price": 81.84,
+        "changePct": -0.63,
+        "changePoints": -0.52
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4666.8,
-        "changePct": 0.62,
-        "changePoints": 28.7
+        "price": 4680.2,
+        "changePct": 0.91,
+        "changePoints": 42.1
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 68.75,
-        "changePct": 0.16,
-        "changePoints": 0.11
+        "price": 69.04,
+        "changePct": 0.58,
+        "changePoints": 0.4
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.72,
-        "changePct": 0.15,
-        "changePoints": 0.01
+        "price": 6.71,
+        "changePct": 0,
+        "changePoints": 0
       },
       {
         "id": "sox",
@@ -240,68 +240,75 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78711,
-        "changePct24h": -0.07,
-        "marketCapUsd": 1580250370077.86
+        "priceUsd": 78846,
+        "changePct24h": -0.21,
+        "marketCapUsd": 1582810180845.88
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2492.7,
-        "changePct24h": 1.69,
-        "marketCapUsd": 300849209100.52
+        "priceUsd": 2493.13,
+        "changePct24h": 1.17,
+        "marketCapUsd": 300867515642.64
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 100.57,
-        "changePct24h": 3.61,
-        "marketCapUsd": 58754747773.14
+        "priceUsd": 101.11,
+        "changePct24h": 4.27,
+        "marketCapUsd": 59051887053.31
       }
     ]
   },
   "news": [
+    {
+      "title": "‘빚’길을 조심합시다 … 불경기에 불법사금융 폭증",
+      "url": "https://www.mk.co.kr/news/economy/12137509",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T03:03:00.000Z",
+      "summary": "국민銀, 불법사금융 예방 ‘빚길조심’ 캠페인 시작해 불사금 신고 6년연속 증가KB국민은행이 불법 사금융 예방 캠페인 ‘국민희망대로: 빚길조심’을 27일 공개했다. 금융 취약계층과 .."
+    },
+    {
+      "title": "토큰증권 시대 열린다…코스콤, 증권사 12곳 손잡고 ‘공동 발행소’ 구축",
+      "url": "https://www.mk.co.kr/news/stock/12137420",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T03:00:00.000Z",
+      "summary": "내년 2월 제도 시행 맞춰 KoSTO 가동 준비코스콤이 내년 2월 토큰증권 제도 시행을 앞두고 증권사들이 공동으로 활용할 수 있는 토큰증권 발행 플랫폼 ‘KoSTO’ 구축에 속도를.."
+    },
+    {
+      "title": "초고수 SK하이닉스 사고 삼성전자 팔았다…엔비디아 훈풍에 기판·전력주 ‘베팅’[주식 초고수는 지금]",
+      "url": "https://www.mk.co.kr/news/stock/12137632",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T02:36:16.000Z",
+      "summary": "주식 투자 수익률 상위 1% 초고수들이 27일 장 초반 SK하이닉스를 가장 많이 사들이고 삼성전자는 가장 많이 팔아치운 것으로 나타났다. 간밤 엔비디아가 시장 기대를 뛰어넘는 실적.."
+    },
+    {
+      "title": "[세계지식포럼 연사] 관세 시대, 한국 기업 공장 유치 총력전 나선 美 주정부의 세일즈맨",
+      "url": "https://www.mk.co.kr/news/columnists/12137611",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T02:18:22.000Z",
+      "summary": "제27회 세계지식포럼 연사 릴레이 소개 스튜어트 맥호터 미국 테네시주 부지사 경제개발부 장관 겸직…투자 유치 총괄 4년간 320개 프로젝트·투자 45조원 유치 LG·SK 등 한국.."
+    },
+    {
+      "title": "삼성전자 ‘zHBF’ 상표 출원…HBM 다음 AI 메모리 선점 나선다",
+      "url": "https://www.mk.co.kr/news/business/12137610",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T02:18:11.000Z",
+      "summary": "낸드 기반 차세대 AI 메모리 내달 대만서 zHBF 기술 공개 zHBM 이어 3D 메모리 확장 SK·샌디스크 표준 선점 경쟁삼성전자가 차세대 인공지능(AI) 메모리로 떠오른 HB.."
+    },
+    {
+      "title": "최고 연 9% 금리 ‘신한 적금 9단’…출시 2주만에 10만좌 판매",
+      "url": "https://www.mk.co.kr/news/economy/12137609",
+      "source": "매일경제",
+      "publishedAt": "2026-08-27T02:16:29.000Z",
+      "summary": "9월 30일까지 잔여 10만좌 판매신한은행은 최고 연 9% 금리를 제공하는 ‘신한 적금 9단’이 출시 약 2주 만에 10만좌가 판매됐다고 27일 밝혔다. 신한은행이 지난 14일 선.."
+    },
     {
       "title": "“할머니도 쌈짓돈 주식 단타” … 돈 굴리는 법 1년 만에 뒤집혔다",
       "url": "https://www.mk.co.kr/news/economy/12136819",
       "source": "매일경제 증권",
       "publishedAt": "2026-08-26T20:00:00.000Z",
       "summary": "한국인은 번 돈 가운데 얼마를 저축하고 있을까요. 그렇게 모은 자산은 어디에 담고 있을까요. 한국은행의 국민계정과 자금순환 통계를 함께 보면 한국 가계의 돈이 들어오고 나가는 과정.."
-    },
-    {
-      "title": "“주식·채권, 지금은 숏” … 포트폴리오 지켜줄 3대 ETF는",
-      "url": "https://www.mk.co.kr/news/stock/12136914",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T20:00:00.000Z",
-      "summary": "주식·채권·달러 동시 약할 때 수비수 ETF“주식·채권 숏(매도 포지션)·원자재 롱(매수 포지션)!” 미국 월스트리트의 투자 분위기다. 스콧 베센트 미국 재무장관이 국채 발행을 장.."
-    },
-    {
-      "title": "삼성 뼈아픈 파운드리 실패 … 이번엔 부활할 수 있을까",
-      "url": "https://www.mk.co.kr/news/business/12136873",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T19:30:00.000Z",
-      "summary": "삼성 파운드리 부활의 조건지금으로부터 7년 전인 2019년 4월 30일. 문재인 대통령이 삼성전자 화성사업장에서 열린 ‘시스템반도체 비전 선포식’에 참석합니다. 이 자리에서 문 대.."
-    },
-    {
-      "title": "엄청난 토사 한번에 덮쳐…정부·기업, 한국인 구조 총력",
-      "url": "https://www.mk.co.kr/news/business/12137293",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T14:23:13.000Z",
-      "summary": "네팔과 중국 티베트 자치구 국경지역에서 26일(현지시간) 발생한 홍수로 현지 한국인 직원 피해 우려가 커지면서 정부와 기업들의 대응 움직임이 바빠지고 있다. 현재 현지에 파견 중인.."
-    },
-    {
-      "title": "美 물가 압력 여전 … 성장둔화에 연준 금리동결 무게",
-      "url": "https://www.mk.co.kr/news/world/12137278",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T13:56:59.000Z",
-      "summary": "지난달 미국의 개인소비지출(PCE) 물가지수가 예상치를 소폭 웃돌았지만 전달과 같은 수준을 유지하며 인플레이션 우려를 다소 누그러뜨리면서 당분간 연방준비제도(Fed·연준)의 금리 .."
-    },
-    {
-      "title": "“적자 자회사를 왜 합병시키나”…주가 급락한 SK이노, 이유가 있습니다",
-      "url": "https://www.mk.co.kr/news/stock/12137266",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T13:40:01.000Z",
-      "summary": "연간 600억원 비용절감 기대 SK이노 주주반발 속 11%↓ 분리막 자회사 IET는 상한가SK이노베이션이 분리막 사업 자회사 SK아이이테크놀로지(SKIET)를 흡수합병한다는 소식에.."
     },
     {
       "title": "박현주 회장 \"배당만 늘렸으면 삼전닉스 없었다\"…先투자 강조",
@@ -339,18 +346,18 @@
       "summary": ""
     },
     {
-      "title": "서민 급전대출 비상 … 카드론 평균 금리 14% 넘겨",
-      "url": "https://www.mk.co.kr/news/economy/12136952",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-08-26T08:22:58.000Z",
-      "summary": "서민들의 급전 창구인 카드론 평균 금리가 올 들어 처음 연 14%대로 올라섰다. 카드사들의 조달비용이 계속 커지는 데다 가계대출 총량 규제로 인해 카드사들이 금리 경쟁을 할 유인도.."
-    },
-    {
       "title": "새단장한 '네이버 현대카드' … 최대 15% 포인트 적립 혜택",
       "url": "https://www.mk.co.kr/news/economy/12136951",
       "source": "매일경제 증권",
       "publishedAt": "2026-08-26T08:22:58.000Z",
       "summary": "네이버와 현대카드가 상업자표시신용카드(PLCC) 신상품을 출시했다. 26일 양사는 네이버플러스 스토어에서 최대 15%를 네이버페이 포인트로 돌려받을 수 있는 '네이버 현대카드 Ed.."
+    },
+    {
+      "title": "서민 급전대출 비상 … 카드론 평균 금리 14% 넘겨",
+      "url": "https://www.mk.co.kr/news/economy/12136952",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-08-26T08:22:58.000Z",
+      "summary": "서민들의 급전 창구인 카드론 평균 금리가 올 들어 처음 연 14%대로 올라섰다. 카드사들의 조달비용이 계속 커지는 데다 가계대출 총량 규제로 인해 카드사들이 금리 경쟁을 할 유인도.."
     },
     {
       "title": "\"금리 상승 오히려 좋아\" 반도체 주춤할 때 '평균 12% 상승' 주목받는 업종",
@@ -388,18 +395,11 @@
       "summary": ""
     },
     {
-      "title": "“잘 자려고 돈까지 쓰는데”…매일 확인한 ‘수면 점수’가 꿀잠 망친다",
-      "url": "https://www.mk.co.kr/news/it/12136814",
+      "title": "심야에는 스쿨존 ‘30㎞’ 완화…경찰, 시간제 속도제한 확대",
+      "url": "https://www.mk.co.kr/news/society/12137636",
       "source": "매일경제",
-      "publishedAt": "2026-08-26T20:07:00.000Z",
-      "summary": "과학자들이 밝혀낸 잠의 비밀우리는 ‘슬리포노믹스(Sleeponomics·수면 경제)’ 시대에 살고 있다. 수십만 원을 호가하는 기능성 베개와 코골이를 막아주는 스마트 기기, 수면의.."
-    },
-    {
-      "title": "지금 집 파는게 맞나요? … 세제개편 후 꼭 챙겨야 할 것들",
-      "url": "https://www.mk.co.kr/news/realestate/12136806",
-      "source": "매일경제",
-      "publishedAt": "2026-08-26T20:00:00.000Z",
-      "summary": "8·3 세제개편 주택 매도 가이드세제개편으로 인한 셈법이 복잡하다. 크게는 보유냐 매각이냐이지만 속사정을 따져보면 그렇게 단순하지 않다. 우선 다주택자의 경우 양도세 중과 한시 완.."
+      "publishedAt": "2026-08-27T03:00:00.000Z",
+      "summary": "연말까지 160여곳서 우선 운영경찰이 어린이보호구역(스쿨존)의 제한속도를 심야시간대에 탄력적으로 높이는 ‘시간제 속도제한’을 확대한다. 보행안전시설을 갖추고 사고 이력이 거의 없는.."
     }
   ],
   "aiAnalysis": {

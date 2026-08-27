@@ -40,7 +40,12 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- data/dart-events.json data/dart-corp-codes.json; then
+          # git diff --quiet는 '한 번도 커밋된 적 없는 새 파일(untracked)'은 아예
+          # 비교 대상으로 안 잡아서 항상 조용히 통과해버린다 — 실제로 이 배치의
+          # 첫 실행에서 data/dart-events.json이 생성됐는데도 이 체크 때문에 커밋을
+          # 건너뛴 사고가 있었다. git status --porcelain은 신규/수정 파일을 모두
+          # 잡아내므로 이걸로 바꾼다.
+          if [ -z "$(git status --porcelain -- data/dart-events.json data/dart-corp-codes.json)" ]; then
             echo "::notice::No DART events changes to commit"
             exit 0
           fi

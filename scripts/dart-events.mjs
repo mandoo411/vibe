@@ -101,13 +101,19 @@ async function loadOrRefreshCorpCodeMap() {
   const map = {};
   const wanted = new Set(Object.keys(KR_CODES));
   const today = seoulYmd();
-  // 3개월씩 구간을 넓혀가며(최대 12개월) 워치리스트 15종목 corp_code를 전부 찾을
-  // 때까지 스캔한다 — 대형주라 보통 최근 3개월 안에 뭔가 하나는 공시가 있다.
-  for (const monthsBack of [3, 6, 12]) {
+  // 실제로 확인함: corp_code 없이 list.json을 부르면 검색기간이 "3개월"로 하드
+  // 캡핑되어 있어서(status=100 에러로 거부) 그냥 시작일을 뒤로 넓히면 안 되고,
+  // 3개월짜리 구간을 연속으로 이어붙여서 스캔해야 한다 (0~3개월 전, 3~6개월 전, ...).
+  const windows = [];
+  for (let i = 0; i < 4; i += 1) {
+    windows.push({
+      bgn: ymdCompact(addDaysYmd(today, -(i + 1) * 90)),
+      end: ymdCompact(addDaysYmd(today, -i * 90 - (i === 0 ? 0 : 1))),
+    });
+  }
+  for (const { bgn, end } of windows) {
     if (wanted.size === 0) break;
-    const bgn = ymdCompact(addDaysYmd(today, -monthsBack * 30));
-    const end = ymdCompact(today);
-    console.log(`  스캔 구간 최근 ${monthsBack}개월 (남은 종목 ${wanted.size}개: ${[...wanted].join(",")})`);
+    console.log(`  스캔 구간 ${bgn}~${end} (남은 종목 ${wanted.size}개: ${[...wanted].join(",")})`);
     let page = 1;
     let totalPage = 1;
     while (page <= totalPage && page <= 60 && wanted.size > 0) {
@@ -261,29 +267,38 @@ function stripTags(xmlOrHtml) {
     .trim();
 }
 
-function findDateNear(plainText, anchorRe, windowChars, todayISO, maxISO) {
+function findDateNear(plainText, anchorRe, windowChars, todayISO, maxISO, debugLabel) {
   const idx = plainText.search(anchorRe);
-  if (idx < 0) return null;
+  if (idx < 0) {
+    if (debugLabel) console.log(`    [debug:${debugLabel}] 앵커 문구 자체를 원문에서 못 찾음`);
+    return null;
+  }
   const windowText = plainText.slice(idx, idx + windowChars);
   const m = windowText.match(/(\d{4})\s*[.\-년]\s*(\d{1,2})\s*[.\-월]\s*(\d{1,2})/);
-  if (!m) return null;
+  if (!m) {
+    if (debugLabel) console.log(`    [debug:${debugLabel}] 앵커는 찾았지만 날짜 패턴 매칭 실패. 주변 텍스트: ${JSON.stringify(windowText.slice(0, 90))}`);
+    return null;
+  }
   const iso = `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
-  if (iso <= todayISO || iso > maxISO) return null; // 미래(오늘 제외) + 합리적 범위(6개월 내)만 인정
+  if (iso <= todayISO || iso > maxISO) {
+    if (debugLabel) console.log(`    [debug:${debugLabel}] 날짜는 뽑았지만(${iso}) 범위 밖(오늘=${todayISO}, 상한=${maxISO})`);
+    return null;
+  }
   return iso;
 }
 
 function extractAgmDate(rawText, todayISO, maxISO) {
   const plain = stripTags(rawText);
   return (
-    findDateNear(plain, /회의\s*일시/, 120, todayISO, maxISO) ||
-    findDateNear(plain, /개최\s*일시/, 120, todayISO, maxISO) ||
-    findDateNear(plain, /주주총회\s*일시/, 120, todayISO, maxISO)
+    findDateNear(plain, /회의\s*일시/, 120, todayISO, maxISO, "agm:회의일시") ||
+    findDateNear(plain, /개최\s*일시/, 120, todayISO, maxISO, "agm:개최일시") ||
+    findDateNear(plain, /주주총회\s*일시/, 120, todayISO, maxISO, "agm:주주총회일시")
   );
 }
 
 function extractDividendRecordDate(rawText, todayISO, maxISO) {
   const plain = stripTags(rawText);
-  return findDateNear(plain, /배당\s*기준\s*일/, 100, todayISO, maxISO);
+  return findDateNear(plain, /배당\s*기준\s*일/, 100, todayISO, maxISO, "dividend:배당기준일");
 }
 
 // ---------------- 실적발표 예상 시기 (제출기한 규정 기반 계산) ----------------

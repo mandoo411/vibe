@@ -369,6 +369,7 @@ function buildSystemPrompt(today, quote) {
     "",
     "web_search 2회 완료 후 반드시 stock_analysis 도구를 호출해 최종 결과를 반환하세요.",
     "direction은 매수|관망|회피 중 하나, confidence는 0~100 상승 확률입니다.",
+    "summary.signal(헤드라인)은 A/B/C 시나리오 중 당신이 가장 높은 확률을 준 시나리오, 그리고 총평(aiComment)에서 실제로 권하는 액션과 같은 방향이어야 한다 — 예를 들어 B안(중립)의 확률이 가장 높으면 signal도 '매수'가 아니라 '관망'이어야 하고, 총평에서 '눌림목에서 매수 대기'처럼 조건부·유보적으로 쓰면서 signal은 확정적 '매수'로 단정하지 않는다. 서버가 최종적으로 한 번 더 검산해서 어긋나면 보정하지만, 처음부터 세 가지가 같은 이야기를 하도록 스스로 맞춰서 낼 것.",
     "scenario A/B/C 확률 합계는 100%입니다.",
   ].join("\n");
 }
@@ -1772,6 +1773,45 @@ function normalizeSignal(v) {
   return "관망";
 }
 
+/** 사용자 제보 — SK하이닉스 분석에서 종합점수는 -1(약세 쪽), 확률 1위 시나리오는
+ * B안(중립) 47%, 총평 본문도 "추격매수보다 눌림목 대기"인데 정작 상단 헤드라인은
+ * 그냥 "매수"로 떠서 같은 리포트 안에서 서로 다른 얘기를 하는 문제가 있었다.
+ * summary.signal(헤드라인)은 이제 AI가 던진 한 단어를 그대로 믿지 않고, 이미
+ * 코드로 확정된 두 가지 객관적 근거로 다시 계산한다 — ① scoreCard.total(지표
+ * 기반 기계적 점수, 부호만 사용) ② A/B/C 중 확률이 가장 높은 시나리오(A=강세
+ * (+1)/B=중립(0)/C=약세(-1)). 둘 다 있을 때는 부호가 완전히 같은 방향으로
+ * 일치할 때만("+1,+1"→매수 / "-1,-1"→회피) 단정하고, 하나라도 중립(0)이거나
+ * 서로 반대 방향이면 "관망"으로 만든다 — 애매하거나 엇갈린 근거를 매수/회피
+ * 어느 한쪽으로 단정하지 않는다. 둘 중 하나만 있으면 그 하나의 부호를 그대로
+ * 쓰고, 둘 다 없으면(데이터 부족) AI가 고른 값을 그대로 쓴다. */
+function deriveFinalSignal(aiSignal, scoreCard, scenarios) {
+  const scoreLean = scoreCard && scoreCard.total != null ? Math.sign(scoreCard.total) : null;
+
+  let scenarioLean = null;
+  if (Array.isArray(scenarios) && scenarios.length) {
+    let best = null;
+    for (const s of scenarios) {
+      const p = toNum(s.probability);
+      if (p == null) continue;
+      if (!best || p > best.probability) best = { label: s.label, type: s.type, probability: p };
+    }
+    if (best) {
+      const isBull = best.label === "A" || String(best.type).includes("강");
+      const isBear = best.label === "C" || String(best.type).includes("약");
+      scenarioLean = isBull ? 1 : isBear ? -1 : 0;
+    }
+  }
+
+  const leanToSignal = (lean) => (lean > 0 ? "매수" : lean < 0 ? "회피" : "관망");
+
+  if (scoreLean == null && scenarioLean == null) return aiSignal;
+  if (scoreLean == null) return leanToSignal(scenarioLean);
+  if (scenarioLean == null) return leanToSignal(scoreLean);
+  if (scoreLean > 0 && scenarioLean > 0) return "매수";
+  if (scoreLean < 0 && scenarioLean < 0) return "회피";
+  return "관망";
+}
+
 function normalizeAnalysis(raw, quote, wm, indicators) {
   const price = toNum(quote && quote.currentPrice) || 0;
   if (!raw || typeof raw !== "object") {
@@ -1915,9 +1955,12 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
   // 것을 확인된 것처럼 단정하지 않는다는 원칙은 "의심"에도 동일하게 적용돼야 한다.
   const chartText = stripCitations(sanitizeStr(raw.chart));
 
+  // 헤드라인 신호를 아래 scoreCard 필드와 동일한 값으로 재사용하기 위해 미리 계산.
+  const scoreCard = computeScoreCard(quote, indicators);
+
   return {
     summary: {
-      signal: normalizeSignal(summary.signal),
+      signal: deriveFinalSignal(normalizeSignal(summary.signal), scoreCard, scenarios),
       probability: finalProbability,
       description: sanitizeOneLineText(summary.description) || "요약 정보가 없습니다.",
     },
@@ -1954,7 +1997,7 @@ function normalizeAnalysis(raw, quote, wm, indicators) {
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.
-    scoreCard: computeScoreCard(quote, indicators),
+    scoreCard,
     // GPT 리포트 지적사항 — "하루 수급만으로는 부족하다", "사실과 AI 해석을 구분해야 한다".
     // 1일/5일/20일 순매수는 AI가 서술하는 게 아니라 KIS 실데이터를 코드가 그대로 집계한
     // 값이므로, supply(AI 해석 문단)와 별개로 "사실" 표로 프론트에 그대로 넘긴다.
@@ -2086,6 +2129,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     "",
     "web_search 2회 후 stock_analysis 도구로 결과를 반환하세요.",
     "summary.direction=매수|관망|회피, summary.confidence=상승확률(0~100).",
+    "summary.signal(헤드라인)은 A/B/C 시나리오 중 당신이 가장 높은 확률을 준 시나리오, 그리고 총평(aiComment)에서 실제로 권하는 액션과 같은 방향이어야 한다 — 예를 들어 B안(중립)의 확률이 가장 높으면 signal도 '매수'가 아니라 '관망'이어야 하고, 총평에서 '눌림목에서 매수 대기'처럼 조건부·유보적으로 쓰면서 signal은 확정적 '매수'로 단정하지 않는다. 서버가 최종적으로 한 번 더 검산해서 어긋나면 보정하지만, 처음부터 세 가지가 같은 이야기를 하도록 스스로 맞춰서 낼 것.",
     indicatorBlock,
     wmBlock,
     formatCryptoNewsBlock(cryptoNews),

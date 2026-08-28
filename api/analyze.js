@@ -368,7 +368,9 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
   · 아래 상투구는 리포트 전체에서 금지한다 — "~라고 보는 게 맞다", "~로 보는 게 맞다", "~라는 점이 중요하다", "~에 무게가 실린다", "~라고 볼 수 있다", "전형적인 모습이다", "~가 유력하다", "~에 가깝다", "~로 읽힌다". 같은 뜻이라도 매번 다른 표현으로 새로 쓴다.
   · 접속사를 문장마다 붙이지 않는다. '그런데/다만/특히/즉'은 흐름이 실제로 꺾일 때만 쓰고 연속으로 반복하지 않는다.
   · 카드마다 짧은 단문 하나로 강약을 준다(예: "문제는 수급이다."). 카드당 1회까지만.
-- [숫자 중복 금지 — 반드시 준수] 같은 수치를 한 카드 안에서 두 번 이상 적지 않는다. 특히 supplyDemand는 외국인·기관의 1일/5일/20일 수량과 금액이 화면 상단 FACT 표에 이미 그대로 표시되므로, 해석 문장에서 그 숫자들을 다시 나열하지 않는다 — 방향과 의미만 쓰고 꼭 필요한 숫자 한 개만 인용한다. 예: "5일·20일 모두 순매도 우위다. 오늘 하루 이벤트가 아니라는 뜻." 나열형 재탕은 고객이 가장 지루해하는 부분이다.
+- [수급 숫자 재나열 절대 금지 — 가장 자주 어기는 규칙] 외국인·기관의 1일/5일/20일 순매수 수량과 원화 환산액은 supplyDemand 바로 위 FACT 표에 코드가 이미 그대로 출력한다. 따라서 supplyDemand 본문에는 그 여섯 개 숫자를 다시 적지 않는다. "외국인 1조 1,788억원 순매도, 기관 4,515억원 순매도" 처럼 표를 그대로 옮겨 적은 문장, "최근 5거래일도 외국인 -5조, 기관 -6,405억원" 처럼 기간별로 나열한 문장 모두 금지다. 대신 방향·지속성·의미만 쓴다. 좋은 예: "외국인과 기관이 같은 날 같은 방향으로 팔았다. 5일·20일로 넓혀 봐도 방향이 그대로다. 차익실현이 아니라 리스크 회피에 가깝다." 숫자를 꼭 인용해야 한다면 논지에 결정적인 한 개까지만 허용한다.
+- [내부 필드명 노출 금지 — 반드시 준수] 고객이 읽는 문장에 JSON 필드명·내부 변수명을 절대 쓰지 않는다. scenarioA/scenarioB/scenarioC, entry, entryPrice, stopLoss, target, target2, reflectionPct, reflectionBasis, supplyDemand, materialAnalysis, aiJudgment, upcomingEvents 같은 표기는 전부 금지다. 반드시 화면 라벨 그대로 한국어로 쓴다 — "scenarioB.entry를 160만5000원으로 둔 이유는"(오답) → "중립 시나리오 진입가를 160만5000원으로 잡은 이유는"(정답).
+- [숫자 중복 금지] 그 밖의 카드에서도 같은 수치를 한 카드 안에서 두 번 이상 적지 않는다.
 - [섹션 역할 분담 — 반드시 준수] 같은 재료·같은 논거를 세 개 이상 섹션에서 반복하지 않는다(최대 두 곳). 각 섹션의 역할은 이렇게 나눈다.
   · summary(1번) = 결론 한 덩어리. 근거 나열 금지.
   · story(2번) = 기존에 알려진 축 대비 "오늘 새로 바뀐 것"의 차이.
@@ -581,9 +583,45 @@ function json(res, status, body) {
 // 2026-07-08: AI 응답 텍스트에 "([도메인](URL))" 같은 인용/출처 표기가 섞여 나오는 문제의
 // 방어적 안전망. 프롬프트로 금지 지시를 넣어도 LLM이 100% 지키지 않을 수 있으므로,
 // 모든 자유 텍스트 필드가 공통으로 거치는 sanitizeStr()에서 강제로 제거한다.
+// 2026-08-28: 프롬프트로 금지해도 모델이 드물게 "scenarioB.entry를 160만5000원으로"처럼
+// 내부 JSON 필드명을 고객 문장에 그대로 노출한다(라이브 제보). 프롬프트 금지 규칙과 별개로
+// 모든 자유 텍스트가 거치는 이 함수에서 한국어 라벨로 강제 치환한다.
+const INTERNAL_FIELD_LABELS = [
+  [/\bscenario\s*A\s*[.．]?\s*entry(?:Price)?\b/gi, "강세 시나리오 진입가"],
+  [/\bscenario\s*B\s*[.．]?\s*entry(?:Price)?\b/gi, "중립 시나리오 진입가"],
+  [/\bscenario\s*C\s*[.．]?\s*entry(?:Price)?\b/gi, "약세 시나리오 진입가"],
+  [/\bscenario\s*A\s*[.．]?\s*(?:stopLoss|stop)\b/gi, "강세 시나리오 손절가"],
+  [/\bscenario\s*B\s*[.．]?\s*(?:stopLoss|stop)\b/gi, "중립 시나리오 손절가"],
+  [/\bscenario\s*C\s*[.．]?\s*(?:stopLoss|stop)\b/gi, "약세 시나리오 손절가"],
+  [/\bscenario\s*A\s*[.．]?\s*target\b/gi, "강세 시나리오 목표가"],
+  [/\bscenario\s*B\s*[.．]?\s*target\b/gi, "중립 시나리오 목표가"],
+  [/\bscenario\s*C\s*[.．]?\s*target\b/gi, "약세 시나리오 목표가"],
+  [/\bscenario\s*A\b/gi, "강세 시나리오"],
+  [/\bscenario\s*B\b/gi, "중립 시나리오"],
+  [/\bscenario\s*C\b/gi, "약세 시나리오"],
+  [/\bentryPrice\b/g, "진입가"],
+  [/\bstopLoss\b/g, "손절가"],
+  [/\btarget2\b/g, "장기 잠재 목표"],
+  [/\breflectionPct\b/g, "반영도"],
+  [/\breflectionBasis\b/g, "반영도 근거"],
+  [/\bsupplyDemand\b/g, "수급 분석"],
+  [/\bmaterialAnalysis\b/g, "재료 분석"],
+  [/\bupcomingEvents\b/g, "다가오는 이벤트"],
+  [/\baiJudgment\b/g, "AI 판단"],
+  [/\baiComment\b/g, "AI 총평"],
+  [/\bchartAnalysis\b/g, "차트 분석"],
+  [/\bpriceReason\b/g, "가격 배경"],
+];
+
+function stripInternalFieldNames(s) {
+  let out = String(s);
+  for (const [re, label] of INTERNAL_FIELD_LABELS) out = out.replace(re, label);
+  return out;
+}
+
 function stripCitations(s) {
   if (!s) return s;
-  let out = s;
+  let out = stripInternalFieldNames(s);
   // "([text](https://...))" 형태 — 괄호로 한 번 더 감싼 마크다운 링크(가장 흔한 패턴)
   out = out.replace(/\(\[[^\]]*\]\(https?:\/\/[^)]*\)\)/g, "");
   // "[text](https://...)" 형태 — 일반 마크다운 링크

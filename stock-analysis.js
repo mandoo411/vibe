@@ -1524,6 +1524,12 @@
     return `${sign}${parts.join(" ")}원`;
   }
 
+  /** 순매수(+)=상승색(빨강) / 순매도(-)=하락색(파랑). 0이거나 값 없으면 색 없음. */
+  function signClass(n) {
+    if (n == null || n === 0) return "";
+    return n > 0 ? "is-plus" : "is-minus";
+  }
+
   function renderSupplyFlowFact(supplyFlow) {
     if (!supplyFlow || typeof supplyFlow !== "object") return "";
     const rows = [
@@ -1537,12 +1543,19 @@
         const warn = divergent
           ? `<span class="ai-supply-fact__warn">오늘·20일 추세 반대</span>`
           : "";
+        // 2026-08-28: 순매수/순매도를 숫자만 보고 부호를 찾아 읽어야 했던 걸,
+        // 한국 시장 관습대로 순매수(+)=빨강 / 순매도(-)=파랑으로 색 구분한다.
+        const cell = (period, val) =>
+          `<span class="ai-supply-fact__cell ${signClass(val)}"><em>${period}</em>${escapeHtml(fmtSharesSigned(val))}`;
         return (
           `<div class="ai-supply-fact__row">` +
           `<span class="ai-supply-fact__label">${escapeHtml(label)}</span>` +
-          `<span class="ai-supply-fact__cell"><em>1일</em>${escapeHtml(fmtSharesSigned(v.d1))}${eok ? `<small>(현재가 기준 환산 약 ${escapeHtml(eok)})</small>` : ""}</span>` +
-          `<span class="ai-supply-fact__cell"><em>5일</em>${escapeHtml(fmtSharesSigned(v.d5))}</span>` +
-          `<span class="ai-supply-fact__cell"><em>20일</em>${escapeHtml(fmtSharesSigned(v.d20))}</span>` +
+          cell("1일", v.d1) +
+          `${eok ? `<small>(현재가 기준 환산 약 ${escapeHtml(eok)})</small>` : ""}</span>` +
+          cell("5일", v.d5) +
+          `</span>` +
+          cell("20일", v.d20) +
+          `</span>` +
           warn +
           `</div>`
         );
@@ -1626,20 +1639,30 @@
     // 대한 기대수익 배수로 읽히게 표기한다.
     const rr = toNum(s.rr);
     const rrText = rr != null ? `손익비 1:${rr}` : "";
-    const lines = [
-      ["조건", s.condition],
-      ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null],
-      [isBear ? "반등 목표가" : "목표가", s.target != null ? fmtPrice(s.target, assetType) : null],
-      ["손절가", s.stop != null ? fmtPrice(s.stop, assetType) : null],
-      isBear && s.targetLow != null ? ["추가 하락 시 목표 하단", fmtPrice(s.targetLow, assetType)] : null,
-      isBear ? ["대응전략", s.strategy] : null,
-      s.basis ? ["확률 근거", s.basis] : null,
-    ]
+    // 2026-08-28: 진입/목표/손절은 성격이 다른 숫자라 라벨만으로는 한눈에 안 들어온다.
+    // 한국식 색 관습(상승=빨강, 하락=파랑)에 맞춰 목표=빨강 / 손절=파랑 / 진입=중립 앰버로
+    // 구분하고, 서술형 행(조건·대응전략·확률 근거)은 라벨을 위로 올린 블록 레이아웃으로 나눈다.
+    const rows = [
+      ["조건", s.condition, "cond"],
+      ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null, "entry"],
+      [
+        isBear ? "반등 목표가" : "목표가",
+        s.target != null ? fmtPrice(s.target, assetType) : null,
+        "target",
+      ],
+      ["손절가", s.stop != null ? fmtPrice(s.stop, assetType) : null, "stop"],
+      isBear && s.targetLow != null
+        ? ["추가 하락 시 목표 하단", fmtPrice(s.targetLow, assetType), "targetlow"]
+        : null,
+      isBear ? ["대응전략", s.strategy, "strategy"] : null,
+      s.basis ? ["확률 근거", s.basis, "basis"] : null,
+    ];
+    const lines = rows
       .filter(Boolean)
       .filter(([, v]) => v)
       .map(
-        ([k, v]) =>
-          `<div class="ai-scenario-row"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
+        ([k, v, kind]) =>
+          `<div class="ai-scenario-row ai-scenario-row--${kind}"><span class="ai-scenario-row__k">${escapeHtml(k)}</span><span class="ai-scenario-row__v">${escapeHtml(String(v))}</span></div>`
       )
       .join("");
     const rrBadge = rrText ? `<span class="ai-scenario__rr">${escapeHtml(rrText)}</span>` : "";
@@ -1665,21 +1688,34 @@
     const target2 = toNum(o.target2);
     const target2IsLongTerm = !!o.target2IsLongTerm;
     const rrVal = toNum(o.rr);
+    // 2026-08-28: 매매 흐름 그대로(진입 → 목표 → 손절) 읽히도록 순서를 시나리오 카드와
+    // 통일하고, 종류별 색상 클래스를 붙여 목표=빨강 / 손절=파랑 / 진입=앰버로 구분한다.
     const priceRows = [
-      ["진입가", fmtPrice(prices.entry, assetType)],
-      ["손절가", fmtPrice(prices.stop, assetType)],
-      [target2 != null ? "목표가(1차)" : "목표가", fmtPrice(prices.target, assetType)],
+      ["진입가", fmtPrice(prices.entry, assetType), "entry"],
+      [target2 != null ? "목표가(1차)" : "목표가", fmtPrice(prices.target, assetType), "target"],
+      ["손절가", fmtPrice(prices.stop, assetType), "stop"],
       // GPT 리포트 지적사항 — target1과 15% 이상 떨어진 target2를 "2차 목표"로 나란히
       // 보여주면 단기에 도달 가능한 목표처럼 오인될 수 있어 "장기 잠재 목표"로 구분한다.
-      target2 != null ? [target2IsLongTerm ? "장기 잠재 목표" : "목표가(2차)", fmtPrice(target2, assetType)] : null,
-      rrVal != null ? ["손익비", `1:${rrVal}`] : null,
+      target2 != null
+        ? [
+            target2IsLongTerm ? "장기 잠재 목표" : "목표가(2차)",
+            fmtPrice(target2, assetType),
+            "target2",
+          ]
+        : null,
     ]
       .filter(Boolean)
       .map(
-        ([label, val]) =>
-          `<div class="ai-opinion-price"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(String(val))}</span></div>`
+        ([label, val, kind]) =>
+          `<div class="ai-opinion-price ai-opinion-price--${kind}"><span class="ai-opinion-price__label">${escapeHtml(label)}</span><span class="ai-opinion-price__value">${escapeHtml(String(val))}</span></div>`
       )
       .join("");
+    // 손익비는 가격이 아니라 가격들의 관계라서 같은 크기 블록으로 나열하면 오히려 눈이
+    // 분산된다. 그리드 아래 한 줄 캡션으로 내려 "위험 1 : 기대수익 N"으로 풀어 쓴다.
+    const rrLine =
+      rrVal != null
+        ? `<p class="ai-opinion-rr">손절까지의 위험 <b>1</b> 대비 1차 목표까지의 기대수익 <b>${escapeHtml(String(rrVal))}</b></p>`
+        : "";
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
     const scenarioHtml = scenarios.length
       ? scenarios.map((s) => renderScenarioCard(s, assetType)).join("")
@@ -1691,7 +1727,7 @@
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
-      `<div class="ai-opinion-prices">${priceRows}</div>` +
+      `<div class="ai-opinion-prices">${priceRows}</div>${rrLine}` +
       `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +

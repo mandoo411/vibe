@@ -236,7 +236,7 @@ async function fetchBuybackEvents(corpCode, bgnDeCompact, endDeCompact, todayISO
       const qtyText = Number.isFinite(qtyRaw) && qtyRaw > 0 ? ` (약 ${qtyRaw.toLocaleString("ko-KR")}주)` : "";
       events.push({
         type: spec.type,
-        content: `자기주식 ${spec.verb} 기간이 ${bgd || "공시 기준일"}부터 ${edd}까지로 공시됐다${qtyText}.`,
+        content: `자기주식 ${spec.verb} 기간 ${bgd || "공시 기준일"}~${edd}${qtyText}`,
         date: edd,
         source: "dart",
         certainty: "확정",
@@ -368,7 +368,7 @@ async function computeExpectedEarningsWindow(corpCode, todayISO) {
     const label = q.isAnnual ? "사업보고서(연간 실적)" : "분기·반기보고서";
     return {
       type: "neutral",
-      content: `${label} 제출기한은 자본시장법상 사업연도 종료 후 ${deadlineDays}일 이내(${windowStart}~${deadline} 사이)로 계산된다 — 실제 발표는 이 기간 안에서 이뤄질 전망이다.`,
+      content: `${label} 발표 예상 구간 ${windowStart}~${deadline} (법정 제출기한 기준)`,
       date: deadline,
       source: "dart-computed",
       certainty: "추정",
@@ -411,7 +411,7 @@ async function collectEventsForStock(code, name, corpCode, todayISO) {
           if (iso) {
             events.push({
               type: "neutral",
-              content: `주주총회 소집 공시가 나왔다 (개최일 ${iso}).`,
+              content: `주주총회 개최 ${iso}`,
               date: iso,
               source: "dart",
               certainty: "확정",
@@ -430,7 +430,7 @@ async function collectEventsForStock(code, name, corpCode, todayISO) {
           if (iso) {
             events.push({
               type: "호재",
-              content: `배당 관련 공시가 나왔다 (배당기준일 ${iso}).`,
+              content: `배당기준일 ${iso} — 이 날까지 보유해야 배당 대상`,
               date: iso,
               source: "dart",
               certainty: "확정",

@@ -111,6 +111,24 @@
   --color-down: #3b82f6;
   --ai-body-size: 15px;
   --ai-body-lh: 1.9;
+
+  /* 2026-08-28: 진입/목표/손절 가격 색상 토큰.
+     한국 시장 관습을 따라 상방(목표)=빨강, 하방(손절)=파랑, 진입=중립 앰버로 고정한다. */
+  --ai-price-entry-fg: #b45309;
+  --ai-price-entry-accent: #f59e0b;
+  --ai-price-entry-tint: rgba(245, 158, 11, 0.13);
+  --ai-price-target-fg: #d0342c;
+  --ai-price-target-accent: #e24b4a;
+  --ai-price-target-tint: rgba(226, 75, 74, 0.12);
+  --ai-price-stop-fg: #1d5fd0;
+  --ai-price-stop-accent: #2d6ae3;
+  --ai-price-stop-tint: rgba(45, 106, 227, 0.12);
+  --ai-price-rr-fg: var(--text-primary, #131722);
+  --ai-price-rr-accent: rgba(148, 163, 184, 0.65);
+  --ai-price-rr-tint: rgba(148, 163, 184, 0.12);
+  --ai-price-border: rgba(148, 163, 184, 0.3);
+  --ai-price-inset: rgba(255, 255, 255, 0.7);
+  --ai-price-shadow: 0 1px 2px rgba(15, 23, 42, 0.07), 0 4px 10px -6px rgba(15, 23, 42, 0.14);
 }
 
 [data-theme="dark"] #ai-stock-analysis {
@@ -380,6 +398,25 @@
   color: var(--text-body, #d1d5db);
 }
 
+/* 2026-08-28: 다크 테마에서는 같은 색 계열을 밝기만 올려 대비를 확보한다. */
+[data-theme="dark"] #ai-stock-analysis {
+  --ai-price-entry-fg: #fbbf24;
+  --ai-price-entry-accent: #f59e0b;
+  --ai-price-entry-tint: rgba(245, 158, 11, 0.16);
+  --ai-price-target-fg: #ff7b78;
+  --ai-price-target-accent: #e24b4a;
+  --ai-price-target-tint: rgba(226, 75, 74, 0.17);
+  --ai-price-stop-fg: #7aa9ff;
+  --ai-price-stop-accent: #2d6ae3;
+  --ai-price-stop-tint: rgba(45, 106, 227, 0.19);
+  --ai-price-rr-fg: var(--text-title, #f3f4f6);
+  --ai-price-rr-accent: rgba(148, 163, 184, 0.5);
+  --ai-price-rr-tint: rgba(148, 163, 184, 0.1);
+  --ai-price-border: rgba(148, 163, 184, 0.22);
+  --ai-price-inset: rgba(255, 255, 255, 0.06);
+  --ai-price-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 14px -8px rgba(0, 0, 0, 0.55);
+}
+
 .ai-prose-p {
   margin: 0 0 14px;
   word-break: keep-all;
@@ -641,13 +678,20 @@
   border-bottom: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
 }
 
+/* 2026-08-28: flex-wrap이라 1일/5일/20일이 제멋대로 줄바꿈되며 열이 어긋났다.
+   고정 그리드로 바꿔 외국인·기관 두 줄의 같은 기간끼리 세로로 맞춰 읽히게 한다. */
 .ai-supply-fact__row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 46px repeat(3, minmax(0, 1fr));
   align-items: baseline;
   gap: 4px 12px;
-  padding: 4px 0;
+  padding: 5px 0;
   font-size: 13px;
+}
+
+.ai-supply-fact__warn {
+  grid-column: 2 / -1;
+  justify-self: start;
 }
 
 .ai-supply-fact__label {
@@ -664,6 +708,7 @@
   color: var(--color-text-secondary);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12.5px;
+  white-space: nowrap;
 }
 
 .ai-supply-fact__cell em {
@@ -673,10 +718,33 @@
   margin-right: 4px;
 }
 
+/* 환산 금액을 같은 줄에 두면 1일 칸만 폭이 튀어 5일·20일 숫자가 자릿수 중간에서
+   끊겼다. 아랫줄로 내려 세 기간의 숫자 열을 나란히 맞춘다. */
 .ai-supply-fact__cell small {
+  display: block;
+  margin-top: 1px;
   font-family: inherit;
+  font-size: 11px;
   color: var(--color-text-muted);
-  margin-left: 2px;
+}
+
+/* 2026-08-28: 순매수/순매도 부호별 색 구분 (한국식: 매수=빨강, 매도=파랑) */
+.ai-supply-fact__cell.is-plus {
+  color: var(--ai-price-target-fg);
+  font-weight: 600;
+}
+
+.ai-supply-fact__cell.is-minus {
+  color: var(--ai-price-stop-fg);
+  font-weight: 600;
+}
+
+.ai-supply-fact__cell.is-plus em,
+.ai-supply-fact__cell.is-minus em,
+.ai-supply-fact__cell.is-plus small,
+.ai-supply-fact__cell.is-minus small {
+  color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .ai-supply-fact__warn {
@@ -1325,37 +1393,106 @@
   color: var(--color-text-secondary);
 }
 
+/* 2026-08-28: 가격 블록 리디자인 — 3열 고정 그리드에서 flex-wrap으로 바꿔
+   항목이 4~5개일 때 마지막 줄이 남는 칸 없이 꽉 차게 늘어나도록 한다. */
 .ai-opinion-prices {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
+}
+
+.ai-opinion-rr {
+  margin: 0 0 16px;
+  padding: 0 2px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.ai-opinion-rr b {
+  font-weight: 600;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--text-primary, #131722);
+}
+
+[data-theme="dark"] .ai-opinion-rr b {
+  color: var(--text-title, #f3f4f6);
 }
 
 .ai-opinion-price {
-  padding: 14px 10px;
+  position: relative;
+  padding: 15px 10px 13px;
+  border: 1px solid var(--ai-price-border);
   border-radius: 12px;
-  background: var(--color-background-secondary);
+  background:
+    linear-gradient(180deg, var(--ai-price-tint, rgba(148, 163, 184, 0.1)) 0%, transparent 78%),
+    var(--color-background-secondary);
+  box-shadow: var(--ai-price-shadow), inset 0 1px 0 var(--ai-price-inset);
   text-align: center;
+  overflow: hidden;
+}
+
+/* 상단 3px 액센트 바 — 라벨을 읽기 전에 색만으로 성격이 구분되게 한다 */
+.ai-opinion-price::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--ai-price-accent, rgba(148, 163, 184, 0.55));
+}
+
+.ai-opinion-price--entry {
+  --ai-price-tint: var(--ai-price-entry-tint);
+  --ai-price-accent: var(--ai-price-entry-accent);
+  --ai-price-fg: var(--ai-price-entry-fg);
+}
+
+.ai-opinion-price--target,
+.ai-opinion-price--target2 {
+  --ai-price-tint: var(--ai-price-target-tint);
+  --ai-price-accent: var(--ai-price-target-accent);
+  --ai-price-fg: var(--ai-price-target-fg);
+}
+
+.ai-opinion-price--stop {
+  --ai-price-tint: var(--ai-price-stop-tint);
+  --ai-price-accent: var(--ai-price-stop-accent);
+  --ai-price-fg: var(--ai-price-stop-fg);
+}
+
+.ai-opinion-price--rr {
+  --ai-price-tint: var(--ai-price-rr-tint);
+  --ai-price-accent: var(--ai-price-rr-accent);
+  --ai-price-fg: var(--ai-price-rr-fg);
+}
+
+/* 장기 잠재 목표는 1차 목표와 같은 계열이되 한 단계 약하게 — 도달 시점이 다르기 때문 */
+.ai-opinion-price--target2 {
+  opacity: 0.88;
 }
 
 .ai-opinion-price__label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
   font-size: 12px;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
   color: var(--color-text-secondary);
+  word-break: keep-all;
 }
 
 .ai-opinion-price__value {
   display: block;
   font-size: 17px;
-  font-weight: 500;
+  font-weight: 600;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  color: var(--text-primary, #131722);
-}
-
-[data-theme="dark"] .ai-opinion-price__value {
-  color: var(--text-title, #f3f4f6);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--ai-price-fg, var(--text-primary, #131722));
 }
 
 .ai-opinion-comment {
@@ -1464,6 +1601,86 @@
 
 [data-theme="dark"] .ai-scenario-row__v {
   color: var(--text-title, #f3f4f6);
+}
+
+/* 2026-08-28: 가격 행은 라벨 왼쪽 / 숫자 오른쪽으로 정렬하고 점선으로 구분해
+   여러 숫자를 위아래로 훑어 비교하기 쉽게 만든다. */
+.ai-scenario-row--entry,
+.ai-scenario-row--target,
+.ai-scenario-row--stop,
+.ai-scenario-row--targetlow {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--ai-price-border);
+}
+
+.ai-scenario-row--targetlow,
+.ai-scenario-row--stop:last-child {
+  border-bottom: none;
+}
+
+.ai-scenario-row--entry .ai-scenario-row__v,
+.ai-scenario-row--target .ai-scenario-row__v,
+.ai-scenario-row--stop .ai-scenario-row__v,
+.ai-scenario-row--targetlow .ai-scenario-row__v {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ai-scenario-row--entry .ai-scenario-row__v,
+[data-theme="dark"] .ai-scenario-row--entry .ai-scenario-row__v {
+  color: var(--ai-price-entry-fg);
+}
+
+.ai-scenario-row--target .ai-scenario-row__v,
+[data-theme="dark"] .ai-scenario-row--target .ai-scenario-row__v {
+  color: var(--ai-price-target-fg);
+}
+
+.ai-scenario-row--stop .ai-scenario-row__v,
+.ai-scenario-row--targetlow .ai-scenario-row__v,
+[data-theme="dark"] .ai-scenario-row--stop .ai-scenario-row__v,
+[data-theme="dark"] .ai-scenario-row--targetlow .ai-scenario-row__v {
+  color: var(--ai-price-stop-fg);
+}
+
+/* 서술형 행(조건·대응전략·확률 근거)은 라벨을 위로 올려 본문이 통째로 읽히게 한다 */
+.ai-scenario-row--cond,
+.ai-scenario-row--strategy,
+.ai-scenario-row--basis {
+  display: block;
+  margin-bottom: 0;
+  padding-top: 12px;
+}
+
+.ai-scenario-row--cond {
+  padding-top: 0;
+  padding-bottom: 12px;
+}
+
+.ai-scenario-row--cond .ai-scenario-row__k,
+.ai-scenario-row--strategy .ai-scenario-row__k,
+.ai-scenario-row--basis .ai-scenario-row__k {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.ai-scenario-row--cond .ai-scenario-row__v,
+.ai-scenario-row--strategy .ai-scenario-row__v,
+.ai-scenario-row--basis .ai-scenario-row__v {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.75;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .ai-scenario-empty {
@@ -1599,6 +1816,30 @@
 
   .ai-card--half .ai-card__body {
     padding: 16px 18px;
+  }
+
+  .ai-opinion-price {
+    padding: 13px 8px 11px;
+  }
+
+  /* 모바일은 폭이 좁아 3열을 유지하면 숫자가 겹친다 — 기간별로 한 줄씩 쌓는다 */
+  .ai-supply-fact__row {
+    grid-template-columns: 46px minmax(0, 1fr);
+    gap: 3px 10px;
+  }
+
+  .ai-supply-fact__cell,
+  .ai-supply-fact__warn {
+    grid-column: 2;
+  }
+
+  .ai-supply-fact__cell em {
+    display: inline-block;
+    min-width: 32px;
+  }
+
+  .ai-opinion-price__label {
+    font-size: 11px;
   }
 
   .ai-opinion-price__value {

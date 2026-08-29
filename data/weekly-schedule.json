@@ -1,37 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-08-29 12:03 KST",
-    "from": "2026-08-29",
-    "to": "2026-09-12",
-    "historyFrom": "2026-05-31",
+    "lastUpdatedKst": "2026-08-30 07:58 KST",
+    "from": "2026-08-30",
+    "to": "2026-09-13",
+    "historyFrom": "2026-06-01",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-05-31",
-      "event": "Fed Powell Speech",
-      "country": "US",
-      "time": "09:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-05-31",
-      "event": "Fed Waller Speech",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-06-01",
       "event": "Exports YoY",
@@ -58,18 +34,6 @@
     },
     {
       "date": "2026-06-01",
-      "event": "ISM Manufacturing Employment",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "48.6",
-      "previous": "46.4",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-06-01",
       "event": "ISM Manufacturing PMI",
       "country": "US",
       "time": "23:00",
@@ -78,6 +42,18 @@
       "actual": "54",
       "previous": "52.7",
       "estimate": "53",
+      "unit": ""
+    },
+    {
+      "date": "2026-06-01",
+      "event": "ISM Manufacturing Employment",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "48.6",
+      "previous": "46.4",
+      "estimate": "",
       "unit": ""
     },
     {
@@ -286,6 +262,18 @@
     },
     {
       "date": "2026-06-05",
+      "event": "Participation Rate",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "61.8",
+      "previous": "61.8",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-06-05",
       "event": "Non Farm Payrolls",
       "country": "US",
       "time": "21:30",
@@ -330,18 +318,6 @@
       "actual": "3.4",
       "previous": "3.6",
       "estimate": "3.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-06-05",
-      "event": "Participation Rate",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "61.8",
-      "previous": "61.8",
-      "estimate": "",
       "unit": "%"
     },
     {
@@ -2470,18 +2446,6 @@
     },
     {
       "date": "2026-07-22",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.765",
-      "previous": "-1.533",
-      "estimate": "-1.54",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-22",
       "event": "EIA Crude Oil Stocks Change",
       "country": "US",
       "time": "23:30",
@@ -2490,6 +2454,18 @@
       "actual": "2.011",
       "previous": "-1.693",
       "estimate": "-1.25",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-22",
+      "event": "EIA Gasoline Stocks Change",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.765",
+      "previous": "-1.533",
+      "estimate": "-1.54",
       "unit": ""
     },
     {
@@ -4505,7 +4481,7 @@
       "importance": 3,
       "actual": "",
       "previous": "44",
-      "estimate": "",
+      "estimate": "47",
       "unit": ""
     },
     {
@@ -4517,7 +4493,7 @@
       "importance": 3,
       "actual": "",
       "previous": "-0.3",
-      "estimate": "",
+      "estimate": "0.6",
       "unit": "%"
     },
     {
@@ -4546,18 +4522,6 @@
     },
     {
       "date": "2026-09-03",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "203",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-03",
       "event": "Imports",
       "country": "US",
       "time": "21:30",
@@ -4570,6 +4534,18 @@
     },
     {
       "date": "2026-09-03",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "203",
+      "estimate": "205",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-03",
       "event": "Exports",
       "country": "US",
       "time": "21:30",
@@ -4577,18 +4553,6 @@
       "importance": 3,
       "actual": "",
       "previous": "314.7",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-09-03",
-      "event": "Balance of Trade",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-73.3",
       "estimate": "",
       "unit": "$"
     },
@@ -4606,6 +4570,18 @@
     },
     {
       "date": "2026-09-03",
+      "event": "Balance of Trade",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-73.3",
+      "estimate": "-86.4",
+      "unit": "$"
+    },
+    {
+      "date": "2026-09-03",
       "event": "ISM Services PMI",
       "country": "US",
       "time": "23:00",
@@ -4613,7 +4589,7 @@
       "importance": 3,
       "actual": "",
       "previous": "54.1",
-      "estimate": "",
+      "estimate": "54.1",
       "unit": ""
     },
     {
@@ -4956,28 +4932,28 @@
       "date": "2026-09-01",
       "title": "수출 YoY",
       "expected": "예측 62.6% / 이전 62.8%",
-      "analysis": "예상 상회 시 원화 강세와 함께 한국 증시가 긍정적인 반응을 보일 가능성이 높습니다. 예상 하회 시 원화 약세가 우려되며, 이는 수출 관련 주식에 부정적인 영향을 미칠 수 있습니다."
-    },
-    {
-      "type": "macro",
-      "date": "2026-09-01",
-      "title": "S&P 글로벌 제조업 PMI",
-      "expected": "예측 없음 / 이전 53.1",
-      "analysis": "예상 상회 시 제조업 경기가 개선되고 있다는 신호로 해석되어 증시가 상승할 수 있습니다. 예상 하회 시 경기 둔화 우려로 인해 증시가 하락할 가능성이 큽니다."
+      "analysis": "예상 상회 시 원화 강세와 함께 한국 증시가 긍정적인 반응을 보일 가능성이 높습니다. 예상 하회 시 원화 약세가 발생할 수 있으며, 이는 수출 기업의 주가에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-09-01",
       "title": "ISM 제조업 PMI",
       "expected": "예측 55.3 / 이전 55.6",
-      "analysis": "예상 상회 시 미국 제조업의 강세를 나타내며, 글로벌 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 경기 불안감이 커져서 증시가 부정적인 반응을 보일 수 있습니다."
+      "analysis": "예상 상회 시 미국 경제의 강세 신호로 해석되어 글로벌 증시가 상승할 수 있습니다. 예상 하회 시 경기 둔화 우려가 커져 증시에 부정적인 영향을 미칠 수 있습니다."
     },
     {
       "type": "macro",
       "date": "2026-09-01",
-      "title": "JOLTs 구인공고",
+      "title": "JOLTs 구인 공고",
       "expected": "예측 7.39 / 이전 7.359",
-      "analysis": "예상 상회 시 고용 시장의 개선을 나타내며, 이는 소비 증가로 이어져 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 고용 시장의 약세가 우려되어 증시에 부정적인 영향을 미칠 수 있습니다."
+      "analysis": "예상 상회 시 고용 시장의 회복세를 나타내어 미국 달러 강세와 함께 증시가 긍정적인 반응을 보일 수 있습니다. 예상 하회 시 고용 둔화 우려가 커지며, 이는 달러 약세와 함께 증시에 부정적인 영향을 미칠 수 있습니다."
+    },
+    {
+      "type": "macro",
+      "date": "2026-09-01",
+      "title": "ISM 제조업 고용",
+      "expected": "예측 없음 / 이전 52.8",
+      "analysis": "예상 상회 시 고용 증가로 인한 소비 증가 기대감이 커져 증시에 긍정적인 영향을 미칠 수 있습니다. 예상 하회 시 고용 둔화 우려가 커져 증시에 부정적인 영향을 미칠 수 있습니다."
     }
   ]
 }

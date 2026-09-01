@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29496,
+        "close": 29513.25,
         "previousClose": 29491.75,
-        "changePct": 0.01,
-        "changePoints": 4.25
+        "changePct": 0.07,
+        "changePoints": 21.5
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 316.82,
-      "changePct": -0.9,
-      "changePoints": 2.88
+      "price": 316.85,
+      "changePct": -0.89,
+      "changePoints": -2.85
     },
     {
       "symbol": "MSFT",
-      "price": 507.6,
-      "changePct": -1.15,
-      "changePoints": 5.93
+      "price": 507.29,
+      "changePct": -1.22,
+      "changePoints": -6.24
     },
     {
       "symbol": "NVDA",
-      "price": 220.21,
-      "changePct": 1.22,
-      "changePoints": 2.66
+      "price": 220.78,
+      "changePct": 1.48,
+      "changePoints": 3.23
     },
     {
       "symbol": "AMZN",
-      "price": 260.33,
-      "changePct": -2.29,
-      "changePoints": 6.1
+      "price": 259.77,
+      "changePct": -2.5,
+      "changePoints": -6.66
     },
     {
       "symbol": "META",
-      "price": 572.05,
-      "changePct": -1.03,
-      "changePoints": 5.97
+      "price": 572.34,
+      "changePct": -0.98,
+      "changePoints": -5.68
     },
     {
       "symbol": "TSLA",
-      "price": 367.09,
-      "changePct": 5.26,
-      "changePoints": 18.34
+      "price": 367.95,
+      "changePct": 5.51,
+      "changePoints": 19.2
     },
     {
       "symbol": "GOOGL",
-      "price": 339.89,
-      "changePct": -1.93,
-      "changePoints": 6.7
+      "price": 339.35,
+      "changePct": -2.09,
+      "changePoints": -7.24
     },
     {
       "symbol": "AMD",
-      "price": 469.86,
-      "changePct": 0.92,
-      "changePoints": 4.28
+      "price": 470.72,
+      "changePct": 1.1,
+      "changePoints": 5.14
     },
     {
       "symbol": "PLTR",
-      "price": 185.9,
-      "changePct": -0.21,
-      "changePoints": 0.39
+      "price": 186.38,
+      "changePct": 0.05,
+      "changePoints": 0.09
     },
     {
       "symbol": "COIN",
-      "price": 186.59,
-      "changePct": 4.45,
-      "changePoints": 7.95
+      "price": 188.12,
+      "changePct": 5.31,
+      "changePoints": 9.48
     }
   ],
   "sectors": [
@@ -185,45 +185,45 @@
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1376.6,
-      "USD/JPY": 160.05,
+      "USD/KRW": 1368.52,
+      "USD/JPY": 159.79,
       "USD/CNY": 6.74,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Mon, 31 Aug 2026 00:02:31 +0000",
+    "updatedAt": "Tue, 01 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 86.41,
-        "changePct": 3.61,
-        "changePoints": 3.01
+        "price": 86.57,
+        "changePct": 3.8,
+        "changePoints": 3.17
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4494.7,
-        "changePct": 0.37,
-        "changePoints": 16.6
+        "price": 4493.6,
+        "changePct": 0.35,
+        "changePoints": 15.5
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 67.18,
-        "changePct": 0.27,
-        "changePoints": 0.18
+        "price": 67.32,
+        "changePct": 0.48,
+        "changePoints": 0.32
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.69,
-        "changePct": 1.98,
-        "changePoints": 0.13
+        "price": 6.74,
+        "changePct": 2.74,
+        "changePoints": 0.18
       },
       {
         "id": "sox",
@@ -240,40 +240,47 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78469,
-        "changePct24h": 0.2,
-        "marketCapUsd": 1575534076659.52
+        "priceUsd": 78425,
+        "changePct24h": 0.81,
+        "marketCapUsd": 1574603605971.28
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2463.56,
-        "changePct24h": 0.13,
-        "marketCapUsd": 297310499549.97
+        "priceUsd": 2461.9,
+        "changePct24h": 1.65,
+        "marketCapUsd": 297105215561.03
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 103.03,
-        "changePct24h": -0.27,
-        "marketCapUsd": 60296967028.57
+        "priceUsd": 102.88,
+        "changePct24h": 0.83,
+        "marketCapUsd": 60206246987.93
       }
     ]
   },
   "news": [
     {
-      "title": "“비용이 새는 것 같은데” … 숫자만 봐선 기업 모릅니다 [A&M의 기업 살리는 경영]",
-      "url": "https://www.mk.co.kr/news/business/12140457",
+      "title": "“트럭 못 쓰면 하루 15만원 보상”…현대차, 대형트럭 운휴손실 지원",
+      "url": "https://www.mk.co.kr/news/business/12141016",
       "source": "매일경제",
-      "publishedAt": "2026-08-31T19:40:00.000Z",
-      "summary": "이일 알바레즈앤마살 코리아 M&A 컨설팅·CDD 전담팀 리더사모펀드가 기업을 인수하는 이유는 단순하다. 저평가되어 있거나 개선 여지가 있어 보이는 기업을 사들여 가치를 높인 뒤 .."
+      "publishedAt": "2026-09-01T01:09:53.000Z",
+      "summary": "현대자동차가 사고나 보증 수리로 대형트럭 운행이 중단될 경우 하루 15만원의 운휴손실을 지원한다. 중고차 매각부터 신차 구매까지 연계하는 트레이드인 프로그램도 새로 운영한다. 현대.."
     },
     {
-      "title": "계약 단 한건으로 한해 목표 절반 채웠다…SK온 ‘ESS 파죽지세’",
-      "url": "https://www.mk.co.kr/news/business/12140804",
+      "title": "“주식 때문에 속상하시죠?”…연 12% 적금으로 유혹하는 은행권, 조건은",
+      "url": "https://www.mk.co.kr/news/economy/12141006",
       "source": "매일경제",
-      "publishedAt": "2026-08-31T13:05:36.000Z",
-      "summary": "美서 배터리셀 1.5조원 수주 쾌거 전기차 캐즘, 신성장축 ESS로 돌파 연내 9GWh 추가계약 전망도SK온이 미국 네오볼타파워와 대규모 공급계약을 체결하면서 전기차 캐즘(일시적 .."
+      "publishedAt": "2026-09-01T01:05:43.000Z",
+      "summary": "주식에 지친 개인들, 다시 저축에 관심 카드실적 등 충족시 우대금리 적금 경쟁주식 시장 변동성에 지친 개인들이 저축에 관심을 보이며 금융권에 적금 출시 경쟁이 치열해지고 있다. .."
+    },
+    {
+      "title": "삼성전자, ‘디자인 마이애미 서울 2026’ 참가…인간 중심 비전 제시",
+      "url": "https://www.mk.co.kr/news/business/12140947",
+      "source": "매일경제",
+      "publishedAt": "2026-09-01T01:00:00.000Z",
+      "summary": "삼성전자가 1일부터 6일까지 서울 동대문디자인플라자(DDP)에서 열리는 글로벌 디자인 행사 ‘디자인 마이애미 서울 2026(Design Miami Seoul 2026)’에 참가한다.."
     },
     {
       "title": "SK에코플랜트, SK오션플랜트 4100억원에 매각…AI·반도체로 사업 재편",
@@ -393,13 +400,6 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-08-31T07:25:17.000Z",
       "summary": "NH투자증권은 9월 퇴직연금 확정기여형(DC) 및 개인형퇴직연금(IRP) 계좌를 통해 투자할 수 있는 '퇴직연금 개인투자용국채'를 출시하고, 이에 앞서 사전 청약 알림 및 청약 고객 대상 이벤트를 진행한다고 31일 밝혔다. 이번 이벤트는 상품 출시에 앞서 청약 일정과 정보를 제공하는 '사전 청약 알림 이벤트'와 출시 후 실제 투자자를 대상으로 하는 '청약 이벤트'로 나뉘어 진행된다. 대상 상품은 개인투자용국채 10년물과 20년물"
-    },
-    {
-      "title": "코스피, 강보합 6800선 마감…코스닥은 약보합",
-      "url": "https://view.asiae.co.kr/article/2026083116043999477",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-08-31T07:04:39.000Z",
-      "summary": "코스피가 6800선에 마감하며 강보합 상태를 보였다. 코스닥은 약보합 상태로 거래를 마쳤다. 31일 코스피는 전장 대비 31.14포인트(0.46%) 오른 6820.02에 거래를 마쳤다. 이날 하락 출발한 코스피는 장 초반 낙폭을 3%대까지 키웠다가 장 중 상승 전환해 강보합 상태로 마감했다. 투자자별로 개인, 기관, 외국인은 각각 1455억원, 7922억원, 6403억원 순매도했다. 이와 달리 기타법인이 1조5775억원 순매수하면서 강보합 상태를"
     }
   ],
   "aiAnalysis": {

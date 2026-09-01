@@ -87,6 +87,7 @@
     title: $("masthead-title"),
     dmAiContent: $("dm-ai-content"),
     dmAnalysis: $("dm-analysis"),
+    dmStrategy: $("dm-strategy"),
     dmFeatured: $("dm-featured"),
     dmWatchlist: $("dm-watchlist"),
     dmStockTbody: $("dm-stock-tbody"),
@@ -1292,6 +1293,559 @@
     }
   }
 
+
+  // ══════════════════════════════════════════════════════════════════
+  // 2026-09-01: 마감시황 "브리핑 덱" 렌더러
+  //
+  // 기존에는 analysis(한 덩어리 텍스트)를 <div> 하나에 그대로 쏟아부어서
+  // 메모장에 갈겨 쓴 것처럼 보였다. 이제 텍스트를 섹션 단위로 파싱하고,
+  // 구조화 데이터(indexes / investor_trend / sectors / topGainers 등)로
+  // 카드·차트를 코드가 직접 그린다.
+  //
+  // 원칙: 차트에 들어가는 숫자는 전부 실데이터에서만 온다. 값이 없으면
+  // 그 블록 자체를 그리지 않는다(추정치로 채우지 않는다).
+  // ══════════════════════════════════════════════════════════════════
+
+  const DMX_SECTION_TITLES = [
+    ["headline", /^핵심\s*한\s*줄$/],
+    ["index", /^지수$/],
+    ["flow", /^시장\s*흐름\s*분석$/],
+    ["investor", /^투자자별\s*매매\s*동향$/],
+    ["featured", /^오늘의?\s*특징주$/],
+    ["strategy", /^향후\s*전략(\s*및\s*총평)?$/],
+    ["watch", /^내일\s*주목(할)?\s*변수$/],
+  ];
+
+  /** 이모지·기호를 떼고 남은 제목 문자열 (섹션 헤더 판별용) */
+  function dmxStripLeadSymbols(line) {
+    return String(line || "")
+      .replace(/^[\s​]*[^\p{L}\p{N}]{0,4}\s*/u, "")
+      .replace(/[\s:：]+$/, "")
+      .trim();
+  }
+
+  function dmxMatchSectionKey(line) {
+    const t = dmxStripLeadSymbols(line);
+    if (!t || t.length > 20) return null;
+    for (const [key, re] of DMX_SECTION_TITLES) {
+      if (re.test(t)) return key;
+    }
+    return null;
+  }
+
+  /** analysis 텍스트를 섹션별로 분해. 헤더를 하나도 못 찾으면 null → 기존 렌더링 폴백 */
+  function dmxParseAnalysis(text) {
+    const raw = sanitizeStr(text);
+    if (!raw) return null;
+    const lines = raw.split(/\r?\n/);
+    const out = {};
+    let cur = null;
+    let buf = [];
+    let found = 0;
+    const flush = () => {
+      if (cur) out[cur] = (out[cur] ? out[cur] + "\n" : "") + buf.join("\n").trim();
+      buf = [];
+    };
+    for (const line of lines) {
+      const key = dmxMatchSectionKey(line);
+      if (key) {
+        flush();
+        cur = key;
+        found += 1;
+        continue;
+      }
+      // 리포트 제목 블록·구분선은 화면 상단 헤더가 대신하므로 버린다
+      if (/^[─—–-]{4,}$/.test(line.trim())) continue;
+      if (!cur && /TOTAL\s*MONEY\s*AI/i.test(line)) continue;
+      if (!cur && /^\d{4}년\s*\d{1,2}월\s*\d{1,2}일/.test(line.trim())) continue;
+      if (cur) buf.push(line);
+    }
+    flush();
+    if (found < 2) return null;
+    return out;
+  }
+
+  /** "-6,399억(순매도)" / "+1조5,000억" / "12,710억원" → 억 단위 숫자 (부호 유지) */
+  function dmxParseEok(v) {
+    const s = String(v == null ? "" : v).replace(/\s/g, "");
+    if (!s) return null;
+    let sign = 1;
+    if (/^-|순매도/.test(s)) sign = -1;
+    if (/^\+/.test(s)) sign = 1;
+    const jo = s.match(/([\d,.]+)조/);
+    const eok = s.match(/(?:조)?\s*([\d,]+)억/);
+    let total = 0;
+    let hit = false;
+    if (jo) {
+      total += parseFloat(jo[1].replace(/,/g, "")) * 10000;
+      hit = true;
+    }
+    if (eok) {
+      total += parseFloat(eok[1].replace(/,/g, ""));
+      hit = true;
+    }
+    if (!hit) {
+      const bare = s.match(/-?[\d,]+(?:\.\d+)?/);
+      if (!bare) return null;
+      total = Math.abs(parseFloat(bare[0].replace(/,/g, "")));
+    }
+    if (!Number.isFinite(total)) return null;
+    return sign * total;
+  }
+
+  /** 억 단위 숫자를 "1조 5,000억" / "6,399억" 형태로 (소수점 없이) */
+  function dmxFmtEok(n) {
+    if (n == null || !Number.isFinite(n)) return "";
+    const sign = n < 0 ? "-" : "+";
+    const abs = Math.round(Math.abs(n));
+    if (abs >= 10000) {
+      const jo = Math.floor(abs / 10000);
+      const rest = abs % 10000;
+      return `${sign}${jo}조${rest ? " " + rest.toLocaleString("ko-KR") + "억" : ""}`;
+    }
+    return `${sign}${abs.toLocaleString("ko-KR")}억`;
+  }
+
+  function dmxNum(v) {
+    if (v == null) return null;
+    const cleaned = String(v).replace(/[^0-9.\-]/g, "");
+    if (!cleaned || cleaned === "-" || cleaned === ".") return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function dmxSignClass(n) {
+    if (n == null || n === 0) return "is-flat";
+    return n > 0 ? "is-up" : "is-down";
+  }
+
+  function dmxPct(n, digits = 2) {
+    if (n == null || !Number.isFinite(n)) return "—";
+    const s = n > 0 ? "+" : "";
+    return `${s}${n.toFixed(digits)}%`;
+  }
+
+  // ── 1) 히어로 (핵심 한 줄) ────────────────────────────────────────
+  function dmxRenderHero(day, ymd, sec) {
+    const line =
+      sanitizeUserCopy(sec && sec.headline ? sec.headline.split(/\n\s*\n/)[0] : "", "") ||
+      sanitizeUserCopy(day && day.summary, "");
+    if (!line) return "";
+    const kospi = day && day.indexes && day.indexes.kospi;
+    const pct = kospi ? dmxNum(kospi.changePercent) : null;
+    const tone = sanitizeUserCopy((day && day.marketTone) || "", "");
+    const dir = pct == null ? "flat" : pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+    const dateLabel = ymd ? `${ymdParts(ymd).m}월 ${ymdParts(ymd).d}일 (${weekdayKo(ymd)})` : "";
+    return `<section class="dmx-hero dmx-hero--${dir}">
+      <div class="dmx-hero__meta">
+        <span class="dmx-hero__date">${escapeHtml(dateLabel)} 장마감</span>
+        ${tone ? `<span class="dmx-hero__tone">${escapeHtml(tone)}</span>` : ""}
+      </div>
+      <p class="dmx-hero__line">${escapeHtml(line.replace(/\s+/g, " ").trim())}</p>
+    </section>`;
+  }
+
+  // ── 2) 지수 카드 (+ 장중 레인지 바) ───────────────────────────────
+  function dmxIndexRangeBar(d) {
+    const low = dmxNum(d.low);
+    const close = dmxNum(d.close);
+    const open = dmxNum(d.open);
+    let high = dmxNum(d.high);
+    const hasHigh = high != null;
+    // 장중 고가가 확인되지 않는 날이 많다. 그럴 땐 지어내지 말고 시가·종가 중 큰 값을
+    // 오른쪽 끝으로 삼아 "저점 → 종가" 구간만 보여주고, 라벨도 '종'으로 정직하게 쓴다.
+    if (!hasHigh) high = Math.max(close == null ? -Infinity : close, open == null ? -Infinity : open);
+    if (low == null || close == null || high == null || !Number.isFinite(high) || high <= low) return "";
+    const pos = (v) => ((v - low) / (high - low)) * 100;
+    const closePos = Math.max(0, Math.min(100, pos(close)));
+    const openPos = open == null ? null : Math.max(0, Math.min(100, pos(open)));
+    const fmt = (v) => v.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+    return `<div class="dmx-range" role="img" aria-label="장중 저가 ${fmt(low)}, 고가 ${fmt(high)}, 종가 ${fmt(close)}">
+      <div class="dmx-range__track">
+        <span class="dmx-range__fill" style="width:${closePos.toFixed(1)}%"></span>
+        ${openPos == null ? "" : `<span class="dmx-range__open" style="left:${openPos.toFixed(1)}%" title="시가 ${fmt(open)}"></span>`}
+        <span class="dmx-range__close" style="left:${closePos.toFixed(1)}%"></span>
+      </div>
+      <div class="dmx-range__ends">
+        <span>저 ${fmt(low)}</span>
+        ${open == null ? "" : `<span class="dmx-range__mid">시 ${fmt(open)}</span>`}
+        <span>${hasHigh ? "고" : "종"} ${fmt(high)}</span>
+      </div>
+    </div>`;
+  }
+
+  function dmxRenderIndexCards(day) {
+    const idx = day && day.indexes;
+    if (!idx || typeof idx !== "object") return "";
+    const detail = (day && day.indexDetail) || {};
+    const specs = [
+      ["kospi", "코스피"],
+      ["kosdaq", "코스닥"],
+    ];
+    const cards = [];
+    for (const [key, label] of specs) {
+      const d = idx[key];
+      if (!d) continue;
+      const close = dmxNum(d.close);
+      const chg = dmxNum(d.change);
+      const pct = dmxNum(d.changePercent != null ? d.changePercent : d.pct);
+      if (close == null) continue;
+      const cls = dmxSignClass(pct);
+      const merged = Object.assign({ close }, detail[key] || {}, {
+        low: (detail[key] && detail[key].low) != null ? detail[key].low : d.low,
+        high: (detail[key] && detail[key].high) != null ? detail[key].high : d.high,
+        open: (detail[key] && detail[key].open) != null ? detail[key].open : d.open,
+        close,
+      });
+      cards.push(`<article class="dmx-idx ${cls}">
+        <span class="dmx-idx__label">${escapeHtml(label)}</span>
+        <strong class="dmx-idx__value">${close.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+        <span class="dmx-idx__delta">${chg == null ? "" : (chg > 0 ? "+" : "") + chg.toFixed(2)}<em>${escapeHtml(dmxPct(pct))}</em></span>
+        ${dmxIndexRangeBar(merged)}
+      </article>`);
+    }
+    const fx = idx.usdkrw;
+    if (fx) {
+      const rate = dmxNum(fx.rate);
+      const fxChg = dmxNum(fx.change);
+      if (rate != null) {
+        // 환율은 하락(원화 강세)이 증시엔 우호적이라 등락 색을 지수와 반대로 쓰지 않고
+        // 중립 톤으로 두되, 방향 화살표만 표시한다.
+        cards.push(`<article class="dmx-idx is-fx">
+          <span class="dmx-idx__label">원/달러</span>
+          <strong class="dmx-idx__value">${rate.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          <span class="dmx-idx__delta">${fxChg == null ? "" : (fxChg > 0 ? "▲ " : fxChg < 0 ? "▼ " : "") + Math.abs(fxChg).toFixed(2) + "원"}</span>
+          ${fx.note ? `<p class="dmx-idx__note">${escapeHtml(sanitizeUserCopy(fx.note, ""))}</p>` : ""}
+        </article>`);
+      }
+    }
+    if (!cards.length) return "";
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">지수 마감</h4>
+      <div class="dmx-idx-grid">${cards.join("")}</div>
+    </section>`;
+  }
+
+  // ── 3) 시장 스코어보드 (전부 코드가 실데이터로 계산) ─────────────
+  function dmxRenderScoreboard(day) {
+    if (!day) return "";
+    const gainers = Array.isArray(day.topGainers) ? day.topGainers : [];
+    const losers = Array.isArray(day.topDecliners) ? day.topDecliners : [];
+    const tv = Array.isArray(day.topTradingValue) ? day.topTradingValue : [];
+    if (!gainers.length && !losers.length && !tv.length) return "";
+    const chg = (r) => dmxNum(r && r.change);
+    const limitUp = gainers.filter((r) => (chg(r) || 0) >= 29.5).length;
+    const limitDown = losers.filter((r) => (chg(r) || 0) <= -29.5).length;
+    const over20 = gainers.filter((r) => (chg(r) || 0) >= 20).length;
+    const tv10 = tv.slice(0, 10);
+    const tvUp = tv10.filter((r) => (chg(r) || 0) > 0).length;
+    const items = [];
+    const cap = (n, total) => (n >= total && total >= 30 ? `${n}+` : String(n));
+    if (gainers.length) items.push(["상한가", cap(limitUp, gainers.length) + "종목", limitUp > 0 ? "is-up" : "is-flat"]);
+    if (gainers.length) items.push(["+20% 이상", cap(over20, gainers.length) + "종목", over20 > 0 ? "is-up" : "is-flat"]);
+    if (losers.length) items.push(["하한가", cap(limitDown, losers.length) + "종목", limitDown > 0 ? "is-down" : "is-flat"]);
+    if (tv10.length) items.push(["거래대금 TOP10 중 상승", `${tvUp} / ${tv10.length}`, tvUp * 2 > tv10.length ? "is-up" : "is-down"]);
+    if (tv.length && tv[0]) items.push(["거래대금 1위", sanitizeUserCopy(tv[0].name, "—"), "is-flat"]);
+    if (!items.length) return "";
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">오늘의 시장 온도<span class="dmx-block__tag">실데이터 집계</span></h4>
+      <div class="dmx-score">${items
+        .map(
+          ([k, v, cls]) =>
+            `<div class="dmx-score__item ${cls}"><span class="dmx-score__k">${escapeHtml(k)}</span><strong class="dmx-score__v">${escapeHtml(v)}</strong></div>`
+        )
+        .join("")}</div>
+      <p class="dmx-note">상승률·하락률·거래대금 TOP30 마감 데이터에서 집계한 값입니다. TOP30을 넘는 구간은 "30+"로 표시합니다.</p>
+    </section>`;
+  }
+
+  // ── 4) 투자자 수급 다이버징 차트 ──────────────────────────────────
+  const DMX_INVESTOR_ROWS = [
+    ["individual", "개인"],
+    ["foreign", "외국인"],
+    ["institution", "기관"],
+    ["etc", "기타법인"],
+  ];
+
+  function dmxSupplyRows(obj) {
+    if (!obj || typeof obj !== "object") return [];
+    const rows = [];
+    for (const [key, name] of DMX_INVESTOR_ROWS) {
+      const v = dmxParseEok(obj[key]);
+      if (v == null) continue;
+      rows.push({ name, value: v });
+    }
+    return rows;
+  }
+
+  function dmxSupplyGroup(label, rows, sharedMax) {
+    if (!rows || !rows.length) return null;
+    const max = sharedMax || Math.max(...rows.map((r) => Math.abs(r.value)), 1);
+    const bars = rows
+      .map((r) => {
+        const w = (Math.abs(r.value) / max) * 50;
+        const side = r.value >= 0 ? "right" : "left";
+        return `<div class="dmx-bar-row">
+          <span class="dmx-bar-row__name">${escapeHtml(r.name)}</span>
+          <span class="dmx-bar-row__track">
+            <span class="dmx-bar dmx-bar--${side} ${r.value >= 0 ? "is-up" : "is-down"}" style="width:${w.toFixed(1)}%"></span>
+          </span>
+          <span class="dmx-bar-row__val ${r.value >= 0 ? "is-up" : "is-down"}">${escapeHtml(dmxFmtEok(r.value))}</span>
+        </div>`;
+      })
+      .join("");
+    return `<div class="dmx-supply-group">
+      <h5 class="dmx-supply-group__title">${escapeHtml(label)}</h5>
+      <div class="dmx-bars">${bars}</div>
+    </div>`;
+  }
+
+  function dmxRenderSupply(day, sec) {
+    const t = day && day.investor_trend;
+    const groups = [];
+    if (t) {
+      const kospiRows = dmxSupplyRows(t.kospi);
+      const kosdaqRows = dmxSupplyRows(t.kosdaq);
+      const sharedMax = Math.max(
+        ...kospiRows.concat(kosdaqRows).map((r) => Math.abs(r.value)),
+        1
+      );
+      const a = dmxSupplyGroup("코스피", kospiRows, sharedMax);
+      const b = dmxSupplyGroup("코스닥", kosdaqRows, sharedMax);
+      if (a) groups.push(a);
+      if (b) groups.push(b);
+    }
+    // 수급 섹션 본문에서 숫자 나열 줄은 버리고 해석 문장만 남긴다
+    // (같은 숫자를 차트와 문장이 두 번 말하면 지면만 잡아먹는다)
+    let comment = sanitizeUserCopy(day && day.supplyComment, "");
+    if (!comment && sec && sec.investor) {
+      comment = sec.investor
+        .split(/\r?\n/)
+        .filter((l) => {
+          const s = l.trim();
+          if (!s) return false;
+          if (/^(코스피|코스닥)$/.test(s)) return false;
+          if (/^(개인|외국인|기관|기타법인)\s/.test(s)) return false;
+          return true;
+        })
+        .join(" ")
+        .replace(/^핵심\s*[:：]\s*/, "")
+        .trim();
+    }
+    if (!groups.length && !comment) return "";
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">투자자별 매매 동향</h4>
+      ${groups.length ? `<div class="dmx-supply">${groups.join("")}</div><p class="dmx-note">코스피·코스닥 막대는 같은 기준으로 그려 서로 크기를 직접 비교할 수 있습니다.</p>` : ""}
+      ${comment ? `<p class="dmx-callout">${escapeHtml(comment)}</p>` : ""}
+    </section>`;
+  }
+
+  // ── 5) 업종별 등락 랭킹 ───────────────────────────────────────────
+  function dmxRenderSectors(day) {
+    const arr = Array.isArray(day && day.sectors) ? day.sectors : [];
+    const rows = arr
+      .map((s) => ({
+        name: sanitizeUserCopy(s && s.name, ""),
+        value: dmxNum(s && (s.change_pct != null ? s.change_pct : s.changePercent)),
+      }))
+      .filter((r) => r.name && r.value != null);
+    if (rows.length < 2) return "";
+    rows.sort((a, b) => b.value - a.value);
+    const ups = rows.filter((r) => r.value > 0).slice(0, 5);
+    const downs = rows.filter((r) => r.value < 0).slice(-5).reverse();
+    const max = Math.max(...rows.map((r) => Math.abs(r.value)), 0.1);
+    const bar = (r) =>
+      `<div class="dmx-bar-row">
+        <span class="dmx-bar-row__name">${escapeHtml(r.name)}</span>
+        <span class="dmx-bar-row__track dmx-bar-row__track--single">
+          <span class="dmx-bar ${r.value >= 0 ? "is-up" : "is-down"}" style="width:${((Math.abs(r.value) / max) * 100).toFixed(1)}%"></span>
+        </span>
+        <span class="dmx-bar-row__val ${r.value >= 0 ? "is-up" : "is-down"}">${escapeHtml(dmxPct(r.value))}</span>
+      </div>`;
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">업종별 등락</h4>
+      <div class="dmx-sector">
+        ${ups.length ? `<div class="dmx-sector__col"><h5 class="dmx-sector__title is-up">강세 업종</h5><div class="dmx-bars">${ups.map(bar).join("")}</div></div>` : ""}
+        ${downs.length ? `<div class="dmx-sector__col"><h5 class="dmx-sector__title is-down">약세 업종</h5><div class="dmx-bars">${downs.map(bar).join("")}</div></div>` : ""}
+      </div>
+    </section>`;
+  }
+
+  // ── 6) 외국인·기관 순매수 상위 ────────────────────────────────────
+  function dmxLeaderCol(label, arr) {
+    const rows = (Array.isArray(arr) ? arr : [])
+      .map((r) => ({ name: sanitizeUserCopy(r && r.name, ""), amount: sanitizeUserCopy(r && r.amount, "") }))
+      .filter((r) => r.name)
+      .slice(0, 5);
+    if (!rows.length) return "";
+    return `<div class="dmx-leader__col">
+      <h5 class="dmx-leader__title">${escapeHtml(label)} 순매수 상위</h5>
+      <ol class="dmx-leader__list">${rows
+        .map(
+          (r, i) =>
+            `<li><span class="dmx-leader__rank">${i + 1}</span><span class="dmx-leader__name">${escapeHtml(r.name)}</span><span class="dmx-leader__amt">${escapeHtml(r.amount)}</span></li>`
+        )
+        .join("")}</ol>
+    </div>`;
+  }
+
+  function dmxRenderLeaders(day) {
+    const l = day && day.netBuyLeaders;
+    if (!l || typeof l !== "object") return "";
+    const cols = [dmxLeaderCol("외국인", l.foreign), dmxLeaderCol("기관", l.institution)].filter(Boolean);
+    if (!cols.length) return "";
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">기관·외국인이 담은 종목</h4>
+      <div class="dmx-leader">${cols.join("")}</div>
+    </section>`;
+  }
+
+  // ── 7) 시장 흐름 분석 (문단 카드 + 인용) ─────────────────────────
+  function dmxRenderFlow(sec) {
+    const text = sec && sec.flow ? sec.flow : "";
+    const paras = String(text)
+      .split(/\n\s*\n/)
+      .map((p) => p.replace(/\s*\n\s*/g, " ").trim())
+      .filter(Boolean);
+    if (!paras.length) return "";
+    const html = paras
+      .map((p, i) => {
+        const isQuote = /(연구원|애널리스트|위원|센터장)[은는이가]?\s*["“]/.test(p) || /["”]\s*(라)?고\s*(설명|밝혔|말했|전했)/.test(p);
+        if (isQuote) return `<blockquote class="dmx-quote">${renderMarkdownBold(p)}</blockquote>`;
+        return `<p class="dmx-para"><span class="dmx-para__idx" aria-hidden="true">${i + 1}</span>${renderMarkdownBold(p)}</p>`;
+      })
+      .join("");
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">시장 흐름</h4>
+      <div class="dmx-flow">${html}</div>
+    </section>`;
+  }
+
+  // ── 8) 향후 전략 ──────────────────────────────────────────────────
+  function dmxRenderStrategy(day, sec) {
+    const st = (day && day.strategy) || {};
+    const kospi = sanitizeUserCopy(st.kospi, "");
+    const kosdaq = sanitizeUserCopy(st.kosdaq, "");
+    let body = "";
+    if (kospi || kosdaq) {
+      body = `<div class="dmx-strat">
+        ${kospi ? `<div class="dmx-strat__col"><h5 class="dmx-strat__title">코스피</h5><p>${renderMarkdownBold(kospi)}</p></div>` : ""}
+        ${kosdaq ? `<div class="dmx-strat__col"><h5 class="dmx-strat__title">코스닥</h5><p>${renderMarkdownBold(kosdaq)}</p></div>` : ""}
+      </div>`;
+    } else if (sec && sec.strategy) {
+      const paras = String(sec.strategy)
+        .split(/\n\s*\n/)
+        .map((p) => p.replace(/\s*\n\s*/g, " ").trim())
+        .filter(Boolean);
+      if (!paras.length) return "";
+      body = `<div class="dmx-flow">${paras.map((p) => `<p class="dmx-para dmx-para--plain">${renderMarkdownBold(p)}</p>`).join("")}</div>`;
+    }
+    if (!body) return "";
+    const tag = sanitizeUserCopy(st.market_type, "");
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">향후 전략${tag ? `<span class="dmx-block__tag">${escapeHtml(tag)}</span>` : ""}</h4>
+      ${body}
+    </section>`;
+  }
+
+  // ── 9) 특징주 (급등/급락 분리 + 등락률 바 + 리스크 한 줄) ─────────
+  function dmxFeaturedCard(row, maxAbs) {
+    const chg = parseChange(row.change);
+    const isUp = row.type === "급등" || (row.type !== "급락" && (chg == null || chg >= 0));
+    const reason = sanitizeUserCopy(row.reason || row.entryReason, "");
+    const point = sanitizeUserCopy(row.point || row.background, "");
+    const risk = sanitizeUserCopy(row.risk, "");
+    const priceText = row.price != null && row.price !== "" ? sanitizeUserCopy(String(row.price), "") : "";
+    const priceLabel = priceText ? (/원\s*$/.test(priceText) ? priceText : `${priceText}원`) : "";
+    const code = sanitizeUserCopy(row.code, "");
+    const w = chg == null || !maxAbs ? 0 : Math.min(100, (Math.abs(chg) / maxAbs) * 100);
+    return `<article class="dmx-stock ${isUp ? "is-up" : "is-down"}">
+      <header class="dmx-stock__head">
+        <div class="dmx-stock__id">
+          <strong class="dmx-stock__name">${escapeHtml(sanitizeUserCopy(row.name, ""))}</strong>
+          ${code ? `<span class="dmx-stock__code">${escapeHtml(code)}</span>` : ""}
+        </div>
+        <div class="dmx-stock__nums">
+          ${priceLabel ? `<span class="dmx-stock__price">${escapeHtml(priceLabel)}</span>` : ""}
+          <span class="dmx-stock__chg ${deltaClass(chg)}">${escapeHtml(formatChange(chg))}</span>
+        </div>
+      </header>
+      <div class="dmx-stock__bar"><span style="width:${w.toFixed(1)}%"></span></div>
+      ${reason ? `<p class="dmx-stock__row"><em>재료</em><span>${escapeHtml(reason)}</span></p>` : ""}
+      ${point ? `<p class="dmx-stock__row"><em>포인트</em><span>${escapeHtml(point)}</span></p>` : ""}
+      ${risk ? `<p class="dmx-stock__row dmx-stock__row--risk"><em>리스크</em><span>${escapeHtml(risk)}</span></p>` : ""}
+    </article>`;
+  }
+
+  function dmxRenderFeatured(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">특징주 분석 없음</p>';
+    }
+    const withChg = arr.map((r) => ({ row: r, chg: parseChange(r.change) }));
+    const maxAbs = Math.max(...withChg.map((x) => Math.abs(x.chg == null ? 0 : x.chg)), 1);
+    const ups = withChg.filter((x) => x.row.type === "급등" || (x.row.type !== "급락" && (x.chg == null || x.chg >= 0)));
+    const downs = withChg.filter((x) => !ups.includes(x));
+    const group = (label, list, cls) =>
+      list.length
+        ? `<div class="dmx-stock-group">
+             <h5 class="dmx-stock-group__title ${cls}">${escapeHtml(label)}<span>${list.length}종목</span></h5>
+             <div class="dmx-stock-grid">${list.map((x) => dmxFeaturedCard(x.row, maxAbs)).join("")}</div>
+           </div>`
+        : "";
+    return group("급등", ups, "is-up") + group("급락", downs, "is-down");
+  }
+
+  // ── 10) 내일 주목할 변수 ──────────────────────────────────────────
+  function dmxRenderWatchlist(arr) {
+    if (!Array.isArray(arr) || !arr.length) {
+      return '<p class="empty-line">내일 주목할 변수 없음</p>';
+    }
+    // "1. ~ 2. ~ 3. ~"이 한 항목에 뭉쳐 들어온 경우 번호 기준으로 다시 쪼갠다
+    // (생성 프롬프트에서도 줄 분리를 지시했지만, 과거 데이터까지 살리기 위한 방어)
+    const items = [];
+    for (const raw of arr) {
+      const t = sanitizeUserCopy(raw, "");
+      if (!t) continue;
+      const parts = t.split(/(?=(?:^|\s)[1-9][.)]\s)/).map((x) => x.trim()).filter(Boolean);
+      if (parts.length > 1) items.push(...parts);
+      else items.push(t);
+    }
+    if (!items.length) return '<p class="empty-line">내일 주목할 변수 없음</p>';
+    // 번호도 줄바꿈도 없이 한 문단으로 들어온 과거 데이터 방어 — 문장 경계에서만 끊어
+    // 비슷한 길이의 덩어리로 재조립한다(내용을 바꾸지 않고 나누기만 한다).
+    if (items.length === 1 && items[0].length > 220) {
+      const sentences = items[0].match(/[^.!?]+[.!?]+\s*/g) || [];
+      if (sentences.length >= 4) {
+        const target = Math.ceil(sentences.length / Math.min(4, Math.ceil(sentences.length / 2)));
+        const chunks = [];
+        for (let i = 0; i < sentences.length; i += target) {
+          chunks.push(sentences.slice(i, i + target).join("").trim());
+        }
+        if (chunks.length > 1) items.length = 0, items.push(...chunks);
+      }
+    }
+    return `<ol class="dmx-watch">${items
+      .slice(0, 6)
+      .map((t) => `<li class="dmx-watch__item">${escapeHtml(t.replace(/^[1-9][.)]\s*/, ""))}</li>`)
+      .join("")}</ol>`;
+  }
+
+  // ── 조립 ──────────────────────────────────────────────────────────
+  function dmxRenderDeck(day, ymd) {
+    const sec = dmxParseAnalysis(day && day.analysis);
+    const parts = [
+      dmxRenderHero(day, ymd, sec),
+      dmxRenderIndexCards(day),
+      dmxRenderScoreboard(day),
+      dmxRenderFlow(sec),
+      dmxRenderSupply(day, sec),
+      dmxRenderSectors(day),
+      dmxRenderLeaders(day),
+    ].filter(Boolean);
+    if (!parts.length) return "";
+    return parts.join("");
+  }
+
   function renderFeatured(arr) {
     if (!Array.isArray(arr) || !arr.length) {
       return '<p class="empty-line">특징주 분석 없음</p>';
@@ -1417,13 +1971,58 @@
     const ymd = selectedYmd();
     const day = getRenderableDay(ymd);
     if (els.dmAnalysis) {
-      const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
-      els.dmAnalysis.innerHTML = analysisText
-        ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
-        : '<p class="empty-line">종합분석 없음</p>';
+      // 2026-09-01: 섹션 파싱에 성공하면 브리핑 덱으로, 실패하면 기존 줄글 렌더링으로 폴백.
+      // 과거 데이터(섹션 헤더가 없던 시절)도 깨지지 않게 하기 위한 이중 경로다.
+      let deck = "";
+      try {
+        deck = dmxRenderDeck(day, ymd);
+      } catch (err) {
+        console.warn("[마감시황] 덱 렌더 실패 — 줄글로 폴백", err);
+        deck = "";
+      }
+      if (deck) {
+        els.dmAnalysis.innerHTML = deck;
+        els.dmAnalysis.classList.add("dmx-on");
+      } else {
+        els.dmAnalysis.classList.remove("dmx-on");
+        const analysisText = sanitizeUserCopy(getAnalysisDisplayText(day), "AI 분석을 준비 중입니다");
+        els.dmAnalysis.innerHTML = analysisText
+          ? `<div class="dm-analysis__body">${renderMarkdownBold(analysisText)}</div>`
+          : '<p class="empty-line">종합분석 없음</p>';
+      }
     }
-    if (els.dmFeatured) els.dmFeatured.innerHTML = renderFeatured(getFeaturedStocks(day));
-    if (els.dmWatchlist) els.dmWatchlist.innerHTML = renderWatchlist(getWatchlist(day));
+    if (els.dmFeatured) {
+      let html = "";
+      try {
+        html = dmxRenderFeatured(getFeaturedStocks(day));
+      } catch (err) {
+        console.warn("[마감시황] 특징주 렌더 실패 — 기존 카드로 폴백", err);
+        html = renderFeatured(getFeaturedStocks(day));
+      }
+      els.dmFeatured.innerHTML = html;
+    }
+    if (els.dmWatchlist) {
+      let html = "";
+      try {
+        html = dmxRenderWatchlist(getWatchlist(day));
+      } catch (err) {
+        console.warn("[마감시황] 내일 변수 렌더 실패 — 기존 목록으로 폴백", err);
+        html = `<ol>${renderWatchlist(getWatchlist(day))}</ol>`;
+      }
+      els.dmWatchlist.innerHTML = html;
+    }
+    if (els.dmStrategy) {
+      let html = "";
+      try {
+        html = dmxRenderStrategy(day, dmxParseAnalysis(day && day.analysis));
+      } catch (err) {
+        console.warn("[마감시황] 전략 렌더 실패", err);
+        html = "";
+      }
+      els.dmStrategy.innerHTML = html;
+      const wrap = els.dmStrategy.closest(".dm-section");
+      if (wrap) wrap.hidden = !html;
+    }
   }
 
   function syncTabPanelsForMainTab() {

@@ -2642,3 +2642,876 @@ button.dm-date-picker__cell:hover {
   .dm-card__value { font-size: 20px; }
   .dm-panel input { font-size: 16px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   2026-09-01: 마감시황 브리핑 덱
+   화면에 띄워놓고 브리핑할 수 있는 밀도·대비를 목표로 한 레이아웃.
+   숫자는 전부 실데이터이며, 차트는 CSS 폭 계산으로만 그린다.
+   ══════════════════════════════════════════════════════════════════ */
+
+.dm-section--flush {
+  margin-bottom: 0;
+}
+
+.dm-section__title.dmx-h {
+  position: relative;
+  padding-left: 11px;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.dm-section__title.dmx-h::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent, #0f766e);
+}
+
+.dmx-on {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ── 공통 블록 ── */
+.dmx-block {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-panel, var(--bg-elevated));
+  padding: 16px 18px 18px;
+}
+
+.dmx-block__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #6b7280);
+  text-transform: none;
+}
+
+.dmx-block__title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.dmx-block__tag {
+  order: 1;
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-muted, #6b7280);
+}
+
+.dmx-note {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-muted, #6b7280);
+}
+
+/* ── 1) 히어로 ── */
+.dmx-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 20px 22px 22px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, var(--dmx-hero-tint, rgba(148, 163, 184, 0.16)) 0%, transparent 62%),
+    var(--bg-panel, var(--bg-elevated));
+}
+
+.dmx-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--dmx-hero-accent, #94a3b8);
+}
+
+.dmx-hero--up {
+  --dmx-hero-tint: rgba(226, 75, 74, 0.14);
+  --dmx-hero-accent: var(--up-color, #e24b4a);
+}
+
+.dmx-hero--down {
+  --dmx-hero-tint: rgba(59, 130, 246, 0.14);
+  --dmx-hero-accent: var(--down-color, #3b82f6);
+}
+
+.dmx-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.dmx-hero__date {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-muted, #6b7280);
+}
+
+.dmx-hero__tone {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--dmx-hero-accent, #94a3b8);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.dmx-hero__line {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+/* ── 2) 지수 카드 ── */
+.dmx-idx-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.dmx-idx {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border-top: 3px solid var(--dmx-idx-accent, rgba(148, 163, 184, 0.5));
+}
+
+.dmx-idx.is-up {
+  --dmx-idx-accent: var(--up-color, #e24b4a);
+}
+
+.dmx-idx.is-down {
+  --dmx-idx-accent: var(--down-color, #3b82f6);
+}
+
+.dmx-idx__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+
+.dmx-idx__value {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.dmx-idx__delta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--dmx-idx-accent, var(--text-muted));
+}
+
+.dmx-idx__delta em {
+  font-style: normal;
+  font-size: 15px;
+}
+
+.dmx-idx__note {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted, #6b7280);
+  word-break: keep-all;
+}
+
+/* 장중 저가~고가 레인지 안에서 종가가 어디에 찍혔는지 — 전약후강/전강후약이 한눈에 */
+.dmx-range {
+  margin-top: 12px;
+}
+
+.dmx-range__track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.2));
+  overflow: visible;
+}
+
+.dmx-range__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: var(--dmx-idx-accent, #94a3b8);
+  opacity: 0.55;
+}
+
+.dmx-range__close {
+  position: absolute;
+  top: -3px;
+  width: 3px;
+  height: 12px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--dmx-idx-accent, #94a3b8);
+}
+
+.dmx-range__open {
+  position: absolute;
+  top: -1px;
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: var(--text-muted, #9ca3af);
+  opacity: 0.7;
+}
+
+.dmx-range__ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 5px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #9ca3af);
+}
+
+/* ── 3) 스코어보드 ── */
+.dmx-score {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.dmx-score__item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--dmx-sc, rgba(148, 163, 184, 0.55));
+}
+
+.dmx-score__item.is-up {
+  --dmx-sc: var(--up-color, #e24b4a);
+}
+
+.dmx-score__item.is-down {
+  --dmx-sc: var(--down-color, #3b82f6);
+}
+
+.dmx-score__k {
+  font-size: 11.5px;
+  color: var(--text-muted, #6b7280);
+  word-break: keep-all;
+}
+
+.dmx-score__v {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ── 4·5) 막대 차트 공통 ── */
+.dmx-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dmx-bar-row {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 82px;
+  align-items: center;
+  gap: 10px;
+}
+
+.dmx-bar-row__name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 0을 가운데 두고 좌(매도)·우(매수)로 뻗는 다이버징 트랙 */
+.dmx-bar-row__track {
+  position: relative;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.12));
+}
+
+.dmx-bar-row__track::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--border-strong, rgba(148, 163, 184, 0.55));
+}
+
+.dmx-bar-row__track--single::before {
+  display: none;
+}
+
+.dmx-bar {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 3px;
+  background: var(--dmx-bar, #94a3b8);
+}
+
+.dmx-bar.is-up {
+  --dmx-bar: var(--up-color, #e24b4a);
+}
+
+.dmx-bar.is-down {
+  --dmx-bar: var(--down-color, #3b82f6);
+}
+
+.dmx-bar--right {
+  left: 50%;
+}
+
+.dmx-bar--left {
+  right: 50%;
+}
+
+.dmx-bar-row__track--single .dmx-bar {
+  left: 0;
+}
+
+.dmx-bar-row__val {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dmx-bar-row__val.is-up {
+  color: var(--up-color, #e24b4a);
+}
+
+.dmx-bar-row__val.is-down {
+  color: var(--down-color, #3b82f6);
+}
+
+/* ── 4) 수급 ── */
+.dmx-supply {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.dmx-supply-group__title,
+.dmx-sector__title,
+.dmx-leader__title {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.dmx-sector__title.is-up {
+  color: var(--up-color, #e24b4a);
+}
+
+.dmx-sector__title.is-down {
+  color: var(--down-color, #3b82f6);
+}
+
+.dmx-callout {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.12));
+  border-left: 3px solid var(--accent, #0f766e);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+/* ── 5) 업종 ── */
+.dmx-sector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.dmx-sector .dmx-bar-row {
+  grid-template-columns: 88px minmax(0, 1fr) 62px;
+}
+
+/* ── 6) 순매수 상위 ── */
+.dmx-leader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.dmx-leader__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dmx-leader__list li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.dmx-leader__rank {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #9ca3af);
+}
+
+.dmx-leader__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dmx-leader__amt {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--up-color, #e24b4a);
+}
+
+/* ── 7) 시장 흐름 ── */
+.dmx-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dmx-para {
+  position: relative;
+  margin: 0;
+  padding-left: 30px;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+.dmx-para--plain {
+  padding-left: 0;
+}
+
+.dmx-para__idx {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.18));
+  color: var(--text-muted, #6b7280);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dmx-quote {
+  margin: 0;
+  padding: 13px 16px;
+  border-radius: 10px;
+  border-left: 3px solid var(--border-strong, rgba(148, 163, 184, 0.6));
+  background: var(--tag-bg, rgba(148, 163, 184, 0.1));
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-muted, #4b5563);
+  word-break: keep-all;
+}
+
+/* ── 8) 전략 ── */
+.dmx-strat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.dmx-strat__col {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.dmx-strat__title {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent, #0f766e);
+}
+
+.dmx-strat__col p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+/* ── 9) 특징주 ── */
+.dmx-stock-group + .dmx-stock-group {
+  margin-top: 18px;
+}
+
+.dmx-stock-group__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dmx-stock-group__title.is-up::before,
+.dmx-stock-group__title.is-down::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.dmx-stock-group__title.is-up::before {
+  background: var(--up-color, #e24b4a);
+}
+
+.dmx-stock-group__title.is-down::before {
+  background: var(--down-color, #3b82f6);
+}
+
+.dmx-stock-group__title span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, #9ca3af);
+}
+
+.dmx-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.dmx-stock {
+  padding: 13px 15px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--dmx-st, rgba(148, 163, 184, 0.5));
+}
+
+.dmx-stock.is-up {
+  --dmx-st: var(--up-color, #e24b4a);
+}
+
+.dmx-stock.is-down {
+  --dmx-st: var(--down-color, #3b82f6);
+}
+
+.dmx-stock__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dmx-stock__id {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dmx-stock__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.dmx-stock__code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--text-muted, #9ca3af);
+}
+
+.dmx-stock__nums {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.dmx-stock__price {
+  font-size: 12.5px;
+  color: var(--text-muted, #6b7280);
+}
+
+.dmx-stock__chg {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.dmx-stock__bar {
+  height: 3px;
+  margin: 9px 0 11px;
+  border-radius: 999px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+  overflow: hidden;
+}
+
+.dmx-stock__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dmx-st, #94a3b8);
+}
+
+.dmx-stock__row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 9px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+.dmx-stock__row:last-child {
+  margin-bottom: 0;
+}
+
+.dmx-stock__row em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
+  padding: 2px 0;
+  height: fit-content;
+  border-radius: 5px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.18));
+  color: var(--text-muted, #6b7280);
+}
+
+.dmx-stock__row--risk em {
+  background: rgba(234, 179, 8, 0.18);
+  color: #a16207;
+}
+
+.dmx-stock__row--risk span {
+  color: var(--text-muted, #4b5563);
+}
+
+/* ── 10) 내일 변수 ── */
+.dmx-watch {
+  counter-reset: dmxw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.dmx-watch__item {
+  counter-increment: dmxw;
+  position: relative;
+  padding: 14px 16px 15px 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+.dmx-watch__item::before {
+  content: counter(dmxw);
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  background: var(--accent, #0f766e);
+  color: #fff;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── 다크 테마 보정 ── */
+[data-theme="dark"] .dmx-block,
+[data-theme="dark"] .dmx-hero {
+  background:
+    linear-gradient(135deg, var(--dmx-hero-tint, transparent) 0%, transparent 62%),
+    var(--card-bg, #111d35);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .dmx-idx,
+[data-theme="dark"] .dmx-score__item,
+[data-theme="dark"] .dmx-stock,
+[data-theme="dark"] .dmx-strat__col,
+[data-theme="dark"] .dmx-watch__item,
+[data-theme="dark"] .dmx-leader__list li {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .dmx-quote,
+[data-theme="dark"] .dmx-callout {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .dmx-stock__row--risk em {
+  background: rgba(234, 179, 8, 0.2);
+  color: #fbbf24;
+}
+
+/* ── 모바일 ── */
+@media (max-width: 768px) {
+  .dmx-block,
+  .dmx-hero {
+    padding: 14px 14px 16px;
+    border-radius: 12px;
+  }
+
+  .dmx-hero__line {
+    font-size: 16px;
+  }
+
+  .dmx-idx__value {
+    font-size: 22px;
+  }
+
+  .dmx-idx-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .dmx-idx.is-fx {
+    grid-column: 1 / -1;
+  }
+
+  .dmx-score {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dmx-bar-row {
+    grid-template-columns: 52px minmax(0, 1fr) 70px;
+    gap: 7px;
+  }
+
+  .dmx-sector .dmx-bar-row {
+    grid-template-columns: 70px minmax(0, 1fr) 54px;
+  }
+
+  .dmx-para {
+    font-size: 14px;
+    padding-left: 26px;
+  }
+
+  .dmx-stock-grid,
+  .dmx-watch {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 레인지 바 가운데 눈금이 시가라는 걸 라벨로 명시 (눈금만으론 안 읽힌다) */
+.dmx-range__mid {
+  opacity: 0.75;
+}
+
+/* 좁은 화면에서는 레인지 라벨 3개가 카드 폭을 넘겨 숫자가 잘린다 — 시가는 눈금으로만 남긴다 */
+@media (max-width: 520px) {
+  .dmx-range__mid {
+    display: none;
+  }
+
+  .dmx-range__ends {
+    font-size: 9.5px;
+    gap: 4px;
+  }
+
+  .dmx-range__ends span {
+    white-space: nowrap;
+  }
+}

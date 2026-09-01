@@ -156,19 +156,22 @@
                       <!-- AI 시황분석 -->
                       <div class="dm-tab-panel is-active" data-dm-panel="ai" role="tabpanel" aria-labelledby="dm-tab-ai">
                         <div id="dm-ai-content">
-                        <section class="dm-section">
-                          <h3 class="dm-section__title">종합분석</h3>
+                        <section class="dm-section dm-section--flush">
                           <div id="dm-analysis" class="dm-analysis"></div>
                         </section>
 
+                        <section class="dm-section dm-section--flush" hidden>
+                          <div id="dm-strategy"></div>
+                        </section>
+
                         <section class="dm-section">
-                          <h3 class="dm-section__title">오늘의 특징주</h3>
+                          <h3 class="dm-section__title dmx-h">오늘의 특징주</h3>
                           <div id="dm-featured" class="dm-featured-list"></div>
                         </section>
 
                         <section class="dm-section">
-                          <h3 class="dm-section__title">내일 주목할 변수</h3>
-                          <ol id="dm-watchlist" class="dm-watchlist"></ol>
+                          <h3 class="dm-section__title dmx-h">내일 주목할 변수</h3>
+                          <div id="dm-watchlist" class="dm-watchlist"></div>
                         </section>
                         </div>
                       </div>

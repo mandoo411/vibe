@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29132.25,
+        "close": 29129.25,
         "previousClose": 29513,
-        "changePct": -1.29,
-        "changePoints": -380.75
+        "changePct": -1.3,
+        "changePoints": -383.75
       },
       {
         "id": "korea-etf",
@@ -52,39 +52,39 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 324.93,
-      "changePct": 2.55,
-      "changePoints": 8.08
+      "price": 324.83,
+      "changePct": 2.52,
+      "changePoints": 7.98
     },
     {
       "symbol": "MSFT",
-      "price": 501.2,
-      "changePct": -1.2,
-      "changePoints": 6.09
+      "price": 500.78,
+      "changePct": -1.28,
+      "changePoints": 6.51
     },
     {
       "symbol": "NVDA",
-      "price": 217.43,
-      "changePct": -1.52,
-      "changePoints": 3.35
+      "price": 217.47,
+      "changePct": -1.5,
+      "changePoints": 3.31
     },
     {
       "symbol": "AMZN",
-      "price": 255.02,
-      "changePct": -1.83,
-      "changePoints": 4.75
+      "price": 255.1,
+      "changePct": -1.8,
+      "changePoints": 4.67
     },
     {
       "symbol": "META",
-      "price": 577.52,
-      "changePct": 0.91,
-      "changePoints": 5.18
+      "price": 577.5,
+      "changePct": 0.9,
+      "changePoints": 5.16
     },
     {
       "symbol": "TSLA",
-      "price": 355.22,
-      "changePct": -3.46,
-      "changePoints": 12.73
+      "price": 355.43,
+      "changePct": -3.4,
+      "changePoints": 12.52
     },
     {
       "symbol": "GOOGL",
@@ -94,21 +94,21 @@
     },
     {
       "symbol": "AMD",
-      "price": 459.07,
-      "changePct": -2.47,
-      "changePoints": 11.65
+      "price": 459.02,
+      "changePct": -2.49,
+      "changePoints": 11.7
     },
     {
       "symbol": "PLTR",
-      "price": 180.02,
-      "changePct": -3.41,
-      "changePoints": 6.36
+      "price": 179.95,
+      "changePct": -3.45,
+      "changePoints": 6.43
     },
     {
       "symbol": "COIN",
-      "price": 176.42,
+      "price": 176.41,
       "changePct": -6.22,
-      "changePoints": 11.7
+      "changePoints": 11.71
     }
   ],
   "sectors": [
@@ -197,25 +197,25 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 90.86,
-        "changePct": 5.95,
-        "changePoints": 5.1
+        "price": 90.81,
+        "changePct": 5.89,
+        "changePoints": 5.05
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4375.9,
-        "changePct": -1.25,
-        "changePoints": -55.2
+        "price": 4376.8,
+        "changePct": -1.23,
+        "changePoints": -54.3
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 64.68,
-        "changePct": -2.33,
-        "changePoints": -1.54
+        "price": 64.72,
+        "changePct": -2.27,
+        "changePoints": -1.5
       },
       {
         "id": "copper",
@@ -240,29 +240,29 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 77220,
-        "changePct24h": -1.57,
-        "marketCapUsd": 1550447135530.74
+        "priceUsd": 77257,
+        "changePct24h": -1.59,
+        "marketCapUsd": 1551189787628.35
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2411.53,
-        "changePct24h": -2.15,
-        "marketCapUsd": 291026326269.07
+        "priceUsd": 2412.78,
+        "changePct24h": -2.11,
+        "marketCapUsd": 291130218396.67
       },
       {
         "id": "solana",
         "symbol": "SOL",
         "priceUsd": 99.71,
-        "changePct24h": -3.23,
-        "marketCapUsd": 58352726500.26
+        "changePct24h": -3.29,
+        "marketCapUsd": 58348171331.82
       }
     ]
   },
   "news": [
     {
-      "title": "WTI 90불 돌파, 국채금리 금융위기이후 최고[월가월부]",
+      "title": "다시 90달러 돌파한 WTI…각국 국채금리 금융위기 이후 최고 [월가월부]",
       "url": "https://www.mk.co.kr/news/stock/12141889",
       "source": "매일경제",
       "publishedAt": "2026-09-01T20:57:08.000Z",

@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29129.25,
+        "close": 29138.75,
         "previousClose": 29513,
-        "changePct": -1.3,
-        "changePoints": -383.75
+        "changePct": -1.27,
+        "changePoints": -374.25
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 324.83,
-      "changePct": 2.52,
-      "changePoints": 7.98
+      "price": 325.13,
+      "changePct": 2.61,
+      "changePoints": 8.28
     },
     {
       "symbol": "MSFT",
-      "price": 500.78,
-      "changePct": -1.28,
-      "changePoints": 6.51
+      "price": 501.02,
+      "changePct": -1.24,
+      "changePoints": 6.27
     },
     {
       "symbol": "NVDA",
-      "price": 217.47,
-      "changePct": -1.5,
-      "changePoints": 3.31
+      "price": 217.44,
+      "changePct": -1.51,
+      "changePoints": 3.34
     },
     {
       "symbol": "AMZN",
-      "price": 255.1,
-      "changePct": -1.8,
-      "changePoints": 4.67
+      "price": 254.92,
+      "changePct": -1.87,
+      "changePoints": 4.85
     },
     {
       "symbol": "META",
-      "price": 577.5,
-      "changePct": 0.9,
-      "changePoints": 5.16
+      "price": 578.54,
+      "changePct": 1.08,
+      "changePoints": 6.2
     },
     {
       "symbol": "TSLA",
-      "price": 355.43,
-      "changePct": -3.4,
-      "changePoints": 12.52
+      "price": 356.09,
+      "changePct": -3.22,
+      "changePoints": 11.86
     },
     {
       "symbol": "GOOGL",
-      "price": 337.08,
-      "changePct": -0.67,
-      "changePoints": 2.27
+      "price": 335.02,
+      "changePct": -1.28,
+      "changePoints": 4.33
     },
     {
       "symbol": "AMD",
-      "price": 459.02,
-      "changePct": -2.49,
-      "changePoints": 11.7
+      "price": 459.61,
+      "changePct": -2.36,
+      "changePoints": 11.11
     },
     {
       "symbol": "PLTR",
-      "price": 179.95,
-      "changePct": -3.45,
-      "changePoints": 6.43
+      "price": 179.92,
+      "changePct": -3.47,
+      "changePoints": 6.46
     },
     {
       "symbol": "COIN",
-      "price": 176.41,
-      "changePct": -6.22,
-      "changePoints": 11.71
+      "price": 176.82,
+      "changePct": -6.01,
+      "changePoints": 11.3
     }
   ],
   "sectors": [
@@ -185,45 +185,45 @@
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1368.52,
-      "USD/JPY": 159.79,
+      "USD/KRW": 1373.78,
+      "USD/JPY": 160.11,
       "USD/CNY": 6.74,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Tue, 01 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Wed, 02 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 90.81,
-        "changePct": 5.89,
-        "changePoints": 5.05
+        "price": 91.15,
+        "changePct": 6.28,
+        "changePoints": 5.39
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4376.8,
-        "changePct": -1.23,
-        "changePoints": -54.3
+        "price": 4372.2,
+        "changePct": -1.33,
+        "changePoints": -58.9
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 64.72,
-        "changePct": -2.27,
-        "changePoints": -1.5
+        "price": 64.73,
+        "changePct": -2.25,
+        "changePoints": -1.49
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.54,
-        "changePct": -0.76,
-        "changePoints": -0.05
+        "price": 6.55,
+        "changePct": -0.61,
+        "changePoints": -0.04
       },
       {
         "id": "sox",
@@ -240,47 +240,68 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 77257,
-        "changePct24h": -1.59,
-        "marketCapUsd": 1551189787628.35
+        "priceUsd": 77205,
+        "changePct24h": -1.98,
+        "marketCapUsd": 1550182916187.75
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2412.78,
-        "changePct24h": -2.11,
-        "marketCapUsd": 291130218396.67
+        "priceUsd": 2410.98,
+        "changePct24h": -2.5,
+        "marketCapUsd": 290948615528.26
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 99.71,
-        "changePct24h": -3.29,
-        "marketCapUsd": 58348171331.82
+        "priceUsd": 99.78,
+        "changePct24h": -3.45,
+        "marketCapUsd": 58388401530.06
       }
     ]
   },
   "news": [
     {
-      "title": "다시 90달러 돌파한 WTI…각국 국채금리 금융위기 이후 최고 [월가월부]",
-      "url": "https://www.mk.co.kr/news/stock/12141889",
+      "title": "금리 뛰는데 금값도 오른다…“내년 말 6000달러까지 상승” [오늘 나온 보고서]",
+      "url": "https://www.mk.co.kr/news/stock/12141991",
       "source": "매일경제",
-      "publishedAt": "2026-09-01T20:57:08.000Z",
-      "summary": "1일(현지시간) 뉴욕증시 3대 지수는 일제히 하락 마감했다. 이란이 호르무즈를 통과하는 유조선 2척에 대한 공격을 했고, 미국이 다시 이란에 대한 공습에 나서면서 서부텍사스산원유(.."
+      "publishedAt": "2026-09-02T00:26:34.000Z",
+      "summary": "신한투자증권 “연초 금값 조정 마무리” 재정 부담·중앙은행 매입이 하단 지지 美 경기 둔화·달러 신뢰 약화도 호재 물가 안정 땐 연말 5000달러 안팎 전망연초 고점에서 크게 조정.."
     },
     {
-      "title": "“국장은 배신하지 않는다” … 40년 투자고수가 내린 결론",
-      "url": "https://www.mk.co.kr/news/stock/12141270",
+      "title": "“실내온도 최대 7도 낮춘다”…현대차그룹, 경찰버스에 ‘쿨링 필름’ 부착",
+      "url": "https://www.mk.co.kr/news/business/12141984",
       "source": "매일경제",
-      "publishedAt": "2026-09-01T19:00:00.000Z",
-      "summary": "이원기 전 KB자산운용 대표 인터뷰 (상)“주말과 연휴가 싫어요. 주식시장이 닫힌 날은 신문이 없는 날 아침 같아요.” 이원기 전 KB자산운용 대표는 쉰둘 무렵 회사를 그만뒀다. .."
+      "publishedAt": "2026-09-02T00:19:22.000Z",
+      "summary": "현대자동차그룹이 폭염 속 장시간 근무하는 경찰 기동대원을 위해 차량 실내온도를 낮추는 ‘나노 쿨링 필름’을 경찰버스에 시범 적용했다. 현대차그룹은 2일 서울경찰청 기동본부에서 1기.."
     },
     {
-      "title": "유로존 8월 물가 3.3%로 급등…3년來 최고 … 금리인상 압박",
-      "url": "https://www.mk.co.kr/news/world/12141817",
+      "title": "‘美 증시 역풍’ 맞은 코스피, 3%대 하락 출발…코스닥도 800선 내줘",
+      "url": "https://www.mk.co.kr/news/stock/12141981",
       "source": "매일경제",
-      "publishedAt": "2026-09-01T13:35:15.000Z",
-      "summary": "유로존(유로화 사용 21개국)의 지난달 물가 상승률이 중동 전쟁에 따른 에너지 가격 급등으로 3년 만에 최고치를 기록했다. 1일(현지시간) 유럽연합(EU) 통계기구 유로스타트에 따.."
+      "publishedAt": "2026-09-02T00:16:40.000Z",
+      "summary": "2일 코스피가 간밤 미국 증시 부진 역풍에 하락 출발했다. 이날 오전 9시 12분 현재 코스피는 전일 대비 190.71포인트(2.79%) 내린 6645.09에 거래되고 있다. 이날.."
+    },
+    {
+      "title": "[MK 골든크로스 돌파종목 : 트윔(290090) & 제로투세븐(159580)]",
+      "url": "https://www.mk.co.kr/news/stock/12141977",
+      "source": "매일경제",
+      "publishedAt": "2026-09-02T00:14:29.000Z",
+      "summary": "안녕하세요. 국내 핫 이슈 종목을 분석해드리는 AI 기자 ‘MK시그널’ 입니다. MK시그널이 오늘 분석한 핫 이슈 골든크로스 종목은 트윔 & 제로투세븐 입니다. - 트윔(29009.."
+    },
+    {
+      "title": "중구 현대아파트 83.97㎡, 13억 2,500만원 ‘최근 3년 신고가’",
+      "url": "https://www.mk.co.kr/news/realestate/12141970",
+      "source": "매일경제",
+      "publishedAt": "2026-09-02T00:04:30.000Z",
+      "summary": "서울 중구 신당동 현대아파트 전용 83.97㎡가 13억 2,500만원에 거래되며 최근 3년 내 신고가를 기록했다. 2026년 9월 1일 국토부 실거래가 시스템에 신규 등록된 거래 .."
+    },
+    {
+      "title": "올해 상반기 대기업 평균 급여 5499만원…‘역대 급여’ 기업 60% 증권사",
+      "url": "https://www.mk.co.kr/news/economy/12141964",
+      "source": "매일경제",
+      "publishedAt": "2026-09-01T23:58:21.000Z",
+      "summary": "올해 상반기 국내 500대 기업 직원 1인당 평균 급여(6개월치)가 약 5499만원으로 집계됐다. 특히, 상반기에만 직원 평균 급여가 1억원을 넘어선 기업 20곳 가운데 12곳이 .."
     },
     {
       "title": "“주식 접고 3% 이자 받겠다”…두 달새 정기예금에 몰린 돈 56조",
@@ -379,27 +400,6 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-01T06:46:13.000Z",
       "summary": "신영증권은 1일 현대공업에 대해 올해 미국 신규 법인이 실적 증가세를 이끄는 데다 전년 수준의 배당만 유지해도 6%대의 배당수익률을 기대할 수 있다며 투자의견 '매수(Buy)'와 목표주가 7000원을 유지했다. 강현석 신영증권 연구원은 \"현대공업의 올해 상반기 연결 매출은 전년 동기 대비 3% 감소했지만, 한국 매출 감소에도 불구하고 지난해부터 본격 가동된 미국 신규 법인 매출이 75% 증가하며 상반기에만 2025년 연간 수준("
-    },
-    {
-      "title": "코스닥, 13.04P 내린 821.25 마감(1.56%↓)",
-      "url": "https://view.asiae.co.kr/article/2026090115351106396",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-01T06:35:11.000Z",
-      "summary": "코스닥, 13.04P 내린 821.25 마감(1.56%↓)"
-    },
-    {
-      "title": "코스피, 15.78P 오른 6835.80 마감(0.23%↑)",
-      "url": "https://view.asiae.co.kr/article/2026090115345689362",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-01T06:34:56.000Z",
-      "summary": "코스피, 15.78P 오른 6835.80 마감(0.23%↑)"
-    },
-    {
-      "title": "원·달러 환율 1.8원 오른 1370.4원(오후 3시30분 기준)",
-      "url": "https://view.asiae.co.kr/article/2026090115320202016",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-01T06:32:02.000Z",
-      "summary": "1일 서울 외환시장에서 원·달러 환율은 오후 3시30분 기준 전 거래일 대비 1.8원 오른 1370.4원을 기록했다."
     }
   ],
   "aiAnalysis": {

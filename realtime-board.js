@@ -1864,6 +1864,14 @@
   }
 
   function applyStockPackToTab(tab, stockPack) {
+    // 탭 데이터가 새로 들어올 때마다 요약 스트립도 다시 계산 (프리페치 포함)
+    setTimeout(() => {
+      try {
+        renderSummaryStrip();
+      } catch (_) {
+        /* 스트립은 보조 UI — 실패해도 표 렌더를 막지 않는다 */
+      }
+    }, 0);
     if (tab === "gainers") state.gainerTotal = Number(stockPack.total || 100) || 100;
     else if (tab === "tv") state.tvTotal = Number(stockPack.total || 100) || 100;
     else state.capTotal = Number(stockPack.total || 100) || 100;
@@ -2094,6 +2102,56 @@
     return "";
   }
 
+  /* 2026-09-02: 표 위 공통 요약 스트립.
+     브레드스는 '거래대금 TOP100'(유동성 상위 중립 표본)으로 센다 — 상승률 탭 100종목으로 세면
+     당연히 100건 전부 상승이라 거짓말이 된다. 표본이 전체 시장이 아니므로 라벨로 밝힌다.
+     이미 받아 둔 state 데이터만 쓰므로 API 호출은 늘지 않는다. */
+  function renderSummaryStrip() {
+    if (!window.TMStrip) return;
+    const indices = (state.indexes || []).filter(Boolean).map((ix) => ({
+      label: ix.label,
+      value: ix.value,
+      changePct: ix.changePct,
+    }));
+
+    const tvRows = state.tvTop100 || [];
+    const capRows = state.capTop100 || [];
+    const gainRows = state.gainerTop100 || [];
+
+    // 브레드스 표본: 거래대금 TOP100 우선, 없으면 시가총액 TOP100
+    let sample = null;
+    let sampleLabel = "";
+    if (tvRows.length >= 20) {
+      sample = tvRows;
+      sampleLabel = `거래대금 상위 ${tvRows.length}종목 기준`;
+    } else if (capRows.length >= 20) {
+      sample = capRows;
+      sampleLabel = `시가총액 상위 ${capRows.length}종목 기준`;
+    }
+    const breadth = sample
+      ? Object.assign(window.TMStrip.countBreadth(sample, (r) => r.changePct), { sampleLabel })
+      : null;
+
+    const highlights = [];
+    if (tvRows.length) {
+      highlights.push({ label: "거래대금 1위", name: tvRows[0].name, changePct: tvRows[0].changePct });
+    }
+    if (gainRows.length) {
+      highlights.push({ label: "상승률 1위", name: gainRows[0].name, changePct: gainRows[0].changePct });
+    }
+    if (sample) {
+      const worst = [...sample].sort(
+        (a, b) => (Number(String(a.changePct ?? "").replace(/,/g, "")) || 0) - (Number(String(b.changePct ?? "").replace(/,/g, "")) || 0)
+      )[0];
+      const wp = Number(String(worst?.changePct ?? "").replace(/,/g, ""));
+      if (worst && Number.isFinite(wp) && wp < 0) {
+        highlights.push({ label: "하락률 1위", name: worst.name, changePct: worst.changePct });
+      }
+    }
+
+    window.TMStrip.render("rt-summary-strip", { indices, breadth, highlights });
+  }
+
   function renderIndexes() {
     const el = $("rt-indexes");
     if (!el) return;
@@ -2115,6 +2173,7 @@
         </div>`;
       })
       .join("");
+    renderSummaryStrip();
   }
 
   function sessionBadge() {

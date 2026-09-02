@@ -127,6 +127,24 @@
         const plans = window.TM_PRICING_PLANS || [];
         const grid = document.getElementById("pricing-grid");
 
+        /* 2026-09-02: 아직 동작하지 않는 특전은 "준비 중" 배지를 붙여 구분한다.
+           결제가 아직 안 열린 상태에서 없는 기능을 있는 것처럼 팔지 않기 위한 장치 —
+           assets/pricing-config.js에서 { text, soon: true } 형태로 표기한다. */
+        function esc(v) {
+          return String(v == null ? "" : v)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        }
+
+        function featureLi(f) {
+          if (f && typeof f === "object") {
+            const soon = f.soon ? '<span class="tm-plan-card__soon">준비 중</span>' : "";
+            return `<li class="${f.soon ? "tm-plan-card__feature--soon" : ""}">${esc(f.text)}${soon}</li>`;
+          }
+          return `<li>${esc(f)}</li>`;
+        }
+
         function renderPlans() {
           const state = window.TM_AUTH_STATE || {};
           grid.innerHTML = plans
@@ -143,7 +161,7 @@
                 `<h2 class="tm-plan-card__name">${p.name}</h2>` +
                 `<p class="tm-plan-card__tagline">${p.tagline}</p>` +
                 `<div class="tm-plan-card__price">${priceHtml}</div>` +
-                `<ul class="tm-plan-card__features">${p.features.map((f) => `<li>${f}</li>`).join("")}</ul>` +
+                `<ul class="tm-plan-card__features">${p.features.map(featureLi).join("")}</ul>` +
                 `<button type="button" class="tm-plan-card__cta" data-plan="${p.id}" data-amount="${p.amount}" data-name="${p.name}" ${isCurrent ? "disabled" : ""}>${ctaLabel}</button>` +
                 `</div>`
               );

@@ -76,6 +76,42 @@
     return document.getElementById(id);
   }
 
+  /* 2026-09-02: 표 위 공통 요약 스트립.
+     미국주식 페이지는 지수 API를 따로 받지 않으므로(서버리스 함수 12개 한도) 지수 칩은 넣지 않고,
+     이미 받아 둔 TOP50 행으로만 등락 브레드스와 특징 종목을 계산한다.
+     표본이 전체 시장이 아니므로 무엇을 센 것인지 라벨로 밝힌다. */
+  function renderSummaryStrip() {
+    if (!window.TMStrip) return;
+    const capRows = state.rowsByTab["market-cap"] || [];
+    const volRows = state.rowsByTab["volume"] || [];
+    const gainRows = state.rowsByTab["gainers"] || [];
+
+    let sample = null;
+    let sampleLabel = "";
+    if (capRows.length >= 10) {
+      sample = capRows;
+      sampleLabel = `시가총액 상위 ${capRows.length}종목 기준`;
+    } else if (volRows.length >= 10) {
+      sample = volRows;
+      sampleLabel = `거래대금 상위 ${volRows.length}종목 기준`;
+    }
+    const breadth = sample
+      ? Object.assign(window.TMStrip.countBreadth(sample, (r) => r.changePct), { sampleLabel })
+      : null;
+
+    const highlights = [];
+    if (gainRows.length) highlights.push({ label: "상승률 1위", name: gainRows[0].name || gainRows[0].ticker, changePct: gainRows[0].changePct });
+    if (volRows.length) highlights.push({ label: "거래대금 1위", name: volRows[0].name || volRows[0].ticker, changePct: volRows[0].changePct });
+    if (sample) {
+      const worst = [...sample].sort((a, b) => (Number(a.changePct) || 0) - (Number(b.changePct) || 0))[0];
+      if (worst && Number(worst.changePct) < 0) {
+        highlights.push({ label: "하락률 1위", name: worst.name || worst.ticker, changePct: worst.changePct });
+      }
+    }
+
+    window.TMStrip.render("us-summary-strip", { breadth, highlights });
+  }
+
   function escapeHtml(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
@@ -773,6 +809,7 @@
       table.setAttribute("data-rt-tab", cfg.rtTab);
     }
     syncMobileHeaderRow();
+    renderSummaryStrip();
     const body = $("us-rank-tbody");
     if (!body) return;
     const rows = state.rowsByTab[state.activeTab] || [];

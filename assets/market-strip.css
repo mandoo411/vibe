@@ -1,0 +1,225 @@
+/* 시장 요약 스트립 (공통) — assets/market-strip.js 참고 */
+
+.tms {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.22));
+  border-radius: 12px;
+  background: var(--bg-panel, var(--card-bg, #fff));
+}
+
+.tms[hidden] {
+  display: none !important;
+}
+
+.tms__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.tms__div {
+  width: 1px;
+  align-self: stretch;
+  min-height: 26px;
+  background: var(--border, rgba(128, 128, 128, 0.22));
+}
+
+.tms__note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+}
+
+/* ── 지수 칩 ── */
+.tms-indices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.tms-idx {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.tms-idx__name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+}
+
+.tms-idx__val {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  /* 상속만 받으면 다크모드에서 --text-secondary(회색)로 흐려진다 — 대표 수치는 또렷하게 */
+  color: var(--text-title, var(--text-primary, inherit));
+}
+
+.tms-hi__name {
+  color: var(--text-title, var(--text-primary, inherit));
+}
+
+.tms-delta {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tms-delta--up {
+  color: var(--up-color, #e24b4a);
+}
+
+.tms-delta--down {
+  color: var(--down-color, #3b82f6);
+}
+
+.tms-delta--flat {
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+}
+
+/* ── 등락 브레드스 ── */
+.tms-breadth {
+  min-width: 190px;
+  flex: 1 1 200px;
+  max-width: 340px;
+}
+
+.tms-breadth__head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.tms-breadth__lbl {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+}
+
+.tms-breadth__sample {
+  font-size: 10px;
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+  opacity: 0.85;
+}
+
+.tms-breadth__bar {
+  display: flex;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--border, rgba(128, 128, 128, 0.18));
+}
+
+.tms-seg {
+  display: block;
+  height: 100%;
+}
+
+.tms-seg--up {
+  background: var(--up-color, #e24b4a);
+}
+
+.tms-seg--down {
+  background: var(--down-color, #3b82f6);
+}
+
+.tms-seg--flat {
+  background: color-mix(in srgb, var(--text-muted, #8a95a8) 45%, transparent);
+}
+
+.tms-breadth__legend {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tms-breadth__legend .tms-delta {
+  font-size: 11px;
+}
+
+/* ── 특징 칩 ── */
+.tms-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tms-hi {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.22));
+  background: color-mix(in srgb, var(--accent, #0f8387) 6%, transparent);
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.tms-hi__lbl {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted, var(--text-secondary, #8a95a8));
+}
+
+.tms-hi__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 12ch;
+}
+
+.tms-hi__val {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 768px) {
+  .tms {
+    padding: 9px 11px;
+    border-radius: 10px;
+  }
+
+  .tms__row {
+    gap: 8px 10px;
+  }
+
+  .tms__div {
+    display: none;
+  }
+
+  .tms-indices {
+    width: 100%;
+    gap: 4px 12px;
+  }
+
+  .tms-breadth {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .tms-highlights {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tms-highlights::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tms-idx__val {
+    font-size: 14px;
+  }
+}

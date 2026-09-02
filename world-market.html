@@ -30,6 +30,8 @@
     />
 
     <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
+    <script src="./assets/market-strip.js?v=1"></script>
     <style>
       .world-panel {
         border: 1px solid var(--border-strong);
@@ -510,6 +512,8 @@
           <h1 class="masthead__title">글로벌랭킹</h1>
         </div>
       </header>
+      <!-- 2026-09-02: 표만 있고 맥락이 없다는 감사 지적 → 공통 시장 요약 스트립 -->
+      <div id="world-summary-strip" class="tms" hidden aria-label="글로벌 랭킹 요약"></div>
       <section class="world-panel world-panel--ranking">
         <div class="world-toolbar" role="group" aria-label="글로벌 랭킹 기준">
           <button class="world-tab" type="button" data-type="marketCap" aria-pressed="true">시가총액</button>
@@ -816,7 +820,38 @@
         function colSpan() {
           return isMobile() ? 5 : 8;
         }
+        /* 2026-09-02: 100행 표 위에 "오늘 이 100개 기업이 어떻게 움직였는지"를 요약한다.
+           국가 분포는 한국 사용자가 실제로 궁금해하는 정보라 함께 넣는다.
+           전부 이미 받아 둔 rows에서 계산 — 새 API 없음. */
+        function renderWorldStrip() {
+          if (!window.TMStrip) return;
+          const rows = (state.allRows && state.allRows.length ? state.allRows : state.rows) || [];
+          if (rows.length < 10) {
+            window.TMStrip.render("world-summary-strip", {});
+            return;
+          }
+          const breadth = Object.assign(
+            window.TMStrip.countBreadth(rows, (r) => r.changePct),
+            { sampleLabel: `글로벌 시가총액 상위 ${rows.length}개 기업 기준` }
+          );
+          const withChg = rows.filter((r) => Number.isFinite(Number(r.changePct)));
+          const sorted = [...withChg].sort((a, b) => Number(b.changePct) - Number(a.changePct));
+          const highlights = [];
+          if (sorted.length) highlights.push({ label: "상승 1위", name: sorted[0].name, changePct: sorted[0].changePct });
+          const worst = sorted[sorted.length - 1];
+          if (worst && Number(worst.changePct) < 0) highlights.push({ label: "하락 1위", name: worst.name, changePct: worst.changePct });
+          // api/world-market.js는 country를 "South Korea" 같은 영문 국가명으로 내려준다(flag는 국기 이모지)
+          const krCount = rows.filter((r) => {
+            if (r.flag === "\u{1F1F0}\u{1F1F7}") return true;
+            const c = String(r.country || r.countryLabel || "").toUpperCase();
+            return c.includes("KOREA") || c.includes("한국");
+          }).length;
+          if (krCount) highlights.push({ label: "국내 기업", name: `${krCount}개 진입` });
+          window.TMStrip.render("world-summary-strip", { breadth, highlights });
+        }
+
         function renderBody() {
+          renderWorldStrip();
           const body = $("world-body");
           if (!body) return;
           if (!state.rows.length) {

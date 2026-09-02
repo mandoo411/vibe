@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="stylesheet" href="./realtime-board.css?v=5" />
+    <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
     <style>
       .us-tv-widget {
         display: block;
@@ -243,6 +244,8 @@
           </header>
 
           <div class="rt-wrap">
+            <!-- 2026-09-02: 표만 있고 맥락이 없다는 감사 지적 → 공통 시장 요약 스트립 -->
+            <div id="us-summary-strip" class="tms" hidden aria-label="미국시장 요약"></div>
             <div class="rt-panel" role="tabpanel">
               <div class="rt-tabs" role="tablist" aria-label="미국주식 보기">
                 <div class="rt-tabs-row-tabs">
@@ -341,6 +344,7 @@
     </div>
 
     <script src="./assets/lw-candle-chart.js?v=1"></script>
+    <script src="./assets/market-strip.js?v=1"></script>
     <script src="./us-market.js?v=20260711a"></script>
   </body>
 </html>

@@ -2851,7 +2851,15 @@ const {
   isValidCondition: tsIsValidConditionShared,
 } = require("../lib/trade-condition-eval.js");
 
-const TS_MAX_ACTIVE_STRATEGIES = 20;
+/* 2026-09-02: 예전엔 Pro/Premium 구분 없이 전원 20개였다 — Premium이 Pro의 2배 가격인데
+   코드상 완전히 동일한 권한이라 팔 게 없었다(감사 지적). 감시 슬롯을 등급 차별점으로 삼는다.
+   "내가 안 봐도 알려준다"는 가치라서 슬롯 수가 곧 상품 가치가 된다. */
+const TS_MAX_ACTIVE_STRATEGIES_BY_PLAN = { pro: 5, premium: 30 };
+const TS_MAX_ACTIVE_STRATEGIES = TS_MAX_ACTIVE_STRATEGIES_BY_PLAN.pro;
+
+function tsStrategyLimitForPlan(plan) {
+  return TS_MAX_ACTIVE_STRATEGIES_BY_PLAN[String(plan || "").toLowerCase()] || TS_MAX_ACTIVE_STRATEGIES_BY_PLAN.pro;
+}
 
 function tsJson(res, status, body) {
   res.statusCode = status;
@@ -2878,6 +2886,8 @@ async function tsRequireProUser(req) {
     err.statusCode = 402;
     throw err;
   }
+  // 호출부에서 등급별 슬롯 상한을 판단할 수 있게 플랜을 함께 실어 보낸다.
+  user.tmPlan = String(sub.plan || "pro").toLowerCase();
   return user;
 }
 
@@ -3631,9 +3641,15 @@ async function tsCreateStrategy(user, body, res) {
     body: JSON.stringify({ p_user_id: user.id }),
   });
   const activeCount = countRes.ok ? await countRes.json() : 0;
-  if (Number(activeCount) >= TS_MAX_ACTIVE_STRATEGIES) {
+  const strategyLimit = tsStrategyLimitForPlan(user.tmPlan);
+  if (Number(activeCount) >= strategyLimit) {
+    const isPremium = String(user.tmPlan) === "premium";
     return tsJson(res, 400, {
-      error: `전략은 최대 ${TS_MAX_ACTIVE_STRATEGIES}개까지 감시할 수 있습니다. 기존 전략을 정리한 뒤 다시 시도해주세요.`,
+      error: isPremium
+        ? `전략은 최대 ${strategyLimit}개까지 감시할 수 있습니다. 기존 전략을 정리한 뒤 다시 시도해주세요.`
+        : `Pro 플랜은 전략 ${strategyLimit}개까지 감시할 수 있습니다. 더 많은 조건을 동시에 감시하려면 Premium(${TS_MAX_ACTIVE_STRATEGIES_BY_PLAN.premium}개)으로 변경해주세요.`,
+      planLimit: strategyLimit,
+      upgradeTo: isPremium ? null : "premium",
     });
   }
 

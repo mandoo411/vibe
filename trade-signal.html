@@ -344,6 +344,15 @@
         color: var(--text-muted-ui);
         margin-top: 4px;
       }
+      .ts-upsell-link {
+        color: var(--accent-bright, var(--accent, #0f8387));
+        font-weight: 700;
+        text-decoration: none;
+        border-bottom: 1px solid currentColor;
+      }
+      .ts-upsell-link:hover {
+        opacity: 0.85;
+      }
       .ts-alert-toggle {
         display: flex;
         gap: 6px;
@@ -970,9 +979,30 @@
           return data;
         }
 
+        /* 2026-09-02: 감시 슬롯이 Pro 5개 / Premium 30개로 갈린다(api/analyze.js의
+           TS_MAX_ACTIVE_STRATEGIES_BY_PLAN와 값을 맞출 것). 화면에도 등급별 상한을 그대로 보여주고,
+           Pro가 상한에 닿으면 Premium 안내를 띄운다. */
+        const TS_STRATEGY_LIMIT_BY_PLAN = { pro: 5, premium: 30 };
+
+        function tsStrategyLimit() {
+          const plan = String((window.TM_AUTH_STATE || {}).plan || "pro").toLowerCase();
+          return TS_STRATEGY_LIMIT_BY_PLAN[plan] || TS_STRATEGY_LIMIT_BY_PLAN.pro;
+        }
+
         function renderStrategies() {
           const list = $("ts-strategy-list");
-          $("ts-strategy-count").textContent = strategies.length ? ` (${strategies.length}/20)` : "";
+          const limit = tsStrategyLimit();
+          const isPremium = String((window.TM_AUTH_STATE || {}).plan || "").toLowerCase() === "premium";
+          const countEl = $("ts-strategy-count");
+          if (countEl) {
+            const atLimit = strategies.length >= limit;
+            countEl.innerHTML = strategies.length
+              ? ` (${strategies.length}/${limit})` +
+                (atLimit && !isPremium
+                  ? ' · <a class="ts-upsell-link" href="./pricing.html">Premium이면 30개까지</a>'
+                  : "")
+              : "";
+          }
           if (!strategies.length) {
             list.innerHTML = `<p class="ts-empty">아직 만든 전략이 없어요. 위에서 조건을 입력해보세요.</p>`;
             return;

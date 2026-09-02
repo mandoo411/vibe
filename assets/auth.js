@@ -7,7 +7,11 @@
  *
  * 제공하는 전역:
  *   window.TMAuth        — signUp/signIn/signOut/getSession 등 API
- *   window.TM_AUTH_STATE  — 동기 접근용 캐시 { loaded, isLoggedIn, email, plan, hasProAccess }
+ *   window.TM_AUTH_STATE  — 동기 접근용 캐시 { loaded, isLoggedIn, email, plan, hasProAccess, hasPremiumAccess }
+ *
+ * 2026-09-02: Premium이 Pro와 코드상 완전히 동일해서(hasProAccess 하나로만 갈림) 2배 가격을
+ * 정당화할 근거가 없다는 감사 지적 → 등급을 구분하는 hasPremiumAccess를 추가했다.
+ * 게이팅을 새로 만들 때는 hasProAccess(Pro 이상)와 hasPremiumAccess(Premium만)를 구분해서 쓸 것.
  *   "tm-auth-ready" 커스텀 이벤트 — TM_AUTH_STATE 최초 계산/갱신 시 document에서 발생
  */
 (function () {
@@ -22,6 +26,7 @@
     email: "",
     userId: "",
     plan: "free",
+    hasPremiumAccess: false,
     status: "active",
     hasProAccess: false,
     setupPending: SETUP_PENDING,
@@ -81,12 +86,14 @@
         plan: "free",
         status: "active",
         hasProAccess: false,
+        hasPremiumAccess: false,
       });
       fireReady();
       return window.TM_AUTH_STATE;
     }
     const sub = await fetchSubscription(session.user.id, session.access_token);
     const active = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
+    const premium = sub.status === "active" && sub.plan === "premium";
     Object.assign(window.TM_AUTH_STATE, {
       loaded: true,
       isLoggedIn: true,
@@ -95,6 +102,7 @@
       plan: sub.plan || "free",
       status: sub.status || "active",
       hasProAccess: active,
+      hasPremiumAccess: premium,
     });
     fireReady();
     return window.TM_AUTH_STATE;

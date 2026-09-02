@@ -20,6 +20,7 @@
       rel="stylesheet"
     />
     <script src="./theme.js"></script>
+    <script src="./assets/market-strip.js?v=1"></script>
     <script src="./site-shell.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/auth-config.js"></script>
@@ -33,6 +34,7 @@
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
+    <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
     <script src="./assets/data-url.js"></script>
     <script src="./assets/lw-candle-chart.js?v=1"></script>
     <style>
@@ -851,6 +853,8 @@
 
         <section class="crypto-section crypto-section--global" aria-label="글로벌 시장 현황">
           <div id="crypto-global" class="crypto-global-grid"></div>
+          <!-- 2026-09-02: 도미넌스·시총만으로는 "지금 코인판이 오르는 장인지"를 못 읽는다 → 등락 브레드스 추가 -->
+          <div id="crypto-summary-strip" class="tms" hidden aria-label="암호화폐 시장 요약"></div>
         </section>
 
         <section class="crypto-section crypto-section--rank" aria-label="시총 TOP 400">
@@ -1478,7 +1482,33 @@
           });
         }
 
+        /* 2026-09-02: 400행 표만으로는 시장 전체 방향을 못 읽는다는 감사 지적.
+           이미 받아 둔 TOP400 코인 배열로 등락 브레드스와 24H 특징 코인을 계산한다.
+           (새 API 없음 — Vercel 서버리스 함수 12개 한도 소진 상태) */
+        function renderCryptoStrip() {
+          if (!window.TMStrip) return;
+          const coins = state.coins || [];
+          if (coins.length < 10) {
+            window.TMStrip.render("crypto-summary-strip", {});
+            return;
+          }
+          const breadth = Object.assign(
+            window.TMStrip.countBreadth(coins, (c) => c.change24h),
+            { sampleLabel: `시가총액 상위 ${coins.length}개 코인 · 24시간 기준` }
+          );
+          const withChg = coins.filter((c) => Number.isFinite(Number(c.change24h)));
+          const sorted = [...withChg].sort((a, b) => Number(b.change24h) - Number(a.change24h));
+          const highlights = [];
+          if (sorted.length) highlights.push({ label: "24H 상승 1위", name: sorted[0].symbol || sorted[0].name, changePct: sorted[0].change24h });
+          const worst = sorted[sorted.length - 1];
+          if (worst && Number(worst.change24h) < 0) highlights.push({ label: "24H 하락 1위", name: worst.symbol || worst.name, changePct: worst.change24h });
+          const btc = coins.find((c) => String(c.symbol || "").toUpperCase() === "BTC");
+          if (btc) highlights.push({ label: "BTC 24H", name: "BTC", changePct: btc.change24h });
+          window.TMStrip.render("crypto-summary-strip", { breadth, highlights });
+        }
+
         function renderTable() {
+          renderCryptoStrip();
           const body = $("crypto-tbody");
           if (!body) return;
           const pageCoins = getPageCoins();

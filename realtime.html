@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="preload" href="/api/repo-data?path=data/kr-realtime.json" as="fetch" crossorigin />
     <link rel="stylesheet" href="./realtime-board.css?v=5" />
+    <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
   </head>
   <body class="page-tm-v2" data-tm-tab="realtime">
     <div id="rt-loading" class="rt-loading" aria-busy="true" aria-label="데이터 로딩 중">
@@ -104,6 +105,8 @@
       </header>
 
       <div class="rt-wrap">
+        <!-- 2026-09-02: 표만 있고 맥락이 없다는 감사 지적 → 공통 시장 요약 스트립 -->
+        <div id="rt-summary-strip" class="tms" hidden aria-label="시장 요약"></div>
         <div class="rt-panel" role="tabpanel">
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
             <div class="rt-tabs-row-tabs">
@@ -290,6 +293,7 @@
         }
       })();
     </script>
+    <script src="./assets/market-strip.js?v=1"></script>
     <script src="./realtime-board.js?v=20260602x"></script>
   </body>
 </html>

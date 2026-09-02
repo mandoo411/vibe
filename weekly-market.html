@@ -132,6 +132,7 @@
               <div>
                 <p class="section-kicker">Upcoming</p>
                 <h2 class="section-title" id="upcoming-title">다가오는 주요일정</h2>
+                <p class="section-sub">선택한 날짜 이후 일정만 표시합니다</p>
               </div>
             </div>
             <div id="upcoming-list">
@@ -160,6 +161,29 @@
             <span><i class="dot dot--kr-earnings"></i>실적</span>
           </div>
           <div class="month-calendar month-calendar--compact" id="month-calendar" aria-label="월간 일정 달력"></div>
+        </section>
+
+        <section class="schedule-card aside-card" aria-labelledby="next-key-title">
+          <div class="section-head section-head--compact">
+            <div>
+              <p class="section-kicker">Next</p>
+              <h2 class="section-title section-title--compact" id="next-key-title">다음 핵심 지표</h2>
+            </div>
+          </div>
+          <div id="next-key-event" class="aside-card__body">
+            <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
+          </div>
+        </section>
+
+        <section class="schedule-card aside-card" aria-labelledby="month-stat-title">
+          <div class="section-head section-head--compact">
+            <div>
+              <p class="section-kicker">Summary</p>
+              <h2 class="section-title section-title--compact" id="month-stat-title">이번 달 일정</h2>
+            </div>
+            <span class="section-date" id="month-stat-label">—</span>
+          </div>
+          <div id="month-stat" class="aside-card__body"></div>
         </section>
         </aside>
         </div>
@@ -798,17 +822,17 @@
           return false;
         }
 
+        /* 2026-09-02: 중요도 배지가 전 건 "높음"으로만 찍혀 변별력이 0이던 문제 수정.
+           원인은 데이터 소스(ForexFactory/Investing)가 애초에 high-impact 항목만 긁어오기
+           때문에 row.impact가 403건 전부 "high"였던 것 — 그 값을 그대로 배지로 쓰면
+           안 된다. 지표 자체의 성격으로 3단계를 다시 매긴다. */
+        const SECONDARY_INDICATOR_RE = /소매판매|Retail\s*Sales|무역수지|Balance\s*of\s*Trade|산업생산|Industrial\s*Production|주택착공|건축승인|주택판매|Housing|Home\s*Sales|Building\s*Permits|신규\s*실업수당|Jobless\s*Claims|내구재|Durable\s*Goods|경상수지|Current\s*Account|수출|수입|Exports|Imports|고용|Employment|Payrolls|실업률|Unemployment|평균\s*시간당\s*임금|Average\s*Hourly\s*Earnings|경제활동참가율|Participation\s*Rate|동시만기|네\s*마녀|기업경기|기업신뢰|소비자신뢰|Confidence/i;
+
         function resolveImpactKey(row) {
           const text = eventSearchText(row);
+          if (isKeyIndicator(row)) return "high";
           if (isMediumOnlyIndicator(text)) return "medium";
-          const impact = row && row.impact;
-          const importance = Number(row && row.importance);
-          if (impact === 3 || impact === "3" || String(impact || "").toLowerCase() === "high") return "high";
-          if (impact === 2 || impact === "2" || String(impact || "").toLowerCase() === "medium") return "medium";
-          if (Number.isFinite(importance)) {
-            if (importance >= 3) return "high";
-            if (importance === 2) return "medium";
-          }
+          if (SECONDARY_INDICATOR_RE.test(text)) return "medium";
           return "low";
         }
 
@@ -817,7 +841,7 @@
         }
 
         function impactBadgeHtml(key) {
-          const label = { high: "높음", medium: "보통", low: "낮음" }[key] || "낮음";
+          const label = { high: "핵심", medium: "주목", low: "참고" }[key] || "참고";
           return `<span class="impact-badge impact-badge--${key}">${label}</span>`;
         }
 
@@ -1019,9 +1043,10 @@
             <tbody>${list
               .map((r) => {
                 const impactKey = resolveImpactKey(r);
-                const isKey = isKeyIndicator(r);
+                // 2026-09-02: 중요도 컬럼이 '핵심'을 그대로 표시하게 되어 좌측 핵심 배지는 중복 — 제거.
+                const isKey = impactKey === "high";
                 const rowClass = [`impact-${impactKey}`, isKey ? "schedule-row--key" : ""].filter(Boolean).join(" ");
-                const keyBadge = isKey ? '<span class="key-indicator-badge">핵심</span>' : "";
+                const keyBadge = "";
                 const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
                 const actualText = fmtEconValue(r.actual, r.unit);
                 const sClass = surpriseClass(r.actual, r.estimate);
@@ -1191,13 +1216,15 @@
             btn.addEventListener("click", () => {
               state.selectedDate = btn.dataset.date;
               renderCalendar();
-              renderDateSchedule(state.selectedDate);
-              renderAnalysis(state.selectedDate);
+              renderSelectedDate(state.selectedDate);
             });
           });
         }
 
         /* ── 다가오는 주요일정 (섹션 3) ───────────── */
+        const UPCOMING_MAX_GROUPS = 6;
+        /* 2026-09-02: 이전엔 항상 '오늘'부터 그려서 위쪽 '오늘 일정' 섹션과 첫 그룹이 통째로
+           중복됐다. 지금은 화면에 펼쳐둔 날짜의 다음날부터, 최대 6개 날짜 그룹만 보여준다. */
         function renderUpcoming(fromYmd) {
           const el = $("upcoming-list");
           if (!el) return;
@@ -1209,19 +1236,22 @@
             el.innerHTML = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>데이터 범위 내 다가오는 주요 일정이 없습니다</p>';
             return;
           }
-          const sortedDates = [...allDates].sort();
+          const sortedDates = [...allDates].sort().slice(0, UPCOMING_MAX_GROUPS * 3);
           let html = "";
+          let groups = 0;
           for (const date of sortedDates) {
+            if (groups >= UPCOMING_MAX_GROUPS) break;
             const econ = allEconomic.filter((r) => r.date === date);
             const earn = allKrEarnings.filter((r) => r.date === date);
             const ipo = allKrIPO.filter((r) => r.date === date);
             const econFiltered = filterEconomicRows(econ);
             if (!econFiltered.length && !earn.length && !ipo.length) continue;
-            const isToday = date === fromYmd;
+            groups += 1;
+            const dday = ddayLabel(date);
             html += `<div class="upcoming-date-group">
-              <div class="upcoming-date-header${isToday ? " upcoming-date-header--today" : ""}">
+              <div class="upcoming-date-header">
                 <span class="upcoming-date-chip">${escapeHtml(fmtDate(date))}</span>
-                ${isToday ? '<span class="today-chip">오늘</span>' : ""}
+                ${dday ? `<span class="upcoming-dday">${escapeHtml(dday)}</span>` : ""}
               </div>
               <div class="upcoming-events">`;
             if (econFiltered.length) html += renderEconomic(econ);
@@ -1237,10 +1267,98 @@
           el.innerHTML = html || '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>다가오는 주요 일정이 없습니다</p>';
         }
 
+        /* 선택 날짜가 바뀔 때 화면 전체를 한 번에 맞춘다.
+           예전엔 호출부마다 renderDateSchedule만 부르거나 renderUpcoming을 '오늘' 기준으로
+           불러서, 날짜를 옮기면 아래 두 섹션이 따로 놀았다. */
+        function renderSelectedDate(ymd) {
+          const target = ymd || state.selectedDate || seoulYmd();
+          renderDateSchedule(target);
+          renderAnalysis(target);
+          renderUpcoming(addDays(target, 1));
+          renderAsideExtras();
+        }
+
         function refreshScheduleViews() {
+          renderSelectedDate(state.selectedDate || seoulYmd());
+        }
+
+        function ddayLabel(ymd) {
           const today = seoulYmd();
-          renderDateSchedule(state.selectedDate || today);
-          renderUpcoming(today);
+          const d0 = new Date(`${today}T12:00:00+09:00`).getTime();
+          const d1 = new Date(`${String(ymd).slice(0, 10)}T12:00:00+09:00`).getTime();
+          if (!Number.isFinite(d1)) return "";
+          const diff = Math.round((d1 - d0) / 86400000);
+          if (diff === 0) return "오늘";
+          if (diff === 1) return "내일";
+          if (diff > 1) return `D-${diff}`;
+          return "";
+        }
+
+        /* ── 우측 사이드바 보조 카드 (달력 아래 빈 공간 채움) ───── */
+        function renderNextKeyEvent() {
+          const el = $("next-key-event");
+          if (!el) return;
+          const now = new Date();
+          const rows = (state.data?.economicCalendar || [])
+            .filter((r) => isKeyIndicator(r))
+            .filter((r) => {
+              const t = eventDateTime(r);
+              return !Number.isNaN(t.getTime()) && t > now;
+            })
+            .sort((a, b) => eventDateTime(a) - eventDateTime(b));
+          const r = rows[0];
+          if (!r) {
+            el.innerHTML = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>데이터 범위 내 예정된 핵심 지표 없음</p>';
+            return;
+          }
+          const cd = countdownLabel(r);
+          const prev = fmtEconValue(r.previous, r.unit);
+          const est = fmtEconValue(r.estimate, r.unit);
+          const metrics = [];
+          if (prev && prev !== "—") metrics.push(`<span class="nke__metric"><span class="nke__lbl">이전</span>${escapeHtml(prev)}</span>`);
+          if (est && est !== "—") metrics.push(`<span class="nke__metric"><span class="nke__lbl">예측</span>${escapeHtml(est)}</span>`);
+          el.innerHTML = `<div class="nke">
+            <div class="nke__top">
+              <span class="nke__cd">${escapeHtml(cd.text || ddayLabel(r.date))}</span>
+              <span class="nke__country">${escapeHtml(r.country || "")}</span>
+            </div>
+            <div class="nke__name">${indicatorDisplayHtml(r)}</div>
+            <div class="nke__when">${escapeHtml(fmtDate(r.date))} · ${escapeHtml(r.time || "—")}</div>
+            ${metrics.length ? `<div class="nke__metrics">${metrics.join("")}</div>` : ""}
+          </div>`;
+        }
+
+        function renderMonthStat() {
+          const el = $("month-stat");
+          if (!el) return;
+          const prefix = state.month || monthKey(seoulYmd());
+          const month = Number(prefix.split("-")[1]);
+          const pick = (key) => (state.data?.[key] || []).filter((r) => String(r?.date || "").startsWith(prefix));
+          const econAll = pick("economicCalendar").filter(isUsOrKrCountry);
+          const econKey = econAll.filter(isKeyIndicator);
+          const earn = pick("krEarnings");
+          const ipo = pick("krIPO");
+          const label = $("month-stat-label");
+          if (label) label.textContent = `${month}월`;
+          const total = econAll.length + earn.length + ipo.length;
+          if (!total) {
+            el.innerHTML = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>이 달은 수집된 일정이 없습니다</p>';
+            return;
+          }
+          const cells = [
+            ["핵심 지표", econKey.length],
+            ["경제지표", econAll.length],
+            ["국내 실적", earn.length],
+            ["신규상장", ipo.length],
+          ];
+          el.innerHTML = `<div class="mstat">${cells
+            .map(([l, v]) => `<div class="mstat__cell"><span class="mstat__v">${v}</span><span class="mstat__l">${escapeHtml(l)}</span></div>`)
+            .join("")}</div>`;
+        }
+
+        function renderAsideExtras() {
+          renderNextKeyEvent();
+          renderMonthStat();
         }
 
         function renderAnalysis(ymd) {
@@ -1263,34 +1381,64 @@
           if (grid) {
             grid.hidden = false;
             const macros = items.filter((i) => i.type === "macro");
-            const earnings = items.filter((i) => i.type === "earnings");
+            const earnings = items.filter((i) => i.type !== "macro");
             let html = "";
             if (macros.length) {
-              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading">\u{1F4C5} 매크로 이벤트</h3><ul class="event-analysis-list">${macros
-                .map((item) => `<li class="event-analysis-item">
-                    <div class="event-analysis-head">
-                      <span class="event-analysis-badge event-analysis-badge--macro">경제지표</span>
-                      <strong class="event-analysis-title">${escapeHtml(item.title || "")}</strong>
-                      ${item.date ? `<span class="event-analysis-date">${escapeHtml(item.date)}</span>` : ""}
-                    </div>
-                    ${item.expected ? `<div class="event-analysis-expected">${escapeHtml(item.expected)}</div>` : ""}
-                    <p class="event-analysis-body">${escapeHtml(item.analysis || "")}</p>
-                  </li>`).join("")}</ul></div>`;
+              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading"><i class="ti ti-chart-bar" aria-hidden="true"></i> 매크로 이벤트</h3><ul class="event-analysis-list">${macros
+                .map((item) => analysisItemHtml(item, "macro"))
+                .join("")}</ul></div>`;
             }
             if (earnings.length) {
-              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading">\u{1F4CA} 실적 발표</h3><ul class="event-analysis-list">${earnings
-                .map((item) => `<li class="event-analysis-item">
-                    <div class="event-analysis-head">
-                      <span class="event-analysis-badge event-analysis-badge--earnings">실적</span>
-                      <strong class="event-analysis-title">${escapeHtml(item.title || "")}</strong>
-                      ${item.date ? `<span class="event-analysis-date">${escapeHtml(item.date)}</span>` : ""}
-                    </div>
-                    ${item.expected ? `<div class="event-analysis-expected">${escapeHtml(item.expected)}</div>` : ""}
-                    <p class="event-analysis-body">${escapeHtml(item.analysis || "")}</p>
-                  </li>`).join("")}</ul></div>`;
+              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading"><i class="ti ti-trending-up" aria-hidden="true"></i> 실적 발표</h3><ul class="event-analysis-list">${earnings
+                .map((item) => analysisItemHtml(item, "earnings"))
+                .join("")}</ul></div>`;
             }
             grid.innerHTML = html;
           }
+        }
+
+        /* 2026-09-02: 예전엔 AI가 "예상 상회 시 …할 가능성이 높습니다 / 예상 하회 시 …할 수
+           있습니다"를 한 문단으로 써내서 4건이 전부 같은 문형으로 보였다(프롬프트가 그 문형을
+           그대로 지시하고 있었던 게 원인). 이제 상회/하회는 화면 라벨이 맡고 AI는 결과만 쓴다.
+           why/bull/bear가 없는 구버전 레코드는 analysis 원문을 그대로 보여준다(폴백 필수). */
+        function analysisItemHtml(item, kind) {
+          const badgeCls = kind === "earnings" ? "event-analysis-badge--earnings" : "event-analysis-badge--macro";
+          const badgeTxt = kind === "earnings" ? "실적" : "경제지표";
+          const why = String(item.why || "").trim();
+          const bull = String(item.bull || "").trim();
+          const bear = String(item.bear || "").trim();
+          const watch = Array.isArray(item.watch) ? item.watch.map((w) => String(w || "").trim()).filter(Boolean) : [];
+          const legacy = String(item.analysis || "").trim();
+          const structured = why || bull || bear || watch.length;
+          const dday = item.date ? ddayLabel(item.date) : "";
+
+          let body = "";
+          if (structured) {
+            if (why) body += `<p class="ea-why">${escapeHtml(why)}</p>`;
+            if (bull || bear) {
+              body += `<div class="ea-scenarios">
+                ${bull ? `<div class="ea-sc ea-sc--up"><span class="ea-sc__lbl">예상 상회</span><p class="ea-sc__body">${escapeHtml(bull)}</p></div>` : ""}
+                ${bear ? `<div class="ea-sc ea-sc--down"><span class="ea-sc__lbl">예상 하회</span><p class="ea-sc__body">${escapeHtml(bear)}</p></div>` : ""}
+              </div>`;
+            }
+            if (watch.length) {
+              body += `<div class="ea-watch"><span class="ea-watch__lbl">관전 포인트</span><div class="ea-watch__tags">${watch
+                .map((w) => `<span class="ea-tag">${escapeHtml(w)}</span>`)
+                .join("")}</div></div>`;
+            }
+          } else if (legacy) {
+            body = `<p class="event-analysis-body">${escapeHtml(legacy)}</p>`;
+          }
+
+          return `<li class="event-analysis-item">
+            <div class="event-analysis-head">
+              <span class="event-analysis-badge ${badgeCls}">${badgeTxt}</span>
+              <strong class="event-analysis-title">${escapeHtml(item.title || "")}</strong>
+              ${dday ? `<span class="ea-dday">${escapeHtml(dday)}</span>` : ""}
+            </div>
+            ${item.expected ? `<div class="event-analysis-expected">${escapeHtml(item.expected)}</div>` : ""}
+            ${body}
+          </li>`;
         }
 
         /* ── 실적 발표 렌더링 ─────────────────────── */
@@ -1424,19 +1572,19 @@
             state.selectedDate = addDays(state.selectedDate, -1);
             state.month = monthKey(state.selectedDate);
             renderCalendar();
-            renderDateSchedule(state.selectedDate);
+            renderSelectedDate(state.selectedDate);
           });
           $("date-next")?.addEventListener("click", () => {
             state.selectedDate = addDays(state.selectedDate, 1);
             state.month = monthKey(state.selectedDate);
             renderCalendar();
-            renderDateSchedule(state.selectedDate);
+            renderSelectedDate(state.selectedDate);
           });
           $("date-today-btn")?.addEventListener("click", () => {
             state.selectedDate = seoulYmd();
             state.month = monthKey(state.selectedDate);
             renderCalendar();
-            renderDateSchedule(state.selectedDate);
+            renderSelectedDate(state.selectedDate);
           });
         }
 
@@ -1478,12 +1626,14 @@
             const d = new Date(year, month - 2, 1);
             state.month = monthKey(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`);
             renderCalendar();
+            renderMonthStat();
           });
           $("calendar-next")?.addEventListener("click", () => {
             const [year, month] = state.month.split("-").map(Number);
             const d = new Date(year, month, 1);
             state.month = monthKey(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`);
             renderCalendar();
+            renderMonthStat();
           });
         }
 
@@ -1508,9 +1658,7 @@
             // 2026-08-13: 데이터 지연 배너를 고객에게 노출하지 않기로 함(내부 운영
             // 상황이라 사용자에게 알릴 필요 없음 — 대신 헬스체크가 내부적으로 감지).
             renderCalendar();
-            renderDateSchedule(today);
-            renderAnalysis(today);
-            renderUpcoming(today);
+            renderSelectedDate(today);
             wireDateNav();
             wireCalendarNav();
             wireScheduleFilters();

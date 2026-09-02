@@ -1000,6 +1000,756 @@
         color: var(--text-secondary);
         font-size: 13px;
       }
+
+      /* ==========================================================
+         브리핑 덱 (bfx-) — 마감시황 AI 덱과 동일한 시각 언어
+         표/줄글 나열 대신 카드·막대·배지로 재구성
+         ========================================================== */
+      .bfx-deck {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        margin: 0 auto;
+        max-width: 1180px;
+        width: 100%;
+        padding: 0 16px 40px;
+        box-sizing: border-box;
+      }
+
+      .bfx-block {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--bg-panel, var(--bg-elevated));
+        padding: 16px 18px 18px;
+      }
+
+      .bfx-block__title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-block__title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      .bfx-block__tag {
+        order: 1;
+        flex: none;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-note {
+        margin: 12px 0 0;
+        font-size: 11.5px;
+        line-height: 1.55;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-sub {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 10px;
+        font-size: 12.5px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: var(--text);
+      }
+
+      .bfx-sub::before {
+        content: "";
+        width: 3px;
+        height: 12px;
+        border-radius: 2px;
+        background: var(--accent, #0f8387);
+      }
+
+      .bfx-sub.is-up::before { background: var(--up-color, #e24b4a); }
+      .bfx-sub.is-down::before { background: var(--down-color, #3b82f6); }
+
+      /* ── 1) 히어로 ── */
+      .bfx-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        padding: 20px 22px 22px;
+        border: 1px solid var(--border);
+        background:
+          linear-gradient(135deg, var(--bfx-tint, rgba(148, 163, 184, 0.16)) 0%, transparent 62%),
+          var(--bg-panel, var(--bg-elevated));
+      }
+
+      .bfx-hero::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--bfx-accent, #94a3b8);
+      }
+
+      .bfx-hero--up { --bfx-tint: rgba(226, 75, 74, 0.14); --bfx-accent: var(--up-color, #e24b4a); }
+      .bfx-hero--down { --bfx-tint: rgba(59, 130, 246, 0.14); --bfx-accent: var(--down-color, #3b82f6); }
+
+      .bfx-hero__meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .bfx-hero__date {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-hero__tone {
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: var(--bfx-accent, #94a3b8);
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+      }
+
+      .bfx-hero__line {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.55;
+        letter-spacing: -0.02em;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-hero__sub {
+        margin: 10px 0 0;
+        font-size: 13.5px;
+        line-height: 1.75;
+        color: var(--text-muted, #4b5563);
+        word-break: keep-all;
+      }
+
+      /* ── 2) 지수·매크로 카드 ── */
+      .bfx-idx-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+        gap: 12px;
+      }
+
+      .bfx-idx {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 13px 15px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-elevated);
+        border-top: 3px solid var(--bfx-c, rgba(148, 163, 184, 0.5));
+      }
+
+      .bfx-idx.is-up { --bfx-c: var(--up-color, #e24b4a); }
+      .bfx-idx.is-down { --bfx-c: var(--down-color, #3b82f6); }
+
+      .bfx-idx__label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-idx__live {
+        padding: 1px 6px;
+        border-radius: 999px;
+        background: var(--accent-dim, rgba(15, 131, 135, 0.14));
+        color: var(--accent, #0f8387);
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .bfx-idx__value {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.15;
+        color: var(--text);
+      }
+
+      .bfx-idx__delta {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 12.5px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: var(--bfx-c, var(--text-muted));
+      }
+
+      .bfx-idx__delta em { font-style: normal; font-size: 14.5px; }
+
+      .bfx-idx__track {
+        position: relative;
+        height: 4px;
+        margin-top: 9px;
+        border-radius: 999px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.18));
+        overflow: hidden;
+      }
+
+      .bfx-idx__track span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: var(--bfx-c, #94a3b8);
+      }
+
+      .bfx-idx__note {
+        margin: 10px 0 0;
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: var(--text-muted, #6b7280);
+        word-break: keep-all;
+      }
+
+      /* ── 3) 시장 온도 ── */
+      .bfx-score {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .bfx-score__item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 11px 12px;
+        border-radius: 10px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--bfx-c, rgba(148, 163, 184, 0.55));
+      }
+
+      .bfx-score__item.is-up { --bfx-c: var(--up-color, #e24b4a); }
+      .bfx-score__item.is-down { --bfx-c: var(--down-color, #3b82f6); }
+
+      .bfx-score__k {
+        font-size: 11.5px;
+        color: var(--text-muted, #6b7280);
+        word-break: keep-all;
+      }
+
+      .bfx-score__v {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 17px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--text);
+      }
+
+      /* ── 막대 차트 공통 ── */
+      .bfx-bars { display: flex; flex-direction: column; gap: 7px; }
+
+      .bfx-bar-row {
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr) 66px;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .bfx-bar-row__name {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .bfx-bar-row__track {
+        position: relative;
+        height: 16px;
+        border-radius: 4px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.12));
+      }
+
+      .bfx-bar-row__track::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -2px;
+        bottom: -2px;
+        width: 1px;
+        background: var(--border-strong, rgba(148, 163, 184, 0.55));
+      }
+
+      .bfx-bar {
+        position: absolute;
+        top: 3px;
+        bottom: 3px;
+        border-radius: 3px;
+        background: var(--bfx-b, #94a3b8);
+        min-width: 2px;
+      }
+
+      .bfx-bar.is-up { --bfx-b: var(--up-color, #e24b4a); }
+      .bfx-bar.is-down { --bfx-b: var(--down-color, #3b82f6); }
+      .bfx-bar--right { left: 50%; }
+      .bfx-bar--left { right: 50%; }
+
+      .bfx-bar-row__val {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 12px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
+        color: var(--text-muted);
+      }
+
+      .bfx-bar-row__val.is-up { color: var(--up-color, #e24b4a); }
+      .bfx-bar-row__val.is-down { color: var(--down-color, #3b82f6); }
+
+      .bfx-twocol {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+
+      /* ── 핵심 이슈 / 체크포인트 번호 카드 ── */
+      .bfx-numlist {
+        counter-reset: bfxn;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 10px;
+      }
+
+      .bfx-numlist li {
+        counter-increment: bfxn;
+        position: relative;
+        padding: 12px 14px 13px 42px;
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        background: var(--bg-elevated);
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-numlist li::before {
+        content: counter(bfxn);
+        position: absolute;
+        left: 13px;
+        top: 12px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        background: var(--accent, #0f8387);
+        color: #fff;
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .bfx-numlist--single { grid-template-columns: 1fr; }
+
+      /* ── 긍정/부정 요인 ── */
+      .bfx-pillar {
+        padding: 14px 16px 15px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-elevated);
+        border-top: 3px solid var(--bfx-c, #94a3b8);
+      }
+
+      .bfx-pillar--pos { --bfx-c: var(--up-color, #e24b4a); }
+      .bfx-pillar--neg { --bfx-c: var(--down-color, #3b82f6); }
+
+      .bfx-pillar__title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--bfx-c);
+      }
+
+      .bfx-pillar__title span {
+        display: grid;
+        place-items: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        background: var(--bfx-c);
+        color: #fff;
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .bfx-pillar ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .bfx-pillar li {
+        position: relative;
+        padding-left: 14px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-pillar li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 9px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--bfx-c);
+        opacity: 0.65;
+      }
+
+      /* ── 문단 카드 ── */
+      .bfx-flow { display: flex; flex-direction: column; gap: 10px; }
+
+      .bfx-para {
+        position: relative;
+        margin: 0;
+        padding: 0 0 0 30px;
+        font-size: 14px;
+        line-height: 1.85;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-para__idx {
+        position: absolute;
+        left: 0;
+        top: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.18));
+        color: var(--text-muted, #6b7280);
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .bfx-callout {
+        margin: 0;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.12));
+        border-left: 3px solid var(--accent, #0f8387);
+        font-size: 14.5px;
+        line-height: 1.8;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      /* ── 라벨 카드 (체크·환율·뉴스·리스크 공통) ── */
+      .bfx-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 12px;
+      }
+
+      .bfx-card {
+        padding: 13px 15px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-elevated);
+        border-left: 3px solid var(--bfx-c, rgba(148, 163, 184, 0.5));
+      }
+
+      .bfx-card.is-up { --bfx-c: var(--up-color, #e24b4a); }
+      .bfx-card.is-down { --bfx-c: var(--down-color, #3b82f6); }
+      .bfx-card.is-warn { --bfx-c: #eab308; }
+
+      .bfx-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .bfx-card__name {
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+        word-break: keep-all;
+      }
+
+      .bfx-card__val {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 13px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--bfx-c, var(--text-muted));
+        text-align: right;
+        word-break: keep-all;
+      }
+
+      .bfx-card__badge {
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: var(--bfx-c, #94a3b8);
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .bfx-row {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 9px;
+        margin: 0 0 7px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-row:last-child { margin-bottom: 0; }
+
+      .bfx-row em {
+        font-style: normal;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        text-align: center;
+        padding: 2px 0;
+        height: fit-content;
+        border-radius: 5px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.18));
+        color: var(--text-muted, #6b7280);
+      }
+
+      .bfx-row--key em {
+        background: var(--accent-dim, rgba(15, 131, 135, 0.16));
+        color: var(--accent, #0f8387);
+      }
+
+      .bfx-row--warn em {
+        background: rgba(234, 179, 8, 0.18);
+        color: #a16207;
+      }
+
+      /* ── 관심 종목군 ── */
+      .bfx-tier {
+        padding: 13px 15px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--bg-elevated);
+        border-left: 3px solid var(--bfx-c, var(--accent, #0f8387));
+      }
+
+      .bfx-tier__head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .bfx-tier__rank {
+        padding: 2px 9px;
+        border-radius: 6px;
+        background: var(--bfx-c, var(--accent, #0f8387));
+        color: #fff;
+        font-size: 11.5px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .bfx-tier__theme {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--text);
+        word-break: keep-all;
+      }
+
+      .bfx-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
+
+      .bfx-chip {
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--bg-panel, var(--bg-elevated));
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+      }
+
+      .bfx-tier__strategy {
+        margin: 0;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: var(--text-muted, #4b5563);
+        word-break: keep-all;
+      }
+
+      /* ── 포트폴리오 비중 바 ── */
+      .bfx-alloc { display: flex; flex-direction: column; gap: 12px; }
+
+      .bfx-alloc__row {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr);
+        align-items: start;
+        gap: 14px;
+      }
+
+      .bfx-alloc__label {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        word-break: keep-all;
+        line-height: 1.5;
+      }
+
+      .bfx-alloc__weight {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent, #0f8387);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .bfx-alloc__track {
+        display: block;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+        overflow: hidden;
+      }
+
+      .bfx-alloc__fill {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent, #0f8387), color-mix(in srgb, var(--accent, #0f8387) 55%, #ffffff));
+      }
+
+      .bfx-alloc__note {
+        margin: 7px 0 0;
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: var(--text-muted, #4b5563);
+        word-break: keep-all;
+      }
+
+      /* ── 다크 보정 ── */
+      [data-theme="dark"] .bfx-block,
+      [data-theme="dark"] .bfx-hero {
+        background:
+          linear-gradient(135deg, var(--bfx-tint, transparent) 0%, transparent 62%),
+          var(--card-bg, #111d35);
+        border-color: rgba(255, 255, 255, 0.09);
+      }
+
+      [data-theme="dark"] .bfx-idx,
+      [data-theme="dark"] .bfx-score__item,
+      [data-theme="dark"] .bfx-card,
+      [data-theme="dark"] .bfx-tier,
+      [data-theme="dark"] .bfx-pillar,
+      [data-theme="dark"] .bfx-numlist li {
+        background: rgba(255, 255, 255, 0.035);
+        border-color: rgba(255, 255, 255, 0.09);
+      }
+
+      [data-theme="dark"] .bfx-chip { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); }
+      [data-theme="dark"] .bfx-callout { background: rgba(255, 255, 255, 0.05); }
+      [data-theme="dark"] .bfx-row--warn em { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
+
+      /* ── 모바일 ── */
+      @media (max-width: 768px) {
+        .bfx-deck { gap: 14px; padding: 0 12px 32px; }
+        .bfx-block,
+        .bfx-hero { padding: 14px 14px 16px; border-radius: 12px; }
+        .bfx-hero__line { font-size: 16px; }
+        .bfx-idx-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .bfx-idx__value { font-size: 20px; }
+        .bfx-score { grid-template-columns: 1fr 1fr; }
+        .bfx-bar-row { grid-template-columns: 80px minmax(0, 1fr) 58px; gap: 7px; }
+        .bfx-cards,
+        .bfx-numlist { grid-template-columns: 1fr; }
+        .bfx-alloc__row { grid-template-columns: 1fr; gap: 6px; }
+        .bfx-para { font-size: 13.5px; padding-left: 26px; }
+      }
+
+      /* 뉴스 컬럼: 좌우 2단 안에서는 카드를 세로로 쌓는다 */
+      .bfx-cards--stack { grid-template-columns: 1fr; }
+
+      /* 대형주 막대: 종목명 + 종가 + 막대 + 등락률 */
+      .bfx-bar-row--px { grid-template-columns: 62px 72px minmax(0, 1fr) 62px; }
+
+      .bfx-bar-row__px {
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-muted, #9ca3af);
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      /* 관심 종목군 등급별 색 */
+      .bfx-tier--t1 { --bfx-c: var(--accent, #0f8387); }
+      .bfx-tier--t2 { --bfx-c: #6b7fa8; }
+      .bfx-tier--t3 { --bfx-c: #94a3b8; }
+      .bfx-tier--watch { --bfx-c: #b0b7c3; }
+
+      @media (max-width: 768px) {
+        .bfx-bar-row--px { grid-template-columns: 52px 62px minmax(0, 1fr) 56px; }
+      }
+
     </style>
   </head>
   <body class="page-tm-v2">
@@ -1092,94 +1842,8 @@
         <span class="bf-archive-badge" id="bf-archive-badge" hidden><i class="ti ti-history" aria-hidden="true"></i>지난 브리핑</span>
         <span class="briefing-meta__updated" id="briefing-updated">미국 마감, 환율, 시장 지표</span>
       </div>
-      <main class="briefing-grid" aria-live="polite">
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-brain" aria-hidden="true"></i>Claude AI 장전 분석</h2>
-          <div id="ai-analysis"><p class="empty-text">브리핑 데이터를 불러오는 중입니다.</p></div>
-        </section>
-
-        <section class="briefing-card briefing-card--us">
-          <h2>
-            <i class="ti ti-trending-up" aria-hidden="true"></i>간밤 미국시장
-            <span class="briefing-us-updated" id="us-market-updated" hidden></span>
-          </h2>
-          <ul class="briefing-list" id="us-market-list"></ul>
-        </section>
-
-        <section class="briefing-card briefing-card--macro">
-          <h2><i class="ti ti-coins" aria-hidden="true"></i>원자재/환율 현황</h2>
-          <ul class="briefing-list" id="forex-list"></ul>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-star" aria-hidden="true"></i>미국 주요종목 TOP10</h2>
-          <ul class="briefing-list" id="top-stocks-list"></ul>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-chart-bar" aria-hidden="true"></i>섹터별 등락률</h2>
-          <ul class="briefing-list" id="sectors-list"></ul>
-        </section>
-
-        <section class="briefing-card briefing-card--crypto" hidden aria-hidden="true">
-          <h2><i class="ti ti-currency-bitcoin" aria-hidden="true"></i>BTC 시황</h2>
-          <ul class="briefing-list" id="crypto-list"></ul>
-        </section>
-
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-world" aria-hidden="true"></i>글로벌 시장 해석</h2>
-          <div class="briefing-table-wrap" id="global-market-table"></div>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-checklist" aria-hidden="true"></i>국내증시 장전 체크</h2>
-          <div class="briefing-table-wrap" id="domestic-check-table"></div>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-receipt" aria-hidden="true"></i>환율·원자재 해석</h2>
-          <div class="briefing-table-wrap" id="forex-commodity-table"></div>
-        </section>
-
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-news" aria-hidden="true"></i>오늘의 주요 뉴스</h2>
-          <div class="briefing-twocol">
-            <div>
-              <p class="briefing-subhead">미국</p>
-              <div class="briefing-table-wrap" id="us-news-table"></div>
-            </div>
-            <div>
-              <p class="briefing-subhead">국내</p>
-              <div class="briefing-table-wrap" id="kr-news-table"></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-layers" aria-hidden="true"></i>업종별 전략</h2>
-          <div class="briefing-table-wrap" id="sector-strategy-table"></div>
-        </section>
-
-        <section class="briefing-card">
-          <h2><i class="ti ti-chart-pie" aria-hidden="true"></i>포트폴리오 전략</h2>
-          <div class="briefing-table-wrap" id="portfolio-table"></div>
-        </section>
-
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-target" aria-hidden="true"></i>오늘의 투자전략</h2>
-          <div id="today-strategy"></div>
-        </section>
-
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-bookmark" aria-hidden="true"></i>관심 종목군</h2>
-          <div id="watchlist-tiers"></div>
-        </section>
-
-        <section class="briefing-card briefing-card--wide">
-          <h2><i class="ti ti-alert-triangle" aria-hidden="true"></i>리스크 요인</h2>
-          <div class="briefing-table-wrap" id="risk-table"></div>
-        </section>
-
+      <main class="bfx-deck" id="bfx-deck" aria-live="polite">
+        <p class="empty-text">브리핑 데이터를 불러오는 중입니다.</p>
       </main>
     </div>
       </main>
@@ -1284,238 +1948,607 @@
 
       const US_INDEX_ORDER = ["nasdaq", "sp500", "nasdaq-futures", "korea-etf"];
 
-      function renderRows(id, rows, getLabel, getValue) {
-        $(id).innerHTML = rows && rows.length
-          ? rows.map((row) => `<li class="briefing-row"><strong>${escapeHtml(getLabel(row))}</strong><span class="briefing-row__value">${getValue(row)}</span></li>`).join("")
-          : '<li class="empty-text">데이터 없음</li>';
+      /* ==========================================================
+         브리핑 덱 렌더러 (bfx-)
+         원칙: ① 없는 값은 지어내지 않고 블록 자체를 생략
+               ② 숫자·집계는 코드가 실데이터에서 직접 계산
+               ③ 표 나열 대신 카드·막대·배지로 시각화
+         ========================================================== */
+      const BFX = { data: null, live: null, liveLabel: "", sox: null, ymd: null };
+
+      const BFX_IDX_ORDER = ["nasdaq", "sp500", "dow", "nasdaq-futures", "korea-etf"];
+
+      function bfxNum(v) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
       }
 
-      function sortUsIndices(rows) {
-        const order = new Map(US_INDEX_ORDER.map((id, i) => [id, i]));
-        return [...(rows || [])].sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+      function bfxTxt(v) {
+        return String(v == null ? "" : v).trim();
       }
 
-      function indexLabel(row) {
-        const name = escapeHtml(row.name || row.symbol || "");
-        if (row.id === "nasdaq-futures" || row.live) {
-          return `${name}<span class="briefing-badge">실시간</span>`;
+      function bfxCls(n) {
+        return n == null ? "" : n > 0 ? "is-up" : n < 0 ? "is-down" : "";
+      }
+
+      function bfxPct(n, d = 2) {
+        if (n == null) return "—";
+        return `${n > 0 ? "+" : ""}${n.toFixed(d)}%`;
+      }
+
+      function bfxFmt(n, d = 2) {
+        if (n == null) return "—";
+        return n.toLocaleString("ko-KR", { minimumFractionDigits: d, maximumFractionDigits: d });
+      }
+
+      /** 텍스트 안의 첫 등락률 부호로 톤(상승/하락)을 잡는다. 없으면 중립 */
+      function bfxToneFromText(text) {
+        const m = bfxTxt(text).match(/([+-])\s?\d+(?:\.\d+)?\s?%/);
+        if (m) return m[1] === "+" ? "is-up" : "is-down";
+        const t = bfxTxt(text);
+        if (/(급등|상승|강세|호조)/.test(t) && !/(하락|약세)/.test(t)) return "is-up";
+        if (/(급락|하락|약세|부진)/.test(t) && !/(상승|강세)/.test(t)) return "is-down";
+        return "";
+      }
+
+      /** 문장 단위 분리. 종결부호 뒤가 공백이거나 문장 끝일 때만 자른다
+       *  ("2.80%" 같은 소수점에서 잘려 숫자가 반토막 나던 버그 방지) */
+      function bfxSentences(text) {
+        const t = bfxTxt(text).replace(/\s+/g, " ");
+        if (!t) return [];
+        const CLOSERS = ".!?\u0022\u201d\u0027)]";
+        const out = [];
+        let start = 0;
+        for (let i = 0; i < t.length; i++) {
+          const c = t[i];
+          if (c !== "." && c !== "!" && c !== "?") continue;
+          let j = i;
+          while (j + 1 < t.length && CLOSERS.includes(t[j + 1])) j++;
+          const next = t[j + 1];
+          if (next !== undefined && next !== " ") continue;
+          const seg = t.slice(start, j + 1).trim();
+          if (seg) out.push(seg + " ");
+          start = j + 2;
+          i = j;
         }
-        return name;
+        const tail = t.slice(start).trim();
+        if (tail) out.push(tail);
+        return out.length ? out : [t];
       }
 
-      function renderUsMarketIndices(rows, sourceLabel) {
-        const sorted = sortUsIndices(rows);
-        $("us-market-list").innerHTML = sorted.length
-          ? sorted
-              .map((row) => {
-                const price = row.price ?? row.close;
-                return `<li class="briefing-row briefing-row--index">
-                  <strong>${indexLabel(row)}</strong>
-                  <span class="briefing-row__value"><span>${fmtNumber(price, 0)}</span>${fmtChange(row.changePct)}</span>
-                </li>`;
-              })
-              .join("")
-          : '<li class="empty-text">데이터 없음</li>';
-        const updated = $("us-market-updated");
-        if (sourceLabel) {
-          updated.hidden = false;
-          updated.textContent = sourceLabel;
-        } else {
-          updated.hidden = true;
-          updated.textContent = "";
+      /** 첫 문장(짧으면 두 문장까지) — 히어로 한 줄용 */
+      function bfxLead(text, minLen = 45) {
+        const s = bfxSentences(text);
+        if (!s.length) return bfxTxt(text);
+        let out = "";
+        for (const x of s) {
+          out += x;
+          if (out.trim().length >= minLen) break;
         }
+        return out.trim();
       }
 
-      async function loadUsMarketLive(fallbackIndices) {
-        const fallback = sortUsIndices(
-          (fallbackIndices || []).map((row) => ({
-            ...row,
-            price: row.price ?? row.close,
-          }))
-        );
-        try {
-          const res = await fetch("/api/us-market-data?action=indices", { cache: "no-store" });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const body = await res.json();
-          const rows = sortUsIndices(body.indices || []);
-          if (!rows.length) throw new Error("empty indices");
-          renderUsMarketIndices(rows, "실시간 갱신");
-          return rows;
-        } catch (error) {
-          console.warn("[briefing] live US indices fallback", error);
-          if (fallback.length) renderUsMarketIndices(fallback, "정적 브리핑 데이터");
-          return fallback;
-        }
+      function bfxAfterLead(text, lead) {
+        const t = bfxTxt(text).replace(/\s+/g, " ");
+        if (!lead || !t.startsWith(lead)) return "";
+        return t.slice(lead.length).trim();
       }
 
-      function renderTable(id, rows, columns) {
-        const el = $(id);
-        if (!el) return;
-        rows = Array.isArray(rows) ? rows.filter(Boolean) : [];
-        if (!rows.length) {
-          el.innerHTML = '<p class="empty-text">분석 대기 중</p>';
-          return;
+      /** 한 덩어리 긴 글을 문장 경계에서만 잘라 2~4개 문단으로 재조립(내용은 그대로) */
+      function bfxChunks(text, target = 3) {
+        const raw = bfxTxt(text);
+        if (!raw) return [];
+        const byBlank = raw.split(/\n\s*\n/).map((p) => p.replace(/\s*\n\s*/g, " ").trim()).filter(Boolean);
+        if (byBlank.length > 1) return byBlank;
+        const s = bfxSentences(raw);
+        if (s.length <= 2) return [raw.replace(/\s+/g, " ")];
+        const groups = Math.min(target, Math.max(2, Math.round(s.length / 2)));
+        const per = Math.ceil(s.length / groups);
+        const out = [];
+        for (let i = 0; i < s.length; i += per) out.push(s.slice(i, i + per).join("").trim());
+        return out.filter(Boolean);
+      }
+
+      function bfxNormLabel(s) {
+        return bfxTxt(s).replace(/[\s()·・,]/g, "").toLowerCase();
+      }
+
+      /** 글로벌 시장 해석 표의 코멘트를 지수/원자재 카드에 붙여준다(표 자체는 없앤다) */
+      function bfxComment(rows, label) {
+        const list = Array.isArray(rows) ? rows : [];
+        const n = bfxNormLabel(label);
+        if (!n) return "";
+        for (const r of list) if (bfxNormLabel(r && r.label) === n) return bfxTxt(r.comment);
+        for (const r of list) {
+          const k = bfxNormLabel(r && r.label);
+          if (k && (k.includes(n) || n.includes(k))) return bfxTxt(r.comment);
         }
-        const thead = `<tr>${columns.map((c) => `<th>${escapeHtml(c.label)}</th>`).join("")}</tr>`;
-        const tbody = rows
-          .map(
-            (row) =>
-              `<tr>${columns
-                .map((c) => `<td>${escapeHtml(row[c.key] ?? "")}</td>`)
-                .join("")}</tr>`
-          )
+        return "";
+      }
+
+      function bfxIndexRows() {
+        const data = BFX.data || {};
+        const src = BFX.live && BFX.live.length ? BFX.live : (data.usMarket && data.usMarket.indices) || [];
+        const order = new Map(BFX_IDX_ORDER.map((id, i) => [id, i]));
+        return [...src]
+          .map((r) => ({ ...r, price: r.price != null ? r.price : r.close }))
+          .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+      }
+
+      // ── 1) 히어로 ─────────────────────────────────────────────────
+      function bfxRenderHero(ai) {
+        const rows = bfxIndexRows();
+        const majors = rows.filter((r) => ["nasdaq", "sp500", "dow"].includes(r.id));
+        const downs = majors.filter((r) => (bfxNum(r.changePct) || 0) < 0).length;
+        const ups = majors.filter((r) => (bfxNum(r.changePct) || 0) > 0).length;
+        let tone = "";
+        let dir = "flat";
+        if (majors.length >= 2) {
+          if (downs === majors.length) { tone = "리스크오프"; dir = "down"; }
+          else if (ups === majors.length) { tone = "리스크온"; dir = "up"; }
+          else { tone = "혼조"; dir = "flat"; }
+        }
+        const summary = bfxTxt(ai.summary);
+        const lead = summary ? bfxLead(summary, 50) : "";
+        const rest = summary ? bfxAfterLead(summary, lead) : "";
+        if (!lead && !tone) return "";
+        const ymd = BFX.ymd;
+        let dateLabel = "";
+        if (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+          const { m, d } = ymdParts(ymd);
+          dateLabel = `${m}월 ${d}일 (${KST_WEEKDAYS[weekdayOf(ymd)]}) 장전 브리핑`;
+        }
+        return `<section class="bfx-hero bfx-hero--${dir}">
+          <div class="bfx-hero__meta">
+            ${dateLabel ? `<span class="bfx-hero__date">${escapeHtml(dateLabel)}</span>` : ""}
+            ${tone ? `<span class="bfx-hero__tone">${escapeHtml(tone)}</span>` : ""}
+          </div>
+          ${lead ? `<p class="bfx-hero__line">${escapeHtml(lead)}</p>` : ""}
+          ${rest ? `<p class="bfx-hero__sub">${escapeHtml(rest)}</p>` : ""}
+        </section>`;
+      }
+
+      // ── 2) 간밤 지수 카드 ─────────────────────────────────────────
+      function bfxRenderIndexCards(ai) {
+        const rows = bfxIndexRows();
+        if (!rows.length) return "";
+        const gmt = ai.globalMarketTable;
+        const maxAbs = Math.max(...rows.map((r) => Math.abs(bfxNum(r.changePct) || 0)), 0.01);
+        const cards = rows
+          .map((r) => {
+            const price = bfxNum(r.price);
+            if (price == null) return "";
+            const pct = bfxNum(r.changePct);
+            const pts = bfxNum(r.changePoints);
+            const cls = bfxCls(pct);
+            const w = pct == null ? 0 : Math.min(100, (Math.abs(pct) / maxAbs) * 100);
+            const digits = Math.abs(price) >= 1000 ? 0 : 2;
+            const live = r.live === true || (BFX.liveLabel === "실시간 갱신" && r.id === "nasdaq-futures");
+            const note = bfxComment(gmt, r.name || r.symbol || "");
+            return `<article class="bfx-idx ${cls}">
+              <span class="bfx-idx__label">${escapeHtml(bfxTxt(r.name) || bfxTxt(r.symbol))}${live ? `<span class="bfx-idx__live">실시간</span>` : ""}</span>
+              <strong class="bfx-idx__value">${bfxFmt(price, digits)}</strong>
+              <span class="bfx-idx__delta">${pts == null ? "" : `${pts > 0 ? "+" : ""}${pts.toFixed(2)}p`}<em>${escapeHtml(bfxPct(pct))}</em></span>
+              <span class="bfx-idx__track"><span style="width:${w.toFixed(1)}%"></span></span>
+              ${note ? `<p class="bfx-idx__note">${escapeHtml(note)}</p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!cards.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">간밤 미국시장 마감${BFX.liveLabel ? `<span class="bfx-block__tag">${escapeHtml(BFX.liveLabel)}</span>` : ""}</h3>
+          <div class="bfx-idx-grid">${cards.join("")}</div>
+        </section>`;
+      }
+
+      // ── 3) 환율·원자재·크립토 카드 ────────────────────────────────
+      function bfxRenderMacroCards(ai) {
+        const data = BFX.data || {};
+        const rates = (data.forex && data.forex.rates) || {};
+        const commodities = Array.isArray(data.forex && data.forex.commodities) ? data.forex.commodities : [];
+        const btc = (Array.isArray(data.crypto && data.crypto.assets) ? data.crypto.assets : []).find((r) => r.symbol === "BTC");
+        const pick = (id) => commodities.find((r) => r.id === id) || {};
+        const wti = pick("wti");
+        const gold = pick("gold");
+        const soxJson = pick("sox");
+        const gmt = ai.globalMarketTable;
+        // 글로벌 시장 해석 표에 없는 항목(원/달러 등)은 환율·원자재 표의 해석을 폴백으로 쓴다
+        const fxNote = (label) => {
+          const rows = Array.isArray(ai.forexCommodityTable) ? ai.forexCommodityTable : [];
+          const n = bfxNormLabel(label);
+          for (const r of rows) if (bfxNormLabel(r && r.asset) === n) return bfxTxt(r.interpretation);
+          return "";
+        };
+        const specs = [
+          { label: "원/달러", value: bfxNum(rates["USD/KRW"]), pct: null, digits: 2, unit: "원", key: "" },
+          { label: "WTI 유가", value: bfxNum(wti.price), pct: bfxNum(wti.changePct), digits: 2, unit: "$", key: "WTI 원유" },
+          { label: "금", value: bfxNum(gold.price), pct: bfxNum(gold.changePct), digits: 2, unit: "$", key: "금" },
+          {
+            label: "필라델피아반도체",
+            value: bfxNum(BFX.sox && BFX.sox.price != null ? BFX.sox.price : soxJson.price),
+            pct: bfxNum(BFX.sox && BFX.sox.changePct != null ? BFX.sox.changePct : soxJson.changePct),
+            digits: 2,
+            unit: "",
+            key: "필라델피아반도체",
+          },
+          { label: "비트코인", value: bfxNum(btc && btc.priceUsd), pct: bfxNum(btc && btc.changePct24h), digits: 0, unit: "$", key: "비트코인" },
+        ].filter((s) => s.value != null);
+        if (!specs.length) return "";
+        const maxAbs = Math.max(...specs.map((s) => Math.abs(s.pct || 0)), 0.01);
+        const cards = specs
+          .map((s) => {
+            const cls = bfxCls(s.pct);
+            const w = s.pct == null ? 0 : Math.min(100, (Math.abs(s.pct) / maxAbs) * 100);
+            const note = (s.key ? bfxComment(gmt, s.key) : "") || fxNote(s.label);
+            return `<article class="bfx-idx ${cls}">
+              <span class="bfx-idx__label">${escapeHtml(s.label)}</span>
+              <strong class="bfx-idx__value">${s.unit === "$" ? "$" : ""}${bfxFmt(s.value, s.digits)}${s.unit === "원" ? "원" : ""}</strong>
+              ${s.pct == null ? "" : `<span class="bfx-idx__delta"><em>${escapeHtml(bfxPct(s.pct))}</em></span>`}
+              ${s.pct == null ? "" : `<span class="bfx-idx__track"><span style="width:${w.toFixed(1)}%"></span></span>`}
+              ${note ? `<p class="bfx-idx__note">${escapeHtml(note)}</p>` : ""}
+            </article>`;
+          })
           .join("");
-        el.innerHTML = `<table class="briefing-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">환율 · 원자재 · 크립토</h3>
+          <div class="bfx-idx-grid">${cards}</div>
+        </section>`;
       }
 
-      function renderAnalysis(ai) {
-        ai = ai || {};
-        const keyIssues = Array.isArray(ai.keyIssues) ? ai.keyIssues : [];
-        const watchSectors = Array.isArray(ai.watchSectors) ? ai.watchSectors : [];
-        const positives = Array.isArray(ai.usMarketPositives) ? ai.usMarketPositives : [];
-        const negatives = Array.isArray(ai.usMarketNegatives) ? ai.usMarketNegatives : [];
-        const outlook = ai.todayOutlook || {};
-        const checkpoints = Array.isArray(outlook.checkpoints) ? outlook.checkpoints : [];
+      // ── 4) 시장 온도 (전부 코드가 실데이터에서 집계) ──────────────
+      function bfxRenderScoreboard() {
+        const data = BFX.data || {};
+        const idx = bfxIndexRows().filter((r) => ["nasdaq", "sp500", "dow"].includes(r.id));
+        const sectors = Array.isArray(data.sectors) ? data.sectors.filter((r) => bfxNum(r.changePct) != null) : [];
+        const stocks = Array.isArray(data.topStocks) ? data.topStocks.filter((r) => bfxNum(r.changePct) != null) : [];
+        const rates = (data.forex && data.forex.rates) || {};
+        const items = [];
+        if (idx.length) {
+          const up = idx.filter((r) => (bfxNum(r.changePct) || 0) > 0).length;
+          items.push(["주요 지수 상승", `${up} / ${idx.length}`, up * 2 > idx.length ? "is-up" : "is-down"]);
+        }
+        if (sectors.length) {
+          const up = sectors.filter((r) => bfxNum(r.changePct) > 0).length;
+          items.push(["S&P 섹터 상승", `${up} / ${sectors.length}`, up * 2 > sectors.length ? "is-up" : "is-down"]);
+        }
+        if (stocks.length) {
+          const up = stocks.filter((r) => bfxNum(r.changePct) > 0).length;
+          items.push(["대형주 상승", `${up} / ${stocks.length}`, up * 2 > stocks.length ? "is-up" : "is-down"]);
+        }
+        if (sectors.length) {
+          const best = [...sectors].sort((a, b) => bfxNum(b.changePct) - bfxNum(a.changePct))[0];
+          const worst = [...sectors].sort((a, b) => bfxNum(a.changePct) - bfxNum(b.changePct))[0];
+          if (best) items.push(["최강 섹터", `${bfxTxt(best.sector || best.name)} ${bfxPct(bfxNum(best.changePct))}`, bfxCls(bfxNum(best.changePct))]);
+          if (worst && worst !== best) items.push(["최약 섹터", `${bfxTxt(worst.sector || worst.name)} ${bfxPct(bfxNum(worst.changePct))}`, bfxCls(bfxNum(worst.changePct))]);
+        }
+        const usdkrw = bfxNum(rates["USD/KRW"]);
+        if (usdkrw != null) items.push(["원/달러", `${bfxFmt(usdkrw, 2)}원`, ""]);
+        if (!items.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">간밤 시장 온도<span class="bfx-block__tag">실데이터 집계</span></h3>
+          <div class="bfx-score">${items
+            .map(([k, v, cls]) => `<div class="bfx-score__item ${cls}"><span class="bfx-score__k">${escapeHtml(k)}</span><strong class="bfx-score__v">${escapeHtml(v)}</strong></div>`)
+            .join("")}</div>
+          <p class="bfx-note">간밤 미국시장 마감 수치에서 코드가 직접 집계한 값입니다. AI 해석이 아닌 원본 데이터입니다.</p>
+        </section>`;
+      }
 
-        const summaryHtml = ai.summary
-          ? `<p class="briefing-summary">${escapeHtml(ai.summary)}</p>`
-          : "";
+      // ── 5) 오늘 주목할 핵심 이슈 ──────────────────────────────────
+      function bfxRenderIssues(ai) {
+        const items = (Array.isArray(ai.keyIssues) ? ai.keyIssues : []).map(bfxTxt).filter(Boolean);
+        const tags = (Array.isArray(ai.watchSectors) ? ai.watchSectors : []).map(bfxTxt).filter(Boolean);
+        if (!items.length && !tags.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">오늘 주목할 핵심 이슈</h3>
+          ${items.length ? `<ol class="bfx-numlist">${items.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ol>` : ""}
+          ${tags.length ? `<p class="bfx-sub" style="margin-top:16px">오늘 주목 섹터</p><div class="bfx-chips">${tags.map((t) => `<span class="bfx-chip">${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+        </section>`;
+      }
 
-        const pillarsHtml =
-          positives.length || negatives.length
-            ? `<p class="briefing-subhead">미국 증시 상세 코멘트</p>
-               <div class="briefing-twocol">
-                 <div class="briefing-pillar briefing-pillar--pos">
-                   <h4>긍정 요인</h4>
-                   <ul>${positives.map((v) => `<li>${escapeHtml(v)}</li>`).join("") || '<li class="empty-text">분석 대기 중</li>'}</ul>
-                 </div>
-                 <div class="briefing-pillar briefing-pillar--neg">
-                   <h4>부정 요인</h4>
-                   <ul>${negatives.map((v) => `<li>${escapeHtml(v)}</li>`).join("") || '<li class="empty-text">분석 대기 중</li>'}</ul>
-                 </div>
+      // ── 6) 간밤 미국증시 긍정 / 부정 요인 ─────────────────────────
+      function bfxRenderPillars(ai) {
+        const pos = (Array.isArray(ai.usMarketPositives) ? ai.usMarketPositives : []).map(bfxTxt).filter(Boolean);
+        const neg = (Array.isArray(ai.usMarketNegatives) ? ai.usMarketNegatives : []).map(bfxTxt).filter(Boolean);
+        if (!pos.length && !neg.length) return "";
+        const col = (label, mark, list, cls) =>
+          list.length
+            ? `<div class="bfx-pillar bfx-pillar--${cls}">
+                 <h4 class="bfx-pillar__title"><span>${mark}</span>${escapeHtml(label)}</h4>
+                 <ul>${list.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>
                </div>`
             : "";
-
-        const outlookHtml = outlook.scenario
-          ? `<p class="briefing-subhead">오늘 예상 흐름</p>
-             <p>${escapeHtml(outlook.scenario)}</p>
-             ${checkpoints.length ? `<ul class="briefing-checklist">${checkpoints.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : ""}`
-          : "";
-
-        const conclusionHtml = ai.conclusion
-          ? `<p class="briefing-subhead">결론</p><div class="briefing-conclusion">${escapeHtml(ai.conclusion)}</div>`
-          : "";
-
-        $("ai-analysis").innerHTML = `
-          ${summaryHtml}
-          <p class="briefing-subhead">오늘 주목할 핵심 이슈</p>
-          ${keyIssues.length ? `<ol class="bf-issue-list">${keyIssues.map((v) => `<li class="bf-issue-item">${escapeHtml(v)}</li>`).join("")}</ol>` : '<p class="empty-text">분석 대기 중</p>'}
-          <p class="briefing-subhead">국내 증시 영향 분석</p>
-          <p>${escapeHtml(ai.domesticImpact || "분석 대기 중")}</p>
-          <p class="briefing-subhead">오늘 주목 섹터/종목</p>
-          ${watchSectors.length ? `<ul class="bf-sector-tags">${watchSectors.map((v) => `<li class="bf-sector-tag">${escapeHtml(v)}</li>`).join("")}</ul>` : '<p class="empty-text">분석 대기 중</p>'}
-          ${pillarsHtml}
-          ${outlookHtml}
-          ${conclusionHtml}
-        `;
-
-        renderTable("global-market-table", ai.globalMarketTable, [
-          { key: "label", label: "구분" },
-          { key: "level", label: "등락/수준" },
-          { key: "comment", label: "해석" },
-        ]);
-
-        renderTable("domestic-check-table", ai.domesticCheckTable, [
-          { key: "item", label: "항목" },
-          { key: "status", label: "현재 상황" },
-          { key: "impact", label: "영향" },
-        ]);
-
-        renderTable("forex-commodity-table", ai.forexCommodityTable, [
-          { key: "asset", label: "자산" },
-          { key: "trend", label: "흐름" },
-          { key: "interpretation", label: "해석" },
-          { key: "domesticImpact", label: "국내 영향" },
-        ]);
-
-        renderTable("us-news-table", ai.usNewsTable, [
-          { key: "news", label: "뉴스" },
-          { key: "content", label: "내용" },
-          { key: "impact", label: "시장 영향" },
-        ]);
-
-        renderTable("kr-news-table", ai.krNewsTable, [
-          { key: "news", label: "뉴스" },
-          { key: "content", label: "내용" },
-          { key: "impact", label: "시장 영향" },
-        ]);
-
-        renderTable("sector-strategy-table", ai.sectorStrategyTable, [
-          { key: "sector", label: "업종" },
-          { key: "view", label: "의견" },
-          { key: "strategy", label: "전략" },
-        ]);
-
-        renderTable("portfolio-table", ai.portfolioTable, [
-          { key: "category", label: "구분" },
-          { key: "weight", label: "비중" },
-          { key: "note", label: "설명" },
-        ]);
-
-        renderTable("risk-table", ai.riskTable, [
-          { key: "risk", label: "리스크" },
-          { key: "content", label: "내용" },
-          { key: "response", label: "대응" },
-        ]);
-
-        const strategy = ai.todayStrategy || {};
-        const principles = Array.isArray(strategy.tradingPrinciples) ? strategy.tradingPrinciples : [];
-        const strategyEl = $("today-strategy");
-        if (strategyEl) {
-          strategyEl.innerHTML = strategy.indexStrategy || principles.length
-            ? `${strategy.indexStrategy ? `<p class="briefing-subhead">지수 전략</p><p>${escapeHtml(strategy.indexStrategy)}</p>` : ""}
-               ${principles.length ? `<p class="briefing-subhead">매매 원칙</p><ul class="briefing-checklist">${principles.map((v) => `<li>${escapeHtml(v)}</li>`).join("")}</ul>` : ""}`
-            : '<p class="empty-text">분석 대기 중</p>';
-        }
-
-        const watchlist = Array.isArray(ai.watchlist) ? ai.watchlist : [];
-        const watchlistEl = $("watchlist-tiers");
-        if (watchlistEl) {
-          watchlistEl.innerHTML = watchlist.length
-            ? watchlist
-                .map(
-                  (tier) => `<div class="briefing-tier">
-                    <h4>${escapeHtml(tier.tier || "")}${tier.theme ? ` · ${escapeHtml(tier.theme)}` : ""}</h4>
-                    ${Array.isArray(tier.names) && tier.names.length ? `<div class="briefing-tier-names">${tier.names.map(n => `<span class="bf-name-chip">${escapeHtml(n)}</span>`).join("")}</div>` : ""}
-                    ${tier.strategy ? `<p>${escapeHtml(tier.strategy)}</p>` : ""}
-                  </div>`
-                )
-                .join("")
-            : '<p class="empty-text">분석 대기 중</p>';
-        }
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">간밤 증시를 움직인 것</h3>
+          <div class="bfx-twocol">${col("긍정 요인", "+", pos, "pos")}${col("부정 요인", "−", neg, "neg")}</div>
+        </section>`;
       }
 
-      function renderMacroList(data, soxLive) {
-        const comments = data.aiAnalysis?.marketComments || {};
-        const rates = data.forex?.rates || {};
-        const commodities = Array.isArray(data.forex?.commodities) ? data.forex.commodities : [];
-        const crypto = (Array.isArray(data.crypto?.assets) ? data.crypto.assets : []).find((row) => row.symbol === "BTC");
-        const pickCommodity = (id) => commodities.find((row) => row.id === id);
-        const soxFromJson = pickCommodity("sox");
-        const soxPrice = soxLive?.price ?? soxFromJson?.price;
-        const soxChange = soxLive?.changePct ?? soxFromJson?.changePct;
-        const rows = [
-          { key: "USD/KRW", label: "원/달러 환율", value: rates["USD/KRW"], changePct: null },
-          { key: "WTI유가", label: "WTI 유가", value: pickCommodity("wti")?.price, changePct: pickCommodity("wti")?.changePct },
-          { key: "금", label: "금시세", value: pickCommodity("gold")?.price, changePct: pickCommodity("gold")?.changePct },
-          { key: "BTC", label: "비트코인", value: crypto?.priceUsd, changePct: crypto?.changePct24h, prefix: "$" },
-          { key: "SOX", label: "필라델피아반도체", value: soxPrice, changePct: soxChange },
-        ];
-        $("forex-list").innerHTML = rows.map((row) => `<li class="briefing-row">
-          <strong>${escapeHtml(row.label)}</strong>
-          <span class="briefing-row__value"><span>${escapeHtml(row.prefix || "")}${fmtNumber(row.value, row.key === "BTC" ? 0 : 2)}</span>${fmtChange(row.changePct)}</span>
-          ${comments[row.key] ? `<span class="briefing-row__note">${escapeHtml(comments[row.key])}</span>` : ""}
-        </li>`).join("");
+      // ── 7) 섹터 등락 + 대형주 등락 (다이버징 막대) ────────────────
+      function bfxBarRow(name, pct, maxAbs, extra) {
+        const w = pct == null ? 0 : Math.min(50, (Math.abs(pct) / maxAbs) * 50);
+        const side = pct >= 0 ? "right" : "left";
+        const cls = bfxCls(pct);
+        return `<div class="bfx-bar-row${extra ? " bfx-bar-row--px" : ""}">
+          <span class="bfx-bar-row__name">${escapeHtml(name)}</span>
+          ${extra ? `<span class="bfx-bar-row__px">${escapeHtml(extra)}</span>` : ""}
+          <span class="bfx-bar-row__track"><span class="bfx-bar bfx-bar--${side} ${cls}" style="width:${w.toFixed(1)}%"></span></span>
+          <span class="bfx-bar-row__val ${cls}">${escapeHtml(bfxPct(pct))}</span>
+        </div>`;
+      }
+
+      function bfxRenderMovers() {
+        const data = BFX.data || {};
+        const sectors = (Array.isArray(data.sectors) ? data.sectors : [])
+          .map((r) => ({ name: bfxTxt(r.sector || r.name || r.symbol), pct: bfxNum(r.changePct) }))
+          .filter((r) => r.name && r.pct != null)
+          .sort((a, b) => b.pct - a.pct);
+        const stocks = (Array.isArray(data.topStocks) ? data.topStocks : [])
+          .map((r) => ({ name: bfxTxt(r.symbol), pct: bfxNum(r.changePct), price: bfxNum(r.price) }))
+          .filter((r) => r.name && r.pct != null)
+          .sort((a, b) => b.pct - a.pct);
+        if (sectors.length < 2 && stocks.length < 2) return "";
+        const sMax = Math.max(...sectors.map((r) => Math.abs(r.pct)), 0.01);
+        const tMax = Math.max(...stocks.map((r) => Math.abs(r.pct)), 0.01);
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">간밤 섹터 · 대형주 등락<span class="bfx-block__tag">실데이터 집계</span></h3>
+          <div class="bfx-twocol">
+            ${sectors.length >= 2 ? `<div><p class="bfx-sub">S&amp;P 섹터별 (${sectors.length}개 ETF)</p><div class="bfx-bars">${sectors.map((r) => bfxBarRow(r.name, r.pct, sMax)).join("")}</div></div>` : ""}
+            ${stocks.length >= 2 ? `<div><p class="bfx-sub">미국 주요종목 TOP${stocks.length}</p><div class="bfx-bars">${stocks.map((r) => bfxBarRow(r.name, r.pct, tMax, r.price == null ? "" : bfxFmt(r.price, 2))).join("")}</div></div>` : ""}
+          </div>
+        </section>`;
+      }
+
+      // ── 8) 간밤 뉴스 (미국 / 국내) ────────────────────────────────
+      function bfxNewsCard(row) {
+        const title = bfxTxt(row.news);
+        if (!title) return "";
+        const content = bfxTxt(row.content);
+        const impact = bfxTxt(row.impact);
+        return `<article class="bfx-card ${bfxToneFromText(impact)}">
+          <div class="bfx-card__head"><strong class="bfx-card__name">${escapeHtml(title)}</strong></div>
+          ${content ? `<p class="bfx-row"><em>내용</em><span>${escapeHtml(content)}</span></p>` : ""}
+          ${impact ? `<p class="bfx-row bfx-row--key"><em>영향</em><span>${escapeHtml(impact)}</span></p>` : ""}
+        </article>`;
+      }
+
+      function bfxRenderNews(ai) {
+        const us = (Array.isArray(ai.usNewsTable) ? ai.usNewsTable : []).map(bfxNewsCard).filter(Boolean);
+        const kr = (Array.isArray(ai.krNewsTable) ? ai.krNewsTable : []).map(bfxNewsCard).filter(Boolean);
+        if (!us.length && !kr.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">간밤을 움직인 뉴스</h3>
+          <div class="bfx-twocol">
+            ${us.length ? `<div><p class="bfx-sub">미국</p><div class="bfx-cards bfx-cards--stack">${us.join("")}</div></div>` : ""}
+            ${kr.length ? `<div><p class="bfx-sub">국내</p><div class="bfx-cards bfx-cards--stack">${kr.join("")}</div></div>` : ""}
+          </div>
+        </section>`;
+      }
+
+      // ── 9) 국내 증시 영향 + 장전 체크리스트 ───────────────────────
+      function bfxRenderDomestic(ai) {
+        const paras = bfxChunks(ai.domesticImpact, 3);
+        const checks = (Array.isArray(ai.domesticCheckTable) ? ai.domesticCheckTable : [])
+          .map((r) => {
+            const item = bfxTxt(r.item);
+            if (!item) return "";
+            const status = bfxTxt(r.status);
+            const impact = bfxTxt(r.impact);
+            return `<article class="bfx-card ${bfxToneFromText(status)}">
+              <div class="bfx-card__head"><strong class="bfx-card__name">${escapeHtml(item)}</strong></div>
+              ${status ? `<p class="bfx-row"><em>현황</em><span>${escapeHtml(status)}</span></p>` : ""}
+              ${impact ? `<p class="bfx-row bfx-row--key"><em>영향</em><span>${escapeHtml(impact)}</span></p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!paras.length && !checks.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">국내 증시에 미칠 영향</h3>
+          ${paras.length ? `<div class="bfx-flow">${paras.map((p, i) => `<p class="bfx-para"><span class="bfx-para__idx" aria-hidden="true">${i + 1}</span>${escapeHtml(p)}</p>`).join("")}</div>` : ""}
+          ${checks.length ? `<p class="bfx-sub" style="margin-top:18px">장전 체크리스트</p><div class="bfx-cards">${checks.join("")}</div>` : ""}
+        </section>`;
+      }
+
+      // ── 10) 환율·원자재 해석 ──────────────────────────────────────
+      function bfxRenderForexRead(ai) {
+        const cards = (Array.isArray(ai.forexCommodityTable) ? ai.forexCommodityTable : [])
+          .map((r) => {
+            const asset = bfxTxt(r.asset);
+            if (!asset) return "";
+            const trend = bfxTxt(r.trend);
+            const interp = bfxTxt(r.interpretation);
+            const domestic = bfxTxt(r.domesticImpact);
+            return `<article class="bfx-card ${bfxToneFromText(trend)}">
+              <div class="bfx-card__head"><strong class="bfx-card__name">${escapeHtml(asset)}</strong>${trend ? `<span class="bfx-card__val">${escapeHtml(trend)}</span>` : ""}</div>
+              ${interp ? `<p class="bfx-row"><em>해석</em><span>${escapeHtml(interp)}</span></p>` : ""}
+              ${domestic ? `<p class="bfx-row bfx-row--key"><em>국내</em><span>${escapeHtml(domestic)}</span></p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!cards.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">환율 · 원자재가 국내에 주는 의미</h3>
+          <div class="bfx-cards">${cards.join("")}</div>
+        </section>`;
+      }
+
+      // ── 11) 오늘 예상 흐름 ────────────────────────────────────────
+      function bfxRenderOutlook(ai) {
+        const o = ai.todayOutlook || {};
+        const paras = bfxChunks(o.scenario, 3);
+        const checks = (Array.isArray(o.checkpoints) ? o.checkpoints : []).map(bfxTxt).filter(Boolean);
+        if (!paras.length && !checks.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">오늘 예상 흐름</h3>
+          ${paras.length ? `<div class="bfx-flow">${paras.map((p, i) => `<p class="bfx-para"><span class="bfx-para__idx" aria-hidden="true">${i + 1}</span>${escapeHtml(p)}</p>`).join("")}</div>` : ""}
+          ${checks.length ? `<p class="bfx-sub" style="margin-top:18px">장중 체크포인트</p><ol class="bfx-numlist">${checks.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ol>` : ""}
+        </section>`;
+      }
+
+      // ── 12) 업종별 전략 ───────────────────────────────────────────
+      function bfxViewClass(view) {
+        const v = bfxTxt(view);
+        if (/(최선호|긍정|비중\s?확대|매수|선호)/.test(v)) return "is-up";
+        if (/(부정|회피|비중\s?축소|매도|보수)/.test(v)) return "is-down";
+        return "";
+      }
+
+      function bfxRenderSectorStrategy(ai) {
+        const cards = (Array.isArray(ai.sectorStrategyTable) ? ai.sectorStrategyTable : [])
+          .map((r) => {
+            const sector = bfxTxt(r.sector);
+            if (!sector) return "";
+            const view = bfxTxt(r.view);
+            const strategy = bfxTxt(r.strategy);
+            return `<article class="bfx-card ${bfxViewClass(view)}">
+              <div class="bfx-card__head"><strong class="bfx-card__name">${escapeHtml(sector)}</strong>${view ? `<span class="bfx-card__badge">${escapeHtml(view)}</span>` : ""}</div>
+              ${strategy ? `<p class="bfx-row"><em>전략</em><span>${escapeHtml(strategy)}</span></p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!cards.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">업종별 대응 전략</h3>
+          <div class="bfx-cards">${cards.join("")}</div>
+        </section>`;
+      }
+
+      // ── 13) 관심 종목군 ───────────────────────────────────────────
+      function bfxTierClass(tier) {
+        const t = bfxTxt(tier);
+        if (/^1/.test(t)) return "bfx-tier--t1";
+        if (/^2/.test(t)) return "bfx-tier--t2";
+        if (/관망|회피|주의/.test(t)) return "bfx-tier--watch";
+        return "bfx-tier--t3";
+      }
+
+      function bfxRenderWatchlist(ai) {
+        const cards = (Array.isArray(ai.watchlist) ? ai.watchlist : [])
+          .map((r) => {
+            const tier = bfxTxt(r.tier);
+            const theme = bfxTxt(r.theme);
+            if (!tier && !theme) return "";
+            const names = (Array.isArray(r.names) ? r.names : []).map(bfxTxt).filter(Boolean);
+            const strategy = bfxTxt(r.strategy);
+            return `<article class="bfx-tier ${bfxTierClass(tier)}">
+              <div class="bfx-tier__head">
+                ${tier ? `<span class="bfx-tier__rank">${escapeHtml(tier)}</span>` : ""}
+                ${theme ? `<span class="bfx-tier__theme">${escapeHtml(theme)}</span>` : ""}
+              </div>
+              ${names.length ? `<div class="bfx-chips">${names.map((n) => `<span class="bfx-chip">${escapeHtml(n)}</span>`).join("")}</div>` : ""}
+              ${strategy ? `<p class="bfx-tier__strategy">${escapeHtml(strategy)}</p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!cards.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">관심 종목군</h3>
+          <div class="bfx-cards">${cards.join("")}</div>
+        </section>`;
+      }
+
+      // ── 14) 오늘의 매매 전략 ──────────────────────────────────────
+      function bfxRenderStrategy(ai) {
+        const s = ai.todayStrategy || {};
+        const paras = bfxChunks(s.indexStrategy, 3);
+        const principles = (Array.isArray(s.tradingPrinciples) ? s.tradingPrinciples : []).map(bfxTxt).filter(Boolean);
+        if (!paras.length && !principles.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">오늘의 매매 전략</h3>
+          ${paras.length ? `<p class="bfx-sub">지수 대응</p><div class="bfx-flow">${paras.map((p, i) => `<p class="bfx-para"><span class="bfx-para__idx" aria-hidden="true">${i + 1}</span>${escapeHtml(p)}</p>`).join("")}</div>` : ""}
+          ${principles.length ? `<p class="bfx-sub" style="margin-top:18px">매매 원칙</p><ol class="bfx-numlist">${principles.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ol>` : ""}
+        </section>`;
+      }
+
+      // ── 15) 포트폴리오 비중 ───────────────────────────────────────
+      function bfxWeightMid(text) {
+        const nums = (bfxTxt(text).match(/\d+(?:\.\d+)?/g) || []).map(Number).filter((n) => Number.isFinite(n));
+        if (!nums.length) return null;
+        if (nums.length === 1) return nums[0];
+        return (nums[0] + nums[1]) / 2;
+      }
+
+      function bfxRenderPortfolio(ai) {
+        const rows = (Array.isArray(ai.portfolioTable) ? ai.portfolioTable : [])
+          .map((r) => ({ category: bfxTxt(r.category), weight: bfxTxt(r.weight), note: bfxTxt(r.note), mid: bfxWeightMid(r.weight) }))
+          .filter((r) => r.category);
+        if (!rows.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">포트폴리오 비중 가이드</h3>
+          <div class="bfx-alloc">${rows
+            .map(
+              (r) => `<div class="bfx-alloc__row">
+                <div class="bfx-alloc__label">${escapeHtml(r.category)}${r.weight ? `<span class="bfx-alloc__weight">${escapeHtml(r.weight)}</span>` : ""}</div>
+                <div>
+                  ${r.mid == null ? "" : `<span class="bfx-alloc__track"><span class="bfx-alloc__fill" style="width:${Math.min(100, r.mid).toFixed(1)}%"></span></span>`}
+                  ${r.note ? `<p class="bfx-alloc__note">${escapeHtml(r.note)}</p>` : ""}
+                </div>
+              </div>`
+            )
+            .join("")}</div>
+          <p class="bfx-note">일반적인 시장 해설이며 개인별 투자 권유가 아닙니다.</p>
+        </section>`;
+      }
+
+      // ── 16) 리스크 요인 ───────────────────────────────────────────
+      function bfxRenderRisk(ai) {
+        const cards = (Array.isArray(ai.riskTable) ? ai.riskTable : [])
+          .map((r) => {
+            const risk = bfxTxt(r.risk);
+            if (!risk) return "";
+            const content = bfxTxt(r.content);
+            const response = bfxTxt(r.response);
+            return `<article class="bfx-card is-warn">
+              <div class="bfx-card__head"><strong class="bfx-card__name">${escapeHtml(risk)}</strong></div>
+              ${content ? `<p class="bfx-row"><em>내용</em><span>${escapeHtml(content)}</span></p>` : ""}
+              ${response ? `<p class="bfx-row bfx-row--warn"><em>대응</em><span>${escapeHtml(response)}</span></p>` : ""}
+            </article>`;
+          })
+          .filter(Boolean);
+        if (!cards.length) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">오늘 경계할 리스크</h3>
+          <div class="bfx-cards">${cards.join("")}</div>
+        </section>`;
+      }
+
+      // ── 17) 결론 ──────────────────────────────────────────────────
+      function bfxRenderConclusion(ai) {
+        const t = bfxTxt(ai.conclusion);
+        if (!t) return "";
+        return `<section class="bfx-block">
+          <h3 class="bfx-block__title">오늘의 결론</h3>
+          <p class="bfx-callout">${escapeHtml(t.replace(/\s+/g, " "))}</p>
+        </section>`;
+      }
+
+      // ── 조립 ──────────────────────────────────────────────────────
+      function renderBriefingDeck() {
+        const el = $("bfx-deck");
+        if (!el) return;
+        const data = BFX.data || {};
+        const ai = data.aiAnalysis || {};
+        const parts = [
+          bfxRenderHero(ai),
+          bfxRenderIndexCards(ai),
+          bfxRenderMacroCards(ai),
+          bfxRenderScoreboard(),
+          bfxRenderIssues(ai),
+          bfxRenderPillars(ai),
+          bfxRenderMovers(),
+          bfxRenderNews(ai),
+          bfxRenderDomestic(ai),
+          bfxRenderForexRead(ai),
+          bfxRenderOutlook(ai),
+          bfxRenderSectorStrategy(ai),
+          bfxRenderWatchlist(ai),
+          bfxRenderStrategy(ai),
+          bfxRenderPortfolio(ai),
+          bfxRenderRisk(ai),
+          bfxRenderConclusion(ai),
+        ].filter(Boolean);
+        el.innerHTML = parts.length
+          ? parts.join("")
+          : '<p class="empty-text">브리핑 데이터를 불러오지 못했습니다.</p>';
       }
 
       async function fetchSoxLive() {
@@ -1531,46 +2564,45 @@
         }
       }
 
-      async function loadBriefing() {
+      async function fetchIndicesLive() {
         try {
-          const data = await tmFetchJson("data/morning-briefing.json");
-          $("briefing-updated").textContent = data.updatedAt
-            ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
-            : "미국 마감, 환율, 시장 지표";
-          renderAnalysis(data.aiAnalysis || {});
-          await loadUsMarketLive(data.usMarket?.indices);
-          renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
-          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
-          const soxLive = await fetchSoxLive();
-          renderMacroList(data, soxLive);
+          const res = await fetch("/api/us-market-data?action=indices", { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const body = await res.json();
+          const rows = Array.isArray(body.indices) ? body.indices : [];
+          if (!rows.length) throw new Error("empty indices");
+          return rows;
         } catch (error) {
-          console.warn("[briefing] load failed", error);
-        } finally {
-          layoutBriefingGrid();
+          console.warn("[briefing] live US indices fallback", error);
+          return null;
         }
       }
 
-      /** 2열 그리드에서 마지막에 홀수로 남는 카드는 전폭 — 오른쪽 빈 회색 칸 방지 */
-      function layoutBriefingGrid() {
-        const grid = document.querySelector(".briefing-grid");
-        if (!grid) return;
-        const cards = [...grid.querySelectorAll(".briefing-card")]
-          .filter((el) => !el.hidden)
-          .map((el, index) => ({ el, index, order: Number(getComputedStyle(el).order) || 0 }))
-          .sort((a, b) => a.order - b.order || a.index - b.index)
-          .map((item) => item.el);
-        cards.forEach((card) => card.classList.remove("briefing-card--orphan-span"));
-        let col = 0;
-        for (const card of cards) {
-          if (card.classList.contains("briefing-card--wide")) {
-            col = 0;
-            continue;
+      async function loadBriefing() {
+        try {
+          const data = await tmFetchJson("data/morning-briefing.json");
+          BFX.data = data;
+          BFX.live = null;
+          BFX.sox = null;
+          BFX.liveLabel = "정적 브리핑 데이터";
+          BFX.ymd = (bf && bf.selectedYmd) || seoulYmdNow();
+          $("briefing-updated").textContent = data.updatedAt
+            ? `마지막 업데이트: ${fmtUpdatedAtKst(data.updatedAt)}`
+            : "미국 마감, 환율, 시장 지표";
+          renderBriefingDeck();
+          const [live, sox] = await Promise.all([fetchIndicesLive(), fetchSoxLive()]);
+          if (live) {
+            BFX.live = live;
+            BFX.liveLabel = "실시간 갱신";
           }
-          col = col === 0 ? 1 : 0;
-        }
-        const last = cards[cards.length - 1];
-        if (last && col === 1 && !last.classList.contains("briefing-card--wide")) {
-          last.classList.add("briefing-card--orphan-span");
+          if (sox) BFX.sox = sox;
+          if (live || sox) renderBriefingDeck();
+        } catch (error) {
+          console.warn("[briefing] load failed", error);
+          const el = $("bfx-deck");
+          if (el && !el.querySelector(".bfx-block")) {
+            el.innerHTML = '<p class="empty-text">브리핑 데이터를 불러오지 못했습니다.</p>';
+          }
         }
       }
 
@@ -1787,19 +2819,19 @@
         try {
           const data = await fetchSubpathJson(`data/briefing/${ymd}.json`);
           if (!data || !data.aiAnalysis) throw new Error("no archive data");
+          BFX.data = data;
+          BFX.live = null;
+          BFX.sox = null;
+          BFX.liveLabel = "지난 브리핑 데이터";
+          BFX.ymd = ymd;
           $("briefing-updated").textContent = data.updatedAt
             ? `${shortDateLabel(ymd)} 브리핑 · ${fmtUpdatedAtKst(data.updatedAt)} 발행`
             : `${shortDateLabel(ymd)} 브리핑`;
-          renderAnalysis(data.aiAnalysis || {});
-          renderUsMarketIndices(data.usMarket?.indices || [], "지난 브리핑 데이터");
-          renderRows("top-stocks-list", data.topStocks || [], (r) => r.symbol, (r) => `<span>${fmtNumber(r.price)}</span>${fmtChange(r.changePct)}`);
-          renderRows("sectors-list", data.sectors || [], (r) => r.name || r.symbol, (r) => `<span>—</span>${fmtChange(r.changePct)}`);
-          renderMacroList(data, null);
+          renderBriefingDeck();
         } catch (error) {
           console.warn("[briefing] archive load failed", error);
-          $("ai-analysis").innerHTML = '<p class="empty-text">해당 날짜의 브리핑 데이터를 찾을 수 없습니다.</p>';
-        } finally {
-          layoutBriefingGrid();
+          const el = $("bfx-deck");
+          if (el) el.innerHTML = '<p class="empty-text">해당 날짜의 브리핑 데이터를 찾을 수 없습니다.</p>';
         }
       }
 
@@ -1872,7 +2904,6 @@
       async function initBriefingPage() {
         bf.todayYmd = seoulYmdNow();
         bindDatePickerEvents();
-        layoutBriefingGrid();
         await loadBfIndex();
         const hash = (location.hash || "").replace("#", "");
         const initial = YMD_RE.test(hash) && isBfSelectable(hash) ? hash : bf.todayYmd;

@@ -85,12 +85,12 @@
         </header>
 
         <div class="tm-setup-banner" id="setup-banner" hidden>
-          ⚠️ 결제 시스템 설정이 아직 완료되지 않았습니다 (테스트 준비 중). 관리자에게 문의해주세요.
+          유료 플랜 결제는 정식 오픈 준비 중입니다. 오픈되면 가장 먼저 안내해 드릴게요.
         </div>
 
         <div class="tm-pricing-grid" id="pricing-grid"></div>
         <p style="max-width: 960px; margin: 20px auto 0; font-size: 12.5px; color: var(--text-muted-ui); text-align: center">
-          결제는 포트원(PortOne) 테스트 결제 모듈로 진행됩니다. 실제 정식 결제 전환은 사업자등록 완료 후 적용됩니다.
+          유료 플랜 결제는 정식 오픈 준비 중입니다. 그때까지 무료 플랜의 모든 기능과 AI 종목분석 월 3회 체험은 그대로 이용하실 수 있습니다.
         </p>
       </main>
 
@@ -166,7 +166,7 @@
 
           const cfg = window.TM_AUTH_CONFIG;
           if (!window.PortOne || cfg.SETUP_PENDING) {
-            alert("결제 모듈이 아직 설정되지 않았습니다. 관리자에게 문의해주세요.");
+            alert("유료 플랜 결제는 정식 오픈 준비 중입니다. 오픈되면 가장 먼저 안내해 드릴게요.");
             return;
           }
 

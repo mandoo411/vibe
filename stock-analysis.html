@@ -112,6 +112,50 @@
         </div>
       </header>
 
+      <!-- 2026-09-02 신설: 비로그인 방문자에게 모달로 "회원가입이 필요합니다"만 띄우면
+           제품을 하나도 못 보고 이탈한다. 무엇을 받게 되는지 먼저 보여주고 가입을 권한다.
+           숫자는 지어내지 않고 구조(카드 구성)와 실제 데이터 출처만 노출한다. -->
+      <section id="ai-landing" class="ail" hidden aria-label="AI 종목분석 소개">
+        <div class="ail-hero">
+          <p class="ail-hero__kicker">AI STOCK REPORT</p>
+          <h2 class="ail-hero__title">종목 하나를 넣으면,<br />리포트 한 장이 나옵니다</h2>
+          <p class="ail-hero__desc">
+            추세·수급·재료·시나리오·리스크까지 7개 카드로 정리합니다.
+            국내주식·미국주식·암호화폐 전 종목을 지원합니다.
+          </p>
+          <div class="ail-hero__cta">
+            <a class="ail-btn ail-btn--primary" href="./signup.html?next=/stock-analysis.html">무료로 시작하기</a>
+            <a class="ail-btn ail-btn--ghost" href="./login.html?next=/stock-analysis.html">로그인</a>
+          </div>
+          <p class="ail-hero__note">무료 회원은 매월 3회 · Pro는 무제한</p>
+        </div>
+
+        <div class="ail-cards">
+          <article class="ail-card"><span class="ail-card__no">01</span><h3>한눈에 요약</h3><p>매수·관망·회피 신호와 상승 확률, 추세·모멘텀·거래량·수급을 한 화면에 정리합니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">02</span><h3>차트 · 기술적 분석</h3><p>약 2년치 캔들과 이동평균선 위에서 지금 위치가 어디인지 짚어 줍니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">03</span><h3>재료 · 상승 이유</h3><p>주가를 움직인 재료와 그 재료가 이미 얼마나 반영됐는지를 구간으로 표시합니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">04</span><h3>다가오는 이벤트</h3><p>국내 종목은 DART 전자공시에서 배당기준일·주주총회 같은 확정 일정을 직접 가져옵니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">05</span><h3>수급</h3><p>외국인·기관·개인의 1일·5일·20일 흐름을 표로 먼저 보여주고 해석은 따로 답니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">06</span><h3>시나리오 A · B · C</h3><p>오를 때·횡보할 때·빠질 때를 각각 나눠, 서로 겹치지 않는 세 갈래로 제시합니다.</p></article>
+          <article class="ail-card"><span class="ail-card__no">07</span><h3>매매 전략 · 리스크</h3><p>진입·목표·손절 가격대와 손익비, 그리고 지금 들어가면 무엇이 위험한지를 함께 씁니다.</p></article>
+        </div>
+
+        <div class="ail-facts">
+          <p class="ail-facts__title">이 리포트가 쓰는 데이터</p>
+          <ul class="ail-facts__list">
+            <li><strong>한국투자증권 Open API</strong> — 국내·미국 실시간 시세와 일봉</li>
+            <li><strong>DART 전자공시</strong> — 국내 종목의 확정된 예정 이벤트</li>
+            <li><strong>최신 뉴스 검색</strong> — 그날의 재료와 이슈</li>
+          </ul>
+          <p class="ail-facts__disclaimer">투자 참고용 정보이며, 투자 판단 및 결과의 책임은 투자자 본인에게 있습니다.</p>
+        </div>
+
+        <div class="ail-foot">
+          <a class="ail-btn ail-btn--primary" href="./signup.html?next=/stock-analysis.html">무료 회원가입하고 분석 받아보기</a>
+          <a class="ail-link" href="./pricing.html">요금제 비교 →</a>
+        </div>
+      </section>
+
       <section id="ai-stock-analysis" class="ai-stock-section" aria-label="AI 종목분석">
         <div class="ai-search-card">
           <div class="ai-search-card__head">

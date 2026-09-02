@@ -1872,3 +1872,308 @@
     font-size: 14px;
   }
 }
+
+/* ==========================================================
+   비로그인 랜딩 (ail-) — 모달 대신 제품을 먼저 보여주는 전환 화면
+   ========================================================== */
+.ail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ail-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 34px 32px 30px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--gradient-primary, linear-gradient(135deg, #07264b 0%, #123a5e 60%, #0f2a42 100%));
+  color: #fff;
+  text-align: center;
+}
+
+.ail-hero__kicker {
+  margin: 0 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.ail-hero__title {
+  margin: 0 0 12px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+  color: #fff;
+  word-break: keep-all;
+}
+
+.ail-hero__desc {
+  max-width: 560px;
+  margin: 0 auto 22px;
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.78);
+  word-break: keep-all;
+}
+
+.ail-hero__cta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 26px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ail-btn--primary {
+  background: #fff;
+  color: #0b2545;
+}
+
+.ail-btn--primary:hover { filter: brightness(0.95); }
+
+.ail-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.ail-hero__note {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 리포트 구성 목업 — 숫자는 넣지 않고 형태만 보여준다(가짜 수치 금지) */
+.ail-preview {
+  padding: 18px 20px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel, var(--bg-elevated));
+}
+
+.ail-preview__cap {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.ail-mock {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 190px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-strong, rgba(148, 163, 184, 0.5));
+  background: var(--bg-elevated);
+}
+
+.ail-mock__left { display: flex; flex-direction: column; gap: 9px; }
+
+.ail-mock__badge {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--accent-dim, rgba(15, 131, 135, 0.16));
+  color: var(--accent, #0f8387);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ail-mock__label { font-size: 11.5px; color: var(--text-muted); }
+
+.ail-mock__gauge {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.2));
+  overflow: hidden;
+}
+
+.ail-mock__gauge span {
+  display: block;
+  width: 62%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent, #0f8387);
+  opacity: 0.45;
+}
+
+.ail-mock__mid { display: flex; flex-direction: column; gap: 8px; }
+
+.ail-mock__bar {
+  display: block;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.22));
+}
+
+.ail-mock__bar--w90 { width: 90%; }
+.ail-mock__bar--w100 { width: 100%; }
+.ail-mock__bar--w70 { width: 70%; }
+
+.ail-mock__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.ail-mock__grid span {
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--tag-bg, rgba(148, 163, 184, 0.14));
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ail-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.ail-card {
+  position: relative;
+  padding: 16px 18px 17px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel, var(--bg-elevated));
+  border-top: 3px solid var(--accent, #0f8387);
+}
+
+.ail-card__no {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent, #0f8387);
+}
+
+.ail-card h3 {
+  margin: 5px 0 7px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.ail-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--text-muted);
+  word-break: keep-all;
+}
+
+.ail-facts {
+  padding: 18px 20px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel, var(--bg-elevated));
+}
+
+.ail-facts__title {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.ail-facts__list {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ail-facts__list li {
+  position: relative;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-muted);
+  word-break: keep-all;
+}
+
+.ail-facts__list strong { color: var(--text); font-weight: 700; }
+
+.ail-facts__disclaimer {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+.ail-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 6px 0 10px;
+}
+
+.ail-foot .ail-btn--primary {
+  background: var(--accent, #0f8387);
+  color: #fff;
+}
+
+.ail-link {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent, #0f8387);
+  text-decoration: none;
+}
+
+.ail-link:hover { text-decoration: underline; }
+
+[data-theme="dark"] .ail-card,
+[data-theme="dark"] .ail-facts,
+[data-theme="dark"] .ail-preview {
+  background: var(--card-bg, #111d35);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .ail-facts__list li,
+[data-theme="dark"] .ail-mock {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .ail-foot .ail-btn--primary { color: #0b1b30; }
+
+@media (max-width: 768px) {
+  .ail-hero { padding: 26px 18px 24px; }
+  .ail-hero__title { font-size: 22px; }
+  .ail-hero__desc { font-size: 13.5px; }
+  .ail-btn { width: 100%; }
+  .ail-mock { grid-template-columns: 1fr; }
+  .ail-cards { grid-template-columns: 1fr; }
+}

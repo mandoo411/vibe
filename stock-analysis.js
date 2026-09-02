@@ -2021,6 +2021,30 @@
     if (textEl) textEl.textContent = text;
   }
 
+  /** 비로그인 방문자용 랜딩. 모달로 막기만 하면 제품을 하나도 못 보고 이탈하므로,
+   *  무엇을 받게 되는지(카드 7종 구성·데이터 출처)를 먼저 보여주고 가입을 권한다. */
+  function showAnalysisLanding() {
+    const landing = document.getElementById("ai-landing");
+    if (!landing) return false;
+    const gateEl = document.getElementById("ai-access-gate");
+    if (gateEl) {
+      gateEl.hidden = true;
+      gateEl.remove();
+    }
+    document.body.classList.remove("ai-access-gate-open");
+    landing.hidden = false;
+    const section = document.getElementById("ai-stock-analysis");
+    if (section) section.hidden = true;
+    return true;
+  }
+
+  function hideAnalysisLanding() {
+    const landing = document.getElementById("ai-landing");
+    if (landing) landing.hidden = true;
+    const section = document.getElementById("ai-stock-analysis");
+    if (section) section.hidden = false;
+  }
+
   function activateAnalysisPage() {
     const gateEl = document.getElementById("ai-access-gate");
     if (gateEl) {
@@ -2028,6 +2052,7 @@
       gateEl.remove();
       document.body.classList.remove("ai-access-gate-open");
     }
+    hideAnalysisLanding();
     bindAnalyzeUi();
   }
 
@@ -2079,6 +2104,11 @@
     // 아니라 "차단"으로 처리한다 — 절대 로그인 게이트를 건너뛰게 하지 않는다.
     const allowed = typeof window.tmHasAnalysisAccess === "function" ? window.tmHasAnalysisAccess() : false;
     if (!allowed) {
+      // 비로그인(정식 서비스 준비중이 아닌 경우)은 모달 대신 소개 랜딩을 보여준다
+      if (!state.isLoggedIn && !state.setupPending && showAnalysisLanding()) {
+        document.addEventListener("tm-auth-ready", init, { once: true });
+        return;
+      }
       if (typeof window.tmOpenAnalysisGate === "function") {
         window.tmOpenAnalysisGate();
       } else {

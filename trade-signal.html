@@ -50,7 +50,67 @@
       }
       .ts-gate {
         text-align: center;
-        padding: 40px 20px;
+        padding: 34px 20px 30px;
+      }
+      .ts-gate__btns {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ts-btn--ghost {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+      .ts-gate__demo {
+        max-width: 560px;
+        margin: 24px auto 0;
+        padding: 16px 18px 17px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--bg-elevated);
+        text-align: left;
+      }
+      .ts-gate__demo-title {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--text-secondary);
+      }
+      .ts-gate__demo-list {
+        margin: 0 0 12px;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .ts-gate__demo-list li {
+        position: relative;
+        padding-left: 14px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--text-title);
+        word-break: keep-all;
+      }
+      .ts-gate__demo-list li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 9px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        opacity: 0.7;
+      }
+      .ts-gate__demo-note {
+        margin: 0;
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: var(--text-secondary);
       }
       .ts-gate__title {
         font-size: 16px;
@@ -611,10 +671,26 @@
 
           <div class="ts-body">
           <p class="ts-intro">원하는 매매 조건을 문장으로 검색하면 지금 조건에 맞는 종목을 AI가 즉시 찾아드려요. 마음에 드는 종목은 저장해서 조건이 다시 발생할 때 계속 알림 받을 수도 있어요.</p>
+          <!-- 2026-09-02: 예전엔 제목·안내문·요금제 버튼뿐이라 비로그인 방문자가
+               이 기능이 뭘 해주는지 전혀 모른 채 이탈했다. 실제로 검색 가능한 조건 예시를
+               함께 보여주고, 로그인 여부에 맞는 CTA를 내보낸다. -->
           <div id="ts-gate" class="ts-card ts-gate ts-hidden">
             <p class="ts-gate__title" id="ts-gate-title">Pro 전용 기능입니다</p>
             <p class="ts-gate__text" id="ts-gate-text">매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.</p>
-            <a class="ts-btn" href="./pricing.html">요금제 보기</a>
+            <div class="ts-gate__btns">
+              <a class="ts-btn" id="ts-gate-btn" href="./pricing.html">요금제 보기</a>
+              <a class="ts-btn ts-btn--ghost" id="ts-gate-btn2" href="./login.html?next=/trade-signal.html" hidden>로그인</a>
+            </div>
+            <div class="ts-gate__demo">
+              <p class="ts-gate__demo-title">이렇게 문장으로 찾습니다</p>
+              <ul class="ts-gate__demo-list">
+                <li>“RSI 30 이하이고 일봉 강세 다이버전스가 나온 종목”</li>
+                <li>“최근 1년 상승률 높은 순서대로 20종목”</li>
+                <li>“주가 1,000원 이상, PBR 1배 미만, 외국인 순매수 종목”</li>
+                <li>키움 HTS 조건검색식을 그대로 붙여넣어도 인식합니다</li>
+              </ul>
+              <p class="ts-gate__demo-note">코스피·코스닥 전 종목을 일봉 기준으로 스캔하며, 거래정지·정리매매 종목은 결과에서 제외합니다.</p>
+            </div>
           </div>
 
           <div id="ts-content" class="ts-hidden">
@@ -1539,8 +1615,12 @@
           }
           const st = window.TM_AUTH_STATE || {};
           if (!st.isLoggedIn) {
-            $("ts-gate-title").textContent = "로그인이 필요합니다";
-            $("ts-gate-text").textContent = "매매시그널은 로그인 후 Pro/Premium 요금제에서 이용할 수 있어요.";
+            $("ts-gate-title").textContent = "조건을 문장으로 검색하는 종목 스크리너";
+            $("ts-gate-text").textContent = "코스피·코스닥 전 종목에서 원하는 조건에 맞는 종목을 찾아주고, 조건이 다시 발생하면 알림까지 보내드립니다.";
+            const b1 = $("ts-gate-btn");
+            if (b1) { b1.textContent = "무료 회원가입"; b1.setAttribute("href", "./signup.html?next=/trade-signal.html"); }
+            const b2 = $("ts-gate-btn2");
+            if (b2) b2.hidden = false;
             $("ts-gate").classList.remove("ts-hidden");
             $("ts-content").classList.add("ts-hidden");
             return;
@@ -1548,6 +1628,10 @@
           if (!st.hasProAccess) {
             $("ts-gate-title").textContent = "Pro 전용 기능입니다";
             $("ts-gate-text").textContent = "매매시그널은 Pro/Premium 요금제에서 이용할 수 있어요.";
+            const b1 = $("ts-gate-btn");
+            if (b1) { b1.textContent = "요금제 보기"; b1.setAttribute("href", "./pricing.html"); }
+            const b2 = $("ts-gate-btn2");
+            if (b2) b2.hidden = true;
             $("ts-gate").classList.remove("ts-hidden");
             $("ts-content").classList.add("ts-hidden");
             return;

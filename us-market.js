@@ -100,7 +100,15 @@
       : null;
 
     const highlights = [];
-    if (gainRows.length) highlights.push({ label: "상승률 1위", name: gainRows[0].name || gainRows[0].ticker, changePct: gainRows[0].changePct });
+    // 상승률/거래대금 탭은 사용자가 눌러야 로드되므로, 없으면 현재 표본에서 뽑아 항상 양쪽을 보여준다.
+    if (gainRows.length) {
+      highlights.push({ label: "상승률 1위", name: gainRows[0].name || gainRows[0].ticker, changePct: gainRows[0].changePct });
+    } else if (sample) {
+      const best = [...sample].sort((a, b) => (Number(b.changePct) || 0) - (Number(a.changePct) || 0))[0];
+      if (best && Number(best.changePct) > 0) {
+        highlights.push({ label: "상승률 1위", name: best.name || best.ticker, changePct: best.changePct });
+      }
+    }
     if (volRows.length) highlights.push({ label: "거래대금 1위", name: volRows[0].name || volRows[0].ticker, changePct: volRows[0].changePct });
     if (sample) {
       const worst = [...sample].sort((a, b) => (Number(a.changePct) || 0) - (Number(b.changePct) || 0))[0];

@@ -2136,15 +2136,19 @@
     if (tvRows.length) {
       highlights.push({ label: "거래대금 1위", name: tvRows[0].name, changePct: tvRows[0].changePct });
     }
+    // 상승률/하락률은 다른 탭이 아직 프리페치되지 않았어도 현재 표본에서 뽑아 항상 양쪽을 보여준다.
+    const pct = (r) => Number(String(r?.changePct ?? "").replace(/,/g, ""));
     if (gainRows.length) {
       highlights.push({ label: "상승률 1위", name: gainRows[0].name, changePct: gainRows[0].changePct });
+    } else if (sample) {
+      const best = [...sample].sort((a, b) => (pct(b) || 0) - (pct(a) || 0))[0];
+      if (best && Number.isFinite(pct(best)) && pct(best) > 0) {
+        highlights.push({ label: "상승률 1위", name: best.name, changePct: best.changePct });
+      }
     }
     if (sample) {
-      const worst = [...sample].sort(
-        (a, b) => (Number(String(a.changePct ?? "").replace(/,/g, "")) || 0) - (Number(String(b.changePct ?? "").replace(/,/g, "")) || 0)
-      )[0];
-      const wp = Number(String(worst?.changePct ?? "").replace(/,/g, ""));
-      if (worst && Number.isFinite(wp) && wp < 0) {
+      const worst = [...sample].sort((a, b) => (pct(a) || 0) - (pct(b) || 0))[0];
+      if (worst && Number.isFinite(pct(worst)) && pct(worst) < 0) {
         highlights.push({ label: "하락률 1위", name: worst.name, changePct: worst.changePct });
       }
     }

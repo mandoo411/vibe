@@ -332,6 +332,219 @@ function dartEventsToLegacyEvents(list, todayISO) {
     .filter((e) => !isPastEventDate(e.date, todayISO));
 }
 
+/* ───────────────── 시장·업종 대비 상대위치 (2026-09-03 신설, 전부 코드 계산) ─────────────────
+ * 유료 리포트가 무료 시세 사이트와 갈리는 지점은 "이 숫자가 시장에서 어느 위치냐"다.
+ * PER 38배라는 숫자만 던지면 비싼지 싼지 알 수 없고, 그 판단을 AI에게 맡기면 근거 없는
+ * 서술(할루시네이션)이 된다. 그래서 이미 매매시그널이 쓰고 있는 전종목 지표 캐시
+ * (data/kr-screener-cache.json, 2,700여 종목)로 백분위를 **코드가 직접** 계산한다.
+ *  - 신규 API 호출 0 (캐시는 이미 함수 번들에 포함돼 있고 매매시그널이 쓰던 것)
+ *  - AI 추정 0 (숫자·순위·중앙값 전부 실데이터 집계)
+ *  - 비교군은 같은 업종 → 없거나 표본이 작으면 같은 시장 → 그래도 작으면 전체 순으로 폴백하고,
+ *    무엇과 비교한 건지(peerLabel/peerCount)를 화면에 반드시 함께 표기한다.
+ */
+const MP_MIN_SECTOR_PEERS = 15; // 업종 표본이 이보다 작으면 백분위가 의미 없어 시장 전체로 폴백
+const MP_MIN_METRIC_SAMPLE = 12; // 지표별 유효 표본 하한
+
+const MP_METRICS = [
+  { key: "per", label: "PER", kind: "x", digits: 2, lowerIsCheap: true, hint: "낮을수록 이익 대비 저평가" },
+  { key: "pbr", label: "PBR", kind: "x", digits: 2, lowerIsCheap: true, hint: "낮을수록 자산 대비 저평가" },
+  { key: "foreignHoldRate", label: "외국인 보유율", kind: "pct", digits: 1 },
+  { key: "ret21", label: "1개월 수익률", kind: "pct", digits: 1 },
+  { key: "ret63", label: "3개월 수익률", kind: "pct", digits: 1 },
+  { key: "ret252", label: "1년 수익률", kind: "pct", digits: 1 },
+  { key: "marketCapEok", label: "시가총액", kind: "eok", digits: 0 },
+  { key: "tradingValueEok", label: "거래대금", kind: "eok", digits: 0 },
+];
+
+function mpValueOf(row, key) {
+  const s = (row && row.snapshot) || {};
+  const pr = s.periodReturns || {};
+  if (key === "ret21") return toNum(pr["21"]);
+  if (key === "ret63") return toNum(pr["63"]);
+  if (key === "ret252") return toNum(pr["252"]);
+  if (key === "marketCapEok") return toNum(s.marketCapEok) != null ? toNum(s.marketCapEok) : toNum(row.marketCapEok);
+  if (key === "tradingValueEok")
+    return toNum(s.tradingValueEok) != null ? toNum(s.tradingValueEok) : toNum(row.tradingValueEok);
+  return toNum(s[key]);
+}
+
+/** 적자·결손 기업의 PER/PBR은 음수·0으로 들어와 비교 자체가 성립하지 않으므로 표본에서 뺀다. */
+function mpValueUsable(key, v) {
+  if (v == null || !Number.isFinite(v)) return false;
+  if (key === "per" || key === "pbr") return v > 0;
+  if (key === "marketCapEok" || key === "tradingValueEok") return v > 0;
+  return true;
+}
+
+/** 억원 단위 정수를 한국식 "N조 N,NNN억"으로. 소수점은 붙이지 않는다(5장 표기 규칙). */
+function mpFmtEok(v) {
+  const n = Math.round(Number(v) || 0);
+  if (n >= 10000) {
+    const jo = Math.floor(n / 10000);
+    const eok = n % 10000;
+    return eok > 0 ? `${jo.toLocaleString("ko-KR")}조 ${eok.toLocaleString("ko-KR")}억원` : `${jo.toLocaleString("ko-KR")}조원`;
+  }
+  return `${n.toLocaleString("ko-KR")}억원`;
+}
+
+function mpFmtValue(metric, v) {
+  if (v == null) return "—";
+  if (metric.kind === "eok") return mpFmtEok(v);
+  // toLocaleString은 "4.96"을 "5"로 만들어 소수점을 지워버린다(중앙값이 실제와 달라 보임).
+  // PER/PBR·퍼센트는 자릿수가 작으니 toFixed 결과를 그대로 쓴다.
+  const fixed = Number(v).toFixed(metric.digits);
+  if (metric.kind === "x") return `${fixed}배`;
+  const sign = metric.key.startsWith("ret") && v > 0 ? "+" : "";
+  return `${sign}${fixed}%`;
+}
+
+function mpMedian(sorted) {
+  if (!sorted.length) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function mpPickPeers(stocks, target) {
+  const alive = stocks.filter(
+    (r) => r && r.snapshot && r.snapshot.tempStopYn !== true && r.snapshot.settlementTradeYn !== true
+  );
+  const sector = target && target.snapshot ? target.snapshot.sector : null;
+  if (sector) {
+    const bySector = alive.filter((r) => r.snapshot.sector === sector);
+    if (bySector.length >= MP_MIN_SECTOR_PEERS) return { rows: bySector, label: `${sector} 업종`, basis: "sector" };
+  }
+  const mkt = target && target.market;
+  if (mkt) {
+    const byMarket = alive.filter((r) => r.market === mkt);
+    if (byMarket.length >= 50)
+      return { rows: byMarket, label: mkt === "KOSDAQ" ? "코스닥 전체" : "코스피 전체", basis: "market" };
+  }
+  return { rows: alive, label: "코스피·코스닥 전체", basis: "all" };
+}
+
+/** "상위 90%"는 사람이 읽으면 좋은 뜻으로 오해한다 — 절반을 넘으면 "하위 N%"로 뒤집어 쓴다.
+ *  PER/PBR은 방향 자체가 헷갈리므로 "높은 쪽/낮은 쪽"을 앞에 붙여 뜻을 못 박는다. */
+function mpRankText(metric, percentileTop) {
+  const top = percentileTop <= 50;
+  const n = top ? percentileTop : 101 - percentileTop;
+  if (metric.lowerIsCheap) return top ? `높은 쪽 상위 ${n}%` : `낮은 쪽 상위 ${n}%`;
+  return top ? `상위 ${n}%` : `하위 ${n}%`;
+}
+
+/** 막대 색조 — 값 판단이 아니라 위치 강조용(상·하위 30% 밖은 중립). */
+function mpTone(metric, percentileTop) {
+  if (metric.lowerIsCheap) {
+    if (percentileTop <= 30) return "expensive";
+    if (percentileTop >= 71) return "cheap";
+    return "mid";
+  }
+  if (percentileTop <= 30) return "high";
+  if (percentileTop >= 71) return "low";
+  return "mid";
+}
+
+/** 카드 상단 한 줄 요약 — AI가 아니라 위 집계 결과로만 조립한다(문장이 매번 사실과 일치). */
+function mpHeadline(items, peerLabel) {
+  const by = (k) => items.find((it) => it.key === k) || null;
+  const parts = [];
+  const per = by("per");
+  const pbr = by("pbr");
+  const valuationHigh = [per, pbr].filter((it) => it && it.percentileTop <= 30).length;
+  const valuationLow = [per, pbr].filter((it) => it && it.percentileTop >= 71).length;
+  if (valuationHigh >= 2) parts.push(`밸류에이션은 ${peerLabel}에서 비싼 축`);
+  else if (valuationLow >= 2) parts.push(`밸류에이션은 ${peerLabel}에서 싼 축`);
+  else if (per) parts.push(`PER은 ${peerLabel} ${per.rankText}`);
+
+  const y = by("ret252");
+  const q = by("ret63");
+  if (y && y.percentileTop <= 20) parts.push("1년 성과는 최상위권");
+  else if (y && y.percentileTop >= 81) parts.push("1년 성과는 최하위권");
+  else if (q && q.percentileTop >= 81) parts.push("최근 3개월은 하위권으로 밀림");
+  else if (q && q.percentileTop <= 20) parts.push("최근 3개월 성과가 상위권");
+
+  const f = by("foreignHoldRate");
+  if (f && f.percentileTop <= 10) parts.push("외국인 보유 비중이 상위 10% 안");
+
+  if (!parts.length) return "";
+  return parts.slice(0, 3).join(", ") + ".";
+}
+
+/**
+ * 국내 종목 한 건의 비교군 내 백분위를 계산한다.
+ * percentileTop = 값이 큰 순서로 줄 세웠을 때 상위 몇 %인지(1이 가장 큼).
+ * 실패(캐시 없음/종목 미수록/표본 부족)하면 null을 반환하고, 화면은 카드를 통째로 감춘다
+ * ("데이터 미확인" 같은 내부 사정 문구를 고객에게 노출하지 않는다).
+ */
+function computeMarketPosition(code6) {
+  try {
+    const cache = tsLoadScreenerCache();
+    const stocks = (cache && cache.stocks) || [];
+    if (stocks.length < 100) return null;
+    const target = stocks.find((r) => r && String(r.code) === String(code6));
+    if (!target || !target.snapshot) return null;
+
+    const peer = mpPickPeers(stocks, target);
+    const items = [];
+    for (const metric of MP_METRICS) {
+      const mine = mpValueOf(target, metric.key);
+      if (!mpValueUsable(metric.key, mine)) continue;
+      const values = [];
+      for (const row of peer.rows) {
+        const v = mpValueOf(row, metric.key);
+        if (mpValueUsable(metric.key, v)) values.push(v);
+      }
+      if (values.length < MP_MIN_METRIC_SAMPLE) continue;
+      const above = values.filter((v) => v > mine).length;
+      const percentileTop = Math.max(1, Math.min(100, Math.round(((above + 1) / values.length) * 100)));
+      const sorted = values.slice().sort((a, b) => a - b);
+      const median = mpMedian(sorted);
+      items.push({
+        key: metric.key,
+        label: metric.label,
+        valueText: mpFmtValue(metric, mine),
+        medianText: mpFmtValue(metric, median),
+        percentileTop,
+        rankText: mpRankText(metric, percentileTop),
+        tone: mpTone(metric, percentileTop),
+        // 막대 채움 비율: 상위 1%면 99%까지 차오르게(값이 클수록 오른쪽)
+        barPct: Math.max(2, Math.min(100, 101 - percentileTop)),
+        sample: values.length,
+        hint: metric.hint || "",
+        lowerIsCheap: metric.lowerIsCheap === true,
+      });
+    }
+    if (items.length < 3) return null;
+
+    return {
+      asOfDate: (cache && cache.asOfDate) || null,
+      peerLabel: peer.label,
+      peerBasis: peer.basis,
+      peerCount: peer.rows.length,
+      sector: (target.snapshot && target.snapshot.sector) || null,
+      items,
+      headline: mpHeadline(items, peer.label),
+    };
+  } catch (error) {
+    console.warn("[analyze] 상대위치 계산 실패", error && error.message);
+    return null;
+  }
+}
+
+/** AI 프롬프트에 주입할 요약 텍스트. 서술이 화면의 막대와 같은 이야기를 하게 만든다. */
+function marketPositionPromptBlock(mp) {
+  if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
+  const lines = mp.items.map(
+    (it) => `- ${it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (중앙값 ${it.medianText})`
+  );
+  return [
+    "",
+    `[비교군 대비 위치 — 코드가 전종목 지표 캐시(${mp.asOfDate || "최근 영업일"} 기준)에서 직접 집계한 실측값이다. 추정이 아니므로 그대로 인용해도 된다]`,
+    `비교군: ${mp.peerLabel} ${mp.peerCount}개 종목`,
+    ...lines,
+    "이 순위는 화면에도 막대그래프로 함께 표시된다. 그래서 본문에서는 모든 항목을 나열하지 말고, 지금 이 종목의 판단에 실제로 영향을 주는 1~2개만 골라 해석으로 연결한다(예: 밸류에이션 부담, 수급 쏠림, 소외 국면). 같은 숫자를 여러 섹션에서 반복하지 않는다.",
+  ].join("\n");
+}
+
 const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널리스트이고, 고객이 돈을 내고 구독하는 유료 리포트를 씁니다.
 그래서 아래는 절대 규칙입니다:
 - 할루시네이션(추정을 사실처럼 서술) 금지. 확인 안 된 것을 확인된 것처럼 쓰지 않는다.
@@ -945,6 +1158,8 @@ async function fetchKisQuote(code6) {
     volTurnoverRate: toNum(o1.vol_tnrt),
     foreignHoldRate: toNum(o1.hts_frgn_ehrt ?? o1.frgn_hldn_qty_rt),
     marketCapRaw: sanitizeStr(o1.hts_avls || o1.stck_avls),
+    // 2026-09-03: 업종명(추가 호출 없이 같은 응답에서). 상대위치 카드의 비교군 라벨에 쓴다.
+    sector: sanitizeStr(o1.bstp_kor_isnm) || null,
   };
 }
 
@@ -2326,6 +2541,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     "summary.signal(헤드라인)은 A/B/C 시나리오 중 당신이 가장 높은 확률을 준 시나리오, 그리고 총평(aiComment)에서 실제로 권하는 액션과 같은 방향이어야 한다 — 예를 들어 B안(중립)의 확률이 가장 높으면 signal도 '매수'가 아니라 '관망'이어야 하고, 총평에서 '눌림목에서 매수 대기'처럼 조건부·유보적으로 쓰면서 signal은 확정적 '매수'로 단정하지 않는다. 서버가 최종적으로 한 번 더 검산해서 어긋나면 보정하지만, 처음부터 세 가지가 같은 이야기를 하도록 스스로 맞춰서 낼 것.",
     indicatorBlock,
     wmBlock,
+    marketPositionPromptBlock(quote && quote.marketPosition),
     formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
@@ -3826,6 +4042,9 @@ module.exports = async function handler(req, res) {
       const wmPromise = fetchKisWeeklyMonthly(code6);
       quote = await fetchKisQuote(code6);
       wm = await wmPromise;
+      // 2026-09-03: 비교군 대비 위치(백분위)는 전종목 지표 캐시에서 코드가 직접 집계한다.
+      // 실패해도 null만 돌아오고 분석 자체는 그대로 진행된다(카드만 안 그려짐).
+      quote.marketPosition = computeMarketPosition(code6);
     } else if (market === "US") {
       quote = await fetchUsQuote(usSymbol);
       wm = await fetchUsWeeklyMonthly(quote.stockCode, quote.exchange);
@@ -3894,6 +4113,8 @@ module.exports = async function handler(req, res) {
     pbr: quote.pbr == null ? null : quote.pbr,
     per: quote.per == null ? null : quote.per,
     volume: quote.volume == null ? null : quote.volume,
+    sector: quote.sector || undefined,
+    marketPosition: quote.marketPosition || undefined,
     analysis,
     analysisError: analysisError || undefined,
   });

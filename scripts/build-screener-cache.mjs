@@ -108,6 +108,7 @@ async function buildOne(stock) {
         institutionNetBuy: investorFlow.institutionNetBuy,
         tempStopYn: market.tempStopYn,
         settlementTradeYn: market.settlementTradeYn,
+        sector: market.sector,
       });
 
       const n = closes.length;

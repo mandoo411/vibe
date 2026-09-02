@@ -1750,6 +1750,40 @@
     return { high52w: hi, low52w: lo };
   }
 
+  /**
+   * 2026-09-03 신설: "시장 대비 위치" 카드.
+   * 서버(api/analyze.js)가 전종목 지표 캐시에서 **코드로 직접 집계**한 백분위만 그린다 —
+   * AI가 만든 문장이 아니라 실측 순위라서, 이 카드에는 할루시네이션이 끼어들 여지가 없다.
+   * marketPosition이 없으면(해외·암호화폐, 캐시 미수록 종목) 카드 자체를 만들지 않는다.
+   */
+  function renderMarketPosition(mp) {
+    if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
+    const rows = mp.items
+      .map((it) => {
+        const width = Math.max(2, Math.min(100, Number(it.barPct) || 0));
+        const tone = String(it.tone || "mid").replace(/[^a-z]/g, "") || "mid";
+        const hint = it.hint ? `<span class="mpos__hint">${escapeHtml(it.hint)}</span>` : "";
+        return `<li class="mpos__row">
+          <span class="mpos__label">${escapeHtml(it.label)}${hint}</span>
+          <span class="mpos__value">${escapeHtml(it.valueText)}</span>
+          <span class="mpos__track"><i class="mpos__fill mpos__fill--${tone}" style="width:${width}%"></i></span>
+          <span class="mpos__rank mpos__rank--${tone}">${escapeHtml(it.rankText)}</span>
+          <span class="mpos__median">중앙값 ${escapeHtml(it.medianText)}</span>
+        </li>`;
+      })
+      .join("");
+    const head = `${escapeHtml(mp.peerLabel || "시장 전체")} ${Number(mp.peerCount || 0).toLocaleString("ko-KR")}개 종목 중`;
+    const asOf = mp.asOfDate ? `<span class="mpos__asof">${escapeHtml(mp.asOfDate)} 종가 기준</span>` : "";
+    const headline = mp.headline ? `<p class="mpos__headline">${escapeHtml(mp.headline)}</p>` : "";
+    return `<span class="ai-fact-badge">FACT · 실측 집계</span>
+      <div class="mpos">
+        <div class="mpos__head"><span class="mpos__peer">${head}</span>${asOf}</div>
+        ${headline}
+        <ul class="mpos__list">${rows}</ul>
+        <p class="mpos__note">막대는 비교군 안에서의 위치다. 오른쪽 끝이 가장 큰 값이다. PER·PBR은 적자·결손으로 값이 성립하지 않는 기업을 뺀 표본 기준이다.</p>
+      </div>`;
+  }
+
   function renderAnalysis(data, chartData, chartPeriod) {
     if (!panel) return;
     disposeAiChart();
@@ -1782,20 +1816,58 @@
     const signalCls = signalBadgeClass(signal);
     const scoreParts = buildScoreCardParts(analysis.scoreCard);
 
+    // 2026-09-03: "시장 대비 위치" 카드가 국내 종목에만 붙기 때문에 카드 번호를 하드코딩할
+    // 수 없게 됐다(해외·암호화폐는 7장, 국내는 8장). 배열로 만들고 번호는 순서대로 매긴다.
+    const marketPositionHtml = renderMarketPosition(data.marketPosition);
+    const cardDefs = [
+      {
+        cls: "ai-card--summary",
+        title: "한눈에 요약",
+        body: `<div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div>`,
+      },
+      marketPositionHtml
+        ? { cls: "ai-card--mpos", title: "시장 대비 위치", body: `<div class="ai-card__body">${marketPositionHtml}</div>` }
+        : null,
+      {
+        cls: "ai-card--half",
+        title: "왜 지금 이 가격인가",
+        body: `<div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div>`,
+      },
+      {
+        cls: "ai-card--half",
+        title: "수급 분석",
+        body: `<div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div>`,
+      },
+      { cls: "ai-card--events", title: "다가오는 이벤트", body: renderEvents(analysis.events) },
+      {
+        cls: "ai-card--materials",
+        title: "재료 분석",
+        body: `<div class="ai-card__body">${renderMaterials(analysis.materials)}</div>`,
+      },
+      {
+        cls: "ai-card--chart",
+        title: "차트 흐름 분석",
+        body: `<div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div>`,
+      },
+      {
+        cls: "ai-card--opinion",
+        title: "AI 주관적 판단",
+        body: `<div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div>`,
+      },
+    ].filter(Boolean);
+    const cardsHtml = `<div class="ai-analysis-cards">${cardDefs
+      .map(
+        (c, i) =>
+          `<article class="ai-card ${c.cls}"><h3 class="ai-card__title"><span class="ai-card__num">${i + 1}</span>${escapeHtml(c.title)}</h3>${c.body}</article>`
+      )
+      .join("")}</div>`;
+
     panel.hidden = false;
     panel.innerHTML =
       errBanner +
       renderStockHeader(data) +
-      `<div class="ai-analysis-cards">
-        <article class="ai-card ai-card--summary"><h3 class="ai-card__title"><span class="ai-card__num">1</span>한눈에 요약</h3><div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div></article>
-        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">2</span>왜 지금 이 가격인가</h3><div class="ai-card__body">${formatProseText(analysis.story, "분석 내용이 없습니다.")}</div></article>
-        <article class="ai-card ai-card--half"><h3 class="ai-card__title"><span class="ai-card__num">3</span>수급 분석</h3><div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div></article>
-        <article class="ai-card ai-card--events"><h3 class="ai-card__title"><span class="ai-card__num">4</span>다가오는 이벤트</h3>${renderEvents(analysis.events)}</article>
-        <article class="ai-card ai-card--materials"><h3 class="ai-card__title"><span class="ai-card__num">5</span>재료 분석</h3><div class="ai-card__body">${renderMaterials(analysis.materials)}</div></article>
-        <article class="ai-card ai-card--chart"><h3 class="ai-card__title"><span class="ai-card__num">6</span>차트 흐름 분석</h3><div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div></article>
-        <article class="ai-card ai-card--opinion"><h3 class="ai-card__title"><span class="ai-card__num">7</span>AI 주관적 판단</h3><div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div></article>
-      </div>
-      <p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
+      cardsHtml +
+      `<p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
 
     if (chartData) {
       wireAiChart(data.stockCode, chartData, chartPeriod || "D", data.assetType);

@@ -134,6 +134,7 @@ async function buildSeriesForStock(stockCode) {
     institutionNetBuy: investorFlow.institutionNetBuy,
     tempStopYn: market.tempStopYn,
     settlementTradeYn: market.settlementTradeYn,
+    sector: market.sector,
   };
 }
 

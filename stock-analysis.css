@@ -1749,6 +1749,7 @@
   }
 
   .ai-card--summary,
+  .ai-card--mpos,
   .ai-card--events,
   .ai-card--materials,
   .ai-card--chart,
@@ -2183,4 +2184,172 @@
   .ail-btn { width: 100%; }
   .ail-mock { grid-template-columns: 1fr; }
   .ail-cards { grid-template-columns: 1fr; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-09-03 신설: "시장 대비 위치" 카드 (.mpos)
+ * 서버가 전종목 지표 캐시에서 코드로 집계한 백분위만 그리는 FACT 블록이다.
+ * 라이트/다크 모두 기존 토큰(--color-up/--color-down/--border/--text-*)만 쓴다.
+ * ───────────────────────────────────────────────────────────────────────── */
+.mpos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mpos__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mpos__peer {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+}
+
+.mpos__asof {
+  font-size: 11.5px;
+  color: var(--color-text-muted, #9ca3af);
+  font-variant-numeric: tabular-nums;
+}
+
+.mpos__headline {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-background-secondary, #f6f7fb);
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-primary, #131722);
+}
+
+.mpos__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.mpos__row {
+  display: grid;
+  grid-template-columns: 116px 92px minmax(90px, 1fr) 104px 118px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.4));
+}
+
+.mpos__row:last-child {
+  border-bottom: 0;
+}
+
+.mpos__label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #131722);
+}
+
+.mpos__hint {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.mpos__value {
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #131722);
+}
+
+.mpos__track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  overflow: hidden;
+}
+
+.mpos__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #94a3b8;
+}
+
+.mpos__fill--high,
+.mpos__fill--expensive {
+  background: var(--color-up, #e24b4a);
+}
+
+.mpos__fill--low,
+.mpos__fill--cheap {
+  background: var(--color-down, #3b82f6);
+}
+
+.mpos__fill--mid {
+  background: #94a3b8;
+}
+
+.mpos__rank {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.mpos__rank--high,
+.mpos__rank--expensive {
+  color: var(--color-up, #e24b4a);
+}
+
+.mpos__rank--low,
+.mpos__rank--cheap {
+  color: var(--color-down, #3b82f6);
+}
+
+.mpos__median {
+  font-size: 11.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.mpos__note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+@media (max-width: 720px) {
+  /* 모바일에서는 5열 그리드가 깨지므로 2행 구성으로 접는다:
+     1행 = 지표명 + 값, 2행 = 막대 + 순위(중앙값은 순위 옆으로). */
+  .mpos__row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label value"
+      "track rank"
+      "median median";
+    row-gap: 6px;
+    column-gap: 8px;
+  }
+  .mpos__label { grid-area: label; }
+  .mpos__value { grid-area: value; }
+  .mpos__track { grid-area: track; align-self: center; }
+  .mpos__rank { grid-area: rank; }
+  .mpos__median { grid-area: median; text-align: left; }
 }

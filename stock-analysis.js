@@ -1537,6 +1537,23 @@
       ["기관", supplyFlow.institution, supplyFlow.institutionDivergent],
     ].filter(([, v]) => v && (v.d1 != null || v.d5 != null || v.d20 != null));
     if (!rows.length) return "";
+    // 2026-09-03: 숫자만 있으면 1일·5일·20일의 크기 차이가 안 읽힌다. 여섯 값의 최대 절댓값을
+    // 기준으로 가운데에서 좌(순매도·파랑)/우(순매수·빨강)로 뻗는 다이버징 막대를 함께 그린다.
+    let maxAbs = 0;
+    for (const [, v] of rows) {
+      for (const k of ["d1", "d5", "d20"]) {
+        const n = toNum(v[k]);
+        if (n != null) maxAbs = Math.max(maxAbs, Math.abs(n));
+      }
+    }
+    const flowBar = (val) => {
+      const n = toNum(val);
+      if (n == null || !maxAbs) return "";
+      const w = Math.min(50, (Math.abs(n) / maxAbs) * 50);
+      const side = n >= 0 ? "is-plus" : "is-minus";
+      const style = n >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `right:50%;width:${w.toFixed(1)}%`;
+      return `<b class="ai-supply-fact__bar"><i class="${side}" style="${style}"></i></b>`;
+    };
     const body = rows
       .map(([label, v, divergent]) => {
         const eok = fmtWonEokSigned(v.d1WonApprox);
@@ -1545,25 +1562,25 @@
           : "";
         // 2026-08-28: 순매수/순매도를 숫자만 보고 부호를 찾아 읽어야 했던 걸,
         // 한국 시장 관습대로 순매수(+)=빨강 / 순매도(-)=파랑으로 색 구분한다.
-        const cell = (period, val) =>
-          `<span class="ai-supply-fact__cell ${signClass(val)}"><em>${period}</em>${escapeHtml(fmtSharesSigned(val))}`;
+        // 막대는 세 기간의 맨 아래에 나란히 오도록 환산액(small) 뒤에 붙인다 —
+        // 중간에 끼우면 1일 칸만 막대 높이가 달라져 열이 어긋난다.
+        const cell = (period, val, extra) =>
+          `<span class="ai-supply-fact__cell ${signClass(val)}"><em>${period}</em>${escapeHtml(fmtSharesSigned(val))}${extra || ""}${flowBar(val)}</span>`;
         return (
           `<div class="ai-supply-fact__row">` +
           `<span class="ai-supply-fact__label">${escapeHtml(label)}</span>` +
-          cell("1일", v.d1) +
-          `${eok ? `<small>(현재가 기준 환산 약 ${escapeHtml(eok)})</small>` : ""}</span>` +
-          cell("5일", v.d5) +
-          `</span>` +
-          cell("20일", v.d20) +
-          `</span>` +
+          cell("1일", v.d1, eok ? `<small>(현재가 기준 환산 약 ${escapeHtml(eok)})</small>` : "") +
+          cell("5일", v.d5, "") +
+          cell("20일", v.d20, "") +
           warn +
           `</div>`
         );
       })
       .join("");
     return (
+      // 2026-09-03 사용자 피드백: "사실"/"AI 해석" 같은 출처 배지는 구독자에게 필요 없고,
+      // 오히려 "그럼 배지 없는 건 거짓인가"라는 의심을 만든다 — 전부 제거했다.
       `<div class="ai-supply-fact">` +
-      `<span class="ai-fact-badge">사실 · KIS 시세데이터</span>` +
       body +
       `</div>`
     );
@@ -1619,6 +1636,30 @@
       ? `<div class="ai-mat-summary"><span class="ai-mat-summary__label">AI 재료 종합 판단</span>${formatProseText(m.summary)}</div>`
       : "";
     return `<div class="ai-mat-grid">${cards}</div>${unreflected}${summary}`;
+  }
+
+  /** A/B/C 시나리오 확률을 100% 스택 막대 하나로. 합이 100이 아니면 정규화해서 그린다. */
+  function renderScenarioProbBar(scenarios) {
+    const list = (Array.isArray(scenarios) ? scenarios : [])
+      .map((s) => ({ label: String(s.label || "").trim(), type: String(s.type || "").trim(), prob: toNum(s.probability) }))
+      .filter((s) => s.label && s.prob != null && s.prob > 0);
+    if (list.length < 2) return "";
+    const total = list.reduce((a, b) => a + b.prob, 0);
+    if (!total) return "";
+    const segs = list
+      .map((s) => {
+        const w = (s.prob / total) * 100;
+        const cls = scenarioCardClass(s.label, s.type).replace("ai-scenario--", "");
+        return `<span class="ai-probbar__seg ai-probbar__seg--${cls}" style="width:${w.toFixed(2)}%"><em>${escapeHtml(s.label)}</em><b>${Math.round(s.prob)}%</b></span>`;
+      })
+      .join("");
+    const legend = list
+      .map((s) => {
+        const cls = scenarioCardClass(s.label, s.type).replace("ai-scenario--", "");
+        return `<span class="ai-probbar__leg"><i class="ai-probbar__chip ai-probbar__chip--${cls}"></i>${escapeHtml(s.label)}안 ${escapeHtml(s.type || "")}</span>`;
+      })
+      .join("");
+    return `<div class="ai-probbar"><div class="ai-probbar__title">시나리오 확률</div><div class="ai-probbar__track">${segs}</div><div class="ai-probbar__legend">${legend}</div></div>`;
   }
 
   function renderScenarioCard(s, assetType) {
@@ -1717,6 +1758,9 @@
         ? `<p class="ai-opinion-rr">손절까지의 위험 <b>1</b> 대비 1차 목표까지의 기대수익 <b>${escapeHtml(String(rrVal))}</b></p>`
         : "";
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
+    // 2026-09-03: A/B/C 확률을 숫자 세 개로만 흩어 놓으면 어느 쪽에 무게가 실렸는지 한눈에
+    // 안 들어온다. 카드 위에 100% 스택 막대 하나로 먼저 보여주고, 상세는 아래 카드가 맡는다.
+    const scenarioBar = renderScenarioProbBar(scenarios);
     const scenarioHtml = scenarios.length
       ? scenarios.map((s) => renderScenarioCard(s, assetType)).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
@@ -1730,7 +1774,7 @@
       `<div class="ai-opinion-prices">${priceRows}</div>${rrLine}` +
       `${comment}` +
       `</div>` +
-      `<div class="ai-opinion-col ai-opinion-col--right">${scenarioHtml}</div>` +
+      `<div class="ai-opinion-col ai-opinion-col--right">${scenarioBar}${scenarioHtml}</div>` +
       `</div>`
     );
   }
@@ -1756,32 +1800,51 @@
    * AI가 만든 문장이 아니라 실측 순위라서, 이 카드에는 할루시네이션이 끼어들 여지가 없다.
    * marketPosition이 없으면(해외·암호화폐, 캐시 미수록 종목) 카드 자체를 만들지 않는다.
    */
+  /**
+   * 2026-09-03 신설 → 같은 날 사용자 피드백("제일 번잡스럽다")으로 타일형 재설계.
+   * 지표 8개를 한 줄씩 나열하지 않고 밸류에이션 / 주가 성과 / 규모·수급 3묶음으로 나눠,
+   * 각 지표를 "값 + 위치 눈금(0=비교군 최소, 100=최대)" 타일 하나로 압축한다.
+   * 숫자는 서버가 전종목 지표 캐시에서 직접 집계한 실측 순위이므로 추정이 섞이지 않는다.
+   */
   function renderMarketPosition(mp) {
     if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
-    const rows = mp.items
-      .map((it) => {
-        const width = Math.max(2, Math.min(100, Number(it.barPct) || 0));
-        const tone = String(it.tone || "mid").replace(/[^a-z]/g, "") || "mid";
-        const hint = it.hint ? `<span class="mpos__hint">${escapeHtml(it.hint)}</span>` : "";
-        return `<li class="mpos__row">
-          <span class="mpos__label">${escapeHtml(it.label)}${hint}</span>
-          <span class="mpos__value">${escapeHtml(it.valueText)}</span>
-          <span class="mpos__track"><i class="mpos__fill mpos__fill--${tone}" style="width:${width}%"></i></span>
-          <span class="mpos__rank mpos__rank--${tone}">${escapeHtml(it.rankText)}</span>
-          <span class="mpos__median">중앙값 ${escapeHtml(it.medianText)}</span>
-        </li>`;
+    const groups = Array.isArray(mp.groups) && mp.groups.length ? mp.groups : [{ id: null, title: "", caption: "" }];
+
+    const tile = (it) => {
+      const pos = Math.max(1, Math.min(99, Number(it.barPct) || 50));
+      const tone = String(it.tone || "mid").replace(/[^a-z]/g, "") || "mid";
+      return `<div class="mpos-tile mpos-tile--${tone}">
+        <div class="mpos-tile__top"><span class="mpos-tile__name">${escapeHtml(it.label)}</span><span class="mpos-tile__rank">${escapeHtml(it.rankText)}</span></div>
+        <div class="mpos-tile__value">${escapeHtml(it.valueText)}</div>
+        <div class="mpos-tile__scale" role="img" aria-label="${escapeHtml(it.label)} ${escapeHtml(it.rankText)}">
+          <span class="mpos-tile__mid"></span>
+          <span class="mpos-tile__dot" style="left:${pos}%"></span>
+        </div>
+        <div class="mpos-tile__foot"><span>중앙값 ${escapeHtml(it.medianText)}</span></div>
+      </div>`;
+    };
+
+    const sections = groups
+      .map((g) => {
+        const list = mp.items.filter((it) => (g.id ? it.group === g.id : true));
+        if (!list.length) return "";
+        const cap = g.caption ? `<span class="mpos-group__cap">${escapeHtml(g.caption)}</span>` : "";
+        return `<section class="mpos-group">
+          <h4 class="mpos-group__title">${escapeHtml(g.title || "")}${cap}</h4>
+          <div class="mpos-group__tiles">${list.map(tile).join("")}</div>
+        </section>`;
       })
       .join("");
-    const head = `${escapeHtml(mp.peerLabel || "시장 전체")} ${Number(mp.peerCount || 0).toLocaleString("ko-KR")}개 종목 중`;
-    const asOf = mp.asOfDate ? `<span class="mpos__asof">${escapeHtml(mp.asOfDate)} 종가 기준</span>` : "";
+
+    const head = `${escapeHtml(mp.peerLabel || "시장 전체")} ${Number(mp.peerCount || 0).toLocaleString("ko-KR")}개 종목 중 위치`;
+    const asOf = mp.asOfDate ? `<span class="mpos__asof">${escapeHtml(mp.asOfDate)} 종가</span>` : "";
     const headline = mp.headline ? `<p class="mpos__headline">${escapeHtml(mp.headline)}</p>` : "";
-    return `<span class="ai-fact-badge">FACT · 실측 집계</span>
-      <div class="mpos">
-        <div class="mpos__head"><span class="mpos__peer">${head}</span>${asOf}</div>
-        ${headline}
-        <ul class="mpos__list">${rows}</ul>
-        <p class="mpos__note">막대는 비교군 안에서의 위치다. 오른쪽 끝이 가장 큰 값이다. PER·PBR은 적자·결손으로 값이 성립하지 않는 기업을 뺀 표본 기준이다.</p>
-      </div>`;
+    return `<div class="mpos">
+      <div class="mpos__head"><span class="mpos__peer">${head}</span>${asOf}</div>
+      ${headline}
+      ${sections}
+      <p class="mpos__note">눈금은 비교군 안에서의 위치다. 왼쪽이 가장 작고 오른쪽이 가장 크다.</p>
+    </div>`;
   }
 
   function renderAnalysis(data, chartData, chartPeriod) {
@@ -1836,7 +1899,7 @@
       {
         cls: "ai-card--half",
         title: "수급 분석",
-        body: `<div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${analysis.supplyFlow ? '<span class="ai-interp-badge">AI 해석</span>' : ""}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div>`,
+        body: `<div class="ai-card__body">${renderSupplyFlowFact(analysis.supplyFlow)}${formatProseText(analysis.supply, "수급 정보가 없습니다.")}</div>`,
       },
       { cls: "ai-card--events", title: "다가오는 이벤트", body: renderEvents(analysis.events) },
       {

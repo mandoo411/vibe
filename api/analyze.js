@@ -345,15 +345,23 @@ function dartEventsToLegacyEvents(list, todayISO) {
 const MP_MIN_SECTOR_PEERS = 15; // 업종 표본이 이보다 작으면 백분위가 의미 없어 시장 전체로 폴백
 const MP_MIN_METRIC_SAMPLE = 12; // 지표별 유효 표본 하한
 
+// group: 화면에서 3개 묶음(밸류에이션 / 주가 성과 / 규모·수급)으로 나눠 그린다.
+// 8개를 한 줄씩 나열하면 읽는 사람이 어디를 봐야 할지 몰라 번잡해진다(2026-09-03 사용자 피드백).
 const MP_METRICS = [
-  { key: "per", label: "PER", kind: "x", digits: 2, lowerIsCheap: true, hint: "낮을수록 이익 대비 저평가" },
-  { key: "pbr", label: "PBR", kind: "x", digits: 2, lowerIsCheap: true, hint: "낮을수록 자산 대비 저평가" },
-  { key: "foreignHoldRate", label: "외국인 보유율", kind: "pct", digits: 1 },
-  { key: "ret21", label: "1개월 수익률", kind: "pct", digits: 1 },
-  { key: "ret63", label: "3개월 수익률", kind: "pct", digits: 1 },
-  { key: "ret252", label: "1년 수익률", kind: "pct", digits: 1 },
-  { key: "marketCapEok", label: "시가총액", kind: "eok", digits: 0 },
-  { key: "tradingValueEok", label: "거래대금", kind: "eok", digits: 0 },
+  { key: "per", label: "PER", group: "valuation", kind: "x", digits: 2, lowerIsCheap: true },
+  { key: "pbr", label: "PBR", group: "valuation", kind: "x", digits: 2, lowerIsCheap: true },
+  { key: "ret21", label: "1개월", group: "performance", kind: "pct", digits: 1 },
+  { key: "ret63", label: "3개월", group: "performance", kind: "pct", digits: 1 },
+  { key: "ret252", label: "1년", group: "performance", kind: "pct", digits: 1 },
+  { key: "marketCapEok", label: "시가총액", group: "scale", kind: "eok", digits: 0 },
+  { key: "tradingValueEok", label: "거래대금", group: "scale", kind: "eok", digits: 0 },
+  { key: "foreignHoldRate", label: "외국인 보유", group: "scale", kind: "pct", digits: 1 },
+];
+
+const MP_GROUPS = [
+  { id: "valuation", title: "밸류에이션", caption: "낮을수록 저평가" },
+  { id: "performance", title: "주가 성과", caption: "" },
+  { id: "scale", title: "규모 · 수급", caption: "" },
 ];
 
 function mpValueOf(row, key) {
@@ -501,6 +509,7 @@ function computeMarketPosition(code6) {
       items.push({
         key: metric.key,
         label: metric.label,
+        group: metric.group,
         valueText: mpFmtValue(metric, mine),
         medianText: mpFmtValue(metric, median),
         percentileTop,
@@ -509,7 +518,6 @@ function computeMarketPosition(code6) {
         // 막대 채움 비율: 상위 1%면 99%까지 차오르게(값이 클수록 오른쪽)
         barPct: Math.max(2, Math.min(100, 101 - percentileTop)),
         sample: values.length,
-        hint: metric.hint || "",
         lowerIsCheap: metric.lowerIsCheap === true,
       });
     }
@@ -522,6 +530,7 @@ function computeMarketPosition(code6) {
       peerCount: peer.rows.length,
       sector: (target.snapshot && target.snapshot.sector) || null,
       items,
+      groups: MP_GROUPS.filter((g) => items.some((it) => it.group === g.id)),
       headline: mpHeadline(items, peer.label),
     };
   } catch (error) {
@@ -534,7 +543,8 @@ function computeMarketPosition(code6) {
 function marketPositionPromptBlock(mp) {
   if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
   const lines = mp.items.map(
-    (it) => `- ${it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (중앙값 ${it.medianText})`
+    (it) =>
+      `- ${it.key.startsWith("ret") ? `${it.label} 수익률` : it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (중앙값 ${it.medianText})`
   );
   return [
     "",

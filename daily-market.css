@@ -3515,3 +3515,67 @@ button.dm-date-picker__cell:hover {
     white-space: nowrap;
   }
 }
+
+/* ==========================================================
+   2026-09-02 · 모바일 접이식 섹션
+   AI 탭이 모바일에서 6,300px(7.5화면)까지 늘어나 스크롤이 감당이 안 됐다.
+   내용을 자르는 대신 지수 마감·시장 온도만 펼쳐 두고 나머지는 제목만 남긴다.
+   데스크톱에는 아무 영향이 없다.
+   ========================================================== */
+.dmx-chev { display: none; }
+
+@media (max-width: 768px) {
+  .dmx-toggle {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dm-section__title.dmx-toggle {
+    display: flex;
+    align-items: center;
+  }
+
+  .dmx-block:not(.is-folded) .dmx-block__title.dmx-toggle { margin-bottom: 14px; }
+  .dmx-block.is-folded .dmx-block__title.dmx-toggle { margin-bottom: 0; }
+
+  .dmx-chev {
+    order: 2;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin-left: auto;
+    border-radius: 7px;
+    background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+    color: var(--text-muted, #6b7280);
+    font-size: 15px;
+    line-height: 1;
+    transform: translateY(-3px);
+    transition: transform 0.15s ease;
+  }
+
+  .dmx-block__title .dmx-chev { margin-left: 2px; }
+
+  .is-folded > .dmx-toggle .dmx-chev,
+  .is-folded .dmx-block__title.dmx-toggle .dmx-chev { transform: rotate(-90deg); }
+
+  .is-folded > .dmx-fold { display: none; }
+  .dmx-block.is-folded { padding-bottom: 15px; }
+
+  /* 접힌 섹션은 위의 블록 카드와 같은 모양으로 맞춰 목록처럼 읽히게 한다 */
+  .dm-section.is-folded {
+    padding: 15px 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-panel, var(--bg-elevated));
+    margin-bottom: 14px;
+  }
+
+  .dm-section.is-folded .dm-section__title { margin-bottom: 0; }
+
+  [data-theme="dark"] .dm-section.is-folded {
+    background: var(--card-bg, #111d35);
+    border-color: rgba(255, 255, 255, 0.09);
+  }
+}

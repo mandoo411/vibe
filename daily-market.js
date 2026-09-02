@@ -1967,6 +1967,63 @@
     }
   }
 
+  /* 2026-09-02: 모바일에서 마감시황 AI 탭이 6,300px(7.5화면)까지 늘어났다.
+     브리핑과 같은 방식으로, 핵심 두 블록만 펼쳐 두고 나머지는 제목만 남기는 접이식으로
+     바꾼다. 내용을 잘라내는 게 아니라 탭하면 그대로 펼쳐지고, 데스크톱은 종전대로 전부 펼침. */
+  const DMX_OPEN_ON_MOBILE = /(지수 마감|오늘의 시장 온도)/;
+
+  function dmxIsMobile() {
+    return window.matchMedia("(max-width: 768px)").matches;
+  }
+
+  function dmxFoldOne(box, title, openRe, mobile) {
+    if (!box || !title) return;
+    if (box.dataset.foldReady !== "1") {
+      const rest = [...box.children].filter((el) => el !== title);
+      if (!rest.length) return;
+      const wrap = document.createElement("div");
+      wrap.className = "dmx-fold";
+      rest.forEach((el) => wrap.appendChild(el));
+      box.appendChild(wrap);
+      const chev = document.createElement("span");
+      chev.className = "dmx-chev";
+      chev.setAttribute("aria-hidden", "true");
+      chev.textContent = "\u2304";
+      title.appendChild(chev);
+      title.classList.add("dmx-toggle");
+      title.setAttribute("role", "button");
+      title.setAttribute("tabindex", "0");
+      const toggle = () => {
+        if (!dmxIsMobile()) return;
+        const folded = box.classList.toggle("is-folded");
+        title.setAttribute("aria-expanded", folded ? "false" : "true");
+      };
+      title.addEventListener("click", toggle);
+      title.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          toggle();
+        }
+      });
+      box.dataset.foldReady = "1";
+    }
+    const keepOpen = !mobile || openRe.test(title.textContent || "");
+    box.classList.toggle("is-folded", !keepOpen);
+    title.setAttribute("aria-expanded", keepOpen ? "true" : "false");
+  }
+
+  function dmxApplyFolds() {
+    const mobile = dmxIsMobile();
+    document.querySelectorAll(".dm-tab-panel[data-dm-panel='ai'] .dmx-block").forEach((box) => {
+      dmxFoldOne(box, box.querySelector(".dmx-block__title"), DMX_OPEN_ON_MOBILE, mobile);
+    });
+    document.querySelectorAll(".dm-tab-panel[data-dm-panel='ai'] .dm-section").forEach((box) => {
+      const title = box.querySelector(":scope > .dm-section__title");
+      if (!title) return;
+      dmxFoldOne(box, title, DMX_OPEN_ON_MOBILE, mobile);
+    });
+  }
+
   function renderAiPanels() {
     const ymd = selectedYmd();
     const day = getRenderableDay(ymd);
@@ -2023,6 +2080,7 @@
       const wrap = els.dmStrategy.closest(".dm-section");
       if (wrap) wrap.hidden = !html;
     }
+    dmxApplyFolds();
   }
 
   function syncTabPanelsForMainTab() {
@@ -2059,6 +2117,13 @@
     renderAiPanels();
     renderStockTable();
   }
+
+  (function bindDmxFoldResize() {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = () => dmxApplyFolds();
+    if (typeof mq.addEventListener === "function") mq.addEventListener("change", handler);
+    else if (typeof mq.addListener === "function") mq.addListener(handler);
+  })();
 
   function bindEvents() {
     document.querySelectorAll("[data-dm-tab]").forEach((btn) => {

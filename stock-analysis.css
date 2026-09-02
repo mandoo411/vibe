@@ -1882,6 +1882,13 @@
   gap: 18px;
 }
 
+/* 2026-09-03 버그픽스: .ail 의 display:flex 가 브라우저 기본 [hidden]{display:none} 보다
+   우선해서, 로그인/Pro 회원에게도 비로그인용 소개 랜딩이 검색 UI 위에 계속 보였다.
+   hideAnalysisLanding() 이 hidden 속성만 세팅하므로 CSS에서 명시적으로 눌러 준다. */
+.ail[hidden] {
+  display: none !important;
+}
+
 .ail-hero {
   position: relative;
   overflow: hidden;

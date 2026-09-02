@@ -3147,6 +3147,15 @@ button.dm-date-picker__cell:hover {
   gap: 14px;
 }
 
+.dmx-prose {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
 .dmx-para {
   position: relative;
   margin: 0;

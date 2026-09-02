@@ -1831,6 +1831,22 @@
   }
 
   // ── 조립 ──────────────────────────────────────────────────────────
+  /**
+   * 2026-09-02: 섹션 헤더가 없는 구형 analysis(예: 2026-07-01)는 dmxParseAnalysis가 null을 반환해
+   * 시장 흐름/전략 같은 본문 블록이 통째로 비는데, 지수·수급 같은 구조화 블록은 그대로 그려지는 바람에
+   * 덱이 "비어있지 않다"고 판정돼 상위의 줄글 폴백 경로까지 막혀 본문이 화면에서 사라졌다.
+   * 파싱 실패 시에는 원문 줄글을 덱 안에 한 블록으로 넣어 어떤 경우에도 본문이 유실되지 않게 한다.
+   */
+  function dmxRenderProseFallback(day, sec) {
+    if (sec) return "";
+    const text = sanitizeUserCopy(getAnalysisDisplayText(day), "");
+    if (!text) return "";
+    return `<section class="dmx-block">
+      <h4 class="dmx-block__title">AI 종합분석</h4>
+      <div class="dmx-prose">${renderMarkdownBold(text)}</div>
+    </section>`;
+  }
+
   function dmxRenderDeck(day, ymd) {
     const sec = dmxParseAnalysis(day && day.analysis);
     const parts = [
@@ -1838,6 +1854,7 @@
       dmxRenderIndexCards(day),
       dmxRenderScoreboard(day),
       dmxRenderFlow(sec),
+      dmxRenderProseFallback(day, sec),
       dmxRenderSupply(day, sec),
       dmxRenderSectors(day),
       dmxRenderLeaders(day),

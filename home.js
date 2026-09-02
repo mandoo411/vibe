@@ -920,18 +920,68 @@
     }
   }
 
-  function hxIdxCard(label, value, pct, digits) {
-    const v = toNum(value);
-    if (v == null) return "";
-    const p = toNum(pct);
-    const cls = p == null || p === 0 ? "" : p > 0 ? "is-up" : "is-down";
-    const num = v.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
-    const pctTxt = p == null ? "" : `${p > 0 ? "+" : ""}${p.toFixed(2)}%`;
-    return `<div class="hx-idx__item ${cls}">
-      <span class="hx-idx__k">${escapeHtml(label)}</span>
-      <strong class="hx-idx__v">${num}</strong>
-      <span class="hx-idx__p">${pctTxt}</span>
-    </div>`;
+  function hxFmtNum(v, digits) {
+    const n = toNum(v);
+    if (n == null) return null;
+    return n.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+
+  function hxDir(pct) {
+    const n = toNum(pct);
+    if (n == null || n === 0) return "";
+    return n > 0 ? "is-up" : "is-down";
+  }
+
+  function hxPctText(pct) {
+    const n = toNum(pct);
+    if (n == null) return "";
+    return `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
+  }
+
+  /** 히어로의 주인공은 문장이 아니라 숫자다.
+   *  대표 지수 하나를 크게, 나머지는 보조 칩으로 두고, 리포트 문장은 본문 크기로 받친다. */
+  function hxRenderLead() {
+    const el = $("hx-lead");
+    if (!el) return;
+    const hub = HX.hub || {};
+    const items = Array.isArray(HX.items) ? HX.items : [];
+    const fx = items.find((r) => r && (r.id === "usdkrw" || r.label === "원/달러"));
+    const main = hub.kospi && toNum(hub.kospi.value) != null ? { label: "코스피", value: hub.kospi.value, pct: hub.kospi.changePct } : null;
+    const side = [
+      hub.kosdaq && toNum(hub.kosdaq.value) != null ? { label: "코스닥", value: hub.kosdaq.value, pct: hub.kosdaq.changePct, digits: 2 } : null,
+      fx && toNum(fx.value) != null ? { label: "원/달러", value: fx.value, pct: fx.changePct, digits: 2 } : null,
+      hub.nasdaqFutures && toNum(hub.nasdaqFutures.value) != null
+        ? { label: "나스닥선물", value: hub.nasdaqFutures.value, pct: hub.nasdaqFutures.changePct, digits: 2 }
+        : null,
+    ].filter(Boolean);
+    if (!main && !side.length) return;
+
+    // 마감시황 데이터가 있으면 등락 포인트까지 함께 보여준다(없으면 생략)
+    let mainPts = null;
+    const kx = HX.close && HX.close.indexes && HX.close.indexes.kospi;
+    if (kx && toNum(kx.change) != null && main) mainPts = toNum(kx.change);
+
+    const mainHtml = main
+      ? `<div class="hx-lead__main ${hxDir(main.pct)}">
+           <span class="hx-lead__k">${escapeHtml(main.label)}</span>
+           <strong class="hx-lead__v">${hxFmtNum(main.value, 2)}</strong>
+           <span class="hx-lead__d">${mainPts == null ? "" : `<span class="hx-lead__pts">${mainPts > 0 ? "+" : ""}${mainPts.toFixed(2)}</span>`}<span class="hx-lead__pct">${escapeHtml(hxPctText(main.pct))}</span></span>
+         </div>`
+      : "";
+
+    const sideHtml = side.length
+      ? `<div class="hx-lead__side">${side
+          .map(
+            (r) => `<div class="hx-mini ${hxDir(r.pct)}">
+              <span class="hx-mini__k">${escapeHtml(r.label)}</span>
+              <span class="hx-mini__v">${hxFmtNum(r.value, r.digits)}</span>
+              <span class="hx-mini__p">${escapeHtml(hxPctText(r.pct))}</span>
+            </div>`
+          )
+          .join("")}</div>`
+      : "";
+
+    el.innerHTML = mainHtml + sideHtml;
   }
 
   function hxRenderToday() {
@@ -946,54 +996,47 @@
       phaseEl.classList.toggle("is-open", phase.open);
     }
 
+    hxRenderLead();
+
     // 장 마감 뒤에는 마감시황, 그 전에는 장전 브리핑을 대표 문장으로 쓴다
     const closeLead = HX.close ? hxClosingLead(HX.close.analysis) : "";
     const briefLead = HX.brief && HX.brief.aiAnalysis ? hxLead(HX.brief.aiAnalysis.summary, 50) : "";
     const afterClose = !phase.open && phase.label !== "장 시작 전";
     let line = "";
-    let src = "";
+    let label = "";
+    const closeLabel = () => {
+      if (!HX.closeYmd || !/^\d{4}-\d{2}-\d{2}$/.test(HX.closeYmd)) return "마감시황";
+      if (HX.closeYmd === p.ymd) return "오늘의 마감시황";
+      return `${Number(HX.closeYmd.split("-")[1])}월 ${Number(HX.closeYmd.split("-")[2])}일 마감시황`;
+    };
     if (afterClose && closeLead) {
       line = closeLead;
-      src = HX.closeYmd === p.ymd ? "오늘 마감시황" : HX.closeYmd ? `${Number(HX.closeYmd.split("-")[1])}월 ${Number(HX.closeYmd.split("-")[2])}일 마감시황` : "마감시황";
+      label = closeLabel();
     } else if (briefLead) {
       line = briefLead;
-      src = "오늘 장전 브리핑";
+      label = "오늘의 장전 브리핑";
     } else if (closeLead) {
       line = closeLead;
-      src = HX.closeYmd ? `${Number(HX.closeYmd.split("-")[1])}월 ${Number(HX.closeYmd.split("-")[2])}일 마감시황` : "마감시황";
+      label = closeLabel();
     }
-    const lineEl = $("hx-line");
-    if (lineEl && line) lineEl.textContent = line;
-    const srcEl = $("hx-src");
-    if (srcEl) {
-      srcEl.textContent = src ? `${src}에서` : "";
-      srcEl.hidden = !src;
-    }
-
-    const hub = HX.hub || {};
-    const idxEl = $("hx-idx");
-    if (idxEl) {
-      // 원/달러는 hub에 없고 items 배열에만 있다
-      const items = Array.isArray(HX.items) ? HX.items : [];
-      const fx = items.find((r) => r && (r.id === "usdkrw" || r.label === "원/달러"));
-      const cards = [
-        hxIdxCard("코스피", hub.kospi && hub.kospi.value, hub.kospi && hub.kospi.changePct, 2),
-        hxIdxCard("코스닥", hub.kosdaq && hub.kosdaq.value, hub.kosdaq && hub.kosdaq.changePct, 2),
-        hxIdxCard("원/달러", fx && fx.value, fx && fx.changePct, 2),
-      ].filter(Boolean);
-      if (cards.length) idxEl.innerHTML = cards.join("");
+    const sayEl = $("hx-say");
+    const sayLabel = $("hx-say-label");
+    const sayText = $("hx-say-text");
+    if (sayEl && sayText && line) {
+      sayText.textContent = line;
+      if (sayLabel) sayLabel.textContent = label;
+      sayEl.hidden = false;
     }
   }
 
   function hxRenderReports() {
-    // 장전 브리핑 카드
+    // 장전 브리핑 카드 — 요약 문장은 히어로가 이미 쓰고 있어 여기선 핵심 이슈만 보여준다
     const ai = HX.brief && HX.brief.aiAnalysis ? HX.brief.aiAnalysis : null;
     const bLine = $("hx-brief-line");
     const bPoints = $("hx-brief-points");
     const bStamp = $("hx-brief-stamp");
     const issues = ai && Array.isArray(ai.keyIssues) ? ai.keyIssues.filter(Boolean).slice(0, 3) : [];
     if (bLine) {
-      // 요약 문장은 히어로가 이미 쓰고 있어 여기선 반복하지 않는다
       bLine.textContent = issues.length ? "오늘 장에서 가장 먼저 확인할 것" : "오늘 브리핑이 아직 발행되지 않았습니다.";
       bLine.classList.toggle("hx-report__line--label", issues.length > 0);
     }
@@ -1009,11 +1052,10 @@
       }
     }
 
-    // 마감시황 카드
+    // 마감시황 카드 — 핵심 한 줄은 히어로가 쓰므로 여기선 '향후 전략'
     const cLine = $("hx-close-line");
     const cChips = $("hx-close-chips");
     const cStamp = $("hx-close-stamp");
-    // 핵심 한 줄은 히어로가 쓰므로 카드는 '향후 전략'을 보여준다(같은 문장 반복 방지)
     const strat = HX.close ? hxSection(HX.close.analysis, /향후\s*전략/) : "";
     const fallbackLead = HX.close ? hxClosingLead(HX.close.analysis) : "";
     if (cLine) cLine.textContent = strat || fallbackLead || "마감시황이 아직 발행되지 않았습니다.";
@@ -1027,13 +1069,12 @@
         if (!o) return "";
         const v = toNum(o.close != null ? o.close : o.value);
         if (v == null) return "";
-        const p = toNum(o.changePercent != null ? o.changePercent : o.pct);
-        const cls = p == null || p === 0 ? "" : p > 0 ? "is-up" : "is-down";
-        const pctTxt = p == null ? "" : `<em>${p > 0 ? "+" : ""}${p.toFixed(2)}%</em>`;
+        const pct = toNum(o.changePercent != null ? o.changePercent : o.pct);
+        const cls = pct == null || pct === 0 ? "" : pct > 0 ? "is-up" : "is-down";
+        const pctTxt = pct == null ? "" : `<em>${pct > 0 ? "+" : ""}${pct.toFixed(2)}%</em>`;
         return `<span class="hx-chip ${cls}">${escapeHtml(label)} <strong>${v.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> ${pctTxt}</span>`;
       };
-      const chips = [chip("코스피", idx.kospi), chip("코스닥", idx.kosdaq)].filter(Boolean);
-      cChips.innerHTML = chips.join("");
+      cChips.innerHTML = [chip("코스피", idx.kospi), chip("코스닥", idx.kosdaq)].filter(Boolean).join("");
     }
   }
 

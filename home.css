@@ -374,11 +374,20 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 .home-hero {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  padding: 28px;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 30px;
+  align-items: stretch;
+  padding: 30px 32px 32px;
   background: var(--gradient-primary);
 }
+
+.home-hero__left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-hero__left .hx-today { flex: 1 1 auto; }
 
 .home-hero__tag {
   font-size: 10px;
@@ -524,30 +533,38 @@ body[data-theme="dark"] .home-nav__ai-badge {
      세로 한글자씩 찌그러지는 원인이었다. min-width:0으로 grid 트랙이
      정상적으로 줄어들 수 있게 하고, align-self:start로 왼쪽(제목·통계·버튼)
      높이에 맞춰 억지로 늘어나지 않고 내용 높이만큼만 차지하게 한다. */
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  align-self: start;
+  align-self: stretch;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 14px 16px 8px;
 }
 
 .home-hero__ai-live-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-evenly;
+  gap: 0;
 }
 
 .home-hero__ai-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
+  padding: 9px 0;
   font-size: 12px;
   min-width: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
+
+.home-hero__ai-item:first-child { border-top: 0; }
 
 .home-hero__ai-badge {
   flex: 0 0 auto;
@@ -2797,67 +2814,136 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   background: #e24b4a;
 }
 
-.hx-today__line {
-  margin: 0 0 16px;
-  font-size: 21px;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: -0.02em;
-  color: #fff;
-  word-break: keep-all;
+/* 히어로의 주인공은 숫자다 — 대표 지수 크게, 보조 지표는 칩, 리포트 문장은 본문 크기 */
+.hx-lead {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  margin-bottom: 20px;
 }
 
-.hx-today__src {
-  margin: -10px 0 14px;
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.hx-idx {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.hx-idx__item {
+.hx-lead__main {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 3px solid var(--hx-c, rgba(255, 255, 255, 0.3));
+  gap: 3px;
+  min-width: 0;
 }
 
-.hx-idx__item.is-up { --hx-c: #ff6b6a; }
-.hx-idx__item.is-down { --hx-c: #6aa8ff; }
-
-.hx-idx__k {
-  font-size: 11px;
+.hx-lead__k {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.6);
 }
 
-.hx-idx__v {
+.hx-lead__v {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 17px;
+  font-size: clamp(32px, 3.1vw, 42px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.hx-lead__d {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hx-lead__main.is-up .hx-lead__d { color: #ff8b8a; }
+.hx-lead__main.is-down .hx-lead__d { color: #8ec0ff; }
+.hx-lead__pts { opacity: 0.8; font-weight: 600; }
+
+.hx-lead__side {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding-bottom: 3px;
+}
+
+.hx-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 13px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 2px solid var(--hx-c, rgba(255, 255, 255, 0.24));
+  min-width: 104px;
+}
+
+.hx-mini.is-up { --hx-c: #ff6b6a; }
+.hx-mini.is-down { --hx-c: #6aa8ff; }
+
+.hx-mini__k {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hx-mini__v {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 15px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #fff;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
-.hx-idx__p {
+.hx-mini__p {
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.hx-idx__item.is-up .hx-idx__p { color: #ff8b8a; }
-.hx-idx__item.is-down .hx-idx__p { color: #8ec0ff; }
+.hx-mini.is-up .hx-mini__p { color: #ff8b8a; }
+.hx-mini.is-down .hx-mini__p { color: #8ec0ff; }
+
+/* 리포트 한 줄 — 헤드라인이 아니라 읽기 좋은 본문으로 */
+.hx-say {
+  position: relative;
+  padding-left: 14px;
+  margin-bottom: 22px;
+  max-width: 620px;
+}
+
+.hx-say::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.hx-say__label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.hx-say__text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.86);
+  word-break: keep-all;
+}
 
 /* ── 오늘의 AI 리포트 스트립 ── */
 .hx-reports {
@@ -3071,9 +3157,14 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
 }
 
 @media (max-width: 768px) {
-  .page-home-v2 .hx-today__line { font-size: 17px; margin-bottom: 14px; }
-  .page-home-v2 .hx-idx { grid-template-columns: 1fr 1fr; gap: 7px; }
-  .page-home-v2 .hx-idx__item:nth-child(3) { grid-column: 1 / -1; }
+  .page-home-v2 .hx-lead { gap: 12px 16px; margin-bottom: 16px; align-items: stretch; }
+  .page-home-v2 .hx-lead__main { width: 100%; }
+  .page-home-v2 .hx-lead__v { font-size: 34px; }
+  .page-home-v2 .hx-lead__side { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding-bottom: 0; }
+  .page-home-v2 .hx-mini { min-width: 0; }
+  .page-home-v2 .hx-mini:nth-child(3) { grid-column: 1 / -1; }
+  .page-home-v2 .hx-say { margin-bottom: 18px; }
+  .page-home-v2 .hx-say__text { font-size: 14px; line-height: 1.8; }
   .page-home-v2 .hx-reports { padding: 14px 12px 2px; gap: 10px; }
   .page-home-v2 .hx-report { padding: 14px 14px; }
 }

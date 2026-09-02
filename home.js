@@ -586,6 +586,9 @@
       const data = await fetchJson("/api/market-ticker?t=" + Date.now());
       renderTicker(data.items);
       renderHeroPanels(data.hub);
+      HX.hub = data.hub || null;
+      HX.items = data.items || null;
+      hxRenderToday();
     } catch (_) {
       renderTicker([]);
     }
@@ -792,6 +795,288 @@
     }
   }
 
+
+  /* ==========================================================
+     홈 v3 — "오늘의 시장" 히어로 + 오늘의 AI 리포트 스트립
+     모든 문구·수치는 실제 발행된 리포트/시세에서만 가져온다.
+     값이 없으면 지어내지 않고 해당 줄을 비운다.
+     ========================================================== */
+  const HX = { brief: null, close: null, closeYmd: null, hub: null, items: null };
+  const HX_WD = ["일", "월", "화", "수", "목", "금", "토"];
+
+  function hxSeoulParts() {
+    const f = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Seoul",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", weekday: "short", hour12: false,
+    }).formatToParts(new Date());
+    const g = (t) => (f.find((p) => p.type === t) || {}).value || "";
+    return {
+      ymd: `${g("year")}-${g("month")}-${g("day")}`,
+      m: Number(g("month")), d: Number(g("day")),
+      hour: Number(g("hour")), minute: Number(g("minute")),
+      wdEn: g("weekday"),
+    };
+  }
+
+  function hxWeekdayKo(ymd) {
+    const [y, m, d] = ymd.split("-").map(Number);
+    return HX_WD[new Date(y, m - 1, d).getDay()];
+  }
+
+  /** 지금이 장전인지 장중인지 마감인지 — KST 기준 코드 판단(추정 문구 금지) */
+  function hxPhase() {
+    const p = hxSeoulParts();
+    const dow = new Date(`${p.ymd}T12:00:00+09:00`).getDay();
+    if (dow === 0 || dow === 6) return { label: "주말 휴장", open: false };
+    const mins = p.hour * 60 + p.minute;
+    if (mins < 9 * 60) return { label: "장 시작 전", open: false };
+    if (mins < 15 * 60 + 30) return { label: "장중", open: true };
+    return { label: "장 마감", open: false };
+  }
+
+  function hxLead(text, minLen = 45) {
+    const t = String(text == null ? "" : text).replace(/\s+/g, " ").trim();
+    if (!t) return "";
+    const parts = t.match(/[^.!?]+[.!?]+\s*/g);
+    if (!parts) return t;
+    let out = "";
+    for (const s of parts) {
+      out += s;
+      if (out.trim().length >= minLen) break;
+    }
+    return out.trim();
+  }
+
+  /** 마감시황 analysis 본문에서 "📌 핵심 한 줄" 블록만 뽑는다 */
+  function hxClosingLead(analysis) {
+    const t = String(analysis == null ? "" : analysis);
+    if (!t) return "";
+    const m = t.match(/핵심\s*한\s*줄\s*\r?\n+([\s\S]*?)(?:\r?\n\s*\r?\n|$)/);
+    if (m && m[1]) return m[1].replace(/\s+/g, " ").trim();
+    return "";
+  }
+
+  /** 마감시황 analysis에서 특정 섹션 본문만 뽑는다(히어로와 카드가 같은 문장을 반복하지 않도록) */
+  function hxSection(analysis, re) {
+    const lines = String(analysis == null ? "" : analysis).split(/\r?\n/);
+    let on = false;
+    const buf = [];
+    for (const raw of lines) {
+      const t = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+      if (/^(핵심\s*한\s*줄|지수|투자자별|시장\s*흐름|향후\s*전략|특징주|내일\s*주목)/.test(t)) {
+        if (on) break;
+        if (re.test(t)) { on = true; continue; }
+      }
+      if (on && raw.trim()) buf.push(raw.trim());
+    }
+    return buf.join(" ").replace(/\s+/g, " ").trim();
+  }
+
+  /** data/daily/<ymd>.json — 서브폴더라 tmFetchJson(단일 파일 전용)을 못 쓴다 */
+  async function hxFetchSubpath(relPath) {
+    const t = Date.now();
+    const urls = [`./${relPath}?t=${t}`];
+    if (window.TM_RAW_BASE) urls.push(`${window.TM_RAW_BASE}/${relPath}?t=${t}`);
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (res.ok) return res.json();
+      } catch (_) { /* next */ }
+    }
+    return null;
+  }
+
+  /** 가장 최근에 "분석까지 완료된" 마감시황을 찾는다(최대 5거래일 역추적).
+   *  오늘 것이 아직 없으면 날짜를 카드에 그대로 표기해 오해가 없게 한다. */
+  async function hxLoadClosing() {
+    // 1순위: 서버가 daily-market.json에서 최신 하루치만 잘라 내려주는 경로(오늘 것이 바로 반영됨)
+    try {
+      const res = await fetch("/api/repo-data?path=data%2Fdaily-market.json&pick=latest-day&t=" + Date.now(), { cache: "no-store" });
+      if (res.ok) {
+        const day = await res.json();
+        if (day && day.analysis && hxClosingLead(day.analysis)) {
+          HX.close = day;
+          HX.closeYmd = day.date || null;
+          return;
+        }
+      }
+    } catch (_) { /* 아래 아카이브 폴백 */ }
+
+    // 2순위: data/daily/<날짜>.json 아카이브 역추적(분석이 하루 늦게 채워지는 파일)
+    const base = hxSeoulParts().ymd;
+    const [by, bm, bd] = base.split("-").map(Number);
+    for (let i = 0; i < 6; i++) {
+      const dt = new Date(by, bm - 1, bd - i);
+      const dow = dt.getDay();
+      if (dow === 0 || dow === 6) continue;
+      const ymd = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+      const day = await hxFetchSubpath(`data/daily/${ymd}.json`);
+      if (day && day.analysis && hxClosingLead(day.analysis)) {
+        HX.close = day;
+        HX.closeYmd = ymd;
+        return;
+      }
+    }
+  }
+
+  function hxIdxCard(label, value, pct, digits) {
+    const v = toNum(value);
+    if (v == null) return "";
+    const p = toNum(pct);
+    const cls = p == null || p === 0 ? "" : p > 0 ? "is-up" : "is-down";
+    const num = v.toLocaleString("ko-KR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    const pctTxt = p == null ? "" : `${p > 0 ? "+" : ""}${p.toFixed(2)}%`;
+    return `<div class="hx-idx__item ${cls}">
+      <span class="hx-idx__k">${escapeHtml(label)}</span>
+      <strong class="hx-idx__v">${num}</strong>
+      <span class="hx-idx__p">${pctTxt}</span>
+    </div>`;
+  }
+
+  function hxRenderToday() {
+    const p = hxSeoulParts();
+    const phase = hxPhase();
+    const dateEl = $("hx-date");
+    if (dateEl) dateEl.textContent = `${p.m}월 ${p.d}일 (${hxWeekdayKo(p.ymd)})`;
+    const phaseEl = $("hx-phase");
+    if (phaseEl) {
+      phaseEl.textContent = phase.label;
+      phaseEl.hidden = false;
+      phaseEl.classList.toggle("is-open", phase.open);
+    }
+
+    // 장 마감 뒤에는 마감시황, 그 전에는 장전 브리핑을 대표 문장으로 쓴다
+    const closeLead = HX.close ? hxClosingLead(HX.close.analysis) : "";
+    const briefLead = HX.brief && HX.brief.aiAnalysis ? hxLead(HX.brief.aiAnalysis.summary, 50) : "";
+    const afterClose = !phase.open && phase.label !== "장 시작 전";
+    let line = "";
+    let src = "";
+    if (afterClose && closeLead) {
+      line = closeLead;
+      src = HX.closeYmd === p.ymd ? "오늘 마감시황" : HX.closeYmd ? `${Number(HX.closeYmd.split("-")[1])}월 ${Number(HX.closeYmd.split("-")[2])}일 마감시황` : "마감시황";
+    } else if (briefLead) {
+      line = briefLead;
+      src = "오늘 장전 브리핑";
+    } else if (closeLead) {
+      line = closeLead;
+      src = HX.closeYmd ? `${Number(HX.closeYmd.split("-")[1])}월 ${Number(HX.closeYmd.split("-")[2])}일 마감시황` : "마감시황";
+    }
+    const lineEl = $("hx-line");
+    if (lineEl && line) lineEl.textContent = line;
+    const srcEl = $("hx-src");
+    if (srcEl) {
+      srcEl.textContent = src ? `${src}에서` : "";
+      srcEl.hidden = !src;
+    }
+
+    const hub = HX.hub || {};
+    const idxEl = $("hx-idx");
+    if (idxEl) {
+      // 원/달러는 hub에 없고 items 배열에만 있다
+      const items = Array.isArray(HX.items) ? HX.items : [];
+      const fx = items.find((r) => r && (r.id === "usdkrw" || r.label === "원/달러"));
+      const cards = [
+        hxIdxCard("코스피", hub.kospi && hub.kospi.value, hub.kospi && hub.kospi.changePct, 2),
+        hxIdxCard("코스닥", hub.kosdaq && hub.kosdaq.value, hub.kosdaq && hub.kosdaq.changePct, 2),
+        hxIdxCard("원/달러", fx && fx.value, fx && fx.changePct, 2),
+      ].filter(Boolean);
+      if (cards.length) idxEl.innerHTML = cards.join("");
+    }
+  }
+
+  function hxRenderReports() {
+    // 장전 브리핑 카드
+    const ai = HX.brief && HX.brief.aiAnalysis ? HX.brief.aiAnalysis : null;
+    const bLine = $("hx-brief-line");
+    const bPoints = $("hx-brief-points");
+    const bStamp = $("hx-brief-stamp");
+    const issues = ai && Array.isArray(ai.keyIssues) ? ai.keyIssues.filter(Boolean).slice(0, 3) : [];
+    if (bLine) {
+      // 요약 문장은 히어로가 이미 쓰고 있어 여기선 반복하지 않는다
+      bLine.textContent = issues.length ? "오늘 장에서 가장 먼저 확인할 것" : "오늘 브리핑이 아직 발행되지 않았습니다.";
+      bLine.classList.toggle("hx-report__line--label", issues.length > 0);
+    }
+    if (bPoints) {
+      bPoints.innerHTML = issues.map((t) => `<li>${escapeHtml(String(t))}</li>`).join("");
+    }
+    if (bStamp && HX.brief && HX.brief.updatedAt) {
+      const t = new Date(HX.brief.updatedAt);
+      if (!Number.isNaN(t.getTime())) {
+        bStamp.textContent = new Intl.DateTimeFormat("ko-KR", {
+          timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
+        }).format(t);
+      }
+    }
+
+    // 마감시황 카드
+    const cLine = $("hx-close-line");
+    const cChips = $("hx-close-chips");
+    const cStamp = $("hx-close-stamp");
+    // 핵심 한 줄은 히어로가 쓰므로 카드는 '향후 전략'을 보여준다(같은 문장 반복 방지)
+    const strat = HX.close ? hxSection(HX.close.analysis, /향후\s*전략/) : "";
+    const fallbackLead = HX.close ? hxClosingLead(HX.close.analysis) : "";
+    if (cLine) cLine.textContent = strat || fallbackLead || "마감시황이 아직 발행되지 않았습니다.";
+    if (cStamp && HX.closeYmd && /^\d{4}-\d{2}-\d{2}$/.test(HX.closeYmd)) {
+      const [, m, d] = HX.closeYmd.split("-");
+      cStamp.textContent = `${Number(m)}/${Number(d)} 마감`;
+    }
+    if (cChips) {
+      const idx = (HX.close && HX.close.indexes) || {};
+      const chip = (label, o) => {
+        if (!o) return "";
+        const v = toNum(o.close != null ? o.close : o.value);
+        if (v == null) return "";
+        const p = toNum(o.changePercent != null ? o.changePercent : o.pct);
+        const cls = p == null || p === 0 ? "" : p > 0 ? "is-up" : "is-down";
+        const pctTxt = p == null ? "" : `<em>${p > 0 ? "+" : ""}${p.toFixed(2)}%</em>`;
+        return `<span class="hx-chip ${cls}">${escapeHtml(label)} <strong>${v.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong> ${pctTxt}</span>`;
+      };
+      const chips = [chip("코스피", idx.kospi), chip("코스닥", idx.kosdaq)].filter(Boolean);
+      cChips.innerHTML = chips.join("");
+    }
+  }
+
+  /** 사이드바: 마감시황 특징주 상위 3 — 위 브리핑 카드와 내용이 겹치지 않는다 */
+  function hxRenderFeatured() {
+    const el = $("hx-featured");
+    if (!el) return;
+    const rows = (HX.close && Array.isArray(HX.close.featured_stocks) ? HX.close.featured_stocks : [])
+      .filter((r) => r && r.name)
+      .slice(0, 3);
+    if (!rows.length) {
+      el.innerHTML = '<p class="home-empty">특징주가 아직 정리되지 않았습니다.</p>';
+      return;
+    }
+    el.innerHTML = rows
+      .map((r) => {
+        const chg = toNum(r.change);
+        const cls = chg == null || chg === 0 ? "" : chg > 0 ? "is-up" : "is-down";
+        const pct = chg == null ? "" : `${chg > 0 ? "+" : ""}${chg.toFixed(2)}%`;
+        const reason = String(r.reason || r.point || "").trim();
+        return `<div class="hx-feat ${cls}">
+          <div class="hx-feat__head"><strong>${escapeHtml(String(r.name))}</strong><span>${escapeHtml(pct)}</span></div>
+          ${reason ? `<p class="hx-feat__why">${escapeHtml(reason)}</p>` : ""}
+        </div>`;
+      })
+      .join("");
+    const stamp = $("hx-featured-stamp");
+    if (stamp && HX.closeYmd && /^\d{4}-\d{2}-\d{2}$/.test(HX.closeYmd)) {
+      const [, m, d] = HX.closeYmd.split("-");
+      stamp.textContent = `${Number(m)}/${Number(d)} 마감 기준`;
+    }
+  }
+
+  async function loadHomeToday() {
+    try {
+      HX.brief = await fetchDataJson("data/morning-briefing.json");
+    } catch (_) { HX.brief = null; }
+    await hxLoadClosing();
+    hxRenderToday();
+    hxRenderReports();
+    hxRenderFeatured();
+  }
+
   async function boot() {
     bindAiForm();
     bindNavToggle();
@@ -806,6 +1091,7 @@
       loadUsAndCrypto(),
       loadSideCards(),
       loadAiLiveFeed(),
+      loadHomeToday(),
     ]);
     prefetchHomeRtTabs("cap");
     setInterval(loadTickerAndHero, 5 * 60 * 1000);

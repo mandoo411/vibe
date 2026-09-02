@@ -52,6 +52,36 @@ module.exports = async function handler(req, res) {
       });
     }
     const text = await gh.text();
+
+    /* 2026-09-02: 홈 화면이 '오늘 마감시황 핵심 한 줄'을 보여주려면 daily-market.json이
+       필요한데 이 파일은 3MB가 넘어 홈에서 통째로 받게 할 수 없다. data/daily/<날짜>.json
+       아카이브는 AI 분석이 하루 늦게 채워져서 대안이 못 된다.
+       Vercel Hobby 함수 12개 제한을 이미 꽉 채운 상태라 새 API 파일을 만들 수 없으므로,
+       이 함수에 pick 파라미터를 붙여 서버에서 최신 하루치만 잘라 내려준다. */
+    const pick = String(req.query?.pick || "").trim();
+    if (pick === "latest-day") {
+      try {
+        const parsed = JSON.parse(text);
+        const days = parsed && parsed.days;
+        if (!days || typeof days !== "object") return json(res, 404, { error: "no days" });
+        const dates = Object.keys(days).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+        for (let i = dates.length - 1; i >= 0; i--) {
+          const d = days[dates[i]];
+          if (!d || !d.analysis) continue;
+          return json(res, 200, {
+            date: dates[i],
+            analysis: d.analysis,
+            indexes: d.indexes || null,
+            marketTone: d.marketTone || null,
+            featured_stocks: Array.isArray(d.featured_stocks) ? d.featured_stocks.slice(0, 6) : [],
+          });
+        }
+        return json(res, 404, { error: "no analysed day" });
+      } catch (e) {
+        return json(res, 500, { error: "parse failed" });
+      }
+    }
+
     json(res, 200, text);
   } catch (e) {
     json(res, 500, { error: e.message || String(e) });

@@ -2762,3 +2762,387 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
     display: none;
   }
 }
+
+/* ==========================================================
+   홈 v3 (hx-) — "오늘의 시장" 히어로 + 오늘의 AI 리포트 스트립
+   기존 히어로의 공허한 카피와 하드코딩 지표(분석 종목수 2,847개 /
+   평균 정확도 73.2% 등)를 걷어내고 그 자리를 실데이터로 채운다.
+   ========================================================== */
+.hx-today__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hx-today__date {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.hx-today__phase {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hx-today__phase.is-open {
+  background: #e24b4a;
+}
+
+.hx-today__line {
+  margin: 0 0 16px;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: #fff;
+  word-break: keep-all;
+}
+
+.hx-today__src {
+  margin: -10px 0 14px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.hx-idx {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.hx-idx__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--hx-c, rgba(255, 255, 255, 0.3));
+}
+
+.hx-idx__item.is-up { --hx-c: #ff6b6a; }
+.hx-idx__item.is-down { --hx-c: #6aa8ff; }
+
+.hx-idx__k {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hx-idx__v {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.hx-idx__p {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.hx-idx__item.is-up .hx-idx__p { color: #ff8b8a; }
+.hx-idx__item.is-down .hx-idx__p { color: #8ec0ff; }
+
+/* ── 오늘의 AI 리포트 스트립 ── */
+.hx-reports {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px var(--shell-pad-inline-end, 32px) 4px var(--shell-pad-inline, 24px);
+  background: var(--bg-secondary);
+}
+
+.hx-report {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 16px 18px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #eef0f8);
+  background: #fff;
+  border-top: 3px solid var(--hx-c, var(--accent, #0f8387));
+}
+
+.hx-report--brief { --hx-c: #f59e0b; }
+.hx-report--close { --hx-c: #6366f1; }
+.hx-report--ai { --hx-c: var(--accent, #0f8387); }
+
+.hx-report__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.hx-report__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--hx-c) 14%, transparent);
+  color: var(--hx-c);
+  font-size: 16px;
+}
+
+.hx-report__titles { min-width: 0; flex: 1; }
+
+.hx-report__kicker {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text-muted, #6b7280);
+}
+
+.hx-report__title {
+  margin: 1px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text, #111827);
+  letter-spacing: -0.01em;
+}
+
+.hx-report__stamp {
+  flex: 0 0 auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  color: var(--text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+.hx-report__line {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--text, #111827);
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hx-report__points {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hx-report__points li {
+  position: relative;
+  padding-left: 13px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-muted, #4b5563);
+  word-break: keep-all;
+}
+
+.hx-report__points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--hx-c);
+  opacity: 0.7;
+}
+
+.hx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.hx-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: var(--tag-bg, #f3f5fa);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, #4b5563);
+  white-space: nowrap;
+}
+
+.hx-chip strong {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--text, #111827);
+}
+
+.hx-chip.is-up strong, .hx-chip.is-up em { color: var(--up-color, #e24b4a); }
+.hx-chip.is-down strong, .hx-chip.is-down em { color: var(--down-color, #3b82f6); }
+.hx-chip em { font-style: normal; font-family: var(--font-mono, ui-monospace, monospace); }
+
+.hx-report__cta {
+  margin-top: auto;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--hx-c);
+  text-decoration: none;
+}
+
+.hx-report__cta:hover { text-decoration: underline; }
+
+.hx-report__form { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+
+.hx-report__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg-elevated, #f9fafb);
+  font-size: 13px;
+  color: var(--text, #111827);
+}
+
+.hx-report__input:focus {
+  outline: none;
+  border-color: var(--hx-c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hx-c) 18%, transparent);
+}
+
+.hx-report__btn {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--hx-c);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hx-report__btn:hover { filter: brightness(1.06); }
+
+.hx-report__note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted, #9ca3af);
+  text-align: center;
+}
+
+/* 다크 */
+[data-theme="dark"] .hx-report {
+  background: var(--card-bg, #111d35);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+[data-theme="dark"] .hx-report__input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .hx-chip {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* 모바일 */
+@media (max-width: 1024px) {
+  .hx-reports { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .page-home-v2 .hx-today__line { font-size: 17px; margin-bottom: 14px; }
+  .page-home-v2 .hx-idx { grid-template-columns: 1fr 1fr; gap: 7px; }
+  .page-home-v2 .hx-idx__item:nth-child(3) { grid-column: 1 / -1; }
+  .page-home-v2 .hx-reports { padding: 14px 12px 2px; gap: 10px; }
+  .page-home-v2 .hx-report { padding: 14px 14px; }
+}
+
+/* 사이드바 · 오늘의 특징주 */
+.hx-featured__stamp {
+  margin: -4px 0 8px;
+  font-size: 10.5px;
+  color: var(--text-muted, #9ca3af);
+}
+
+.hx-feat {
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: var(--bg-elevated, #f7f8fc);
+  border: 1px solid var(--border, #eef0f8);
+  border-left: 3px solid var(--hx-c, rgba(148, 163, 184, 0.5));
+}
+
+.hx-feat + .hx-feat { margin-top: 7px; }
+.hx-feat.is-up { --hx-c: var(--up-color, #e24b4a); }
+.hx-feat.is-down { --hx-c: var(--down-color, #3b82f6); }
+
+.hx-feat__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hx-feat__head strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #111827);
+}
+
+.hx-feat__head span {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--hx-c, var(--text-muted));
+}
+
+.hx-feat__why {
+  margin: 5px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted, #6b7280);
+  word-break: keep-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .hx-feat {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.hx-report__line--label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 9px;
+  -webkit-line-clamp: 2;
+}
+
+/* 다크 테마의 accent는 골드라 흰 글씨 대비가 부족하다 — 버튼 글자를 어둡게 */
+[data-theme="dark"] .hx-report__btn { color: #0b1b30; }

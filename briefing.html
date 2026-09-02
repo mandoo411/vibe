@@ -2066,13 +2066,23 @@
         return "";
       }
 
+      /** 정적 브리핑 지수 + 실시간 지수를 id 기준으로 병합.
+       *  실시간 API가 일부 지수(다우 등)를 안 내려줘도 카드가 사라지지 않게 한다. */
       function bfxIndexRows() {
         const data = BFX.data || {};
-        const src = BFX.live && BFX.live.length ? BFX.live : (data.usMarket && data.usMarket.indices) || [];
+        const base = ((data.usMarket && data.usMarket.indices) || []).map((r) => ({ ...r, price: r.price != null ? r.price : r.close }));
+        const live = Array.isArray(BFX.live) ? BFX.live : [];
+        const map = new Map();
+        for (const r of base) map.set(r.id || r.symbol, r);
+        for (const r of live) {
+          const key = r.id || r.symbol;
+          if (!key) continue;
+          const prev = map.get(key) || {};
+          const price = r.price != null ? r.price : r.close != null ? r.close : prev.price;
+          map.set(key, { ...prev, ...r, price, live: true });
+        }
         const order = new Map(BFX_IDX_ORDER.map((id, i) => [id, i]));
-        return [...src]
-          .map((r) => ({ ...r, price: r.price != null ? r.price : r.close }))
-          .sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+        return [...map.values()].sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
       }
 
       // ── 1) 히어로 ─────────────────────────────────────────────────
@@ -2123,7 +2133,7 @@
             const cls = bfxCls(pct);
             const w = pct == null ? 0 : Math.min(100, (Math.abs(pct) / maxAbs) * 100);
             const digits = Math.abs(price) >= 1000 ? 0 : 2;
-            const live = r.live === true || (BFX.liveLabel === "실시간 갱신" && r.id === "nasdaq-futures");
+            const live = r.live === true && BFX.liveLabel === "실시간 갱신";
             const note = bfxComment(gmt, r.name || r.symbol || "");
             return `<article class="bfx-idx ${cls}">
               <span class="bfx-idx__label">${escapeHtml(bfxTxt(r.name) || bfxTxt(r.symbol))}${live ? `<span class="bfx-idx__live">실시간</span>` : ""}</span>

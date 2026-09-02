@@ -1993,6 +1993,14 @@
     return window.matchMedia("(max-width: 768px)").matches;
   }
 
+  /* 사용자가 직접 펼치거나 접은 섹션은 그 선택을 기억한다.
+     데이터 갱신·탭 전환 등으로 패널이 다시 그려져도 기본값으로 되돌아가지 않게 하기 위한 것. */
+  const dmxUserFold = new Map();
+
+  function dmxFoldKey(title) {
+    return String((title && title.textContent) || "").replace(/\u2304/g, "").trim();
+  }
+
   function dmxFoldOne(box, title, openRe, mobile) {
     if (!box || !title) return;
     if (box.dataset.foldReady !== "1") {
@@ -2014,6 +2022,7 @@
         if (!dmxIsMobile()) return;
         const folded = box.classList.toggle("is-folded");
         title.setAttribute("aria-expanded", folded ? "false" : "true");
+        dmxUserFold.set(dmxFoldKey(title), !folded);
       };
       title.addEventListener("click", toggle);
       title.addEventListener("keydown", (e) => {
@@ -2024,7 +2033,9 @@
       });
       box.dataset.foldReady = "1";
     }
-    const keepOpen = !mobile || openRe.test(title.textContent || "");
+    const key = dmxFoldKey(title);
+    const remembered = dmxUserFold.has(key) ? dmxUserFold.get(key) : null;
+    const keepOpen = !mobile || (remembered !== null ? remembered : openRe.test(key));
     box.classList.toggle("is-folded", !keepOpen);
     title.setAttribute("aria-expanded", keepOpen ? "true" : "false");
   }
@@ -2206,7 +2217,14 @@
     }
 
     let resizeTid;
+    let lastViewportW = window.innerWidth;
     window.addEventListener("resize", () => {
+      // 2026-09-02: iOS 사파리는 스크롤로 주소창이 접혔다 펴질 때마다 resize를 쏜다(높이만 변함).
+      // 그때 renderAiPanels()가 다시 돌면서 사용자가 펼쳐둔 접이식 섹션이 기본값으로 되돌아가,
+      // 특징주·내일 변수 근처를 스크롤할 때 블록이 튕기듯 닫히는 것처럼 보였다.
+      // 레이아웃 모드는 '폭'으로만 갈리므로 폭이 실제로 바뀐 경우에만 다시 그린다.
+      if (window.innerWidth === lastViewportW) return;
+      lastViewportW = window.innerWidth;
       clearTimeout(resizeTid);
       resizeTid = setTimeout(onLayoutModeChange, 150);
     });

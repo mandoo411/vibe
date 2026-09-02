@@ -509,3 +509,19 @@ html.tm-tv-chart-fs-lock body {
     font-size: 12px;
   }
 }
+
+/* ==========================================================
+   2026-09-02 · iOS Safari 자동 확대 방지
+   iOS Safari는 글자 크기가 16px 미만인 입력창에 포커스가 가면 페이지를
+   강제로 확대한다. 확대된 배율은 그대로 남아서, 다시 홈에 들어오면
+   "화면 중간(검색창 위치)에서 확대된 채로 시작"하는 것처럼 보인다.
+   모든 입력 요소를 모바일에서 16px로 올려 이 동작 자체를 막는다.
+   (각 페이지 CSS가 더 작은 값을 지정하고 있어 !important가 필요하다)
+   ========================================================== */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

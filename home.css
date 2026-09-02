@@ -3162,11 +3162,31 @@ body[data-theme="dark"] .page-home-v2 .home-th--rt {
   .page-home-v2 .hx-lead__v { font-size: 34px; }
   .page-home-v2 .hx-lead__side { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding-bottom: 0; }
   .page-home-v2 .hx-mini { min-width: 0; }
-  .page-home-v2 .hx-mini:nth-child(3) { grid-column: 1 / -1; }
+  /* 모바일은 대표 지수 + 보조 2개까지만 — 나스닥선물은 상단 티커에 이미 있다 */
+  .page-home-v2 .hx-mini:nth-child(3) { display: none; }
   .page-home-v2 .hx-say { margin-bottom: 18px; }
   .page-home-v2 .hx-say__text { font-size: 14px; line-height: 1.8; }
-  .page-home-v2 .hx-reports { padding: 14px 12px 2px; gap: 10px; }
-  .page-home-v2 .hx-report { padding: 14px 14px; }
+  /* 모바일에선 리포트 3장을 세로로 쌓지 않고 옆으로 넘기는 카드로 — 세로 스크롤 대폭 단축 */
+  .page-home-v2 .hx-reports {
+    display: flex;
+    gap: 10px;
+    padding: 14px 12px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .page-home-v2 .hx-reports::-webkit-scrollbar { display: none; }
+
+  .page-home-v2 .hx-report {
+    flex: 0 0 87%;
+    scroll-snap-align: center;
+    padding: 15px 16px 16px;
+  }
+
+  .page-home-v2 .hx-report__line { -webkit-line-clamp: 3; }
+  .page-home-v2 .hx-report__points li:nth-child(n + 3) { display: none; }
 }
 
 /* 사이드바 · 오늘의 특징주 */

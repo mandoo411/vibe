@@ -1709,8 +1709,40 @@
       [data-theme="dark"] .bfx-callout { background: rgba(255, 255, 255, 0.05); }
       [data-theme="dark"] .bfx-row--warn em { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
 
+      /* 접이식 섹션(모바일 전용) */
+      .bfx-block__chev { display: none; }
+
       /* ── 모바일 ── */
       @media (max-width: 768px) {
+        .bfx-block__title--toggle {
+          cursor: pointer;
+          margin-bottom: 0;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .bfx-block:not(.is-folded) .bfx-block__title--toggle { margin-bottom: 14px; }
+
+        .bfx-block__chev {
+          order: 2;
+          flex: none;
+          display: grid;
+          place-items: center;
+          width: 22px;
+          height: 22px;
+          margin-left: 2px;
+          border-radius: 7px;
+          background: var(--tag-bg, rgba(148, 163, 184, 0.16));
+          color: var(--text-muted, #6b7280);
+          font-size: 15px;
+          line-height: 1;
+          transform: translateY(-3px);
+          transition: transform 0.15s ease;
+        }
+
+        .bfx-block.is-folded .bfx-block__chev { transform: rotate(-90deg); }
+        .bfx-block.is-folded .bfx-fold { display: none; }
+        .bfx-block.is-folded { padding-bottom: 15px; }
+
         .bfx-deck { gap: 14px; padding: 0 12px 32px; }
         .bfx-block,
         .bfx-hero { padding: 14px 14px 16px; border-radius: 12px; }
@@ -2532,6 +2564,55 @@
       }
 
       // ── 조립 ──────────────────────────────────────────────────────
+      /* 2026-09-02: 모바일에서 이 덱이 14,000px(17화면)까지 늘어나 스크롤이 감당이 안 됐다.
+         내용을 잘라내면 리포트 가치가 줄어드니, 핵심 3개만 펼쳐 두고 나머지는 제목만 남기는
+         접이식으로 바꾼다. 데스크톱은 지금처럼 전부 펼친 상태 그대로다. */
+      const BFX_OPEN_ON_MOBILE = /(간밤 미국시장 마감|간밤 시장 온도|오늘 주목할 핵심 이슈)/;
+
+      function bfxIsMobile() {
+        return window.matchMedia("(max-width: 768px)").matches;
+      }
+
+      function bfxApplyFolds() {
+        const mobile = bfxIsMobile();
+        document.querySelectorAll(".bfx-block").forEach((block) => {
+          const title = block.querySelector(".bfx-block__title");
+          if (!title) return;
+          if (block.dataset.foldReady !== "1") {
+            const rest = [...block.children].filter((el) => el !== title);
+            if (!rest.length) return;
+            const wrap = document.createElement("div");
+            wrap.className = "bfx-fold";
+            rest.forEach((el) => wrap.appendChild(el));
+            block.appendChild(wrap);
+            const chev = document.createElement("span");
+            chev.className = "bfx-block__chev";
+            chev.setAttribute("aria-hidden", "true");
+            chev.textContent = "\u2304";
+            title.appendChild(chev);
+            title.classList.add("bfx-block__title--toggle");
+            title.setAttribute("role", "button");
+            title.setAttribute("tabindex", "0");
+            const toggle = () => {
+              if (!bfxIsMobile()) return;
+              const folded = block.classList.toggle("is-folded");
+              title.setAttribute("aria-expanded", folded ? "false" : "true");
+            };
+            title.addEventListener("click", toggle);
+            title.addEventListener("keydown", (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                toggle();
+              }
+            });
+            block.dataset.foldReady = "1";
+          }
+          const keepOpen = !mobile || BFX_OPEN_ON_MOBILE.test(title.textContent || "");
+          block.classList.toggle("is-folded", !keepOpen);
+          title.setAttribute("aria-expanded", keepOpen ? "true" : "false");
+        });
+      }
+
       function renderBriefingDeck() {
         const el = $("bfx-deck");
         if (!el) return;
@@ -2559,6 +2640,7 @@
         el.innerHTML = parts.length
           ? parts.join("")
           : '<p class="empty-text">브리핑 데이터를 불러오지 못했습니다.</p>';
+        bfxApplyFolds();
       }
 
       async function fetchSoxLive() {
@@ -2910,6 +2992,13 @@
           }
         });
       }
+
+      (function bindFoldResize() {
+        const mq = window.matchMedia("(max-width: 768px)");
+        const handler = () => bfxApplyFolds();
+        if (typeof mq.addEventListener === "function") mq.addEventListener("change", handler);
+        else if (typeof mq.addListener === "function") mq.addListener(handler);
+      })();
 
       async function initBriefingPage() {
         bf.todayYmd = seoulYmdNow();

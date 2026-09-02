@@ -788,7 +788,7 @@
       if (!res.ok) return;
       const rows = await res.json();
       const list = Array.isArray(rows) ? rows : [];
-      if (mList) renderMobileAiFeed(mList, list.slice(0, 3));
+      if (mList) renderMobileAiFeed(mList, list.slice(0, 2));
       if (hList) renderHeroAiFeed(hList, list);
     } catch (e) {
       console.warn("[home] AI 실시간 피드 로드 실패", e);
@@ -1118,7 +1118,23 @@
     hxRenderFeatured();
   }
 
+  /** iOS Safari가 이전 방문의 스크롤 위치를 복원해 홈이 중간에서 열리는 것을 막는다.
+   *  뒤로가기(back_forward)로 돌아온 경우에는 브라우저 복원을 그대로 존중한다. */
+  function resetHomeScroll() {
+    try {
+      const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      const type = nav ? nav.type : "";
+      // 뒤로가기로 돌아온 경우엔 브라우저 복원을 그대로 존중한다(위치를 잃으면 더 불편하다)
+      if (type === "back_forward" || location.hash) return;
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+      // Safari는 load 이후에 복원을 시도하는 경우가 있어 한 번 더 맞춰 준다
+      window.addEventListener("load", () => window.scrollTo(0, 0), { once: true });
+    } catch (_) { /* 무시 */ }
+  }
+
   async function boot() {
+    resetHomeScroll();
     bindAiForm();
     bindNavToggle();
     bindMobileHomeUi();

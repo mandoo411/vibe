@@ -2428,6 +2428,19 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         .filter((it) => it.name)
     : [];
 
+  // 2026-09-03: 재료 슬롯에 실제로 뭐가 들어갔는지 로그로 남긴다.
+  // 이 페이지는 로그인+구독 게이트라 Claude가 화면으로 직접 검증할 수 없어서, 지난 세션에
+  // "재료에 최신 뉴스가 안 들어온다"는 제보를 고치고도 결과를 확인할 방법이 없었다.
+  // 제목만 남기므로 개인정보가 아니고, Vercel 함수 로그에서 바로 확인할 수 있다.
+  try {
+    console.log(
+      `[analyze] materials(${materialItems.length}) ${quote && quote.stockCode ? quote.stockCode : ""}: ` +
+        materialItems.map((it) => `${it.name}[${it.reflectionPct ?? "-"}%]`).join(" | ")
+    );
+  } catch {
+    /* 로그 실패가 분석을 막지 않게 */
+  }
+
   const opinion = raw.opinion && typeof raw.opinion === "object" ? raw.opinion : {};
 
   const prices = resolveOpinionPrices(opinion.entry, opinion.stop, opinion.target, price);
@@ -4100,11 +4113,216 @@ async function handleTradeSignal(req, res) {
     return tsJson(res, error.statusCode || 500, { error: error.message || "요청 처리에 실패했습니다." });
   }
 }
+
+/* ═════════════════ 리포트 저장 · 사후 추적 (2026-09-03, 로드맵 E) ═════════════════
+ * 유료 서비스가 재방문을 받으려면 "지난번에 뭘 봤더라"를 다시 열 수 있어야 하고,
+ * 실력을 증명하려면 "그때 그 판단이 맞았나"를 보여줘야 한다. 둘 다 리포트를 저장해야
+ * 가능한 일이라, 분석이 끝나면 요약·가격·재료·시나리오를 Supabase에 남긴다.
+ *
+ * 사후 수익률은 AI가 회고하는 게 아니라 **코드가 계산한다**:
+ *   (현재가 − 리포트 시점 가격) / 리포트 시점 가격
+ * 현재가는 매매시그널이 이미 쓰는 전종목 지표 캐시에서 읽으므로 **신규 API 호출이 0**이다.
+ * 캐시에 없는 시장(미국·암호화폐)은 수익률을 억지로 만들지 않고 생략한다.
+ */
+
+const RP_LIST_LIMIT = 30;
+const RP_DEDUPE_MINUTES = 10; // 같은 종목을 연달아 다시 돌려도 행이 쌓이지 않게
+
+async function rpRequireUser(req) {
+  const user = await getUserFromToken(bearerToken(req));
+  if (!user) {
+    const err = new Error("로그인이 필요합니다.");
+    err.statusCode = 401;
+    throw err;
+  }
+  return user;
+}
+
+/** 저장 대상만 추려낸다 — 리포트 전문(수십 KB)을 통째로 넣지 않고,
+ *  나중에 "그때 무엇을 근거로 봤나"를 되짚는 데 필요한 것만 남긴다. */
+function rpExtractPayload(body) {
+  const analysis = (body && body.analysis) || {};
+  const summary = analysis.summary || {};
+  const opinion = analysis.opinion || {};
+  const materials = (analysis.materials && analysis.materials.items) || [];
+  const scenarios = Array.isArray(opinion.scenarios) ? opinion.scenarios : [];
+
+  const num = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  return {
+    market: sanitizeStr(body.market) || "KR",
+    stock_code: sanitizeStr(body.stockCode),
+    stock_name: sanitizeStr(body.stockName),
+    currency: sanitizeStr(body.currency) || null,
+    price_at_report: num(body.currentPrice),
+    signal: sanitizeStr(summary.signal) || null,
+    // ⚠️ 필드명 주의 — 정규화된 응답은 summary.probability / opinion.entry·target·stop이다
+    //    (프롬프트 스키마의 confidence·entryPrice·stopLoss와 이름이 다르다). 둘 다 받는다.
+    confidence: num(summary.probability ?? summary.confidence),
+    entry_price: num(opinion.entry ?? opinion.entryPrice),
+    target_price: num(opinion.target ?? opinion.targetPrice),
+    stop_loss: num(opinion.stop ?? opinion.stopLoss),
+    summary: sanitizeStr(summary.description) || null,
+    materials: materials.slice(0, 5).map((m) => ({
+      name: sanitizeStr(m && m.name),
+      strength: sanitizeStr(m && m.strength),
+      reflectionPct: num(m && m.reflectionPct),
+    })),
+    scenarios: scenarios.slice(0, 3).map((sc) => ({
+      label: sanitizeStr(sc && sc.label),
+      type: sanitizeStr(sc && sc.type),
+      probability: num(sc && sc.probability),
+    })),
+  };
+}
+
+async function rpSaveReport(user, body, res) {
+  const row = rpExtractPayload(body);
+  if (!row.stock_code || !row.stock_name) {
+    return tsJson(res, 400, { error: "종목 정보가 없습니다." });
+  }
+  // 기준선이 없으면 사후 추적을 못 하므로 저장 자체를 하지 않는다(빈 행을 쌓지 않음).
+  if (row.price_at_report == null || row.price_at_report <= 0) {
+    return tsJson(res, 200, { saved: false, reason: "가격 정보 없음" });
+  }
+
+  // 같은 종목을 짧은 시간 안에 다시 돌린 경우(새로고침·재렌더)는 새 행을 만들지 않는다.
+  const since = new Date(Date.now() - RP_DEDUPE_MINUTES * 60 * 1000).toISOString();
+  const dupRes = await serviceRequest(
+    `analysis_reports?user_id=eq.${user.id}&stock_code=eq.${encodeURIComponent(row.stock_code)}` +
+      `&created_at=gte.${encodeURIComponent(since)}&select=id&limit=1`,
+    { method: "GET" }
+  );
+  if (dupRes.ok) {
+    const dups = await dupRes.json().catch(() => []);
+    if (Array.isArray(dups) && dups.length) {
+      return tsJson(res, 200, { saved: false, reason: "최근 저장분과 중복", id: dups[0].id });
+    }
+  }
+
+  const insertRes = await serviceRequest("analysis_reports", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ user_id: user.id, ...row }),
+  });
+  if (!insertRes.ok) {
+    const errText = await insertRes.text().catch(() => "");
+    console.error("[reports] 저장 실패", insertRes.status, errText.slice(0, 200));
+    return tsJson(res, 200, { saved: false, reason: "저장 실패" });
+  }
+  const rows = await insertRes.json().catch(() => []);
+  return tsJson(res, 200, { saved: true, report: (rows && rows[0]) || null });
+}
+
+/** 국내 종목의 최근 종가를 전종목 지표 캐시에서 읽는다(신규 API 호출 없음). */
+function rpLatestKrPrice(code) {
+  try {
+    const cache = tsLoadScreenerCache();
+    const stocks = (cache && cache.stocks) || [];
+    if (!stocks.length) return null;
+    const hit = stocks.find((r) => r && String(r.code) === String(code));
+    if (!hit) return null;
+    const close = Number((hit.snapshot && hit.snapshot.closeCur) ?? hit.close);
+    if (!Number.isFinite(close) || close <= 0) return null;
+    return { price: close, asOfDate: (cache && cache.asOfDate) || null };
+  } catch {
+    return null;
+  }
+}
+
+async function rpListReports(user, res) {
+  const listRes = await serviceRequest(
+    `analysis_reports?user_id=eq.${user.id}&order=created_at.desc&limit=${RP_LIST_LIMIT}&select=*`,
+    { method: "GET" }
+  );
+  if (!listRes.ok) {
+    const errText = await listRes.text().catch(() => "");
+    throw new Error(`리포트 조회 실패 (HTTP ${listRes.status}): ${errText.slice(0, 200)}`);
+  }
+  const rows = await listRes.json().catch(() => []);
+
+  const reports = (Array.isArray(rows) ? rows : []).map((r) => {
+    const base = Number(r.price_at_report);
+    let trackedPrice = null;
+    let trackedReturnPct = null;
+    let trackedAsOf = null;
+    if (String(r.market || "KR").toUpperCase() === "KR" && Number.isFinite(base) && base > 0) {
+      const latest = rpLatestKrPrice(r.stock_code);
+      if (latest) {
+        trackedPrice = latest.price;
+        trackedReturnPct = Math.round(((latest.price - base) / base) * 1000) / 10;
+        trackedAsOf = latest.asOfDate;
+      }
+    }
+    return {
+      id: r.id,
+      createdAt: r.created_at,
+      market: r.market,
+      stockCode: r.stock_code,
+      stockName: r.stock_name,
+      currency: r.currency,
+      priceAtReport: base,
+      signal: r.signal,
+      confidence: r.confidence,
+      targetPrice: r.target_price,
+      stopLoss: r.stop_loss,
+      summary: r.summary,
+      materials: r.materials || [],
+      // 사후 추적 — 값이 없으면 화면이 알아서 "추적 대기"로 표시한다(0%로 속이지 않음).
+      trackedPrice,
+      trackedReturnPct,
+      trackedAsOf,
+    };
+  });
+
+  return tsJson(res, 200, { reports });
+}
+
+async function rpDeleteReport(user, id, res) {
+  if (!id) return tsJson(res, 400, { error: "id가 필요합니다." });
+  const delRes = await serviceRequest(
+    `analysis_reports?id=eq.${encodeURIComponent(id)}&user_id=eq.${user.id}`,
+    { method: "DELETE" }
+  );
+  if (!delRes.ok) {
+    const errText = await delRes.text().catch(() => "");
+    throw new Error(`삭제 실패 (HTTP ${delRes.status}): ${errText.slice(0, 200)}`);
+  }
+  return tsJson(res, 200, { ok: true });
+}
+
+async function handleReports(req, res) {
+  if (req.method === "OPTIONS") return tsJson(res, 204, {});
+  try {
+    const user = await rpRequireUser(req);
+    const id = req.query && req.query.id ? String(req.query.id) : "";
+    if (req.method === "GET") return await rpListReports(user, res);
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      return await rpSaveReport(user, body, res);
+    }
+    if (req.method === "DELETE") return await rpDeleteReport(user, id, res);
+    return tsJson(res, 405, { error: "Method not allowed" });
+  } catch (error) {
+    console.error("[reports] 실패", error && error.message);
+    return tsJson(res, error.statusCode || 500, { error: error.message || "요청 처리에 실패했습니다." });
+  }
+}
+/* ═════════════════════════ 리포트 저장 끝 ═════════════════════════ */
+
 /* ═══════════════════════════ 매매 시그널 끝 ═══════════════════════════ */
 
 module.exports = async function handler(req, res) {
   if (req.query && req.query.feature === "trade-signal") {
     return await handleTradeSignal(req, res);
+  }
+  // 2026-09-03(로드맵 E): 리포트 저장·사후 추적. Vercel Hobby 함수 12개 한도 때문에
+  // 새 api/*.js를 만들지 않고 쿼리 파라미터로 이 파일에 얹는다(매매시그널과 같은 방식).
+  if (req.query && req.query.feature === "reports") {
+    return await handleReports(req, res);
   }
   setCors(res);
 

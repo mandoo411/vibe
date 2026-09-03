@@ -2118,6 +2118,126 @@
     }
   }
 
+  /* ───────────── 리포트 저장 · 사후 추적 (2026-09-03 신설, 로드맵 E) ─────────────
+   * 분석이 끝나면 요약·가격·재료를 서버에 남긴다. 목적은 두 가지 —
+   * ①"지난번에 뭘 봤더라"로 다시 들어올 이유를 만든다 ②그때 판단이 맞았는지를
+   * 나중에 숫자로 보여준다. 수익률은 AI가 회고하는 게 아니라 저장된 시점 가격과
+   * 현재 종가로 **코드가** 계산한다(서버에서 전종목 캐시로 처리 — 신규 API 호출 0).
+   */
+
+  async function tmAuthHeader() {
+    const token = window.TMAuth ? await window.TMAuth.getAccessToken().catch(() => "") : "";
+    return token ? { Authorization: `Bearer ${token}` } : null;
+  }
+
+  /** 저장은 부가 기능이다 — 실패해도 분석 화면에 아무 영향을 주지 않는다(조용히 넘어감). */
+  async function saveReport(data) {
+    try {
+      const auth = await tmAuthHeader();
+      if (!auth || !data || !data.analysis) return;
+      const res = await fetch("/api/analyze?feature=reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({
+          market: data.market || "KR",
+          stockCode: data.stockCode,
+          stockName: data.stockName,
+          currency: data.currency,
+          currentPrice: data.currentPrice,
+          analysis: data.analysis,
+        }),
+        cache: "no-store",
+      });
+      const out = await res.json().catch(() => ({}));
+      if (out && out.saved) loadReports();
+    } catch (err) {
+      console.warn("[리포트] 저장 건너뜀", err && err.message);
+    }
+  }
+
+  function reportReturnBadge(r) {
+    // 값이 없으면 0%로 속이지 않고 "추적 대기"로 둔다(국내 종목만 캐시에 있다).
+    if (r.trackedReturnPct == null) return `<span class="airp-item__pending">추적 대기</span>`;
+    const v = r.trackedReturnPct;
+    const cls = v > 0 ? "up" : v < 0 ? "down" : "flat";
+    return `<span class="airp-item__ret airp-item__ret--${cls}">${v > 0 ? "+" : ""}${v}%</span>`;
+  }
+
+  function renderReports(reports) {
+    const section = document.getElementById("ai-reports");
+    const list = document.getElementById("ai-reports-list");
+    if (!section || !list) return;
+    if (!Array.isArray(reports) || !reports.length) {
+      section.hidden = true;
+      list.innerHTML = "";
+      return;
+    }
+    const fmtDate = (iso) => {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    };
+    const fmtPrice = (v, cur) => {
+      if (v == null || !Number.isFinite(Number(v))) return "";
+      const n = Number(v);
+      if (String(cur || "KRW") === "KRW") return `${Math.round(n).toLocaleString("ko-KR")}원`;
+      return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    };
+
+    list.innerHTML = reports
+      .map((r) => {
+        const sig = escapeHtml(r.signal || "");
+        const sigCls = signalBadgeClass(r.signal || "");
+        const priceLine =
+          r.trackedPrice != null
+            ? `${escapeHtml(fmtPrice(r.priceAtReport, r.currency))} → ${escapeHtml(fmtPrice(r.trackedPrice, r.currency))}`
+            : escapeHtml(fmtPrice(r.priceAtReport, r.currency));
+        const asOf = r.trackedAsOf ? `<span class="airp-item__asof">${escapeHtml(r.trackedAsOf)} 종가 기준</span>` : "";
+        const mats = Array.isArray(r.materials)
+          ? r.materials
+              .filter((m) => m && m.name)
+              .slice(0, 3)
+              .map((m) => `<span class="airp-item__mat">${escapeHtml(m.name)}</span>`)
+              .join("")
+          : "";
+        return `<article class="airp-item">
+          <div class="airp-item__top">
+            <button type="button" class="airp-item__name" data-query="${escapeHtml(r.stockName || "")}">${escapeHtml(r.stockName || "")}</button>
+            ${sig ? `<span class="airp-item__sig airp-item__sig--${sigCls}">${sig}</span>` : ""}
+            <span class="airp-item__date">${escapeHtml(fmtDate(r.createdAt))}</span>
+            ${reportReturnBadge(r)}
+          </div>
+          <div class="airp-item__price">${priceLine}${asOf}</div>
+          ${mats ? `<div class="airp-item__mats">${mats}</div>` : ""}
+        </article>`;
+      })
+      .join("");
+    section.hidden = false;
+
+    list.querySelectorAll(".airp-item__name").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const q = btn.getAttribute("data-query") || "";
+        if (!q) return;
+        if (input) input.value = q;
+        runAnalysis(q);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+  }
+
+  async function loadReports() {
+    try {
+      const auth = await tmAuthHeader();
+      if (!auth) return;
+      const res = await fetch("/api/analyze?feature=reports", { headers: auth, cache: "no-store" });
+      if (!res.ok) return;
+      const out = await res.json().catch(() => ({}));
+      renderReports(out && out.reports);
+    } catch (err) {
+      console.warn("[리포트] 목록 실패", err && err.message);
+    }
+  }
+
   async function fetchAnalysis(code, name, indicators, market) {
     console.log("[AI분석] fetch 시작", { code, name, indicators, market });
     const ind = indicators && typeof indicators === "object" ? indicators : {};
@@ -2234,6 +2354,8 @@
       const [chartData, data] = await Promise.all([chartPromise, analyzePromise]);
       finishLoadingProgress();
       renderAnalysis(data, chartData, "D");
+      // 저장은 화면 렌더를 막지 않도록 기다리지 않는다(실패해도 분석은 그대로 보인다).
+      void saveReport(data);
       if (freePlanRemaining !== null) freePlanRemaining = Math.max(0, freePlanRemaining - 1);
     } catch (err) {
       console.error("[AI분석] 실패", err);
@@ -2473,6 +2595,10 @@
       console.error("[AI분석] #ai-analysis-panel 없음");
       return;
     }
+
+    // 2026-09-03(로드맵 E): 로그인 사용자면 지난 리포트 목록을 불러온다.
+    // 저장분이 없으면 renderReports가 섹션을 숨긴 채로 두므로 빈 껍데기가 보이지 않는다.
+    void loadReports();
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();

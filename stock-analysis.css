@@ -2955,3 +2955,155 @@
     font-size: 18px;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-09-03: "내가 본 리포트" (.airp) — 리포트 저장 · 사후 추적
+ * 수익률은 저장된 리포트 시점 가격과 최근 종가로 서버가 계산한 값이다.
+ * 값이 없으면 0%로 채우지 않고 "추적 대기"로 둔다(없는 걸 있는 척하지 않기).
+ * ───────────────────────────────────────────────────────────────────────── */
+.airp {
+  margin: 28px 0 8px;
+  padding: 18px 20px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  background: var(--color-background-primary, #fff);
+}
+
+.airp__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.airp__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+}
+
+.airp__cap {
+  font-size: 11.5px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.airp__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.airp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--color-background-secondary, #f6f7fb);
+}
+
+.airp-item__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.airp-item__name {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+  cursor: pointer;
+  text-align: left;
+}
+
+.airp-item__name:hover {
+  color: var(--accent-brand, #0f8387);
+  text-decoration: underline;
+}
+
+.airp-item__sig {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-background-primary, #fff);
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.airp-item__date {
+  font-size: 11.5px;
+  color: var(--color-text-muted, #9ca3af);
+  font-variant-numeric: tabular-nums;
+}
+
+.airp-item__ret {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.airp-item__ret--up {
+  color: var(--color-up, #e24b4a);
+}
+
+.airp-item__ret--down {
+  color: var(--color-down, #3b82f6);
+}
+
+.airp-item__ret--flat {
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.airp-item__pending {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.airp-item__price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.airp-item__asof {
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.airp-item__mats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.airp-item__mat {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--color-background-primary, #fff);
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  color: var(--color-text-secondary, #6b7280);
+}
+
+@media (max-width: 560px) {
+  .airp {
+    padding: 15px 14px 16px;
+  }
+  .airp-item__ret {
+    font-size: 13px;
+  }
+}

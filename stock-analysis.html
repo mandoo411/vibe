@@ -199,6 +199,16 @@
         </div>
 
         <div id="ai-analysis-panel" class="ai-analysis-panel" hidden aria-live="polite"></div>
+
+        <!-- 2026-09-03(로드맵 E): 내가 본 리포트 + 그 이후 주가.
+             서버가 저장한 리포트 시점 가격을 기준으로 수익률을 코드가 계산한다. -->
+        <section id="ai-reports" class="airp" hidden aria-label="내가 본 리포트">
+          <div class="airp__head">
+            <h2 class="airp__title">내가 본 리포트</h2>
+            <span class="airp__cap">리포트를 낸 날의 주가와 지금을 비교합니다</span>
+          </div>
+          <div id="ai-reports-list" class="airp__list"></div>
+        </section>
       </section>
     </div>
       </main>

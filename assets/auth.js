@@ -515,9 +515,12 @@
   function attachPasswordToggle(input) {
     if (!input || input.dataset.tmToggle === "1") return;
     input.dataset.tmToggle = "1";
-    const wrap = input.parentElement;
-    if (!wrap) return;
-    wrap.classList.add("tm-auth-pwwrap");
+    // input 만 감싸는 전용 래퍼를 만든다.
+    // (필드 div를 그대로 쓰면 아래에 붙는 강도바·안내문 높이만큼 토글 버튼이 밀린다)
+    const wrap = document.createElement("div");
+    wrap.className = "tm-auth-pwwrap";
+    input.parentElement.insertBefore(wrap, input);
+    wrap.appendChild(input);
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "tm-auth-pwtoggle";

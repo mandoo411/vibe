@@ -465,6 +465,7 @@
 /* ---------- 비밀번호 표시 토글 ---------- */
 .tm-auth-pwwrap {
   position: relative;
+  display: block;
 }
 
 .tm-auth-pwwrap input {
@@ -474,7 +475,8 @@
 .tm-auth-pwtoggle {
   position: absolute;
   right: 6px;
-  bottom: 5px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 34px;
   height: 34px;
   display: inline-flex;

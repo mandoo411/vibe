@@ -1,114 +1,114 @@
 {
-  "updatedAt": "2026-09-03T06:00:00+09:00",
+  "updatedAt": "2026-09-04T06:00:00+09:00",
   "usMarket": {
     "indices": [
       {
         "id": "nasdaq",
         "name": "나스닥",
         "symbol": "^NDX",
-        "close": 29143.33,
-        "previousClose": 29077.22,
-        "changePct": 0.23,
-        "changePoints": 66.11
+        "close": 29482.32,
+        "previousClose": 29143.33,
+        "changePct": 1.16,
+        "changePoints": 338.99
       },
       {
         "id": "sp500",
         "name": "S&P 500",
         "symbol": "^GSPC",
-        "close": 7666.6,
-        "previousClose": 7631.47,
-        "changePct": 0.46,
-        "changePoints": 35.13
+        "close": 7747.71,
+        "previousClose": 7666.6,
+        "changePct": 1.06,
+        "changePoints": 81.11
       },
       {
         "id": "dow",
         "name": "다우지수",
         "symbol": "^DJI",
-        "close": 53061.95,
-        "previousClose": 52766.88,
-        "changePct": 0.56,
-        "changePoints": 295.07
+        "close": 53686.11,
+        "previousClose": 53061.95,
+        "changePct": 1.18,
+        "changePoints": 624.16
       },
       {
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29155.75,
-        "previousClose": 29125.5,
-        "changePct": 0.1,
-        "changePoints": 30.25
+        "close": 29506.75,
+        "previousClose": 29186.25,
+        "changePct": 1.1,
+        "changePoints": 320.5
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
-        "close": 178.86,
-        "previousClose": 180.86,
-        "changePct": -1.11,
-        "changePoints": -2
+        "close": 180.56,
+        "previousClose": 178.86,
+        "changePct": 0.95,
+        "changePoints": 1.7
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 324.96,
-      "changePct": -0.05,
-      "changePoints": 0.17
+      "price": 327.95,
+      "changePct": 0.92,
+      "changePoints": 2.99
     },
     {
       "symbol": "MSFT",
-      "price": 496.82,
-      "changePct": -0.84,
-      "changePoints": 4.2
+      "price": 509.4,
+      "changePct": 2.53,
+      "changePoints": 12.58
     },
     {
       "symbol": "NVDA",
-      "price": 224.41,
-      "changePct": 3.21,
-      "changePoints": 6.97
+      "price": 229.48,
+      "changePct": 2.26,
+      "changePoints": 5.07
     },
     {
       "symbol": "AMZN",
-      "price": 254.98,
-      "changePct": 0.02,
-      "changePoints": 0.06
+      "price": 259.35,
+      "changePct": 1.71,
+      "changePoints": 4.37
     },
     {
       "symbol": "META",
-      "price": 592.85,
-      "changePct": 2.47,
-      "changePoints": 14.31
+      "price": 612.88,
+      "changePct": 3.38,
+      "changePoints": 20.03
     },
     {
       "symbol": "TSLA",
-      "price": 357.01,
-      "changePct": 0.26,
-      "changePoints": 0.92
+      "price": 375.57,
+      "changePct": 5.2,
+      "changePoints": 18.56
     },
     {
       "symbol": "GOOGL",
-      "price": 337.12,
-      "changePct": 0.63,
-      "changePoints": 2.1
+      "price": 343.16,
+      "changePct": 1.79,
+      "changePoints": 6.04
     },
     {
       "symbol": "AMD",
-      "price": 457.06,
-      "changePct": -0.55,
-      "changePoints": 2.55
+      "price": 455.17,
+      "changePct": -0.41,
+      "changePoints": 1.89
     },
     {
       "symbol": "PLTR",
-      "price": 169.46,
-      "changePct": -5.81,
-      "changePoints": 10.46
+      "price": 182.15,
+      "changePct": 7.49,
+      "changePoints": 12.69
     },
     {
       "symbol": "COIN",
-      "price": 174.96,
-      "changePct": -1.05,
-      "changePoints": 1.86
+      "price": 191.65,
+      "changePct": 9.54,
+      "changePoints": 16.69
     }
   ],
   "sectors": [
@@ -116,71 +116,71 @@
       "symbol": "XLK",
       "sector": "기술",
       "name": "기술 (XLK)",
-      "price": 183.6,
-      "changePct": -1.55
+      "price": 185.97,
+      "changePct": 1.29
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
-      "price": 57.66,
-      "changePct": -0.09
+      "price": 58.56,
+      "changePct": 1.56
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
-      "price": 65.1,
-      "changePct": 1.78
+      "price": 64.62,
+      "changePct": -0.74
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
-      "price": 172.95,
-      "changePct": 1.41
+      "price": 173.26,
+      "changePct": 0.18
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
-      "price": 172.78,
-      "changePct": -1.34
+      "price": 174.56,
+      "changePct": 1.03
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
-      "price": 114.86,
-      "changePct": -1.48
+      "price": 116.46,
+      "changePct": 1.39
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
-      "price": 85.53,
-      "changePct": 0.65
+      "price": 85.26,
+      "changePct": -0.32
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
-      "price": 42.67,
-      "changePct": 1.04
+      "price": 43.03,
+      "changePct": 0.84
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
-      "price": 52.95,
-      "changePct": 0.49
+      "price": 52.62,
+      "changePct": -0.62
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
-      "price": 43.73,
-      "changePct": -0.86
+      "price": 44.25,
+      "changePct": 1.19
     }
   ],
   "forex": {
@@ -197,41 +197,41 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 90.82,
-        "changePct": 0.67,
-        "changePoints": 0.6
+        "price": 91.8,
+        "changePct": 0.87,
+        "changePoints": 0.79
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4432.3,
-        "changePct": 1.94,
-        "changePoints": 84.3
+        "price": 4522.9,
+        "changePct": 3.59,
+        "changePoints": 156.6
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.83,
-        "changePct": 1.87,
-        "changePoints": 1.21
+        "price": 67.59,
+        "changePct": 4.43,
+        "changePoints": 2.87
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.6,
-        "changePct": 1.38,
-        "changePoints": 0.09
+        "price": 6.67,
+        "changePct": 2.62,
+        "changePoints": 0.17
       },
       {
         "id": "sox",
         "name": "필라델피아반도체",
         "symbol": "^SOX",
-        "price": 11339.25,
-        "changePct": 0.45,
-        "changePoints": 50.64
+        "price": 11352.13,
+        "changePct": 0.11,
+        "changePoints": 12.88
       }
     ]
   },
@@ -240,166 +240,166 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 77065,
-        "changePct24h": -0.18,
-        "marketCapUsd": 1547388171937.4
+        "priceUsd": 81191,
+        "changePct24h": 5.2,
+        "marketCapUsd": 1630237150528.31
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2382.47,
-        "changePct24h": -1.09,
-        "marketCapUsd": 290685000203.95
+        "priceUsd": 2498.71,
+        "changePct24h": 4.76,
+        "marketCapUsd": 304790712696.95
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 99.63,
-        "changePct24h": -0.1,
-        "marketCapUsd": 58322327838.39
+        "priceUsd": 104.13,
+        "changePct24h": 4.29,
+        "marketCapUsd": 60934321345.04
       }
     ]
   },
   "news": [
     {
-      "title": "현대모비스 “유럽 첫 PE시스템 거점은 슬로바키아”…연 28만개 생산",
-      "url": "https://www.mk.co.kr/news/business/12143047",
+      "title": "연준 월러, 9월 금리 동결 시사에…뉴욕증시, 일제히 1% 반등 [월가월부]",
+      "url": "https://www.mk.co.kr/news/stock/12144044",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:46:41.000Z",
-      "summary": "현대모비스가 슬로바키아에 유럽 첫 전기차 구동시스템 생산기지를 구축하고 현지 양산에 들어갔다. 체코·스페인의 배터리시스템 생산기지에 이어 유럽 내 전동화 부품 공급망을 한층 넓히는.."
+      "publishedAt": "2026-09-03T20:48:36.000Z",
+      "summary": "금리훈풍에 채권·증시 모두 강세 기술주 이끌며 나스닥 1.4% 급등9월 연방준비제도(Fed)의 금리인상 가능성이 약해지면서 미국 증시가 일제히 1% 이상 반등했다. 지난 잭슨홀 연.."
     },
     {
-      "title": "영등포구 현대6차 50.55㎡, 9억4천만원 최근 3년 신고가",
-      "url": "https://www.mk.co.kr/news/realestate/12143043",
+      "title": "“금리·환율까지 우주의 기운이 모이는중”…금융지주 주가 ‘불기둥’",
+      "url": "https://www.mk.co.kr/news/stock/12144043",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:43:50.000Z",
-      "summary": "서울 영등포구 문래동6가 현대6차아파트 전용 50.55㎡가 9억 4,000만 원에 거래되며 최근 3년 내 신고가를 기록했다. 2026년 9월 2일 국토부 실거래가 시스템에 신규 등.."
+      "publishedAt": "2026-09-03T20:47:05.000Z",
+      "summary": "주주환원율 대폭확대도 호재 신한지주 3.6% 올라 신고가 1년새 주가는 76.4%나 상승 KB·하나·우리금융지주 등도 변동성장세서 방어력 돋보여변동성 장세에서 금융지주 주식이 방어.."
     },
     {
-      "title": "코로나 이후 최대 규모 ‘해고’ 나왔다...‘무쓸모’ 관리자부터 날리는 글로벌 기업",
-      "url": "https://www.mk.co.kr/news/world/12143034",
+      "title": "“금리 팍팍 올릴 때 됐잖아”…미국 역정에 日 금리인상 속도 붙는다",
+      "url": "https://www.mk.co.kr/news/world/12144039",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:40:13.000Z",
-      "summary": "글로벌 차량공유 서비스기업 ‘우버’ 전세계 인력 10%, 3300명 감원 사내관리자 인력 20% 축소 계획 일부 관리자는 실무직으로 전환글로벌 차량 공유 서비스 기업 우버 테크놀로.."
+      "publishedAt": "2026-09-03T20:45:08.000Z",
+      "summary": "하루만에 3엔 올라 156엔대 엔저 장기화·美정부 압박 영향 우에다, 인상 주기 단축 시사 이달중 인상 가능성 97% 달해 긴축 전망에 국채금리도 급등 30년물 초장기채 4%선 넘.."
     },
     {
-      "title": "“금2·은1·동3·본10”…현대차그룹, ‘2026 IDEA 디자인상’ 16개 수상",
-      "url": "https://www.mk.co.kr/news/business/12143031",
+      "title": "우습게 봤는데 2년만에 HBM3E까지 … 삼성·SK가 경계할 ‘中 반도체 숲’",
+      "url": "https://www.mk.co.kr/news/business/12143417",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:37:02.000Z",
-      "summary": "현대자동차그룹이 자동차와 모빌리티뿐 아니라 브랜딩, 디지털 인터페이스, 공간·서비스 디자인까지 폭넓은 분야에서 글로벌 디자인 경쟁력을 인정받았다. 현대차그룹은 미국 산업디자인협회(.."
+      "publishedAt": "2026-09-03T19:30:00.000Z",
+      "summary": "중국 CXMT의 HBM3E 생산의 숨은 의미중국 최대 DRAM 업체 CXMT가 5세대 고대역폭 메모리 HBM3E 생산을 시작했다는 소식이 외신을 통해 전해졌다. 지난 8월 31일.."
     },
     {
-      "title": "“서민 대출은 칼같이 굴더니”…은행권 기업 부실채권, 19조 육박",
-      "url": "https://www.mk.co.kr/news/economy/12142904",
+      "title": "“오늘 사고 오늘 팔죠”…단타 몰리는 ‘삼전닉스’, 반도체주 변동성 언제까지?",
+      "url": "https://www.mk.co.kr/news/stock/12143982",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T13:36:21.000Z",
+      "summary": "지난달 회전율 전년 대비 증가최근 들어 삼성전자와 SK하이닉스를 두고 당일 사고파는 ‘단타 매매’로 투자자들이 몰리고 있다. 조금 오르는가 싶으면 하락하고 또 조금 오르는 주가 흐.."
+    },
+    {
+      "title": "법무부·檢警도 세종行…공공기관 수 20% 줄인다 [뉴스&분석]",
+      "url": "https://www.mk.co.kr/news/economy/12143943",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T20:42:21.000Z",
-      "summary": "8년만에 부실채권 규모 최대 기업대출이 부실의 80% 차지 3개월새 中企신규부실 4.5조 충당금 적립이 부실 못따라가 산은마저 부실대출 60% 늘어 일각선 “생산적금융 영향”경기 .."
+      "publishedAt": "2026-09-03T12:13:56.000Z",
+      "summary": "정부, 행정·공공기관 대수술 내년 상반기 순차 이전…중수청·경찰청은 청사 건립 후에 발전5社·4개 항만公 통합…석유·가스 합치고 LH는 분리정부가 국내외 환경 변화에 맞춰 공공기관.."
     },
     {
-      "title": "“코스피 고점 가까워졌다”…전문가가 주식 대신 늘리라는 ‘이 자산’",
-      "url": "https://www.mk.co.kr/news/economy/12142830",
+      "title": "[뉴스&분석] 법무부·檢警도 세종行… 공공기관 수 20% 줄인다",
+      "url": "https://www.mk.co.kr/news/economy/12143764",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T13:42:59.000Z",
-      "summary": "경기선행지수가 정점에 근접하면서 주식 비중을 줄이고 단기 국채 등 안전자산 비중을 늘려야 한다는 주장이 제기됐다. 경기 둔화 국면에 대비해 현금성 자산을 확보하고 향후 증시 조정 .."
+      "publishedAt": "2026-09-03T09:07:19.000Z",
+      "summary": "정부가 국내외 환경 변화에 맞춰 대규모 공공기관 통폐합 작업을 단행한다. 아울러 지역 균형발전을 위한 행정·공공기관 2차 이전도 내년 상반기부터 본격 착수하기로 했다. 한성숙 국무.."
     },
     {
-      "title": "해외투자 실무 전반 배운다…KIC, 국제금융 아카데미 개최",
-      "url": "https://view.asiae.co.kr/article/2026090219242736321",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T10:24:27.000Z",
-      "summary": "국부펀드 한국투자공사(KIC)가 해외투자 실무 전반을 교육하는 행사를 개최한다. 2일 KIC는 서울 중구에서 오는 4일까지 이같은 하반기 국제금융 아카데미를 개최한다고 밝혔다. 이번 행사는 해외투자 자산배분 체계와 자산배분 운용 전략을 시작으로 해외투자 실무 전반을 다루는 8개 강좌로 운영된다. 자산군별 운용사 선정 방안을 심층적으로 다루는 기획 강좌가 마련됐고, 전략적 투자의 현황과 시사점을 주제로 한 신규 강좌도"
-    },
-    {
-      "title": "증선위, 코스닥 IR임원 수사기관 통보…\"신약호재 내부정보로 부당이득\"",
-      "url": "https://view.asiae.co.kr/article/2026090218315026709",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T09:31:50.000Z",
-      "summary": "미공개 내부정보로 2000만원의 부당이득을 취한 코스닥 상장사 기업설명(IR) 담당 임원이 덜미를 잡혔다. 금융위원회 산하 증권선물위원회는 2일 제15차 정례회의에서 코스닥 상장법인 임원 A씨를 자본시장법상 미공개중요정보 이용 혐의 등으로 수사기관 통보 조치했다고 밝혔다. 금융당국에 따르면 A씨는 개발 중인 신약 임상 1상 주요 결과와 기술이전 계약 체결 등 호재성 미공개 내부정보를 이용해 2024년 3월부터 6월까지 지"
-    },
-    {
-      "title": "韓서 지갑 활짝 연 외국인 … 카드로 6.5조 긁었다",
-      "url": "https://www.mk.co.kr/news/economy/12142631",
+      "title": "상장사 가스公에 '자본잠식' 석유公 합친다 … 주주 반발이 변수",
+      "url": "https://www.mk.co.kr/news/economy/12143748",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T08:59:27.000Z",
-      "summary": "외국인의 국내 카드 사용액이 분기 기준 역대 최대를 기록했다. 한국을 찾은 관광객이 늘어난 것이 큰 원인이다. 2일 한국은행이 발표한 '2분기 중 거주자의 카드 해외 사용 실적'에.."
+      "publishedAt": "2026-09-03T09:03:20.000Z",
+      "summary": "정부가 3일 한국석유공사와 한국가스공사를 하나의 회사로 합치기로 결정했다. 두 기업이 유사하게 수행하고 있는 해외 자원 탐사 개발 기능을 통합해 효율성을 강화하고, 재무 구조도 장.."
     },
     {
-      "title": "글로벌 '큰손' 캐피털그룹 신한금융 3대 주주 복귀",
-      "url": "https://www.mk.co.kr/news/economy/12142588",
+      "title": "외환보유액 51개월만에 최대… 반도체 수출 힘입어 4423억弗",
+      "url": "https://www.mk.co.kr/news/economy/12143670",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T08:54:20.000Z",
-      "summary": "글로벌 자산운용사 캐피털그룹이 신한금융지주 지분을 5% 넘게 확보했다. 2012년 이른바 '신한 사태' 때 신한금융 지분을 모두 정리하고 나간 후 14년 만에 다시 3대주주로 귀환.."
+      "publishedAt": "2026-09-03T08:53:19.000Z",
+      "summary": "수출기업들의 자금 유입이 크게 늘면서 지난달 외환보유액이 역대 최대 폭으로 증가했다. 한국은행은 25년 넘게 이어온 우리나라 외환보유액 세계 순위 공개를 중단하기로 했다. 한은이 .."
     },
     {
-      "title": "[클릭 e종목]네오위즈, 신작 구체화 후 접근해야…목표가 2만원",
-      "url": "https://view.asiae.co.kr/article/2026090214252638040",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T08:53:00.000Z",
-      "summary": "현대차증권은 2일 네오위즈에 대해 대형 콘솔 신작 출시 공백과 기존 라이브 서비스 성과의 한계로 주가 상방이 제한되고 있다며, 주요 신작 라인업이 구체화하는 시점에 매수 접근할 것을 추천했다. 투자의견은 '중립(Market Perform)', 목표주가는 2만원으로 커버리지를 개시했다. 최승호 현대차증권 연구원은 \"네오위즈의 2026년 연결 기준 매출액은 4138억원(YoY -4%), 영업이익은 329억원(YoY -45%)을 기록할 것으로 예상된다"
-    },
-    {
-      "title": "은행 부실채권 19조 육박 … 기업대출 건전성 빨간불",
-      "url": "https://www.mk.co.kr/news/economy/12142525",
+      "title": "1350원대 …'반도체 달러'가 올린 원화체급",
+      "url": "https://www.mk.co.kr/news/economy/12143646",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T08:33:34.000Z",
-      "summary": "경기 침체로 빚을 갚지 못하는 가계와 기업이 늘며 국내 은행의 부실채권이 8년 만에 가장 많아진 것으로 나타났다. 은행들이 위험에 대비하기 위해 충당금을 쌓고 있지만, 신규 부실이.."
+      "publishedAt": "2026-09-03T08:47:50.000Z",
+      "summary": "반도체 호황에 몰려든 달러가 원화 체급을 한 단계 끌어올렸다. 한때 1550원대까지 하락했던 달러당 원화값이 1350원까지 치솟으면서 14개월 만에 최고치를 기록한 것이다. 수출 .."
     },
     {
-      "title": "임종룡 우리금융 회장… 자사주 5000주 매입",
-      "url": "https://www.mk.co.kr/news/economy/12142526",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-09-02T08:33:34.000Z",
-      "summary": "우리금융그룹은 임종룡 회장(사진)이 지난달 24일 우리금융지주 주식 5000주를 장내 매수했다고 2일 밝혔다. 이번 자사주 매입은 약 4개월간의 동양생명 완전자회사 절차를 마무리.."
-    },
-    {
-      "title": "코스피, 유가·금리 부담에 4%대 하락 마감",
-      "url": "https://view.asiae.co.kr/article/2026090215514382923",
+      "title": "NH투자증권, 안산 지역사회 취약계층에 '사랑의 쌀' 전달",
+      "url": "https://view.asiae.co.kr/article/2026090316240033177",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T06:51:44.000Z",
-      "summary": "코스피 지수가 국제 유가와 국채 금리 부담으로 하락했다. 코스닥도 2%대 하락 마감했다. 2일 한국거래소에서 코스피 지수는 전장 대비 3.99% 내린 6562.72에 마감했다. 3.08% 하락 출발한 코스피는 잠시 하락 폭을 만회했으나 줄곧 하락세를 보이며 4% 가까이 하락 마감했다. 외국인과 기관은 각각 1조9094억원, 2조434억원을 순매도했다. 개인은 2조3023억원을 순매수했다. 업종별로 살펴보면 의료·정밀기기(0.97%)를 제외하고"
+      "publishedAt": "2026-09-03T07:24:01.000Z",
+      "summary": "NH투자증권은 안산시청에서 지역사회 취약계층을 위한 '사랑의 쌀' 전달식을 진행했다고 3일 밝혔다. NH투자증권 안산WM센터는 농협중앙회 최고 권위의 상인 '총화상'을 수상하며 받은 포상금 전액을 기부하기로 결정했다. 총화상은 농협중앙회가 전 계열사를 대상으로 사업실적, 임직원 화합, 사회공헌 등을 종합 평가해 최우수 사무소에 수여하는 상이다. NH투자증권 본사 역시 매칭그랜트 방식으로 포상금과 동일한 금액을 추가 후원해 총 1000만원 상당의 쌀을 마련했으며, 이는 안산시 관내 취약계층 가구에 전달될 예정이다. 배광수 NH투자"
     },
     {
-      "title": "코스닥, 17.27P 내린 803.98 마감(2.1%↓)",
-      "url": "https://view.asiae.co.kr/article/2026090215350317457",
+      "title": "코스피, 장 중 6500선 깨졌다 회복 마감…코스닥은 하락",
+      "url": "https://view.asiae.co.kr/article/2026090316074444085",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T06:35:03.000Z",
-      "summary": "코스닥, 17.27P 내린 803.98 마감(2.1%↓)"
+      "publishedAt": "2026-09-03T07:07:44.000Z",
+      "summary": "코스피 지수가 장 중 6500선 아래로 떨어졌다가 회복하며 강보합으로 마감했다. 코스닥 지수는 상승 출발했지만, 하락 전환 이후 그대로 거래를 마쳤다. 3일 코스피 지수는 전 거래일 대비 16.76포인트(0.26%) 오른 6579.48에 마감했다. 지수는 한때 6439.49까지 떨어졌지만, 다시 반등했다. 투자자별로는 외국인·개인·기관 모두 매도에 나섰다. 외국인은 2077억4900만원, 개인은 1조1597억4800만원, 기관은 2418억6000만원 순매도했다. 업종별로는 등락이 엇갈렸다. 보험(+4.44%), 건설(+3.45%),"
     },
     {
-      "title": "코스피, 273.08P 내린 6562.72 마감(3.99%↓)",
-      "url": "https://view.asiae.co.kr/article/2026090215344107707",
+      "title": "코스닥, 13.77P 내린 790.21 마감(1.71%↓)",
+      "url": "https://view.asiae.co.kr/article/2026090315354507827",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T06:34:41.000Z",
-      "summary": "코스피, 273.08P 내린 6562.72 마감(3.99%↓)"
+      "publishedAt": "2026-09-03T06:35:45.000Z",
+      "summary": "코스닥, 13.77P 내린 790.21 마감(1.71%↓)"
     },
     {
-      "title": "원·달러 환율 1.7원 내린 1368.7원(오후 3시30분 기준)",
-      "url": "https://view.asiae.co.kr/article/2026090215323864898",
+      "title": "코스피, 16.76P 오른 6579.48 마감(0.26%↑)",
+      "url": "https://view.asiae.co.kr/article/2026090315344381085",
       "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T06:32:38.000Z",
-      "summary": "2일 서울 외환시장에서 원·달러 환율은 오후 3시30분 기준 전 거래일 대비 1.7원 내린 1368.7원을 기록했다."
+      "publishedAt": "2026-09-03T06:34:43.000Z",
+      "summary": "코스피, 16.76P 오른 6579.48 마감(0.26%↑)"
     },
     {
-      "title": "국민의힘 여의도연구원, 2026년 청년정책 수요조사 전달식",
-      "url": "https://www.mk.co.kr/news/politics/12143051",
+      "title": "마약사범끼리 “의리 끝까지 지킬게”…공범 편지 잘못 압수했다고 무죄?",
+      "url": "https://www.mk.co.kr/news/society/12144045",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:47:55.000Z",
-      "summary": "국민의힘 여의도연구원, 2026년 청년정책 수요조사 전달식 장동혁 국민의힘 대표를 비롯한 청년들이 3일 서울 여의도 국회에서 열린 2026 청년정책 수요조사 전달식에서 기념촬영을 .."
+      "publishedAt": "2026-09-03T20:52:36.000Z",
+      "summary": "압수수색 등 절차 안지켜 증거 능력 잃는 경우 속출 노응래·송영길 등 무죄 판결 수사권 재편땐 檢 수사 안해 다른 수사기관 확보증거 의존 기소포기 사례 급증할까 우려# 서울 모처에.."
     },
     {
-      "title": "청년정책 수요조사 자료집 든 장동혁 대표",
-      "url": "https://www.mk.co.kr/news/politics/12143050",
+      "title": "“맨땅에 헤딩했더니 미슐랭 셰프가 찾아왔다”…파인다이닝 휩쓴 식재료",
+      "url": "https://www.mk.co.kr/news/business/12144042",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:47:43.000Z",
-      "summary": "청년정책 수요조사 자료집 든 장동혁 대표 국민의힘 장동혁 대표가 3일 국회에서 열린 최고위원회의에서 2026 청년정책 수요조사 결과 자료집을 들고 발언하고 있다. 2026.9.3..."
+      "publishedAt": "2026-09-03T20:46:24.000Z",
+      "summary": "중기부, 소상공인 도약지원사업 올해 오디션통해 총 80社 선정 최종 11곳 선정해 10일 시상식 작년 수상 감태업체 쾌속 성장 제주 식재료 어묵 매출 316%↑ 반려견 구강스프.."
     },
     {
-      "title": "발언하는 장동혁 대표",
-      "url": "https://www.mk.co.kr/news/politics/12143049",
+      "title": "한두번은 요행, 그 이상은 실력인데…테슬라 넉달째 쏘렌토 제치고 1위",
+      "url": "https://www.mk.co.kr/news/business/12144041",
       "source": "매일경제",
-      "publishedAt": "2026-09-03T00:47:32.000Z",
-      "summary": "발언하는 장동혁 대표 국민의힘 장동혁 대표가 3일 국회에서 열린 최고위원회의에서 발언하고 있다. 2026.9.3.김재훈기자"
+      "publishedAt": "2026-09-03T20:45:59.000Z",
+      "summary": "테슬라 모델Y 8월 9638대 판매 넉달간 기아 쏘렌토 앞질러 1위 BYD도 월판매 3000대 첫 돌파테슬라 ‘모델Y’가 4개월 연속 기아 ‘쏘렌토’를 앞지르며 국내 연간 베스트셀.."
+    },
+    {
+      "title": "미국 최대 학군지 뉴욕, 초중학교서 AI ‘퇴장’…60만명 1년간 못 쓴다",
+      "url": "https://www.mk.co.kr/news/world/12144040",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T20:45:29.000Z",
+      "summary": "맘다니 “AI가 학생 성장 방해” 교실 내 사용 1년 동안 막기로 다른 지역으로 확산될지 주목미국 뉴욕시가 이번 학기부터 유아에서 초등학생·중학생까지 교실 내 인공지능(AI) 사용.."
+    },
+    {
+      "title": "같이 뛰었는데 왜 나만 아플까 … 답은 “몸이 다르니까”",
+      "url": "https://www.mk.co.kr/news/it/12143568",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T20:30:00.000Z",
+      "summary": "달릴 때 생기는 부위별 통증 대응법달리기를 하다 보면 이상한 일이 생긴다. 같이 시작한 친구는 별문제 없이 거리를 늘려가는데, 나는 조금만 뛰어도 무릎이 아프고, 정강이가 당기고,.."
+    },
+    {
+      "title": "“3억 굴리면 노후 월 398만원” … 9월부터 DC·IRP서 뜨는 ‘국채 풍차’",
+      "url": "https://www.mk.co.kr/news/economy/12143394",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-09-03T19:30:00.000Z",
+      "summary": "개인투자용 국채 ‘복리효과’에 퇴직연금 ‘과세이연’까지이달부터 확정기여형 퇴직연금(DC) 및 개인형 퇴직연금(IRP) 계좌를 통한 ‘개인투자용 국채’ 매입이 본격 허용되면서, 은퇴.."
     }
   ],
   "aiAnalysis": {

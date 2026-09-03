@@ -35,6 +35,19 @@ window.TM_AUTH_CONFIG = {
   NAVER_CLIENT_ID: "1VUxr1f4dnZWhUt_UYrh",
   NAVER_AUTH_ENDPOINT: "https://slcplrblmdiydakwzqdc.supabase.co/functions/v1/naver-auth",
 
+  // ---- 소셜 로그인 버튼 노출 스위치 ----
+  // 콘솔 설정이 끝난 것만 true 로 두세요. false 면 버튼이 아예 안 보입니다.
+  //  - 아직 안 켠 provider의 버튼이 떠 있으면, 눌렀을 때 에러만 나서 이탈로 이어집니다.
+  //  - kakao: 이메일 동의항목이 "비즈 앱 전환" 승인 후에야 열립니다.
+  //    (사업자등록번호 없어도 "개인 개발자 비즈 앱 전환"으로 신청 가능 —
+  //     승인 나면 카카오 동의항목에서 이메일을 켠 뒤 아래를 true 로 바꾸세요)
+  //  - 이메일 없이 가입되면 결제·구독 연동이 깨지므로, 이메일이 열리기 전엔 켜지 마세요.
+  SOCIAL_ENABLED: {
+    google: false, // Google Cloud + Supabase 설정 완료 후 true
+    kakao: false,  // 비즈 앱 전환 승인 + 이메일 동의항목 활성화 후 true
+    naver: true,   // 2026-09-03 연동 완료
+  },
+
   // 약관/개인정보 동의 버전. 약관을 개정하면 이 값을 올리세요(재동의 유도에 사용).
   CONSENT_VERSION: "2026-09-03",
 

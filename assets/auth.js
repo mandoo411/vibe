@@ -433,9 +433,17 @@
     if (!container) return;
     const opts = options || {};
     const verb = opts.mode === "signup" ? "로 시작하기" : "로 로그인";
+    // SOCIAL_ENABLED 에서 켜둔 것만 노출한다(설정이 없으면 과거 동작대로 전부 노출).
+    const flags = cfg.SOCIAL_ENABLED || null;
     const enabled = SOCIAL_META.filter(function (m) {
-      return m.id === "naver" ? !!cfg.NAVER_CLIENT_ID : true;
+      if (m.id === "naver" && !cfg.NAVER_CLIENT_ID) return false;
+      if (flags && flags[m.id] !== true) return false;
+      return true;
     });
+    if (!enabled.length) {
+      container.innerHTML = "";
+      return;
+    }
 
     container.innerHTML =
       '<div class="tm-social-divider"><span>또는</span></div>' +

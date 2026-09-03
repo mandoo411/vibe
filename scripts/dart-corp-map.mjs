@@ -6,13 +6,19 @@
  * list.json 공시검색을 종목코드로 스캔해 워치리스트 15종목만 알아내는 방식으로 우회해
  * 왔지만, AI 종목분석은 **임의 종목**을 다루므로 상장사 전체 매핑이 필요하다.
  *
- * 과거 실패 이력(2026-08-28): corpCode.xml(87,000여 법인 zip) 다운로드가 GitHub
- * Actions에서 계속 타임아웃돼 포기했었다. 원인은 파일 크기가 아니라 **fetch에 걸어둔
- * 30초 AbortSignal**이었을 가능성이 높다(같은 코드가 document.xml 수백 KB에는 잘
- * 동작했다). 그래서 이번엔:
- *   - 타임아웃을 180초로 늘리고
- *   - 3회까지 지수 백오프 재시도하고
- *   - 받은 zip이 XML 에러 응답("status":"013" 등)인지 먼저 확인하고
+ * 실패 이력과 진짜 원인(2026-09-03에 재현·규명):
+ *   - 2026-08-28: 다운로드가 GitHub Actions에서 계속 타임아웃돼 포기.
+ *   - 2026-09-03 1차: 타임아웃을 30초 → 180초로 늘리고 3회 재시도하도록 고쳐 다시 돌렸으나
+ *     **3회 모두 정확히 180초를 채우고 0바이트로 실패**했다(로그에 수신 크기 줄이 한 번도
+ *     안 찍힘). 같은 시각 다른 환경에서는 같은 엔드포인트가 0.1초에 응답했다.
+ *     → 즉 코드 타임아웃 값이 아니라 **GitHub Actions 러너에서 이 20MB 전송이 정체되는 것**이
+ *     원인이다. Node fetch는 전송이 기어가도 그냥 기다리다 통째로 중단될 뿐이라 구분이 안 된다.
+ *   - 그래서 워크플로에서는 **curl로 먼저 파일을 받고**(--max-time 900으로 넉넉히,
+ *     --speed-limit/--speed-time으로 진짜 정체일 때만 끊고 재시도) 이 스크립트는
+ *     `--zip <경로>`로 받아둔 파일을 파싱만 한다. fetch 경로는 로컬 실행용으로 남겨 둔다.
+ *
+ * 공통 안전장치:
+ *   - 받은 zip이 XML/JSON 에러 응답("status":"013" 등)인지 먼저 확인하고
  *   - 상장사(stock_code가 있는 행)만 추려 파일 크기를 100KB대로 줄인다.
  *
  * 실패해도 기존 파일을 덮어쓰지 않는다(빈 결과를 커밋해 서비스를 죽이지 않기 위해).
@@ -34,6 +40,11 @@ const MIN_EXPECTED_LISTED = 2000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function argValue(flag, fallback) {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
 }
 
 async function downloadCorpCodeZip() {
@@ -101,12 +112,23 @@ function parseListedCompanies(xml) {
 }
 
 async function main() {
-  if (!API_KEY) {
-    console.error("DART_API_KEY 환경변수가 없습니다 — GitHub Actions secrets에 설정 필요");
-    process.exit(1);
-  }
+  // --zip <경로>: 워크플로가 curl로 미리 받아둔 파일을 그대로 파싱한다(GHA 정체 회피).
+  const zipPath = argValue("--zip", "");
 
-  const zipBuf = await downloadCorpCodeZip();
+  let zipBuf;
+  if (zipPath) {
+    zipBuf = await fs.readFile(path.resolve(zipPath));
+    console.log(`미리 받아둔 zip 사용: ${zipPath} (${(zipBuf.length / 1024 / 1024).toFixed(1)}MB)`);
+    if (zipBuf.subarray(0, 2).toString("latin1") !== "PK") {
+      throw new Error(`zip이 아닙니다 — DART 에러 응답일 가능성: ${zipBuf.subarray(0, 300).toString("utf8")}`);
+    }
+  } else {
+    if (!API_KEY) {
+      console.error("DART_API_KEY 환경변수가 없습니다 — GitHub Actions secrets에 설정 필요");
+      process.exit(1);
+    }
+    zipBuf = await downloadCorpCodeZip();
+  }
   const entries = readZipEntries(zipBuf);
   const entryName = Object.keys(entries).find((k) => /CORPCODE\.xml$/i.test(k)) || Object.keys(entries)[0];
   if (!entryName) throw new Error("zip 안에 항목이 없음");

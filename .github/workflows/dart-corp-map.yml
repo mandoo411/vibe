@@ -39,10 +39,39 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Build corp_code map
+      # Node fetch로 직접 받으면 GitHub Actions 러너에서 20MB 전송이 정체돼
+      # 180초를 채우고 0바이트로 죽는다(2026-09-03 3회 재현). curl은 넉넉한 총 제한시간과
+      # "진짜 멈췄을 때만" 끊는 속도 임계값을 따로 줄 수 있어서 이 구간에 훨씬 강하다.
+      - name: Download corpCode.xml (curl)
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
-        run: node scripts/dart-corp-map.mjs
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "다운로드 시도 ${attempt}/3"
+            if curl -sS -L --fail \
+                 --max-time 900 \
+                 --connect-timeout 30 \
+                 --speed-limit 1024 --speed-time 60 \
+                 -A "TotalMoneyAI/1.0" \
+                 -o /tmp/corpCode.zip \
+                 -w "  수신 %{size_download} bytes / %{time_total}s (평균 %{speed_download} B/s)\n" \
+                 "https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key=${DART_API_KEY}"; then
+              if [ "$(head -c 2 /tmp/corpCode.zip)" = "PK" ]; then
+                echo "::notice::zip 수신 성공 ($(stat -c%s /tmp/corpCode.zip) bytes)"
+                exit 0
+              fi
+              echo "zip이 아닌 응답(DART 에러로 추정):"
+              head -c 300 /tmp/corpCode.zip; echo
+            fi
+            echo "실패 — 15초 후 재시도"
+            sleep 15
+          done
+          echo "::error::corpCode.xml 다운로드 3회 모두 실패"
+          exit 1
+
+      - name: Build corp_code map
+        run: node scripts/dart-corp-map.mjs --zip /tmp/corpCode.zip
 
       - name: Commit and push
         run: |

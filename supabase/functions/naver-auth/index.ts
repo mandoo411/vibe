@@ -30,7 +30,34 @@ const NAVER_CLIENT_ID = Deno.env.get("NAVER_CLIENT_ID") ?? "";
 const NAVER_CLIENT_SECRET = Deno.env.get("NAVER_CLIENT_SECRET") ?? "";
 const SITE_URL = (Deno.env.get("TM_SITE_URL") ?? "https://www.totalmoney.kr").replace(/\/+$/, "");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+/**
+ * 서버 전용 키를 읽는다.
+ * Supabase가 SUPABASE_SERVICE_ROLE_KEY 를 deprecated 처리하고
+ * SUPABASE_SECRET_KEYS(JSON 사전) 로 옮겨가는 중이라 둘 다 지원한다.
+ * 신규 방식을 먼저 보고, 없으면 기존 키로 폴백한다.
+ */
+function readServiceKey(): string {
+  const raw = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (raw) {
+    try {
+      const dict = JSON.parse(raw);
+      // 형태가 { "sb_secret_...": "..." } 인지 { "secret": "..." } 인지 보장되지 않으므로
+      // sb_secret_ 로 시작하거나 JWT 처럼 생긴 첫 값을 고른다.
+      const values = Object.values(dict).filter((v) => typeof v === "string") as string[];
+      const picked = values.find((v) => v.startsWith("sb_secret_") || v.split(".").length === 3);
+      if (picked) return picked;
+      const keys = Object.keys(dict).filter((k) => k.startsWith("sb_secret_"));
+      if (keys.length) return keys[0];
+    } catch (_e) {
+      // JSON이 아니면 키 문자열 그 자체로 본다
+      if (raw.startsWith("sb_secret_") || raw.split(".").length === 3) return raw;
+    }
+  }
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+}
+
+const SERVICE_ROLE_KEY = readServiceKey();
 
 function redirect(hashOrQuery: string) {
   return new Response(null, {

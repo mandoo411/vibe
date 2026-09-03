@@ -1444,13 +1444,82 @@
     });
   }
 
-  function renderChartSection(stockCode, stockName, chartText, market, hasChartData) {
+  /**
+   * 2026-09-03: 차트 카드가 "① 이동평균선 …" 문단 8개 나열이라 읽기 전에 지치는 화면이었다.
+   * 카드 맨 위에 코드가 계산한 도표 두 개(이평 이격 다이버징 막대 + RSI 게이지)를 얹어,
+   * 글을 읽기 전에 "지금 어디에 서 있는지"가 먼저 보이게 한다. 값은 전부 실제 지표다.
+   */
+  function renderTechSnapshot(currentPrice, ind, assetType) {
+    const price = toNum(currentPrice);
+    const i = ind && typeof ind === "object" ? ind : {};
+    const mas = [
+      ["20일선", toNum(i.ma20)],
+      ["60일선", toNum(i.ma60)],
+      ["120일선", toNum(i.ma120)],
+      ["200일선", toNum(i.ma200)],
+    ].filter(([, v]) => v != null && v > 0);
+    const rsi = toNum(i.rsi14);
+    if ((!price || mas.length < 2) && rsi == null) return "";
+
+    let maBlock = "";
+    if (price && mas.length >= 2) {
+      const gaps = mas.map(([label, v]) => [label, v, ((price - v) / v) * 100]);
+      // 눈금 상한은 실제 최대 이격(최소 10%)으로 잡는다 — 2% 차이가 화면 끝까지 뻗지 않게.
+      const scale = Math.max(10, ...gaps.map(([, , g]) => Math.abs(g)));
+      const rows = gaps
+        .map(([label, v, gap]) => {
+          const w = Math.min(50, (Math.abs(gap) / scale) * 50);
+          const side = gap >= 0 ? "is-plus" : "is-minus";
+          const style = gap >= 0 ? `left:50%;width:${w.toFixed(1)}%` : `right:50%;width:${w.toFixed(1)}%`;
+          const sign = gap >= 0 ? "+" : "";
+          return `<li class="techsnap__row">
+            <span class="techsnap__k">${escapeHtml(label)}</span>
+            <span class="techsnap__v">${escapeHtml(fmtPrice(v, assetType))}</span>
+            <b class="techsnap__bar"><i class="${side}" style="${style}"></i></b>
+            <span class="techsnap__d ${side}">${sign}${gap.toFixed(1)}%</span>
+          </li>`;
+        })
+        .join("");
+      // 정배열/역배열은 이동평균끼리의 순서로 코드가 직접 판정한다(AI 서술과 무관).
+      const vals = mas.map(([, v]) => v);
+      let order = "혼조";
+      if (vals.every((v, k) => k === 0 || vals[k - 1] > v)) order = "정배열";
+      else if (vals.every((v, k) => k === 0 || vals[k - 1] < v)) order = "역배열";
+      const aboveCount = gaps.filter(([, , g]) => g >= 0).length;
+      maBlock = `<section class="techsnap__col">
+        <h4 class="techsnap__title">이동평균선 대비 이격<span class="techsnap__cap">${escapeHtml(order)} · ${aboveCount}/${gaps.length}개 선 위</span></h4>
+        <ul class="techsnap__list">${rows}</ul>
+      </section>`;
+    }
+
+    let rsiBlock = "";
+    if (rsi != null) {
+      const pos = Math.max(0, Math.min(100, rsi));
+      const state = rsi >= 70 ? ["과열", "is-plus"] : rsi <= 30 ? ["과매도", "is-minus"] : ["중립", "is-neu"];
+      rsiBlock = `<section class="techsnap__col">
+        <h4 class="techsnap__title">RSI (14)<span class="techsnap__cap">30 이하 과매도 · 70 이상 과열</span></h4>
+        <div class="techsnap__rsi">
+          <div class="techsnap__rsi-num ${state[1]}">${rsi.toFixed(1)}<em>${escapeHtml(state[0])}</em></div>
+          <div class="techsnap__rsi-track">
+            <span class="techsnap__rsi-zone techsnap__rsi-zone--under"></span>
+            <span class="techsnap__rsi-zone techsnap__rsi-zone--over"></span>
+            <i class="techsnap__rsi-dot" style="left:${pos.toFixed(1)}%"></i>
+          </div>
+          <div class="techsnap__rsi-scale"><span>0</span><span>30</span><span>70</span><span>100</span></div>
+        </div>
+      </section>`;
+    }
+    if (!maBlock && !rsiBlock) return "";
+    return `<div class="techsnap">${maBlock}${rsiBlock}</div>`;
+  }
+
+  function renderChartSection(stockCode, stockName, chartText, market, hasChartData, techSnapshotHtml) {
     // 2026-07-10: 예전엔 국내주식이 아니면 무조건 TradingView(단일 색 이평선만 지원)를 썼다.
     // 이제는 미국주식·암호화폐도 자체 캔들+4색 이평선 차트 데이터를 받아올 수 있으므로,
     // 실제로 그 데이터 확보에 성공했는지(hasChartData)를 기준으로 삼는다. 실패했을 때만
     // (드문 티커, 스테이블코인처럼 Binance 페어가 없는 경우 등) TradingView로 대체한다.
     const useTv = !hasChartData;
-    return renderChartShell(stockCode, stockName, chartText, useTv, market);
+    return (techSnapshotHtml || "") + renderChartShell(stockCode, stockName, chartText, useTv, market);
   }
 
   /** 2026-08-26: GPT 리포트 지적사항 "상승확률 40%의 산출 방법이 없다"에 대한 보완 —
@@ -1910,7 +1979,7 @@
       {
         cls: "ai-card--chart",
         title: "차트 흐름 분석",
-        body: `<div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData)}</div>`,
+        body: `<div class="ai-card__body">${renderChartSection(data.stockCode, data.stockName, analysis.chart, data.assetType, !!chartData, renderTechSnapshot(data.currentPrice, data.indicators, data.assetType))}</div>`,
       },
       {
         cls: "ai-card--opinion",

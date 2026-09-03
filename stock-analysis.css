@@ -2488,3 +2488,239 @@
 .ai-supply-fact__bar i.is-minus {
   background: var(--ai-price-stop-accent, #2d6ae3);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-09-03: 차트 카드 상단 기술 스냅샷 (.techsnap)
+ * "① 이동평균선 …" 문단 8개를 읽기 전에, 지금 위치를 도표로 먼저 보여준다.
+ * 왼쪽 = 이동평균 이격 다이버징 막대, 오른쪽 = RSI 게이지. 둘 다 실제 지표 값이다.
+ * ───────────────────────────────────────────────────────────────────────── */
+.techsnap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 15px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  background: var(--color-background-secondary, #f6f7fb);
+}
+
+.techsnap__col {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.techsnap__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.techsnap__cap {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--color-text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+.techsnap__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.techsnap__row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 78px) minmax(60px, 1fr) 56px;
+  align-items: center;
+  gap: 8px;
+}
+
+.techsnap__k {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.techsnap__v {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+/* 가운데가 0(이격 없음). 현재가가 이평 위면 오른쪽 빨강, 아래면 왼쪽 파랑. */
+.techsnap__bar {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border-tertiary, rgba(200, 210, 255, 0.5));
+}
+
+.techsnap__bar::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--color-text-muted, #9ca3af);
+  opacity: 0.5;
+}
+
+.techsnap__bar i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+
+.techsnap__bar i.is-plus {
+  background: var(--ai-price-target-accent, #e24b4a);
+}
+
+.techsnap__bar i.is-minus {
+  background: var(--ai-price-stop-accent, #2d6ae3);
+}
+
+.techsnap__d {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.techsnap__d.is-plus {
+  color: var(--ai-price-target-fg, #d0342c);
+}
+
+.techsnap__d.is-minus {
+  color: var(--ai-price-stop-fg, #1d5fd0);
+}
+
+.techsnap__rsi {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.techsnap__rsi-num {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary, #131722);
+  font-variant-numeric: tabular-nums;
+}
+
+.techsnap__rsi-num em {
+  font-family: inherit;
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.techsnap__rsi-num.is-plus em {
+  background: var(--ai-price-target-tint, rgba(226, 75, 74, 0.12));
+  color: var(--ai-price-target-fg, #d0342c);
+}
+
+.techsnap__rsi-num.is-minus em {
+  background: var(--ai-price-stop-tint, rgba(45, 106, 227, 0.12));
+  color: var(--ai-price-stop-fg, #1d5fd0);
+}
+
+.techsnap__rsi-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  overflow: hidden;
+}
+
+.techsnap__rsi-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.techsnap__rsi-zone--under {
+  left: 0;
+  width: 30%;
+  background: var(--ai-price-stop-tint, rgba(45, 106, 227, 0.12));
+}
+
+.techsnap__rsi-zone--over {
+  left: 70%;
+  right: 0;
+  background: var(--ai-price-target-tint, rgba(226, 75, 74, 0.12));
+}
+
+.techsnap__rsi-dot {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: var(--text-primary, #131722);
+  box-shadow: 0 0 0 2px var(--color-background-secondary, #f6f7fb);
+  overflow: visible;
+}
+
+.techsnap__rsi-track { overflow: visible; }
+
+.techsnap__rsi-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+[data-theme="dark"] .techsnap {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .techsnap__rsi-dot {
+  background: var(--text-title, #f3f4f6);
+  box-shadow: 0 0 0 2px var(--panel-surface, #1a1f35);
+}
+
+@media (max-width: 720px) {
+  .techsnap {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 12px 13px;
+  }
+  .techsnap__row {
+    grid-template-columns: 46px minmax(0, 70px) minmax(50px, 1fr) 50px;
+    gap: 6px;
+  }
+  .techsnap__rsi-num {
+    font-size: 19px;
+  }
+}

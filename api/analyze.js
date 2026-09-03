@@ -4125,6 +4125,15 @@ module.exports = async function handler(req, res) {
     volume: quote.volume == null ? null : quote.volume,
     sector: quote.sector || undefined,
     marketPosition: quote.marketPosition || undefined,
+    // 2026-09-03: 차트 카드 상단의 이평 이격·RSI 도표를 그리려면 클라이언트가 보낸 지표를
+    // 그대로 되돌려 받아야 한다(응답만 다시 렌더하는 경우에도 도표가 살아 있게).
+    indicators: {
+      ma20: indicators.ma20,
+      ma60: indicators.ma60,
+      ma120: indicators.ma120,
+      ma200: indicators.ma200,
+      rsi14: indicators.rsi14,
+    },
     analysis,
     analysisError: analysisError || undefined,
   });

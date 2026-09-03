@@ -1,0 +1,56 @@
+name: DART Corp Code Map
+
+# DART corp_code(고유번호) ↔ 종목코드 전체 매핑 갱신.
+# AI 종목분석의 "실적 추이" 카드가 임의 종목을 조회하려면 상장사 전체 매핑이 필요하다.
+# 신규 상장·상장폐지 반영을 위해 매주 1회 + 필요할 때 수동 실행.
+#
+# ⚠️ corpCode.xml은 20MB대 zip이고 과거(2026-08-28) 30초 타임아웃으로 계속 실패한
+#    이력이 있다. 스크립트가 180초 타임아웃 + 3회 재시도를 하므로 job 타임아웃도
+#    넉넉히 준다. 실패하면 기존 data/dart-corp-map.json은 건드리지 않는다.
+
+on:
+  schedule:
+    # 매주 일요일 07:00 KST = 토요일 22:00 UTC
+    - cron: "0 22 * * 6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dart-corp-map
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build corp_code map
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: node scripts/dart-corp-map.mjs
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # git diff --quiet는 untracked 신규 파일을 못 잡는다(dart-events.yml에서 겪은 사고).
+          if [ -z "$(git status --porcelain -- data/dart-corp-map.json)" ]; then
+            echo "::notice::corp_code map unchanged"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+          git add data/dart-corp-map.json
+          git commit -m "chore(data): sync DART corp_code map ${STAMP}"
+          git pull --rebase origin main
+          git push

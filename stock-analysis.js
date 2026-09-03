@@ -1889,7 +1889,7 @@
           <span class="mpos-tile__mid"></span>
           <span class="mpos-tile__dot" style="left:${pos}%"></span>
         </div>
-        <div class="mpos-tile__foot"><span>중앙값 ${escapeHtml(it.medianText)}</span></div>
+        <div class="mpos-tile__foot"><span>종목 중앙값 ${escapeHtml(it.medianText)}</span></div>
       </div>`;
     };
 
@@ -1912,7 +1912,113 @@
       <div class="mpos__head"><span class="mpos__peer">${head}</span>${asOf}</div>
       ${headline}
       ${sections}
-      <p class="mpos__note">눈금은 비교군 안에서의 위치다. 왼쪽이 가장 작고 오른쪽이 가장 크다.</p>
+      <p class="mpos__note">눈금은 비교군 안에서의 위치다. 왼쪽이 가장 작고 오른쪽이 가장 크다.<br>종목 중앙값은 비교군을 <b>한 종목당 한 표</b>로 세어 정가운데에 오는 값이다. 뉴스에 나오는 <b>코스피 PBR(지수 PBR)</b>은 시가총액으로 가중한 값이라 대형주 영향이 커서 이 숫자보다 훨씬 높게 나온다 — 서로 다른 지표다.</p>
+    </div>`;
+  }
+
+  /* ───────────────── 실적 추이 (2026-09-03 신설, DART 원본 공시) ─────────────────
+   * 그동안 분기·연간 실적은 AI가 web_search로 "추측"하던 유일한 구간이었다
+   * (검증 불가·할루시네이션 위험 1순위). 이제 서버(lib/dart-financials.js)가 DART
+   * 전자공시 단일회사 주요계정에서 직접 파싱한 숫자만 그린다 — 값이 없으면
+   * 채우지 않고 그 기간·그 항목을 통째로 생략한다.
+   */
+
+  /** 억원 단위 정수를 한국식 "N조 N,NNN억원"으로. 소수점은 붙이지 않는다(표기 규칙). */
+  function finFmtEok(eok) {
+    if (eok == null || !Number.isFinite(eok)) return "";
+    const neg = eok < 0;
+    const abs = Math.abs(Math.round(eok));
+    let text;
+    if (abs >= 10000) {
+      const jo = Math.floor(abs / 10000);
+      const rest = abs % 10000;
+      text = rest > 0 ? `${jo.toLocaleString("ko-KR")}조 ${rest.toLocaleString("ko-KR")}억원` : `${jo.toLocaleString("ko-KR")}조원`;
+    } else {
+      text = `${abs.toLocaleString("ko-KR")}억원`;
+    }
+    return neg ? `-${text}` : text;
+  }
+
+  const FIN_METRICS = [
+    { key: "revenue", label: "매출액" },
+    { key: "operatingProfit", label: "영업이익" },
+    { key: "netProfit", label: "당기순이익" },
+  ];
+
+  function renderFinancials(fin) {
+    if (!fin) return "";
+    const annual = Array.isArray(fin.annual) ? fin.annual : [];
+    const q = fin.quarter || null;
+    if (!annual.length && !q) return "";
+
+    // 최근 분기 — 전년 동기 대비. 한국 관습대로 증가=빨강, 감소=파랑.
+    let quarterHtml = "";
+    if (q) {
+      const tiles = FIN_METRICS.map((m) => {
+        const cur = q.current ? q.current[m.key] : null;
+        if (cur == null) return "";
+        const yoy = q.yoy ? q.yoy[m.key] : null;
+        const loss = cur < 0;
+        let badge = "";
+        if (yoy != null) {
+          const up = yoy > 0;
+          badge = `<span class="fin-yoy fin-yoy--${up ? "up" : yoy < 0 ? "down" : "flat"}">${up ? "+" : ""}${yoy}%</span>`;
+        } else if (loss) {
+          badge = `<span class="fin-yoy fin-yoy--loss">적자</span>`;
+        }
+        const prev = q.previous ? q.previous[m.key] : null;
+        const prevText = prev != null ? `<span class="fin-q__prev">전년 ${finFmtEok(prev)}</span>` : "";
+        return `<div class="fin-q__tile${loss ? " fin-q__tile--loss" : ""}">
+          <span class="fin-q__name">${escapeHtml(m.label)}</span>
+          <span class="fin-q__val">${escapeHtml(finFmtEok(cur))}</span>
+          <span class="fin-q__meta">${badge}${prevText}</span>
+        </div>`;
+      }).join("");
+      if (tiles) {
+        quarterHtml = `<section class="fin-group">
+          <h4 class="fin-group__title">최근 실적 <span class="fin-group__cap">${escapeHtml(q.label)} · ${escapeHtml(q.prevLabel)} 대비</span></h4>
+          <div class="fin-q__grid">${tiles}</div>
+        </section>`;
+      }
+    }
+
+    // 연간 3개년 — 항목별 가로 막대. 스케일은 항목 안에서만 정규화한다
+    // (매출과 영업이익을 같은 자로 재면 이익 막대가 항상 안 보인다).
+    let annualHtml = "";
+    if (annual.length >= 2) {
+      const rows = FIN_METRICS.map((m) => {
+        const vals = annual.map((p) => (p[m.key] == null ? null : p[m.key]));
+        if (vals.every((v) => v == null)) return "";
+        const max = Math.max(...vals.filter((v) => v != null).map((v) => Math.abs(v)), 1);
+        const bars = annual
+          .map((p, i) => {
+            const v = vals[i];
+            if (v == null) {
+              return `<div class="fin-a__bar"><span class="fin-a__yr">${escapeHtml(p.label)}</span><span class="fin-a__track"></span><span class="fin-a__num fin-a__num--none">—</span></div>`;
+            }
+            const w = Math.max(2, Math.round((Math.abs(v) / max) * 100));
+            const neg = v < 0;
+            return `<div class="fin-a__bar"><span class="fin-a__yr">${escapeHtml(p.label)}</span><span class="fin-a__track"><i class="fin-a__fill${neg ? " fin-a__fill--neg" : ""}" style="width:${w}%"></i></span><span class="fin-a__num${neg ? " fin-a__num--neg" : ""}">${escapeHtml(finFmtEok(v))}</span></div>`;
+          })
+          .join("");
+        return `<div class="fin-a__row"><span class="fin-a__name">${escapeHtml(m.label)}</span><div class="fin-a__bars">${bars}</div></div>`;
+      }).join("");
+      if (rows) {
+        annualHtml = `<section class="fin-group">
+          <h4 class="fin-group__title">연간 추이 <span class="fin-group__cap">${escapeHtml(annual[0].label)}~${escapeHtml(annual[annual.length - 1].label)}년</span></h4>
+          <div class="fin-a">${rows}</div>
+        </section>`;
+      }
+    }
+
+    if (!quarterHtml && !annualHtml) return "";
+    const basis = fin.fsLabel ? `${fin.fsLabel} 기준` : "";
+    const head = [basis, "단위 억원"].filter(Boolean).join(" · ");
+    return `<div class="fin">
+      <div class="fin__head"><span class="fin__basis">${escapeHtml(head)}</span><span class="fin__src">DART 전자공시</span></div>
+      ${quarterHtml}
+      ${annualHtml}
+      <p class="fin__note">금융감독원 전자공시(DART)에 실제 제출된 보고서의 숫자다. 공시되지 않은 기간·항목은 추정하지 않고 비워 둔다.</p>
     </div>`;
   }
 
@@ -1951,6 +2057,7 @@
     // 2026-09-03: "시장 대비 위치" 카드가 국내 종목에만 붙기 때문에 카드 번호를 하드코딩할
     // 수 없게 됐다(해외·암호화폐는 7장, 국내는 8장). 배열로 만들고 번호는 순서대로 매긴다.
     const marketPositionHtml = renderMarketPosition(data.marketPosition);
+    const financialsHtml = renderFinancials(data.financials);
     const cardDefs = [
       {
         cls: "ai-card--summary",
@@ -1959,6 +2066,9 @@
       },
       marketPositionHtml
         ? { cls: "ai-card--mpos", title: "시장 대비 위치", body: `<div class="ai-card__body">${marketPositionHtml}</div>` }
+        : null,
+      financialsHtml
+        ? { cls: "ai-card--fin", title: "실적 추이", body: `<div class="ai-card__body">${financialsHtml}</div>` }
         : null,
       {
         cls: "ai-card--half",

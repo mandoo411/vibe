@@ -1728,6 +1728,7 @@
 
   .ai-card--summary,
   .ai-card--mpos,
+  .ai-card--fin,
   .ai-card--events,
   .ai-card--materials,
   .ai-card--chart,
@@ -2722,5 +2723,235 @@
   }
   .techsnap__rsi-num {
     font-size: 19px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 2026-09-03: "실적 추이" 카드 (.fin) — DART 전자공시 원본 숫자
+ * 그동안 분기·연간 실적은 AI가 web_search로 추측하던 유일한 구간이었다.
+ * 이 카드의 숫자는 전부 서버(lib/dart-financials.js)가 공시에서 파싱한 실측값이라
+ * 화면에 없는 기간은 "데이터가 없어서 생략된 것"이지 0이 아니다.
+ * ───────────────────────────────────────────────────────────────────────── */
+.fin {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fin__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fin__basis {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary, #131722);
+}
+
+.fin__src {
+  font-size: 11.5px;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.fin__note {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+.fin-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fin-group__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.fin-group__cap {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* 최근 분기 — 값 + 전년동기 대비 */
+.fin-q__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 10px;
+}
+
+.fin-q__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 13px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  background: var(--color-background-primary, #fff);
+}
+
+.fin-q__tile--loss {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.fin-q__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.fin-q__val {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #131722);
+}
+
+.fin-q__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fin-q__prev {
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 한국 관습: 증가=빨강, 감소=파랑 */
+.fin-yoy {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-yoy--up {
+  color: var(--color-up, #e24b4a);
+  background: rgba(226, 75, 74, 0.12);
+}
+
+.fin-yoy--down {
+  color: var(--color-down, #3b82f6);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.fin-yoy--flat,
+.fin-yoy--loss {
+  color: var(--color-text-secondary, #6b7280);
+  background: var(--color-background-secondary, #f6f7fb);
+}
+
+/* 연간 추이 — 항목별 가로 막대. 스케일은 항목 안에서만 정규화한다
+   (매출과 영업이익을 같은 자로 재면 이익 막대가 항상 안 보인다). */
+.fin-a {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fin-a__row {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-tertiary, rgba(200, 210, 255, 0.55));
+  background: var(--color-background-primary, #fff);
+}
+
+.fin-a__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.fin-a__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fin-a__bar {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.fin-a__yr {
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+  font-variant-numeric: tabular-nums;
+}
+
+.fin-a__track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-background-secondary, #f1f3f9);
+  overflow: hidden;
+}
+
+.fin-a__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(15, 131, 135, 0.55), var(--accent-brand, #0f8387));
+}
+
+.fin-a__fill--neg {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.5), var(--color-down, #3b82f6));
+}
+
+.fin-a__num {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #131722);
+  white-space: nowrap;
+}
+
+.fin-a__num--neg {
+  color: var(--color-down, #3b82f6);
+}
+
+.fin-a__num--none {
+  color: var(--color-text-muted, #9ca3af);
+  font-weight: 400;
+}
+
+@media (max-width: 560px) {
+  .fin-a__row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .fin-a__bar {
+    grid-template-columns: 38px 1fr auto;
+  }
+  .fin-q__val {
+    font-size: 18px;
   }
 }

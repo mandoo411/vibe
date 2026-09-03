@@ -1,0 +1,90 @@
+name: Screener Daily Snapshot (archive)
+
+# 매매시그널 백테스트용 일자별 스냅샷 축적 (2026-09-03 신설, 로드맵 F 선행과제)
+#
+# data/kr-screener-cache.json은 매일 덮어써지므로 "3개월 전에 이 전략을 돌렸으면
+# 뭐가 잡혔을까"를 물어볼 과거 데이터가 아예 없다. 백테스트를 언제 만들든 데이터는
+# 오늘부터 쌓아야 하므로, 캐시 빌드가 끝날 때마다 경량 CSV 스냅샷을 남긴다.
+#
+# ⚠️ 중요: 결과물은 **main이 아니라 `data-archive` 브랜치**에 커밋한다.
+#    main에 넣으면 Vercel 배포에 매일 파일이 하나씩 얹혀 배포가 계속 무거워진다.
+#    data-archive는 Vercel이 배포하지 않는 브랜치라 서비스에 아무 영향이 없다.
+
+on:
+  workflow_run:
+    workflows: ["KR Screener Cache Build"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screener-snapshot
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    # 캐시 빌드가 실패했으면 반쪽짜리 데이터를 아카이브하지 않는다.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout main (캐시 원본)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Checkout data-archive branch (없으면 새로 만든다)
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
+        run: |
+          set -euo pipefail
+          REPO_URL="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$REPO_URL" data-archive >/dev/null 2>&1; then
+            git clone --depth 1 --branch data-archive "$REPO_URL" /tmp/archive
+          else
+            echo "::notice::data-archive 브랜치가 없어 새로 만듭니다"
+            git clone --depth 1 "$REPO_URL" /tmp/archive
+            cd /tmp/archive
+            git checkout --orphan data-archive
+            git rm -rf . >/dev/null 2>&1 || true
+            cat > README.md <<'EOF'
+          # data-archive
+
+          매매시그널 백테스트용 **일자별 전종목 지표 스냅샷** 보관 브랜치입니다.
+          `main`과는 커밋 히스토리가 분리되어 있고 Vercel 배포 대상이 아닙니다.
+
+          - `screener/index.json` — 보유 날짜 목록 + 열 스키마
+          - `screener/<YYYY-MM>/<YYYY-MM-DD>.csv.gz` — 그날 종가 기준 전종목 지표
+
+          생성: `.github/workflows/screener-snapshot.yml` (main 브랜치)
+          EOF
+            git add README.md
+            git -c user.name="github-actions[bot]" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                commit -m "chore: init data-archive branch"
+          fi
+
+      - name: Build snapshot
+        run: node scripts/archive-screener-snapshot.mjs --out /tmp/archive
+
+      - name: Commit and push to data-archive
+        run: |
+          set -euo pipefail
+          cd /tmp/archive
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::notice::스냅샷 변경 없음 (같은 날짜 재실행)"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d')
+          git add -A
+          git commit -m "chore(archive): screener snapshot ${STAMP}"
+          git push origin data-archive
+          echo "::notice::스냅샷 커밋 완료"

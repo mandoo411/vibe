@@ -27,6 +27,9 @@ const STOCK_LIST = require("../assets/stock-list.json"); // 매매 시그널 종
 // AI 종목분석(암호화폐)에도 재사용 — Claude/OpenAI의 범용 web_search만으로는 국내 크립토
 // 전문 매체 기사를 놓치는 경우가 많아서, 이미 있는 RSS 피드를 프롬프트 근거로 직접 공급한다.
 const { fetchAllCryptoNews, filterNewsByRelevance } = require("../lib/crypto-news");
+// 2026-09-03(로드맵 D): DART 전자공시 기반 실적 추이. 새 api/*.js를 만들면 Vercel Hobby
+// 함수 12개 한도를 넘기므로 lib 모듈로 두고 이 파일에서 직접 호출한다.
+const { fetchFinancialTrend, financialTrendPromptBlock } = require("../lib/dart-financials");
 
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
 
@@ -477,9 +480,9 @@ function mpTierWord(percentileTop) {
 function mpRatioText(mine, median) {
   if (mine == null || median == null || median <= 0 || mine <= 0) return "";
   const r = mine / median;
-  if (r >= 1.3) return `중앙값의 ${r.toFixed(1)}배`;
-  if (r <= 0.77) return `중앙값의 ${Math.round(r * 100)}% 수준`;
-  return "중앙값과 비슷";
+  if (r >= 1.3) return `종목 중앙값의 ${r.toFixed(1)}배`;
+  if (r <= 0.77) return `종목 중앙값의 ${Math.round(r * 100)}% 수준`;
+  return "종목 중앙값과 비슷";
 }
 
 /**
@@ -610,11 +613,12 @@ function marketPositionPromptBlock(mp) {
   if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
   const lines = mp.items.map(
     (it) =>
-      `- ${it.key.startsWith("ret") ? `${it.label} 수익률` : it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (중앙값 ${it.medianText})`
+      `- ${it.key.startsWith("ret") ? `${it.label} 수익률` : it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (종목 중앙값 ${it.medianText})`
   );
   return [
     "",
     `[비교군 대비 위치 — 코드가 전종목 지표 캐시(${mp.asOfDate || "최근 영업일"} 기준)에서 직접 집계한 실측값이다. 추정이 아니므로 그대로 인용해도 된다]`,
+    "※ 여기서 말하는 중앙값은 비교군을 한 종목당 한 표로 세어 정가운데에 오는 값(종목 중앙값)이다. 시가총액으로 가중한 지수 PBR/PER과는 다른 숫자이므로, 본문에서 '코스피 PBR'처럼 지수 지표인 것처럼 쓰지 말고 반드시 '종목 중앙값'으로 표기한다.",
     `비교군: ${mp.peerLabel} ${mp.peerCount}개 종목`,
     ...lines,
     "이 순위는 화면에도 막대그래프로 함께 표시된다. 그래서 본문에서는 모든 항목을 나열하지 말고, 지금 이 종목의 판단에 실제로 영향을 주는 1~2개만 골라 해석으로 연결한다(예: 밸류에이션 부담, 수급 쏠림, 소외 국면). 같은 숫자를 여러 섹션에서 반복하지 않는다.",
@@ -2683,6 +2687,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     indicatorBlock,
     wmBlock,
     marketPositionPromptBlock(quote && quote.marketPosition),
+    financialTrendPromptBlock(quote && quote.financials),
     formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
@@ -4191,6 +4196,9 @@ module.exports = async function handler(req, res) {
       // 2026-09-03: 비교군 대비 위치(백분위)는 전종목 지표 캐시에서 코드가 직접 집계한다.
       // 실패해도 null만 돌아오고 분석 자체는 그대로 진행된다(카드만 안 그려짐).
       quote.marketPosition = computeMarketPosition(code6);
+      // 2026-09-03(로드맵 D): 분기·연간 실적은 AI가 web_search로 추측하던 구간이었다.
+      // DART 원본 공시 숫자로 교체한다. 실패하면 null이라 카드만 안 그려진다.
+      quote.financials = await fetchFinancialTrend(code6);
     } else if (market === "US") {
       quote = await fetchUsQuote(usSymbol);
       wm = await fetchUsWeeklyMonthly(quote.stockCode, quote.exchange);
@@ -4261,6 +4269,7 @@ module.exports = async function handler(req, res) {
     volume: quote.volume == null ? null : quote.volume,
     sector: quote.sector || undefined,
     marketPosition: quote.marketPosition || undefined,
+    financials: quote.financials || undefined,
     // 2026-09-03: 차트 카드 상단의 이평 이격·RSI 도표를 그리려면 클라이언트가 보낸 지표를
     // 그대로 되돌려 받아야 한다(응답만 다시 렌더하는 경우에도 도표가 살아 있게).
     indicators: {

@@ -13,6 +13,11 @@ on:
     # 매주 일요일 07:00 KST = 토요일 22:00 UTC
     - cron: "0 22 * * 6"
   workflow_dispatch:
+  # Cowork 세션의 PAT에는 Actions 실행 권한이 없어 workflow_dispatch를 못 부른다.
+  # 저장소 쓰기 권한만으로 부를 수 있는 repository_dispatch를 함께 열어 둔다
+  # (마감시황 재시도에서 이미 쓰고 있는 방식과 동일).
+  repository_dispatch:
+    types: [dart-corp-map]
 
 permissions:
   contents: write

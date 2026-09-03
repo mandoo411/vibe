@@ -360,7 +360,7 @@ const MP_METRICS = [
 
 const MP_GROUPS = [
   { id: "valuation", title: "밸류에이션", caption: "낮을수록 저평가" },
-  { id: "performance", title: "주가 성과", caption: "" },
+  { id: "performance", title: "주가 수익률", caption: "해당 기간 상승률" },
   { id: "scale", title: "규모 · 수급", caption: "" },
 ];
 
@@ -451,30 +451,94 @@ function mpTone(metric, percentileTop) {
   return "mid";
 }
 
-/** 카드 상단 한 줄 요약 — AI가 아니라 위 집계 결과로만 조립한다(문장이 매번 사실과 일치). */
-function mpHeadline(items, peerLabel) {
+/** 한글 받침 유무로 조사 고르기 — "하위권로"처럼 어색하게 나가는 걸 막는다. */
+function mpHasJong(word) {
+  const ch = String(word || "").trim().slice(-1);
+  const code = ch.charCodeAt(0);
+  if (!(code >= 0xac00 && code <= 0xd7a3)) return false;
+  return (code - 0xac00) % 28 !== 0;
+}
+function mpJosaRo(word) {
+  return `${word}${mpHasJong(word) ? "으로" : "로"}`;
+}
+
+/** 백분위를 사람이 쓰는 말로. 상위 20%를 "최상위권"이라 부르면 과장이 된다(2026-09-03 피드백). */
+function mpTierWord(percentileTop) {
+  if (percentileTop <= 5) return "최상위권";
+  if (percentileTop <= 20) return "상위권";
+  if (percentileTop <= 40) return "중상위";
+  if (percentileTop <= 60) return "중간";
+  if (percentileTop <= 80) return "중하위";
+  if (percentileTop <= 95) return "하위권";
+  return "최하위권";
+}
+
+/** 비교군 대비 몇 배인지 — "PBR 1.01배(중앙값 0.57배의 1.8배)"처럼 체감되는 표현용. */
+function mpRatioText(mine, median) {
+  if (mine == null || median == null || median <= 0 || mine <= 0) return "";
+  const r = mine / median;
+  if (r >= 1.3) return `중앙값의 ${r.toFixed(1)}배`;
+  if (r <= 0.77) return `중앙값의 ${Math.round(r * 100)}% 수준`;
+  return "중앙값과 비슷";
+}
+
+/**
+ * 카드 상단 요약 — AI가 아니라 위 집계 결과로만 조립한다(문장이 항상 숫자와 일치).
+ * 2026-09-03 피드백("코멘트가 성의 없다")으로, 한 마디 툭 던지지 않고
+ * 밸류에이션 / 수익률 흐름 / 시장 관심 세 축을 각각 한 문장씩 만든다.
+ */
+function mpHeadline(items, peerLabel, rawByKey) {
   const by = (k) => items.find((it) => it.key === k) || null;
-  const parts = [];
+  const raw = rawByKey || {};
+  const out = [];
+
+  // ① 밸류에이션 — 배수를 같이 줘야 "비싸다/싸다"가 감으로 잡힌다.
   const per = by("per");
   const pbr = by("pbr");
-  const valuationHigh = [per, pbr].filter((it) => it && it.percentileTop <= 30).length;
-  const valuationLow = [per, pbr].filter((it) => it && it.percentileTop >= 71).length;
-  if (valuationHigh >= 2) parts.push(`밸류에이션은 ${peerLabel}에서 비싼 축`);
-  else if (valuationLow >= 2) parts.push(`밸류에이션은 ${peerLabel}에서 싼 축`);
-  else if (per) parts.push(`PER은 ${peerLabel} ${per.rankText}`);
+  const vs = [per, pbr].filter(Boolean);
+  if (vs.length) {
+    const pick = pbr || per;
+    const ratio = mpRatioText(raw[pick.key] && raw[pick.key].mine, raw[pick.key] && raw[pick.key].median);
+    const tone = pick.percentileTop <= 30 ? "비싼" : pick.percentileTop >= 71 ? "싼" : null;
+    const bothExpensive = vs.length === 2 && vs.every((v) => v.percentileTop <= 30);
+    const bothCheap = vs.length === 2 && vs.every((v) => v.percentileTop >= 71);
+    let lead;
+    if (bothExpensive) lead = `PER·PBR 모두 ${peerLabel}에서 비싼 축이다.`;
+    else if (bothCheap) lead = `PER·PBR 모두 ${peerLabel}에서 싼 축이다.`;
+    else if (tone) lead = `${pick.label} ${pick.valueText}로 ${peerLabel}에서 ${tone} 축이다.`;
+    else lead = `${pick.label} ${pick.valueText}로 ${peerLabel} 중간 수준이다.`;
+    const ratioSent = ratio && ratio !== "중앙값과 비슷" ? ` ${pick.label}은 ${ratio}.` : "";
+    out.push(lead + ratioSent);
+  }
 
-  const y = by("ret252");
-  const q = by("ret63");
-  if (y && y.percentileTop <= 20) parts.push("1년 성과는 최상위권");
-  else if (y && y.percentileTop >= 81) parts.push("1년 성과는 최하위권");
-  else if (q && q.percentileTop >= 81) parts.push("최근 3개월은 하위권으로 밀림");
-  else if (q && q.percentileTop <= 20) parts.push("최근 3개월 성과가 상위권");
+  // ② 수익률 흐름 — 1개월·3개월·1년의 방향이 같은지 엇갈리는지가 핵심 정보다.
+  const m1 = by("ret21");
+  const m3 = by("ret63");
+  const y1 = by("ret252");
+  const rets = [m1, m3, y1].filter(Boolean);
+  if (rets.length >= 2) {
+    const allTop = rets.every((r) => r.percentileTop <= 30);
+    const allBottom = rets.every((r) => r.percentileTop >= 71);
+    if (allTop) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 상위권이다.`);
+    else if (allBottom) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 하위권이다.`);
+    else if (y1 && m3 && y1.percentileTop <= 30 && m3.percentileTop >= 61)
+      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}인데 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 밀렸다 — 상승 흐름이 최근 꺾였다.`);
+    else if (y1 && m3 && y1.percentileTop >= 71 && m3.percentileTop <= 30)
+      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}지만 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 올라섰다 — 최근 들어 반전 시도가 나왔다.`);
+    else if (y1) out.push(`1년 수익률 ${y1.valueText}로 ${peerLabel} ${mpTierWord(y1.percentileTop)}이다.`);
+  }
 
-  const f = by("foreignHoldRate");
-  if (f && f.percentileTop <= 10) parts.push("외국인 보유 비중이 상위 10% 안");
+  // ③ 시장의 관심 — 시총 대비 거래대금이 튀면 그 자체가 신호다.
+  const tv = by("tradingValueEok");
+  const mc = by("marketCapEok");
+  const fh = by("foreignHoldRate");
+  if (tv && mc && tv.percentileTop + 10 < mc.percentileTop)
+    out.push(`시가총액은 ${mpTierWord(mc.percentileTop)}인데 거래대금은 상위 ${tv.percentileTop}%다 — 덩치에 비해 손바뀜이 활발하다.`);
+  else if (tv && tv.percentileTop <= 10) out.push(`거래대금 상위 ${tv.percentileTop}%로 시장의 관심이 몰려 있다.`);
+  else if (fh && fh.percentileTop <= 10) out.push(`외국인 보유 비중이 상위 ${fh.percentileTop}%다.`);
+  else if (tv && tv.percentileTop >= 81) out.push(`거래대금은 ${mpJosaRo(mpTierWord(tv.percentileTop))} 손바뀜이 뜸하다.`);
 
-  if (!parts.length) return "";
-  return parts.slice(0, 3).join(", ") + ".";
+  return out.slice(0, 3).join(" ");
 }
 
 /**
@@ -493,6 +557,7 @@ function computeMarketPosition(code6) {
 
     const peer = mpPickPeers(stocks, target);
     const items = [];
+    const rawByKey = {};
     for (const metric of MP_METRICS) {
       const mine = mpValueOf(target, metric.key);
       if (!mpValueUsable(metric.key, mine)) continue;
@@ -506,6 +571,7 @@ function computeMarketPosition(code6) {
       const percentileTop = Math.max(1, Math.min(100, Math.round(((above + 1) / values.length) * 100)));
       const sorted = values.slice().sort((a, b) => a - b);
       const median = mpMedian(sorted);
+      rawByKey[metric.key] = { mine, median };
       items.push({
         key: metric.key,
         label: metric.label,
@@ -531,7 +597,7 @@ function computeMarketPosition(code6) {
       sector: (target.snapshot && target.snapshot.sector) || null,
       items,
       groups: MP_GROUPS.filter((g) => items.some((it) => it.group === g.id)),
-      headline: mpHeadline(items, peer.label),
+      headline: mpHeadline(items, peer.label, rawByKey),
     };
   } catch (error) {
     console.warn("[analyze] 상대위치 계산 실패", error && error.message);
@@ -668,11 +734,16 @@ function buildSystemPrompt(today, quote) {
 - 날짜를 정확히 모르면 '2026년 하반기 예정' 식으로 표현.`,
     "",
     `5번 재료 분석 — web_search 결과 기반 (반드시 준수):
-- materialAnalysis.materials는 반드시 2개 이상 채울 것.
-- 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
-- 재료가 없으면 아래처럼 기본 재료로 채울 것:
-  · 실적 모멘텀: 다음 실적발표 예상치 기반
-  · 업종 트렌드: 해당 업종 현재 흐름
+- materialAnalysis.materials는 3개 이상 채울 것(최대 5개).
+- [최근성 — 반드시 준수] 이 중 최소 2개는 **최근 45일 이내에 실제로 벌어진 개별 사건**이어야 한다.
+  위에 붙은 최신 기사 제목 목록과 web_search 결과에서 고른다. 수주·계약·인수·합병·분할·자회사
+  이슈·대규모 투자·규제 승인처럼 날짜와 주체가 특정되는 사건이 여기 해당한다.
+- [일반론 금지 — 이게 가장 자주 어기는 규칙] "실적 모멘텀", "업종 트렌드", "메모리 업황 개선 기대"
+  처럼 어느 종목에나 붙일 수 있는 제목으로 슬롯을 채우지 않는다. 제목에는 반드시 고유명사나
+  숫자가 들어가야 한다 — 발주처·상대 회사명·자회사명·금액·지역 중 최소 하나.
+  · 나쁜 예: "업황 개선 기대", "실적 모멘텀", "정부 정책 수혜"
+  · 좋은 예: "미국 ○○사 배터리 수주 ○조원", "SKIET 흡수합병 결정", "SK온 흑자 전환"
+- 재료를 정말 못 찾겠으면 억지로 일반론을 만들지 말고 찾은 개수만 넣는다(2개라도 구체적인 편이 낫다).
 - strength는 반드시 '강'/'중'/'하' 중 하나.
 - reflectionPct는 반드시 0-100 사이 숫자이되 10% 단위(예: 60, 70)로만 제시할 것(62처럼 세밀한 값 금지 — 통계가 아닌 정성적 어림값이므로). reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 중 최소 하나, 숫자 포함)를 반드시 채울 것.
 - certainty는 반드시 '확정'(이미 집행·완료)/'진행중'(공시·발표되어 절차 진행 중)/'예상'(아직 미실현)/'루머'(비공식)/'AI추정'(근거 없는 정황 추정) 중 하나로 채울 것.
@@ -998,6 +1069,63 @@ async function fetchStockNews(query, maxItems = 5) {
     console.warn("[analyze] news fetch failed", e && e.message);
     return [];
   }
+}
+
+/**
+ * 2026-09-03: 사용자 제보 — SK이노베이션 리포트에 미국 대규모 수주·SKIET 합병·SK온 같은
+ * 그 주의 핵심 재료가 하나도 안 들어갔다. 원인은 두 가지였다.
+ *  ① 모델에게 "종목 최신 뉴스를 검색하라"고만 시켜서 검색이 한 번, 그것도 시황 기사 하나로
+ *     끝나는 경우가 많았다(수주·합병·자회사 같은 개별 이벤트는 그 검색에 안 잡힌다).
+ *  ② 프롬프트가 "재료가 없으면 실적 모멘텀·업종 트렌드로 채우라"고 시켜서, 모델이 검색을
+ *     대충 하고도 일반론으로 슬롯을 메울 수 있었다.
+ * 그래서 코드가 각도를 나눠 직접 최신 헤드라인을 모아 프롬프트에 넣는다 — 모델의 검색이
+ * 부실해도 실제 최근 기사 제목이 입력에 들어가므로 재료가 비는 일이 없다.
+ */
+async function fetchStockNewsBundle(name, opts) {
+  const q = String(name || "").trim();
+  if (!q) return [];
+  const isKr = !opts || opts.isKr !== false;
+  const queries = isKr
+    ? [
+        `"${q}" when:14d`,
+        `"${q}" 수주 OR 계약 OR 공시 OR 인수 OR 합병 when:45d`,
+        `"${q}" 실적 OR 목표주가 OR 증권사 when:45d`,
+      ]
+    : [`"${q}" stock news when:14d`, `"${q}" earnings OR deal OR contract when:45d`];
+  const results = await Promise.all(queries.map((query) => fetchStockNews(query, 8)));
+  const seen = new Set();
+  const merged = [];
+  for (const list of results) {
+    for (const item of list) {
+      const key = String(item.title || "").replace(/\s+/g, "").slice(0, 40);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(item);
+    }
+  }
+  merged.sort((a, b) => {
+    const ta = Date.parse(a.published || "") || 0;
+    const tb = Date.parse(b.published || "") || 0;
+    return tb - ta;
+  });
+  return merged.slice(0, 14);
+}
+
+/** 수집한 헤드라인을 프롬프트 블록으로. 날짜를 함께 줘야 모델이 "최근 30일" 규칙을 지킬 수 있다. */
+function formatNewsBundleBlock(news) {
+  if (!Array.isArray(news) || !news.length) return "";
+  const lines = news.map((n) => {
+    const t = Date.parse(n.published || "");
+    const d = Number.isFinite(t) ? new Date(t).toISOString().slice(0, 10) : "";
+    return `- ${d ? `[${d}] ` : ""}${n.title}`;
+  });
+  return [
+    "",
+    "[코드가 방금 수집한 최신 기사 제목 — 이 종목을 여러 각도(일반 뉴스 / 수주·계약·합병·공시 / 실적·목표주가)로 검색한 결과다]",
+    ...lines,
+    "이 목록은 '무엇이 최근에 벌어졌는지'의 단서다. 제목만 보고 단정하지 말고, 이 중 주가에 실제로 영향을 줄 만한 건을 web_search로 사실관계(금액·상대사·일정)를 확인한 뒤 재료로 쓴다.",
+    "목록에 없는 재료를 web_search로 새로 찾아 쓰는 것도 좋다. 다만 목록에 뚜렷한 대형 이벤트(수주·합병·분할·자회사 이슈 등)가 있는데 재료 분석에서 한 번도 다루지 않으면 그건 누락이다.",
+  ].join("\n");
 }
 
 function kisBaseUrl() {
@@ -2526,9 +2654,12 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - 정말 하나도 확인되지 않으면 억지로 만들지 말고 빈 배열로 둘 것 — 화면에 "현재 확인된 예정 이벤트 없음"이 자동 표시된다.`,
     "",
     `5번 재료 분석 — web_search 기반 (반드시 준수):
-- materialAnalysis.materials는 반드시 2개 이상 채울 것.
-- 웹검색 결과에서 해당 종목 관련 재료를 찾아서 채워줘.
-- 재료가 없으면 기본 재료로 채울 것: 실적 모멘텀(다음 실적발표 예상치), 업종 트렌드(해당 업종 흐름).
+- materialAnalysis.materials는 3개 이상(최대 5개) 채울 것.
+- [최근성] 이 중 최소 2개는 최근 45일 이내에 실제로 벌어진 개별 사건이어야 한다 — 위 최신 기사 제목
+  목록과 web_search 결과에서 고른다(수주·계약·인수·합병·분할·자회사 이슈·대규모 투자·규제 승인 등).
+- [일반론 금지] "실적 모멘텀", "업종 트렌드", "업황 개선 기대"처럼 어느 종목에나 붙는 제목 금지.
+  제목에 발주처·상대 회사명·자회사명·금액·지역 중 최소 하나의 고유명사나 숫자를 반드시 넣을 것.
+  못 찾으면 억지로 채우지 말고 찾은 개수만 넣는다.
 - strength는 반드시 '강'/'중'/'하', reflectionPct는 0-100 숫자이되 10% 단위로만 어림잡아 제시(통계가 아닌 정성적 판단이므로 62 같은 세밀한 값 금지), reflectionBasis에 그 숫자의 구체적 근거(경과일수/공개 후 등락률/컨센서스 괴리율 등 숫자 포함)를 채울 것.
 - certainty는 '확정'/'진행중'/'예상'/'루머'/'AI추정' 중 하나. 자사주 매입/소각은 목적(임직원 보상용 vs 소각 주주환원용)을 구분하고 절대 수급(supplyDemand) 근거로 쓰지 말 것.`,
     "",
@@ -2683,14 +2814,15 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
  * 호출부(openaiAnalyze)가 RSS 기반 폴백으로 넘어가게 한다. 즉 매 호출마다 반드시
  * "실검색" 또는 "RSS 헤드라인" 둘 중 하나의 실제 최신 정보를 근거로 쓰도록 강제해서
  * 호출할 때마다 결과가 달라지는 문제를 없앤다. */
-async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews) {
+async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews, newsBundle) {
   const name = stockName || quote.stockName || quote.stockCode;
   const ind = indicators && typeof indicators === "object" ? indicators : {};
   const isKr = (quote.assetType || "KR") === "KR";
 
   const system =
     ANALYST_PERSONA_RULES + "\n\n" +
-    "web_search 도구를 이번 요청에서 반드시 최소 1회, 필요하면 여러 번 호출해서, 이 종목의 최신 뉴스와 수급 데이터를 확인한 뒤에만 답하세요.\n" +
+    "web_search 도구를 이번 요청에서 반드시 최소 3회 호출하세요. 한 번의 포괄 검색으로는 개별 이벤트가 잡히지 않습니다.\n" +
+    "검색 각도를 나눠서 부르세요 — ①[종목명] 최근 뉴스 ②[종목명] 수주·계약·합병·공시 ③[종목명] 실적·목표주가.\n" +
     "검색을 호출하지 않고 답하는 것은 허용되지 않습니다.\n" +
     "특히 실적발표·이벤트·재료는 검색 결과로 '이미 발표/발생했는지'를 반드시 먼저 확인하고,\n" +
     "이미 끝난 일을 절대 '예정'이나 '기대'로 서술하지 마세요 (예: 실적발표가 이미 나왔다면 그 결과를 반영하고,\n" +
@@ -2704,7 +2836,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 
   const user = [
     `오늘은 ${today}입니다. 분석 종목: ${name} (${quote.stockCode})`,
-    "web_search로 이 종목의 최신 뉴스·공시·실적발표 여부를 반드시 검색해서 확인한 뒤 답하세요. 이번 요청에서 검색 도구 호출은 필수입니다.",
+    "web_search를 최소 3회, 각도를 나눠 호출한 뒤 답하세요 — ①최근 뉴스 ②수주·계약·인수·합병·공시 ③실적·목표주가. 이번 요청에서 검색 도구 호출은 필수입니다.",
     "검색 없이 학습된 과거 지식만으로 답하지 마세요. 아래 데이터를 받아서 반드시 JSON 형식으로만 응답하세요.",
     "코드블록(```) 금지, 설명 문장 금지, JSON 외 문자 금지. 답변 텍스트 안에 URL·도메인명·출처 표기도 절대 포함하지 말 것.",
     "",
@@ -2757,6 +2889,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - weeklyIndicators/monthlyIndicators가 모두 없으면 이 항목들은 언급 자체를 생략하고 일봉 중심 분석만으로 자연스럽게 마무리할 것 ("데이터 없음" 같은 문구를 고객에게 노출하지 말 것).
 【형식】 chart는 각 항목을 반드시 줄바꿈(개행문자 \n)으로 구분해서 "제목: 내용" 형태로 작성할 것 (예: "이동평균선(일봉): …\nRSI: …\n일목균형표: …"). 한 문단으로 이어 쓰지 말 것.`,
     formatCryptoNewsBlock(cryptoNews),
+    formatNewsBundleBlock(newsBundle),
     "",
     CLAUDE_RESPONSE_SCHEMA,
     "",
@@ -2848,10 +2981,13 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
   const name = stockName || quote.stockName || quote.stockCode;
   const cryptoNews = await fetchCryptoNewsForPrompt(quote.assetType, name);
 
+  // 2026-09-03: 모델의 검색 품질에 재료 카드를 온전히 맡기지 않는다. 코드가 각도를 나눠
+  // 최신 헤드라인을 먼저 모아 프롬프트에 함께 넣는다(구글뉴스 RSS, 무료).
+  const newsBundle = await fetchStockNewsBundle(name, { isKr: (quote.assetType || "KR") === "KR" });
   let text = null;
   try {
-    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews);
-    console.log("[analyze] OpenAI web_search 경로 사용");
+    text = await openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKey, model, wm, cryptoNews, newsBundle);
+    console.log(`[analyze] OpenAI web_search 경로 사용 (사전수집 헤드라인 ${newsBundle.length}건)`);
   } catch (e) {
     console.warn("[analyze] OpenAI web_search 실패 — RSS 폴백으로 전환", e && e.message);
   }
@@ -2859,11 +2995,11 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
   if (!text) {
     // 암호화폐는 크립토 전문매체 RSS(이미 fetch해둔 cryptoNews)를 우선 쓰고, 부족하면
     // 구글뉴스로 보충한다. 그 외 자산은 기존과 동일하게 구글뉴스만 사용.
-    const genericNews = await fetchStockNews(name, 6);
+    const genericNews = newsBundle.length ? newsBundle : await fetchStockNews(name, 6);
     const news =
       quote.assetType === "CRYPTO" && cryptoNews.length
-        ? [...cryptoNews, ...genericNews].slice(0, 10)
-        : genericNews;
+        ? [...cryptoNews, ...genericNews].slice(0, 12)
+        : genericNews.slice(0, 12);
     const newsBlock = news.length
       ? "\n\n최신 뉴스 헤드라인(참고용):\n" +
         news.map((n) => `- ${n.title} (${n.source})`).join("\n")

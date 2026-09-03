@@ -4127,6 +4127,27 @@ async function handleTradeSignal(req, res) {
 
 const RP_LIST_LIMIT = 30;
 const RP_DEDUPE_MINUTES = 10; // 같은 종목을 연달아 다시 돌려도 행이 쌓이지 않게
+const RP_PAYLOAD_MAX_BYTES = 300 * 1024; // 리포트 한 건은 보통 20~30KB. 이보다 크면 비정상.
+
+/** 목록 조회에서 payload를 빼기 위한 컬럼 목록 — `select=*`를 쓰면 행마다 20~30KB가
+ *  딸려와 30건이면 1MB 가까이 된다. */
+const RP_LIST_COLUMNS =
+  "id,created_at,market,stock_code,stock_name,currency,price_at_report,signal,confidence," +
+  "entry_price,target_price,stop_loss,summary,materials,scenarios";
+
+function rpSizeGuard(report) {
+  if (!report || typeof report !== "object") return null;
+  try {
+    const bytes = Buffer.byteLength(JSON.stringify(report), "utf8");
+    if (bytes > RP_PAYLOAD_MAX_BYTES) {
+      console.warn(`[reports] payload ${Math.round(bytes / 1024)}KB — 상한 초과로 원문 저장 생략`);
+      return null;
+    }
+    return report;
+  } catch {
+    return null;
+  }
+}
 
 async function rpRequireUser(req) {
   const user = await getUserFromToken(bearerToken(req));
@@ -4153,6 +4174,9 @@ function rpExtractPayload(body) {
   };
 
   return {
+    // 리포트 원문 — 목록에서 누르면 AI 호출 없이 이걸로 그대로 다시 그린다.
+    // 너무 큰 응답이 들어오면(비정상) 저장을 포기하고 요약만 남긴다.
+    payload: rpSizeGuard(body.report),
     market: sanitizeStr(body.market) || "KR",
     stock_code: sanitizeStr(body.stockCode),
     stock_name: sanitizeStr(body.stockName),
@@ -4235,7 +4259,8 @@ function rpLatestKrPrice(code) {
 
 async function rpListReports(user, res) {
   const listRes = await serviceRequest(
-    `analysis_reports?user_id=eq.${user.id}&order=created_at.desc&limit=${RP_LIST_LIMIT}&select=*`,
+    `analysis_reports?user_id=eq.${user.id}&order=created_at.desc&limit=${RP_LIST_LIMIT}` +
+      `&select=${RP_LIST_COLUMNS}`,
     { method: "GET" }
   );
   if (!listRes.ok) {
@@ -4281,6 +4306,52 @@ async function rpListReports(user, res) {
   return tsJson(res, 200, { reports });
 }
 
+/** 저장된 리포트 한 건을 원문까지 돌려준다 — 이걸로 AI 호출 없이 화면을 다시 그린다.
+ *  사후 추적 수치도 함께 실어, 화면이 "그때 리포트 / 그 이후 주가"를 나란히 보여줄 수 있게 한다. */
+async function rpGetReport(user, id, res) {
+  if (!id) return tsJson(res, 400, { error: "id가 필요합니다." });
+  const getRes = await serviceRequest(
+    `analysis_reports?id=eq.${encodeURIComponent(id)}&user_id=eq.${user.id}&select=*&limit=1`,
+    { method: "GET" }
+  );
+  if (!getRes.ok) {
+    const errText = await getRes.text().catch(() => "");
+    throw new Error(`리포트 조회 실패 (HTTP ${getRes.status}): ${errText.slice(0, 200)}`);
+  }
+  const rows = await getRes.json().catch(() => []);
+  const row = Array.isArray(rows) ? rows[0] : null;
+  if (!row) return tsJson(res, 404, { error: "리포트를 찾을 수 없습니다." });
+  if (!row.payload) {
+    // 원문 저장 기능(2026-09-03) 이전에 쌓인 행 — 지어내지 않고 없다고 알린다.
+    return tsJson(res, 200, { report: null, reason: "원문이 저장되기 전에 만들어진 리포트입니다." });
+  }
+
+  const base = Number(row.price_at_report);
+  let tracked = null;
+  if (String(row.market || "KR").toUpperCase() === "KR" && Number.isFinite(base) && base > 0) {
+    const latest = rpLatestKrPrice(row.stock_code);
+    if (latest) {
+      tracked = {
+        price: latest.price,
+        asOfDate: latest.asOfDate,
+        returnPct: Math.round(((latest.price - base) / base) * 1000) / 10,
+      };
+    }
+  }
+
+  return tsJson(res, 200, {
+    report: row.payload,
+    archive: {
+      id: row.id,
+      createdAt: row.created_at,
+      stockName: row.stock_name,
+      priceAtReport: base,
+      currency: row.currency,
+      tracked,
+    },
+  });
+}
+
 async function rpDeleteReport(user, id, res) {
   if (!id) return tsJson(res, 400, { error: "id가 필요합니다." });
   const delRes = await serviceRequest(
@@ -4299,7 +4370,10 @@ async function handleReports(req, res) {
   try {
     const user = await rpRequireUser(req);
     const id = req.query && req.query.id ? String(req.query.id) : "";
-    if (req.method === "GET") return await rpListReports(user, res);
+    if (req.method === "GET") {
+      if (id) return await rpGetReport(user, id, res);
+      return await rpListReports(user, res);
+    }
     if (req.method === "POST") {
       const body = await readBody(req);
       return await rpSaveReport(user, body, res);

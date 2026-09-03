@@ -2022,7 +2022,7 @@
     </div>`;
   }
 
-  function renderAnalysis(data, chartData, chartPeriod) {
+  function renderAnalysis(data, chartData, chartPeriod, archive) {
     if (!panel) return;
     disposeAiChart();
     if (data && chartData && (data.high52w == null || data.low52w == null)) {
@@ -2107,6 +2107,7 @@
     panel.hidden = false;
     panel.innerHTML =
       errBanner +
+      renderArchiveBanner(archive) +
       renderStockHeader(data) +
       cardsHtml +
       `<p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
@@ -2145,6 +2146,9 @@
           currency: data.currency,
           currentPrice: data.currentPrice,
           analysis: data.analysis,
+          // 2026-09-03: 원문을 함께 저장한다. 이게 없으면 목록에서 눌러도 그때 리포트를
+          // 다시 못 읽고 새 분석이 돌아가서(무료 3회 한도까지 소모) 재방문 이유가 안 된다.
+          report: data,
         }),
         cache: "no-store",
       });
@@ -2153,6 +2157,64 @@
     } catch (err) {
       console.warn("[리포트] 저장 건너뜀", err && err.message);
     }
+  }
+
+  /** 저장된 리포트를 AI 호출 없이 그대로 다시 그린다.
+   *  차트는 저장하지 않으므로(용량) 현재 차트가 대신 붙는다 — 배너로 그 점을 밝힌다. */
+  async function openSavedReport(id) {
+    try {
+      const auth = await tmAuthHeader();
+      if (!auth || !id) return;
+      const res = await fetch(`/api/analyze?feature=reports&id=${encodeURIComponent(id)}`, {
+        headers: auth,
+        cache: "no-store",
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`);
+      if (!out.report) {
+        showError(out.reason || "저장된 리포트 원문이 없습니다.");
+        return;
+      }
+      renderAnalysis(out.report, null, "D", out.archive || null);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("[리포트] 열기 실패", err);
+      showError((err && err.message) || "리포트를 불러오지 못했습니다.");
+    }
+  }
+
+  /** 보관 리포트 상단 배너 — "언제 쓴 글인지"와 "그 뒤 주가가 어떻게 됐는지"를 먼저 밝힌다.
+   *  이걸 안 보여주면 오래된 판단을 오늘 판단으로 오해할 수 있다. */
+  function renderArchiveBanner(archive) {
+    if (!archive) return "";
+    const d = new Date(archive.createdAt);
+    const date = Number.isNaN(d.getTime())
+      ? ""
+      : `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+    const cur = String(archive.currency || "KRW");
+    const fmt = (v) =>
+      v == null || !Number.isFinite(Number(v))
+        ? ""
+        : cur === "KRW"
+          ? `${Math.round(Number(v)).toLocaleString("ko-KR")}원`
+          : `$${Number(v).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+    let since = "";
+    if (archive.tracked && archive.tracked.returnPct != null) {
+      const v = archive.tracked.returnPct;
+      const cls = v > 0 ? "up" : v < 0 ? "down" : "flat";
+      since = `<span class="ai-archive__since">그 이후 <b class="ai-archive__ret ai-archive__ret--${cls}">${v > 0 ? "+" : ""}${v}%</b>
+        <span class="ai-archive__prices">${escapeHtml(fmt(archive.priceAtReport))} → ${escapeHtml(fmt(archive.tracked.price))}</span>
+        <span class="ai-archive__asof">${escapeHtml(archive.tracked.asOfDate || "")} 종가 기준</span></span>`;
+    }
+    return `<div class="ai-archive">
+      <div class="ai-archive__row">
+        <span class="ai-archive__tag">보관 리포트</span>
+        <span class="ai-archive__date">${escapeHtml(date)}에 작성</span>
+        ${since}
+      </div>
+      <p class="ai-archive__note">작성 당시 내용을 그대로 보여줍니다. 차트만 현재 시세입니다. 지금 시점으로 다시 보려면
+        <button type="button" class="ai-archive__rerun" data-query="${escapeHtml(archive.stockName || "")}">새로 분석</button>하세요.</p>
+    </div>`;
   }
 
   function reportReturnBadge(r) {
@@ -2202,19 +2264,31 @@
           : "";
         return `<article class="airp-item">
           <div class="airp-item__top">
-            <button type="button" class="airp-item__name" data-query="${escapeHtml(r.stockName || "")}">${escapeHtml(r.stockName || "")}</button>
+            <button type="button" class="airp-item__name" data-open="${escapeHtml(r.id || "")}">${escapeHtml(r.stockName || "")}</button>
             ${sig ? `<span class="airp-item__sig airp-item__sig--${sigCls}">${sig}</span>` : ""}
             <span class="airp-item__date">${escapeHtml(fmtDate(r.createdAt))}</span>
             ${reportReturnBadge(r)}
           </div>
           <div class="airp-item__price">${priceLine}${asOf}</div>
           ${mats ? `<div class="airp-item__mats">${mats}</div>` : ""}
+          <div class="airp-item__acts">
+            <button type="button" class="airp-item__act" data-open="${escapeHtml(r.id || "")}">리포트 열기</button>
+            <button type="button" class="airp-item__act airp-item__act--ghost" data-query="${escapeHtml(r.stockName || "")}">새로 분석</button>
+          </div>
         </article>`;
       })
       .join("");
     section.hidden = false;
 
-    list.querySelectorAll(".airp-item__name").forEach((btn) => {
+    // 기본 동작은 "저장된 리포트 열기"다 — 크레딧을 쓰지 않고 즉시 열린다.
+    // 다시 돌리고 싶을 때만 '새로 분석'을 누르게 분리했다.
+    list.querySelectorAll("[data-open]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-open") || "";
+        if (id) void openSavedReport(id);
+      });
+    });
+    list.querySelectorAll("[data-query]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const q = btn.getAttribute("data-query") || "";
         if (!q) return;
@@ -2595,6 +2669,17 @@
       console.error("[AI분석] #ai-analysis-panel 없음");
       return;
     }
+
+    // 보관 리포트 배너의 '새로 분석' 버튼 — 패널은 매번 innerHTML로 갈리므로
+    // 개별 리스너 대신 패널에 위임 핸들러를 한 번만 건다.
+    panel.addEventListener("click", (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest(".ai-archive__rerun") : null;
+      if (!btn) return;
+      const q = btn.getAttribute("data-query") || "";
+      if (!q) return;
+      if (input) input.value = q;
+      runAnalysis(q);
+    });
 
     // 2026-09-03(로드맵 E): 로그인 사용자면 지난 리포트 목록을 불러온다.
     // 저장분이 없으면 renderReports가 섹션을 숨긴 채로 두므로 빈 껍데기가 보이지 않는다.

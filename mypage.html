@@ -92,6 +92,23 @@
             <div id="acc-orders">불러오는 중…</div>
           </div>
 
+          <div class="tm-account-row">
+            <p class="tm-account-row__label">로그인 방식</p>
+            <p class="tm-account-row__value" id="acc-provider">—</p>
+            <div class="tm-account-actions" id="acc-pw-row" style="margin-top: 12px" hidden>
+              <a class="tm-btn tm-btn--ghost" href="./reset-password.html">비밀번호 변경</a>
+            </div>
+          </div>
+
+          <div class="tm-account-row">
+            <p class="tm-account-row__label">마케팅 정보 수신</p>
+            <div class="tm-consent__item" style="padding-top: 4px">
+              <input type="checkbox" id="acc-marketing" />
+              <label class="tm-consent__label" for="acc-marketing">이메일로 서비스 소식·이벤트 정보를 받겠습니다 <span class="tm-consent__opt">[선택]</span></label>
+            </div>
+            <p class="tm-consent__note" id="acc-marketing-msg" style="margin-left: 26px"></p>
+          </div>
+
           <div class="tm-account-actions">
             <a class="tm-btn tm-btn--primary" href="./pricing.html">요금제 관리 / 업그레이드</a>
             <button type="button" class="tm-btn tm-btn--ghost" id="acc-logout">로그아웃</button>
@@ -193,6 +210,31 @@
           } else {
             document.getElementById("acc-plan-until").textContent = "AI 종목분석은 월 체험 횟수 제한이 있어요";
           }
+
+          const PROVIDER_LABEL = { email: "이메일 + 비밀번호", google: "구글 계정", kakao: "카카오 계정", naver: "네이버 계정" };
+          const isEmailAccount = !state.provider || state.provider === "email";
+          document.getElementById("acc-provider").textContent = PROVIDER_LABEL[state.provider] || "이메일 + 비밀번호";
+          document.getElementById("acc-pw-row").hidden = !isEmailAccount;
+
+          const mkt = document.getElementById("acc-marketing");
+          if (!mkt.dataset.bound) {
+            mkt.dataset.bound = "1";
+            mkt.addEventListener("change", async function () {
+              const note = document.getElementById("acc-marketing-msg");
+              mkt.disabled = true;
+              try {
+                await window.TMAuth.setMarketingConsent(mkt.checked);
+                note.textContent = mkt.checked ? "수신 동의로 변경되었습니다." : "수신 거부로 변경되었습니다.";
+              } catch (e) {
+                mkt.checked = !mkt.checked;
+                note.textContent = "변경에 실패했습니다. 잠시 후 다시 시도해주세요.";
+              } finally {
+                mkt.disabled = false;
+              }
+            });
+          }
+          if (document.activeElement !== mkt) mkt.checked = !!state.marketingAgreed;
+
           const token = await window.TMAuth.getAccessToken();
           loadOrders(state.userId, token);
         }

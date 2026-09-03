@@ -24,6 +24,20 @@ window.TM_AUTH_CONFIG = {
   PORTONE_STORE_ID: "store-2e346cca-6d0b-48ae-a853-887f6214fa93",
   PORTONE_CHANNEL_KEY: "channel-key-95945b22-b915-4a56-bf4b-3dea660f5efc",
 
+  // ---- 네이버 로그인 (2026-09-03 추가) ----
+  // 구글/카카오는 Supabase 대시보드에만 등록하면 되므로 여기에 값이 필요 없습니다.
+  // 네이버는 Supabase가 기본 지원하지 않아 Supabase Edge Function(naver-auth)을 경유합니다.
+  //   NAVER_CLIENT_ID      : 네이버 개발자센터 → 내 애플리케이션 → Client ID (공개값)
+  //   NAVER_AUTH_ENDPOINT  : 배포된 Edge Function URL. 네이버 콘솔의 "Callback URL"과 동일해야 함
+  //                          예) https://slcplrblmdiydakwzqdc.supabase.co/functions/v1/naver-auth
+  // ⚠️ 네이버 Client Secret 은 절대 여기 넣지 말 것 (Supabase Edge Function Secrets 에만 저장)
+  // 두 값이 비어 있으면 네이버 버튼은 자동으로 숨겨집니다.
+  NAVER_CLIENT_ID: "",
+  NAVER_AUTH_ENDPOINT: "https://slcplrblmdiydakwzqdc.supabase.co/functions/v1/naver-auth",
+
+  // 약관/개인정보 동의 버전. 약관을 개정하면 이 값을 올리세요(재동의 유도에 사용).
+  CONSENT_VERSION: "2026-09-03",
+
   // true 로 두면 아직 Supabase/포트원 설정 전이라도 사이트가 깨지지 않고
   // 로그인/결제 버튼이 "준비 중" 안내만 표시합니다. 값 채운 뒤 false로 변경.
   SETUP_PENDING: false,

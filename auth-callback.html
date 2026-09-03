@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#07264b" />
-    <title>TotalMoney AI · 로그인</title>
+    <title>TotalMoney AI · 로그인 처리 중</title>
     <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6" />
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="./assets/auth.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
   </head>
-  <body class="page-tm-v2 page-login" data-tm-tab="menu">
+  <body class="page-tm-v2 page-auth-callback" data-tm-tab="menu">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -72,28 +72,12 @@
 
       <main class="tm-main tm-auth-main">
         <div class="tm-auth-card">
-          <h1 class="tm-auth-card__title">로그인</h1>
-          <p class="tm-auth-card__desc">TotalMoney AI 계정으로 로그인하세요.</p>
-
-          <form id="login-form" autocomplete="on" novalidate>
-            <div class="tm-auth-field">
-              <label for="login-email">이메일</label>
-              <input type="email" id="login-email" name="email" required autocomplete="email" placeholder="you@example.com" />
-            </div>
-            <div class="tm-auth-field">
-              <label for="login-password">비밀번호</label>
-              <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="비밀번호" />
-            </div>
-            <div class="tm-auth-links">
-              <a href="./reset-password.html">비밀번호를 잊으셨나요?</a>
-            </div>
-            <button type="submit" class="tm-auth-submit" id="login-submit">로그인</button>
-            <div class="tm-auth-msg" id="login-msg"></div>
-          </form>
-
-          <div class="tm-social" id="login-social"></div>
-
-          <p class="tm-auth-switch">아직 계정이 없으신가요? <a href="./signup.html">회원가입</a></p>
+          <div class="tm-auth-status" id="cb-status">
+            <div class="tm-auth-spinner" aria-hidden="true"></div>
+            로그인 처리 중입니다…
+          </div>
+          <div class="tm-auth-msg" id="cb-msg"></div>
+          <p class="tm-auth-switch" id="cb-back" hidden><a href="./login.html">로그인 화면으로 돌아가기</a></p>
         </div>
       </main>
 
@@ -127,63 +111,84 @@
 
     <script>
       (function () {
-        function showMsg(text, isError) {
-          const el = document.getElementById("login-msg");
-          el.textContent = text;
-          el.classList.add("is-visible");
-          el.classList.toggle("tm-auth-msg--error", !!isError);
-          el.classList.toggle("tm-auth-msg--ok", !isError);
+        const statusEl = document.getElementById("cb-status");
+        const msgEl = document.getElementById("cb-msg");
+        const backEl = document.getElementById("cb-back");
+
+        function fail(text) {
+          statusEl.hidden = true;
+          backEl.hidden = false;
+          msgEl.textContent = text;
+          msgEl.classList.add("is-visible", "tm-auth-msg--error");
         }
 
         const params = new URLSearchParams(window.location.search);
-        const nextParam = window.TMAuth.safeNext(params.get("next") || "") || "/mypage.html";
+        const hashParams = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+        let next = window.TMAuth.safeNext(params.get("next") || "") || "/mypage.html";
 
-        function redirectAfterLogin() {
-          window.location.href = nextParam;
+        const oauthErr = params.get("error_description") || hashParams.get("error_description") || params.get("error");
+        if (oauthErr) {
+          fail(decodeURIComponent(String(oauthErr).replace(/\+/g, " ")));
+          return;
         }
 
-        // 이메일 인증 완료 후 돌아온 경우 안내
-        if (window.location.hash.indexOf("type=signup") !== -1) {
-          showMsg("이메일 인증이 완료되었습니다. 로그인해주세요.", false);
-        }
-
-        window.TMAuth.attachPasswordToggle(document.getElementById("login-password"));
-
-        window.TMAuth.renderSocialButtons(document.getElementById("login-social"), {
-          mode: "login",
-          next: nextParam,
-          onError: function (err) {
-            showMsg((err && err.message) || "소셜 로그인에 실패했습니다.", true);
-          },
-        });
-
-        document.getElementById("login-form").addEventListener("submit", async function (e) {
-          e.preventDefault();
-          if (window.TMAuth && window.TMAuth.isSetupPending()) {
-            showMsg("아직 로그인 기능 설정 중입니다. 잠시 후 다시 시도해주세요.", true);
+        // 동의 이력이 없으면 동의 페이지로 보낸다(소셜 최초 가입자)
+        async function finish() {
+          const st = await window.TMAuth.refreshState();
+          if (!st.hasConsent) {
+            let pending = null;
+            try {
+              const raw = localStorage.getItem("tm_pending_consent");
+              if (raw) pending = JSON.parse(raw);
+            } catch (e) {}
+            if (pending) {
+              try {
+                await window.TMAuth.saveConsent(pending);
+              } catch (e) {
+                /* 실패하면 아래 동의 페이지로 유도된다 */
+              }
+              try {
+                localStorage.removeItem("tm_pending_consent");
+              } catch (e) {}
+              const again = await window.TMAuth.refreshState();
+              if (again.hasConsent) {
+                window.location.replace("." + next);
+                return;
+              }
+            }
+            window.location.replace("./consent.html?next=" + encodeURIComponent(next));
             return;
           }
-          const email = document.getElementById("login-email").value.trim();
-          const password = document.getElementById("login-password").value;
-          const btn = document.getElementById("login-submit");
-          btn.disabled = true;
-          btn.textContent = "로그인 중…";
-          try {
-            await window.TMAuth.signIn({ email, password });
-            showMsg("로그인 성공! 이동합니다…", false);
-            setTimeout(redirectAfterLogin, 400);
-          } catch (err) {
-            const raw = (err && err.message) || "";
-            let msg = raw || "로그인에 실패했습니다.";
-            if (/Invalid login credentials/i.test(raw)) msg = "이메일 또는 비밀번호가 올바르지 않습니다.";
-            else if (/Email not confirmed/i.test(raw)) msg = "이메일 인증이 아직 완료되지 않았습니다. 메일함을 확인해주세요.";
-            else if (/rate limit|too many/i.test(raw)) msg = "시도 횟수가 많습니다. 잠시 후 다시 시도해주세요.";
-            showMsg(msg, true);
-          } finally {
-            btn.disabled = false;
-            btn.textContent = "로그인";
-          }
-        });
+          window.location.replace("." + next);
+        }
+
+        const naverToken = hashParams.get("naver");
+
+        if (naverToken) {
+          // ---- 네이버: Edge Function이 발급한 1회용 토큰으로 세션 개시 ----
+          window.TMAuth.completeNaverLogin(naverToken, hashParams.get("state"))
+            .then(function (r) {
+              if (r && r.next) next = r.next;
+              history.replaceState(null, "", window.location.pathname);
+              return finish();
+            })
+            .catch(function (err) {
+              fail((err && err.message) || "네이버 로그인에 실패했습니다.");
+            });
+        } else {
+          // ---- 구글/카카오: supabase-js 가 URL 토큰을 세션으로 교환할 때까지 대기 ----
+          let tries = 0;
+          (function waitSession() {
+            tries += 1;
+            const c = window.TMAuth.getClient();
+            if (!c) return fail("로그인 설정이 완료되지 않았습니다.");
+            c.auth.getSession().then(function (r) {
+              if (r && r.data && r.data.session) return finish();
+              if (tries > 32) return fail("로그인 정보를 확인하지 못했습니다. 다시 시도해주세요.");
+              setTimeout(waitSession, 250);
+            });
+          })();
+        }
       })();
     </script>
   </body>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#07264b" />
-    <title>TotalMoney AI · 회원가입</title>
+    <title>TotalMoney AI · 약관 동의</title>
     <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6" />
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6" />
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6" />
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="./assets/auth.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
   </head>
-  <body class="page-tm-v2 page-signup" data-tm-tab="menu">
+  <body class="page-tm-v2 page-consent" data-tm-tab="menu">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
@@ -72,32 +72,10 @@
 
       <main class="tm-main tm-auth-main">
         <div class="tm-auth-card">
-          <h1 class="tm-auth-card__title">회원가입</h1>
-          <p class="tm-auth-card__desc">이메일 또는 소셜 계정으로 가입하고 무료 플랜부터 시작하세요.</p>
+          <h1 class="tm-auth-card__title">약관 동의</h1>
+          <p class="tm-auth-card__desc">서비스 이용을 위해 아래 항목에 동의해주세요.</p>
 
-          <form id="signup-form" autocomplete="on" novalidate>
-            <div class="tm-auth-field">
-              <label for="signup-name">이름 / 닉네임</label>
-              <input type="text" id="signup-name" name="name" autocomplete="nickname" placeholder="닉네임" />
-            </div>
-            <div class="tm-auth-field">
-              <label for="signup-email">이메일</label>
-              <input type="email" id="signup-email" name="email" required autocomplete="email" placeholder="you@example.com" />
-            </div>
-            <div class="tm-auth-field">
-              <label for="signup-password">비밀번호</label>
-              <input type="password" id="signup-password" name="password" required minlength="8" autocomplete="new-password" placeholder="8자 이상, 영문+숫자 조합" />
-              <div class="tm-pwmeter" id="signup-pwmeter" data-level="none">
-                <div class="tm-pwmeter__track"><div class="tm-pwmeter__fill"></div></div>
-                <span class="tm-pwmeter__text"></span>
-              </div>
-            </div>
-            <div class="tm-auth-field">
-              <label for="signup-password2">비밀번호 확인</label>
-              <input type="password" id="signup-password2" name="password2" required autocomplete="new-password" placeholder="한 번 더 입력해주세요" />
-              <span class="tm-auth-hint" id="signup-pw2-hint"></span>
-            </div>
-
+          <form id="consent-form" novalidate>
             <div class="tm-consent" id="consent-box">
               <div class="tm-consent__all">
                 <div class="tm-consent__item">
@@ -124,13 +102,11 @@
               <p class="tm-consent__note">선택 항목에 동의하지 않아도 서비스 이용에는 제한이 없습니다. 수신 동의는 마이페이지에서 언제든 해제할 수 있습니다.</p>
             </div>
 
-            <button type="submit" class="tm-auth-submit" id="signup-submit">회원가입</button>
-            <div class="tm-auth-msg" id="signup-msg"></div>
+            <button type="submit" class="tm-auth-submit" id="consent-submit">동의하고 시작하기</button>
+            <div class="tm-auth-msg" id="consent-msg"></div>
           </form>
 
-          <div class="tm-social" id="signup-social"></div>
-
-          <p class="tm-auth-switch">이미 계정이 있으신가요? <a href="./login.html">로그인</a></p>
+          <p class="tm-auth-switch"><a href="#" id="consent-cancel">취소하고 로그아웃</a></p>
         </div>
       </main>
 
@@ -165,19 +141,21 @@
     <script>
       (function () {
         function showMsg(text, isError) {
-          const el = document.getElementById("signup-msg");
+          const el = document.getElementById("consent-msg");
           el.textContent = text;
           el.classList.add("is-visible");
           el.classList.toggle("tm-auth-msg--error", !!isError);
           el.classList.toggle("tm-auth-msg--ok", !isError);
         }
 
-        /* ---- 약관 동의 체크박스 공통 로직 ---- */
-        var consentBox = document.getElementById("consent-box");
-        var cbAll = document.getElementById("consent-all");
-        var cbReq = Array.prototype.slice.call(consentBox.querySelectorAll('input[data-required="1"]'));
-        var cbMkt = document.getElementById("consent-marketing");
-        var cbAny = cbReq.concat([cbMkt]);
+        const params = new URLSearchParams(window.location.search);
+        const next = window.TMAuth.safeNext(params.get("next") || "") || "/mypage.html";
+
+        const consentBox = document.getElementById("consent-box");
+        const cbAll = document.getElementById("consent-all");
+        const cbReq = Array.prototype.slice.call(consentBox.querySelectorAll('input[data-required="1"]'));
+        const cbMkt = document.getElementById("consent-marketing");
+        const cbAny = cbReq.concat([cbMkt]);
 
         cbAll.addEventListener("change", function () {
           cbAny.forEach(function (cb) { cb.checked = cbAll.checked; });
@@ -189,96 +167,43 @@
             if (cbReq.every(function (x) { return x.checked; })) consentBox.classList.remove("is-error");
           });
         });
-        function consentOk() {
-          var ok = cbReq.every(function (x) { return x.checked; });
-          consentBox.classList.toggle("is-error", !ok);
-          if (!ok) consentBox.scrollIntoView({ behavior: "smooth", block: "center" });
-          return ok;
-        }
-        function consentValue() { return { marketing: !!cbMkt.checked }; }
 
-        /* ---- 비밀번호 UX (표시토글 · 강도바 · 확인 일치) ---- */
-        const pw1 = document.getElementById("signup-password");
-        const pw2 = document.getElementById("signup-password2");
-        const pw2Hint = document.getElementById("signup-pw2-hint");
-        window.TMAuth.attachPasswordToggle(pw1);
-        window.TMAuth.attachPasswordToggle(pw2);
-        window.TMAuth.attachStrengthMeter(pw1, document.getElementById("signup-pwmeter"));
-
-        function checkMatch() {
-          if (!pw2.value) {
-            pw2Hint.textContent = "";
-            pw2Hint.classList.remove("is-error");
-            return false;
+        // 로그인 상태가 아니면 로그인 페이지로
+        document.addEventListener("tm-auth-ready", function onReady(e) {
+          const st = e.detail;
+          if (!st.loaded) return;
+          document.removeEventListener("tm-auth-ready", onReady);
+          if (!st.isLoggedIn) {
+            window.location.replace("./login.html?next=" + encodeURIComponent(next));
+          } else if (st.hasConsent) {
+            window.location.replace("." + next);
           }
-          const same = pw1.value === pw2.value;
-          pw2Hint.textContent = same ? "비밀번호가 일치합니다." : "비밀번호가 일치하지 않습니다.";
-          pw2Hint.classList.toggle("is-error", !same);
-          return same;
-        }
-        pw1.addEventListener("input", checkMatch);
-        pw2.addEventListener("input", checkMatch);
-
-        /* ---- 소셜 로그인 버튼 (필수 동의 확인 후 진행) ---- */
-        window.TMAuth.renderSocialButtons(document.getElementById("signup-social"), {
-          mode: "signup",
-          next: "/mypage.html",
-          beforeClick: function () {
-            if (!consentOk()) {
-              showMsg("필수 항목에 동의해주셔야 가입이 가능합니다.", true);
-              return false;
-            }
-            // 소셜은 외부로 이동했다가 돌아오므로 동의 내역을 잠시 보관했다가
-            // auth-callback.html 에서 계정에 기록한다.
-            try {
-              localStorage.setItem("tm_pending_consent", JSON.stringify(consentValue()));
-            } catch (e) {}
-            return true;
-          },
-          onError: function (err) {
-            showMsg((err && err.message) || "소셜 로그인에 실패했습니다.", true);
-          },
         });
 
-        /* ---- 이메일 가입 ---- */
-        document.getElementById("signup-form").addEventListener("submit", async function (e) {
+        document.getElementById("consent-form").addEventListener("submit", async function (e) {
           e.preventDefault();
-          if (window.TMAuth && window.TMAuth.isSetupPending()) {
-            showMsg("아직 회원가입 기능 설정 중입니다. 잠시 후 다시 시도해주세요.", true);
-            return;
-          }
-          const displayName = document.getElementById("signup-name").value.trim();
-          const email = document.getElementById("signup-email").value.trim();
-          const password = pw1.value;
+          const ok = cbReq.every(function (x) { return x.checked; });
+          consentBox.classList.toggle("is-error", !ok);
+          if (!ok) return showMsg("필수 항목에 모두 동의해주세요.", true);
 
-          if (!email) return showMsg("이메일을 입력해주세요.", true);
-
-          const v = window.TMAuth.validatePassword(password);
-          if (!v.ok) {
-            pw1.focus();
-            return showMsg(v.reason, true);
-          }
-          if (password !== pw2.value) {
-            pw2.focus();
-            checkMatch();
-            return showMsg("비밀번호 확인이 일치하지 않습니다.", true);
-          }
-          if (!consentOk()) return showMsg("필수 항목에 동의해주셔야 가입이 가능합니다.", true);
-
-          const btn = document.getElementById("signup-submit");
+          const btn = document.getElementById("consent-submit");
           btn.disabled = true;
-          btn.textContent = "가입 처리 중…";
+          btn.textContent = "저장 중…";
           try {
-            await window.TMAuth.signUp({ email, password, displayName, consent: consentValue() });
-            showMsg("가입 신청 완료! 이메일함에서 인증 링크를 확인해주세요.", false);
-            document.getElementById("signup-form").reset();
-            checkMatch();
+            await window.TMAuth.saveConsent({ marketing: !!cbMkt.checked });
+            try { localStorage.removeItem("tm_pending_consent"); } catch (err) {}
+            window.location.replace("." + next);
           } catch (err) {
-            showMsg((err && err.message) || "회원가입에 실패했습니다.", true);
-          } finally {
+            showMsg((err && err.message) || "저장에 실패했습니다.", true);
             btn.disabled = false;
-            btn.textContent = "회원가입";
+            btn.textContent = "동의하고 시작하기";
           }
+        });
+
+        document.getElementById("consent-cancel").addEventListener("click", async function (e) {
+          e.preventDefault();
+          await window.TMAuth.signOut();
+          window.location.replace("./login.html");
         });
       })();
     </script>

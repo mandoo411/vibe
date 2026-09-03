@@ -32,7 +32,7 @@ window.TM_AUTH_CONFIG = {
   //                          예) https://slcplrblmdiydakwzqdc.supabase.co/functions/v1/naver-auth
   // ⚠️ 네이버 Client Secret 은 절대 여기 넣지 말 것 (Supabase Edge Function Secrets 에만 저장)
   // 두 값이 비어 있으면 네이버 버튼은 자동으로 숨겨집니다.
-  NAVER_CLIENT_ID: "",
+  NAVER_CLIENT_ID: "1VUxr1f4dnZWhUt_UYrh",
   NAVER_AUTH_ENDPOINT: "https://slcplrblmdiydakwzqdc.supabase.co/functions/v1/naver-auth",
 
   // 약관/개인정보 동의 버전. 약관을 개정하면 이 값을 올리세요(재동의 유도에 사용).

@@ -443,7 +443,7 @@
       enabled
         .map(function (m) {
           return (
-            '<button type="button" class="tm-social-btn ' + m.cls + '" data-provider="' + m.id + '">' +
+            '<button type="button" class="tm-social-btn ' + m.cls + '" data-provider="' + m.id + '" aria-label="' + m.label + verb + '">' +
             '<span class="tm-social-btn__icon">' + SOCIAL_ICONS[m.id] + "</span>" +
             '<span class="tm-social-btn__label">' + m.label + verb + "</span>" +
             "</button>"

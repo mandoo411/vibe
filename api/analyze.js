@@ -3244,6 +3244,7 @@ const {
   CONDITION_GUIDE: TS_CONDITION_GUIDE,
   evaluateCondition: tsEvaluateCondition,
   isValidCondition: tsIsValidConditionShared,
+  describeMatch: tsDescribeMatch,
 } = require("../lib/trade-condition-eval.js");
 
 /* 2026-09-02: 예전엔 Pro/Premium 구분 없이 전원 20개였다 — Premium이 Pro의 2배 가격인데
@@ -3999,6 +4000,10 @@ async function tsHandleScreen(req, res, user) {
       close: r.close,
       changePct: r.changePct,
       sortValue: sort ? r.__sortValue : undefined,
+      // 2026-09-03: "왜 걸렸는지" 근거. 조건 없이 순위만 매긴 검색(hasClauses=false)은
+      // 걸러낸 조건 자체가 없으므로 빈 배열이 맞다. 실측값이 없는 항목은 지어내지 않고
+      // 목록에서 빠진다(lib/trade-condition-eval.js의 describeMatch 참고).
+      why: hasClauses ? tsDescribeMatch(condition, r.snapshot, { limit: 4 }) : [],
     })),
   });
 }

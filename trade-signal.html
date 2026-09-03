@@ -432,6 +432,33 @@
         color: var(--text-muted-ui);
         margin-top: 2px;
       }
+      /* 2026-09-03: "왜 걸렸는지" 근거 칩. 종목명 아래에 실제 측정값을 붙여
+         "걸렀다"가 아니라 "이 값이라서 걸렀다"를 보여준다. 값이 없는 신호형 조건은
+         라벨만 그린다. */
+      .ts-why {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+      }
+      .ts-why__chip {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        padding: 2px 7px;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-subtle, rgba(127, 127, 127, 0.08));
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--text-muted-ui);
+        white-space: nowrap;
+      }
+      .ts-why__val {
+        font-weight: 700;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+      }
       .ts-result-row__stats {
         flex: 0 0 auto;
         min-width: 92px;
@@ -1456,6 +1483,23 @@
           }
         }
 
+        /* 2026-09-03: 서버(lib/trade-condition-eval.js describeMatch)가 내려준 근거를 칩으로.
+           값이 null인 항목(신호 발생형 조건)은 라벨만 그린다. 배열이 비어 있으면 블록 자체를
+           만들지 않는다 — 조건 없이 순위만 매긴 검색이 그 경우다. */
+        function whyChipsHtml(why) {
+          if (!Array.isArray(why) || !why.length) return "";
+          const chips = why
+            .filter((w) => w && w.label)
+            .map(
+              (w) =>
+                `<span class="ts-why__chip">${escapeHtml(w.label)}${
+                  w.value ? `<span class="ts-why__val">${escapeHtml(String(w.value))}</span>` : ""
+                }</span>`
+            )
+            .join("");
+          return chips ? `<div class="ts-why">${chips}</div>` : "";
+        }
+
         function renderResultList() {
           const wrap = $("ts-result-list");
           if (!currentScreen || !currentScreen.stocks || !currentScreen.stocks.length) {
@@ -1480,6 +1524,7 @@
               // 보여준다 — 예전엔 정렬 자체가 거래대금 순으로 고정이라 사용자가 요청한 지표와
               // 화면에 뜬 숫자가 아예 달랐던(당일등락률만 표시) 문제 수정.
               const sortValueText = sortSpec ? fmtSortValue(sortSpec, s.sortValue) : "";
+              const whyHtml = whyChipsHtml(s.why);
               const statsHtml = sortSpec
                 ? `<div class="ts-result-row__rank">${idx + 1}위</div>
                    <div class="ts-result-row__price">${escapeHtml(sortValueText)}</div>`
@@ -1490,6 +1535,7 @@
                   <div class="ts-result-row__main">
                     <div class="ts-result-row__name">${escapeHtml(s.name)}</div>
                     <div class="ts-result-row__meta">${escapeHtml(s.code)} · ${escapeHtml(s.market || "")}</div>
+                    ${whyHtml}
                   </div>
                   <div class="ts-result-row__stats">
                     ${statsHtml}

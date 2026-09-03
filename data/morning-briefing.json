@@ -33,82 +33,82 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29181,
+        "close": 29155.75,
         "previousClose": 29125.5,
-        "changePct": 0.19,
-        "changePoints": 55.5
+        "changePct": 0.1,
+        "changePoints": 30.25
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
         "close": 178.86,
-        "previousClose": 175.8,
-        "changePct": 1.74,
-        "changePoints": 3.06
+        "previousClose": 180.86,
+        "changePct": -1.11,
+        "changePoints": -2
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 324.65,
-      "changePct": -0.15,
-      "changePoints": 0.48
+      "price": 324.96,
+      "changePct": -0.05,
+      "changePoints": 0.17
     },
     {
       "symbol": "MSFT",
-      "price": 497.99,
-      "changePct": -0.6,
-      "changePoints": 3.03
+      "price": 496.82,
+      "changePct": -0.84,
+      "changePoints": 4.2
     },
     {
       "symbol": "NVDA",
-      "price": 224.85,
-      "changePct": 3.41,
-      "changePoints": 7.41
+      "price": 224.41,
+      "changePct": 3.21,
+      "changePoints": 6.97
     },
     {
       "symbol": "AMZN",
-      "price": 256.02,
-      "changePct": 0.43,
-      "changePoints": 1.1
+      "price": 254.98,
+      "changePct": 0.02,
+      "changePoints": 0.06
     },
     {
       "symbol": "META",
-      "price": 596.59,
-      "changePct": 3.12,
-      "changePoints": 18.05
+      "price": 592.85,
+      "changePct": 2.47,
+      "changePoints": 14.31
     },
     {
       "symbol": "TSLA",
-      "price": 356.59,
-      "changePct": 0.14,
-      "changePoints": 0.5
+      "price": 357.01,
+      "changePct": 0.26,
+      "changePoints": 0.92
     },
     {
       "symbol": "GOOGL",
-      "price": 338,
-      "changePct": 0.89,
-      "changePoints": 2.98
+      "price": 337.12,
+      "changePct": 0.63,
+      "changePoints": 2.1
     },
     {
       "symbol": "AMD",
-      "price": 456.55,
-      "changePct": -0.67,
-      "changePoints": 3.06
+      "price": 457.06,
+      "changePct": -0.55,
+      "changePoints": 2.55
     },
     {
       "symbol": "PLTR",
-      "price": 169.78,
-      "changePct": -5.64,
-      "changePoints": 10.14
+      "price": 169.46,
+      "changePct": -5.81,
+      "changePoints": 10.46
     },
     {
       "symbol": "COIN",
-      "price": 175.18,
-      "changePct": -0.93,
-      "changePoints": 1.64
+      "price": 174.96,
+      "changePct": -1.05,
+      "changePoints": 1.86
     }
   ],
   "sectors": [
@@ -117,113 +117,113 @@
       "sector": "기술",
       "name": "기술 (XLK)",
       "price": 183.6,
-      "changePct": -0.02
+      "changePct": -1.55
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
       "price": 57.66,
-      "changePct": 0.8
+      "changePct": -0.09
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
       "price": 65.1,
-      "changePct": 0.51
+      "changePct": 1.78
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
       "price": 172.95,
-      "changePct": 0.75
+      "changePct": 1.41
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
       "price": 172.78,
-      "changePct": 0.03
+      "changePct": -1.34
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
       "price": 114.86,
-      "changePct": 0.24
+      "changePct": -1.48
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
       "price": 85.53,
-      "changePct": 0.33
+      "changePct": 0.65
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
       "price": 42.67,
-      "changePct": 0.26
+      "changePct": 1.04
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
       "price": 52.95,
-      "changePct": 1.69
+      "changePct": 0.49
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 43.73,
-      "changePct": -0.7
+      "changePct": -0.86
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1373.78,
-      "USD/JPY": 160.11,
+      "USD/KRW": 1361.14,
+      "USD/JPY": 159.09,
       "USD/CNY": 6.74,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Wed, 02 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Thu, 03 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 90.7,
-        "changePct": 0.53,
-        "changePoints": 0.48
+        "price": 90.82,
+        "changePct": 0.67,
+        "changePoints": 0.6
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4431.7,
-        "changePct": 1.93,
-        "changePoints": 83.7
+        "price": 4432.3,
+        "changePct": 1.94,
+        "changePoints": 84.3
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.91,
-        "changePct": 2,
-        "changePoints": 1.29
+        "price": 65.83,
+        "changePct": 1.87,
+        "changePoints": 1.21
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.61,
-        "changePct": 1.54,
-        "changePoints": 0.1
+        "price": 6.6,
+        "changePct": 1.38,
+        "changePoints": 0.09
       },
       {
         "id": "sox",
@@ -240,40 +240,54 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 77130,
-        "changePct24h": -0.17,
-        "marketCapUsd": 1548883459896.78
+        "priceUsd": 77065,
+        "changePct24h": -0.18,
+        "marketCapUsd": 1547388171937.4
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2383.59,
-        "changePct24h": -1.22,
-        "marketCapUsd": 290826445856.91
+        "priceUsd": 2382.47,
+        "changePct24h": -1.09,
+        "marketCapUsd": 290685000203.95
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 99.7,
-        "changePct24h": -0.04,
-        "marketCapUsd": 58353727670.74
+        "priceUsd": 99.63,
+        "changePct24h": -0.1,
+        "marketCapUsd": 58322327838.39
       }
     ]
   },
   "news": [
     {
-      "title": "아빠 찬스 없이 강남 집 샀다…주식 머니 2.2조, 증여·상속 자금 2배 육박",
-      "url": "https://www.mk.co.kr/news/realestate/12142908",
+      "title": "현대모비스 “유럽 첫 PE시스템 거점은 슬로바키아”…연 28만개 생산",
+      "url": "https://www.mk.co.kr/news/business/12143047",
       "source": "매일경제",
-      "publishedAt": "2026-09-02T20:44:15.000Z",
-      "summary": "주택 자금조달 계획서 분석 강남3구 주식·채권 매각대금 전년대비 6500억원 웃돌아 노도강은 부동산 팔아 집 매매올해 증시 호황이 강남3구 주택 매매의 자금조달 방식을 바꾼 것으로.."
+      "publishedAt": "2026-09-03T00:46:41.000Z",
+      "summary": "현대모비스가 슬로바키아에 유럽 첫 전기차 구동시스템 생산기지를 구축하고 현지 양산에 들어갔다. 체코·스페인의 배터리시스템 생산기지에 이어 유럽 내 전동화 부품 공급망을 한층 넓히는.."
     },
     {
-      "title": "“넷플 퍼주는 네이버 있는데”…카카오멤버십, 이모티콘·택시·음악 묶는다",
-      "url": "https://www.mk.co.kr/news/it/12142905",
+      "title": "영등포구 현대6차 50.55㎡, 9억4천만원 최근 3년 신고가",
+      "url": "https://www.mk.co.kr/news/realestate/12143043",
       "source": "매일경제",
-      "publishedAt": "2026-09-02T20:42:33.000Z",
-      "summary": "통합 유료멤버십 이르면 내달 출시카카오가 다음달 ‘카카오 멤버십’(가칭)을 출시하기 위해 준비 중인 것으로 알려졌다. 카카오톡 플랫폼을 중심으로 계열사 서비스를 통합 제공하겠다는 .."
+      "publishedAt": "2026-09-03T00:43:50.000Z",
+      "summary": "서울 영등포구 문래동6가 현대6차아파트 전용 50.55㎡가 9억 4,000만 원에 거래되며 최근 3년 내 신고가를 기록했다. 2026년 9월 2일 국토부 실거래가 시스템에 신규 등.."
+    },
+    {
+      "title": "코로나 이후 최대 규모 ‘해고’ 나왔다...‘무쓸모’ 관리자부터 날리는 글로벌 기업",
+      "url": "https://www.mk.co.kr/news/world/12143034",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T00:40:13.000Z",
+      "summary": "글로벌 차량공유 서비스기업 ‘우버’ 전세계 인력 10%, 3300명 감원 사내관리자 인력 20% 축소 계획 일부 관리자는 실무직으로 전환글로벌 차량 공유 서비스 기업 우버 테크놀로.."
+    },
+    {
+      "title": "“금2·은1·동3·본10”…현대차그룹, ‘2026 IDEA 디자인상’ 16개 수상",
+      "url": "https://www.mk.co.kr/news/business/12143031",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T00:37:02.000Z",
+      "summary": "현대자동차그룹이 자동차와 모빌리티뿐 아니라 브랜딩, 디지털 인터페이스, 공간·서비스 디자인까지 폭넓은 분야에서 글로벌 디자인 경쟁력을 인정받았다. 현대차그룹은 미국 산업디자인협회(.."
     },
     {
       "title": "“서민 대출은 칼같이 굴더니”…은행권 기업 부실채권, 19조 육박",
@@ -283,25 +297,11 @@
       "summary": "8년만에 부실채권 규모 최대 기업대출이 부실의 80% 차지 3개월새 中企신규부실 4.5조 충당금 적립이 부실 못따라가 산은마저 부실대출 60% 늘어 일각선 “생산적금융 영향”경기 .."
     },
     {
-      "title": "AI시대 전기·물 퍼먹는 데이터센터 … ‘가장 빠른 해법’가진 기업에 돈 몰린다",
-      "url": "https://www.mk.co.kr/news/it/12142434",
-      "source": "매일경제",
-      "publishedAt": "2026-09-02T19:30:00.000Z",
-      "summary": "송전 효율화 관련 종목인공지능 서비스를 주도하는 미국의 빅테크 기업들은 데이터센터 건립을 지연시키려 한다. 계산에 필요한 전기와 냉각에 필요한 물이 부족하기 때문이다. 물론 반도체.."
-    },
-    {
       "title": "“코스피 고점 가까워졌다”…전문가가 주식 대신 늘리라는 ‘이 자산’",
       "url": "https://www.mk.co.kr/news/economy/12142830",
       "source": "매일경제 증권",
       "publishedAt": "2026-09-02T13:42:59.000Z",
       "summary": "경기선행지수가 정점에 근접하면서 주식 비중을 줄이고 단기 국채 등 안전자산 비중을 늘려야 한다는 주장이 제기됐다. 경기 둔화 국면에 대비해 현금성 자산을 확보하고 향후 증시 조정 .."
-    },
-    {
-      "title": "“AI 써라, 안 쓰면 자리 없어진다”…기업 ‘아날로그 문화’ 경고한 손정의",
-      "url": "https://www.mk.co.kr/news/stock/12142824",
-      "source": "매일경제",
-      "publishedAt": "2026-09-02T13:27:28.000Z",
-      "summary": "소뱅 강연서 공개한 통찰 화제 “14년뒤 AI가 GDP 20% 차지” 연 800조엔 인프라 투자 구상 ‘투자 대비 수익률’ 목표 제시 “100조개 에이전트, 인간 대체”“인공지능(.."
     },
     {
       "title": "해외투자 실무 전반 배운다…KIC, 국제금융 아카데미 개최",
@@ -381,25 +381,25 @@
       "summary": "2일 서울 외환시장에서 원·달러 환율은 오후 3시30분 기준 전 거래일 대비 1.7원 내린 1368.7원을 기록했다."
     },
     {
-      "title": "\"외화예수금 급증\" 외환보유액, 143억달러 늘었다…증가폭 '역대 최대'",
-      "url": "https://view.asiae.co.kr/article/2026090217240108698",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-02T21:00:00.000Z",
-      "summary": "외환보유액이 한 달 만에 143억달러 이상 급증하며 역대 최대 증가 폭을 기록했다. 전체 외환보유액도 4400억달러를 넘어서면서 4년3개월 만에 가장 높은 수준을 나타냈다. 반도체 효과 등에 수출기업 경상대금 유입이 급증하면서 국내 외화자금 시장 유동성을 풍부하게 했고, 이로 인해 한국은행에 예치한 금융기관 외화예수금이 크게 늘어난 결과다. 운용수익과 기타통화 외화자산의 미국 달러 환산액도 증가하면서 외환보유액 사"
+      "title": "국민의힘 여의도연구원, 2026년 청년정책 수요조사 전달식",
+      "url": "https://www.mk.co.kr/news/politics/12143051",
+      "source": "매일경제",
+      "publishedAt": "2026-09-03T00:47:55.000Z",
+      "summary": "국민의힘 여의도연구원, 2026년 청년정책 수요조사 전달식 장동혁 국민의힘 대표를 비롯한 청년들이 3일 서울 여의도 국회에서 열린 2026 청년정책 수요조사 전달식에서 기념촬영을 .."
     },
     {
-      "title": "“냉매충전 몇번하면 에어컨 값인데”…저렴이 썼다가 집 태워먹는다",
-      "url": "https://www.mk.co.kr/news/society/12142909",
+      "title": "청년정책 수요조사 자료집 든 장동혁 대표",
+      "url": "https://www.mk.co.kr/news/politics/12143050",
       "source": "매일경제",
-      "publishedAt": "2026-09-02T20:44:27.000Z",
-      "summary": "혼합냉매發 추정화재 작년부터 27건 실외기 알루미늄 반응해 공기중 발화온라인 등에서 유통되는 에어컨용 불법 혼합냉매가 에어컨 화재의 원인이 될 수 있다는 조사 결과가 나왔다. 2일.."
+      "publishedAt": "2026-09-03T00:47:43.000Z",
+      "summary": "청년정책 수요조사 자료집 든 장동혁 대표 국민의힘 장동혁 대표가 3일 국회에서 열린 최고위원회의에서 2026 청년정책 수요조사 결과 자료집을 들고 발언하고 있다. 2026.9.3..."
     },
     {
-      "title": "유튜브 개국공신이 어쩌다…동전주 전락하더니 헐값매각 고프로",
-      "url": "https://www.mk.co.kr/news/stock/12142907",
+      "title": "발언하는 장동혁 대표",
+      "url": "https://www.mk.co.kr/news/politics/12143049",
       "source": "매일경제",
-      "publishedAt": "2026-09-02T20:43:55.000Z",
-      "summary": "가성비 중국 액션캠에 밀려 결국 스타맨옵티컬에 합병돼 AI 광통신·방산 분야로 재편 새주인 소식에 주가 40% 급등한때 액션카메라 시장을 평정했던 고프로가 중국산 제품에 밀려 경영.."
+      "publishedAt": "2026-09-03T00:47:32.000Z",
+      "summary": "발언하는 장동혁 대표 국민의힘 장동혁 대표가 3일 국회에서 열린 최고위원회의에서 발언하고 있다. 2026.9.3.김재훈기자"
     }
   ],
   "aiAnalysis": {

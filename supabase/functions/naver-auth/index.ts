@@ -81,7 +81,27 @@ Deno.serve(async (req) => {
     if (naverError) return fail("네이버 로그인이 취소되었습니다.");
     if (!code) return fail("잘못된 접근입니다.");
     if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET || !SERVICE_ROLE_KEY) {
-      console.error("[naver-auth] 필수 환경변수 누락");
+      // 어느 값이 비었는지만 남긴다 (값 자체는 절대 로그에 남기지 않는다)
+      console.error(
+        "[naver-auth] 필수 환경변수 누락 " +
+          JSON.stringify({
+            NAVER_CLIENT_ID: !!NAVER_CLIENT_ID,
+            NAVER_CLIENT_SECRET: !!NAVER_CLIENT_SECRET,
+            SERVICE_KEY: !!SERVICE_ROLE_KEY,
+            has_SECRET_KEYS: !!Deno.env.get("SUPABASE_SECRET_KEYS"),
+            has_SERVICE_ROLE_KEY: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+            secretKeysShape: (() => {
+              const r = Deno.env.get("SUPABASE_SECRET_KEYS");
+              if (!r) return "none";
+              try {
+                const d = JSON.parse(r);
+                return Array.isArray(d) ? "array:" + d.length : "object:" + Object.keys(d).join(",");
+              } catch {
+                return "raw:" + r.slice(0, 10);
+              }
+            })(),
+          }),
+      );
       return fail("네이버 로그인이 아직 설정되지 않았습니다.");
     }
 

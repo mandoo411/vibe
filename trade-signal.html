@@ -723,9 +723,10 @@
                 <li>“RSI 30 이하이고 일봉 강세 다이버전스가 나온 종목”</li>
                 <li>“최근 1년 상승률 높은 순서대로 20종목”</li>
                 <li>“주가 1,000원 이상, PBR 1배 미만, 외국인 순매수 종목”</li>
+                <li>“부채비율 150% 이하이고 영업이익률 7% 이상인 종목”</li>
                 <li>키움 HTS 조건검색식을 그대로 붙여넣어도 인식합니다</li>
               </ul>
-              <p class="ts-gate__demo-note">코스피·코스닥 전 종목을 일봉 기준으로 스캔하며, 거래정지·정리매매 종목은 결과에서 제외합니다.</p>
+              <p class="ts-gate__demo-note">코스피·코스닥 전 종목을 일봉 기준으로 스캔하며, 거래정지·정리매매 종목은 결과에서 제외합니다. 부채비율·영업이익률·순이익률·ROE·유동비율은 DART 사업보고서(최근 결산) 실수치로 판정하고, 결과마다 어떤 값으로 걸렸는지 함께 보여줍니다.</p>
             </div>
           </div>
 
@@ -858,6 +859,11 @@
           foreign_net_buy: "외국인순매수",
           institution_net_buy: "기관순매수",
           adx: "ADX",
+          debt_ratio: "부채비율",
+          operating_margin: "영업이익률",
+          net_margin: "순이익률",
+          roe: "ROE",
+          current_ratio: "유동비율",
         };
         const TS_SORT_PERIOD_LABEL = { 5: "1주", 21: "1개월", 63: "3개월", 126: "6개월", 252: "1년" };
 
@@ -873,7 +879,7 @@
               : sort.by === "disparity"
                 ? `${sort.period}일 이격도`
                 : TS_SORT_BY_LABEL[sort.by] || sort.by;
-          const isPct = ["period_return", "price_change_pct", "volume_ratio", "disparity", "foreign_hold_rate", "volume_turnover_rate"].includes(sort.by);
+          const isPct = ["period_return", "price_change_pct", "volume_ratio", "disparity", "foreign_hold_rate", "volume_turnover_rate", "debt_ratio", "operating_margin", "net_margin", "roe", "current_ratio"].includes(sort.by);
           const isEok = ["market_cap", "trading_value", "foreign_net_buy", "institution_net_buy"].includes(sort.by);
           let valueText;
           if (isPct) {
@@ -954,6 +960,13 @@
           if (c.type === "volume_turnover_rate") return `거래량 회전율 ${cmp(c.op)} ${c.value}%`;
           if (c.type === "foreign_net_buy") return `외국인 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
           if (c.type === "institution_net_buy") return `기관 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          // 2026-09-03 재무비율(DART 사업보고서 최근 결산). 시세와 갱신 주기가 달라
+          // "최근 결산"을 문구에 명시해 사용자가 실시간 값으로 오해하지 않게 한다.
+          if (c.type === "debt_ratio") return `부채비율 ${cmp(c.op)} ${c.value}% (최근 결산)`;
+          if (c.type === "operating_margin") return `영업이익률 ${cmp(c.op)} ${c.value}% (최근 결산)`;
+          if (c.type === "net_margin") return `순이익률 ${cmp(c.op)} ${c.value}% (최근 결산)`;
+          if (c.type === "roe") return `ROE ${cmp(c.op)} ${c.value}% (최근 결산)`;
+          if (c.type === "current_ratio") return `유동비율 ${cmp(c.op)} ${c.value}% (최근 결산)`;
           if (c.type === "high_breakout_n") return `${c.windowBars}봉중 신고가`;
           if (c.type === "low_breakdown_n") return `${c.windowBars}봉중 신저가`;
           if (c.type === "volume_record_high_n") return `${c.windowBars}봉중 신고거래량`;
@@ -1627,6 +1640,12 @@
           "시가총액 1000억 이상이고 거래대금 50억 넘는 종목 찾아줘",
           "5일선이 20일선 골든크로스한 종목 찾아줘",
           "최근 3개월간 20% 이상 상승한 종목 찾아줘",
+          // 2026-09-03: 재무비율 조건검색 신설. 무료 시세 사이트에 없는 축이라 예시로 노출해
+          // 발견 가능성을 높인다(사용자 제보: 키움 조건식 붙여넣기).
+          "부채비율 150% 이하이고 영업이익률 7% 이상인 종목 찾아줘",
+          "ROE 15% 이상이면서 PER 15배 이하인 종목 찾아줘",
+          "시가총액 5000억 이상이고 부채비율 100% 이하인 우량주 찾아줘",
+          "ROE 높은 순서대로 20종목 보여줘",
         ];
 
         function renderExampleChips() {

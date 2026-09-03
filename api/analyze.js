@@ -3598,6 +3598,20 @@ function tsNormalizeParseResult(rawInput, candidates) {
     ? raw.condition.clauses.map(tsNormalizeClause).filter(Boolean)
     : [];
 
+  // 2026-09-03: 즉시검색과 같은 이유로 여기서도 미지원 조건을 조용히 버리면 안 된다.
+  // 오히려 이쪽이 더 위험하다 — 저장된 전략은 앞으로 계속 알림을 보내므로, 조건 하나가
+  // 빠진 채 저장되면 사용자가 원하지 않은 시점에 매수/매도 신호를 계속 받게 된다.
+  const unsupportedSaved = [...new Set(tsCollectUnsupportedTypes(raw?.condition?.clauses, []))];
+  if (matched && unsupportedSaved.length) {
+    console.log("[trade-signal parse] 미지원 조건으로 거절:", unsupportedSaved.join(", "));
+    return {
+      matched: false,
+      clarifyMessage:
+        `아직 지원하지 않는 조건이 섞여 있어요: ${unsupportedSaved.join(", ")}. ` +
+        "이 조건을 빼고 다시 말씀해주시면 나머지로 감시 전략을 만들어드려요.",
+    };
+  }
+
   if (!matched || !validCandidate || !clauses.length) {
     return {
       matched: false,
@@ -3652,11 +3666,47 @@ async function tsHandleParse(req, res, user) {
 let TS_SCREENER_CACHE = null;
 let TS_SCREENER_CACHE_LOAD_FAILED = false;
 
+/* 2026-09-03: 재무비율(DART 사업보고서)을 스크리너 캐시에 조인한다.
+   두 데이터는 갱신 주기가 완전히 다르다 — 시세 캐시는 평일 16:00마다, 재무는 사업보고서가
+   나오는 연 1회다. build-screener-cache.mjs 안에서 합치면 재무가 바뀔 때마다 8MB짜리
+   시세 캐시를 통째로 다시 만들어야 하고, 반대로 시세 캐시를 다시 만들기 전엔 재무가
+   반영되지 않는다. 그래서 파일은 따로 두고 **검색 시점에 메모리에서 합친다**(1회만). */
+function tsLoadFinancialRatios() {
+  if (TS_FIN_RATIOS !== undefined) return TS_FIN_RATIOS;
+  try {
+    const f = require("../data/dart-financial-ratios.json");
+    TS_FIN_RATIOS = (f && f.stocks) || null;
+  } catch {
+    // 배치가 아직 한 번도 안 돌았거나 배포에 누락된 상태. 재무 조건은 자연히 아무것도
+    // 매치되지 않고(필드 없음 → null → false), 시세 조건은 그대로 동작한다.
+    TS_FIN_RATIOS = null;
+  }
+  return TS_FIN_RATIOS;
+}
+let TS_FIN_RATIOS;
+
 function tsLoadScreenerCache() {
   if (TS_SCREENER_CACHE) return TS_SCREENER_CACHE;
   if (TS_SCREENER_CACHE_LOAD_FAILED) return { updatedAt: null, asOfDate: null, count: 0, stocks: [] };
   try {
     TS_SCREENER_CACHE = require("../data/kr-screener-cache.json");
+    const ratios = tsLoadFinancialRatios();
+    if (ratios) {
+      let joined = 0;
+      for (const row of TS_SCREENER_CACHE.stocks || []) {
+        const r = row && row.code ? ratios[row.code] : null;
+        if (!r || !row.snapshot) continue;
+        // 값이 있는 항목만 싣는다 — null을 넣으면 판정에선 같지만 스냅샷이 지저분해진다.
+        if (r.debtRatio != null) row.snapshot.debtRatio = r.debtRatio;
+        if (r.operatingMargin != null) row.snapshot.operatingMargin = r.operatingMargin;
+        if (r.netMargin != null) row.snapshot.netMargin = r.netMargin;
+        if (r.roe != null) row.snapshot.roe = r.roe;
+        if (r.currentRatio != null) row.snapshot.currentRatio = r.currentRatio;
+        if (r.year != null) row.snapshot.fiscalYear = r.year;
+        joined += 1;
+      }
+      console.log(`[trade-signal screen] 재무비율 조인 ${joined}/${(TS_SCREENER_CACHE.stocks || []).length}종목`);
+    }
   } catch (error) {
     console.error("[trade-signal screen] 캐시 로드 실패 — 아직 생성 전이거나 배포에 누락됨", error && error.message);
     TS_SCREENER_CACHE_LOAD_FAILED = true;
@@ -3805,6 +3855,12 @@ const TS_SORT_BY_OPTIONS = [
   "foreign_net_buy",
   "institution_net_buy",
   "adx",
+  // 2026-09-03 재무비율 정렬("ROE 높은 순 20종목")
+  "debt_ratio",
+  "operating_margin",
+  "net_margin",
+  "roe",
+  "current_ratio",
 ];
 const TS_PERIOD_RETURN_DAYS = [5, 21, 63, 126, 252];
 const TS_DISPARITY_PERIODS = [5, 10, 20, 60, 120, 200, 240];
@@ -3837,12 +3893,67 @@ function tsNormalizeLimit(raw) {
   return Math.min(Math.floor(n), 100);
 }
 
+/* 2026-09-03: 미지원 조건이 조용히 버려지던 구멍 막기.
+   tsNormalizeClause는 모르는 type에 null을 돌려주고 호출부가 .filter(Boolean)으로 걸러낸다.
+   그래서 모델이 "이해했다"면서 미지원 조건을 끼워 보내면, 서버가 그 조건만 말없이 버리고
+   나머지로 검색해 **사용자는 5개 조건이 다 걸린 줄 알고 결과를 보게 된다**(실제 제보:
+   키움 조건식 A~E 붙여넣기 — 부채비율·영업이익률·이자보상배율이 조용히 사라졌다).
+   파싱 가이드에도 "일부만 반영된 결과를 내지 말 것"이라고 적혀 있지만 모델 준수에만
+   기대면 안 되므로, 서버가 직접 확인해서 거절한다.
+
+   사용자가 자주 요청하는데 아직 못 하는 지표는 한글 이름을 붙여 무엇이 빠졌는지 알린다.
+   모르는 이름은 모델이 지어낸 type 문자열을 그대로 보여준다(감추는 것보다 낫다). */
+const TS_UNSUPPORTED_LABELS = {
+  interest_coverage: "이자보상배율",
+  interest_coverage_ratio: "이자보상배율",
+  dividend_yield: "배당수익률",
+  payout_ratio: "배당성향",
+  revenue_growth: "매출액증가율",
+  operating_profit_growth: "영업이익증가율",
+  psr: "PSR",
+  pcr: "PCR",
+  ev_ebitda: "EV/EBITDA",
+  bps: "BPS",
+  roa: "ROA",
+  reserve_ratio: "유보율",
+  quick_ratio: "당좌비율",
+};
+
+function tsCollectUnsupportedTypes(nodes, out) {
+  if (!Array.isArray(nodes)) return out;
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+    const type = sanitizeStr(node.type);
+    if (type === "group") {
+      tsCollectUnsupportedTypes(node.clauses, out);
+      continue;
+    }
+    if (!TS_ALLOWED_CLAUSE_TYPES.includes(type)) {
+      out.push(TS_UNSUPPORTED_LABELS[type] || type || "(이름 없는 조건)");
+    }
+  }
+  return out;
+}
+
 function tsNormalizeScreenCondition(rawInput) {
   const raw = tsUnwrapToolCallShape(rawInput);
   const understood = raw && raw.understood === true;
   const clauses = Array.isArray(raw?.condition?.clauses)
     ? raw.condition.clauses.map(tsNormalizeClause).filter(Boolean)
     : [];
+
+  // 조건 중 하나라도 지원 밖이면 나머지만으로 검색하지 않고 멈춘다.
+  const unsupported = [...new Set(tsCollectUnsupportedTypes(raw?.condition?.clauses, []))];
+  if (understood && unsupported.length) {
+    console.log("[trade-signal screen] 미지원 조건으로 거절:", unsupported.join(", "));
+    return {
+      understood: false,
+      clarifyMessage:
+        `아직 지원하지 않는 조건이 섞여 있어요: ${unsupported.join(", ")}. ` +
+        "이 조건들을 빼고 검색하면 나머지는 그대로 찾아드려요. " +
+        "지원하는 재무 조건은 부채비율·영업이익률·순이익률·ROE·유동비율입니다.",
+    };
+  }
   const sort = tsNormalizeSort(raw && raw.sort);
   const limit = tsNormalizeLimit(raw && raw.limit);
   // 2026-08-26: 임계값 조건이 하나도 없어도(clauses.length === 0) 유효한 sort가 있으면
@@ -3890,6 +4001,16 @@ function tsSortValue(row, sort) {
       const ma = snap[`ma${sort.period}Cur`];
       return ma ? (snap.closeCur / ma) * 100 : null;
     }
+    case "debt_ratio":
+      return snap.debtRatio;
+    case "operating_margin":
+      return snap.operatingMargin;
+    case "net_margin":
+      return snap.netMargin;
+    case "roe":
+      return snap.roe;
+    case "current_ratio":
+      return snap.currentRatio;
     case "per":
       return snap.per;
     case "pbr":

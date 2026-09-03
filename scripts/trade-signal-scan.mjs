@@ -32,6 +32,30 @@ const {
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries, evaluateCondition } = require("../lib/trade-condition-eval.js");
 
+/* 2026-09-03: 재무비율(DART 사업보고서)은 KIS 시계열에서 나오지 않는다. 조인하지 않으면
+   "부채비율 100% 이하이면서 RSI 30 이하로 떨어지면 알려줘" 같은 전략이 **영원히 알림을
+   보내지 않는다**(필드가 없어 항상 false). 즉시검색(api/analyze.js)과 반드시 같은 값으로
+   판정해야 사용자가 검색한 조건과 실제 알림이 어긋나지 않는다. */
+let FIN_RATIOS = null;
+try {
+  const f = require("../data/dart-financial-ratios.json");
+  FIN_RATIOS = (f && f.stocks) || null;
+  console.log(`[trade-signal-scan] 재무비율 로드 ${Object.keys(FIN_RATIOS || {}).length}종목`);
+} catch {
+  console.warn("[trade-signal-scan] 재무비율 파일 없음 — 재무 조건은 매치되지 않습니다");
+}
+
+function withFinancials(snapshot, code) {
+  const r = FIN_RATIOS && code ? FIN_RATIOS[code] : null;
+  if (!r || !snapshot) return snapshot;
+  if (r.debtRatio != null) snapshot.debtRatio = r.debtRatio;
+  if (r.operatingMargin != null) snapshot.operatingMargin = r.operatingMargin;
+  if (r.netMargin != null) snapshot.netMargin = r.netMargin;
+  if (r.roe != null) snapshot.roe = r.roe;
+  if (r.currentRatio != null) snapshot.currentRatio = r.currentRatio;
+  return snapshot;
+}
+
 function requireEnv(name) {
   const v = process.env[name];
   if (!v || !String(v).trim()) {
@@ -174,7 +198,10 @@ async function main() {
 
     let matched = false;
     try {
-      matched = evaluateCondition(strategy.condition, buildSnapshotFromSeries(series));
+      matched = evaluateCondition(
+        strategy.condition,
+        withFinancials(buildSnapshotFromSeries(series), strategy.stock_code)
+      );
     } catch (error) {
       console.warn(`[trade-signal-scan] ${strategy.id} 조건 판정 실패: ${error.message}`);
       continue;

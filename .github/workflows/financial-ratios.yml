@@ -1,0 +1,73 @@
+name: DART Financial Ratios
+
+# 상장사 전체 재무비율(부채비율·영업이익률·순이익률·ROE·유동비율) 캐시 갱신.
+# 매매시그널 조건검색이 재무 조건을 지원하려면 이 파일이 필요하다 —
+# 스크리너 캐시(kr-screener-cache.json)는 KIS 시세·수급 데이터라 재무 항목이 없다.
+#
+# 사업보고서는 연 1회(3월경) 갱신되고 그 외엔 거의 안 바뀌므로 매일 돌릴 이유가 없다.
+# 주 1회 + 필요할 때 수동 실행으로 충분하다(DART 호출량도 아낀다).
+
+on:
+  schedule:
+    # 매주 일요일 08:30 KST = 토요일 23:30 UTC (corp_code 매핑 갱신 뒤에 돈다)
+    - cron: "30 23 * * 6"
+  workflow_dispatch:
+  # Cowork 세션의 PAT에는 Actions 실행 권한이 없어 workflow_dispatch를 못 부른다.
+  repository_dispatch:
+    types: [financial-ratios]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: financial-ratios
+  cancel-in-progress: false
+
+env:
+  # data/ 전용 커밋은 vercel.json의 ignoreCommand가 자동 배포를 건너뛴다. 이 파일은
+  # api/analyze.js가 번들에서 직접 읽으므로 배포 스텝이 없으면 영영 반영되지 않는다.
+  VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
+  VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build financial ratios
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: node scripts/build-financial-ratios.mjs
+
+      - name: Commit and push
+        id: commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # git diff --quiet는 untracked 신규 파일을 못 잡는다(dart-events.yml에서 겪은 사고).
+          if [ -z "$(git status --porcelain -- data/dart-financial-ratios.json)" ]; then
+            echo "::notice::financial ratios unchanged"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+          git add data/dart-financial-ratios.json
+          git commit -m "chore(data): sync DART financial ratios ${STAMP}"
+          git pull --rebase origin main
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Vercel
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes

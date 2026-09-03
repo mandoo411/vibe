@@ -791,7 +791,6 @@
   // 배열 순서 = 매칭 우선순위(위에 있을수록 더 구체적인 키워드 → 먼저 검사).
   const CHART_SECTIONS = [
     { key: "hilo", title: "전고점·전저점(52주)", color: "gray", re: /52주|전고점|전저점/ },
-    { key: "ichimoku", title: "일목균형표", color: "purple", re: /일목균형|전환선|기준선|구름대/ },
     { key: "elliott", title: "엘리어트 파동", color: "green", re: /엘리어트|파동|조정\s*국면/ },
     {
       key: "mtf",
@@ -821,6 +820,17 @@
       re: /이동평균|이평선|20일선|60일선|120일선|200일선|정배열|역배열/,
     },
   ];
+
+  /* 2026-09-03: 일목균형표 서술 제거.
+   * 전환선·기준선·선행스팬 값은 애초에 서버가 AI에 넘기지 않는다 — 그래서 이 항목은
+   * "수치가 확인되지 않는다"거나 보이지도 않는 구름대를 지어내는 문장만 반복됐다.
+   * 프롬프트에서 금지했지만 ①이미 저장된 과거 리포트 ②모델이 습관적으로 끼워 넣는 경우가
+   * 남으므로, 화면에서도 해당 문장을 통째로 버린다(제목 없는 회색 문단으로 흘러가지 않게). */
+  const CHART_DROP_RE = /일목|전환선|기준선|구름대|선행스팬|후행스팬/;
+
+  function isDroppedChartLine(text) {
+    return CHART_DROP_RE.test(String(text || ""));
+  }
 
   function chartSectionFor(text) {
     const t = String(text || "");
@@ -866,7 +876,7 @@
   /** 줄바꿈이 전혀 없는 하나의 서술형 문단을 소제목별 문단(박스)으로 재구성.
    * AI가 마커 없이 flowing text로 응답한 경우(가장 흔한 케이스)를 위한 안전망. */
   function groupChartSections(text) {
-    const sentences = splitChartSentences(text);
+    const sentences = splitChartSentences(text).filter((sent) => !isDroppedChartLine(sent));
     const groups = [];
     let current = null;
     sentences.forEach((sent) => {
@@ -893,11 +903,17 @@
         .split(/\n+/)
         .map((s) => s.trim())
         .filter(Boolean)
+        .filter((line) => !isDroppedChartLine(line))
         .map((line) => parseChartLine(line));
     } else {
       items = groupChartSections(raw);
     }
-    if (!items.length) items = [{ title: "", body: raw }];
+    // 전부 걸러졌으면 원문을 통째로 되살리지 않는다 — 그러면 방금 버린 일목 문장이
+    // 제목 없는 회색 문단으로 되돌아온다.
+    if (!items.length) {
+      if (isDroppedChartLine(raw)) return `<p class="ai-chart-text-empty">차트 분석이 없습니다.</p>`;
+      items = [{ title: "", body: raw }];
+    }
 
     return (
       `<div class="ai-chart-text">` +
@@ -2175,7 +2191,26 @@
         showError(out.reason || "저장된 리포트 원문이 없습니다.");
         return;
       }
-      renderAnalysis(out.report, null, "D", out.archive || null);
+      // 캔들 데이터는 용량 때문에 저장하지 않는다. 그렇다고 null로 넘기면 TradingView
+      // 폴백이 뜨는데, KRX 심볼은 무료 위젯이 못 그려서 "TradingView에서만 제공되는
+      // 심볼입니다" 경고창과 빈 차트가 뜬다(시우님 제보). 그래서 여기서 KIS 차트를
+      // 새로 받아 자체 캔들차트로 그린다 — AI 호출이 아니라 시세 조회라 크레딧과 무관하다.
+      const saved = out.report || {};
+      const savedMarket = String(saved.market || "KR").toUpperCase();
+      const savedCode = saved.stockCode || "";
+      let chartData = null;
+      try {
+        if (savedCode) {
+          chartData =
+            savedMarket === "KR"
+              ? await fetchKisChart(savedCode, "D")
+              : await fetchNonKrChart(savedCode, savedMarket, "D");
+        }
+      } catch (chartErr) {
+        console.warn("[리포트] 차트 조회 실패 — 차트 없이 표시", chartErr && chartErr.message);
+        chartData = null;
+      }
+      renderAnalysis(saved, chartData, "D", out.archive || null);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error("[리포트] 열기 실패", err);

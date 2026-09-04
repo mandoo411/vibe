@@ -3018,8 +3018,12 @@ a:hover {
 
 .event-analysis-list {
   display: grid;
-  /* 카드 최소 폭 300px — 넓은 화면에선 3장까지 가로로 붙고, 좁아지면 자동으로 줄어든다 */
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  /* 카드 최소 폭 268px.
+     이 영역의 실측 폭은 874px 로 고정돼 있다(오른쪽 달력 사이드바 때문에
+     화면이 아무리 넓어도 본문은 908px 를 넘지 않는다). 268*3 + gap 24 = 828 이라
+     3장이 가로로 딱 들어간다. 300px 로 두면 3열이 안 만들어져서 세 번째 카드가
+     혼자 둘째 줄로 내려가고 오른쪽이 비어 보인다. */
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -3102,13 +3106,6 @@ a:hover {
 .event-analysis-item .ea-watch {
   margin-top: auto;
   padding-top: 10px;
-}
-
-/* 아주 넓은 화면에서도 카드가 지나치게 길어지지 않게 4장까지만 */
-@media (min-width: 1500px) {
-  .event-analysis-list {
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
 }
 
 @media (max-width: 640px) {

@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { createRequire } from "node:module";
+
+// 핵심 지표 판정은 웹(weekly-market.html)과 같은 파일을 쓴다 — 기준이 갈리지 않도록.
+const require = createRequire(import.meta.url);
+const { isKeyIndicator: isKeyIndicatorImpl } = require("../assets/key-indicators.js");
 
 export const SITE_URL = String(process.env.SITE_URL || "https://www.totalmoney.kr").replace(/\/+$/, "");
 export const WD_KO = ["일", "월", "화", "수", "목", "금", "토"];
@@ -118,9 +123,23 @@ export function bold(value) {
   return `<b>${htmlText(value)}</b>`;
 }
 
+/**
+ * ⚠️ 데이터 소스가 모든 행을 impact:"high" 로 주기 때문에(2026-09-04 기준 408건 전부)
+ * 이 함수는 사실상 아무것도 거르지 못한다. **알림 필터로는 쓰지 말 것.**
+ * 실제치(actual) 수집 대상을 넓게 잡는 용도로만 남겨둔다.
+ * 알림·강조에는 아래 isKeyIndicator() 를 쓴다.
+ */
 export function isHighImpact(row) {
   const impact = String(row?.impact || "").toLowerCase();
   return impact === "high" || Number(row?.importance) >= 3;
+}
+
+/**
+ * 진짜 "핵심 지표"인지 판정한다(FOMC·CPI·PCE·고용보고서·GDP·ISM·소매판매 등).
+ * 기준 정의와 포함/제외 목록은 assets/key-indicators.js 한 곳에 있다.
+ */
+export function isKeyIndicator(row) {
+  return isKeyIndicatorImpl(row);
 }
 
 export function countryFlag(country) {

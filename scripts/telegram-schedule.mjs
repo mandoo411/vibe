@@ -7,7 +7,7 @@ import {
   eventTitle,
   fmtNumber,
   formatDateKo,
-  isHighImpact,
+  isKeyIndicator,
   mdText,
   readJson,
   sendTelegramMessage,
@@ -42,7 +42,7 @@ function targetYmd() {
 
 function eventsForToday(data, ymd) {
   return (Array.isArray(data?.economicCalendar) ? data.economicCalendar : [])
-    .filter((row) => row?.date === ymd && isHighImpact(row))
+    .filter((row) => row?.date === ymd && isKeyIndicator(row))
     .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
 }
 
@@ -84,10 +84,10 @@ function buildDailyMessage(data, ymd) {
     "📅 *TotalMoney AI - 오늘 경제일정*",
     formatDateKo(ymd),
     "",
-    "⚠️ *주요 지표 (HIGH)*",
+    "⚠️ *오늘의 핵심 지표*",
   ];
 
-  lines.push(...(events.length ? events.map(formatEvent) : ["- 오늘 예정된 HIGH 지표 없음"]));
+  lines.push(...(events.length ? events.map(formatEvent) : ["- 오늘 예정된 핵심 지표 없음"]));
   lines.push("", "📊 *실적발표*");
   if (earnings.length) {
     earnings.forEach((row) => {
@@ -148,7 +148,7 @@ async function main() {
   if (mode === "breaking") {
     const messages = buildBreakingMessages(data, ymd);
     if (!messages.length) {
-      console.log("No breaking HIGH indicator result to send.");
+      console.log("발표된 핵심 지표 실제치 없음 — 속보 발송 생략.");
       return;
     }
     for (const message of messages) await sendTelegramMessage(message);
@@ -159,7 +159,7 @@ async function main() {
   const events = eventsForToday(data, ymd);
   const earnings = earningsForToday(data, ymd);
   if (!events.length && !earnings.length) {
-    console.log("오늘 HIGH 지표·실적 발표 없음 — 텔레그램 발송 생략.");
+    console.log("오늘 핵심 지표·실적 발표 없음 — 텔레그램 발송 생략.");
     return;
   }
 

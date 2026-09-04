@@ -33,6 +33,7 @@
 
     <link rel="stylesheet" href="./weekly-market.css" />
     <script src="./assets/data-url.js"></script>
+    <script src="./assets/key-indicators.js"></script>
     </head>
   <body class="page-tm-v2" data-tm-tab="schedule">
     <div class="tm-wrap">
@@ -801,25 +802,17 @@
           return false;
         }
 
+        /* 2026-09-04: 핵심 지표 판정을 assets/key-indicators.js 로 옮겼다.
+           텔레그램 알림(scripts/telegram-*.mjs)과 이 페이지가 같은 기준을 쓰게 하기 위함.
+           예전에는 여기와 telegram-utils.mjs 가 서로 다른 기준을 갖고 있었고,
+           텔레그램 쪽은 impact === "high" 를 봤는데 데이터 408건이 전부 high 라
+           사실상 아무것도 안 걸러져서 원유재고·모기지금리·연준 위원 개별 연설까지
+           "주요 지표" 알림으로 나갔다. 기준을 바꾸려면 그 파일 하나만 고치면 된다.
+           화면에서 번역된 한글 지표명도 같이 넘겨 한/영 양쪽으로 매칭한다. */
         function isKeyIndicator(row) {
-          if (!isUsOrKrCountry(row)) return false;
-          const t = eventSearchText(row);
-          if (isMediumOnlyIndicator(t)) return false;
-
-          const isUS = normalizeCountryCode(row?.country) === "US";
-
-          if (/소비자물가|\bCPI\b/i.test(t) && !/PPI|Producer|생산자물가/i.test(t)) return true;
-          if (/근원\s*소비자물가|Core\s*CPI/i.test(t)) return true;
-          if (/기준금리|금리\s*결정|\bFOMC\b|금통위|한국은행/i.test(t)) return true;
-          if (/국내총생산|\bGDP\b/i.test(t)) return true;
-
-          if (isUS) {
-            if (/고용|비농업|실업률|\bNFP\b/i.test(t)) return true;
-            if (/개인소비지출|\bPCE\b/i.test(t)) return true;
-            if (/파월\s*기자회견|연준의장\s*기자회견/i.test(t)) return true;
-          }
-
-          return false;
+          const api = window.TM_KEY;
+          if (!api || typeof api.isKeyIndicator !== "function") return false;
+          return api.isKeyIndicator(row, eventSearchText(row));
         }
 
         /* 2026-09-02: 중요도 배지가 전 건 "높음"으로만 찍혀 변별력이 0이던 문제 수정.

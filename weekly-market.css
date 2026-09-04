@@ -1703,10 +1703,16 @@ a:hover {
   display: block;
 }
 
+/* 2026-09-04: 예전 "3장 카드" 디자인의 잔재로 repeat(3, 1fr)이 남아 있었다.
+   지금 구조는 이 안에 "매크로 이벤트"/"실적 발표" 묶음 div 1~2개만 들어가서,
+   결과적으로 내용이 왼쪽 1/3에만 몰리고 오른쪽이 텅 비어 보였다.
+   섹션은 전폭을 쓰고, 실제 나열은 아래 .event-analysis-list 가 담당한다. */
 .analysis-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  display: block;
+}
+
+.analysis-grid > .event-analysis-section + .event-analysis-section {
+  margin-top: 22px;
 }
 
 .analysis-grid article {
@@ -1950,8 +1956,7 @@ a:hover {
     font-size: 11px;
   }
 
-  .today-grid,
-  .analysis-grid {
+  .today-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -2244,7 +2249,6 @@ a:hover {
   }
 
   .page-tm-v2 .analysis-grid {
-    grid-template-columns: 1fr;
     padding: 12px 14px;
   }
 }
@@ -2986,5 +2990,133 @@ a:hover {
 @media (max-width: 640px) {
   .ea-scenarios {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   2026-09-04 — 일정 분석 카드
+   이 클래스들은 지금까지 CSS가 하나도 없어서 브라우저 기본 <ul> 불릿으로
+   렌더링되고 있었다. 카드로 만들고, 넓은 화면에서는 지표가 가로로 나열되게 한다.
+   ───────────────────────────────────────────────────────────── */
+
+.event-analysis-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
+.event-analysis-heading i {
+  color: var(--accent-bright, var(--accent, #0f8387));
+  font-size: 14px;
+}
+
+.event-analysis-list {
+  display: grid;
+  /* 카드 최소 폭 300px — 넓은 화면에선 3장까지 가로로 붙고, 좁아지면 자동으로 줄어든다 */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event-analysis-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.event-analysis-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.event-analysis-badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.event-analysis-badge--macro {
+  background: color-mix(in srgb, var(--accent, #0f8387) 14%, transparent);
+  color: var(--accent-bright, var(--accent, #0f8387));
+}
+
+.event-analysis-badge--earnings {
+  background: color-mix(in srgb, #7c6cf0 16%, transparent);
+  color: #6f5fe0;
+}
+
+[data-theme="dark"] .event-analysis-badge--earnings {
+  color: #a99bff;
+}
+
+.event-analysis-title {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  word-break: keep-all;
+}
+
+.event-analysis-expected {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-analysis-body {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-body, var(--text));
+}
+
+/* 카드 안에서는 상회/하회를 위아래로 쌓는다 — 가로 2단으로 두면 한 칸이
+   너무 좁아져 글자가 서너 자마다 끊긴다(원래 화면의 그 문제). */
+.event-analysis-item .ea-scenarios {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+/* 관전 포인트는 카드 바닥에 붙여 카드 높이를 서로 맞춘다 */
+.event-analysis-item .ea-watch {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+/* 아주 넓은 화면에서도 카드가 지나치게 길어지지 않게 4장까지만 */
+@media (min-width: 1500px) {
+  .event-analysis-list {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .event-analysis-list {
+    grid-template-columns: 1fr;
+  }
+
+  .event-analysis-item {
+    padding: 12px 14px;
   }
 }

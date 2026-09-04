@@ -7,7 +7,7 @@ import {
   dayKo,
   eventTitle,
   formatDateKo,
-  isHighImpact,
+  isKeyIndicator,
   mdText,
   mondayYmdFor,
   readJson,
@@ -60,7 +60,7 @@ function buildMessage(data) {
   const monday = targetMonday();
   const friday = addDaysYmd(monday, 4);
   const highEvents = rowsThisWeek(Array.isArray(data?.economicCalendar) ? data.economicCalendar : [], monday, friday)
-    .filter(isHighImpact)
+    .filter(isKeyIndicator)
     .sort((a, b) => `${a.date} ${a.time || ""}`.localeCompare(`${b.date} ${b.time || ""}`))
     .slice(0, 8);
   // 2026-07-10: "earningsCalendar"는 weekly-schedule.json에 존재한 적 없는 필드명 — 실제

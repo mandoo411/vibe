@@ -33,82 +33,82 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29510,
+        "close": 29526.5,
         "previousClose": 29186.25,
-        "changePct": 1.11,
-        "changePoints": 323.75
+        "changePct": 1.17,
+        "changePoints": 340.25
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
         "close": 180.56,
-        "previousClose": 178.86,
-        "changePct": 0.95,
-        "changePoints": 1.7
+        "previousClose": 175.8,
+        "changePct": 2.71,
+        "changePoints": 4.76
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 327.84,
-      "changePct": 0.88,
-      "changePoints": 2.88
+      "price": 328.21,
+      "changePct": 1,
+      "changePoints": 3.25
     },
     {
       "symbol": "MSFT",
-      "price": 509.15,
-      "changePct": 2.48,
-      "changePoints": 12.33
+      "price": 510.12,
+      "changePct": 2.68,
+      "changePoints": 13.3
     },
     {
       "symbol": "NVDA",
-      "price": 229.41,
-      "changePct": 2.23,
-      "changePoints": 5
+      "price": 228.45,
+      "changePct": 1.8,
+      "changePoints": 4.04
     },
     {
       "symbol": "AMZN",
-      "price": 259.41,
-      "changePct": 1.74,
-      "changePoints": 4.43
+      "price": 258.9,
+      "changePct": 1.54,
+      "changePoints": 3.92
     },
     {
       "symbol": "META",
-      "price": 613.29,
-      "changePct": 3.45,
-      "changePoints": 20.44
+      "price": 610.68,
+      "changePct": 3.01,
+      "changePoints": 17.83
     },
     {
       "symbol": "TSLA",
-      "price": 375.55,
-      "changePct": 5.19,
-      "changePoints": 18.54
+      "price": 376.37,
+      "changePct": 5.42,
+      "changePoints": 19.36
     },
     {
       "symbol": "GOOGL",
-      "price": 342.96,
-      "changePct": 1.73,
-      "changePoints": 5.84
+      "price": 342.48,
+      "changePct": 1.59,
+      "changePoints": 5.36
     },
     {
       "symbol": "AMD",
-      "price": 455.35,
-      "changePct": -0.37,
-      "changePoints": 1.71
+      "price": 456.16,
+      "changePct": -0.2,
+      "changePoints": 0.9
     },
     {
       "symbol": "PLTR",
-      "price": 182.14,
-      "changePct": 7.48,
-      "changePoints": 12.68
+      "price": 182.53,
+      "changePct": 7.71,
+      "changePoints": 13.07
     },
     {
       "symbol": "COIN",
-      "price": 191.78,
-      "changePct": 9.61,
-      "changePoints": 16.82
+      "price": 192.7,
+      "changePct": 10.14,
+      "changePoints": 17.74
     }
   ],
   "sectors": [
@@ -117,70 +117,70 @@
       "sector": "기술",
       "name": "기술 (XLK)",
       "price": 185.97,
-      "changePct": 1.29
+      "changePct": 1.27
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
       "price": 58.56,
-      "changePct": 1.56
+      "changePct": 2.38
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
       "price": 64.62,
-      "changePct": -0.74
+      "changePct": -0.23
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
       "price": 173.26,
-      "changePct": 0.18
+      "changePct": 0.93
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
       "price": 174.56,
-      "changePct": 1.03
+      "changePct": 1.06
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
       "price": 116.46,
-      "changePct": 1.39
+      "changePct": 1.63
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
       "price": 85.26,
-      "changePct": -0.32
+      "changePct": 0.01
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
       "price": 43.03,
-      "changePct": 0.84
+      "changePct": 1.1
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
       "price": 52.62,
-      "changePct": -0.62
+      "changePct": 1.06
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 44.25,
-      "changePct": 1.19
+      "changePct": 0.48
     }
   ],
   "forex": {
@@ -197,33 +197,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 91.8,
-        "changePct": 0.87,
-        "changePoints": 0.79
+        "price": 91.54,
+        "changePct": 0.58,
+        "changePoints": 0.53
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4523,
-        "changePct": 3.59,
-        "changePoints": 156.7
+        "price": 4525.5,
+        "changePct": 3.65,
+        "changePoints": 159.2
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 67.58,
-        "changePct": 4.42,
-        "changePoints": 2.86
+        "price": 67.55,
+        "changePct": 4.37,
+        "changePoints": 2.83
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.67,
-        "changePct": 2.62,
-        "changePoints": 0.17
+        "price": 6.68,
+        "changePct": 2.77,
+        "changePoints": 0.18
       },
       {
         "id": "sox",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 81202,
-        "changePct24h": 5.28,
-        "marketCapUsd": 1630458489195.67
+        "priceUsd": 81221,
+        "changePct24h": 5.46,
+        "marketCapUsd": 1630756432646.93
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2498.15,
-        "changePct24h": 4.8,
-        "marketCapUsd": 304734516097.18
+        "priceUsd": 2508.03,
+        "changePct24h": 5.39,
+        "marketCapUsd": 306018758146.05
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 104.04,
-        "changePct24h": 4.33,
-        "marketCapUsd": 60897722427.77
+        "priceUsd": 103.77,
+        "changePct24h": 4.12,
+        "marketCapUsd": 60742168727.45
       }
     ]
   },
@@ -288,13 +288,6 @@
       "source": "매일경제",
       "publishedAt": "2026-09-03T19:30:00.000Z",
       "summary": "중국 CXMT의 HBM3E 생산의 숨은 의미중국 최대 DRAM 업체 CXMT가 5세대 고대역폭 메모리 HBM3E 생산을 시작했다는 소식이 외신을 통해 전해졌다. 지난 8월 31일.."
-    },
-    {
-      "title": "“오늘 사고 오늘 팔죠”…단타 몰리는 ‘삼전닉스’, 반도체주 변동성 언제까지?",
-      "url": "https://www.mk.co.kr/news/stock/12143982",
-      "source": "매일경제",
-      "publishedAt": "2026-09-03T13:36:21.000Z",
-      "summary": "지난달 회전율 전년 대비 증가최근 들어 삼성전자와 SK하이닉스를 두고 당일 사고파는 ‘단타 매매’로 투자자들이 몰리고 있다. 조금 오르는가 싶으면 하락하고 또 조금 오르는 주가 흐.."
     },
     {
       "title": "법무부·檢警도 세종行…공공기관 수 20% 줄인다 [뉴스&분석]",
@@ -330,6 +323,34 @@
       "source": "매일경제 증권",
       "publishedAt": "2026-09-03T08:47:50.000Z",
       "summary": "반도체 호황에 몰려든 달러가 원화 체급을 한 단계 끌어올렸다. 한때 1550원대까지 하락했던 달러당 원화값이 1350원까지 치솟으면서 14개월 만에 최고치를 기록한 것이다. 수출 .."
+    },
+    {
+      "title": "NH투자증권, 안산 지역사회 취약계층에 '사랑의 쌀' 전달",
+      "url": "https://view.asiae.co.kr/article/2026090316240033177",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-03T07:24:01.000Z",
+      "summary": "NH투자증권은 안산시청에서 지역사회 취약계층을 위한 '사랑의 쌀' 전달식을 진행했다고 3일 밝혔다. NH투자증권 안산WM센터는 농협중앙회 최고 권위의 상인 '총화상'을 수상하며 받은 포상금 전액을 기부하기로 결정했다. 총화상은 농협중앙회가 전 계열사를 대상으로 사업실적, 임직원 화합, 사회공헌 등을 종합 평가해 최우수 사무소에 수여하는 상이다. NH투자증권 본사 역시 매칭그랜트 방식으로 포상금과 동일한 금액을 추가 후원해 총 1000만원 상당의 쌀을 마련했으며, 이는 안산시 관내 취약계층 가구에 전달될 예정이다. 배광수 NH투자"
+    },
+    {
+      "title": "코스피, 장 중 6500선 깨졌다 회복 마감…코스닥은 하락",
+      "url": "https://view.asiae.co.kr/article/2026090316074444085",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-03T07:07:44.000Z",
+      "summary": "코스피 지수가 장 중 6500선 아래로 떨어졌다가 회복하며 강보합으로 마감했다. 코스닥 지수는 상승 출발했지만, 하락 전환 이후 그대로 거래를 마쳤다. 3일 코스피 지수는 전 거래일 대비 16.76포인트(0.26%) 오른 6579.48에 마감했다. 지수는 한때 6439.49까지 떨어졌지만, 다시 반등했다. 투자자별로는 외국인·개인·기관 모두 매도에 나섰다. 외국인은 2077억4900만원, 개인은 1조1597억4800만원, 기관은 2418억6000만원 순매도했다. 업종별로는 등락이 엇갈렸다. 보험(+4.44%), 건설(+3.45%),"
+    },
+    {
+      "title": "코스닥, 13.77P 내린 790.21 마감(1.71%↓)",
+      "url": "https://view.asiae.co.kr/article/2026090315354507827",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-03T06:35:45.000Z",
+      "summary": "코스닥, 13.77P 내린 790.21 마감(1.71%↓)"
+    },
+    {
+      "title": "코스피, 16.76P 오른 6579.48 마감(0.26%↑)",
+      "url": "https://view.asiae.co.kr/article/2026090315344381085",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-03T06:34:43.000Z",
+      "summary": "코스피, 16.76P 오른 6579.48 마감(0.26%↑)"
     },
     {
       "title": "마약사범끼리 “의리 끝까지 지킬게”…공범 편지 잘못 압수했다고 무죄?",
@@ -379,27 +400,6 @@
       "source": "매일경제",
       "publishedAt": "2026-09-03T19:20:00.000Z",
       "summary": "LS, AI 데이터센터·HVDC 등 차세대 전력 기술 경쟁북미 지역 노후 전력망 교체 수요와 인공지능(AI) 기술 숙성이 촉발한 전력망 산업 초호황이 이어지는 가운데 LS가 세계 .."
-    },
-    {
-      "title": "[포토] 양대노총 위원장 만난 李대통령 …'정년연장 연내 결론' 공감대",
-      "url": "https://www.mk.co.kr/news/politics/12144001",
-      "source": "매일경제",
-      "publishedAt": "2026-09-03T14:14:52.000Z",
-      "summary": ""
-    },
-    {
-      "title": "청와대 “호르무즈 파병 가닥? 사실과 달라…결정된 바 없다”",
-      "url": "https://www.mk.co.kr/news/politics/12143999",
-      "source": "매일경제",
-      "publishedAt": "2026-09-03T14:08:16.000Z",
-      "summary": "청와대가 한국 정부가 호르무즈 해협에 군 자산과 병력을 파견하는 쪽으로 가닥을 잡았다는 일부 언론 보도에 대해 “사실과 다르다”고 선을 그었다. 청와대는 3일 공지를 통해 “호르무.."
-    },
-    {
-      "title": "“가을엔 라떼지”…메가MGC커피, ‘하우스밀크·오르조’로 입맛 공략",
-      "url": "https://www.mk.co.kr/news/business/12143996",
-      "source": "매일경제",
-      "publishedAt": "2026-09-03T14:05:15.000Z",
-      "summary": "가을철 라떼 수요가 본격적으로 늘어나는 가운데 메가MGC커피가 우유의 풍미를 강조한 라떼와 무카페인 라떼를 잇달아 선보인다. 메가MGC커피는 전용 우유를 사용한 ‘하우스밀크 라떼’.."
     }
   ],
   "aiAnalysis": {

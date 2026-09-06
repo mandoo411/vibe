@@ -1,0 +1,102 @@
+name: Instagram Carousel v2 (manual)
+
+# 카드뉴스 v2(캐러셀 5장) 테스트 발행용. 자동 스케줄은 없다 — 수동 실행 전용이며,
+# 기존 릴스 자동 발행(instagram-card-post.yml)은 그대로 두고 병행 검증한다.
+#
+# 실행 방법
+#   repository_dispatch: { "event_type": "carousel-v2", "client_payload": { "deck": "...", "dir": "..." } }
+#   (workflow_dispatch가 403으로 막히는 환경 대비)
+on:
+  workflow_dispatch:
+    inputs:
+      deck:
+        description: "덱 JSON 경로"
+        required: true
+        default: "data/promo/closing-2026-09-04.json"
+      dir:
+        description: "generated 하위 출력 폴더"
+        required: true
+        default: "closing-v2"
+      dry_run:
+        description: "1이면 렌더만 하고 발행하지 않음"
+        required: false
+        default: "0"
+  repository_dispatch:
+    types: [carousel-v2]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-carousel-v2
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  render-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve inputs
+        id: cfg
+        run: |
+          set -euo pipefail
+          DECK="${{ github.event.inputs.deck || github.event.client_payload.deck }}"
+          DIR="${{ github.event.inputs.dir || github.event.client_payload.dir }}"
+          DRY="${{ github.event.inputs.dry_run || github.event.client_payload.dry_run }}"
+          DECK="${DECK:-data/promo/closing-2026-09-04.json}"
+          DIR="${DIR:-closing-v2}"
+          DRY="${DRY:-0}"
+          echo "deck=$DECK" >> "$GITHUB_OUTPUT"
+          echo "dir=$DIR"   >> "$GITHUB_OUTPUT"
+          echo "dry=$DRY"   >> "$GITHUB_OUTPUT"
+          test -f "$DECK" || { echo "::error::덱 파일을 찾을 수 없습니다: $DECK"; exit 1; }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Pretendard는 저장소(templates/fonts)에 포함돼 있지만, 러너 기본 폰트로
+      # 대체 렌더링되는 글자(기호 등)를 막기 위해 Noto CJK도 함께 깔아 둔다.
+      - name: Install Korean fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
+
+      - name: Render carousel
+        run: node scripts/promo-render-carousel.mjs --deck="${{ steps.cfg.outputs.deck }}" --out="generated/${{ steps.cfg.outputs.dir }}"
+
+      - name: Commit and push generated images
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "generated/${{ steps.cfg.outputs.dir }}"
+          if git diff --staged --quiet; then
+            echo "::notice::이미지 변경 없음 — 커밋 생략"
+            exit 0
+          fi
+          git commit -m "chore(promo): carousel v2 ${{ steps.cfg.outputs.dir }} $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')"
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      # 방금 커밋한 이미지가 raw.githubusercontent.com CDN에 반영될 시간 대기
+      - name: Wait for CDN
+        run: sleep 25
+
+      - name: Publish carousel
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          PROMO_DRY_RUN: ${{ steps.cfg.outputs.dry }}
+        run: node scripts/promo-publish-carousel.mjs --dir="${{ steps.cfg.outputs.dir }}" --deck="${{ steps.cfg.outputs.deck }}"

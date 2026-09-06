@@ -80,11 +80,16 @@ export const topBar = (slotLabel, dateLabel) => `
   <div class="slot"><span class="dot"></span>${slotLabel} · ${dateLabel}</div>
 </div>`;
 
-export const pager = (n, total = 5) =>
-  `<div class="pager">${Array.from({ length: total }, (_, i) => `<i class="${i === n ? "on" : ""}"></i>`).join("")}</div>`;
+/* 페이지 인디케이터는 레이아웃마다 장수가 달라서(마감시황 6 / 아침 5 / 랭킹 4)
+   렌더러가 슬라이드마다 setPager()로 현재 위치와 총 장수를 알려준다. */
+export const PAGER = { i: 0, n: 5 };
+export const setPager = (i, n) => { PAGER.i = i; PAGER.n = n; };
 
-export const foot = (leftText, rightHTML, n) => `
+export const pager = () =>
+  `<div class="pager">${Array.from({ length: PAGER.n }, (_, i) => `<i class="${i === PAGER.i ? "on" : ""}"></i>`).join("")}</div>`;
+
+export const foot = (leftText, rightHTML) => `
 <div class="foot">
   <div class="foot-l">${leftText}</div>
-  ${rightHTML ? `<div class="foot-r">${rightHTML}</div>` : pager(n)}
+  ${rightHTML ? `<div class="foot-r">${rightHTML}</div>` : pager()}
 </div>`;

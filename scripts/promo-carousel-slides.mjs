@@ -366,3 +366,64 @@ export function slideKrRank(d) {
   ${foot("TOP100 전체 순위는 totalmoney.kr 글로벌랭킹", "", 2)}
   </div>`, css);
 }
+
+/* ───────── 훅의 답 — 그 두 종목이 무엇이고 얼마나 쏠렸는지 (마감시황 2번) ─────────
+   1번 카드에서 "딱 두 종목"이라고 던졌으면 바로 다음 장에서 이름과 금액을 줘야 한다.
+   답을 뒤쪽 카드에 작게 숨겨두면 훅이 낚시가 되고, 그건 계정 신뢰를 깎는다. */
+export function slideFocus(d) {
+  const css = `
+  .fcbody{flex:1;display:flex;flex-direction:column;margin-top:30px;}
+  .fc2{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .fcc{padding:28px 28px 26px;border-radius:22px;
+    background:linear-gradient(180deg,rgba(255,92,92,.13),rgba(255,92,92,.03));
+    border:1px solid rgba(255,92,92,.34);}
+  .fcc .mk{font-size:19px;font-weight:700;color:var(--dim-2);letter-spacing:-.3px;}
+  .fcc .nm{font-size:40px;font-weight:800;letter-spacing:-1.3px;margin-top:6px;}
+  .fcc .amt{font-size:50px;font-weight:800;letter-spacing:-1.8px;margin-top:16px;color:var(--up);}
+  .fcc .lb{font-size:20px;font-weight:600;color:var(--dim);margin-top:4px;letter-spacing:-.3px;}
+  .fcc .pc{margin-top:14px;display:inline-block;padding:7px 15px;border-radius:9px;
+    background:rgba(255,92,92,.18);font-size:23px;font-weight:800;color:var(--up);letter-spacing:-.5px;}
+  .shr{margin-top:26px;}
+  .shr-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px;}
+  .shr-t{font-size:23px;font-weight:700;color:var(--dim);letter-spacing:-.4px;}
+  .shr-v{font-size:34px;font-weight:800;color:var(--up);letter-spacing:-1px;}
+  .shr-b{height:46px;border-radius:12px;overflow:hidden;display:flex;background:rgba(255,255,255,.06);}
+  .shr-b i{display:flex;align-items:center;padding:0 18px;font-size:20px;font-weight:700;
+    letter-spacing:-.3px;font-style:normal;white-space:nowrap;}
+  .shr-b i.a{background:linear-gradient(90deg,var(--up),rgba(255,92,92,.55));color:#fff;}
+  .shr-b i.b{color:var(--dim-2);}
+  .fcn{margin-top:26px;padding:24px 28px;border-radius:20px;background:rgba(37,224,200,.09);
+    border:1px solid rgba(37,224,200,.28);font-size:25px;line-height:1.5;font-weight:600;
+    letter-spacing:-.6px;color:#DFF7F3;}
+  .fcn span{color:var(--teal);font-weight:800;}
+  .fcx{margin-top:auto;padding-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .fcx-c{padding:20px 22px;border-radius:17px;background:rgba(255,255,255,.045);border:1px solid var(--line);}
+  .fcx-c .k{font-size:20px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
+  .fcx-c .v{font-size:31px;font-weight:800;letter-spacing:-.9px;margin-top:6px;}
+  .fcx-c .p{font-size:21px;font-weight:700;letter-spacing:-.4px;margin-top:3px;}
+  `;
+  const card = (c) => `
+    <div class="fcc"><div class="mk">거래대금 ${esc(c.rank)}위 · ${esc(c.market)}</div>
+      <div class="nm">${esc(c.name)}</div>
+      <div class="amt mono">${esc(c.amount)}</div>
+      <div class="lb">오늘 거래대금</div>
+      <div class="pc mono">${esc(c.pct)}</div></div>`;
+  return shell(`<div class="wrap">
+  ${topBar(d.slotLabel, d.dateLabel)}
+  <div class="fcbody">
+    <div class="kicker" style="margin-bottom:20px;">◆ 그 두 종목은</div>
+    <div class="ptitle">${d.focusTitle}</div>
+    <div class="fc2">${d.focusPair.map(card).join("")}</div>
+    <div class="shr">
+      <div class="shr-h"><div class="shr-t">${esc(d.shareLabel)}</div><div class="shr-v mono">${esc(d.sharePct)}</div></div>
+      <div class="shr-b"><i class="a" style="width:${d.shareWidth}%">두 종목 ${esc(d.shareA)}</i><i class="b">나머지 ${esc(d.shareB)}</i></div>
+    </div>
+    <div class="fcn">${d.focusNote}</div>
+    <div class="fcx">${(d.focusIndexes || []).map((x) => `
+      <div class="fcx-c"><div class="k">${esc(x.name)}</div>
+        <div class="v mono">${esc(x.value)}</div>
+        <div class="p ${x.dir} mono">${esc(x.pct)}</div></div>`).join("")}</div>
+  </div>
+  ${foot("출처 · 한국투자증권 실시간 시세 · 거래대금 상위 30종목 기준", "", 1)}
+  </div>`, css);
+}

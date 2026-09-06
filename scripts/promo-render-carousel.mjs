@@ -16,14 +16,15 @@ import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import {
   slideHook, slideVerdict, slideFlow, slideStocks, slideCTA,
-  slideIndex, slideWatch, slideRank, slideKrRank,
+  slideIndex, slideWatch, slideRank, slideKrRank, slideFocus,
 } from "./promo-carousel-slides.mjs";
+import { setPager } from "./promo-carousel-css.mjs";
 
 const TEMPLATES_DIR = join(process.cwd(), "templates");
 
 /** 슬롯별 슬라이드 구성. 1번=훅, 마지막=CTA는 공통이고 가운데만 바뀐다. */
 export const LAYOUTS = {
-  closing: [slideHook, slideVerdict, slideFlow, slideStocks, slideCTA],
+  closing: [slideHook, slideFocus, slideVerdict, slideFlow, slideStocks, slideCTA],
   morning: [slideHook, slideIndex, slideVerdict, slideWatch, slideCTA],
   ranking: [slideHook, slideRank, slideKrRank, slideCTA],
 };
@@ -53,6 +54,7 @@ export async function renderDeckToPNG(deck, outDir) {
   const outputs = [];
   try {
     for (let i = 0; i < builders.length; i++) {
+      setPager(i, builders.length);
       const html = builders[i](deck);
       const tmpPath = join(TEMPLATES_DIR, `_tmp-carousel-${i + 1}.html`);
       writeFileSync(tmpPath, html);

@@ -99,22 +99,22 @@ export function slideFlow(d) {
   return shell(`<div class="wrap">
   ${topBar(d.slotLabel, d.dateLabel)}
   <div class="fbody">
-    <div class="kicker" style="margin-bottom:22px;">◆ 오늘 돈의 흐름</div>
+    <div class="kicker" style="margin-bottom:22px;">◆ ${esc(d.flowKicker || "오늘 돈의 흐름")}</div>
     <div class="ptitle">${d.flowTitle}</div>
     <div class="cols">
-      <div class="col in"><div class="col-h"><span class="ic">↑</span>돈이 몰린 곳</div>${d.flowIn.map(grp).join("")}</div>
-      <div class="col out"><div class="col-h"><span class="ic">↓</span>돈이 빠진 곳</div>${d.flowOut.map(grp).join("")}</div>
+      <div class="col in"><div class="col-h"><span class="ic">↑</span>${esc(d.flowInLabel || "돈이 몰린 곳")}</div>${d.flowIn.map(grp).join("")}</div>
+      <div class="col out"><div class="col-h"><span class="ic">↓</span>${esc(d.flowOutLabel || "돈이 빠진 곳")}</div>${d.flowOut.map(grp).join("")}</div>
     </div>
     <div class="note">${d.flowNote}</div>
-    <div class="sup">
+    ${(d.supply || []).length ? `<div class="sup">
       <div class="sup-h">${esc(d.supplyTitle)}</div>
       <div class="sup-g">${d.supply.map((s) => `
         <div class="sup-c"><div class="w">${esc(s.who)}</div>
           <div class="a ${s.dir} mono">${esc(s.amount)}</div>
           <div class="s">${esc(s.label)}</div></div>`).join("")}</div>
-    </div>
+    </div>` : ""}
   </div>
-  ${foot("출처 · 한국투자증권 실시간 시세 / 투자자별 매매동향", "", 2)}
+  ${foot(esc(d.flowFoot || "출처 · 한국투자증권 실시간 시세 / 투자자별 매매동향"), "")}
   </div>`, css);
 }
 

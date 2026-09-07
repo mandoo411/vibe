@@ -26,7 +26,7 @@ const TEMPLATES_DIR = join(process.cwd(), "templates");
 export const LAYOUTS = {
   closing: [slideHook, slideFocus, slideVerdict, slideFlow, slideStocks, slideCTA],
   morning: [slideHook, slideIndex, slideVerdict, slideWatch, slideCTA],
-  ranking: [slideHook, slideRank, slideKrRank, slideCTA],
+  ranking: [slideHook, slideRank, slideKrRank, slideFlow, slideCTA],
 };
 
 export function buildersFor(deck) {

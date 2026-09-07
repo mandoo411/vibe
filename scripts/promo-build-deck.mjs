@@ -14,6 +14,7 @@
  *   node scripts/promo-build-deck.mjs --slot=closing --out=data/promo/closing-<date>.json
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { firstSentence } from "./promo-deck-ai.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -422,23 +423,6 @@ const LIMITS = {
 };
 
 const plain = (s) => String(s ?? "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "");
-
-/** 태그를 살린 채 첫 문장만 남긴다. 모델이 훅에 문장을 덧붙이는 걸 코드가 잘라낸다. */
-export function firstSentence(html) {
-  const s = String(html ?? "");
-  // 태그 밖에 있는 종결부호 위치를 찾는다
-  let depth = 0;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i];
-    if (c === "<") depth++;
-    else if (c === ">") depth = Math.max(0, depth - 1);
-    else if (depth === 0 && (c === "." || c === "!" || c === "?")) {
-      const rest = s.slice(i + 1).replace(/<br\s*\/?>/gi, "").trim();
-      if (rest.length > 0) return s.slice(0, i + 1);
-    }
-  }
-  return s;
-}
 
 /**
  * 모델이 규칙을 어겨도 화면은 지켜야 한다. 경고만 남기면 결국 그대로 발행된다.

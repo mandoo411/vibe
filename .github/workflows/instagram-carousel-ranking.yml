@@ -1,0 +1,122 @@
+name: Instagram Carousel v2 (주간 글로벌 랭킹)
+
+# 주간 글로벌 랭킹 카드뉴스(캐러셀). 덱 생성 -> 렌더 -> 커밋 -> 발행.
+# 기존 릴스 워크플로는 자동 스케줄을 껐고 이 워크플로가 대체한다.
+# dry_run=1 이면 렌더·커밋까지만 하고 발행은 건너뛴다.
+on:
+  schedule:
+    - cron: "30 1 * * 6"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1이면 렌더까지만 하고 발행하지 않음"
+        required: false
+        default: "0"
+  repository_dispatch:
+    types: [ranking-carousel]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-carousel-ranking
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  build-render-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve inputs
+        id: cfg
+        run: |
+          DRY="${{ github.event.inputs.dry_run || github.event.client_payload.dry_run }}"
+          echo "dry=${DRY:-0}" >> "$GITHUB_OUTPUT"
+
+      # 같은 날 두 번 나가지 않게 막는다(재시도·수동 실행 대비).
+      - name: Dedup guard
+        id: guard
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
+          STAMP="generated/carousel-ranking/last-published-date.txt"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$TODAY" ]; then
+            echo "::notice::오늘 이미 발행 완료 — 스킵"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.guard.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.guard.outputs.go == 'true'
+        run: npm ci
+
+      - name: Install Korean fonts
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
+
+      - name: Build deck
+        if: steps.guard.outputs.go == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: node scripts/promo-build-deck-ranking.mjs --out=data/promo/latest-ranking.json
+
+      - name: Render carousel
+        if: steps.guard.outputs.go == 'true'
+        run: node scripts/promo-render-carousel.mjs --deck=data/promo/latest-ranking.json --out=generated/carousel-ranking
+
+      - name: Commit deck and images
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/carousel-ranking data/promo/latest-ranking.json
+          if git diff --staged --quiet; then
+            echo "::notice::변경 없음 — 커밋 생략"; exit 0
+          fi
+          git commit -m "chore(promo): carousel-ranking $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')"
+          git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Wait for CDN
+        if: steps.guard.outputs.go == 'true'
+        run: sleep 25
+
+      - name: Publish carousel
+        if: steps.guard.outputs.go == 'true'
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          PROMO_DRY_RUN: ${{ steps.cfg.outputs.dry }}
+        run: node scripts/promo-publish-carousel.mjs --dir=carousel-ranking --deck=data/promo/latest-ranking.json
+
+      - name: Record published date
+        if: steps.guard.outputs.go == 'true' && steps.cfg.outputs.dry != '1'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p generated/carousel-ranking
+          TZ=Asia/Seoul date '+%Y-%m-%d' > generated/carousel-ranking/last-published-date.txt
+          git add generated/carousel-ranking/last-published-date.txt
+          git diff --staged --quiet || {
+            git commit -m "chore(promo): mark carousel-ranking published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          }

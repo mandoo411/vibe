@@ -101,7 +101,7 @@ export function buildMorningSkeleton(f) {
   // 훅에서 EWY를 던졌으면 2번 카드에서 EWY가 눈에 띄어야 한다 — 칩에도 같이 올린다
   const chips = [];
   if (f.ewy) chips.push({ name: "한국 ETF", text: pctText(f.ewy.pct), dir: dirOf(f.ewy.pct) });
-  if (f.sox) chips.push({ name: "필라델피아반도체", text: pctText(f.sox.pct), dir: dirOf(f.sox.pct) });
+  if (f.sox) chips.push({ name: "필라 반도체", text: pctText(f.sox.pct), dir: dirOf(f.sox.pct) });
   if (f.nasdaq) chips.push({ name: "나스닥100", text: pctText(f.nasdaq.pct), dir: dirOf(f.nasdaq.pct) });
 
   return {

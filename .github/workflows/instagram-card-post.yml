@@ -4,9 +4,11 @@ name: Instagram Daily Card News (Closing)
 # (원래 17:30이었으나 GitHub Actions의 schedule 트리거가 혼잡한 정각/반각대에 몰려 최대 1.5~3시간까지 지연되는
 #  문제가 있어, 상대적으로 덜 혼잡한 분(:22)으로 이동해뒀다. 정확한 시각 발행은 Supabase pg_cron이 이 워크플로를
 #  workflow_dispatch로 직접 호출하는 방식으로 별도 보강한다 — 이 schedule은 그 백업 역할.)
+# 2026-09-07: 카드뉴스 v2(캐러셀)로 전환하면서 자동 스케줄을 껐다.
+# 정지 이미지 릴스는 시청유지율 판정에서 불리해 도달이 나오지 않는다.
+# 대체 워크플로: .github/workflows/instagram-carousel-v2.yml (평일 17:26 KST)
+# 이 워크플로는 캐러셀에 문제가 생겼을 때 수동으로 되돌릴 수 있게 남겨 둔다.
 on:
-  schedule:
-    - cron: "22 8 * * 1-5"
   workflow_dispatch:
 
 permissions:

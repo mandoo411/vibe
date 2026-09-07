@@ -121,7 +121,14 @@ jobs:
             echo "::notice::변경 없음 — 커밋 생략"; exit 0
           fi
           git commit -m "chore(promo): carousel v2 ${{ steps.deck.outputs.date }} $(TZ=Asia/Seoul date '+%H:%M %Z')"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          # 다른 발행 워크플로가 같은 시각에 push하면 non-fast-forward로 밀린다.
+          # 데이터·이미지 커밋이라 rebase 후 재시도하면 안전하다.
+          for i in 1 2 3; do
+            git push origin HEAD:${GITHUB_REF_NAME} && break
+            echo "::notice::push 경합 — rebase 후 재시도 ($i/3)"
+            git pull --rebase origin ${GITHUB_REF_NAME}
+            sleep $((i * 4))
+          done
 
       - name: Wait for CDN
         if: steps.guard.outputs.go == 'true'
@@ -146,5 +153,16 @@ jobs:
           git add generated/carousel-v2/last-published-date.txt
           git diff --staged --quiet || {
             git commit -m "chore(promo): mark carousel v2 published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            for i in 1 2 3; do
+              # 다른 발행 워크플로가 같은 시각에 push하면 non-fast-forward로 밀린다.
+          # 데이터·이미지 커밋이라 rebase 후 재시도하면 안전하다.
+          for i in 1 2 3; do
+            git push origin HEAD:${GITHUB_REF_NAME} && break
+            echo "::notice::push 경합 — rebase 후 재시도 ($i/3)"
+            git pull --rebase origin ${GITHUB_REF_NAME}
+            sleep $((i * 4))
+          done && break
+              git pull --rebase origin ${GITHUB_REF_NAME}
+              sleep $((i * 4))
+            done
           }

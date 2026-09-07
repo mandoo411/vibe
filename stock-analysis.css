@@ -192,6 +192,32 @@
   line-height: var(--ai-body-lh);
 }
 
+/* 리포트를 다시 열 때의 스크롤 처리
+   - overflow-anchor: 차트가 비동기로 채워지며 높이가 바뀔 때 브라우저가 스크롤을
+     되돌리는 앵커링을 끈다(리포트 열기가 제자리에 머물던 원인).
+   - scroll-margin-top: sticky 헤더(.home-nav, 60px)에 리포트 첫 줄이 가리지 않게.
+   - outline:none: JS가 포커스를 옮기지만 마우스 사용자에게 테두리를 보이진 않는다. */
+.ai-analysis-panel {
+  overflow-anchor: none;
+  scroll-margin-top: 72px;
+}
+.ai-analysis-panel:focus {
+  outline: none;
+}
+
+/* 내용이 바뀐 걸 눈으로도 알리는 1회 플래시 */
+@keyframes aiPanelFlash {
+  from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-brand) 55%, transparent); }
+  to { box-shadow: 0 0 0 3px transparent; }
+}
+.ai-analysis-panel--flash {
+  animation: aiPanelFlash 900ms ease-out 1;
+  border-radius: var(--radius-md, 14px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-analysis-panel--flash { animation: none; }
+}
+
 .ai-analysis-panel[hidden] {
   display: none !important;
 }

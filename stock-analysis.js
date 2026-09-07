@@ -2177,6 +2177,50 @@
 
   /** 저장된 리포트를 AI 호출 없이 그대로 다시 그린다.
    *  차트는 저장하지 않으므로(용량) 현재 차트가 대신 붙는다 — 배너로 그 점을 밝힌다. */
+  /**
+   * 리포트를 열었을 때 시선을 "리포트 첫 줄"로 옮긴다.
+   *
+   * 기존에는 window.scrollTo({ top: 0 })이었는데 두 가지가 문제였다.
+   *  ① top:0은 검색창까지 올라가서, 정작 보려던 리포트는 화면 아래에 남는다.
+   *  ② 패널을 새로 그리는 동안 차트가 비동기로 채워지며 문서 높이가 계속 바뀌는데,
+   *     그 사이 브라우저 스크롤 앵커링이 개입해 부드러운 스크롤을 되돌려 버린다.
+   *     (제보: "리포트 열기를 눌러도 클릭한 그 자리에 그대로 있다")
+   * 그래서 sticky 헤더 높이를 뺀 패널 상단으로 이동한 뒤, 다음 프레임과 짧은 지연 뒤에
+   * 두 번 더 위치를 보정한다. 보정 중 사용자가 직접 스크롤하면 즉시 손을 뗀다.
+   */
+  function scrollToReportTop() {
+    if (!panel) return;
+    const header = document.querySelector(".home-nav");
+    const offset = (header ? header.getBoundingClientRect().height : 0) + 12;
+    const go = (behavior) => {
+      const top = Math.max(0, panel.getBoundingClientRect().top + window.scrollY - offset);
+      window.scrollTo({ top, behavior });
+    };
+
+    // 사용자가 스크롤을 잡으면 보정을 멈춘다 — 안 그러면 읽으려는 화면을 도로 끌어올린다.
+    let cancelled = false;
+    const release = () => { cancelled = true; };
+    window.addEventListener("wheel", release, { passive: true, once: true });
+    window.addEventListener("touchstart", release, { passive: true, once: true });
+
+    go("smooth");
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (!cancelled) go("auto"); }));
+    setTimeout(() => {
+      if (!cancelled) go("auto");
+      window.removeEventListener("wheel", release);
+      window.removeEventListener("touchstart", release);
+    }, 400);
+
+    // 스크롤만 하면 포커스는 눌렀던 버튼에 남는다. 키보드·스크린리더 사용자도 결과로 옮긴다.
+    if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
+    try { panel.focus({ preventScroll: true }); } catch (_) { /* 구형 브라우저 무시 */ }
+
+    // 내용이 바뀐 걸 눈으로도 알 수 있게 한 번만 깜빡인다(모션 최소화 설정은 CSS가 존중).
+    panel.classList.remove("ai-analysis-panel--flash");
+    void panel.offsetWidth;
+    panel.classList.add("ai-analysis-panel--flash");
+  }
+
   async function openSavedReport(id) {
     try {
       const auth = await tmAuthHeader();
@@ -2211,7 +2255,7 @@
         chartData = null;
       }
       renderAnalysis(saved, chartData, "D", out.archive || null);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      scrollToReportTop();
     } catch (err) {
       console.error("[리포트] 열기 실패", err);
       showError((err && err.message) || "리포트를 불러오지 못했습니다.");
@@ -2318,9 +2362,21 @@
     // 기본 동작은 "저장된 리포트 열기"다 — 크레딧을 쓰지 않고 즉시 열린다.
     // 다시 돌리고 싶을 때만 '새로 분석'을 누르게 분리했다.
     list.querySelectorAll("[data-open]").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-open") || "";
-        if (id) void openSavedReport(id);
+        if (!id || btn.dataset.busy === "1") return;
+        // 네트워크 왕복 동안 아무 반응이 없으면 사용자가 같은 버튼을 또 누른다.
+        const label = btn.textContent;
+        btn.dataset.busy = "1";
+        btn.disabled = true;
+        if (btn.classList.contains("airp-item__act")) btn.textContent = "불러오는 중…";
+        try {
+          await openSavedReport(id);
+        } finally {
+          btn.dataset.busy = "";
+          btn.disabled = false;
+          if (btn.classList.contains("airp-item__act")) btn.textContent = label;
+        }
       });
     });
     list.querySelectorAll("[data-query]").forEach((btn) => {
@@ -2329,7 +2385,7 @@
         if (!q) return;
         if (input) input.value = q;
         runAnalysis(q);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        scrollToReportTop();
       });
     });
   }

@@ -88,7 +88,14 @@ export function computeClosingFacts(day) {
              label: sign > 0 ? "순매수" : "순매도", dir: sign > 0 ? "up" : "down" };
   };
 
-  const featured = (day.featured_stocks || []).filter((f) => f && f.name);
+  // featured_stocks에는 market 필드가 없다. 같은 종목코드를 랭킹 목록에서 찾아 시장을 채운다
+  // (없이 두면 코스닥 종목이 전부 '코스피'로 찍힌다 — 스카이랩스가 그랬다).
+  const marketByCode = new Map();
+  for (const list of [day.topTradingValue, day.topGainers, day.topDecliners]) {
+    for (const r of list || []) if (r?.code && r?.market) marketByCode.set(String(r.code), r.market);
+  }
+  const featured = (day.featured_stocks || []).filter((f) => f && f.name)
+    .map((f) => ({ ...f, market: f.market || marketByCode.get(String(f.code)) || "" }));
   const surges = featured.filter((f) => f.type === "급등");
 
   return {
@@ -171,8 +178,8 @@ export function buildDeckSkeleton(f, slotLabel = "마감 시황") {
     }).filter(Boolean),
 
     // 5번 카드 특징주 — 문장은 리포트가 이미 써 둔 것을 길이만 다듬어 쓴다
-    stocks: f.featured.slice(0, 3).map((s) => ({
-      market: (s.market || "").includes("KOSDAQ") ? "코스닥" : "코스피",
+    stocks: f.featured.slice(0, 2).map((s) => ({
+      market: s.market ? (String(s.market).includes("KOSDAQ") ? "코스닥" : "코스피") : "",
       name: s.name, pct: pctText(num(s.change)), dir: dirOf(num(s.change)),
       reason: trim(esc(s.reason), 80),
       risk: trim(esc(s.risk), 95),
@@ -258,8 +265,8 @@ ${HOOK_GUIDE[hookType]}
   "focusNote": "2번 카드 하단 한 문장. 3위와의 격차 등 쏠림의 의미. <span>로 핵심어 강조. 70자 이내",
   "verdictHTML": "3번 카드. 오늘 시장을 한 문장으로 규정. <br>로 2줄, 핵심구는 <em>. 30자 이내",
   "verdictWhy": ["근거 3개. 각 60~85자. <b>로 수치·인명 강조", "", ""],
-  "flowTitle": "4번 카드 제목. <br>로 2줄. 20자 이내",
-  "flowIn": [{"name":"업종명","desc":"종목 2~4개 등락률. <br> 1개, <b> 사용. 70자 이내"}, {"name":"","desc":""}],
+  "flowTitle": "4번 카드 제목. 오늘 업종이 어떻게 갈렸는지를 말한다. \"흐름을 짚어보자\" 같은 맹탕 제목 금지. <br>로 2줄. 20자 이내",
+  "flowIn": [{"name":"업종명","desc":"종목 딱 2개의 등락률. 형식은 '종목A <b>+3.93%</b><br>종목B <b>+9.26%</b>'. 3개 이상 넣지 말 것"}, {"name":"","desc":""}],
   "flowOut": [{"name":"업종명","desc":"동일 형식"}, {"name":"","desc":""}],
   "flowNote": "4번 카드 하단 한 문장. <span>로 핵심어 강조. 80자 이내",
   "stocksTitle": "5번 카드 제목. <br>로 2줄. 20자 이내",
@@ -455,10 +462,17 @@ export function clampCopy(copy, f, hookType) {
     }
   }
   copy.verdictWhy = (copy.verdictWhy || []).filter(Boolean).slice(0, 3);
-  copy.flowIn = (copy.flowIn || []).filter((x) => x && x.name).slice(0, 2);
-  copy.flowOut = (copy.flowOut || []).filter((x) => x && x.name).slice(0, 2);
+  const twoNames = (desc) => {
+    const parts = String(desc ?? "").split(/<br\s*\/?>|,\s*/).map((x) => x.trim()).filter(Boolean);
+    return parts.slice(0, 2).join("<br>");
+  };
+  copy.flowIn = (copy.flowIn || []).filter((x) => x && x.name).slice(0, 2)
+    .map((x) => ({ ...x, desc: twoNames(x.desc) }));
+  copy.flowOut = (copy.flowOut || []).filter((x) => x && x.name).slice(0, 2)
+    .map((x) => ({ ...x, desc: twoNames(x.desc) }));
 
   // 2번 카드에서 이미 공개한 1·2위를 4번 카드가 또 쓰면 같은 얘기 반복이다.
+  // (위에서 종목을 2개로 줄인 뒤라 여기서 걸러도 최소 1개는 남는다)
   const top2Names = f.top2.map((r) => r.name);
   if (copy.flowIn[0]) {
     const before = copy.flowIn[0].desc;

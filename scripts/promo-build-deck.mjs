@@ -234,7 +234,20 @@ ${HOOK_GUIDE[hookType]}
 4. "무료", "수익률", "매수 추천" 같은 표현은 쓰지 않는다. 사라고 말하지 않는다.
 5. flowIn/flowOut은 실제로 오른 업종/내린 업종을 분석 원문에서 찾아 쓰고, 종목명과 등락률을 함께 넣는다.
    flowIn 첫 항목은 거래대금 1·2위와 같은 얘기를 반복하지 말고 그 업종의 **다른 종목**으로 채운다.
-6. HTML은 <br> <b> <em> <span>만 쓴다.
+6. HTML은 <br> <b> <em> <span>만 쓴다. flowIn/flowOut의 desc에는 <br> 1개와 <b>를 반드시 쓴다.
+7. **훅(hookHTML)은 한 문장이다.** 두 문장을 붙이면 훅이 죽는다. 설명은 hookSub이 한다.
+8. verdictHTML은 요약이 아니라 **규정**이다. "강세로 마감했습니다" 같은 서술은 실패다.
+
+# 좋은 예 / 나쁜 예
+- hookHTML  O: "오늘 증시의 돈<br><em>8조 2,468억</em>이<br>딱 두 종목에<br>몰렸습니다"
+             X: "오늘 증시의 돈 8조가 두 종목에 몰렸습니다. 이 두 종목이 시장을 이끌었습니다" (두 문장)
+- hookSub   O: "지수는 올랐는데 내 종목만 조용했다면,<br>이유는 이 안에 있습니다."
+             X: "어떤 종목인지 궁금하시죠? 다음 카드에서 확인해보세요" (유튜브 낚시 말투 금지)
+- hookTag   O: "오늘 시장, 한 줄로 말하면"   X: "투자자 주목" (내용이 없다)
+- verdictHTML O: "오늘 반등은<br><em>금리가 만든 반등</em>이다."
+               X: "오늘 시장은 강세로 마감했습니다" (규정이 아니라 요약)
+- flowIn 첫 항목 O: 거래대금 1·2위를 뺀 같은 업종의 다른 종목들
+                 X: 2번 카드에서 이미 공개한 1·2위를 또 쓰는 것
 
 # 출력 (JSON만. 설명 금지)
 {
@@ -305,7 +318,7 @@ export async function writeCopyWithClaude(f, deck, hookType, analysisText, apiKe
 export async function writeCopyWithOpenAI(f, deck, hookType, analysisText, apiKey = process.env.OPENAI_API_KEY) {
   const key = String(apiKey ?? "").trim();
   if (!key) throw new Error("OPENAI_API_KEY 없음");
-  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const model = process.env.OPENAI_MODEL || "gpt-4o";
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
@@ -401,17 +414,61 @@ const LIMITS = {
   verdictHTML: 36, flowTitle: 26, stocksTitle: 26, flowNote: 92,
 };
 
-/** 길이를 넘으면 발행을 막는 게 아니라 잘라서 넘긴다(렌더러가 높이 초과는 따로 잡는다). */
-function clampCopy(copy) {
-  const plain = (s) => String(s ?? "").replace(/<[^>]+>/g, "");
+const plain = (s) => String(s ?? "").replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, "");
+
+/** 태그를 살린 채 첫 문장만 남긴다. 모델이 훅에 문장을 덧붙이는 걸 코드가 잘라낸다. */
+export function firstSentence(html) {
+  const s = String(html ?? "");
+  // 태그 밖에 있는 종결부호 위치를 찾는다
+  let depth = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "<") depth++;
+    else if (c === ">") depth = Math.max(0, depth - 1);
+    else if (depth === 0 && (c === "." || c === "!" || c === "?")) {
+      const rest = s.slice(i + 1).replace(/<br\s*\/?>/gi, "").trim();
+      if (rest.length > 0) return s.slice(0, i + 1);
+    }
+  }
+  return s;
+}
+
+/**
+ * 모델이 규칙을 어겨도 화면은 지켜야 한다. 경고만 남기면 결국 그대로 발행된다.
+ * - 훅은 첫 문장만 남기고, 그래도 길면 코드 폴백 훅으로 갈아끼운다
+ * - 나머지 필드는 길이를 넘으면 자른다
+ */
+export function clampCopy(copy, f, hookType) {
+  copy.hookHTML = firstSentence(copy.hookHTML);
+  if (plain(copy.hookHTML).length > LIMITS.hookHTML) {
+    console.warn(`[deck] 훅이 ${plain(copy.hookHTML).length}자로 너무 길어 코드 폴백 훅으로 교체합니다`);
+    const fb = fallbackCopy(f, hookType);
+    copy.hookHTML = fb.hookHTML;
+    copy.hookSub = copy.hookSub || fb.hookSub;
+  }
   for (const [k, max] of Object.entries(LIMITS)) {
-    if (copy[k] && plain(copy[k]).length > max) {
-      console.warn(`[deck] ${k} 가 ${plain(copy[k]).length}자로 기준(${max}자)을 넘었습니다 — 그대로 두되 렌더에서 확인 필요`);
+    if (k === "hookHTML" || !copy[k]) continue;
+    if (plain(copy[k]).length > max) {
+      console.warn(`[deck] ${k} ${plain(copy[k]).length}자 → ${max}자로 자름`);
+      copy[k] = firstSentence(copy[k]);
+      if (plain(copy[k]).length > max) copy[k] = plain(copy[k]).slice(0, max).trim();
     }
   }
   copy.verdictWhy = (copy.verdictWhy || []).filter(Boolean).slice(0, 3);
   copy.flowIn = (copy.flowIn || []).filter((x) => x && x.name).slice(0, 2);
   copy.flowOut = (copy.flowOut || []).filter((x) => x && x.name).slice(0, 2);
+
+  // 2번 카드에서 이미 공개한 1·2위를 4번 카드가 또 쓰면 같은 얘기 반복이다.
+  const top2Names = f.top2.map((r) => r.name);
+  if (copy.flowIn[0]) {
+    const before = copy.flowIn[0].desc;
+    copy.flowIn[0].desc = String(before ?? "")
+      .split(/,\s*/)
+      .filter((seg) => !top2Names.some((n) => seg.includes(n)))
+      .join(", ");
+    if (!plain(copy.flowIn[0].desc).trim()) copy.flowIn[0].desc = before; // 다 지워지면 원문 유지
+    else if (before !== copy.flowIn[0].desc) console.warn("[deck] flowIn 첫 항목에서 거래대금 1·2위 중복을 제거했습니다");
+  }
   return copy;
 }
 
@@ -443,7 +500,7 @@ export async function buildClosingDeck(snapshotPath = "data/daily-market.json", 
     console.warn("[deck] AI 두 곳 모두 실패 — 코드 폴백 덱으로 발행합니다");
     copy = fallbackCopy(f, hookType);
   }
-  copy = clampCopy(copy);
+  copy = clampCopy(copy, f, hookType);
 
   Object.assign(deck, {
     hookTag: copy.hookTag, hookHTML: copy.hookHTML, hookSub: copy.hookSub,

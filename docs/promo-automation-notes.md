@@ -1,5 +1,14 @@
 # 인스타그램 카드뉴스 · X 자동 트윗 — 작업 노트
 
+> ⚠️ **이 문서는 릴스 시절(v1) 기록입니다.** 2026-09-07부터 인스타그램 발행은
+> **카드뉴스 v2(캐러셀)** 로 전환됐습니다. 현재 구조는 `scripts/promo-build-deck*.mjs`,
+> `promo-render-carousel.mjs`, `promo-carousel-slides.mjs`, `promo-deck-ai.mjs`,
+> `.github/workflows/instagram-carousel-*.yml` 이고, 설계 원칙과 지켜야 할 규칙은
+> `TOTALMONEY_STATUS.md` 2·5·6장에 정리돼 있습니다.
+> 아래 내용 중 릴스·단일 이미지 관련 부분은 더 이상 실제 발행 경로가 아닙니다
+> (릴스 워크플로는 롤백용으로 수동 실행만 남겨 뒀습니다).
+
+
 이 브랜치(`promo/instagram-x-cardnews`)가 추가하는 것과, 왜 이런 구조로 짰는지 정리.
 
 ## 왜 새 파일만 추가했나

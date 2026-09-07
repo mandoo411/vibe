@@ -269,16 +269,33 @@ function parseJson(text) {
 }
 
 export async function writeCopyWithClaude(f, deck, hookType, analysisText, apiKey = process.env.ANTHROPIC_API_KEY) {
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY 없음");
-  const client = new Anthropic({ apiKey });
-  const res = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5-20250929",
-    max_tokens: 4000,
-    system: SYSTEM,
-    messages: [{ role: "user", content: buildPrompt(f, deck, hookType, analysisText) }],
-  });
-  const text = (res.content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n");
-  return parseJson(text);
+  const key = String(apiKey ?? "").trim();
+  if (!key) throw new Error("ANTHROPIC_API_KEY 없음");
+  // 다른 스크립트와 같은 별칭 모델을 쓴다(날짜 붙은 ID는 만료되면 조용히 폴백으로 떨어진다).
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+  const client = new Anthropic({ apiKey: key, maxRetries: 3, timeout: 120_000 });
+  const prompt = buildPrompt(f, deck, hookType, analysisText);
+
+  let lastErr;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await client.messages.create({
+        model,
+        max_tokens: 4000,
+        system: SYSTEM,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text = (res.content || []).filter((c) => c.type === "text").map((c) => c.text).join("\n");
+      return parseJson(text);
+    } catch (e) {
+      lastErr = e;
+      // 왜 실패했는지 남기지 않으면 매번 폴백으로 떨어져도 원인을 알 수 없다.
+      console.warn(`[deck] Claude 호출 ${attempt}차 실패 · model=${model} · ${e?.name || "Error"} ` +
+        `status=${e?.status ?? "-"} ${String(e?.message || "").slice(0, 200)}`);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 4000));
+    }
+  }
+  throw lastErr;
 }
 
 /* ═════════════════ 5) 폴백 — Claude 없이도 발행은 된다 ═════════════════ */

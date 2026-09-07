@@ -298,7 +298,33 @@ export async function writeCopyWithClaude(f, deck, hookType, analysisText, apiKe
   throw lastErr;
 }
 
-/* ═════════════════ 5) 폴백 — Claude 없이도 발행은 된다 ═════════════════ */
+/**
+ * Claude가 막히면(크레딧 소진 등) OpenAI로 같은 프롬프트를 돌린다.
+ * 이 저장소의 다른 AI 작업들과 같은 이중화 패턴이다.
+ */
+export async function writeCopyWithOpenAI(f, deck, hookType, analysisText, apiKey = process.env.OPENAI_API_KEY) {
+  const key = String(apiKey ?? "").trim();
+  if (!key) throw new Error("OPENAI_API_KEY 없음");
+  const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model,
+      temperature: 0.6,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: SYSTEM },
+        { role: "user", content: buildPrompt(f, deck, hookType, analysisText) },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`OpenAI ${res.status} ${String(await res.text()).slice(0, 200)}`);
+  const data = await res.json();
+  return parseJson(data?.choices?.[0]?.message?.content ?? "");
+}
+
+/* ═════════════════ 5) 폴백 — AI 없이도 발행은 된다 ═════════════════ */
 
 function fallbackCopy(f, hookType) {
   const a = f.top2[0], b = f.top2[1];
@@ -341,7 +367,12 @@ const BASE_TAGS_MID = ["주식초보", "국내주식", "증시브리핑", "종�
 const BRAND_TAG = "토탈머니";
 
 function buildCaption(deck, copy) {
-  const strip = (s) => String(s ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  // <br>을 그냥 지우면 "돈8조 2,468억이딱"처럼 단어가 붙는다. 줄바꿈 태그는 공백으로 바꾼다.
+  const strip = (s) => String(s ?? "")
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   const hookLine = strip(copy.hookHTML).replace(/\s+/g, " ");
   const tags = [...BASE_TAGS_BIG, ...BASE_TAGS_MID,
     ...(copy.themeTags || []).map((t) => String(t).replace(/[^가-힣A-Za-z0-9]/g, "")).filter(Boolean).slice(0, 4),
@@ -398,12 +429,18 @@ export async function buildClosingDeck(snapshotPath = "data/daily-market.json", 
   const deck = buildDeckSkeleton(f);
   deck.hookType = hookType;
 
-  let copy;
-  try {
-    copy = await writeCopyWithClaude(f, deck, hookType, day.analysis || "");
-    console.log(`[deck] Claude 문장 생성 완료 (훅 유형 ${hookType})`);
-  } catch (e) {
-    console.warn(`[deck] Claude 실패 — 폴백 사용: ${e.message}`);
+  let copy = null;
+  for (const [label, fn] of [["Claude", writeCopyWithClaude], ["OpenAI", writeCopyWithOpenAI]]) {
+    try {
+      copy = await fn(f, deck, hookType, day.analysis || "");
+      console.log(`[deck] ${label} 문장 생성 완료 (훅 유형 ${hookType})`);
+      break;
+    } catch (e) {
+      console.warn(`[deck] ${label} 실패: ${String(e.message).slice(0, 220)}`);
+    }
+  }
+  if (!copy) {
+    console.warn("[deck] AI 두 곳 모두 실패 — 코드 폴백 덱으로 발행합니다");
     copy = fallbackCopy(f, hookType);
   }
   copy = clampCopy(copy);

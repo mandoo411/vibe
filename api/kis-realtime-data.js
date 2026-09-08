@@ -1682,65 +1682,121 @@ function mapDailyItemchartRow(row) {
  * 국내주식기간별시세(일/주/월) — 응답당 최대 약 100건이라 구간을 나눠 병합.
  * @param {string} periodDiv  D | W | M
  */
+/* 2026-09-09 성능: 차트 "콜드" 조회가 실측 7~8초였다(매매시그널·실시간시세 차트보기).
+   캔들을 100개씩 끊어 받는 걸 순차로 돌면서, 사이마다 KIS_GAP_MS(기본 700ms)를 쉬었다.
+   일봉 400개 = KIS 4회 → 왕복 4번 + 2.1초 대기가 그대로 사용자 대기시간이 됐다.
+   구간은 날짜로 미리 계산되므로 창을 나눠 병렬로 받는다. 창 폭은 "그 안의 거래일 수 < 100"이라
+   정상적인 경우 보충 호출이 생기지 않는다(일봉 130일 ≈ 89거래일).
+   KIS 초당 호출 제한을 배려해 창끼리 짧게 시차만 둔다(700ms 순차 → 60ms 시차). */
+const CANDLE_PARALLEL_STAGGER_MS = Math.max(0, Number(process.env.KIS_CANDLE_STAGGER_MS) || 60);
+const CANDLE_PAGE_MAX = 100;
+
+function candleWindowPlan(periodDiv) {
+  const p = String(periodDiv || "D").toUpperCase();
+  if (p === "M") return { span: 1200, count: 4 }; // 4800일 ≈ 157개월 ≥ 120
+  if (p === "W") return { span: 640, count: 3 }; //  1920일 ≈ 274주  ≥ 200
+  return { span: 130, count: 5 }; //                  650일 ≈ 445거래일 ≥ 400
+}
+
+async function fetchCandleWindow(code6, fidPeriod, d1, d2) {
+  const { json } = await kisGet(
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+    "FHKST03010100",
+    {
+      fid_cond_mrkt_div_code: "J",
+      fid_input_iscd: code6,
+      fid_input_date_1: d1,
+      fid_input_date_2: d2,
+      fid_period_div_code: fidPeriod,
+      fid_org_adj_prc: "0",
+    },
+    ""
+  );
+  let raw = json.output2;
+  if (raw && !Array.isArray(raw)) raw = [raw];
+  if (!Array.isArray(raw)) raw = [];
+  const batch = [];
+  for (const row of raw) {
+    const b = mapDailyItemchartRow(row);
+    if (b) batch.push(b);
+  }
+  batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  return batch;
+}
+
 async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
   const div = sanitizeStr(periodDiv).toUpperCase();
   const fidPeriod = div === "W" || div === "M" ? div : "D";
   const target = dailyCandleTargetCount(fidPeriod);
+  const plan = candleWindowPlan(fidPeriod);
   const endAll = ymdKst(new Date());
-  const byTime = new Map();
-  let chunkEnd = endAll;
-  const floorYmd = subtractCalendarDaysFromYmd(endAll, dailyFirstWindowStartDays(fidPeriod));
 
-  for (let iter = 0; iter < 30; iter++) {
-    if (iter > 0) await sleep(KIS_GAP_MS);
-    const chunkStart =
-      iter === 0
-        ? floorYmd
-        : subtractCalendarDaysFromYmd(chunkEnd, dailyBackwardChunkDays(fidPeriod));
-    let d1 = chunkStart;
-    let d2 = chunkEnd;
-    if (d1 >= d2) {
-      d1 = subtractCalendarDaysFromYmd(d2, 30);
-    }
-    if (d1 >= d2) break;
-
-    const { json } = await kisGet(
-      "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
-      "FHKST03010100",
-      {
-        fid_cond_mrkt_div_code: "J",
-        fid_input_iscd: code6,
-        fid_input_date_1: d1,
-        fid_input_date_2: d2,
-        fid_period_div_code: fidPeriod,
-        fid_org_adj_prc: "0",
-      },
-      ""
-    );
-    let raw = json.output2;
-    if (raw && !Array.isArray(raw)) raw = [raw];
-    if (!Array.isArray(raw)) raw = [];
-    const batch = [];
-    for (const row of raw) {
-      const b = mapDailyItemchartRow(row);
-      if (b) batch.push(b);
-    }
-    batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-    if (!batch.length) break;
-    const beforeSize = byTime.size;
-    for (const b of batch) byTime.set(b.time, b);
-    if (byTime.size >= target) break;
-    if (byTime.size === beforeSize && iter > 2) break;
-
-    const oldestYmd = String(batch[0].time).replace(/\D/g, "").slice(0, 8);
-    if (!/^\d{8}$/.test(oldestYmd)) break;
-    const nextEnd = subtractCalendarDaysFromYmd(oldestYmd, 1);
-    if (nextEnd >= chunkEnd) break;
-    chunkEnd = nextEnd;
+  const windows = [];
+  for (let i = 0; i < plan.count; i++) {
+    windows.push({
+      d1: subtractCalendarDaysFromYmd(endAll, (i + 1) * plan.span),
+      d2: i === 0 ? endAll : subtractCalendarDaysFromYmd(endAll, i * plan.span),
+    });
   }
+
+  let firstError = null;
+  const results = await Promise.all(
+    windows.map(async (w, i) => {
+      if (i > 0 && CANDLE_PARALLEL_STAGGER_MS) await sleep(i * CANDLE_PARALLEL_STAGGER_MS);
+      try {
+        return await fetchCandleWindow(code6, fidPeriod, w.d1, w.d2);
+      } catch (e) {
+        // 창 하나가 실패해도 나머지로 그린다(기존 동작과 동일한 원칙).
+        if (!firstError) firstError = e;
+        return [];
+      }
+    })
+  );
+
+  const byTime = new Map();
+  for (const rows of results) for (const b of rows) byTime.set(b.time, b);
+
+  // 상한(100개)에 걸린 창은 더 과거 구간이 잘렸을 수 있다 — 그 창만 이어 받는다.
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].length < CANDLE_PAGE_MAX) continue;
+    let chunkEnd = subtractCalendarDaysFromYmd(
+      String(results[i][0].time).replace(/\D/g, "").slice(0, 8),
+      1
+    );
+    for (let g = 0; g < 3; g++) {
+      if (!/^\d{8}$/.test(String(chunkEnd)) || chunkEnd <= windows[i].d1) break;
+      await sleep(KIS_GAP_MS);
+      let rows = [];
+      try {
+        rows = await fetchCandleWindow(code6, fidPeriod, windows[i].d1, chunkEnd);
+      } catch {
+        break;
+      }
+      if (!rows.length) break;
+      for (const b of rows) byTime.set(b.time, b);
+      const next = subtractCalendarDaysFromYmd(String(rows[0].time).replace(/\D/g, "").slice(0, 8), 1);
+      if (!/^\d{8}$/.test(String(next)) || next >= chunkEnd) break;
+      chunkEnd = next;
+      if (rows.length < CANDLE_PAGE_MAX) break;
+    }
+  }
+
+  if (!byTime.size && firstError) throw firstError;
 
   const bars = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   return bars.slice(-target);
+}
+
+/* 2026-09-09: 캔들 전용 엣지 캐시.
+   기존 공통값(s-maxage=30, swr=30)은 60초만 지나면 완전히 만료돼, 그 다음 사용자가
+   KIS 왕복(실측 7~8초)을 그대로 기다렸다. 캔들은 이미 확정된 과거 데이터이고 장중에
+   움직이는 건 마지막 봉 하나뿐이라, stale-while-revalidate를 길게 둬서 만료 뒤에도
+   캐시를 즉시 돌려주고 갱신은 뒤에서 하게 한다(사용자가 기다리지 않는다). */
+function candleEdgeCacheControl() {
+  const s = sessionLabelFromKst();
+  return s.key === "open"
+    ? "public, max-age=30, s-maxage=120, stale-while-revalidate=86400"
+    : "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400";
 }
 
 function json(res, status, body, opts) {
@@ -1748,9 +1804,10 @@ function json(res, status, body, opts) {
   res.setHeader("content-type", "application/json; charset=utf-8");
   // 실시간 데이터지만 30초 Edge Cache는 허용범위 — KIS 호출 부하/지연 완화. approval 등은 noStore로 제외.
   const noStore = (opts && opts.noStore) || status !== 200;
+  const custom = opts && opts.cacheControl;
   res.setHeader(
     "cache-control",
-    noStore ? "no-store" : "public, s-maxage=30, stale-while-revalidate=30"
+    noStore ? "no-store" : custom || "public, s-maxage=30, stale-while-revalidate=30"
   );
   res.end(JSON.stringify(body));
 }
@@ -2019,12 +2076,12 @@ module.exports = async function handler(req, res) {
         !Object.prototype.hasOwnProperty.call(cached.bars[0], "volume");
       const ttl = candleCacheTtlMs();
       if (cached && now < cached.expiresAt && !cacheStaleVolume) {
-        json(res, 200, { code: code6, period: periodKey, ...withMaSeries(cached.bars), cached: true });
+        json(res, 200, { code: code6, period: periodKey, ...withMaSeries(cached.bars), cached: true }, { cacheControl: candleEdgeCacheControl() });
         return;
       }
       const bars = await fetchDailyItemchartCandlesFromKis(code6, periodKey);
       candleMemoryCache.set(cacheKey, { bars, expiresAt: now + ttl, period: periodKey });
-      json(res, 200, { code: code6, period: periodKey, ...withMaSeries(bars), cached: false });
+      json(res, 200, { code: code6, period: periodKey, ...withMaSeries(bars), cached: false }, { cacheControl: candleEdgeCacheControl() });
       return;
     }
 

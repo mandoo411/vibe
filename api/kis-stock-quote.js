@@ -7,12 +7,39 @@
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
 const { isKisRsymToken, isLikelyUsSectorName, resolveUsDisplayName } = require("../lib/us-stock-display-name");
 
-function json(res, status, body) {
+function json(res, status, body, cacheControl) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("cache-control", "no-store");
+  // 2026-09-09: 차트 응답만 엣지 캐시를 허용한다. 시세(현재가) 응답은 그대로 no-store.
+  res.setHeader("cache-control", cacheControl || "no-store");
   res.end(JSON.stringify(body));
+}
+
+/* 2026-09-09 성능: 차트 로딩이 너무 느리다는 피드백(국내 일봉 실측 2.8~4.0초, 미국 2.4초).
+   원인이 두 가지였다.
+   (1) 모든 응답이 cache-control: no-store 라 같은 종목을 몇 번을 열어도 매번 KIS를
+       다시 다 훑었다. x-vercel-cache 는 항상 MISS.
+   (2) 캔들을 100개씩 끊어 받으면서 그걸 순차로 반복했다(국내 일봉 5회, 미국 일봉 최대 12회).
+   여기서는 (1)을, 아래 fetch 함수들에서 (2)를 고친다.
+
+   캔들은 이미 확정된 과거 데이터이고, 장중에 움직이는 건 맨 마지막 봉 하나뿐이라
+   짧은 s-maxage + 긴 stale-while-revalidate 조합이 안전하다. SWR 구간에서는 캐시를
+   즉시 돌려주고 뒤에서 갱신하므로, 두 번째 사용자부터는 체감 대기가 사라진다. */
+const CHART_CACHE = {
+  // 일봉: 장중 마지막 봉이 움직인다 — 최대 3분 지연 허용
+  D: "public, max-age=60, s-maxage=180, stale-while-revalidate=1800",
+  // 주봉·월봉: 하루 안에서 의미 있게 바뀌지 않는다
+  W: "public, max-age=300, s-maxage=900, stale-while-revalidate=86400",
+  M: "public, max-age=300, s-maxage=900, stale-while-revalidate=86400",
+  // 암호화폐: 24시간 거래라 조금 더 짧게
+  CRYPTO_D: "public, max-age=30, s-maxage=120, stale-while-revalidate=600",
+};
+
+function chartCacheControl(period, isCrypto) {
+  const p = normalizePeriod(period);
+  if (isCrypto) return p === "D" ? CHART_CACHE.CRYPTO_D : CHART_CACHE.W;
+  return CHART_CACHE[p] || CHART_CACHE.D;
 }
 
 function sanitizeStr(v) {
@@ -138,69 +165,103 @@ function targetCount(periodDiv) {
   return 500;
 }
 
-function firstWindowDays(periodDiv) {
-  if (periodDiv === "M") return 3650;
-  if (periodDiv === "W") return 1460;
-  return 750;
+/** KIS 기간별시세는 한 번에 최대 100개만 돌려준다(국내·해외 공통). */
+const KIS_CHART_PAGE_MAX = 100;
+
+/* 2026-09-09 성능: 기존에는 "받고 → 가장 오래된 날짜 다음으로 커서를 옮겨 → 또 받고"를
+   순차로 반복해서, 일봉 2년치(500개)를 채우는 데 KIS 왕복이 5번 직렬로 쌓였다(실측 2.8~4.0초).
+   구간은 날짜로 미리 계산할 수 있으므로, 창을 먼저 나눠 놓고 병렬로 받는다.
+   창 하나가 100개(=1회 상한)로 잘렸을 가능성이 있으면 그 창만 과거 방향으로 이어 받아 메운다.
+   창 폭은 "그 안의 거래일 수 < 100"이 되도록 잡아, 정상적인 경우 보충 호출이 아예 안 생긴다.
+   (일봉 130일 ≈ 89거래일 / 주봉 640일 ≈ 91주 / 월봉 1200일 ≈ 39개월) */
+function chartWindowPlan(period) {
+  if (period === "M") return { span: 1200, count: 4 }; // 4800일 ≈ 157개월 ≥ 120
+  if (period === "W") return { span: 640, count: 3 }; //  1920일 ≈ 274주  ≥ 200
+  return { span: 130, count: 6 }; //                       780일 ≈ 535거래일 ≥ 500
 }
 
-function backwardChunkDays(periodDiv) {
-  if (periodDiv === "M") return 4000;
-  if (periodDiv === "W") return 1000;
-  return 400;
+function oldestYmdOf(rows) {
+  if (!rows || !rows.length) return "";
+  const s = String(rows[0].time).replace(/\D/g, "").slice(0, 8);
+  return /^\d{8}$/.test(s) ? s : "";
+}
+
+async function fetchDomesticChartWindow(code6, period, d1, d2) {
+  const j = await kisGetJson(
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+    "FHKST03010100",
+    {
+      FID_COND_MRKT_DIV_CODE: "J",
+      FID_INPUT_ISCD: code6,
+      FID_INPUT_DATE_1: d1,
+      FID_INPUT_DATE_2: d2,
+      FID_PERIOD_DIV_CODE: period,
+      FID_ORG_ADJ_PRC: "0",
+    }
+  );
+  let raw = j && j.output2;
+  if (raw && !Array.isArray(raw)) raw = [raw];
+  if (!Array.isArray(raw)) raw = [];
+  const batch = [];
+  for (const row of raw) {
+    const b = mapDailyRow(row);
+    if (b) batch.push(b);
+  }
+  batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  return batch;
 }
 
 async function fetchChartCandles(code6, periodDiv) {
   const period = normalizePeriod(periodDiv);
   const target = targetCount(period);
+  const plan = chartWindowPlan(period);
   const endAll = ymdKst(new Date());
-  const byTime = new Map();
-  let chunkEnd = endAll;
-  const floorYmd = subtractCalendarDaysFromYmd(endAll, firstWindowDays(period));
 
-  for (let iter = 0; iter < 20; iter++) {
-    const chunkStart =
-      iter === 0 ? floorYmd : subtractCalendarDaysFromYmd(chunkEnd, backwardChunkDays(period));
-    let d1 = chunkStart;
-    let d2 = chunkEnd;
-    if (d1 >= d2) d1 = subtractCalendarDaysFromYmd(d2, 30);
-    if (d1 >= d2) break;
-
-    const j = await kisGetJson(
-      "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
-      "FHKST03010100",
-      {
-        FID_COND_MRKT_DIV_CODE: "J",
-        FID_INPUT_ISCD: code6,
-        FID_INPUT_DATE_1: d1,
-        FID_INPUT_DATE_2: d2,
-        FID_PERIOD_DIV_CODE: period,
-        FID_ORG_ADJ_PRC: "0",
-      }
-    );
-
-    let raw = j.output2;
-    if (raw && !Array.isArray(raw)) raw = [raw];
-    if (!Array.isArray(raw)) raw = [];
-    const batch = [];
-    for (const row of raw) {
-      const b = mapDailyRow(row);
-      if (b) batch.push(b);
-    }
-    batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-    if (!batch.length) break;
-
-    const before = byTime.size;
-    for (const b of batch) byTime.set(b.time, b);
-    if (byTime.size >= target) break;
-    if (byTime.size === before && iter > 1) break;
-
-    const oldestYmd = String(batch[0].time).replace(/\D/g, "").slice(0, 8);
-    if (!/^\d{8}$/.test(oldestYmd)) break;
-    const nextEnd = subtractCalendarDaysFromYmd(oldestYmd, 1);
-    if (nextEnd >= chunkEnd) break;
-    chunkEnd = nextEnd;
+  const windows = [];
+  for (let i = 0; i < plan.count; i++) {
+    windows.push({
+      d1: subtractCalendarDaysFromYmd(endAll, (i + 1) * plan.span),
+      d2: i === 0 ? endAll : subtractCalendarDaysFromYmd(endAll, i * plan.span),
+    });
   }
+
+  let firstError = null;
+  const results = await Promise.all(
+    windows.map((w) =>
+      fetchDomesticChartWindow(code6, period, w.d1, w.d2).catch((e) => {
+        // 창 하나가 실패해도 나머지로 그린다(기존 동작과 동일한 원칙).
+        if (!firstError) firstError = e;
+        return [];
+      })
+    )
+  );
+
+  const byTime = new Map();
+  for (const rows of results) for (const b of rows) byTime.set(b.time, b);
+
+  // 상한(100개)에 걸린 창은 더 과거 구간이 잘렸을 수 있다 — 그 창만 이어 받는다.
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].length < KIS_CHART_PAGE_MAX) continue;
+    let chunkEnd = subtractCalendarDaysFromYmd(oldestYmdOf(results[i]), 1);
+    for (let g = 0; g < 3; g++) {
+      if (!chunkEnd || chunkEnd <= windows[i].d1) break;
+      let rows = [];
+      try {
+        rows = await fetchDomesticChartWindow(code6, period, windows[i].d1, chunkEnd);
+      } catch {
+        break;
+      }
+      if (!rows.length) break;
+      for (const b of rows) byTime.set(b.time, b);
+      const next = subtractCalendarDaysFromYmd(oldestYmdOf(rows), 1);
+      if (!next || next >= chunkEnd) break;
+      chunkEnd = next;
+      if (rows.length < KIS_CHART_PAGE_MAX) break;
+    }
+  }
+
+  // 전부 실패했다면 원래 KIS 오류를 그대로 올려 원인을 알 수 있게 한다.
+  if (!byTime.size && firstError) throw firstError;
 
   return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
 }
@@ -269,7 +330,7 @@ async function handleChartRequest(res, code6, period) {
   if (!candles.length) {
     return json(res, 502, { error: "차트 데이터가 없습니다." });
   }
-  return json(res, 200, enrichChart(candles));
+  return json(res, 200, enrichChart(candles), chartCacheControl(period, false));
 }
 
 function marketLabelFromRow(row) {
@@ -544,38 +605,63 @@ function mapOverseasDailyCandle(row) {
 
 /** KIS 해외주식 기간별시세는 BYMD를 기준일로 과거 방향 페이지네이션을 지원한다.
  * 국내주식 차트(fetchChartCandles)와 동일한 원칙: 실패해도 지금까지 모은 것만 반환. */
+/* 2026-09-09 성능: 해외 기간별시세도 BYMD 커서를 순차로 밀면서 최대 12번 왕복했다(실측 2.4초).
+   BYMD는 "그 날짜 기준 과거 100개"를 뜻하므로 커서를 날짜로 미리 계산할 수 있다.
+   한 번에 약 100거래일(≈140일)이 오는데 창 간격은 그보다 좁게(115일) 잡아 서로 겹치게 했다 —
+   겹치는 만큼 중복은 Map이 걸러내고, 대신 구간이 비는 일이 없다. */
+function usWindowPlan(period) {
+  if (period === "M") return { step: 2400, count: 2 }; // 월봉 100개/회 — 2회로 충분
+  if (period === "W") return { step: 560, count: 3 }; //  주봉 100주/회, 3회 ≈ 300주 ≥ 200
+  return { step: 115, count: 8 }; //                      일봉 8회 ≈ 650거래일 ≥ 500
+}
+
+async function fetchUsChartWindow(ticker, exchange, gubn, bymd) {
+  const j = await kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
+    AUTH: "",
+    EXCD: exchange,
+    SYMB: ticker,
+    GUBN: gubn,
+    BYMD: bymd,
+    MODP: "0",
+  });
+  let raw = j && j.output2;
+  if (raw && !Array.isArray(raw)) raw = [raw];
+  if (!Array.isArray(raw)) raw = [];
+  const batch = raw.map(mapOverseasDailyCandle).filter(Boolean);
+  batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+  return batch;
+}
+
 async function fetchUsChartCandles(ticker, exchange, period) {
   const gubn = OVERSEAS_GUBN[period] || "0";
   const target = OVERSEAS_CHART_TARGET[period] || OVERSEAS_CHART_TARGET.D;
-  const byTime = new Map();
-  let bymd = "";
-  // 2026-07-11: KIS 해외 기간별시세는 한 번 호출에 최대 약 100개만 돌려줘서, 2년치(약 500개)를
-  // 모으려면 페이지네이션을 더 여러 번 반복해야 한다. 기존 4회로는 200개도 못 채웠음.
-  const maxIter = period === "D" ? 12 : period === "W" ? 6 : 4;
-  for (let iter = 0; iter < maxIter; iter++) {
-    const j = await kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
-      AUTH: "",
-      EXCD: exchange,
-      SYMB: ticker,
-      GUBN: gubn,
-      BYMD: bymd,
-      MODP: "0",
-    });
-    let raw = j && j.output2;
-    if (raw && !Array.isArray(raw)) raw = [raw];
-    if (!Array.isArray(raw)) raw = [];
-    const batch = raw.map(mapOverseasDailyCandle).filter(Boolean);
-    if (!batch.length) break;
-    batch.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-    const before = byTime.size;
-    for (const b of batch) byTime.set(b.time, b);
-    if (byTime.size >= target) break;
-    if (byTime.size === before) break;
-    const oldestYmd = String(batch[0].time).replace(/\D/g, "");
-    const nextBymd = subtractCalendarDaysFromYmd(oldestYmd, 1);
-    if (!nextBymd || nextBymd === bymd) break;
-    bymd = nextBymd;
+  const plan = usWindowPlan(period);
+  const endAll = ymdKst(new Date());
+
+  // 첫 창은 BYMD 빈 값(=최신)으로 둔다. KIS가 "오늘"을 어떻게 잡는지에 맡기는 편이
+  // 장 시작 직후·서머타임 경계에서 마지막 봉을 놓치지 않는다.
+  const cursors = [""];
+  for (let i = 1; i < plan.count; i++) {
+    cursors.push(subtractCalendarDaysFromYmd(endAll, i * plan.step));
   }
+
+  let firstError = null;
+  const results = await Promise.all(
+    cursors.map((bymd) =>
+      fetchUsChartWindow(ticker, exchange, gubn, bymd).catch((e) => {
+        if (!firstError) firstError = e;
+        return [];
+      })
+    )
+  );
+
+  const byTime = new Map();
+  for (const rows of results) for (const b of rows) byTime.set(b.time, b);
+
+  // 최신 창이 아예 비어 있으면 티커/거래소가 틀린 경우다 — 호출부가 다음 거래소로 넘어가도록
+  // 빈 배열을 그대로 돌려준다(기존 동작 유지).
+  if (!byTime.size && firstError) throw firstError;
+
   return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
 }
 
@@ -587,7 +673,7 @@ async function handleUsChartRequest(res, ticker, period, exchangeHint) {
   for (const exc of exchanges) {
     try {
       const candles = await fetchUsChartCandles(ticker, exc, period);
-      if (candles.length) return json(res, 200, enrichChart(candles, "US"));
+      if (candles.length) return json(res, 200, enrichChart(candles, "US"), chartCacheControl(period, false));
     } catch (e) {
       lastErr = e;
     }
@@ -653,7 +739,7 @@ async function handleCryptoChartRequest(res, symbol, period) {
   try {
     const candles = await fetchCryptoChartCandles(symbol, period);
     if (!candles.length) return json(res, 502, { error: "차트 데이터가 없습니다." });
-    return json(res, 200, enrichChart(candles, "CRYPTO"));
+    return json(res, 200, enrichChart(candles, "CRYPTO"), chartCacheControl(period, true));
   } catch (e) {
     return json(res, (e && e.statusCode) || 502, { error: (e && e.message) || "차트 데이터가 없습니다." });
   }

@@ -971,13 +971,19 @@
 
         function clauseText(c) {
           const dirText = c.direction === "down" ? "하향" : "상향";
-          const cmp = (op) => (op === "lt" || op === "lte" ? "≤" : "≥");
+          // 2026-09-08: 예전엔 lt/lte를 전부 "≤", gt/gte를 전부 "≥"로 뭉뚱그려 그렸다.
+          // "외국인 순매수 ≥ 0주"(실제 조건은 0 초과)처럼 경계값이 포함되는 것처럼 읽혀서
+          // 조건 요약이 실제 판정과 어긋나 보였다. 네 연산자를 그대로 구분해 표기한다.
+          const cmp = (op) => ({ lt: "<", lte: "≤", gt: ">", gte: "≥" }[op] || "≥");
           // 2026-08-26: within(최근 N봉 이내 발생)이 있으면 크로스/갭류 문구 뒤에 덧붙인다.
           const withinSuffix = c.within && Number(c.within.bars) > 0 ? ` (최근 ${c.within.bars}봉 이내)` : "";
           if (c.type === "ma_cross") return `${c.fast}일선이 ${c.slow}일선을 ${dirText} 돌파${withinSuffix}`;
           if (c.type === "price_cross_ma") return `현재가가 ${c.period}일선을 ${dirText} 돌파${withinSuffix}`;
           if (c.type === "rsi") return `RSI ${cmp(c.op)} ${c.value}`;
-          if (c.type === "volume_ratio") return `거래량 20일평균 대비 ${c.value}% 이상`;
+          // 2026-09-08: lt/lte 지원이 생겼는데 문구가 "이상" 고정이라 눌림목처럼 거래량 감소를
+          // 찾는 조건이 정반대로 표시됐다.
+          if (c.type === "volume_ratio")
+            return `거래량 20일평균 대비 ${c.value}% ${c.op === "lt" || c.op === "lte" ? "이하" : "이상"}`;
           if (c.type === "high52w_breakout") return "52주 신고가 갱신";
           if (c.type === "low52w_breakdown") return "52주 신저가 갱신";
           if (c.type === "price_change_pct") return `당일 등락률 ${c.op === "lte" ? "≤" : "≥"} ${c.value}%`;
@@ -1025,8 +1031,16 @@
           if (c.type === "eps") return `EPS ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}원`;
           if (c.type === "foreign_hold_rate") return `외국인 보유율 ${cmp(c.op)} ${c.value}%`;
           if (c.type === "volume_turnover_rate") return `거래량 회전율 ${cmp(c.op)} ${c.value}%`;
-          if (c.type === "foreign_net_buy") return `외국인 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
-          if (c.type === "institution_net_buy") return `기관 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          // "0주 초과"는 결국 "순매수"라는 뜻이므로 수식 대신 말로 쓴다(조건식 그대로 노출하면
+          // 오히려 무슨 뜻인지 알기 어렵다).
+          if (c.type === "foreign_net_buy")
+            return c.op === "gt" && !Number(c.value)
+              ? "외국인 순매수"
+              : `외국인 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          if (c.type === "institution_net_buy")
+            return c.op === "gt" && !Number(c.value)
+              ? "기관 순매수"
+              : `기관 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
           // 2026-09-08: 종가매매/수급매매용 확장 수급 조건
           if (c.type === "foreign_net_buy_amount") return `외국인 순매수액 ${cmp(c.op)} ${c.value}억`;
           if (c.type === "institution_net_buy_amount") return `기관 순매수액 ${cmp(c.op)} ${c.value}억`;

@@ -53,14 +53,14 @@ function resolveSlot() {
  * 한 번에 30건 안팎만 내려오므로 시장별로 호출해 합치고, 모자라는 만큼은 전일 캐시의
  * 거래대금 상위로 채운다(전일 상위권은 오늘도 상위권일 확률이 높아 보충용으로 충분하고,
  * 오늘 새로 터진 종목은 순위 API 쪽이 잡아준다). */
-async function fetchTurnoverRank(marketCode, marketLabel) {
+async function fetchTurnoverRank(marketCode, marketLabel, blngClsCode) {
   const url = new URL(`${BASE_URL}/uapi/domestic-stock/v1/quotations/volume-rank`);
   const params = {
     fid_cond_mrkt_div_code: "J",
     fid_cond_scr_div_code: "20171",
     fid_input_iscd: marketCode,
     fid_div_cls_code: "0",
-    fid_blng_cls_code: "3", // 3 = 거래금액순
+    fid_blng_cls_code: String(blngClsCode), // 0=평균거래량 1=거래증가율 3=거래금액순
     fid_trgt_cls_code: "111111111",
     fid_trgt_exls_cls_code: "0000000000",
     fid_input_price_1: "",
@@ -91,17 +91,29 @@ async function fetchTurnoverRank(marketCode, marketLabel) {
     .filter((r) => /^\d{6}$/.test(r.code));
 }
 
+/* 순위 API는 한 번에 30건 안팎만 내려준다(2026-09-08 실측: 코스피+코스닥 합쳐 59건).
+ * 그래서 정렬 기준을 바꿔가며 여러 번 부른다 — 거래금액순만 보면 오늘 처음 터진 중소형주가
+ * 상위 30위 밖에 있어 통째로 빠지는데, 거래증가율순이 바로 그런 종목을 잡아준다.
+ * 호출 6회(3기준 × 2시장)면 후보가 150건 안팎으로 늘고 소요는 1초 남짓이다. */
+const RANK_MODES = [
+  ["3", "거래금액순"],
+  ["1", "거래증가율순"],
+  ["0", "평균거래량순"],
+];
+
 async function buildCandidates(cache) {
   const seen = new Map();
-  for (const [code, label] of [["0001", "KOSPI"], ["1001", "KOSDAQ"]]) {
-    try {
-      for (const r of await fetchTurnoverRank(code, label)) {
-        if (!seen.has(r.code)) seen.set(r.code, r);
+  for (const [blng, modeLabel] of RANK_MODES) {
+    for (const [code, label] of [["0001", "KOSPI"], ["1001", "KOSDAQ"]]) {
+      try {
+        for (const r of await fetchTurnoverRank(code, label, blng)) {
+          if (!seen.has(r.code)) seen.set(r.code, r);
+        }
+      } catch (e) {
+        console.warn(`[intraday] 순위 조회 실패(${modeLabel}/${label}): ${e.message}`);
       }
-    } catch (e) {
-      console.warn(`[intraday] 거래대금 순위 조회 실패(${label}): ${e.message}`);
+      await sleep(GAP_MS);
     }
-    await sleep(GAP_MS);
   }
   const fromRank = seen.size;
 

@@ -983,6 +983,179 @@
         flex-shrink: 0;
       }
 
+      /* ── 검색 로딩 연출 ────────────────────────────────────────────────
+         2026-09-09: 프리셋을 눌러도 화면에 아무 변화가 없어서, 결과가 나온 건지
+         조건에 맞는 종목이 없는 건지 아래로 스크롤해봐야 알 수 있었다.
+         (1) 누르는 즉시 결과 자리에 스켈레톤 + 진행 문구를 띄우고
+         (2) 그 자리로 자동 스크롤해 "지금 찾고 있다"를 눈으로 보이게 한다. */
+      @keyframes tsSpin { to { transform: rotate(360deg); } }
+      @keyframes tsBar {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(320%); }
+      }
+      @keyframes tsShimmer {
+        0% { background-position: -420px 0; }
+        100% { background-position: 420px 0; }
+      }
+      @keyframes tsRise {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      .ts-loading {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border-color);
+        animation: tsRise 0.24s ease-out both;
+      }
+      .ts-loading__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .ts-loading__spinner {
+        flex: 0 0 auto;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2.5px solid var(--ts-line);
+        border-top-color: var(--ts-accent);
+        animation: tsSpin 0.75s linear infinite;
+      }
+      .ts-loading__title {
+        margin: 0;
+        font-size: 14.5px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--text-title, var(--text-primary));
+      }
+      .ts-loading__step {
+        margin: 3px 0 0;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: var(--ts-accent);
+      }
+      .ts-loading__bar {
+        position: relative;
+        overflow: hidden;
+        height: 3px;
+        border-radius: 999px;
+        background: var(--ts-inset);
+        margin-bottom: 14px;
+      }
+      .ts-loading__bar span {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 32%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, var(--ts-accent), transparent);
+        animation: tsBar 1.15s ease-in-out infinite;
+      }
+      .ts-loading__skel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .ts-skel-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--ts-inset);
+      }
+      .ts-skel-row > div { display: flex; flex-direction: column; gap: 7px; }
+      .ts-skel-row > div:last-child { align-items: flex-end; }
+      /* 스켈레톤 색은 theme.css의 --skeleton-* 대신 본문 색에서 뽑는다.
+         다크 카드 위에서 --skeleton-* 는 대비가 거의 없어 안 보였다. */
+      .ts-skel {
+        display: block;
+        height: 11px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--text-secondary) 16%, transparent) 0%,
+          color-mix(in srgb, var(--text-secondary) 34%, transparent) 50%,
+          color-mix(in srgb, var(--text-secondary) 16%, transparent) 100%
+        );
+        background-size: 420px 100%;
+        animation: tsShimmer 1.3s linear infinite;
+      }
+      .ts-skel--title { height: 14px; width: 128px; }
+      .ts-skel--meta { width: 96px; height: 9px; }
+      .ts-skel--chip { width: 172px; height: 15px; border-radius: 999px; }
+      .ts-skel--price { width: 74px; height: 14px; }
+      .ts-skel--chg { width: 52px; height: 11px; }
+
+      /* 버튼·프리셋 카드 자체에도 진행 표시를 남긴다 */
+      .ts-btn.is-loading::before {
+        content: "";
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        animation: tsSpin 0.7s linear infinite;
+      }
+      .ts-preset.is-loading {
+        border-color: var(--ts-accent);
+        background: var(--ts-soft-2);
+      }
+      .ts-preset.is-loading::before { opacity: 1; }
+      .ts-preset.is-loading::after {
+        content: "";
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--ts-line);
+        border-top-color: var(--ts-accent);
+        animation: tsSpin 0.7s linear infinite;
+      }
+
+      /* 결과가 도착했을 때 한 번 반짝여서 "여기 바뀌었다"를 알린다 */
+      @keyframes tsFlash {
+        from { box-shadow: 0 0 0 3px var(--ts-soft); }
+        to { box-shadow: 0 0 0 3px transparent; }
+      }
+      .ts-results--flash {
+        border-radius: 12px;
+        animation: tsFlash 900ms ease-out 1;
+      }
+
+      /* 결과 0건 — 회색 한 줄이 아니라 이유가 보이는 빈 상태 카드 */
+      .ts-empty--result {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      .ts-empty--result i {
+        font-size: 26px;
+        color: var(--text-muted-ui);
+        opacity: 0.7;
+        margin-bottom: 4px;
+      }
+      .ts-empty__title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-title, var(--text-primary));
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .ts-loading__spinner,
+        .ts-loading__bar span,
+        .ts-skel,
+        .ts-btn.is-loading::before,
+        .ts-preset.is-loading::after { animation: none; }
+        .ts-loading, .ts-results--flash { animation: none; }
+      }
+
       .ts-empty {
         margin: 0;
         font-size: 13px;
@@ -1184,6 +1357,32 @@
               </div>
               <div class="ts-example-chips" id="ts-example-chips" aria-label="예시 검색어"></div>
               <p class="ts-error ts-hidden" id="ts-search-error"></p>
+
+              <!-- 2026-09-09: 검색 진행 상태. 프리셋/문장 검색 모두 여기로 스크롤된다. -->
+              <div id="ts-loading" class="ts-loading ts-hidden" role="status" aria-live="polite">
+                <div class="ts-loading__head">
+                  <span class="ts-loading__spinner" aria-hidden="true"></span>
+                  <div>
+                    <p class="ts-loading__title" id="ts-loading-title">조건에 맞는 종목을 찾는 중…</p>
+                    <p class="ts-loading__step" id="ts-loading-step">준비하고 있어요</p>
+                  </div>
+                </div>
+                <div class="ts-loading__bar" aria-hidden="true"><span></span></div>
+                <div class="ts-loading__skel" aria-hidden="true">
+                  <div class="ts-skel-row">
+                    <div><span class="ts-skel ts-skel--title"></span><span class="ts-skel ts-skel--meta"></span><span class="ts-skel ts-skel--chip"></span></div>
+                    <div><span class="ts-skel ts-skel--price"></span><span class="ts-skel ts-skel--chg"></span></div>
+                  </div>
+                  <div class="ts-skel-row">
+                    <div><span class="ts-skel ts-skel--title"></span><span class="ts-skel ts-skel--meta"></span><span class="ts-skel ts-skel--chip"></span></div>
+                    <div><span class="ts-skel ts-skel--price"></span><span class="ts-skel ts-skel--chg"></span></div>
+                  </div>
+                  <div class="ts-skel-row">
+                    <div><span class="ts-skel ts-skel--title"></span><span class="ts-skel ts-skel--meta"></span><span class="ts-skel ts-skel--chip"></span></div>
+                    <div><span class="ts-skel ts-skel--price"></span><span class="ts-skel ts-skel--chg"></span></div>
+                  </div>
+                </div>
+              </div>
 
               <div id="ts-results" class="ts-results ts-hidden">
                 <div class="ts-results__summary">
@@ -1996,11 +2195,19 @@
           const wrap = $("ts-result-list");
           if (!currentScreen || !currentScreen.stocks || !currentScreen.stocks.length) {
             const noCache = currentScreen && !currentScreen.cacheUpdatedAt;
-            wrap.innerHTML = `<p class="ts-empty">${
-              noCache
-                ? "아직 스크리닝 데이터가 준비 중이에요. 잠시 후 다시 시도해주세요."
-                : "조건에 맞는 종목이 없어요. 조건을 조금 완화해보세요."
-            }</p>`;
+            // 2026-09-09: 회색 한 줄이라 "결과 0건"인지 "아직 안 나온 건지" 구분이 안 됐다.
+            // 검색이 끝났고 결과가 0건이라는 사실 자체를 분명히 보여준다.
+            wrap.innerHTML = noCache
+              ? `<div class="ts-empty ts-empty--result">
+                   <i class="ti ti-clock-hour-4" aria-hidden="true"></i>
+                   <span class="ts-empty__title">스크리닝 데이터를 준비하고 있어요</span>
+                   <span>잠시 후 다시 시도해주세요.</span>
+                 </div>`
+              : `<div class="ts-empty ts-empty--result">
+                   <i class="ti ti-mood-empty" aria-hidden="true"></i>
+                   <span class="ts-empty__title">조건에 맞는 종목이 없습니다</span>
+                   <span>검색은 정상적으로 끝났고, 지금 이 조건을 만족하는 종목이 0개예요.<br />조건을 조금 완화하거나 다른 매매기법으로 찾아보세요.</span>
+                 </div>`;
             return;
           }
           openDetailCode.clear();
@@ -2241,16 +2448,22 @@
               // 프리셋 3종의 조건은 전부 오늘 봉으로 정확히 다시 계산되는 지표만 쓴다
               // (lib/intraday-snapshot.js의 INTRADAY_UPDATED). 그래서 장 막판 스냅샷이
               // 있으면 그걸로, 없으면 전일 종가로 자동 폴백한다.
+              // 프리셋은 AI 파싱을 거치지 않으므로 "조건 해석" 단계 문구는 빼고,
+              // 어떤 기법을 돌리는 중인지 이름을 그대로 보여준다.
               await runScreen(
                 { condition: preset.condition, summary: preset.summary, source: "intraday" },
                 btn,
                 null,
-                null
+                null,
+                {
+                  loadingTitle: `‘${preset.name}’ 조건으로 찾는 중…`,
+                  loadingSteps: [
+                    "코스피·코스닥 전 종목을 스캔하고 있어요",
+                    "조건에 맞는 종목을 걸러내고 있어요",
+                    "시세·수급을 붙여 정리하고 있어요",
+                  ],
+                }
               );
-              const results = $("ts-results");
-              if (results && !results.classList.contains("ts-hidden")) {
-                results.scrollIntoView({ behavior: "smooth", block: "start" });
-              }
             });
           });
         }
@@ -2299,12 +2512,71 @@
           $("ts-results").classList.remove("ts-hidden");
         }
 
-        async function runScreen(payload, btn, busyLabel, idleLabel) {
+        /* 2026-09-09: 검색 진행 연출.
+           스크리닝은 전 종목을 훑기 때문에 몇 초가 걸리는데, 예전에는 그 사이
+           화면이 그대로였다. 특히 프리셋은 버튼이 카드 맨 위에 있고 결과는 한참
+           아래 카드에 그려져서, 다 끝난 뒤에도 스크롤을 내려봐야 "종목이 나왔는지
+           / 조건에 맞는 게 없었는지"를 알 수 있었다. 눌리는 즉시 결과 자리에
+           스켈레톤을 띄우고 그 자리로 스크롤해, 상태가 항상 눈에 보이게 한다. */
+        let tsLoadingTimer = null;
+
+        function tsScrollToEl(el) {
+          if (!el) return;
+          // sticky 헤더(.home-nav)에 가리지 않게 여유를 둔다
+          const y = el.getBoundingClientRect().top + window.pageYOffset - 84;
+          window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        }
+
+        function tsShowLoading(title, steps) {
+          const box = $("ts-loading");
+          if (!box) return;
+          $("ts-results").classList.add("ts-hidden");
+          $("ts-search-error").classList.add("ts-hidden");
+          $("ts-loading-title").textContent = title;
+          const list = steps && steps.length ? steps : ["조건에 맞는 종목을 고르고 있어요"];
+          let i = 0;
+          $("ts-loading-step").textContent = list[0];
+          box.classList.remove("ts-hidden");
+          if (tsLoadingTimer) clearInterval(tsLoadingTimer);
+          // 진행 문구는 실제 서버 단계가 아니라 안내용이므로, 마지막 문구에서 멈춘다
+          tsLoadingTimer = setInterval(() => {
+            i += 1;
+            if (i >= list.length) {
+              clearInterval(tsLoadingTimer);
+              tsLoadingTimer = null;
+              return;
+            }
+            $("ts-loading-step").textContent = list[i];
+          }, 1400);
+          tsScrollToEl(box);
+        }
+
+        function tsHideLoading() {
+          if (tsLoadingTimer) {
+            clearInterval(tsLoadingTimer);
+            tsLoadingTimer = null;
+          }
+          const box = $("ts-loading");
+          if (box) box.classList.add("ts-hidden");
+        }
+
+        async function runScreen(payload, btn, busyLabel, idleLabel, opts) {
+          const o = opts || {};
           const prevLabel = idleLabel != null ? idleLabel : btn ? btn.textContent : "";
           if (btn) {
             btn.disabled = true;
+            btn.classList.add("is-loading");
             if (busyLabel) btn.textContent = busyLabel;
           }
+          tsShowLoading(
+            o.loadingTitle || "조건에 맞는 종목을 찾는 중…",
+            o.loadingSteps || [
+              "조건을 해석하고 있어요",
+              "코스피·코스닥 전 종목을 스캔하고 있어요",
+              "지표를 계산하고 순위를 매기고 있어요",
+              "결과를 정리하고 있어요",
+            ]
+          );
           $("ts-search-error").classList.add("ts-hidden");
           try {
             const result = await apiFetch("/api/analyze?feature=trade-signal&action=screen", {
@@ -2312,19 +2584,35 @@
               body: JSON.stringify(payload),
             });
             if (!result.matched) {
+              tsHideLoading();
               $("ts-search-error").textContent = result.clarifyMessage || "조건을 이해하지 못했어요. 다시 입력해주세요.";
               $("ts-search-error").classList.remove("ts-hidden");
               $("ts-results").classList.add("ts-hidden");
+              tsScrollToEl($("ts-search-error"));
               return;
             }
+            tsHideLoading();
             applyScreenResult(result);
+            // 결과가 0건이든 100건이든 항상 결과 자리로 데려가고 한 번 반짝인다.
+            // 스크롤을 내려봐야 결과 유무를 알 수 있던 문제의 핵심 수정.
+            const results = $("ts-results");
+            if (results) {
+              tsScrollToEl(results);
+              results.classList.remove("ts-results--flash");
+              void results.offsetWidth;
+              results.classList.add("ts-results--flash");
+            }
           } catch (e) {
+            tsHideLoading();
             $("ts-search-error").textContent = e.message || "검색에 실패했습니다.";
             $("ts-search-error").classList.remove("ts-hidden");
             $("ts-results").classList.add("ts-hidden");
+            tsScrollToEl($("ts-search-error"));
           } finally {
+            tsHideLoading();
             if (btn) {
               btn.disabled = false;
+              btn.classList.remove("is-loading");
               if (busyLabel) btn.textContent = prevLabel;
             }
           }

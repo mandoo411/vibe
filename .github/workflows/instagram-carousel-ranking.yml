@@ -11,6 +11,9 @@ on:
       dry_run:
         description: "1이면 렌더까지만 하고 발행하지 않음"
         required: false
+      force:
+        description: "1이면 중복·주말·데이터준비 가드를 무시하고 강제 발행"
+        required: false
         default: "0"
   repository_dispatch:
     types: [ranking-carousel]
@@ -46,7 +49,11 @@ jobs:
           set -euo pipefail
           TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
           STAMP="generated/carousel-ranking/last-published-date.txt"
-          if [ "${{ github.event_name }}" = "schedule" ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$TODAY" ]; then
+          FORCE_DATE="${{ github.event.inputs.date || github.event.client_payload.date }}"
+          FORCE_FLAG="${{ github.event.inputs.force || github.event.client_payload.force }}"
+          GUARD=1
+          if [ -n "$FORCE_DATE" ] || [ "$FORCE_FLAG" = "1" ] || [ "$FORCE_FLAG" = "true" ]; then GUARD=0; fi
+          if [ "$GUARD" = "1" ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$TODAY" ]; then
             echo "::notice::오늘 이미 발행 완료 — 스킵"
             echo "go=false" >> "$GITHUB_OUTPUT"
           else

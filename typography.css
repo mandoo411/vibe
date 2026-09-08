@@ -1,0 +1,660 @@
+/* ══════════════════════════════════════════════════════════════════════════
+ * typography.css — 사이트 전역 가독성 보정 레이어 (2026-09-09 신설)
+ *
+ * 왜 별도 파일인가
+ *   색·크기가 11개 CSS 파일에 흩어져 하드코딩돼 있어서, 각 파일을 고치면
+ *   서로 다른 페이지에서 회귀가 나기 쉽다. 여기서 "읽히는 값"만 마지막에
+ *   한 번 덮어써서, 원본 디자인 구조는 그대로 두고 가독성만 끌어올린다.
+ *   모든 페이지에서 가장 마지막에 로드된다.
+ *
+ * 어떻게 골랐나 (감각이 아니라 측정)
+ *   전 페이지를 라이트/다크 × 데스크톱/모바일로 렌더링해서, 실제 화면 픽셀에서
+ *   글자색과 배경색을 뽑아 WCAG 대비를 계산했다. 본문 4.5:1, 큰 글씨 3:1 기준.
+ *   아래 색들은 모두 실제 배경(#fff / #f0f3fa / #e8ecf5 / #0d172a / #111d35 /
+ *   #132038) 위에서 기준을 넘도록 계산해서 고른 값이다.
+ *
+ * !important 를 쓴 이유
+ *   원본 규칙들이 body.page-home-v2 .xxx 처럼 특이도가 제각각이라,
+ *   이 레이어가 확실히 이기려면 필요하다. 색·글자크기·줄간격에만 한정한다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. 의미 토큰 보정 ──────────────────────────────────────────────────
+   var() 로 색을 쓰는 곳은 이 블록만으로 전부 함께 고쳐진다. */
+html[data-theme="light"],
+body[data-theme="light"] {
+  /* 상승 빨강: #e24b4a 는 흰 배경에서 3.5~3.9 로 흐렸다 → 4.7~5.2 */
+  --up-color: #c62828;
+  --up: #c62828;
+  /* 하락 파랑: #3b82f6 은 3.3~3.7 → 5.0~5.5 */
+  --down-color: #1d63d6;
+  --down: #1d63d6;
+  /* 본문에 쓰이는 브랜드 teal: #0f8387 은 4.1 → 5.7 (버튼 배경색은 그대로 둔다) */
+  --accent-text: #0b6a6d;
+  --text-secondary: #4e525e;
+  --text-muted-ui: #5f6875;
+  --status-open: #15803d;
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  /* 어두운 카드 위에서 #e24b4a 는 4.1~4.3 으로 아슬아슬했다 → 6.0 */
+  --up-color: #f4726d;
+  --up: #f4726d;
+  --down-color: #5b9bff;
+  --down: #5b9bff;
+  --accent-text: var(--accent-gold, #d4af37);
+  --text-secondary: #b7c1d1;
+  --text-muted-ui: #98a3b6;
+}
+
+/* ── 2. 하드코딩된 상승/하락 색 ────────────────────────────────────────
+   var() 를 안 쓰고 #e24b4a / #3b82f6 을 직접 박아둔 곳들. 위 토큰으로 연결한다. */
+.home-ticker__pct.is-up,
+.home-tr__chg.is-up,
+.hx-chip.is-up strong,
+.hx-chip.is-up em,
+.market-card__change--up,
+.dm-badge--up,
+.dm-up,
+.dmx-bar-row__val.is-up,
+.dmx-sector__title.is-up,
+.dmx-leader__amt,
+.delta--pos,
+.rt-vs-pos,
+.rt-acc-val--hi,
+.rt-acc-val--uplimit,
+.rt-acc-val--sup-pos,
+.rt-acc-val--credit-high,
+.rt-basic-v--hi,
+.rt-mini__v--pos,
+.rt-mini__v--inv-neg,
+.crypto-delta--up,
+.tms-delta--up,
+.bfx-bar-row__val.is-up,
+.bfx-idx__delta.is-up,
+.surprise-value.surprise-up,
+.ea-sc--up .ea-sc__lbl,
+.fin-yoy--up,
+.airp-item__ret--up,
+.ai-archive__ret--up,
+.ai-mat-strength--high,
+.menu-card__mini-badge.is-up {
+  color: var(--up-color) !important;
+}
+
+.home-ticker__pct.is-down,
+.home-tr__chg.is-down,
+.hx-chip.is-down strong,
+.hx-chip.is-down em,
+.market-card__change--down,
+.dm-badge--down,
+.dm-down,
+.dmx-bar-row__val.is-down,
+.dmx-sector__title.is-down,
+.delta--neg,
+.rt-vs-neg,
+.rt-acc-val--lolimit,
+.crypto-delta--down,
+.tms-delta--down,
+.bfx-bar-row__val.is-down,
+.bfx-idx__delta.is-down,
+.surprise-value.surprise-down,
+.ea-sc--down .ea-sc__lbl,
+.fin-yoy--down,
+.fin-a__num--neg,
+.airp-item__ret--down,
+.ai-archive__ret--down {
+  color: var(--down-color) !important;
+}
+
+/* ── 3. 흐린 회색 라벨 ────────────────────────────────────────────────
+   라이트에서 #9ca3af(2.3~2.5) · #6b7280(4.1~4.4) 이 그대로 본문 라벨에 쓰였다.
+   다크에서는 반대로 #6b7280 이 어두운 카드에 묻혀 3.4 였다. 양쪽 다 올린다. */
+html[data-theme="light"] .home-th,
+html[data-theme="light"] .home-rank,
+html[data-theme="light"] .home-tr__code,
+html[data-theme="light"] .hx-report__stamp,
+html[data-theme="light"] .hx-report__note,
+html[data-theme="light"] .hx-report__kicker,
+html[data-theme="light"] .hx-featured__stamp,
+html[data-theme="light"] .hx-feat__why,
+html[data-theme="light"] .rt-header-row,
+html[data-theme="light"] .rt-acc-cell__k,
+html[data-theme="light"] .rt-acc-section-bar__date,
+html[data-theme="light"] .rt-acc-section-bar__title,
+html[data-theme="light"] .dm-table th,
+html[data-theme="light"] .dm-rank,
+html[data-theme="light"] .dmx-stock__code,
+html[data-theme="light"] .dmx-leader__rank,
+html[data-theme="light"] .dmx-range__ends,
+html[data-theme="light"] .dmx-idx__label,
+html[data-theme="light"] .dmx-idx__note,
+html[data-theme="light"] .dmx-block__title,
+html[data-theme="light"] .dmx-note,
+html[data-theme="light"] .dmx-hero__date,
+html[data-theme="light"] .market-vix--calm,
+html[data-theme="light"] .crypto-metric-card__label,
+html[data-theme="light"] .indicator-abbr,
+html[data-theme="light"] .indicator-period,
+html[data-theme="light"] .impact-badge--low,
+html[data-theme="light"] .mpos__asof,
+html[data-theme="light"] .mpos__note,
+html[data-theme="light"] .mpos-group__cap,
+html[data-theme="light"] .mpos-tile__rank,
+html[data-theme="light"] .mpos-tile__foot,
+html[data-theme="light"] .mpos-tile__name,
+html[data-theme="light"] .mpos-group__title,
+html[data-theme="light"] .techsnap__cap,
+html[data-theme="light"] .techsnap__v,
+html[data-theme="light"] .techsnap__d,
+html[data-theme="light"] .techsnap__k,
+html[data-theme="light"] .techsnap__title,
+html[data-theme="light"] .techsnap__rsi-scale,
+html[data-theme="light"] .fin__src,
+html[data-theme="light"] .fin__note,
+html[data-theme="light"] .fin-group__cap,
+html[data-theme="light"] .fin-group__title,
+html[data-theme="light"] .fin-q__prev,
+html[data-theme="light"] .fin-q__name,
+html[data-theme="light"] .fin-a__yr,
+html[data-theme="light"] .fin-a__name,
+html[data-theme="light"] .airp__cap,
+html[data-theme="light"] .airp-item__date,
+html[data-theme="light"] .airp-item__asof,
+html[data-theme="light"] .airp-item__price,
+html[data-theme="light"] .airp-item__sig,
+html[data-theme="light"] .airp-item__mat,
+html[data-theme="light"] .ai-archive__asof,
+html[data-theme="light"] .ai-archive__note,
+html[data-theme="light"] .ai-archive__since,
+html[data-theme="light"] .ai-probbar__legend,
+html[data-theme="light"] .ai-probbar__title,
+html[data-theme="light"] .tms-breadth__sample,
+html[data-theme="light"] .tms-breadth__lbl,
+html[data-theme="light"] .tms-hi__lbl,
+html[data-theme="light"] .ail-facts__disclaimer,
+html[data-theme="light"] .ai-access-gate__text,
+html[data-theme="light"] .ai-search-card__hint,
+html[data-theme="light"] .ai-search-popular__title,
+html[data-theme="light"] .rt-ac-item__code,
+html[data-theme="light"] .rt-ac-item__badge,
+html[data-theme="light"] .dm-card__label,
+html[data-theme="light"] .dm-card__sub,
+html[data-theme="light"] .dm-empty,
+html[data-theme="light"] .dm-issue__desc,
+html[data-theme="light"] .dm-claude-note,
+html[data-theme="light"] .schedule-event-country,
+html[data-theme="light"] .schedule-metric,
+html[data-theme="light"] .world-country__label {
+  color: #5f6875 !important;
+}
+
+html[data-theme="dark"] .indicator-abbr,
+html[data-theme="dark"] .indicator-period,
+html[data-theme="dark"] .impact-badge--low,
+html[data-theme="dark"] .rt-col-change,
+html[data-theme="dark"] .dmx-block__title,
+html[data-theme="dark"] .dmx-block__tag,
+html[data-theme="dark"] .dmx-note,
+html[data-theme="dark"] .dmx-hero__date,
+html[data-theme="dark"] .dmx-idx__label,
+html[data-theme="dark"] .dmx-idx__note,
+html[data-theme="dark"] .dmx-score__k,
+html[data-theme="dark"] .dmx-para__idx,
+html[data-theme="dark"] .dmx-stock__price,
+html[data-theme="dark"] .dm-card__label,
+html[data-theme="dark"] .dm-card__sub,
+html[data-theme="dark"] .dm-table th,
+html[data-theme="dark"] .dm-rank,
+html[data-theme="dark"] .mpos-group__title,
+html[data-theme="dark"] .mpos-tile__name,
+html[data-theme="dark"] .techsnap__title,
+html[data-theme="dark"] .techsnap__k,
+html[data-theme="dark"] .fin-group__title,
+html[data-theme="dark"] .fin-q__name,
+html[data-theme="dark"] .fin-a__name,
+html[data-theme="dark"] .airp-item__sig,
+html[data-theme="dark"] .airp-item__price,
+html[data-theme="dark"] .airp-item__mat,
+html[data-theme="dark"] .ai-archive__since,
+html[data-theme="dark"] .ai-probbar__title,
+html[data-theme="dark"] .ai-access-gate__text,
+html[data-theme="dark"] .ai-access-gate__secondary,
+html[data-theme="dark"] .rt-acc-cell__k,
+html[data-theme="dark"] .rt-acc-section-bar__title,
+html[data-theme="dark"] .rt-header-row,
+html[data-theme="dark"] .crypto-table th,
+html[data-theme="dark"] .world-table th,
+html[data-theme="dark"] .tms-breadth__sample,
+html[data-theme="dark"] .tms-breadth__lbl,
+html[data-theme="dark"] .tms-hi__lbl {
+  color: #98a3b6 !important;
+}
+
+/* 라이트에서 본문 teal 링크·라벨 (#0f8387 → 4.1) */
+html[data-theme="light"] .ail-link,
+html[data-theme="light"] .ail-card__no,
+html[data-theme="light"] .ail-mock__badge,
+html[data-theme="light"] .world-tab,
+html[data-theme="light"] .rt-data-freshness--loading,
+html[data-theme="light"] #rt-data-freshness,
+html[data-theme="light"] .market-section__en,
+html[data-theme="light"] .home-nav__account-link-label,
+html[data-theme="light"] .home-nav__account-link i,
+html[data-theme="light"] #acc-plan-badge,
+html[data-theme="light"] .countdown,
+html[data-theme="light"] .upcoming-dday,
+html[data-theme="light"] .ea-dday,
+html[data-theme="light"] .earnings-hour-badge,
+html[data-theme="light"] .earnings-hour--bmo,
+html[data-theme="light"] .dm-issue__tag,
+html[data-theme="light"] .dm-verdict,
+html[data-theme="light"] .section-kicker,
+html[data-theme="light"] .ai-archive__rerun {
+  color: #0b6a6d !important;
+}
+
+/* LIVE 배지 초록 (#22c55e 는 흰 배경에서 2.3) */
+html[data-theme="light"] .home-nav__live-text,
+html[data-theme="light"] .home-m-ai-live__status {
+  color: #15803d !important;
+}
+
+/* ── 4. 반투명 흰 글씨 ────────────────────────────────────────────────
+   푸터 저작권·데이터 출처가 rgba(255,255,255,.3) 이라 대비 1.75 였다.
+   푸터는 라이트에서도 어두운 배경이므로 흰색 계열을 유지하되 불투명도를 올린다. */
+.home-footer__bottom span,
+.home-footer__bottom {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 12px !important;
+}
+.home-footer__links a {
+  color: rgba(255, 255, 255, 0.88) !important;
+  font-size: 12px !important;
+}
+.home-footer__slogan {
+  color: rgba(255, 255, 255, 0.74) !important;
+  font-size: 12.5px !important;
+}
+.home-hero__ai-time,
+.hx-mini__k,
+#hx-date,
+#hx-say-label,
+.hx-lead__k {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* ── 5. 최소 글자 크기 ────────────────────────────────────────────────
+   측정 결과 10px 424개 · 11px 297개로 10~11px 텍스트가 700개를 넘었다.
+   "글씨가 작네"의 실제 원인. 정보 밀도를 해치지 않는 선에서 바닥을 올린다.
+   숫자·표 데이터는 12px 이상, 배지·머리글 같은 마이크로 라벨은 11.5px 이상. */
+.home-footer__links a,
+.crypto-name-btn,
+.crypto-coin-name,
+.indicator-name-ko,
+.hx-report__kicker,
+.home-section__more,
+.market-section__en,
+.tms-breadth__sample,
+.tms-hi__lbl,
+.home-tr__code,
+.schedule-metric,
+.schedule-event-country,
+.world-country__label,
+.section-kicker,
+.masthead__kicker,
+.crypto-symbol-inline,
+.tms-delta,
+.tms-breadth__lbl {
+  font-size: 12px !important;
+}
+
+/* 표 머리글은 조금 작아도 되지만 10px 은 과했다 */
+.page-tm-v2 .crypto-table th,
+.page-tm-v2 .world-table th,
+.dm-table th,
+.home-th,
+.rt-header-row,
+.schedule-table th {
+  font-size: 11.5px !important;
+  letter-spacing: 0.01em;
+}
+
+/* 로고 박스 안 글자(TM / AI)는 9px 이었다 */
+.home-nav__logo-box span,
+.home-nav__ai-badge,
+.home-footer__brand-name + * .home-nav__ai-badge {
+  font-size: 10.5px !important;
+  letter-spacing: 0.02em;
+}
+
+/* ── 6. 줄간격 ────────────────────────────────────────────────────────
+   여러 줄로 흐르는 본문이 1.2~1.35 로 붙어 있던 곳들. 한국어는 받침 때문에
+   라틴 문자보다 줄간격이 더 필요하다. 1.7 을 본문 기본으로 잡는다. */
+.home-nav__link,
+.home-nav__more-btn,
+.home-rt-tab,
+.world-tab,
+.crypto-tab,
+.hx-report__btn,
+.hx-chip,
+#stock-search-btn,
+#us-stock-search-btn {
+  line-height: 1.4 !important;
+}
+
+p,
+li,
+.dm-issue__desc,
+.dmx-note,
+.dmx-para,
+.ail-card p,
+.ail-facts__list li,
+.hx-feat__why,
+.ai-access-gate__text,
+.mpos__note,
+.fin__note {
+  line-height: 1.7;
+}
+
+/* 숫자는 자리수가 흔들리지 않게 — 표에서 값이 미세하게 어긋나 보이던 원인 */
+.num,
+.home-tr .price,
+.home-ticker__val,
+.home-ticker__pct,
+.crypto-table td.num,
+.world-table td.num,
+.dm-table td,
+.rt-td-price,
+.rt-td-vol,
+.rt-td-tv,
+.rt-td-mcap {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── 7. 본문 렌더링 품질 ──────────────────────────────────────────────
+   다크에서 흰 글씨가 굵고 번져 보이던 것(글씨가 흐리다는 인상)을 줄인다. */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 2차 보정 — 1차 적용 후 재측정에서 남은 항목들
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* masthead 머리띠는 어두운 그라디언트다. 그 위 kicker 는 흰색 계열이라야 읽힌다
+   (1차에서 teal 로 바꿨더니 대비 2.25 로 더 나빠져서 되돌린다) */
+.masthead__kicker {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* 라이트에서 아직 #0f8387 로 남아 있던 곳들 */
+html[data-theme="light"] .home-nav__link[aria-current="page"],
+html[data-theme="light"] .home-nav__link:hover,
+html[data-theme="light"] #briefing-today-weekday,
+html[data-theme="light"] .bfx-idx__live,
+html[data-theme="light"] .bfx-alloc__weight,
+html[data-theme="light"] .event-analysis-heading,
+html[data-theme="light"] .event-analysis-badge,
+html[data-theme="light"] .kr-schedule-title {
+  color: #0b6a6d !important;
+}
+
+/* 하드코딩 빨강이 남아 있던 게이지 라벨 */
+.market-gauge__label.market-fng {
+  color: var(--up-color) !important;
+}
+
+/* 연한 틴트 배경 위 숫자 — 배경이 밝아 한 단계 더 진하게 */
+html[data-theme="light"] .market-card__change--down {
+  color: #1856c4 !important;
+}
+html[data-theme="light"] .nke__cd {
+  color: #a01d1a !important;
+}
+
+/* 앰버(#f59e0b)는 흰 배경에서 2.2 로 거의 안 읽힌다 */
+html[data-theme="light"] .hx-report__cta,
+html[data-theme="light"] .market-gauge__value,
+html[data-theme="light"] .market-vix--warn {
+  color: #b45309 !important;
+}
+
+/* 배지 안쪽 글자 — 배지 배경색에 맞춰 글자색을 뒤집는다 */
+.bfx-card__badge {
+  color: #0b1220 !important;
+  font-size: 12px !important;
+}
+html[data-theme="dark"] .impact-badge--low {
+  color: #cbd5e1 !important;
+}
+html[data-theme="light"] .home-empty,
+html[data-theme="light"] .empty-text {
+  color: #5f6875 !important;
+}
+
+/* 홈 히어로·표의 마이크로 라벨이 10~11px 이었다.
+   첫 화면에서 가장 먼저 읽는 영역이라 12px 로 올린다. */
+.hx-mini__k,
+.hx-mini__p,
+.hx-chip,
+.hx-lead__k,
+#hx-date,
+#hx-phase,
+#hx-say-label,
+#hx-brief-stamp,
+#hx-close-stamp,
+.hx-report__note,
+.hx-report__stamp,
+.hx-featured__stamp,
+.home-hero__ai-time,
+.home-hero__ai-badge,
+.home-nav__brand-sub span,
+.home-nav__live-text,
+.home-rt-pct__num,
+.home-rt-col,
+.home-rt-col__name-web,
+.home-th__name-over-logo,
+#home-rt-metric-h,
+#home-us-metric-h,
+.home-tr__metric,
+.home-tr__chg,
+.bfx-block__tag,
+.ea-tag,
+.countdown,
+.upcoming-dday,
+.home-imp--h,
+.home-imp--m,
+.home-imp--l {
+  font-size: 12px !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 3차 보정 — 배지처럼 "배경색이 상태에 따라 바뀌는" 요소들
+ * 글자색을 하나로 고정하면 어떤 상태에서는 반드시 대비가 깨진다.
+ * 테마별로 나누고, 배경이 옅어지는 상태는 배경 자체를 살짝 어둡게 눌러
+ * 색(의미)은 유지한 채 대비만 확보한다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* 상태에 따라 회색/빨강/teal 로 바뀌는 배지 — 배경을 32% 눌러 흰 글자를 살린다 */
+.bfx-card__badge {
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.32);
+}
+
+html[data-theme="light"] .bfx-hero__tone,
+html[data-theme="light"] .bfx-tier__rank {
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .bfx-hero__tone {
+  color: #08203f !important;
+}
+html[data-theme="dark"] .bfx-tier__rank {
+  color: #1a1305 !important;
+}
+
+/* 중요도 배지는 라이트에서만 진하게 (다크는 원래 밝은 글자라 그대로 둔다) */
+html[data-theme="light"] .impact-badge--medium { color: #7c4a03 !important; }
+html[data-theme="light"] .impact-badge--high   { color: #991b1b !important; }
+
+/* 남은 10~11.5px 마이크로 텍스트 — 지표·시각·주석처럼 실제로 읽는 값들이다 */
+.bfx-idx__live,
+.bfx-idx__note,
+.bfx-score__k,
+.bfx-note,
+.bfx-bar-row__px,
+.bfx-hero__tone,
+.bfx-tier__rank,
+#briefing-updated,
+#market-updated,
+.page-meta-bar__poll,
+.market-subsection__title,
+.market-card__sub,
+.market-gauge__hint,
+.home-mini-row__name,
+.hx-feat__why,
+#today-date,
+.subsection-title,
+.schedule-metric__lbl,
+.impact-badge,
+.day-cell__num,
+.calendar-day__num {
+  font-size: 12px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 4차 보정 — 마지막 잔여 항목 (실시간시세 · 미국주식 · 암호화폐 · 글로벌랭킹 · 일정)
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* 표 아래 "○○종목 기준" 주석이 3.75 로 조금 모자랐다 */
+html[data-theme="light"] .tms-breadth__sample,
+html[data-theme="light"] .crypto-col-rank,
+html[data-theme="light"] .world-col-rank {
+  color: #4e525e !important;
+}
+
+/* 암호화폐 게이지 점수·통화 토글의 teal */
+html[data-theme="light"] .crypto-gauge__score,
+html[data-theme="light"] .crypto-currency-btn {
+  color: #0b6a6d !important;
+}
+
+/* 배경이 브랜드색(빨강/골드)인 배지·버튼 위의 흰 글자 */
+#crypto-news-count {
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.28);
+}
+html[data-theme="dark"] .crypto-page-btn.is-active {
+  color: #17130a !important;
+}
+
+/* 일정 페이지에 남아 있던 10~11.5px */
+.event-analysis-heading,
+.event-analysis-badge,
+.event-analysis-expected,
+.ea-dday,
+.ea-sc__lbl,
+.ea-watch__lbl,
+.section-sub,
+.kr-schedule-title,
+.kr-ipo-item__meta,
+.nke__cd,
+.nke__country,
+.nke__when,
+.nke__lbl,
+.mstat__l,
+#analysis-date,
+#month-stat-label,
+#weekly-updated,
+.schedule-event-time,
+.schedule-time,
+.crypto-metric-card__label,
+.home-rank,
+.world-rank {
+  font-size: 12px !important;
+}
+
+/* 일정표의 시각 열(08:00 등)과 달력 날짜는 표 안이라 조금 작아도 되지만 10px 은 과했다 */
+.schedule-table td span,
+.calendar-cell span,
+.day-cell span {
+  font-size: 11.5px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 5차 보정 — 모바일 전용 컴포넌트와 opacity 로 흐려진 텍스트
+ * opacity 를 씌워 글자를 흐리게 만든 곳들은 색 자체를 조정하고 불투명하게 되돌린다.
+ * (흐린 글씨는 "디자인"이 아니라 그냥 안 읽히는 글씨다)
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.ail-facts__disclaimer,
+.tm-plan-card__feature--soon,
+.ai-analysis-panel .is-muted {
+  opacity: 1 !important;
+}
+html[data-theme="light"] .ail-facts__disclaimer,
+html[data-theme="light"] .tm-plan-card__feature--soon {
+  color: #5f6875 !important;
+}
+html[data-theme="dark"] .ail-facts__disclaimer,
+html[data-theme="dark"] .tm-plan-card__feature--soon {
+  color: #98a3b6 !important;
+}
+
+/* 모바일 홈의 인사이트 카드 */
+html[data-theme="light"] .home-m-insight__badge--hold,
+html[data-theme="light"] .home-m-insight__badge {
+  color: #b45309 !important;
+}
+html[data-theme="light"] .home-m-insight__pct,
+html[data-theme="light"] .home-m-insight__time {
+  color: #5f6875 !important;
+}
+html[data-theme="dark"] .home-m-insight__time,
+html[data-theme="dark"] .home-m-insight__pct {
+  color: #98a3b6 !important;
+}
+html[data-theme="light"] .tm-claude-card__mark {
+  color: #92400e !important;
+}
+
+/* 암호화폐 표 머리글 */
+html[data-theme="light"] .crypto-table th,
+html[data-theme="light"] .world-table th {
+  color: #5f6875 !important;
+}
+
+/* 매매시그널의 accent — 라이트에서 연한 teal 틴트 위에 올라가 3.1~3.8 이었다.
+   버튼 배경으로도 쓰이는 값이라 한 단계 진하게 바꾸면 흰 글자 대비도 함께 좋아진다. */
+html[data-theme="light"] .ts-body {
+  --ts-accent: #0b6a6d;
+}
+html[data-theme="light"] .ail-facts__title {
+  color: #0b6a6d !important;
+}
+
+/* .ail-hero__kicker 는 어두운 네이비 히어로 위에 있다 — 밝은 글자라야 읽힌다 */
+.ail-hero__kicker {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* 매매시그널 히어로의 알약 라벨은 연한 teal 틴트 위 — 한 단계 더 진하게 */
+html[data-theme="light"] .ts-hero__kicker,
+html[data-theme="light"] .ts-hero__step-no {
+  color: #08585b !important;
+}
+
+/* 어두운 히어로 위 흰 글씨의 불투명도 */
+.ail-hero__note {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+/* 골드 배경 배지 위의 글자 */
+html[data-theme="dark"] .tm-plan-card__badge {
+  color: #17130a !important;
+}

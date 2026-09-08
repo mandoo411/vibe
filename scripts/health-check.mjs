@@ -189,6 +189,38 @@ function checkInstagramPublishStamps() {
     }
 }
 
+// 8) 마감시황 AI 분석 반영 여부 — 평일 16:15 KST Cowork 예약작업(totalmoney-daily-closing-report)이
+// 조용히 중단되면 topGainers(시세)만 들어오고 analysis/indexes가 비어 있는 상태로 하루가 지나간다.
+// 2026-09-08 사고: 예약작업이 웹서치 단계에서 멈춘 채 종료됐는데 아무 알림도 가지 않았고,
+// 그 여파로 17:30 인스타 마감 카드까지 "데이터 미준비"로 스킵됐다. 그 무음 실패를 여기서 잡는다.
+function checkDailyClosingAnalysis() {
+    const now = new Date();
+    const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+    const weekday = kst.getUTCDay(); // 0=일 6=토
+  if (weekday === 0 || weekday === 6) return; // 주말은 장이 없음
+  if (kst.getUTCHours() < 17) return; // 16:15 발행 예정 + 여유 45분
+
+  const daily = readJsonSafe(path.resolve("data/daily-market.json"));
+    if (!daily?.days) return;
+    const today = seoulYmd();
+    const entry = daily.days[today];
+    if (!entry) return; // 오늘 항목 자체가 없으면 수집 단계 문제 — 여기서 다루지 않는다
+
+  // 공휴일 방어: 휴장일에도 sync는 돌지만 등락률이 전부 0인 더미가 들어온다.
+  const gainers = Array.isArray(entry.topGainers) ? entry.topGainers : [];
+    const hasRealMove = gainers.some((row) => Math.abs(Number(row?.change) || 0) > 0);
+    if (gainers.length === 0 || !hasRealMove) return; // 휴장일로 판단, 알림 없음
+
+  const hasAnalysis = String(entry.analysis || "").trim().length > 0;
+    const hasIndexes = Number.isFinite(Number(entry.indexes?.kospi?.close));
+    if (!hasAnalysis || !hasIndexes) {
+          fail(
+                  "daily-closing-not-published",
+                  `마감시황 AI 분석이 오늘(${today}) 아직 반영되지 않음 (analysis:${hasAnalysis ? "OK" : "없음"}, indexes:${hasIndexes ? "OK" : "없음"}) — Cowork 예약작업(totalmoney-daily-closing-report / -retry) 로그 확인 필요. 이 상태면 인스타 마감 카드도 데이터 미준비로 스킵됩니다.`
+                );
+    }
+}
+
 function loadState() {
     return readJsonSafe(STATE_PATH) || { lastSignature: null, lastAlertAt: null };
 }
@@ -207,6 +239,7 @@ async function main() {
     checkMorningBriefingErrors();
     checkDailyMarketIndexes();
     checkMorningBriefingPublishStamp();
+    checkDailyClosingAnalysis();
     checkInstagramPublishStamps();
     checkPackageJsonSyntax();
 

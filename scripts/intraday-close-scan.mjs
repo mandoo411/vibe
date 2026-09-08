@@ -240,7 +240,7 @@ async function main() {
     throw new Error("스캔 결과가 0종목 — 저장하지 않는다(빈 결과를 화면에 내보내지 않기 위함)");
   }
   await saveToSupabase(payload);
-  console.log("[intraday] Supabase 저장 완료");
+  if (!DRY_RUN) console.log("[intraday] Supabase 저장 완료");
 }
 
 main().catch((error) => {

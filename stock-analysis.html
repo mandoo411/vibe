@@ -36,7 +36,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./hub.css" />
-    <link rel="stylesheet" href="./stock-analysis.css?v=21" />
+    <link rel="stylesheet" href="./stock-analysis.css?v=22" />
   </head>
   <body class="page-tm-v2 ai-access-gate-open" data-tm-tab="analysis">
     <div
@@ -159,10 +159,23 @@
       </section>
 
       <section id="ai-stock-analysis" class="ai-stock-section" aria-label="AI 종목분석">
-        <div class="ai-search-card">
+        <!-- 2026-09-08 재설계: 초기 화면이 "종목 검색"이라는 작은 제목 + 얇은 입력창
+             뿐이라 무엇을 받게 되는지가 안 보이고 시선이 갈 곳도 없었다. 검색창을
+             페이지의 히어로로 세우고, 지원 범위와 리포트 구성을 함께 보여준다. -->
+        <div class="ai-search-card ai-search-card--hero">
           <div class="ai-search-card__head">
-            <h2 class="ai-search-card__title">종목 검색</h2>
-            <span class="ai-search-card__badge">NEW</span>
+            <span class="ai-search-card__icon" aria-hidden="true"><i class="ti ti-robot"></i></span>
+            <div class="ai-search-card__headtxt">
+              <h2 class="ai-search-card__title">종목 하나를 넣으면, 리포트 한 장이 나옵니다</h2>
+              <p class="ai-search-card__sub">추세·수급·재료·시나리오·리스크까지 8개 카드로 정리합니다.</p>
+            </div>
+            <span class="ai-search-card__badge">AI</span>
+          </div>
+
+          <div class="ai-search-scope" aria-label="지원 시장">
+            <span class="ai-search-scope__item"><i class="ti ti-building-bank" aria-hidden="true"></i>국내주식</span>
+            <span class="ai-search-scope__item"><i class="ti ti-flag" aria-hidden="true"></i>미국주식</span>
+            <span class="ai-search-scope__item"><i class="ti ti-currency-bitcoin" aria-hidden="true"></i>암호화폐</span>
           </div>
 
           <div class="ai-search-input-row ai-search-card__row">
@@ -183,11 +196,12 @@
           </div>
 
           <p class="ai-search-card__hint">
-            종목명 또는 코드를 입력하면 KIS 시세와 AI가 7가지 관점으로 분석합니다.
+            <i class="ti ti-info-circle" aria-hidden="true"></i>
+            종목명·티커·종목코드 어느 쪽으로 입력해도 됩니다. 실시간 시세는 한국투자증권 Open API를 씁니다.
           </p>
 
           <div class="ai-search-popular" aria-label="인기 검색 종목">
-            <p class="ai-search-popular__title">인기 검색 종목</p>
+            <p class="ai-search-popular__title"><i class="ti ti-flame" aria-hidden="true"></i>인기 검색 종목</p>
             <div class="ai-search-popular__chips">
               <button type="button" class="ai-search-popular__chip" data-query="삼성전자">삼성전자</button>
               <button type="button" class="ai-search-popular__chip" data-query="SK하이닉스">SK하이닉스</button>
@@ -197,6 +211,27 @@
             </div>
           </div>
         </div>
+
+        <!-- 2026-09-08: 로그인 사용자의 첫 화면이 검색창 하나뿐이라 여백만 남았다.
+             리포트가 어떤 카드로 구성되는지 미리 보여준다. 리포트가 열리면
+             :has()로 자동으로 접힌다(미지원 브라우저에서는 그대로 남아도 무해). -->
+        <section id="ai-report-guide" class="airg" aria-label="리포트 구성">
+          <div class="airg__head">
+            <h2 class="airg__title">리포트에 담기는 것</h2>
+            <span class="airg__cap">종목 하나당 8개 카드</span>
+          </div>
+          <div class="airg__grid">
+            <article class="airg__item"><span class="airg__no">01</span><i class="ti ti-gauge" aria-hidden="true"></i><strong>한눈에 요약</strong><span>매수·관망·회피 신호와 추세·모멘텀·거래량</span></article>
+            <article class="airg__item"><span class="airg__no">02</span><i class="ti ti-chart-arrows-vertical" aria-hidden="true"></i><strong>시장 대비 위치</strong><span>PER·PBR·외국인 보유율의 전 종목 순위</span></article>
+            <article class="airg__item"><span class="airg__no">03</span><i class="ti ti-chart-candle" aria-hidden="true"></i><strong>차트 · 기술적 분석</strong><span>약 2년치 캔들과 이동평균선 위 현재 위치</span></article>
+            <article class="airg__item"><span class="airg__no">04</span><i class="ti ti-news" aria-hidden="true"></i><strong>재료 · 상승 이유</strong><span>주가를 움직인 재료와 반영 정도</span></article>
+            <article class="airg__item"><span class="airg__no">05</span><i class="ti ti-calendar-event" aria-hidden="true"></i><strong>다가오는 이벤트</strong><span>DART 전자공시의 확정 일정</span></article>
+            <article class="airg__item"><span class="airg__no">06</span><i class="ti ti-users-group" aria-hidden="true"></i><strong>수급</strong><span>외국인·기관·개인 1일·5일·20일 흐름</span></article>
+            <article class="airg__item"><span class="airg__no">07</span><i class="ti ti-git-branch" aria-hidden="true"></i><strong>시나리오 A · B · C</strong><span>상승·횡보·하락 세 갈래</span></article>
+            <article class="airg__item"><span class="airg__no">08</span><i class="ti ti-shield-half" aria-hidden="true"></i><strong>매매 전략 · 리스크</strong><span>진입·목표·손절 가격대와 손익비</span></article>
+          </div>
+          <p class="airg__note">투자 참고용 정보이며, 투자 판단 및 결과의 책임은 투자자 본인에게 있습니다.</p>
+        </section>
 
         <div id="ai-analysis-panel" class="ai-analysis-panel" hidden aria-live="polite"></div>
 

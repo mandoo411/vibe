@@ -3262,3 +3262,384 @@
   border-color: var(--accent-brand, #0f8387);
   color: var(--accent-brand, #0f8387);
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 2026-09-08 — AI 종목분석 초기 화면 재설계
+ * 문제: 초기 화면이 작은 "종목 검색" 제목 + 40px 얇은 입력창 + 회색 칩이 전부라
+ *       위계도 색도 없고, 로그인 사용자에겐 그 아래가 통째로 빈 여백이었다.
+ * 방향: (1) 검색창을 페이지의 히어로로 세운다(아이콘 타일 + 큰 제목 + 지원 시장).
+ *       (2) 리포트 구성 8종을 카드로 미리 보여줘 빈 화면을 없앤다.
+ *       (3) 색은 브랜드 accent 토큰만 쓴다(라이트 teal / 다크 gold). 숫자·실데이터는
+ *           절대 지어내지 않는다 — 이 영역엔 수치를 넣지 않았다.
+ * 이 파일이 site-shell.css보다 뒤에 로드되므로 별도 !important 없이 덮어쓴다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+#ai-stock-analysis,
+#ai-landing {
+  --sa-accent: var(--accent, #0f8387);
+  --sa-soft: color-mix(in srgb, var(--sa-accent) 12%, transparent);
+  --sa-soft-2: color-mix(in srgb, var(--sa-accent) 6%, transparent);
+  --sa-line: color-mix(in srgb, var(--sa-accent) 30%, transparent);
+  --sa-shadow: 0 1px 2px rgba(10, 20, 40, 0.04), 0 20px 44px -28px rgba(10, 20, 40, 0.32);
+}
+[data-theme="dark"] #ai-stock-analysis,
+[data-theme="dark"] #ai-landing {
+  --sa-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 20px 48px -28px rgba(0, 0, 0, 0.9);
+}
+
+/* ── 히어로 검색 카드 ───────────────────────────────────────────────────── */
+.ai-search-card--hero {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 28px 24px;
+  border-radius: 20px;
+  border: 1px solid var(--sa-line);
+  background:
+    radial-gradient(140% 180% at 0% 0%, var(--sa-soft) 0%, transparent 58%),
+    radial-gradient(110% 150% at 100% 6%, var(--sa-soft-2) 0%, transparent 55%),
+    linear-gradient(140deg, var(--card-bg, var(--bg-secondary)) 0%, var(--bg-primary) 100%);
+  box-shadow: var(--sa-shadow);
+}
+[data-theme="dark"] .ai-search-card--hero {
+  border-color: var(--sa-line);
+  background:
+    radial-gradient(140% 180% at 0% 0%, var(--sa-soft) 0%, transparent 58%),
+    linear-gradient(150deg, #16233f 0%, var(--card-bg, #111d35) 100%);
+}
+.ai-search-card--hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--sa-accent) 0%, color-mix(in srgb, var(--sa-accent) 18%, transparent) 74%, transparent 100%);
+}
+
+.ai-search-card--hero .ai-search-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  margin-bottom: 16px;
+}
+.ai-search-card__icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: var(--sa-soft);
+  border: 1px solid var(--sa-line);
+  color: var(--sa-accent);
+  font-size: 21px;
+}
+.ai-search-card__headtxt { min-width: 0; flex: 1 1 auto; }
+.ai-search-card--hero .ai-search-card__title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: -0.03em;
+  color: var(--text-title, var(--text-primary));
+  word-break: keep-all;
+}
+.ai-search-card__sub {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+.ai-search-card--hero .ai-search-card__badge {
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 10px;
+  background: var(--sa-soft);
+  border: 1px solid var(--sa-line);
+  color: var(--sa-accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.ai-search-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 14px;
+}
+.ai-search-scope__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color, var(--border));
+  background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ai-search-scope__item i { font-size: 14px; color: var(--sa-accent); }
+
+/* 입력창 + 버튼 — 페이지에서 가장 큰 인터랙션 요소로 세운다 */
+.ai-search-card--hero .ai-search-card__input {
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, var(--border));
+  padding: 0 16px;
+  font-size: 15.5px;
+  font-weight: 500;
+  background: var(--bg-primary);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+[data-theme="dark"] .ai-search-card--hero .ai-search-card__input {
+  background: rgba(9, 17, 33, 0.66);
+  border-color: var(--border-color);
+}
+.ai-search-card--hero .ai-search-card__input:focus {
+  border-color: var(--sa-accent);
+  box-shadow: 0 0 0 3px var(--sa-soft);
+}
+/* 입력창 높이를 키웠으므로 자동완성 드롭다운 위치도 따라간다 */
+.ai-search-card--hero .rt-ac { top: calc(100% + 6px); }
+
+#ai-stock-analysis .ai-search-input-row { gap: 12px; }
+#ai-stock-analysis button#analyzeBtn {
+  height: 52px;
+  padding: 0 30px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, var(--sa-accent) 0%, color-mix(in srgb, var(--sa-accent) 72%, #000) 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--sa-accent) 85%, transparent);
+}
+[data-theme="dark"] #ai-stock-analysis button#analyzeBtn {
+  color: #17130a;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--sa-accent) 92%, #fff) 0%, var(--sa-accent) 100%);
+}
+
+.ai-search-card--hero .ai-search-card__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-muted-ui, var(--text-secondary));
+  word-break: keep-all;
+}
+.ai-search-card--hero .ai-search-card__hint i {
+  flex: 0 0 auto;
+  font-size: 14px;
+  color: var(--sa-accent);
+  opacity: 0.85;
+}
+
+.ai-search-card--hero .ai-search-popular {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border-color, var(--border));
+}
+.ai-search-card--hero .ai-search-popular__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--sa-accent);
+}
+.ai-search-card--hero .ai-search-popular__title i { font-size: 14px; }
+.ai-search-card--hero .ai-search-popular__chip {
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--bg-primary) 60%, transparent);
+  border: 1px solid var(--border-color, var(--border));
+  color: var(--text-secondary);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+.ai-search-card--hero .ai-search-popular__chip:hover {
+  background: var(--sa-soft);
+  border-color: var(--sa-line);
+  color: var(--sa-accent);
+  transform: translateY(-1px);
+}
+
+/* ── 리포트 구성 미리보기 ──────────────────────────────────────────────── */
+.airg { margin-top: 22px; }
+/* 리포트가 열리면 자동으로 접는다(:has 미지원 브라우저에선 그대로 남아도 무해) */
+.ai-stock-section:has(#ai-analysis-panel:not([hidden])) .airg { display: none; }
+
+.airg__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.airg__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-title, var(--text-primary));
+}
+.airg__cap {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sa-accent);
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--sa-soft);
+  border: 1px solid var(--sa-line);
+}
+.airg__grid {
+  display: grid;
+  /* 8장이므로 2·4열로만 떨어지게 고정한다(auto-fit이면 5+3으로 갈라진다) */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (min-width: 1000px) {
+  .airg__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.airg__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "icon no" "icon name" "icon desc";
+  align-content: start;
+  column-gap: 12px;
+  padding: 14px 15px 15px;
+  border-radius: 13px;
+  border: 1px solid var(--border-color, var(--border));
+  background: var(--card-bg, var(--bg-secondary));
+  box-shadow: var(--sa-shadow);
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+.airg__item:hover {
+  border-color: var(--sa-line);
+  transform: translateY(-2px);
+}
+.airg__item i {
+  grid-area: icon;
+  align-self: start;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--sa-soft);
+  border: 1px solid var(--sa-line);
+  color: var(--sa-accent);
+  font-size: 18px;
+}
+.airg__no {
+  grid-area: no;
+  font-family: var(--font-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sa-accent);
+  opacity: 0.8;
+}
+.airg__item strong {
+  grid-area: name;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-title, var(--text-primary));
+}
+.airg__item > span:last-of-type {
+  grid-area: desc;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  word-break: keep-all;
+}
+.airg__note {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--text-muted-ui, var(--text-secondary));
+}
+
+/* ── 비로그인 랜딩(.ail) 다듬기 ────────────────────────────────────────── */
+.ail-hero {
+  padding: 40px 34px 34px;
+  border-radius: 20px;
+  border-color: color-mix(in srgb, #ffffff 16%, transparent);
+  background:
+    radial-gradient(120% 150% at 50% 0%, rgba(255, 255, 255, 0.12) 0%, transparent 62%),
+    var(--gradient-primary, linear-gradient(135deg, #07264b 0%, #123a5e 60%, #0f2a42 100%));
+  box-shadow: 0 26px 60px -34px rgba(7, 38, 75, 0.75);
+}
+.ail-hero__kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.86);
+  letter-spacing: 0.14em;
+}
+.ail-hero__title { font-size: 32px; line-height: 1.38; }
+.ail-btn { border-radius: 12px; padding: 13px 28px; }
+.ail-btn--primary { box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.6); }
+
+.ail-cards { gap: 12px; }
+.ail-card {
+  border-radius: 14px;
+  border-top-width: 1px;
+  padding: 18px 18px 19px;
+  box-shadow: var(--sa-shadow);
+  transition: border-color 0.16s ease, transform 0.16s ease;
+}
+.ail-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px -1px auto -1px;
+  height: 3px;
+  border-radius: 14px 14px 0 0;
+  background: linear-gradient(90deg, var(--sa-accent) 0%, color-mix(in srgb, var(--sa-accent) 18%, transparent) 78%, transparent 100%);
+}
+.ail-card:hover { border-color: var(--sa-line); transform: translateY(-2px); }
+.ail-card__no {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--sa-soft);
+  border: 1px solid var(--sa-line);
+}
+.ail-card h3 { font-size: 15.5px; margin-top: 8px; }
+
+.ail-facts { border-radius: 16px; box-shadow: var(--sa-shadow); }
+.ail-facts__title { color: var(--sa-accent); font-size: 12.5px; letter-spacing: 0.06em; }
+.ail-facts__list li { border-radius: 12px; padding: 13px 15px; }
+
+/* ── 모바일 ────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ai-search-card--hero { padding: 20px 17px 19px; border-radius: 18px; }
+  .ai-search-card--hero .ai-search-card__head { gap: 11px; margin-bottom: 14px; }
+  .ai-search-card__icon { width: 36px; height: 36px; font-size: 19px; border-radius: 11px; }
+  .ai-search-card--hero .ai-search-card__title { font-size: 17px; }
+  .ai-search-card__sub { font-size: 12.5px; }
+  .ai-search-card--hero .ai-search-card__badge { display: none; }
+  .ai-search-scope { gap: 6px; margin-bottom: 12px; }
+  .ai-search-scope__item { padding: 5px 10px; font-size: 11.5px; }
+  #ai-stock-analysis .ai-search-input-row { flex-wrap: wrap; gap: 10px; }
+  .ai-search-card--hero .ai-search-card__input-wrap { flex: 1 1 100%; }
+  /* iOS 자동확대 방지: 16px 유지 */
+  .ai-search-card--hero .ai-search-card__input { height: 50px; font-size: 16px; }
+  #ai-stock-analysis button#analyzeBtn { flex: 1 1 100%; height: 50px; }
+  .airg { margin-top: 18px; }
+  .airg__grid { grid-template-columns: 1fr; }
+  .ail-hero { padding: 28px 18px 26px; border-radius: 18px; }
+  .ail-hero__title { font-size: 23px; }
+}

@@ -703,3 +703,23 @@ html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="gre
 html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="greed-extreme"] .market-gauge__value {
   color: #c62828 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 7차 보정 — 모바일 최종 재측정 잔여 2건
+ * (푸터로 잡힌 항목들은 daily-market 6.73 · realtime 등 실제 픽셀로 재확인해
+ *  모두 정상이었다 — 고정 하단탭 겹침에 의한 오탐)
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* 비트코인 도미넌스 게이지 값이 앰버(#f59e0b)라 밝은 배경에서 1.93 이었다.
+   공포탐욕 카드는 구간별 색을 따로 지정했으므로 그 카드만 제외한다. */
+html[data-theme="light"] .market-gauge-card:not(.market-gauge-card--fng) .market-gauge__value,
+html[data-theme="light"] .market-vix--caution {
+  color: #b45309 !important;
+}
+
+/* 홈 히어로의 보조 버튼 — 흰 글씨가 밝은 teal 위에 올라가 4.1 이었다.
+   버튼 색을 한 단계 진하게 해 흰 글씨를 살린다(글자 크기는 그대로). */
+html[data-theme="light"] .home-hero__btn:not(.home-hero__btn--primary) {
+  background: rgba(4, 60, 63, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.34) !important;
+}

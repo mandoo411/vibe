@@ -3685,6 +3685,40 @@ function tsLoadFinancialRatios() {
 }
 let TS_FIN_RATIOS;
 
+/* ── 장중(장 막판) 스냅샷 (2026-09-08) ──────────────────────────────────────
+ * 전종목 일봉 캐시는 밤에 한 번 만들어져 장중에는 전날 값이다. scripts/intraday-close-scan.mjs가
+ * 14:30·15:31에 거래대금 상위 400종목만 당일 시세·수급으로 갱신해 Supabase에 넣어두고,
+ * 여기서 그걸 읽어 "장 막판 기준" 검색을 처리한다. 파일 캐시와 row 구조가 같아서
+ * 판정·정렬·근거 표시 코드는 그대로 재사용된다.
+ *
+ * 오늘 스캔이 아직 없으면(장 시작 전, 휴장일, 스캔 실패) null을 돌려주고 호출부가
+ * 전일 종가 캐시로 되돌아간다 — 어제 것을 오늘 장중 데이터인 척 보여주지 않는다. */
+async function tsLoadIntradaySnapshot() {
+  const today = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date());
+  try {
+    const res = await serviceRequest(
+      `trade_signal_intraday?as_of_date=eq.${today}&order=scanned_at.desc&limit=1&select=*`,
+      { method: "GET" }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+    const stocks = row && row.payload && Array.isArray(row.payload.stocks) ? row.payload.stocks : null;
+    if (!stocks || !stocks.length) return null;
+    return {
+      updatedAt: row.scanned_at || null,
+      asOfDate: row.as_of_date || today,
+      slot: row.slot || null,
+      baseAsOfDate: row.base_as_of_date || null,
+      count: stocks.length,
+      stocks,
+    };
+  } catch (error) {
+    console.error("[trade-signal screen] 장중 스냅샷 조회 실패", error && error.message);
+    return null;
+  }
+}
+
 function tsLoadScreenerCache() {
   if (TS_SCREENER_CACHE) return TS_SCREENER_CACHE;
   if (TS_SCREENER_CACHE_LOAD_FAILED) return { updatedAt: null, asOfDate: null, count: 0, stocks: [] };
@@ -4069,7 +4103,13 @@ async function tsHandleScreen(req, res, user) {
     limit = tsNormalizeLimit(body.limit);
   }
 
-  const cache = tsLoadScreenerCache();
+  // 2026-09-08: source:"intraday"면 장 막판 스캔 결과로 판정한다(종가매매용).
+  // 오늘 스캔이 아직 없으면 조용히 전일 종가 캐시로 되돌아가고, 어느 쪽으로 판정했는지는
+  // 응답의 dataSource로 알려준다 — 화면이 "장 막판 기준"인지 "전일 종가 기준"인지
+  // 정확히 표기할 수 있어야 하기 때문이다.
+  const wantIntraday = sanitizeStr(body.source) === "intraday";
+  const intraday = wantIntraday ? await tsLoadIntradaySnapshot() : null;
+  const cache = intraday || tsLoadScreenerCache();
   const hasClauses = Array.isArray(condition.clauses) && condition.clauses.length > 0;
   // 2026-08-26: 임계값 조건 없이 순위만 요청한 경우(clauses가 빈 배열) evaluateCondition은
   // 항상 false를 반환하므로(빈 조건 = "아무것도 매치 안 함") 그 경로를 타지 않고 전체 종목을
@@ -4113,6 +4153,9 @@ async function tsHandleScreen(req, res, user) {
     rawText,
     cacheUpdatedAt: cache.updatedAt || null,
     cacheAsOfDate: cache.asOfDate || null,
+    dataSource: intraday ? "intraday" : "daily",
+    intradaySlot: intraday ? intraday.slot : null,
+    intradayRequested: wantIntraday,
     count: matches.length,
     stocks: matches.slice(0, sliceCount).map((r) => ({
       code: r.code,

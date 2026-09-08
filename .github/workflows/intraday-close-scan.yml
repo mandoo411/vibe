@@ -1,0 +1,86 @@
+name: Intraday Close Scan
+
+# 장 막판 종가매매 후보 스캔 — 거래대금 상위 400종목만 당일 시세·수급으로 갱신해
+# Supabase(trade_signal_intraday)에 넣는다. 전종목 캐시(kr-screener-cache)는 80분이
+# 걸려 장중에 못 쓰기 때문에 별도로 둔 경량 경로다(4~5분).
+#
+# ⚠️ 정시 실행은 GitHub schedule이 아니라 Supabase pg_cron → Edge Function
+# github-workflow-dispatch → workflow_dispatch 경로가 담당한다. 이 저장소의 schedule
+# 트리거는 실측 1.5~6시간까지 밀려서(2026-09-08 확인) 15:31 마감을 절대 못 맞춘다.
+# 아래 schedule은 pg_cron이 죽었을 때를 위한 백업일 뿐이고, 정시성은 기대하지 않는다.
+#
+# pg_cron 쪽을 바꿀 때 Edge Function의 ALLOWED_WORKFLOWS에 이 파일명을 넣어야 한다 —
+# allowlist에 없으면 400을 돌려주고 아무 일도 없이 조용히 끝난다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "슬롯(1430=진입검토 / 1531=종가확정). 비우면 실행 시각으로 자동 판정"
+        required: false
+        default: ""
+      limit:
+        description: "후보 종목 수 (기본 400)"
+        required: false
+        default: ""
+      dry_run:
+        description: "1이면 스캔만 하고 Supabase 저장은 생략"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [trigger-intraday-close-scan]
+  schedule:
+    # 백업용. UTC 05:30 = 14:30 KST, UTC 06:31 = 15:31 KST (실제로는 크게 밀린다)
+    - cron: "30 5 * * 1-5"
+    - cron: "31 6 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: intraday-close-scan
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      # 휴장일·주말에 헛돌지 않게 한다. 국내 증시가 안 열린 날은 전일 캐시와 같은 값을
+      # 오늘 것처럼 저장하게 되므로(실데이터가 아닌 걸 최신인 척 보여주는 셈) 막는다.
+      - name: 평일 여부 확인
+        id: guard
+        run: |
+          set -euo pipefail
+          DOW=$(TZ=Asia/Seoul date +%u)
+          if [ "$DOW" -ge 6 ]; then
+            echo "::notice::주말($DOW) — 스캔 건너뜀"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run intraday close scan
+        if: steps.guard.outputs.run == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          INTRADAY_SLOT: ${{ github.event.inputs.slot || github.event.client_payload.slot || '' }}
+          INTRADAY_LIMIT: ${{ github.event.inputs.limit || github.event.client_payload.limit || '400' }}
+          INTRADAY_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}
+        run: node scripts/intraday-close-scan.mjs

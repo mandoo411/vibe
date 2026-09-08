@@ -1753,6 +1753,7 @@
             icon: "ti-sunset-2",
             name: "종가 수급매매",
             desc: "외국인·기관이 이틀 이상 연달아 같이 사들이면서 거래대금까지 실린 종목. 장 막판 종가 부근 진입을 염두에 둔 수급 주도주 후보입니다.",
+            hint: "14:30·15:31 갱신",
             summary: "종가 수급매매 조건",
             condition: {
               logic: "AND",
@@ -1833,19 +1834,28 @@
                 <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
                 <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
                 <span class="ts-preset__cond">${escapeHtml(conditionText(p.condition))}</span>
+                ${p.hint ? `<span class="ts-preset__cond" style="border:0;padding-top:0;margin-top:-4px;">${escapeHtml(p.hint)}</span>` : ""}
               </button>`
           ).join("");
           const note = $("ts-presets-note");
           if (note) {
             note.textContent =
-              "코스피·코스닥 전 종목을 전일 종가 기준 일봉으로 스캔한 결과이며, 특정 종목의 매수·매도를 권유하는 것이 아닙니다. 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
+              "평일 14:30·15:31에 거래대금 상위 종목을 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 전에는 전일 종가 기준으로 보여드립니다. 특정 종목의 매수·매도를 권유하는 것이 아니며, 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
           }
           wrap.querySelectorAll("[data-preset]").forEach((btn) => {
             btn.addEventListener("click", async () => {
               const preset = TS_STRATEGY_PRESETS.find((p) => p.id === btn.getAttribute("data-preset"));
               if (!preset) return;
               $("ts-input").value = "";
-              await runScreen({ condition: preset.condition, summary: preset.summary }, btn, null, null);
+              // 프리셋 3종의 조건은 전부 오늘 봉으로 정확히 다시 계산되는 지표만 쓴다
+              // (lib/intraday-snapshot.js의 INTRADAY_UPDATED). 그래서 장 막판 스냅샷이
+              // 있으면 그걸로, 없으면 전일 종가로 자동 폴백한다.
+              await runScreen(
+                { condition: preset.condition, summary: preset.summary, source: "intraday" },
+                btn,
+                null,
+                null
+              );
               const results = $("ts-results");
               if (results && !results.classList.contains("ts-hidden")) {
                 results.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1880,9 +1890,20 @@
           $("ts-results-count").textContent = result.sort
             ? `총 ${result.count}개 종목 중 상위 ${shownCount}개`
             : `총 ${result.count}개 종목 (최대 100개 표시)`;
-          $("ts-freshness").textContent = result.cacheUpdatedAt
-            ? `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 데이터`
-            : "아직 스크리닝 데이터가 준비되지 않았어요 (곧 준비됩니다).";
+          /* 2026-09-08: 어떤 기준으로 판정했는지는 반드시 정확히 밝힌다. 장중 스캔 결과와
+             전일 종가 결과는 값이 다른데 같은 화면에 같은 모양으로 뜨기 때문에, 여기서
+             구분하지 않으면 사용자가 전날 데이터를 오늘 것으로 오해하게 된다. */
+          const fresh = $("ts-freshness");
+          if (result.dataSource === "intraday") {
+            const slotLabel = result.intradaySlot === "1430" ? "14:30" : "15:31";
+            fresh.textContent = `오늘 ${slotLabel} 장 막판 기준 · 거래대금 상위 400종목 · 수급은 잠정치`;
+          } else if (result.intradayRequested) {
+            fresh.textContent = `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 (오늘 장 막판 스캔은 15:36부터)`;
+          } else {
+            fresh.textContent = result.cacheUpdatedAt
+              ? `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 데이터`
+              : "아직 스크리닝 데이터가 준비되지 않았어요 (곧 준비됩니다).";
+          }
           renderResultList();
           $("ts-results").classList.remove("ts-hidden");
         }

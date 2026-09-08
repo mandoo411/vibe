@@ -156,6 +156,14 @@ async function buildSeriesForStock(stockCode) {
     volTurnoverRate: market.volTurnoverRate,
     foreignNetBuy: investorFlow.foreignNetBuy,
     institutionNetBuy: investorFlow.institutionNetBuy,
+    // 2026-09-08: 연속 순매수 일수/순매수 금액. 저장된 전략에 이 조건이 들어 있어도
+    // 감시 스캔이 같은 값으로 판정하도록 즉시검색 캐시 빌더와 동일하게 실어준다
+    // (여기서 빠지면 해당 전략은 조건이 충족돼도 영원히 알림이 안 간다).
+    foreignNetBuyEok: investorFlow.foreignNetBuyEok,
+    institutionNetBuyEok: investorFlow.institutionNetBuyEok,
+    foreignNetBuyStreak: investorFlow.foreignNetBuyStreak,
+    institutionNetBuyStreak: investorFlow.institutionNetBuyStreak,
+    majorNetBuyStreak: investorFlow.majorNetBuyStreak,
     tempStopYn: market.tempStopYn,
     settlementTradeYn: market.settlementTradeYn,
     sector: market.sector,

@@ -106,6 +106,13 @@ async function buildOne(stock) {
         volTurnoverRate: market.volTurnoverRate,
         foreignNetBuy: investorFlow.foreignNetBuy,
         institutionNetBuy: investorFlow.institutionNetBuy,
+        // 2026-09-08: 종가매매 프리셋 — 연속 순매수 일수/순매수 금액. 같은 inquire-investor
+        // 응답에서 파생되므로 KIS 추가 호출은 없다(호출량·소요시간 변화 없음).
+        foreignNetBuyEok: investorFlow.foreignNetBuyEok,
+        institutionNetBuyEok: investorFlow.institutionNetBuyEok,
+        foreignNetBuyStreak: investorFlow.foreignNetBuyStreak,
+        institutionNetBuyStreak: investorFlow.institutionNetBuyStreak,
+        majorNetBuyStreak: investorFlow.majorNetBuyStreak,
         tempStopYn: market.tempStopYn,
         settlementTradeYn: market.settlementTradeYn,
         sector: market.sector,

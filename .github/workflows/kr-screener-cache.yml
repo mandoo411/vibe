@@ -11,6 +11,12 @@ on:
   schedule:
     - cron: "0 7 * * 1-5" # 평일 16:00 KST (장마감 15:30 이후)
   workflow_dispatch:
+  # 2026-09-08: 스크리너 스냅샷에 새 지표 필드를 추가했을 때처럼 "다음 정기 실행까지
+  # 기다릴 수 없는" 경우를 위한 트리거. workflow_dispatch는 이 저장소의 PAT 권한으로
+  # 호출하면 항상 403이라 코드로 재실행이 불가능한데, repository_dispatch는
+  # Contents:write만으로 동작한다(2026-08-14 확인, 5장 참고).
+  repository_dispatch:
+    types: [trigger-screener-cache]
 
 permissions:
   contents: write

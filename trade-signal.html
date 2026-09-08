@@ -201,6 +201,63 @@
         border-color: var(--accent-brand);
         color: var(--accent-brand);
       }
+      /* 2026-09-08: 매매기법 프리셋 카드 — 조건을 직접 문장으로 써야만 쓸 수 있던 기능을
+         "누르면 나오는 전략"으로 바꾸는 진입점. 세로로 쌓이는 카드형이라 모바일에서도
+         설명 문구가 잘리지 않는다. */
+      .ts-presets {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      @media (min-width: 720px) {
+        .ts-presets { grid-template-columns: repeat(3, 1fr); }
+      }
+      .ts-preset {
+        appearance: none;
+        text-align: left;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 12px;
+        padding: 14px 15px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+      }
+      .ts-preset:hover:not(:disabled) {
+        border-color: var(--accent-brand);
+        background: rgba(15, 131, 135, 0.08);
+      }
+      .ts-preset:disabled { opacity: 0.6; cursor: progress; }
+      .ts-preset__name {
+        font-size: 14.5px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ts-preset__name i { color: var(--accent-brand); font-size: 16px; }
+      .ts-preset__desc {
+        font-size: 12.5px;
+        line-height: 1.65;
+        color: var(--text-secondary);
+      }
+      .ts-preset__cond {
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: var(--text-tertiary, var(--text-secondary));
+        border-top: 1px dashed var(--border-color);
+        padding-top: 7px;
+        margin-top: 1px;
+      }
+      .ts-presets__note {
+        font-size: 11.5px;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        margin-top: 11px;
+      }
       .ts-preview {
         border-top: 1px solid var(--border-color);
         padding-top: 14px;
@@ -731,6 +788,16 @@
           </div>
 
           <div id="ts-content" class="ts-hidden">
+            <!-- 2026-09-08: 매매기법 프리셋. 조건 문장을 직접 만들 줄 아는 사용자만 쓸 수 있던
+                 기능이라, 대표 기법을 버튼 하나로 돌릴 수 있게 했다. AI 파싱을 거치지 않고
+                 구조화된 condition을 그대로 보내므로 응답이 빠르고 토큰도 쓰지 않는다. -->
+            <section class="ts-card">
+              <p class="ts-section-title">매매기법으로 찾기</p>
+              <p class="ts-label" style="margin-top:6px;">대표 매매기법의 조건을 그대로 담았어요. 누르면 바로 검색합니다.</p>
+              <div class="ts-presets" id="ts-presets"></div>
+              <p class="ts-presets__note" id="ts-presets-note"></p>
+            </section>
+
             <section class="ts-card">
               <p class="ts-label">어떤 조건에 맞는 종목을 찾을까요?</p>
               <textarea id="ts-input" class="ts-textarea" autocomplete="off" placeholder="예: RSI 30 이하이고 일봉 기준 강세 다이버전스가 발생한 종목 찾아줘"></textarea>
@@ -960,6 +1027,13 @@
           if (c.type === "volume_turnover_rate") return `거래량 회전율 ${cmp(c.op)} ${c.value}%`;
           if (c.type === "foreign_net_buy") return `외국인 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
           if (c.type === "institution_net_buy") return `기관 순매수 ${cmp(c.op)} ${Number(c.value || 0).toLocaleString("ko-KR")}주`;
+          // 2026-09-08: 종가매매/수급매매용 확장 수급 조건
+          if (c.type === "foreign_net_buy_amount") return `외국인 순매수액 ${cmp(c.op)} ${c.value}억`;
+          if (c.type === "institution_net_buy_amount") return `기관 순매수액 ${cmp(c.op)} ${c.value}억`;
+          if (c.type === "foreign_net_buy_streak") return `외국인 ${c.value}일 연속 순매수`;
+          if (c.type === "institution_net_buy_streak") return `기관 ${c.value}일 연속 순매수`;
+          if (c.type === "major_net_buy_streak")
+            return c.value > 1 ? `외국인·기관 양매수 ${c.value}일 연속` : "외국인·기관 동반 순매수";
           // 2026-09-03 재무비율(DART 사업보고서 최근 결산). 시세와 갱신 주기가 달라
           // "최근 결산"을 문구에 명시해 사용자가 실시간 값으로 오해하지 않게 한다.
           if (c.type === "debt_ratio") return `부채비율 ${cmp(c.op)} ${c.value}% (최근 결산)`;
@@ -1646,7 +1720,126 @@
           "ROE 15% 이상이면서 PER 15배 이하인 종목 찾아줘",
           "시가총액 5000억 이상이고 부채비율 100% 이하인 우량주 찾아줘",
           "ROE 높은 순서대로 20종목 보여줘",
+          // 2026-09-08: 연속 순매수·순매수 금액 조건 신설 — 발견 가능성을 위해 예시로 노출
+          "외국인과 기관이 3일 연속 동반 순매수한 종목 찾아줘",
+          "외국인이 100억 이상 순매수한 종목 찾아줘",
         ];
+
+        /* ── 매매기법 프리셋 (2026-09-08 신설) ───────────────────────────────────
+         * 실전 매매기법을 이 조건엔진의 clause 조합으로 옮긴 것. 원칙 두 가지:
+         *  1) 표현할 수 없는 축(재료·뉴스의 강도 같은 정성 판단)은 억지로 흉내내지 않고 뺀다 —
+         *     "재료 있는 종목"을 공시 유무 따위로 근사하면 맞지도 않는 걸 맞다고 보여주게 된다.
+         *  2) 임계값은 실제 캐시(2026-09-07 종가, 2,765종목)로 결과 개수를 확인해 정했다.
+         *     너무 조이면 매일 0개가 나와 기능이 죽고, 너무 풀면 스크리너의 의미가 없다.
+         * condition은 서버로 그대로 전달되어 AI 파싱 없이 즉시 평가된다(응답 빠름 · 토큰 0).
+         */
+        const TS_STRATEGY_PRESETS = [
+          {
+            id: "close-major-flow",
+            icon: "ti-sunset-2",
+            name: "종가 수급매매",
+            desc: "외국인·기관이 이틀 이상 연달아 같이 사들이면서 거래대금까지 실린 종목. 장 막판 종가 부근 진입을 염두에 둔 수급 주도주 후보입니다.",
+            summary: "종가 수급매매 조건",
+            condition: {
+              logic: "AND",
+              clauses: [
+                { type: "major_net_buy_streak", op: "gte", value: 2 },
+                { type: "trading_value", op: "gte", value: 200 },
+                { type: "price", op: "gte", value: 1000 },
+                { type: "volume_ratio", op: "gte", value: 100 },
+                { type: "disparity", period: 20, op: "gte", value: 100 },
+              ],
+            },
+          },
+          {
+            id: "pullback-flow",
+            icon: "ti-arrow-bounce",
+            name: "수급 눌림목",
+            desc: "최근 한 달 크게 오른 뒤 거래량이 말라붙으며 조정 중인데, 외국인이나 기관 수급은 아직 빠지지 않은 종목. 20일선 위에서 5일선까지 눌린 자리만 봅니다.",
+            summary: "수급 눌림목 조건",
+            condition: {
+              logic: "AND",
+              clauses: [
+                {
+                  type: "group",
+                  logic: "OR",
+                  clauses: [
+                    { type: "foreign_net_buy", op: "gt", value: 0 },
+                    { type: "institution_net_buy", op: "gt", value: 0 },
+                  ],
+                },
+                { type: "period_return", days: 21, op: "gte", value: 10 },
+                { type: "disparity", period: 20, op: "gte", value: 100 },
+                { type: "disparity", period: 5, op: "lte", value: 102 },
+                { type: "volume_ratio", op: "lte", value: 80 },
+                { type: "trading_value", op: "gte", value: 50 },
+                { type: "price", op: "gte", value: 1000 },
+              ],
+            },
+          },
+          {
+            id: "breakout-flow",
+            icon: "ti-trending-up",
+            name: "신고가 돌파",
+            desc: "전고점이나 52주 신고가를 거래량을 실어 뚫은 종목 중, 외국인이나 기관 순매수가 함께 들어온 것만 남깁니다.",
+            summary: "신고가 돌파 조건",
+            condition: {
+              logic: "AND",
+              clauses: [
+                {
+                  type: "group",
+                  logic: "OR",
+                  clauses: [
+                    { type: "high52w_breakout" },
+                    { type: "high_breakout_n", windowBars: 60 },
+                    { type: "high_breakout_n", windowBars: 20 },
+                  ],
+                },
+                { type: "volume_ratio", op: "gte", value: 150 },
+                {
+                  type: "group",
+                  logic: "OR",
+                  clauses: [
+                    { type: "foreign_net_buy", op: "gt", value: 0 },
+                    { type: "institution_net_buy", op: "gt", value: 0 },
+                  ],
+                },
+                { type: "trading_value", op: "gte", value: 300 },
+                { type: "price", op: "gte", value: 1000 },
+              ],
+            },
+          },
+        ];
+
+        function renderStrategyPresets() {
+          const wrap = $("ts-presets");
+          if (!wrap) return;
+          wrap.innerHTML = TS_STRATEGY_PRESETS.map(
+            (p) => `<button type="button" class="ts-preset" data-preset="${escapeHtml(p.id)}">
+                <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
+                <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
+                <span class="ts-preset__cond">${escapeHtml(conditionText(p.condition))}</span>
+              </button>`
+          ).join("");
+          const note = $("ts-presets-note");
+          if (note) {
+            note.textContent =
+              "코스피·코스닥 전 종목을 전일 종가 기준 일봉으로 스캔한 결과이며, 특정 종목의 매수·매도를 권유하는 것이 아닙니다. 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
+          }
+          wrap.querySelectorAll("[data-preset]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const preset = TS_STRATEGY_PRESETS.find((p) => p.id === btn.getAttribute("data-preset"));
+              if (!preset) return;
+              $("ts-input").value = "";
+              await runScreen({ condition: preset.condition, summary: preset.summary }, btn, null, null);
+              const results = $("ts-results");
+              if (results && !results.classList.contains("ts-hidden")) {
+                results.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            });
+          });
+        }
+        renderStrategyPresets();
 
         function renderExampleChips() {
           const wrap = $("ts-example-chips");
@@ -1663,17 +1856,34 @@
         }
         renderExampleChips();
 
-        $("ts-search-btn").addEventListener("click", async () => {
-          const text = $("ts-input").value.trim();
-          if (!text) return;
-          const btn = $("ts-search-btn");
-          btn.disabled = true;
-          btn.textContent = "검색 중…";
+        /* 2026-09-08: 문장 검색과 프리셋 검색이 같은 응답을 같은 방식으로 그리도록 분리.
+           프리셋은 body에 structured condition을 실어 보내므로 서버가 AI 파싱을 건너뛴다. */
+        function applyScreenResult(result) {
+          currentScreen = result;
+          savedRowCodes.clear();
+          $("ts-results-summary").textContent = conditionText(result.condition) || result.summary;
+          const shownCount = Array.isArray(result.stocks) ? result.stocks.length : 0;
+          $("ts-results-count").textContent = result.sort
+            ? `총 ${result.count}개 종목 중 상위 ${shownCount}개`
+            : `총 ${result.count}개 종목 (최대 100개 표시)`;
+          $("ts-freshness").textContent = result.cacheUpdatedAt
+            ? `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 데이터`
+            : "아직 스크리닝 데이터가 준비되지 않았어요 (곧 준비됩니다).";
+          renderResultList();
+          $("ts-results").classList.remove("ts-hidden");
+        }
+
+        async function runScreen(payload, btn, busyLabel, idleLabel) {
+          const prevLabel = idleLabel != null ? idleLabel : btn ? btn.textContent : "";
+          if (btn) {
+            btn.disabled = true;
+            if (busyLabel) btn.textContent = busyLabel;
+          }
           $("ts-search-error").classList.add("ts-hidden");
           try {
             const result = await apiFetch("/api/analyze?feature=trade-signal&action=screen", {
               method: "POST",
-              body: JSON.stringify({ text }),
+              body: JSON.stringify(payload),
             });
             if (!result.matched) {
               $("ts-search-error").textContent = result.clarifyMessage || "조건을 이해하지 못했어요. 다시 입력해주세요.";
@@ -1681,26 +1891,23 @@
               $("ts-results").classList.add("ts-hidden");
               return;
             }
-            currentScreen = result;
-            savedRowCodes.clear();
-            $("ts-results-summary").textContent = conditionText(result.condition) || result.summary;
-            const shownCount = Array.isArray(result.stocks) ? result.stocks.length : 0;
-            $("ts-results-count").textContent = result.sort
-              ? `총 ${result.count}개 종목 중 상위 ${shownCount}개`
-              : `총 ${result.count}개 종목 (최대 100개 표시)`;
-            $("ts-freshness").textContent = result.cacheUpdatedAt
-              ? `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 데이터`
-              : "아직 스크리닝 데이터가 준비되지 않았어요 (곧 준비됩니다).";
-            renderResultList();
-            $("ts-results").classList.remove("ts-hidden");
+            applyScreenResult(result);
           } catch (e) {
             $("ts-search-error").textContent = e.message || "검색에 실패했습니다.";
             $("ts-search-error").classList.remove("ts-hidden");
             $("ts-results").classList.add("ts-hidden");
           } finally {
-            btn.disabled = false;
-            btn.textContent = "검색하기";
+            if (btn) {
+              btn.disabled = false;
+              if (busyLabel) btn.textContent = prevLabel;
+            }
           }
+        }
+
+        $("ts-search-btn").addEventListener("click", async () => {
+          const text = $("ts-input").value.trim();
+          if (!text) return;
+          await runScreen({ text }, $("ts-search-btn"), "검색 중…", "검색하기");
         });
 
         async function checkGateAndInit(opts) {

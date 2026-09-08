@@ -27,7 +27,12 @@ const { fetchMarketSnapshot, fetchInvestorFlow } = require("../lib/kis-indicator
 const { buildIntradaySnapshot } = require("../lib/intraday-snapshot.js");
 
 const LIMIT = Number(process.env.INTRADAY_LIMIT || 400);
-const GAP_MS = Number(process.env.INTRADAY_GAP_MS || 120);
+/* 2026-09-09: 120 → 80ms. 400종목이면 종목당 sleep이 2회씩 들어가 순수 대기만 96초였다.
+ * 실측(2026-09-09 새벽, 400종목) dispatch→Supabase 저장까지 4분 19초로 15:36 목표까지
+ * 여유가 40초뿐이었는데, 그 측정은 KIS API가 한가한 새벽이라 장 마감 직후엔 더 느려진다.
+ * 80ms면 대기가 64초로 줄어 32초를 벌고, 호출 속도는 초당 12.5회로 KIS 한도(20회) 안이다.
+ * 후보 수를 줄이는 대신 이걸 먼저 조인 이유는 종목 커버리지를 깎지 않기 때문. */
+const GAP_MS = Number(process.env.INTRADAY_GAP_MS || 80);
 const DRY_RUN = process.env.INTRADAY_DRY_RUN === "1";
 const MAX_RETRIES = 2;
 

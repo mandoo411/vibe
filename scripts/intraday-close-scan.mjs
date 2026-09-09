@@ -218,6 +218,17 @@ async function main() {
     await sleep(GAP_MS);
   }
 
+  // 2026-09-09: 수급이 어느 영업일 확정치인지 요약해 둔다. 장중/마감 직후에는 KIS가 당일
+  // 수급을 아직 집계하지 않아 직전 영업일 값이 오므로, 화면이 "수급은 N일 기준"이라고
+  // 정확히 표기할 수 있어야 한다(신규 컬럼 없이 payload jsonb 안에 담는다).
+  const flowDates = new Map();
+  for (const row of stocks) {
+    const d = row.snapshot && row.snapshot.flowAsOfDate;
+    if (d) flowDates.set(d, (flowDates.get(d) || 0) + 1);
+  }
+  const flowAsOfDate =
+    [...flowDates.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d)[0] || null;
+
   const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
   const payload = {
     as_of_date: asOfDate,
@@ -226,10 +237,11 @@ async function main() {
     base_as_of_date: cache.asOfDate || null,
     count: stocks.length,
     elapsed_sec: elapsedSec,
-    payload: { stocks },
+    payload: { stocks, flowAsOfDate },
   };
   console.log(
-    `[intraday] 완료 — ${stocks.length}종목 (기준없음 ${skippedNoBase}, 실패 ${failed}) · ${elapsedSec}초 · 종료 ${seoulHm()} KST`
+    `[intraday] 완료 — ${stocks.length}종목 (기준없음 ${skippedNoBase}, 실패 ${failed}) · ${elapsedSec}초 · ` +
+      `수급기준 ${flowAsOfDate || "없음"} · 종료 ${seoulHm()} KST`
   );
   if (!stocks.length) {
     // 배포 첫날처럼 전종목 캐시가 아직 "접힌 값(snapshot.next)" 없이 만들어진 상태면

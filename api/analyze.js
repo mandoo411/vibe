@@ -3710,6 +3710,7 @@ async function tsLoadIntradaySnapshot() {
       asOfDate: row.as_of_date || today,
       slot: row.slot || null,
       baseAsOfDate: row.base_as_of_date || null,
+      flowAsOfDate: (row.payload && row.payload.flowAsOfDate) || null,
       count: stocks.length,
       stocks,
     };
@@ -4155,6 +4156,7 @@ async function tsHandleScreen(req, res, user) {
     cacheAsOfDate: cache.asOfDate || null,
     dataSource: intraday ? "intraday" : "daily",
     intradaySlot: intraday ? intraday.slot : null,
+    intradayFlowAsOfDate: intraday ? intraday.flowAsOfDate : null,
     intradayRequested: wantIntraday,
     count: matches.length,
     stocks: matches.slice(0, sliceCount).map((r) => ({

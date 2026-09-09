@@ -2542,7 +2542,13 @@
           const fresh = $("ts-freshness");
           if (result.dataSource === "intraday") {
             const slotLabel = result.intradaySlot === "1430" ? "14:30" : "15:31";
-            fresh.textContent = `오늘 ${slotLabel} 장 막판 기준 · 거래대금 상위 400종목 · 수급은 잠정치`;
+            /* 2026-09-09: 수급은 KIS가 당일 집계를 마감 후에야 공개해서, 장 막판 스캔 시점엔
+               직전 영업일 확정치가 실린다. "잠정치"라고 뭉뚱그리면 오늘 수급으로 오해하므로
+               실제 기준일을 그대로 밝힌다. */
+            const flowLabel = result.intradayFlowAsOfDate
+              ? ` · 수급은 ${fmtCacheDate(result.intradayFlowAsOfDate)} 기준`
+              : "";
+            fresh.textContent = `오늘 ${slotLabel} 장 막판 기준 · 거래대금 상위 400종목${flowLabel}`;
           } else if (result.intradayRequested) {
             fresh.textContent = `${fmtCacheDate(result.cacheAsOfDate)} 종가 기준 (오늘 장 막판 스캔은 15:36부터)`;
           } else {

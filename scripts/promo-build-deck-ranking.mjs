@@ -73,16 +73,68 @@ export function computeRankingFacts(topRows, krRows) {
 
 /* ═════════════ 2) 훅 유형 ═════════════ */
 
-export function pickRankingHookType(f) {
-  if (!f.krInTop10 && f.topKr) return "ABSENT"; // TOP10에 한국 기업이 없다
-  if (f.krInTop10) return "PRESENT";
-  return "GAP";
+/**
+ * 2026-09-09 교체. 세계 TOP10에 한국 기업이 없는 건 매주 그대로라, 예전 로직은
+ * 사실상 ABSENT 하나로 고정이었다(주 1회 발행이라도 매주 같은 첫 장이 나갔다).
+ * 순위 변동·격차·주간 등락처럼 매주 실제로 달라지는 소재를 후보로 만들고,
+ * 최근에 쓴 유형은 감점한다.
+ */
+export function pickRankingHookCandidates(f) {
+  const c = [];
+  const a = (x) => Math.abs(num(x));
+
+  // 이번 주 가장 크게 움직인 TOP10 기업
+  const mover = [...f.top].sort((x, y) => a(y.pct) - a(x.pct))[0];
+  if (mover && a(mover.pct) >= 3) {
+    c.push({ type: "MOVER", score: 80 + Math.min(12, a(mover.pct)),
+             why: `${mover.name} ${mover.pct}%` });
+  }
+  // TOP10 전체가 한 방향으로 쏠린 주
+  if (f.upCount >= 8) c.push({ type: "ALLUP", score: 78, why: `TOP10 중 ${f.upCount}곳 상승` });
+  if (f.upCount <= 2) c.push({ type: "ALLDOWN", score: 78, why: `TOP10 중 ${f.upCount}곳만 상승` });
+
+  // 1위와 2위의 격차
+  if (f.top[0] && f.top[1] && f.top[1].won > 0) {
+    const lead = (f.top[0].won / f.top[1].won - 1) * 100;
+    if (lead >= 12) c.push({ type: "LEAD", score: 76 + Math.min(10, lead / 4),
+                             why: `1위가 2위보다 ${lead.toFixed(0)}% 큼` });
+  }
+  // 한국 1위 기업이 TOP10 막차와 얼마나 가까운가
+  if (f.topKr && f.need) {
+    if (f.need <= 25) c.push({ type: "CLOSE", score: 79, why: `${f.topKr.name} TOP10까지 ${f.need.toFixed(0)}%` });
+    else c.push({ type: "ABSENT", score: 68, why: `TOP10까지 ${f.need.toFixed(0)}%` });
+  }
+  // 같은 반도체인데 앞서 있는 기업과의 비교
+  if (f.semiRef && f.topKr) {
+    c.push({ type: "SEMI", score: 72, why: `${f.semiRef.name} ${f.semiRef.rank}위 vs ${f.topKr.name} ${f.topKr.globalRank}위` });
+  }
+  // 한국 기업이 TOP10에 들어간 주(이례적)
+  if (f.krInTop10) c.push({ type: "PRESENT", score: 96, why: "TOP10에 한국 기업 진입" });
+
+  return c;
+}
+
+export function pickRankingHookType(f, opts = {}) {
+  const picked = chooseHook(pickRankingHookCandidates(f), opts.recent || [], "ABSENT");
+  if (opts.debug) {
+    console.log(`[ranking] 후보: ${(picked.all || []).map((x) => `${x.type}(${Math.round(x.final)})`).join(", ") || "없음"}`);
+    console.log(`[ranking] 선택: ${picked.type} — ${picked.why || "기본형"}`);
+  }
+  return picked.type;
 }
 
 const HOOK_GUIDE = {
   ABSENT: `[부재형] 세계 시총 TOP10에 한국 기업이 하나도 없다. 훅은 "세계 시총 TOP10에 한국 기업은 없습니다" 형태로
            사실을 담담하게 던진다. 몇 위인지는 훅에 쓰지 않는다(2·3번 카드가 답한다).`,
   PRESENT: `[진입형] TOP10에 한국 기업이 있다. 훅은 그 사실과 순위를 크게 던진다.`,
+  CLOSE: `[근접형] 한국 1위 기업이 TOP10 막차와 꽤 가깝다. 훅은 "TOP10까지 남은 거리"를 던지되
+          정확한 수치는 3번 카드가 답한다.`,
+  MOVER: `[변동형] 이번 주 TOP10 안에서 유독 크게 움직인 기업이 있다. 훅은 그 기업명과 방향을 던진다.`,
+  ALLUP: `[동반상승형] TOP10 대부분이 올랐다. 훅은 "이번 주 세계 시총 상위가 다 올랐습니다" 계열.`,
+  ALLDOWN: `[동반하락형] TOP10 대부분이 내렸다. 훅은 그 사실을 담담하게 던진다.`,
+  LEAD: `[독주형] 1위가 2위를 크게 앞선다. 훅은 그 격차를 한 문장으로 던진다.`,
+  SEMI: `[비교형] 같은 반도체인데 순위가 앞선 해외 기업이 있다. 훅은 두 기업을 나란히 놓되
+         순위 숫자는 2·3번 카드가 답한다.`,
   GAP: `[격차형] 1위와 2위의 격차, 또는 순위 변동을 짚는다.`,
 };
 
@@ -235,7 +287,7 @@ export async function buildRankingDeck(ymd) {
   if (!topRows?.length) throw new Error("글로벌 랭킹 데이터가 비어 있습니다");
 
   const f = computeRankingFacts(topRows, krRows);
-  const hookType = pickRankingHookType(f);
+  const hookType = pickRankingHookType(f, { recent: recentHookTypes("ranking", 6), debug: true });
   const deck = buildRankingSkeleton(f, date);
   deck.hookType = hookType;
 
@@ -280,6 +332,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const out = arg("out", `data/promo/ranking-${deck.date}.json`);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(deck, null, 2), "utf8");
+  appendHookType("ranking", deck.date, deck.hookType);
   console.log(`[ranking] ${deck.date} · 훅유형 ${deck.hookType} → ${out}`);
   console.log(`[ranking] 훅: ${plain(deck.hookHTML)}`);
 }

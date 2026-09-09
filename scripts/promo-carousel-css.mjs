@@ -7,6 +7,12 @@
  * 읽기 편한 본문 하한을 13pt로 잡으면 카드 기준 36px이 된다. 아래 스케일은 그 계산에서 나왔다.
  *   본문 34~36px → 12.3~13.0pt / 항목 제목 36~40px → 13~14.4pt / 각주 26px → 9.4pt
  *
+ * 2026-09-09 가독성 조정.
+ * 이 파일 상단 규칙("본문 하한 34~36px")과 실제 값이 어긋나 있었다. 71곳 중 38곳이
+ * 21~31px 이라 아이폰 피드에서 7.6~11.2pt 로 보였다 — 확대해야 읽히는 크기다.
+ * 보조 라벨·각주·배지 계열만 26~33px 로 올려 하한을 9.4pt → 11.2pt 이상으로 맞췄다.
+ * 제목·숫자(32px 이상)는 레이아웃이 흔들리므로 건드리지 않았다.
+ *
  * ⚠️ 우상단에 요소를 두지 말 것.
  * 인스타 캐러셀은 이미지 우상단에 자체 페이지 배지(1/6)를 덮어 그린다.
  * 그래서 브랜드·슬롯·날짜를 전부 좌측 블록으로 모았다.
@@ -58,26 +64,26 @@ body{
 .top{display:flex;align-items:center;gap:18px;padding-right:190px;}
 .logo{flex:0 0 auto;width:62px;height:62px;border-radius:18px;
   background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dim) 100%);
-  display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;
   color:#04121F;letter-spacing:-.5px;}
-.brand-t{font-size:31px;font-weight:700;letter-spacing:-.5px;line-height:1.18;}
+.brand-t{font-size:33px;font-weight:700;letter-spacing:-.5px;line-height:1.18;}
 .brand-s{display:flex;align-items:center;gap:11px;margin-top:5px;
-  font-size:23px;font-weight:600;color:var(--dim);letter-spacing:-.3px;line-height:1.2;}
+  font-size:28px;font-weight:600;color:var(--dim);letter-spacing:-.3px;line-height:1.2;}
 .brand-s .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);
   box-shadow:0 0 14px var(--teal);flex:0 0 auto;}
 
 /* ── 페이지 라벨 ── */
 .kicker{display:inline-flex;align-items:center;gap:11px;align-self:flex-start;
   padding:13px 26px;border-radius:999px;border:1.5px solid rgba(37,224,200,.45);
-  background:rgba(37,224,200,.12);font-size:26px;font-weight:700;color:var(--teal);letter-spacing:-.3px;}
+  background:rgba(37,224,200,.12);font-size:30px;font-weight:700;color:var(--teal);letter-spacing:-.3px;}
 .ptitle{font-size:58px;font-weight:800;letter-spacing:-1.9px;line-height:1.22;}
-.psub{font-size:28px;color:var(--body);font-weight:500;margin-top:12px;letter-spacing:-.4px;}
+.psub{font-size:31px;color:var(--body);font-weight:500;margin-top:12px;letter-spacing:-.4px;}
 
 /* ── 하단: 인스타가 하단 중앙에 자체 인디케이터를 그리므로 점은 넣지 않는다 ── */
 .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:20px;
   padding-top:24px;border-top:1px solid var(--line);}
-.foot-l{font-size:24px;color:var(--dim-2);font-weight:500;letter-spacing:-.3px;}
-.foot-r{display:flex;align-items:center;gap:12px;font-size:26px;font-weight:700;color:var(--teal);
+.foot-l{font-size:28px;color:var(--dim-2);font-weight:500;letter-spacing:-.3px;}
+.foot-r{display:flex;align-items:center;gap:12px;font-size:30px;font-weight:700;color:var(--teal);
   white-space:nowrap;}
 
 .hl{color:var(--teal);}

@@ -16,6 +16,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { firstSentence } from "./promo-deck-ai.mjs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { chooseHook, recentHookTypes, appendHookType } from "./promo-hook-history.mjs";
 import { dirname } from "node:path";
 
 /* ═════════════════ 숫자 유틸 ═════════════════ */
@@ -122,24 +123,166 @@ export function computeClosingFacts(day) {
  * 훅은 감으로 쓰면 매일 무너지므로 유형을 데이터로 먼저 고른다.
  * 각 유형은 2번 카드(답)와 짝이 맞아야 한다 — 답 없는 훅은 낚시다.
  */
-export function pickHookType(f) {
-  // A 쏠림형 — 거래대금 상위 2종목이 전체의 절반 가까이를 차지한 날
-  if (f.top2Share >= 45 && f.top2.length === 2) return "A";
+/**
+ * 2026-09-09 전면 교체.
+ *
+ * 문제: 이전 로직의 첫 조건이 `top2Share >= 45` 였는데, 국내 증시에서 거래대금
+ * 1·2위(삼성전자·SK하이닉스)가 상위 30종목의 절반을 넘는 건 거의 매일 성립하는
+ * "구조적 상수"다. 실제로 최근 60거래일을 돌려보니 60일 전부 A(쏠림형)로 떨어졌고,
+ * 두 종목 이름까지 늘 같아서 카드 1장이 숫자만 바뀐 채 매일 똑같이 나갔다.
+ *
+ * 원칙을 바꾼다 — 훅은 "늘 그런 것"이 아니라 "오늘 유독 그런 것"을 잡아야 한다.
+ *  1) 절대 임계값 대신 최근 20거래일 대비 얼마나 이례적인지로 점수를 매긴다.
+ *  2) 후보를 여러 개 만들고 가장 높은 점수를 고른다.
+ *  3) 최근에 쓴 유형은 감점한다(promo-hook-history.mjs). 후보가 하나뿐이면
+ *     감점을 받아도 그대로 나간다 — 억지로 없는 이야기를 만들지는 않는다.
+ *
+ * 모든 후보는 computeClosingFacts 가 실제로 계산한 값에만 근거한다.
+ */
+export function pickHookCandidates(f, history = []) {
+  const c = [];
+  const absKospi = Math.abs(f.kospi.pct);
+  const absKosdaq = Math.abs(f.kosdaq.pct);
 
-  // D 불일치형 — 지수는 올랐는데 개인이 대규모로 판 날(또는 반대)
-  const ind = f.flows.individual;
-  if (ind && ind.amount >= 1e12 && Math.sign(f.kospi.pct) === -ind.sign) return "D";
+  // 최근 20거래일 기준선 (없으면 보수적으로 판단)
+  const hist = history.filter(Boolean).slice(0, 20);
+  const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
+  const baseMove = avg(hist.map((h) => Math.abs(h.kospiPct)).filter(Number.isFinite));
+  const baseShare = avg(hist.map((h) => h.top2Share).filter(Number.isFinite));
+  const prev = hist[0] || null;
 
-  // E 경고형 — 급등 종목이 3개 이상 몰린 날(테마 과열)
-  if (f.surges.length >= 3) return "E";
+  // ── 지수가 평소보다 크게 움직인 날
+  if (absKospi >= 1.5 || (baseMove && absKospi >= baseMove * 1.8 && absKospi >= 0.7)) {
+    c.push({ type: "BIGMOVE", score: 84 + Math.min(12, absKospi * 4),
+             why: `코스피 ${f.kospi.pct}% (최근 평균 ${baseMove ? baseMove.toFixed(2) : "?"}%)` });
+  }
 
-  // C 범인지목형 — 위 조건이 없으면 원인 하나를 지목하는 기본형
-  return "C";
+  // ── 코스피와 코스닥이 반대로 간 날
+  if (Math.sign(f.kospi.pct) !== Math.sign(f.kosdaq.pct) && absKospi >= 0.25 && absKosdaq >= 0.25) {
+    c.push({ type: "DIVERGE", score: 80 + Math.min(10, (absKospi + absKosdaq) * 2),
+             why: `코스피 ${f.kospi.pct}% vs 코스닥 ${f.kosdaq.pct}%` });
+  }
+
+  // ── 전일과 방향이 뒤집힌 날
+  if (prev && Number.isFinite(prev.kospiPct) && Math.sign(prev.kospiPct) !== Math.sign(f.kospi.pct) && absKospi >= 0.4) {
+    c.push({ type: "REVERSAL", score: 72 + Math.min(10, absKospi * 3),
+             why: `전일 ${prev.kospiPct}% → 오늘 ${f.kospi.pct}%` });
+  }
+
+  // ── 수급이 정면으로 갈린 날 (외국인·기관 vs 개인)
+  const fo = f.flows.foreign, ins = f.flows.institution, ind = f.flows.individual;
+  if (fo && ind && fo.sign !== ind.sign) {
+    const big = Math.max(fo.amount, ind.amount);
+    if (big >= 5e11) {
+      c.push({ type: "FLOWCLASH", score: 74 + Math.min(14, big / 1e12 * 7),
+               why: `외국인 ${fo.label} vs 개인 ${ind.label} (최대 ${wonLong(big)})` });
+    }
+  }
+
+  // ── 개인이 지수 방향과 반대로 대규모 매매한 날 (기존 D)
+  if (ind && ind.amount >= 8e11 && Math.sign(f.kospi.pct) === -ind.sign) {
+    c.push({ type: "D", score: 76 + Math.min(10, ind.amount / 1e12 * 5),
+             why: `개인 ${ind.label} ${wonLong(ind.amount)}, 지수는 반대` });
+  }
+
+  // ── 급등 종목이 몰린 날 (기존 E)
+  if (f.surges.length >= 2) {
+    const hot = f.surges.filter((s) => Math.abs(num(s.changePercent ?? s.change ?? 0)) >= 20).length;
+    // 급등 종목은 거의 매일 2~3개는 나온다. 점수를 낮게 잡아 "유독 많은 날"에만 이기게 한다.
+    c.push({ type: "E", score: 58 + Math.min(12, f.surges.length * 3) + Math.min(12, hot * 5),
+             why: `급등 ${f.surges.length}종목 (20%+ ${hot}종목)` });
+  }
+
+  // ── 평소 안 보이던 종목이 거래대금 상위로 치고 올라온 날
+  if (f.third && f.top2[1] && f.third.raw >= f.top2[1].raw * 0.7) {
+    c.push({ type: "THIRD", score: 73,
+             why: `3위 ${f.third.name}가 2위의 ${Math.round(f.third.raw / f.top2[1].raw * 100)}% 수준` });
+  }
+
+  // ── 쏠림형(기존 A): 이제는 "평소보다 유독 쏠린 날"만.
+  //    절대값 45%는 매일 성립해서 의미가 없었다. 최근 평균 대비 초과분으로 본다.
+  if (f.top2.length === 2) {
+    const over = baseShare ? f.top2Share - baseShare : 0;
+    if (f.top2Share >= 72 || (baseShare && over >= 6)) {
+      c.push({ type: "A", score: 66 + Math.min(16, Math.max(0, over) * 1.8),
+               why: `top2 ${f.top2Share.toFixed(1)}% (최근 평균 ${baseShare ? baseShare.toFixed(1) : "?"}%)` });
+    }
+  }
+
+  // ── 환율이 크게 움직인 날
+  if (f.usdkrw && prev && Number.isFinite(prev.usdkrw) && prev.usdkrw > 0) {
+    const diff = f.usdkrw - prev.usdkrw;
+    if (Math.abs(diff) >= 10) {
+      c.push({ type: "FX", score: 71 + Math.min(10, Math.abs(diff) / 3),
+               why: `원달러 ${prev.usdkrw} → ${f.usdkrw} (${diff > 0 ? "+" : ""}${diff.toFixed(1)}원)` });
+    }
+  }
+
+  return c;
+}
+
+/** 후보 중 최근에 안 쓴 것을 우선해 하나 고른다. */
+export function pickHookType(f, opts = {}) {
+  const history = opts.history || [];
+  const recent = opts.recent || [];
+  const picked = chooseHook(pickHookCandidates(f, history), recent, "C");
+  if (opts.debug) {
+    console.log(`[hook] 후보: ${(picked.all || []).map((x) => `${x.type}(${Math.round(x.final)})`).join(", ") || "없음"}`);
+    console.log(`[hook] 선택: ${picked.type} — ${picked.why || "기본형"}`);
+  }
+  return picked.type;
 }
 
 /* ═════════════════ 3) 코드가 채우는 덱 뼈대 ═════════════════ */
 
-export function buildDeckSkeleton(f, slotLabel = "마감 시황") {
+/** 훅 유형에 맞는 1번 카드 하단 칩. 훅에서 던진 소재를 그대로 뒷받침한다. */
+function hookChips(f, hookType) {
+  const pc = (v) => `${v > 0 ? "▲" : v < 0 ? "▼" : ""} ${Math.abs(num(v)).toFixed(2)}%`;
+  const idxChips = [
+    { name: "코스피", text: pc(f.kospi.pct), dir: dirOf(f.kospi.pct) },
+    { name: "코스닥", text: pc(f.kosdaq.pct), dir: dirOf(f.kosdaq.pct) },
+  ];
+  // 칩은 2개까지만. 3개를 넣으면 카드 폭에서 라벨이 중간에 끊긴다.
+  // 훅이 "외국인 vs 개인" 구도이므로 그 두 주체만 올린다.
+  const flowChips = () => {
+    const out = [];
+    for (const [label, v] of [["외국인", f.flows.foreign], ["개인", f.flows.individual]]) {
+      if (v) out.push({ name: label, text: v.text, dir: v.dir });
+    }
+    return out;
+  };
+  switch (hookType) {
+    case "BIGMOVE":
+    case "DIVERGE":
+    case "REVERSAL":
+    case "C":
+      return idxChips;
+    case "FLOWCLASH":
+    case "D":
+      return flowChips().length ? flowChips() : idxChips;
+    case "E": {
+      const s = f.surges.slice(0, 2).map((x) => ({
+        name: x.name, text: pc(num(x.changePercent ?? x.change ?? 0)), dir: "up",
+      }));
+      return s.length ? s : idxChips;
+    }
+    case "THIRD":
+      return f.third
+        ? [{ name: f.third.name, text: won(f.third.raw), dir: "up" },
+           { name: f.top2[1]?.name ?? "", text: won(f.top2[1]?.raw), dir: "up" }].filter((c) => c.name)
+        : idxChips;
+    case "FX":
+      return [
+        { name: "원·달러", text: f.usdkrw ? `${f.usdkrw.toLocaleString("ko-KR")}원` : "-", dir: "flat" },
+        idxChips[0],
+      ];
+    case "A":
+    default:
+      return f.top2.map((r) => ({ name: r.name, text: won(r.raw), dir: "up" }));
+  }
+}
+
+export function buildDeckSkeleton(f, slotLabel = "마감 시황", hookType = "A") {
   const d = new Date(`${f.date}T00:00:00+09:00`);
   const dow = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -151,8 +294,10 @@ export function buildDeckSkeleton(f, slotLabel = "마감 시황") {
     dateLabel: `${mm}.${dd} (${dow})`,
     dateFull: `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`,
 
-    // 1번 카드 하단 칩 = 훅의 답을 첫 장에서 이미 보여준다
-    indexChips: f.top2.map((r) => ({ name: r.name, text: won(r.raw), dir: "up" })),
+    // 1번 카드 하단 칩 = 훅이 던진 소재를 첫 장에서 바로 뒷받침한다.
+    // 2026-09-09: 예전엔 훅과 무관하게 항상 거래대금 1·2위였는데,
+    // 훅이 지수/수급/급등으로 바뀌면 칩만 엉뚱한 종목이 떠 있어 말이 안 됐다.
+    indexChips: hookChips(f, hookType),
 
     // 2번 카드 (쏠림 공개)
     focusPair: f.top2.map((r, i) => ({
@@ -206,8 +351,21 @@ export function buildDeckSkeleton(f, slotLabel = "마감 시황") {
 /* ═════════════════ 4) 문장은 Claude가 (실측값 주입) ═════════════════ */
 
 const HOOK_GUIDE = {
-  A: `[쏠림형] 거래대금이 상위 2종목에 쏠린 날이다. 훅은 "오늘 증시의 돈 <금액>이 딱 두 종목에 몰렸습니다" 형태로,
-      금액을 크게 쓰되 종목명은 훅 본문에 넣지 않는다(2번 카드가 바로 공개한다).`,
+  BIGMOVE: `[변동형] 지수가 평소보다 크게 움직인 날이다. 훅은 "코스피가 <등락률> <방향>했습니다" 가 아니라,
+        그 폭이 얼마 만인지·무엇이 밀었는지를 한 문장으로 던진다. 숫자는 하나만 크게 쓴다.`,
+  DIVERGE: `[갈림형] 코스피와 코스닥이 반대로 움직인 날이다. 훅은 "코스피는 <방향>인데 코스닥은 <방향>했습니다" 형태로
+        어느 쪽에 있었느냐에 따라 체감이 갈렸다는 점을 건드린다. 이유는 2번 카드가 답한다.`,
+  REVERSAL: `[반전형] 전일과 방향이 뒤집힌 날이다. 훅은 "어제와 정반대였습니다" 계열로,
+        무엇이 하루 만에 바뀌었는지를 묻는다. 원인은 훅에 쓰지 않는다.`,
+  FLOWCLASH: `[대치형] 외국인과 개인이 정면으로 반대 방향에 섰다. 훅은 "외국인이 산 걸 개인이 팔았습니다" 형태로
+        누가 옳았는지는 말하지 않고 대치 구도만 세운다.`,
+  THIRD: `[신규주자형] 늘 보던 1·2위 말고 다른 종목이 거래대금 상위로 올라온 날이다.
+        훅은 그 종목명을 쓰지 않고 "오늘 거래대금 3위에 낯선 이름이 올라왔습니다" 형태로 궁금하게 만든다.`,
+  FX: `[환율형] 원달러 환율이 크게 움직인 날이다. 훅은 환율 숫자 하나를 크게 던지고,
+        그게 증시에 무슨 뜻인지는 2번 카드가 답한다.`,
+  A: `[쏠림형] 거래대금이 상위 2종목에 평소보다 더 쏠린 날이다. 훅은 "오늘 증시의 돈 <금액>이 딱 두 종목에 몰렸습니다" 형태로,
+      금액을 크게 쓰되 종목명은 훅 본문에 넣지 않는다(2번 카드가 바로 공개한다).
+      주의: 이 표현은 자주 써 온 형태다. 가능하면 같은 문장을 그대로 반복하지 말고 어순·표현을 바꿔 쓴다.`,
   D: `[불일치형] 지수 방향과 개인 수급이 반대인 날이다. 훅은 "코스피는 <등락률>, 그런데 개인은 <금액>을 팔았습니다" 형태로,
       "나만 못 벌었나"라는 감정을 건드린다.`,
   E: `[경고형] 급등 종목이 한꺼번에 나온 날이다. 훅은 "오늘 급등한 <N>종목, 그래서 더 위험합니다" 형태로,
@@ -347,13 +505,72 @@ export async function writeCopyWithOpenAI(f, deck, hookType, analysisText, apiKe
 
 /* ═════════════════ 5) 폴백 — AI 없이도 발행은 된다 ═════════════════ */
 
+/** 유형별 폴백 훅 — AI 호출이 실패해도 그날의 성격이 남게 한다. */
+function fallbackHook(f, hookType, up) {
+  const kp = `${f.kospi.pct > 0 ? "+" : ""}${f.kospi.pct}%`;
+  const kq = `${f.kosdaq.pct > 0 ? "+" : ""}${f.kosdaq.pct}%`;
+  const ind = f.flows.individual, fo = f.flows.foreign;
+  const map = {
+    BIGMOVE: {
+      hookTag: up ? "큰 폭 상승" : "큰 폭 하락",
+      hookHTML: `코스피가<br><em>${kp}</em><br>${up ? "올랐습니다" : "내렸습니다"}`,
+      hookSub: `평소보다 큰 하루였습니다.<br>무엇이 움직였는지 봅니다.`,
+    },
+    DIVERGE: {
+      hookTag: "지수가 갈렸다",
+      hookHTML: `코스피 <em>${kp}</em><br>코스닥 <em>${kq}</em><br>방향이 갈렸습니다`,
+      hookSub: `어느 쪽에 있었느냐에 따라<br>오늘 체감이 달랐습니다.`,
+    },
+    REVERSAL: {
+      hookTag: "하루 만에 반전",
+      hookHTML: `어제와<br><em>정반대</em>였던<br>하루입니다`,
+      hookSub: `하루 만에 무엇이 바뀌었는지<br>안에서 정리했습니다.`,
+    },
+    FLOWCLASH: {
+      hookTag: "수급 대치",
+      hookHTML: `외국인이 산 것을<br><em>개인</em>이<br>팔았습니다`,
+      hookSub: `오늘 시장은 수급이<br>정면으로 갈렸습니다.`,
+    },
+    THIRD: {
+      hookTag: "낯선 이름",
+      hookHTML: `오늘 거래대금 3위에<br><em>낯선 이름</em>이<br>올라왔습니다`,
+      hookSub: `늘 보던 두 종목 말고<br>어디에 돈이 몰렸을까요.`,
+    },
+    FX: {
+      hookTag: "환율 급변",
+      hookHTML: `원달러 환율<br><em>${f.usdkrw ? f.usdkrw.toLocaleString("ko-KR") + "원" : "급변"}</em><br>증시가 흔들렸습니다`,
+      hookSub: `환율이 움직이면<br>어느 업종이 먼저 반응할까요.`,
+    },
+    D: {
+      hookTag: "개인만 반대편",
+      hookHTML: `코스피는 <em>${kp}</em><br>그런데 개인은<br>${ind && ind.sign < 0 ? "팔았습니다" : "샀습니다"}`,
+      hookSub: `지수와 내 계좌가 달랐다면<br>이유는 이 안에 있습니다.`,
+    },
+    E: {
+      hookTag: "급등 종목 경고",
+      hookHTML: `오늘 급등한<br><em>${f.surges.length}종목</em><br>그래서 더 위험합니다`,
+      hookSub: `왜 올랐는지와 함께<br>무엇이 위험한지도 봅니다.`,
+    },
+    C: {
+      hookTag: "오늘 시장, 한 줄로",
+      hookHTML: `오늘 시장을 움직인 건<br><em>${f.marketTone || (up ? "반등" : "조정")}</em><br>이었습니다`,
+      hookSub: `지수 숫자보다<br>왜 그랬는지를 먼저 봅니다.`,
+    },
+  };
+  return map[hookType] || {
+    hookTag: "오늘 돈의 흐름",
+    hookHTML: `오늘 증시의 돈<br><em>${wonLong(f.top2Sum)}</em>이<br>딱 두 종목에<br>몰렸습니다`,
+    hookSub: `지수는 ${up ? "올랐" : "내렸"}는데 내 종목만 조용했다면,<br>이유는 이 안에 있습니다.`,
+  };
+}
+
 function fallbackCopy(f, hookType) {
   const a = f.top2[0], b = f.top2[1];
   const up = f.kospi.pct > 0;
   return {
-    hookTag: "오늘 시장, 한 줄로 말하면",
-    hookHTML: `오늘 증시의 돈<br><em>${wonLong(f.top2Sum)}</em>이<br>딱 두 종목에<br>몰렸습니다`,
-    hookSub: `지수는 ${up ? "올랐" : "내렸"}는데 내 종목만 조용했다면,<br>이유는 이 안에 있습니다.`,
+    // 2026-09-09: 폴백도 유형별로 갈라야 한다. 예전엔 유형과 무관하게 "두 종목" 문장을
+    // 돌려줘서, AI 호출이 실패한 날은 훅 유형을 바꿔도 결과가 같았다.
+    ...fallbackHook(f, hookType, up),
     focusTitle: `${a?.name}와<br>${b?.name}입니다`,
     focusNote: `거래대금 상위 ${f.tv.length}종목이 굴린 돈의 <span>${f.top2Share.toFixed(1)}%</span>가 이 두 종목에서 돌았습니다.`,
     verdictHTML: `오늘 시장은<br><em>${f.marketTone || (up ? "반등" : "조정")}</em>이었다.`,
@@ -480,9 +697,27 @@ export async function buildClosingDeck(snapshotPath = "data/daily-market.json", 
   const f = computeClosingFacts(day);
   if (f.top2.length < 2) throw new Error("거래대금 데이터가 부족합니다 (휴장일?)");
 
-  const hookType = pickHookType(f);
-  const deck = buildDeckSkeleton(f);
+  // 2026-09-09: 훅을 "오늘이 평소와 얼마나 다른가"로 판단하려면 기준선이 필요하다.
+  // 직전 20거래일의 핵심 수치만 뽑아 넘긴다(전체 스냅샷을 넘기면 메모리·시간 낭비).
+  const history = keys
+    .filter((k) => k < date)
+    .sort()
+    .reverse()
+    .slice(0, 20)
+    .map((k) => {
+      try {
+        const pf = computeClosingFacts(all.days[k]);
+        return { date: k, kospiPct: pf.kospi.pct, top2Share: pf.top2Share, usdkrw: pf.usdkrw };
+      } catch { return null; }
+    })
+    .filter(Boolean);
+
+  const recent = recentHookTypes("closing", 8);
+  const hookType = pickHookType(f, { history, recent, debug: true });
+  const deck = buildDeckSkeleton(f, "마감 시황", hookType);
   deck.hookType = hookType;
+  // 2번 카드 머리말: 훅이 두 종목을 가리킨 날에만 "그 두 종목은"이 말이 된다
+  deck.focusKicker = hookType === "A" ? "그 두 종목은" : "오늘 거래대금 1·2위";
 
   let copy = null;
   for (const [label, fn] of [["Claude", writeCopyWithClaude], ["OpenAI", writeCopyWithOpenAI]]) {
@@ -522,6 +757,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const out = arg("out", `data/promo/closing-${deck.date}.json`);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(deck, null, 2), "utf8");
+  // 다음 회차에서 같은 훅이 연달아 나가지 않도록 이번에 쓴 유형을 남긴다
+  appendHookType("closing", deck.date, deck.hookType);
   console.log(`[deck] ${deck.date} · 훅유형 ${deck.hookType} → ${out}`);
   console.log(`[deck] 훅: ${String(deck.hookHTML).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()}`);
 }

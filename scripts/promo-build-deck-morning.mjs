@@ -9,6 +9,7 @@
  * 사용: node scripts/promo-build-deck-morning.mjs --out=data/promo/latest-morning.json
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { chooseHook, recentHookTypes, appendHookType } from "./promo-hook-history.mjs";
 import { dirname } from "node:path";
 import { firstSentence, callClaude, callOpenAI, composeCaption } from "./promo-deck-ai.mjs";
 
@@ -63,22 +64,96 @@ export function computeMorningFacts(m) {
 
 /* ═════════════ 2) 훅 유형 (코드) ═════════════ */
 
-export function pickMorningHookType(f) {
-  // EWY형 — 한국 ETF가 크게 움직인 날. 국내 투자자에게 가장 직접적인 신호다.
-  if (f.ewy && Math.abs(f.ewy.pct) >= 2) return "EWY";
-  // 갈림형 — 지수와 반도체가 반대로 움직인 날
-  if (f.sox && Math.abs(f.sox.pct) >= 1.5 && Math.sign(f.sox.pct) !== Math.sign(f.majorsAvg)) return "SPLIT";
-  // 이례조합형 — 안전자산과 위험자산이 같이 오른 날
-  if (f.gold && f.gold.pct >= 1 && f.majorsAvg > 0) return "SAFE";
-  return "SYNC";
+/**
+ * 2026-09-09 전면 교체.
+ *
+ * 문제: 조건 3개(EWY 2%↑ / 반도체 1.5%↑ 역방향 / 금 1%↑)가 모두 빡빡해서
+ * 대부분의 날이 마지막 기본형 SYNC 로 떨어졌다. 마감 카드와 같은 증상이다.
+ * 임계를 현실적인 수준으로 낮추고, 간밤 데이터에서 실제로 잡히는 소재를 더 넣는다.
+ * 그리고 최근에 쓴 유형은 감점해서 같은 훅이 연달아 나가지 않게 한다.
+ *
+ * 아침 브리핑은 하루치 스냅샷만 읽으므로(과거 파일 없음) 기준선 대신
+ * 절대 임계를 쓰되, 임계를 넘긴 정도를 점수에 반영한다.
+ */
+export function pickMorningHookCandidates(f) {
+  const c = [];
+  const a = (x) => Math.abs(num(x));
+
+  // 한국 ETF — 국내 투자자에게 가장 직접적인 신호
+  if (f.ewy && a(f.ewy.pct) >= 1.2) {
+    c.push({ type: "EWY", score: 80 + Math.min(14, a(f.ewy.pct) * 4),
+             why: `EWY ${f.ewy.pct}%` });
+  }
+  // 지수와 반도체가 갈린 날
+  if (f.sox && a(f.sox.pct) >= 0.8 && Math.sign(f.sox.pct) !== Math.sign(f.majorsAvg)) {
+    c.push({ type: "SPLIT", score: 78 + Math.min(12, a(f.sox.pct) * 4),
+             why: `SOX ${f.sox.pct}% vs 지수 평균 ${f.majorsAvg.toFixed(2)}%` });
+  }
+  // 3대 지수가 한 방향이 아닌 날 (혼조)
+  if (f.majorsUp === 1 || f.majorsUp === 2) {
+    c.push({ type: "MIXED", score: 68, why: `3대 지수 중 ${f.majorsUp}개만 상승` });
+  }
+  // 위험자산과 안전자산이 같이 오른 날
+  if (f.gold && f.gold.pct >= 0.8 && f.majorsAvg > 0) {
+    c.push({ type: "SAFE", score: 74 + Math.min(10, f.gold.pct * 3),
+             why: `금 ${f.gold.pct}% + 지수 상승` });
+  }
+  // 유가가 크게 움직인 날 — 국내 정유·화학·항공에 바로 붙는다
+  if (f.wti && a(f.wti.pct) >= 2) {
+    c.push({ type: "OIL", score: 76 + Math.min(12, a(f.wti.pct) * 2),
+             why: `WTI ${f.wti.pct}%` });
+  }
+  // 대형 기술주 한 종목이 유독 크게 움직인 날
+  const bigMover = (f.topStocks || []).filter((s) => Number.isFinite(s.pct))
+    .sort((x, y) => a(y.pct) - a(x.pct))[0];
+  if (bigMover && a(bigMover.pct) >= 4) {
+    c.push({ type: "BIGTECH", score: 75 + Math.min(12, a(bigMover.pct) * 1.5),
+             why: `${bigMover.symbol} ${bigMover.pct}%` });
+  }
+  // 섹터가 양극화된 날
+  if (f.sectorBest && f.sectorWorst) {
+    const spread = num(f.sectorBest.pct) - num(f.sectorWorst.pct);
+    if (spread >= 3) {
+      c.push({ type: "SECTOR", score: 70 + Math.min(12, spread * 1.5),
+               why: `${f.sectorBest.name} ${f.sectorBest.pct}% ↔ ${f.sectorWorst.name} ${f.sectorWorst.pct}%` });
+    }
+  }
+  // 비트코인이 크게 움직인 날 (위험선호 신호로 읽힌다)
+  if (f.btc && a(f.btc.pct) >= 4) {
+    c.push({ type: "BTC", score: 69 + Math.min(10, a(f.btc.pct)),
+             why: `BTC ${f.btc.pct}%` });
+  }
+  // 3대 지수가 같은 방향으로 크게 간 날
+  if (a(f.majorsAvg) >= 1) {
+    c.push({ type: "SYNC", score: 72 + Math.min(12, a(f.majorsAvg) * 5),
+             why: `3대 지수 평균 ${f.majorsAvg.toFixed(2)}%` });
+  }
+  return c;
+}
+
+export function pickMorningHookType(f, opts = {}) {
+  const recent = opts.recent || [];
+  const picked = chooseHook(pickMorningHookCandidates(f), recent, "SYNC");
+  if (opts.debug) {
+    console.log(`[morning] 훅 후보: ${(picked.all || []).map((x) => `${x.type}(${Math.round(x.final)})`).join(", ") || "없음"}`);
+    console.log(`[morning] 선택: ${picked.type} — ${picked.why || "기본형"}`);
+  }
+  return picked.type;
 }
 
 const HOOK_GUIDE = {
   EWY: `[EWY형] 미국에 상장된 한국 ETF가 크게 움직였다. 훅은 "간밤 미국 증시는 <방향>인데,
         한국 ETF만 <등락률> <방향>했습니다" 형태. 왜 그런지는 밝히지 않는다(2·3번 카드가 답한다).`,
   SPLIT: `[갈림형] 지수와 반도체가 반대로 움직였다. 훅은 "지수는 <방향>인데 반도체만 <등락률> <방향>했습니다" 형태.`,
+  MIXED: `[혼조형] 3대 지수가 한 방향이 아니었다. 훅은 "간밤 미국 증시는 갈렸습니다" 계열로
+        어디가 오르고 어디가 내렸는지는 2번 카드가 답한다.`,
   SAFE: `[이례조합형] 위험자산과 안전자산이 같이 올랐다. 훅은 "나스닥도 금도 같이 올랐습니다" 형태로
          이례적이라는 점을 짚는다.`,
+  OIL: `[유가형] 유가가 크게 움직였다. 훅은 유가 숫자 하나를 크게 던지고,
+        국내 어느 업종에 붙는지는 2·3번 카드가 답한다.`,
+  BIGTECH: `[대형주형] 대형 기술주 한 종목이 유독 크게 움직였다. 훅은 종목명과 등락률을 크게 던진다.`,
+  SECTOR: `[양극화형] 섹터별로 명암이 크게 갈렸다. 훅은 "간밤 미국장은 업종이 갈렸습니다" 계열.`,
+  BTC: `[위험선호형] 비트코인이 크게 움직였다. 훅은 그 움직임을 위험선호 신호로 던지되 단정하지 않는다.`,
   SYNC: `[동조형] 3대 지수가 같은 방향으로 움직였다. 훅은 그 원인 하나를 명사로 압축한다.`,
 };
 
@@ -196,14 +271,37 @@ ${HOOK_GUIDE[hookType]}
 
 /* ═════════════ 5) 폴백 ═════════════ */
 
-function fallbackCopy(f) {
+/** 유형별 폴백 훅 (아침) */
+function morningFallbackHook(f, hookType, up) {
+  const p = (x) => (x ? pctText(x.pct) : "-");
+  const map = {
+    EWY: { hookTag: "한국 ETF", hookHTML: `간밤 한국 ETF가<br><em>${p(f.ewy)}</em><br>${f.ewy && f.ewy.pct > 0 ? "올랐" : "내렸"}습니다`,
+           hookSub: `오늘 코스피가 어디서 출발할지,<br>답은 이 안에 있습니다.` },
+    SPLIT: { hookTag: "반도체만 달랐다", hookHTML: `지수는 ${up ? "올랐는데" : "내렸는데"}<br><em>반도체</em>만<br>반대로 갔습니다`,
+             hookSub: `오늘 국내 반도체를<br>어떻게 볼지 정리했습니다.` },
+    MIXED: { hookTag: "혼조 마감", hookHTML: `간밤 미국 증시는<br><em>갈렸습니다</em>`,
+             hookSub: `어디가 오르고 어디가 내렸는지<br>안에서 확인하세요.` },
+    SAFE: { hookTag: "이례적 조합", hookHTML: `주식도 금도<br><em>같이</em><br>올랐습니다`,
+            hookSub: `자주 나오지 않는 조합입니다.<br>무슨 뜻일까요.` },
+    OIL: { hookTag: "유가 급변", hookHTML: `유가가<br><em>${p(f.wti)}</em><br>움직였습니다`,
+           hookSub: `정유·화학·항공에<br>바로 붙는 변수입니다.` },
+    BIGTECH: { hookTag: "대형주 급변", hookHTML: `간밤 대형 기술주에서<br><em>큰 움직임</em>이<br>나왔습니다`,
+               hookSub: `어느 종목이 얼마나 움직였는지<br>안에서 봅니다.` },
+    SECTOR: { hookTag: "업종이 갈렸다", hookHTML: `간밤 미국장은<br><em>업종별로</em><br>명암이 갈렸습니다`,
+              hookSub: `오늘 국내에서 어디를 볼지<br>정리했습니다.` },
+    BTC: { hookTag: "위험선호 신호", hookHTML: `비트코인이<br><em>${p(f.btc)}</em><br>움직였습니다`,
+           hookSub: `위험선호가 어느 쪽인지<br>같이 봅니다.` },
+    SYNC: { hookTag: "간밤 미국장", hookHTML: `간밤 미국 3대 지수가<br><em>${up ? "올랐습니다" : "내렸습니다"}</em>`,
+            hookSub: `오늘 코스피가 어디서 출발할지,<br>답은 이 안에 있습니다.` },
+  };
+  return map[hookType] || map.SYNC;
+}
+
+function fallbackCopy(f, hookType) {
   const up = f.majorsAvg > 0;
   return {
-    hookTag: "간밤 미국장",
-    hookHTML: f.ewy
-      ? `간밤 한국 ETF가<br><em>${pctText(f.ewy.pct)}</em><br>${f.ewy.pct > 0 ? "올랐" : "내렸"}습니다`
-      : `간밤 미국 3대 지수가<br><em>${up ? "올랐" : "내렸"}습니다</em>`,
-    hookSub: `오늘 코스피가 어디서 출발할지,<br>답은 이 안에 있습니다.`,
+    // 2026-09-09: AI 호출이 실패한 날에도 그날 성격이 남게 유형별로 갈랐다.
+    ...morningFallbackHook(f, hookType, up),
     idxTitle: `간밤 미국 지수<br>마감 현황`,
     idxComment: `3대 지수 중 ${f.majorsUp}개가 상승 마감했고, 섹터는 ${f.sectorBest?.name}이 가장 강했습니다.`,
     verdictHTML: `오늘은<br><em>${up ? "갭업을 지켜내는지" : "낙폭을 줄이는지"}</em>가 관건이다.`,
@@ -262,7 +360,7 @@ export async function buildMorningDeck(path = "data/morning-briefing.json") {
   const f = computeMorningFacts(m);
   if (!f.nasdaq && !f.sp && !f.dow) throw new Error("간밤 지수 데이터가 없습니다");
 
-  const hookType = pickMorningHookType(f);
+  const hookType = pickMorningHookType(f, { recent: recentHookTypes("morning", 8), debug: true });
   const deck = buildMorningSkeleton(f);
   deck.hookType = hookType;
 
@@ -279,7 +377,7 @@ export async function buildMorningDeck(path = "data/morning-briefing.json") {
   }
   if (!copy) {
     console.warn("[morning] AI 두 곳 모두 실패 — 코드 폴백 덱으로 발행합니다");
-    copy = fallbackCopy(f);
+    copy = fallbackCopy(f, hookType);
   }
   copy = clampCopy(copy, f);
 
@@ -309,6 +407,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const out = arg("out", `data/promo/morning-${deck.date}.json`);
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(deck, null, 2), "utf8");
+  appendHookType("morning", deck.date, deck.hookType);
   console.log(`[morning] ${deck.date} · 훅유형 ${deck.hookType} → ${out}`);
   console.log(`[morning] 훅: ${plain(deck.hookHTML)}`);
 }

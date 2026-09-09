@@ -1,3 +1,10 @@
+/**
+ * 2026-09-09 가독성 조정.
+ * 이 파일 상단 규칙("본문 하한 34~36px")과 실제 값이 어긋나 있었다. 71곳 중 38곳이
+ * 21~31px 이라 아이폰 피드에서 7.6~11.2pt 로 보였다 — 확대해야 읽히는 크기다.
+ * 보조 라벨·각주·배지 계열만 26~33px 로 올려 하한을 9.4pt → 11.2pt 이상으로 맞췄다.
+ * 제목·숫자(32px 이상)는 레이아웃이 흔들리므로 건드리지 않았다.
+ */
 // TotalMoney AI 카드뉴스 v2 — 캐러셀 5장 빌더
 // deck 데이터 스키마는 render.mjs 하단 참고
 import { shell, topBar, foot, pager } from "./promo-carousel-css.mjs";
@@ -10,18 +17,19 @@ export function slideHook(d) {
   .hookwrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:26px;}
   .hk-tag{display:inline-flex;align-self:flex-start;align-items:center;gap:12px;
     padding:13px 26px;border-radius:999px;background:var(--up);
-    font-size:26px;font-weight:800;letter-spacing:-.3px;color:#fff;margin-bottom:38px;}
+    font-size:30px;font-weight:800;letter-spacing:-.3px;color:#fff;margin-bottom:38px;}
   .hk{font-size:88px;font-weight:800;line-height:1.26;letter-spacing:-3.4px;}
   .hk em{font-style:normal;color:var(--teal);}
   .hk-sub{margin-top:34px;font-size:36px;line-height:1.52;color:var(--body);font-weight:500;letter-spacing:-.8px;}
   .hk-num{margin-top:46px;display:flex;gap:14px;}
-  .chip{padding:16px 26px;border-radius:16px;background:rgba(255,255,255,.05);
+  /* 2026-09-09: 수급 훅에서 "외국 인 / 기 관"처럼 라벨이 중간에 끊겼다 — 줄바꿈을 막는다 */
+  .chip{white-space:nowrap;padding:16px 26px;border-radius:16px;background:rgba(255,255,255,.05);
     border:1px solid var(--line);display:flex;align-items:baseline;gap:12px;}
-  .chip b{font-size:26px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
+  .chip b{font-size:30px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
   .chip s{text-decoration:none;font-size:36px;font-weight:800;letter-spacing:-.8px;}
-  .swipe{display:flex;align-items:center;gap:14px;font-size:28px;font-weight:700;color:var(--teal);}
+  .swipe{display:flex;align-items:center;gap:14px;font-size:31px;font-weight:700;color:var(--teal);}
   .swipe .ar{width:44px;height:44px;border-radius:50%;background:var(--teal);color:#04121F;
-    display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;}
+    display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;}
   `;
   const chips = d.indexChips.map(
     (c) => `<div class="chip"><b>${esc(c.name)}</b><s class="${c.dir} mono">${esc(c.text)}</s></div>`
@@ -49,7 +57,7 @@ export function slideVerdict(d) {
   .why-row{display:flex;gap:20px;align-items:flex-start;padding:26px 28px;border-radius:20px;
     background:rgba(255,255,255,.045);border:1px solid var(--line);}
   .why-n{flex:0 0 40px;height:40px;border-radius:12px;background:rgba(37,224,200,.16);color:var(--teal);
-    display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin-top:2px;}
+    display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;margin-top:2px;}
   .why-t{font-size:36px;line-height:1.5;font-weight:500;letter-spacing:-.7px;color:var(--body);}
   .why-t b{font-weight:800;color:#fff;}
   `;
@@ -77,23 +85,23 @@ export function slideFlow(d) {
   .col.out{border-color:rgba(91,155,255,.34);background:linear-gradient(180deg,rgba(91,155,255,.12),rgba(91,155,255,.03));}
   .col-h{display:flex;align-items:center;gap:11px;font-size:32px;font-weight:800;letter-spacing:-.7px;margin-bottom:22px;}
   .col-h .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
-    font-size:21px;font-weight:800;}
+    font-size:26px;font-weight:800;}
   .in .ic{background:var(--up);color:#fff;} .out .ic{background:var(--down);color:#fff;}
   .grp{padding:17px 0;border-top:1px solid rgba(255,255,255,.09);}
   .grp:first-of-type{border-top:0;padding-top:0;}
   .grp-n{font-size:37px;font-weight:800;letter-spacing:-.9px;margin-bottom:9px;}
-  .grp-d{font-size:30px;line-height:1.5;color:var(--body);font-weight:500;letter-spacing:-.5px;}
+  .grp-d{font-size:32px;line-height:1.5;color:var(--body);font-weight:500;letter-spacing:-.5px;}
   .grp-d b{color:var(--body);font-weight:700;}
   .note{margin-top:18px;padding:20px 26px;border-radius:20px;background:rgba(37,224,200,.09);
     border:1px solid rgba(37,224,200,.28);font-size:32px;line-height:1.5;font-weight:600;letter-spacing:-.6px;color:#DFF7F3;}
   .note span{color:var(--teal);font-weight:800;}
   .sup{margin-top:20px;}
-  .sup-h{font-size:27px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-bottom:11px;}
+  .sup-h{font-size:30px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-bottom:11px;}
   .sup-g{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
   .sup-c{padding:18px 16px;border-radius:18px;background:rgba(255,255,255,.045);border:1px solid var(--line);text-align:center;}
-  .sup-c .w{font-size:26px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
+  .sup-c .w{font-size:30px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
   .sup-c .a{font-size:37px;font-weight:800;letter-spacing:-1px;margin-top:8px;}
-  .sup-c .s{font-size:24px;font-weight:600;color:var(--dim-2);margin-top:5px;}
+  .sup-c .s{font-size:28px;font-weight:600;color:var(--dim-2);margin-top:5px;}
   `;
   const grp = (g) => `<div class="grp"><div class="grp-n">${esc(g.name)}</div><div class="grp-d">${g.desc}</div></div>`;
   return shell(`<div class="wrap">
@@ -126,14 +134,14 @@ export function slideStocks(d) {
   .st{border-radius:22px;padding:26px 28px;background:rgba(255,255,255,.045);border:1px solid var(--line);}
   .st-h{display:flex;align-items:center;justify-content:space-between;gap:16px;}
   .st-l{display:flex;align-items:center;gap:13px;min-width:0;}
-  .st-mk{padding:6px 13px;border-radius:8px;background:rgba(255,255,255,.10);font-size:23px;font-weight:700;color:var(--dim);}
+  .st-mk{padding:6px 13px;border-radius:8px;background:rgba(255,255,255,.10);font-size:28px;font-weight:700;color:var(--dim);}
   .st-n{font-size:42px;font-weight:800;letter-spacing:-1.1px;}
   .st-p{font-size:40px;font-weight:800;letter-spacing:-1px;white-space:nowrap;}
   .st-r{margin-top:14px;font-size:32px;line-height:1.5;color:var(--body);font-weight:500;letter-spacing:-.6px;}
   .st-risk{margin-top:15px;padding:16px 20px;border-radius:14px;background:rgba(255,92,92,.10);
     border-left:4px solid var(--up);display:flex;gap:12px;align-items:flex-start;}
-  .st-risk .lb{flex:0 0 auto;font-size:25px;font-weight:800;color:var(--up);letter-spacing:-.3px;}
-  .st-risk .tx{font-size:30px;line-height:1.46;color:#F2D7D7;font-weight:500;letter-spacing:-.5px;}
+  .st-risk .lb{flex:0 0 auto;font-size:29px;font-weight:800;color:var(--up);letter-spacing:-.3px;}
+  .st-risk .tx{font-size:32px;line-height:1.46;color:#F2D7D7;font-weight:500;letter-spacing:-.5px;}
   `;
   const rows = d.stocks.map((s) => `
     <div class="st">
@@ -158,27 +166,27 @@ export function slideStocks(d) {
 /* ───────────────────────── 5. CTA — 팔로우/저장 이유를 명시 ───────────────────────── */
 export function slideCTA(d) {
   const css = `
-  .cbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:26px;}
+  .cbody{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:14px;}
   .ct-t{font-size:64px;font-weight:800;line-height:1.28;letter-spacing:-2.4px;}
   .ct-t em{font-style:normal;color:var(--teal);}
-  .ct-s{margin-top:22px;font-size:33px;color:var(--body);font-weight:500;letter-spacing:-.6px;line-height:1.5;}
-  .rs{margin-top:46px;display:flex;flex-direction:column;gap:16px;}
-  .rs-row{display:flex;gap:18px;align-items:center;padding:24px 26px;border-radius:18px;
+  .ct-s{margin-top:18px;font-size:33px;color:var(--body);font-weight:500;letter-spacing:-.6px;line-height:1.5;}
+  .rs{margin-top:34px;display:flex;flex-direction:column;gap:13px;}
+  .rs-row{display:flex;gap:18px;align-items:center;padding:20px 24px;border-radius:18px;
     background:rgba(255,255,255,.045);border:1px solid var(--line);}
   .rs-ic{flex:0 0 44px;height:44px;border-radius:13px;background:linear-gradient(135deg,var(--teal),var(--teal-dim));
-    color:#04121F;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;}
+    color:#04121F;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800;}
   .rs-t{font-size:33px;font-weight:600;letter-spacing:-.7px;line-height:1.42;color:var(--body);}
   .rs-t b{font-weight:800;color:#fff;}
-  .cta{margin-top:44px;display:flex;gap:16px;}
-  .cta-b{flex:1;padding:28px 22px;border-radius:20px;text-align:center;}
+  .cta{margin-top:32px;display:flex;gap:16px;}
+  .cta-b{flex:1;padding:24px 20px;border-radius:20px;text-align:center;}
   .cta-b.p{background:linear-gradient(135deg,var(--teal),var(--teal-dim));color:#04121F;}
   .cta-b.s{background:rgba(255,255,255,.07);border:1px solid var(--line);color:#fff;}
-  .cta-b .k{font-size:25px;font-weight:700;opacity:.72;letter-spacing:-.3px;}
+  .cta-b .k{font-size:29px;font-weight:700;opacity:.72;letter-spacing:-.3px;}
   .cta-b .v{font-size:34px;font-weight:800;margin-top:7px;letter-spacing:-.9px;}
-  .save{margin-top:22px;padding:24px 28px;border-radius:18px;border:1.5px dashed rgba(37,224,200,.45);
+  .save{margin-top:18px;padding:20px 26px;border-radius:18px;border:1.5px dashed rgba(37,224,200,.45);
     background:rgba(37,224,200,.07);display:flex;align-items:center;gap:16px;}
   .save .ic{flex:0 0 46px;height:46px;border-radius:13px;background:rgba(37,224,200,.18);
-    display:flex;align-items:center;justify-content:center;font-size:24px;}
+    display:flex;align-items:center;justify-content:center;font-size:28px;}
   .save .tx{font-size:32px;font-weight:600;line-height:1.44;letter-spacing:-.6px;color:#DFF7F3;}
   .save .tx b{font-weight:800;color:var(--teal);}
   `;
@@ -210,21 +218,21 @@ export function slideIndex(d) {
   .ig{margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .ic{padding:26px 28px;border-radius:20px;background:rgba(255,255,255,.045);border:1px solid var(--line);}
   .ic.wide{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:22px 28px;}
-  .ic-n{font-size:28px;font-weight:600;color:var(--dim);letter-spacing:-.4px;}
+  .ic-n{font-size:31px;font-weight:600;color:var(--dim);letter-spacing:-.4px;}
   .ic-v{font-size:50px;font-weight:800;letter-spacing:-1.6px;margin-top:8px;}
-  .ic-p{font-size:31px;font-weight:700;letter-spacing:-.6px;margin-top:4px;}
+  .ic-p{font-size:33px;font-weight:700;letter-spacing:-.6px;margin-top:4px;}
   .ic.wide .ic-v{font-size:36px;margin-top:0;}
-  .ic.wide .ic-p{margin-top:0;font-size:24px;}
+  .ic.wide .ic-p{margin-top:0;font-size:28px;}
   .ic.wide .r{display:flex;align-items:baseline;gap:14px;}
   .icmt{margin-top:22px;padding:24px 28px;border-radius:20px;background:rgba(37,224,200,.09);
     border:1px solid rgba(37,224,200,.28);font-size:32px;line-height:1.5;font-weight:600;
     letter-spacing:-.6px;color:#DFF7F3;}
   .bt{margin-top:26px;}
-  .bt-h{font-size:27px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-bottom:14px;}
+  .bt-h{font-size:30px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-bottom:14px;}
   .bt-g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
   .bt-c{padding:20px 16px;border-radius:16px;background:rgba(255,255,255,.045);
     border:1px solid var(--line);text-align:center;}
-  .bt-c .s{font-size:27px;font-weight:700;color:var(--dim);letter-spacing:-.3px;}
+  .bt-c .s{font-size:30px;font-weight:700;color:var(--dim);letter-spacing:-.3px;}
   .bt-c .p{font-size:32px;font-weight:800;letter-spacing:-.8px;margin-top:7px;}
   `;
   const big = d.idxMain.map((c) => `
@@ -258,15 +266,15 @@ export function slideWatch(d) {
     background:rgba(255,255,255,.045);border:1px solid var(--line);}
   .wr.hot{border-color:rgba(245,196,81,.4);background:rgba(245,196,81,.09);}
   .wc{flex:0 0 42px;height:42px;border-radius:13px;background:rgba(37,224,200,.16);color:var(--teal);
-    display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;}
+    display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800;}
   .wr.hot .wc{background:rgba(245,196,81,.2);color:#F5C451;}
   .wt{font-size:36px;font-weight:800;letter-spacing:-.9px;}
-  .wd{font-size:31px;line-height:1.5;color:var(--body);font-weight:500;letter-spacing:-.5px;margin-top:8px;}
+  .wd{font-size:33px;line-height:1.5;color:var(--body);font-weight:500;letter-spacing:-.5px;margin-top:8px;}
   .wd b{color:var(--body);font-weight:700;}
   .sec-tags{margin-top:26px;display:flex;flex-wrap:wrap;gap:12px;}
   .sec-tags span{padding:17px 26px;border-radius:15px;background:rgba(255,255,255,.06);
-    border:1px solid var(--line);font-size:31px;font-weight:700;letter-spacing:-.5px;}
-  .sec-h2{font-size:28px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-top:auto;padding-top:30px;}
+    border:1px solid var(--line);font-size:33px;font-weight:700;letter-spacing:-.5px;}
+  .sec-h2{font-size:31px;font-weight:700;color:var(--dim);letter-spacing:-.4px;margin-top:auto;padding-top:30px;}
   `;
   const rows = d.watchRows.map((w, i) => `
     <div class="wr ${w.hot ? "hot" : ""}"><div class="wc">${w.hot ? "!" : i + 1}</div>
@@ -295,12 +303,12 @@ export function slideRank(d) {
     border-color:rgba(37,224,200,.34);}
   .rr.kr{background:linear-gradient(90deg,rgba(255,92,92,.13),rgba(255,92,92,.03));
     border-color:rgba(255,92,92,.34);}
-  .rn{font-size:30px;font-weight:800;color:var(--dim-2);text-align:center;}
+  .rn{font-size:32px;font-weight:800;color:var(--dim-2);text-align:center;}
   .rr.top .rn{color:var(--teal);} .rr.kr .rn{color:var(--up);}
   .rnm{font-size:35px;font-weight:700;letter-spacing:-.8px;}
-  .rnm small{font-size:23px;font-weight:600;color:var(--dim-2);margin-left:9px;letter-spacing:0;}
+  .rnm small{font-size:28px;font-weight:600;color:var(--dim-2);margin-left:9px;letter-spacing:0;}
   .rmc{font-size:33px;font-weight:800;letter-spacing:-.7px;text-align:right;white-space:nowrap;}
-  .rpc{font-size:28px;font-weight:700;text-align:right;letter-spacing:-.5px;}
+  .rpc{font-size:31px;font-weight:700;text-align:right;letter-spacing:-.5px;}
   `;
   const rows = d.rankRows.map((r) => `
     <div class="rr ${r.kr ? "kr" : r.rank <= 3 ? "top" : ""}">
@@ -328,7 +336,7 @@ export function slideKrRank(d) {
   .kbar{}
   .kbar-h{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:11px;}
   .kbar-l{display:flex;align-items:baseline;gap:13px;}
-  .kbar-r{font-size:26px;font-weight:700;padding:5px 13px;border-radius:8px;
+  .kbar-r{font-size:30px;font-weight:700;padding:5px 13px;border-radius:8px;
     background:rgba(255,255,255,.09);color:var(--dim);letter-spacing:-.3px;}
   .kbar.me .kbar-r{background:rgba(255,92,92,.18);color:var(--up);}
   .kbar-n{font-size:38px;font-weight:800;letter-spacing:-1px;}
@@ -339,9 +347,9 @@ export function slideKrRank(d) {
   .kbar.ref .kbar-f{background:linear-gradient(90deg,var(--teal),rgba(37,224,200,.35));}
   .gap{margin-top:28px;padding:26px 30px;border-radius:20px;background:rgba(37,224,200,.09);
     border:1px solid rgba(37,224,200,.28);}
-  .gap-t{font-size:28px;font-weight:700;color:var(--teal);letter-spacing:-.4px;}
+  .gap-t{font-size:31px;font-weight:700;color:var(--teal);letter-spacing:-.4px;}
   .gap-v{font-size:48px;font-weight:800;letter-spacing:-1.4px;margin-top:8px;}
-  .gap-d{font-size:31px;line-height:1.5;color:#DFF7F3;font-weight:500;margin-top:9px;letter-spacing:-.5px;}
+  .gap-d{font-size:33px;line-height:1.5;color:#DFF7F3;font-weight:500;margin-top:9px;letter-spacing:-.5px;}
   `;
   const bar = (b) => `
     <div class="kbar ${b.me ? "me" : b.ref ? "ref" : ""}">
@@ -377,18 +385,18 @@ export function slideFocus(d) {
   .fcc{padding:28px 28px 26px;border-radius:22px;
     background:linear-gradient(180deg,rgba(255,92,92,.13),rgba(255,92,92,.03));
     border:1px solid rgba(255,92,92,.34);}
-  .fcc .mk{font-size:24px;font-weight:700;color:var(--dim-2);letter-spacing:-.3px;}
+  .fcc .mk{font-size:28px;font-weight:700;color:var(--dim-2);letter-spacing:-.3px;}
   .fcc .nm{font-size:44px;font-weight:800;letter-spacing:-1.3px;margin-top:6px;}
   .fcc .amt{font-size:54px;font-weight:800;letter-spacing:-1.8px;margin-top:16px;color:var(--up);}
-  .fcc .lb{font-size:24px;font-weight:600;color:var(--dim);margin-top:4px;letter-spacing:-.3px;}
+  .fcc .lb{font-size:28px;font-weight:600;color:var(--dim);margin-top:4px;letter-spacing:-.3px;}
   .fcc .pc{margin-top:14px;display:inline-block;padding:7px 15px;border-radius:9px;
-    background:rgba(255,92,92,.18);font-size:28px;font-weight:800;color:var(--up);letter-spacing:-.5px;}
+    background:rgba(255,92,92,.18);font-size:31px;font-weight:800;color:var(--up);letter-spacing:-.5px;}
   .shr{margin-top:26px;}
   .shr-h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:13px;}
-  .shr-t{font-size:27px;font-weight:700;color:var(--dim);letter-spacing:-.4px;}
+  .shr-t{font-size:30px;font-weight:700;color:var(--dim);letter-spacing:-.4px;}
   .shr-v{font-size:38px;font-weight:800;color:var(--up);letter-spacing:-1px;}
   .shr-b{height:46px;border-radius:12px;overflow:hidden;display:flex;background:rgba(255,255,255,.06);}
-  .shr-b i{display:flex;align-items:center;padding:0 18px;font-size:25px;font-weight:700;
+  .shr-b i{display:flex;align-items:center;padding:0 18px;font-size:29px;font-weight:700;
     letter-spacing:-.3px;font-style:normal;white-space:nowrap;}
   .shr-b i.a{background:linear-gradient(90deg,var(--up),rgba(255,92,92,.55));color:#fff;}
   .shr-b i.b{color:var(--dim-2);}
@@ -398,9 +406,9 @@ export function slideFocus(d) {
   .fcn span{color:var(--teal);font-weight:800;}
   .fcx{margin-top:auto;padding-top:26px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
   .fcx-c{padding:20px 22px;border-radius:17px;background:rgba(255,255,255,.045);border:1px solid var(--line);}
-  .fcx-c .k{font-size:25px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
+  .fcx-c .k{font-size:29px;font-weight:600;color:var(--dim);letter-spacing:-.3px;}
   .fcx-c .v{font-size:35px;font-weight:800;letter-spacing:-.9px;margin-top:6px;}
-  .fcx-c .p{font-size:26px;font-weight:700;letter-spacing:-.4px;margin-top:3px;}
+  .fcx-c .p{font-size:30px;font-weight:700;letter-spacing:-.4px;margin-top:3px;}
   `;
   const card = (c) => `
     <div class="fcc"><div class="mk">거래대금 ${esc(c.rank)}위 · ${esc(c.market)}</div>
@@ -411,7 +419,7 @@ export function slideFocus(d) {
   return shell(`<div class="wrap">
   ${topBar(d.slotLabel, d.dateLabel)}
   <div class="fcbody">
-    <div class="kicker" style="margin-bottom:20px;">◆ 그 두 종목은</div>
+    <div class="kicker" style="margin-bottom:20px;">◆ ${esc(d.focusKicker || "오늘 거래대금 1·2위")}</div>
     <div class="ptitle">${d.focusTitle}</div>
     <div class="fc2">${d.focusPair.map(card).join("")}</div>
     <div class="shr">

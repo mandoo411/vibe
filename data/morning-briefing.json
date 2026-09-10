@@ -33,40 +33,40 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29421.5,
+        "close": 29468.25,
         "previousClose": 29538.75,
-        "changePct": -0.4,
-        "changePoints": -117.25
+        "changePct": -0.24,
+        "changePoints": -70.5
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
         "close": 190.78,
-        "previousClose": 189.91,
-        "changePct": 0.46,
-        "changePoints": 0.87
+        "previousClose": 188.87,
+        "changePct": 1.01,
+        "changePoints": 1.91
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 317.3,
-      "changePct": 0.34,
-      "changePoints": 1.08
+      "price": 315.34,
+      "changePct": -0.28,
+      "changePoints": 0.88
     },
     {
       "symbol": "MSFT",
-      "price": 492,
-      "changePct": -0.39,
-      "changePoints": 1.95
+      "price": 491.65,
+      "changePct": -0.47,
+      "changePoints": 2.3
     },
     {
       "symbol": "NVDA",
-      "price": 223.53,
-      "changePct": -0.97,
-      "changePoints": 2.2
+      "price": 223.67,
+      "changePct": -0.91,
+      "changePoints": 2.06
     },
     {
       "symbol": "AMZN",
@@ -76,39 +76,39 @@
     },
     {
       "symbol": "META",
-      "price": 649.46,
-      "changePct": 5.86,
-      "changePoints": 35.98
+      "price": 653.69,
+      "changePct": 6.55,
+      "changePoints": 40.21
     },
     {
       "symbol": "TSLA",
-      "price": 366.43,
-      "changePct": -0.47,
-      "changePoints": 1.73
+      "price": 367.81,
+      "changePct": -0.1,
+      "changePoints": 0.35
     },
     {
       "symbol": "GOOGL",
-      "price": 330.9,
-      "changePct": -2.2,
-      "changePoints": 7.46
+      "price": 330.65,
+      "changePct": -2.28,
+      "changePoints": 7.71
     },
     {
       "symbol": "AMD",
-      "price": 519.7,
-      "changePct": 2.76,
-      "changePoints": 13.96
+      "price": 521.1,
+      "changePct": 3.04,
+      "changePoints": 15.36
     },
     {
       "symbol": "PLTR",
-      "price": 169.61,
-      "changePct": -0.41,
-      "changePoints": 0.69
+      "price": 169.53,
+      "changePct": -0.45,
+      "changePoints": 0.77
     },
     {
       "symbol": "COIN",
-      "price": 174.99,
-      "changePct": -2.21,
-      "changePoints": 3.95
+      "price": 174.72,
+      "changePct": -2.36,
+      "changePoints": 4.22
     }
   ],
   "sectors": [
@@ -117,113 +117,113 @@
       "sector": "기술",
       "name": "기술 (XLK)",
       "price": 187.87,
-      "changePct": 0
+      "changePct": 0.32
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
       "price": 57.06,
-      "changePct": -0.42
+      "changePct": -1.79
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
       "price": 65.31,
-      "changePct": 0.83
+      "changePct": 1.95
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
       "price": 166.58,
-      "changePct": -0.33
+      "changePct": -2.84
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
       "price": 171.79,
-      "changePct": -1.51
+      "changePct": -1.99
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
       "price": 112.46,
-      "changePct": -1.34
+      "changePct": -2.13
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
       "price": 83.05,
-      "changePct": -1.15
+      "changePct": -1.81
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
       "price": 42.94,
-      "changePct": -1.17
+      "changePct": -0.32
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
       "price": 51.39,
-      "changePct": -1.06
+      "changePct": -2
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 43.41,
-      "changePct": -1.12
+      "changePct": -1.18
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1340.86,
-      "USD/JPY": 153.82,
+      "USD/KRW": 1339,
+      "USD/JPY": 153.59,
       "USD/CNY": 6.73,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Wed, 09 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Thu, 10 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 97.06,
-        "changePct": 4.33,
-        "changePoints": 4.03
+        "price": 96.55,
+        "changePct": 3.78,
+        "changePoints": 3.52
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4444.4,
-        "changePct": 1.15,
-        "changePoints": 50.5
+        "price": 4437.1,
+        "changePct": 0.98,
+        "changePoints": 43.2
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 67.9,
-        "changePct": 2.41,
-        "changePoints": 1.6
+        "price": 67.92,
+        "changePct": 2.44,
+        "changePoints": 1.62
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.86,
-        "changePct": 1.78,
-        "changePoints": 0.12
+        "price": 6.85,
+        "changePct": 1.63,
+        "changePoints": 0.11
       },
       {
         "id": "sox",
@@ -240,68 +240,89 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78128,
-        "changePct24h": -0.43,
-        "marketCapUsd": 1568974033199.7
+        "priceUsd": 78239,
+        "changePct24h": -0.48,
+        "marketCapUsd": 1571604041555.18
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2460.42,
-        "changePct24h": -0.94,
-        "marketCapUsd": 300251534459.25
+        "priceUsd": 2467.15,
+        "changePct24h": -0.89,
+        "marketCapUsd": 301177989919.03
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 101.45,
-        "changePct24h": -1.84,
-        "marketCapUsd": 59473190123.25
+        "priceUsd": 101.27,
+        "changePct24h": -2.21,
+        "marketCapUsd": 59454175163.95
       }
     ]
   },
   "news": [
+    {
+      "title": "SK하이닉스, 지난해 하루 용수 사용 17만t 절감…55만명 1일 사용량",
+      "url": "https://www.mk.co.kr/news/business/12149053",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:34:28.000Z",
+      "summary": "SK하이닉스가 지난해 국내 사업장에서 하루 평균 17만t 규모의 용수 사용을 절감한 것으로 나타났다. 이는 55만여명이 하루 동안 생활용수로 사용할 수 있는 규모다. 10일 SK하.."
+    },
+    {
+      "title": "“친환경·저탄소 사업 투자”…서부발전, 서부발전, 녹색채권 500억원 발행",
+      "url": "https://www.mk.co.kr/news/business/12149042",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:21:31.000Z",
+      "summary": "민평 대비 6.8베이시스포인트 낮은 우량 조건 “재무건전성·ESG 경영 투자자 신뢰 확인“한국서부발전이 녹색채권 발행에 성공했다. 서부발전은 500억원 규모의 5년 만기 녹색채권을.."
+    },
+    {
+      "title": "[MK 골든크로스 돌파종목 : DKME(015590) & 알에스오토메이션(140670)]",
+      "url": "https://www.mk.co.kr/news/stock/12149041",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:19:42.000Z",
+      "summary": "안녕하세요. 국내 핫 이슈 종목을 분석해드리는 AI 기자 ‘MK시그널’ 입니다. MK시그널이 오늘 분석한 핫 이슈 골든크로스 종목은 DKME & 알에스오토메이션 입니다. - DKM.."
+    },
+    {
+      "title": "[MK시그널]지엔씨에너지,AI 데이터센터 투자확대에 따른 비상발전기 수주 성장 기대감등에 주가상승세...MK시그널 추천 후 상승률 19.90%",
+      "url": "https://www.mk.co.kr/news/stock/12149037",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:16:09.000Z",
+      "summary": "9월 10일 지엔씨에너지(119850)가 상승 중이다. 전 거래일 지엔씨에너지 주가는 종가기준 48,300원 상승으로 마감했다. 현재 49,000원으로 (9시 6분 기준) 전일 종.."
+    },
+    {
+      "title": "“오늘 오후 주식창 안볼란다”…네 마녀도 벅찬데, ETF까지 겹쳤다",
+      "url": "https://www.mk.co.kr/news/stock/12149036",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:15:38.000Z",
+      "summary": "ETF 리밸런싱 물량이 장 흔들듯 삼전닉스 비중20%로 하향조정 중소형주 변동성 확대 우려커져국내 증시가 9월물 파생상품 만기와 한국거래소(KRX) 섹터지수 정기변경이라는 두 개의.."
+    },
+    {
+      "title": "“그냥 본전되면 팝니다”…박스피 지친 개미들, 이달 들어 15조 순매도",
+      "url": "https://www.mk.co.kr/news/stock/12149034",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:14:02.000Z",
+      "summary": "“본전만 오면 바로 팔아야죠. 코스피 전망은 오른다고 하는데 불안해서 못 버티겠어요. 이번에는 진짜 욕심 안 부릴 겁니다.” 개인투자자들이 이달 들어 10조원 넘게 팔아치웠다. 코.."
+    },
+    {
+      "title": "“3배 늘린다 했는데, 안먹히네”…美국채 바이백 확대에도 금리 되레 급등",
+      "url": "https://www.mk.co.kr/news/world/12149025",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:04:31.000Z",
+      "summary": "미국 재무부가 장기 국채 바이백(조기 매입) 규모를 기존의 3배로 확대했지만, 시장의 기대에는 미치지 못했다. 더 큰 규모의 매입을 예상했던 투자자들이 실망 매물을 쏟아내면서 국채.."
+    },
+    {
+      "title": "상장 후 최고가 찍었다…SK하이닉스 ADR 7% 급등, 장중 199.87달러",
+      "url": "https://www.mk.co.kr/news/stock/12149024",
+      "source": "매일경제",
+      "publishedAt": "2026-09-10T00:03:31.000Z",
+      "summary": "지난 7월 10일 미국 나스닥에 상장한 SK하이닉스 주식예탁증서(ADR)가 상장 후 최고가를 기록했다. 9일(현지시간) SK하이닉스 ADR는 전날보다 7.05% 오른 198.63달.."
+    },
     {
       "title": "증시 활황에…증권사 2분기 순이익 5조 돌파",
       "url": "https://view.asiae.co.kr/article/2026090918315309967",
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-09T21:00:00.000Z",
       "summary": "증권사들이 올해 2분기 증시 활황에 힘입어 5조원이 넘는 순이익을 거뒀다. 주식 거래대금이 크게 늘면서 수탁수수료가 급증한 데다 주가 상승으로 주식·펀드 관련 자기매매손익도 크게 개선된 여파다. 10일 금융감독원이 공개한 '2분기 증권·선물회사 영업실적(잠정)'에 따르면 2분기 국내 61개 증권사의 순이익은 5조1914억원으로 집계됐다. 이는 전년 동기 대비 무려 2조3412억원(82.1%) 급증한 규모다. 전 분기 대비로도 8646억원(20.0%) 늘었다. 2분기 증권사 자기자본이익률(ROE)은 4.9%로 전 분기 대비 0.6%포"
-    },
-    {
-      "title": "“올해 9월은 다르다, 美주식 겁먹고 팔았다간” … 금리가 보내는 뜻밖의 신호",
-      "url": "https://www.mk.co.kr/news/stock/12148317",
-      "source": "매일경제",
-      "publishedAt": "2026-09-09T20:00:00.000Z",
-      "summary": "미국 중간선거 앞둔 9월 투자전략통계적으로 9월은 미국 주식에 있어 투자하기 좋은 달은 아닙니다. 이유는 많은데요, 통상 개인들의 경우 신학기를 맞아 등록금, 학비 등의 이유로 큰.."
-    },
-    {
-      "title": "삼전닉스 있는데 한국이 불리? … 2030년 반도체 멸망전",
-      "url": "https://www.mk.co.kr/news/business/12148320",
-      "source": "매일경제",
-      "publishedAt": "2026-09-09T19:30:00.000Z",
-      "summary": "메모리반도체 초과 공급 시나리오‘멸망전’이라는 단어를 아시나요? e스포츠에서 자주 쓰이는 이 단어는 ‘상대방이 완전히 멸망할때까지 하는 게임’이라는 뜻입니다. 주로 게임계에서 쓰이.."
-    },
-    {
-      "title": "“나도 10개 사면 7개는 손절” … 40년간 살아남은 고수의 ‘투자 5계명’",
-      "url": "https://www.mk.co.kr/news/stock/12148226",
-      "source": "매일경제",
-      "publishedAt": "2026-09-09T19:00:00.000Z",
-      "summary": "이원기 전 KB자산운용 대표 인터뷰 (하)“저도 아직 주식 10개를 사면 7개는 손절매를 합니다.” 이원기 전 KB자산운용 대표는 40년 넘게 주식에 투자했지만 지금도 산 종목 가.."
-    },
-    {
-      "title": "“삼성만 접나? 우리도 접었다…애플 첫 폴더블폰 ‘아이폰 듀오’ 공개",
-      "url": "https://www.mk.co.kr/news/it/12148866",
-      "source": "매일경제",
-      "publishedAt": "2026-09-09T18:16:44.000Z",
-      "summary": "펼치면 7.6인치, 아이폰18 프로보다 80% 커 두 앱 동시에 띄우고 애플펜슬까지 지원 “두 폰 붙인 기존 폴더블과 달라” 경쟁사 겨냥 접으면 여권 크기…역대 가장 얇은 아이폰 .."
-    },
-    {
-      "title": "[속보] “유가 100달러 넘었다”…뉴욕증시, 인플레 우려에 하락 출발",
-      "url": "https://www.mk.co.kr/news/world/12148819",
-      "source": "매일경제",
-      "publishedAt": "2026-09-09T13:42:21.000Z",
-      "summary": "미국 뉴욕증시가 지정학적 리스크에 따른 국제유가 급등 여파로 일제히 하락 출발했다. 중동발 긴장이 고조되며 브렌트유가 두 달 만에 다시 배럴당 100달러 선을 넘어서자 투자심리가 .."
     },
     {
       "title": "“1400억 과징금 맞았던 동양생명 폭탄 피했다”…금융위 70억 제재 의결",
@@ -346,18 +367,18 @@
       "summary": ""
     },
     {
-      "title": "산업부, 수출 中企 지원 … 내년도 무역금융 140조",
-      "url": "https://www.mk.co.kr/news/economy/12148557",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-09-09T08:43:08.000Z",
-      "summary": "산업통상부가 한국무역보험공사를 통해 수출 중소·중견기업에 대한 무역금융 누적 공급 규모를 올해 120조원에서 내년 140조원으로 확대한다. 9일 산업부는 박정성 통상교섭본부장 주재.."
-    },
-    {
       "title": "신용정보법 위반 동양생명에 … 금융위원회, 70억대 과징금",
       "url": "https://www.mk.co.kr/news/economy/12148556",
       "source": "매일경제 증권",
       "publishedAt": "2026-09-09T08:43:08.000Z",
       "summary": "금융위원회가 9일 정례회의를 열고 동양생명의 신용정보법 위반에 대해 70억원대 과징금을 최종 확정했다. 당초 금융감독원이 결정한 1400억원대 과징금보단 훨씬 감경된 처분이라 동양.."
+    },
+    {
+      "title": "산업부, 수출 中企 지원 … 내년도 무역금융 140조",
+      "url": "https://www.mk.co.kr/news/economy/12148557",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-09-09T08:43:08.000Z",
+      "summary": "산업통상부가 한국무역보험공사를 통해 수출 중소·중견기업에 대한 무역금융 누적 공급 규모를 올해 120조원에서 내년 140조원으로 확대한다. 9일 산업부는 박정성 통상교섭본부장 주재.."
     },
     {
       "title": "弱달러+수출기업 달러 매도…환율 23개월 만에 1330원대(상보)",
@@ -379,27 +400,6 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-09T06:56:08.000Z",
       "summary": "스타트업 생태계의 지속가능성을 위해 액셀러레이터(AC)의 의무투자 대상을 후속 투자기업으로 확대해야 한다는 벤처 업계와 전문가들의 주장이 나왔다. 9일 서울 여의도 국회의원회관에서 국회 스타트업 연구모임 유니콘팜 공동대표 김한규·배현진 의원 주최, 스타트업얼라이언스 주관으로 'AC의 스타트업 생태계 역할과 제도적 과제: 유니콘은 어디서 시작되는가' 토론회가 열렸다.AC는 초기창업기업에 대한 투자 및 전문보육을 업무로하는 투자회사로, 벤처투자 촉진에 관한 법률에는 창업기획자로 명시돼있다. 이날 토론회 참여자들은 AC 관련 제도 개선의"
-    },
-    {
-      "title": "코스닥, 18.49P 오른 830.37 마감(2.28%↑)",
-      "url": "https://view.asiae.co.kr/article/2026090915381876220",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-09T06:38:18.000Z",
-      "summary": ""
-    },
-    {
-      "title": "코스피, 97.12P 오른 7051.64 마감(1.40%↑)",
-      "url": "https://view.asiae.co.kr/article/2026090915380269867",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-09T06:38:02.000Z",
-      "summary": ""
-    },
-    {
-      "title": "SK증권, 비대면 고객 대상 '연금저축 이전 이벤트'",
-      "url": "https://view.asiae.co.kr/article/2026090915343080264",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-09T06:34:30.000Z",
-      "summary": "SK증권은 오는 30일까지 비대면 고객을 대상으로 '연금저축 이전 이벤트'를 진행한다고 9일 밝혔다. 이에 따라 타 금융사에서 SK증권으로 연금저축 또는 IRP 이전 시 순이전금액에 따라 최대 100만원 현금을 지급한다. 순이전금액 ▲500만원 이상 5만원 ▲1000만원 이상 10만원 ▲5000만원 이상 30만원 ▲1억원 이상 50만원 등이다. 특히 최초 신규고객에게는 '더블 혜택'이 적용된다. ▲5000만원 이상 60만원 ▲1억원 이상 100만원의 혜택을 받을 수 있다. 다만 오는 11월 30일까지 잔고 유지 조건을 충족해야"
     }
   ],
   "aiAnalysis": {

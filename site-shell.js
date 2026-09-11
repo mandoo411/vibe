@@ -583,10 +583,6 @@
 
   function ensureNavSheet() {
     if (document.getElementById("tm-nav-sheet")) return;
-    const st = authState();
-    const accountHref = st.isLoggedIn ? "./mypage.html" : "./login.html";
-    const accountLabel = st.isLoggedIn ? "마이페이지" : "로그인";
-    const accountIcon = st.isLoggedIn ? "ti-user-circle" : "ti-login";
     const cells = NAV_SHEET_GRID.flat()
       .map((id) => {
         const p = pageById(id);
@@ -617,12 +613,38 @@
       '<div class="tm-nav-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="tm-nav-sheet-title">' +
       '<header class="tm-nav-sheet__head"><h2 id="tm-nav-sheet-title">전체 메뉴</h2>' +
       '<div class="tm-nav-sheet__head-actions">' +
-      `<a class="tm-nav-sheet__account-btn" href="${accountHref}" id="tm-nav-sheet-account">` +
-      `<i class="ti ${accountIcon}" aria-hidden="true"></i><span>${accountLabel}</span></a>` +
+      '<span id="tm-nav-sheet-account-slot"></span>' +
       '<button type="button" class="tm-nav-sheet__close" data-close-sheet aria-label="닫기"><i class="ti ti-x"></i></button>' +
       "</div></header>" +
       `<div class="tm-nav-sheet__body">${body}</div></div>`;
     document.body.appendChild(sheet);
+    updateNavSheetAccount();
+  }
+
+  /**
+   * 2026-09-11 버그픽스: 전체 메뉴 시트에 로그인한 사용자에게도 "로그인" 버튼이 떠 있었다.
+   * ensureNavSheet()는 시트를 한 번만 만드는데, 그 시점에는 보통 인증 확인이 끝나기 전이라
+   * 로그아웃 상태가 HTML에 그대로 박혀버렸고 이후 갱신하는 코드가 없었다(상단바 계정 버튼은
+   * updateMobileAccountLink()로 갱신하고 있었는데 시트만 빠져 있었다).
+   * 겸사겸사 로그아웃 버튼도 넣는다 — 시트가 열리면 상단바가 가려져서 로그아웃할 방법이 없었다.
+   */
+  function updateNavSheetAccount() {
+    const slot = document.getElementById("tm-nav-sheet-account-slot");
+    if (!slot) return;
+    const st = authState();
+    // 상태 확인 전에는 아무것도 그리지 않는다 — "로그인"을 먼저 보여줬다 바뀌는 깜빡임 방지
+    if (!st.loaded) { slot.innerHTML = ""; return; }
+    if (st.isLoggedIn) {
+      slot.innerHTML =
+        '<a class="tm-nav-sheet__account-btn" href="./mypage.html" id="tm-nav-sheet-account">' +
+        '<i class="ti ti-user-circle" aria-hidden="true"></i><span>마이페이지</span></a>' +
+        '<button type="button" class="tm-nav-sheet__account-btn tm-nav-sheet__account-btn--logout" id="tm-nav-sheet-logout">' +
+        '<i class="ti ti-logout" aria-hidden="true"></i><span>로그아웃</span></button>';
+    } else {
+      slot.innerHTML =
+        '<a class="tm-nav-sheet__account-btn" href="./login.html" id="tm-nav-sheet-account">' +
+        '<i class="ti ti-login" aria-hidden="true"></i><span>로그인</span></a>';
+    }
   }
 
   let navSheetBound = false;
@@ -659,6 +681,15 @@
       }
       if (e.target.closest("[data-close-sheet]")) setNavSheetOpen(false);
       if (e.target.closest(".tm-nav-sheet__cell:not([data-analysis-locked])")) setNavSheetOpen(false);
+      const logoutBtn = e.target.closest("#tm-nav-sheet-logout");
+      if (logoutBtn) {
+        e.preventDefault();
+        logoutBtn.disabled = true;
+        Promise.resolve(window.TMAuth && window.TMAuth.signOut ? window.TMAuth.signOut() : null)
+          .catch(() => {})
+          .then(() => { window.location.href = "./index.html"; });
+        return;
+      }
       if (e.target.closest(".tm-nav-sheet__account-btn")) setNavSheetOpen(false);
     });
     document.addEventListener("keydown", (e) => {
@@ -798,6 +829,7 @@
 
   document.addEventListener("tm-auth-ready", applyAnalysisNavLock);
   document.addEventListener("tm-auth-ready", updateMobileAccountLink);
+  document.addEventListener("tm-auth-ready", updateNavSheetAccount);
   // 로그인/마이페이지 링크(.home-nav__auth-link)가 로그인 상태에 따라 폭이 달라지므로,
   // 인증 상태가 확정된 뒤에도 우선순위 네비게이션 폭 계산을 다시 실행한다.
   document.addEventListener("tm-auth-ready", () => {

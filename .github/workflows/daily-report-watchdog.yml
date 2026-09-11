@@ -1,0 +1,65 @@
+name: Daily Report Watchdog
+
+# 마감시황 본문(지수·총평·수급·특징주)은 시우 PC의 Cowork 예약작업이 채운다.
+# 그 단계가 누락되면 카드뉴스 게이트가 발행을 막는데, 워크플로는 Success로 끝나서
+# 아무 알림도 가지 않았다 — 2026-09-10에 하루 통째로 미발행되고도 아무도 몰랐다.
+# (원인: Windows 보안 업데이트 KB5124008 설치로 Cowork 로컬 샌드박스 파일 접근 차단)
+# 이 워치독이 "거래일인데 리포트가 비었다"를 잡아 텔레그램으로 알린다.
+#
+# ⚠️ GitHub schedule은 이 저장소에서 2~6시간까지 밀린다(2026-09-07 실측 23:19,
+#    2026-09-10 마감 카드 백업 스케줄도 21:58 실행). 그래서 정시성이 필요하면
+#    Supabase pg_cron이 workflow_dispatch로 호출하는 경로를 주 트리거로 쓰고,
+#    아래 schedule은 백업으로 둔다.
+#    → pg_cron 등록 권장: 16:40 KST(stage=first) / 19:00 KST(stage=final)
+on:
+  schedule:
+    - cron: "40 7 * * 1-5" # 16:40 KST (백업 — 밀릴 수 있음)
+    - cron: "0 10 * * 1-5" # 19:00 KST (백업 — 최종 점검)
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "first(1차 점검) 또는 final(최종 점검)"
+        required: false
+        default: "first"
+  repository_dispatch:
+    types: [daily-report-watchdog]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-report-watchdog
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Resolve stage
+        id: cfg
+        run: |
+          set -euo pipefail
+          STAGE="${{ github.event.inputs.stage || github.event.client_payload.stage }}"
+          if [ -z "$STAGE" ]; then
+            if [ "${{ github.event.schedule }}" = "0 10 * * 1-5" ]; then STAGE=final; else STAGE=first; fi
+          fi
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Check today's closing report
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+        run: node scripts/check-daily-report-watchdog.mjs --stage=${{ steps.cfg.outputs.stage }}

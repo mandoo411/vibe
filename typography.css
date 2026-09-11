@@ -723,3 +723,23 @@ html[data-theme="light"] .home-hero__btn:not(.home-hero__btn--primary) {
   background: rgba(4, 60, 63, 0.55) !important;
   border-color: rgba(255, 255, 255, 0.34) !important;
 }
+
+
+/* ════════════════════════════════════════════════════════════════════════
+ * 2026-09-11: 전체 메뉴 시트의 로그아웃 버튼
+ * 마이페이지(teal)와 구분되게 2차 버튼로 두고, <button> 기본 스타일을 지운다.
+ * 색은 토큰을 써서 라이트/다크 모두 대비가 유지된다.
+ * ════════════════════════════════════════════════════════════════════════ */
+.tm-nav-sheet__account-btn--logout {
+  background: transparent;
+  color: var(--text-secondary, #4e525e);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.16));
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tm-nav-sheet__account-btn--logout:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}

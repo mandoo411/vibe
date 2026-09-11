@@ -14,3 +14,12 @@ yarn-error.log*
 pnpm-debug.log*
 tmp-*
 
+
+# 2026-09-11 추가 - 로컬 임시/비밀 파일
+*pass*.txt
+*pat*.txt
+pending-closing-*
+_tmp_*
+_incoming-*
+.retry-probe-*
+_to_delete/

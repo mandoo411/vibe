@@ -29,6 +29,16 @@ on:
         default: "0"
   repository_dispatch:
     types: [carousel-v2]
+  # 리포트가 17:30 게이트보다 늦게 채워진 날을 자동으로 구제한다.
+  # 2026-09-10·09-11 이틀 연속으로 본문이 19시 넘어 들어와 카드가 통째로 누락됐다
+  # (가드는 정상 동작했지만 워크플로가 Success로 끝나 아무도 몰랐다).
+  # 아래 가드가 그대로 걸리므로 중복·주말·휴장일 발행 위험은 없다:
+  #   · 스탬프(last-published-date.txt)가 오늘이면 스킵 → 정시 발행된 날은 아무 일도 안 일어남
+  #   · check-promo-data-ready가 지수·총평을 확인 → 15:40 시세 동기화 push로는 발행되지 않음
+  push:
+    branches: [main]
+    paths:
+      - data/daily-market.json
 
 permissions:
   contents: write

@@ -274,7 +274,7 @@ function buildSupplySection(supply, searchContext) {
   ];
 }
 
-function buildUserPrompt({
+export function buildUserPrompt({
   targetYmd,
   indexes,
   supply,
@@ -414,7 +414,7 @@ function buildUserPrompt({
   return lines.join("\n");
 }
 
-function buildSystemPrompt() {
+export function buildSystemPrompt() {
   const base = `[역할]
 너는 한국 증시 전문 애널리스트다. 수집된 시장 데이터만을 근거로
 기승전결이 있는 마감시황 리포트를 작성한다.
@@ -497,7 +497,7 @@ function normalizeFeaturedStock(s) {
   };
 }
 
-function normalizeFeaturedList(raw) {
+export function normalizeFeaturedList(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map(normalizeFeaturedStock).filter(Boolean).slice(0, 10);
 }
@@ -518,12 +518,12 @@ function normalizeStockThemeRow(s) {
   };
 }
 
-function normalizeStocksList(raw) {
+export function normalizeStocksList(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map(normalizeStockThemeRow).filter(Boolean);
 }
 
-function buildSupplyComment(investorTrend) {
+export function buildSupplyComment(investorTrend) {
   if (!investorTrend || typeof investorTrend !== "object") return "";
   const parts = [];
   const map = [
@@ -540,7 +540,7 @@ function buildSupplyComment(investorTrend) {
   return parts.join(" | ");
 }
 
-function buildHeadlineIssue(summary, strategy) {
+export function buildHeadlineIssue(summary, strategy) {
   const s = sanitizeStr(summary);
   if (s) return s;
   return sanitizeStr(strategy?.market_type);

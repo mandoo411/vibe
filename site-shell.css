@@ -952,6 +952,11 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   grid-template-rows: repeat(4, minmax(0, auto));
 }
 
+/* 2026-09-12: 종가베팅이 들어가 13칸 = 5행이 됐다. */
+.tm-nav-sheet__grid--13 {
+  grid-template-rows: repeat(5, minmax(0, auto));
+}
+
 .tm-nav-sheet__cell {
   position: relative;
   display: flex;

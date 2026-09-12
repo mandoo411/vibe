@@ -86,17 +86,23 @@
   // 2026-07-31: 사용자 지정 순서 — 홈/매매시그널/AI분석/브리핑/마감시황/일정/시장지표/
   // 실시간시세/미국주식/암호화폐/글로벌랭킹/요금제 이 순서 그대로. 로그인(계정)은 더 이상
   // 그리드 안에 있지 않고 시트 상단 헤더(닫기 버튼 왼쪽)로 옮겼다(아래 ensureNavSheet 참고).
+  // 2026-09-12: 종가베팅 추가. 이 격자는 TM_ALL_PAGES와 별개로 하드코딩돼 있어서,
+  // TM_ALL_PAGES에만 넣으면 모바일 "전체 메뉴"에는 끝까지 안 나온다(실제로 그랬다).
+  // 12칸이 꽉 차 있었으므로 한 칸이 늘어 5행이 된다. 위치는 같은 "종목 고르기" 계열인
+  // 매매시그널 바로 옆 — 그 뒤 항목들은 한 칸씩 밀린다.
   const NAV_SHEET_GRID = [
-    ["home", "signal", "analysis"],
-    ["briefing", "daily", "schedule"],
-    ["market", "realtime", "us"],
-    ["crypto", "world", "pricing"],
+    ["home", "signal", "closebet"],
+    ["analysis", "briefing", "daily"],
+    ["schedule", "market", "realtime"],
+    ["us", "crypto", "world"],
+    ["pricing"],
   ];
 
   const NAV_SHEET_LABELS = {
     home: "홈",
     realtime: "시세",
     signal: "매매시그널",
+    closebet: "종가베팅",
     analysis: "AI분석",
     schedule: "일정",
     briefing: "브리핑",
@@ -608,7 +614,7 @@
         );
       })
       .join("");
-    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--12">${cells}</div>`;
+    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--13">${cells}</div>`;
     const sheet = document.createElement("div");
     sheet.id = "tm-nav-sheet";
     sheet.className = "tm-nav-sheet";

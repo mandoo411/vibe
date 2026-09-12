@@ -484,15 +484,6 @@
         color: var(--text-secondary);
         word-break: keep-all;
       }
-      .ts-preset__cond {
-        font-size: 11.5px;
-        line-height: 1.65;
-        color: var(--text-muted-ui, var(--text-secondary));
-        border-top: 1px dashed var(--border-color);
-        padding-top: 9px;
-        margin-top: auto;
-        word-break: keep-all;
-      }
       .ts-presets__note {
         font-size: 11.5px;
         line-height: 1.8;
@@ -517,11 +508,9 @@
          패널(#ts-sub)은 하나뿐이고 DOM 위치만 옮긴다(렌더 중복·상태 꼬임 방지). */
       .ts-tech { display: grid; gap: 12px; }
       @media (min-width: 900px) {
-        /* stretch — 오른쪽 패널이 왼쪽 목록보다 짧으면 아래가 휑하게 빈다. 높이를 맞춰
-           한 덩어리로 보이게 하고, 카드는 위쪽부터 차곡차곡 쌓는다. */
-        .ts-tech { grid-template-columns: 272px minmax(0, 1fr); gap: 16px; align-items: stretch; }
-        .ts-tech__detail { display: flex; }
-        .ts-tech__detail > .ts-sub { flex: 1 1 auto; }
+        /* 조건식 줄을 뺀 뒤로 기법 카드가 짧아졌다. 패널 높이를 목록에 억지로 맞추면
+           아래가 텅 빈 상자처럼 보이므로 내용만큼만 차지하게 둔다. */
+        .ts-tech { grid-template-columns: 272px minmax(0, 1fr); gap: 16px; align-items: start; }
         .ts-tech__detail .ts-presets { align-content: start; }
       }
       .ts-tech__list { display: flex; flex-direction: column; gap: 8px; }
@@ -683,6 +672,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
+        margin-top: auto;
+        padding-top: 2px;
       }
       .ts-preset__tag {
         font-size: 10.5px;
@@ -1436,7 +1427,13 @@
         .ts-hero { padding: 20px 18px 18px; }
         .ts-hero__title { font-size: 19.5px; }
         .ts-hero__desc { font-size: 13.5px; }
-        .ts-hero__steps { grid-template-columns: 1fr; gap: 8px; }
+        /* 2026-09-12: 3단계 안내가 세로로 쌓이면서 히어로만 500px을 먹었다. 매일 들어오는
+           유료 사용자에겐 매번 지나쳐야 하는 스크롤 비용이다. 이름만 남긴 한 줄 띠로 줄인다. */
+        .ts-hero__steps { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .ts-hero__step { padding: 8px 6px; flex-direction: column; align-items: center; text-align: center; gap: 3px; }
+        .ts-hero__step-no { width: 20px; height: 20px; font-size: 9.5px; }
+        .ts-hero__step-name { font-size: 12px; }
+        .ts-hero__step-sub { display: none; }
         .ts-card { padding: 17px 16px 18px; border-radius: 14px; }
         .ts-sec { gap: 10px; margin-bottom: 14px; }
         .ts-sec__icon { width: 32px; height: 32px; font-size: 17px; border-radius: 10px; }
@@ -3349,7 +3346,7 @@
           const note = $("ts-presets-note");
           if (note) {
             note.textContent =
-              "종가매매·급등주 계열은 평일 14:30·15:31에 거래대금 상위 종목을 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 외 기법과 그 전 시간대는 전일 종가 기준입니다. 특정 종목의 매수·매도를 권유하는 것이 아니며, 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
+              "종가매매·급등주 계열은 평일 14:30·15:31에 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 외에는 전일 종가 기준입니다. 특정 종목의 매수·매도를 권유하지 않으며, 투자 판단과 결과의 책임은 투자자 본인에게 있습니다.";
           }
           // 넓은 화면에선 첫 계열을 미리 열어 둔다 — 오른쪽 칸이 빈 채로 시작하면
           // "여기서 뭘 해야 하는지"가 안 보인다. 좁은 화면은 8개 계열을 먼저 훑게 접어 둔다.
@@ -3402,9 +3399,7 @@
                     <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
                     <span class="ts-preset__tags">
                       <span class="ts-preset__tag">${p.intraday ? "장 막판 갱신" : "일봉 기준"}</span>
-                      <span class="ts-preset__tag ts-preset__tag--plain">조건 ${p.condition.clauses.length}개</span>
                     </span>
-                    <span class="ts-preset__cond">${escapeHtml(conditionText(p.condition))}</span>
                   </button>`
                 )
                 .join("")}
@@ -3490,14 +3485,17 @@
         function applyScreenResult(result) {
           currentScreen = result;
           savedRowCodes.clear();
-          // 2026-09-12: 기법 이름을 제목으로 올리고, 긴 조건식은 그 아래 한 줄로 내린다.
-          // 기법이 32개가 되면서 "어떤 기법의 결과인지"가 먼저 보여야 하기 때문이다.
+          // 2026-09-12: 기법 이름을 제목으로 올린다. 조건식 전문은 "직접 입력" 검색일 때만
+          // 보여준다 — AI가 내 문장을 제대로 알아들었는지 확인할 길이 그것뿐이기 때문이다.
+          // 기법 프리셋은 이름만 보여준다: 조건식은 이 서비스의 자산이고, 화면에서도
+          // 자리만 차지한다(특히 모바일). rawText는 문장 검색일 때만 채워져 온다.
           const condLine = conditionText(result.condition) || "";
           $("ts-results-summary").textContent = result.summary || condLine;
           const condEl = $("ts-results-cond");
           if (condEl) {
-            condEl.textContent = condLine && condLine !== result.summary ? condLine : "";
-            condEl.classList.toggle("ts-hidden", !condEl.textContent);
+            const showCond = !!result.rawText && condLine && condLine !== result.summary;
+            condEl.textContent = showCond ? condLine : "";
+            condEl.classList.toggle("ts-hidden", !showCond);
           }
           const shownCount = Array.isArray(result.stocks) ? result.stocks.length : 0;
           $("ts-results-count").textContent = result.sort

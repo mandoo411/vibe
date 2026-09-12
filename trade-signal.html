@@ -301,6 +301,10 @@
         border-radius: 50%;
         background: var(--ts-accent);
       }
+      .ts-gate__demo-list li b {
+        font-weight: 800;
+        color: var(--ts-accent);
+      }
       .ts-gate__demo-note {
         margin: 0;
         font-size: 11.5px;
@@ -499,7 +503,228 @@
         word-break: keep-all;
       }
 
+
+      /* ── 매매기법 카테고리 (2026-09-12) ───────────────────────────────────
+         프리셋이 3개일 땐 카드 나열로 충분했지만 30개가 넘어가면 목록이 화면을
+         다 잡아먹는다. "대분류 타일 → 세부 기법 확장" 2단으로 바꿔서 첫 화면엔
+         계열 8개만 보이게 한다. 모바일 2열 / 데스크톱 4열. */
+      .ts-groups {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      @media (min-width: 720px) {
+        .ts-groups { grid-template-columns: repeat(4, 1fr); }
+      }
+      .ts-group {
+        position: relative;
+        appearance: none;
+        font-family: inherit;
+        text-align: left;
+        cursor: pointer;
+        border: 1px solid var(--border-color);
+        background: var(--ts-inset);
+        color: var(--text-primary);
+        border-radius: 14px;
+        padding: 13px 13px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+      }
+      .ts-group:hover {
+        border-color: var(--ts-line);
+        background: var(--ts-soft-2);
+        transform: translateY(-2px);
+      }
+      .ts-group__top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .ts-group__icon {
+        flex: 0 0 auto;
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        background: var(--ts-soft);
+        border: 1px solid var(--ts-line);
+        color: var(--ts-accent);
+        font-size: 17px;
+        transition: background 0.16s ease, color 0.16s ease;
+      }
+      .ts-group__name {
+        font-size: 14.5px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text-title, var(--text-primary));
+        word-break: keep-all;
+      }
+      .ts-group__cap {
+        font-size: 11.5px;
+        line-height: 1.6;
+        color: var(--text-muted-ui, var(--text-secondary));
+        word-break: keep-all;
+      }
+      .ts-group__count {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--ts-accent);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: auto;
+        padding-top: 2px;
+      }
+      .ts-group__count i { font-size: 13px; transition: transform 0.2s ease; }
+      .ts-group.is-open {
+        border-color: var(--ts-accent);
+        background: var(--ts-soft);
+        box-shadow: 0 12px 26px -20px color-mix(in srgb, var(--ts-accent) 90%, transparent);
+      }
+      .ts-group.is-open .ts-group__icon {
+        background: var(--ts-accent);
+        border-color: var(--ts-accent);
+        color: var(--ts-on-accent, #fff);
+      }
+      [data-theme="dark"] .ts-group.is-open .ts-group__icon { color: #14181f; }
+      .ts-group.is-open .ts-group__count i { transform: rotate(180deg); }
+
+      /* 선택한 계열의 세부 기법 패널 */
+      .ts-sub {
+        margin-top: 14px;
+        padding: 15px 15px 16px;
+        border: 1px solid var(--ts-line);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--ts-accent) 4%, var(--ts-surface));
+        animation: tsSubIn 0.22s ease both;
+      }
+      @keyframes tsSubIn {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: none; }
+      }
+      .ts-sub__head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 12px;
+      }
+      .ts-sub__title {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text-title, var(--text-primary));
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .ts-sub__title i { color: var(--ts-accent); font-size: 17px; }
+      .ts-sub__cap {
+        font-size: 11.5px;
+        color: var(--text-muted-ui, var(--text-secondary));
+        margin: 2px 0 0;
+        word-break: keep-all;
+      }
+      .ts-sub__close {
+        margin-left: auto;
+        flex: 0 0 auto;
+        appearance: none;
+        border: 1px solid var(--border-color);
+        background: var(--ts-surface);
+        color: var(--text-secondary);
+        border-radius: 9px;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .ts-sub__close:hover { border-color: var(--ts-line); color: var(--ts-accent); }
+      .ts-preset__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .ts-preset__tag {
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 5px 7px;
+        border-radius: 6px;
+        background: var(--ts-soft);
+        border: 1px solid var(--ts-line);
+        color: var(--ts-accent);
+      }
+      .ts-preset__tag--plain {
+        background: color-mix(in srgb, var(--bg-tertiary) 70%, transparent);
+        border-color: var(--border-color);
+        color: var(--text-muted-ui, var(--text-secondary));
+      }
+
+      /* ── 자연어 검색(보조 경로) ──────────────────────────────────────────── */
+      .ts-card--sub { background: color-mix(in srgb, var(--bg-tertiary) 45%, var(--ts-surface)); }
+      .ts-sub-toggle {
+        appearance: none;
+        width: 100%;
+        background: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        font-family: inherit;
+        color: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+      }
+      .ts-sub-toggle__icon {
+        flex: 0 0 auto;
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: var(--ts-soft);
+        border: 1px solid var(--ts-line);
+        color: var(--ts-accent);
+        font-size: 17px;
+      }
+      .ts-sub-toggle__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+      .ts-sub-toggle__title {
+        font-size: 15.5px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: var(--text-title, var(--text-primary));
+      }
+      .ts-sub-toggle__cap {
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--text-muted-ui, var(--text-secondary));
+        word-break: keep-all;
+      }
+      .ts-sub-toggle__chev {
+        margin-left: auto;
+        flex: 0 0 auto;
+        color: var(--text-muted-ui, var(--text-secondary));
+        font-size: 18px;
+        transition: transform 0.2s ease;
+      }
+      .ts-sub-toggle[aria-expanded="true"] .ts-sub-toggle__chev { transform: rotate(180deg); }
+      .ts-nl-body { margin-top: 14px; animation: tsSubIn 0.2s ease both; }
+
       /* ── 결과 ──────────────────────────────────────────────────────────── */
+      .ts-results__cond {
+        margin: 8px 0 0;
+        font-size: 11.5px;
+        line-height: 1.7;
+        color: var(--text-muted-ui, var(--text-secondary));
+        word-break: keep-all;
+      }
       .ts-results { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-color); }
       .ts-results__summary {
         display: flex;
@@ -1277,17 +1502,18 @@
                3단계 사용 흐름을 배너로 세운다. 숫자는 넣지 않는다(실데이터만). -->
           <section class="ts-hero" aria-label="매매시그널 소개">
             <p class="ts-hero__kicker"><i class="ti ti-bolt" aria-hidden="true"></i>TRADE SIGNAL</p>
-            <h2 class="ts-hero__title">찾고 싶은 조건을 <em>문장으로</em> 검색하세요</h2>
+            <h2 class="ts-hero__title">쓰고 싶은 <em>매매기법</em>을 고르기만 하세요</h2>
             <p class="ts-hero__desc">
-              코스피·코스닥 전 종목을 일봉 기준으로 스캔해 지금 조건에 맞는 종목을 즉시 찾아드립니다.
-              마음에 드는 종목은 저장해 두면 같은 조건이 다시 발생할 때 계속 알림을 받습니다.
+              국내외에서 실제로 쓰이는 대표 매매기법을 조건으로 옮겨 담았습니다. 계열을 고르고 기법을 누르면
+              코스피·코스닥 전 종목을 스캔해 지금 그 조건에 맞는 종목을 찾아드립니다. 저장해 두면 같은 조건이
+              다시 발생할 때 계속 알림을 받습니다.
             </p>
             <ol class="ts-hero__steps">
               <li class="ts-hero__step">
                 <span class="ts-hero__step-no">01</span>
                 <span class="ts-hero__step-txt">
-                  <strong class="ts-hero__step-name">조건 검색</strong>
-                  <span class="ts-hero__step-sub">문장 · 매매기법 프리셋 · HTS 조건식</span>
+                  <strong class="ts-hero__step-name">기법 선택</strong>
+                  <span class="ts-hero__step-sub">계열 → 세부 기법 클릭 (직접 조건 입력도 가능)</span>
                 </span>
               </li>
               <li class="ts-hero__step">
@@ -1317,50 +1543,48 @@
               <a class="ts-btn ts-btn--ghost" id="ts-gate-btn2" href="./login.html?next=/trade-signal.html" hidden>로그인</a>
             </div>
             <div class="ts-gate__demo">
-              <p class="ts-gate__demo-title"><i class="ti ti-search" aria-hidden="true"></i>이렇게 문장으로 찾습니다</p>
+              <p class="ts-gate__demo-title"><i class="ti ti-target-arrow" aria-hidden="true"></i>클릭 한 번으로 돌아가는 매매기법 32가지</p>
               <ul class="ts-gate__demo-list">
-                <li>“RSI 30 이하이고 일봉 강세 다이버전스가 나온 종목”</li>
-                <li>“최근 1년 상승률 높은 순서대로 20종목”</li>
-                <li>“주가 1,000원 이상, PBR 1배 미만, 외국인 순매수 종목”</li>
-                <li>“부채비율 150% 이하이고 영업이익률 7% 이상인 종목”</li>
-                <li>키움 HTS 조건검색식을 그대로 붙여넣어도 인식합니다</li>
+                <li><b>종가매매</b> — 종가 수급매매 · 종가 눌림목 · 종가 강세 마감 · 종가 대금 급증</li>
+                <li><b>추세추종</b> — 미너비니 추세 템플릿 · 정배열 초입 · ADX 추세 강화 · 1년 모멘텀 주도주</li>
+                <li><b>돌파매매</b> — 신고가 돌파 · 박스권 돌파(다바스) · 신고거래량 돌파 · 볼린저 상단 돌파</li>
+                <li><b>눌림목</b> — 수급 눌림목 · 20일선 눌림목 · VCP 변동성 수축 · 신고가 직전 코일링</li>
+                <li><b>역추세·반등 / 수급매매 / 급등주·모멘텀 / 가치·재무</b> 계열까지 8계열</li>
+                <li>원하는 조건을 문장으로 쓰거나 키움 HTS 조건검색식을 붙여넣어도 인식합니다</li>
               </ul>
               <p class="ts-gate__demo-note">코스피·코스닥 전 종목을 일봉 기준으로 스캔하며, 거래정지·정리매매 종목은 결과에서 제외합니다. 부채비율·영업이익률·순이익률·ROE·유동비율은 DART 사업보고서(최근 결산) 실수치로 판정하고, 결과마다 어떤 값으로 걸렸는지 함께 보여줍니다.</p>
             </div>
           </div>
 
           <div id="ts-content" class="ts-hidden">
-            <!-- 2026-09-08: 매매기법 프리셋. 조건 문장을 직접 만들 줄 아는 사용자만 쓸 수 있던
-                 기능이라, 대표 기법을 버튼 하나로 돌릴 수 있게 했다. AI 파싱을 거치지 않고
-                 구조화된 condition을 그대로 보내므로 응답이 빠르고 토큰도 쓰지 않는다. -->
+            <!-- 2026-09-12 재설계: 매매기법이 3개일 땐 카드 나열로 충분했지만, 계열별로
+                 30개 넘게 채우면서 "대분류 타일 → 세부 기법" 2단 구조로 바꿨다. 자연어
+                 입력은 타이핑이 번거롭다는 의견이 많아 클릭 경로를 위로 올리고 아래로 내렸다. -->
             <section class="ts-card ts-card--accent">
               <div class="ts-sec">
                 <span class="ts-sec__icon" aria-hidden="true"><i class="ti ti-target-arrow"></i></span>
                 <div class="ts-sec__txt">
                   <h2 class="ts-sec__title">매매기법으로 찾기</h2>
-                  <p class="ts-sec__cap">대표 매매기법의 조건을 그대로 담았어요. 누르면 바로 검색합니다.</p>
+                  <p class="ts-sec__cap">계열을 고르면 세부 기법이 열립니다. 기법을 누르면 타이핑 없이 바로 검색해요.</p>
                 </div>
               </div>
-              <div class="ts-presets" id="ts-presets"></div>
+              <div class="ts-groups" id="ts-groups"></div>
+              <div class="ts-sub ts-hidden" id="ts-sub" aria-live="polite"></div>
               <p class="ts-presets__note" id="ts-presets-note"></p>
             </section>
 
-            <section class="ts-card">
+            <!-- 검색 결과 — 기법 클릭과 자연어 검색이 공유한다. 예전엔 자연어 입력창
+                 안에 들어 있어서, 위쪽 기법 버튼을 눌러도 결과가 한참 아래에 떴다. -->
+            <section class="ts-card ts-hidden" id="ts-result-card">
               <div class="ts-sec">
-                <span class="ts-sec__icon" aria-hidden="true"><i class="ti ti-message-2-search"></i></span>
+                <span class="ts-sec__icon" aria-hidden="true"><i class="ti ti-list-search"></i></span>
                 <div class="ts-sec__txt">
-                  <h2 class="ts-sec__title">조건으로 직접 찾기</h2>
-                  <p class="ts-sec__cap">어떤 조건에 맞는 종목을 찾을까요? 문장으로 쓰거나 HTS 조건식을 붙여넣어도 됩니다.</p>
+                  <h2 class="ts-sec__title">검색 결과</h2>
+                  <p class="ts-sec__cap">마음에 드는 종목을 저장해 두면 조건이 다시 발생할 때 알려드립니다.</p>
                 </div>
               </div>
-              <textarea id="ts-input" class="ts-textarea" autocomplete="off" placeholder="예: RSI 30 이하이고 일봉 기준 강세 다이버전스가 발생한 종목 찾아줘"></textarea>
-              <div class="ts-row-actions">
-                <button type="button" class="ts-btn" id="ts-search-btn">검색하기</button>
-              </div>
-              <div class="ts-example-chips" id="ts-example-chips" aria-label="예시 검색어"></div>
               <p class="ts-error ts-hidden" id="ts-search-error"></p>
 
-              <!-- 2026-09-09: 검색 진행 상태. 프리셋/문장 검색 모두 여기로 스크롤된다. -->
               <div id="ts-loading" class="ts-loading ts-hidden" role="status" aria-live="polite">
                 <div class="ts-loading__head">
                   <span class="ts-loading__spinner" aria-hidden="true"></span>
@@ -1391,6 +1615,7 @@
                   <span class="ts-tag ts-tag--accent" id="ts-results-summary"></span>
                   <span class="ts-results__count" id="ts-results-count"></span>
                 </div>
+                <p class="ts-results__cond" id="ts-results-cond"></p>
                 <p class="ts-freshness" id="ts-freshness"></p>
                 <p class="ts-label" style="margin-top:16px;">저장할 때 받을 알림 종류</p>
                 <div class="ts-alert-toggle">
@@ -1398,6 +1623,25 @@
                   <button type="button" class="ts-pill" id="ts-alert-sell" data-alert-type="sell">매도 신호</button>
                 </div>
                 <div id="ts-result-list" style="margin-top:12px;"></div>
+              </div>
+            </section>
+
+            <!-- 자연어·HTS 조건식 검색 — 기법 버튼으로 안 되는 조건을 위한 보조 경로. -->
+            <section class="ts-card ts-card--sub">
+              <button type="button" class="ts-sub-toggle" id="ts-nl-toggle" aria-expanded="false" aria-controls="ts-nl-body">
+                <span class="ts-sub-toggle__icon" aria-hidden="true"><i class="ti ti-message-2-search"></i></span>
+                <span class="ts-sub-toggle__txt">
+                  <span class="ts-sub-toggle__title">조건으로 직접 찾기</span>
+                  <span class="ts-sub-toggle__cap">원하는 조건을 문장으로 쓰거나 HTS 조건검색식을 붙여넣으세요</span>
+                </span>
+                <i class="ti ti-chevron-down ts-sub-toggle__chev" aria-hidden="true"></i>
+              </button>
+              <div id="ts-nl-body" class="ts-nl-body ts-hidden">
+                <textarea id="ts-input" class="ts-textarea" autocomplete="off" placeholder="예: RSI 30 이하이고 일봉 기준 강세 다이버전스가 발생한 종목 찾아줘"></textarea>
+                <div class="ts-row-actions">
+                  <button type="button" class="ts-btn" id="ts-search-btn">검색하기</button>
+                </div>
+                <div class="ts-example-chips" id="ts-example-chips" aria-label="예시 검색어"></div>
               </div>
             </section>
 
@@ -2380,137 +2624,778 @@
           "외국인이 100억 이상 순매수한 종목 찾아줘",
         ];
 
-        /* ── 매매기법 프리셋 (2026-09-08 신설) ───────────────────────────────────
-         * 실전 매매기법을 이 조건엔진의 clause 조합으로 옮긴 것. 원칙 두 가지:
+        /* ── 매매기법 카탈로그 (2026-09-08 신설 → 2026-09-12 2단 구조로 확장) ─────
+         * 실전 매매기법을 이 조건엔진의 clause 조합으로 옮긴 것. 원칙 세 가지:
          *  1) 표현할 수 없는 축(재료·뉴스의 강도 같은 정성 판단)은 억지로 흉내내지 않고 뺀다 —
          *     "재료 있는 종목"을 공시 유무 따위로 근사하면 맞지도 않는 걸 맞다고 보여주게 된다.
-         *  2) 임계값은 실제 캐시(2026-09-07 종가, 2,765종목)로 결과 개수를 확인해 정했다.
+         *  2) 임계값은 실제 캐시(2026-09-11 종가, 2,765종목)로 결과 개수를 확인해 정했다.
          *     너무 조이면 매일 0개가 나와 기능이 죽고, 너무 풀면 스크리너의 의미가 없다.
+         *  3) 계열(대분류) → 세부 기법(소메뉴) 2단. 기법이 30개가 넘어가면 한 줄로 나열할 수
+         *     없고, 사용자도 "종가매매 계열"처럼 계열 단위로 먼저 생각한다.
          * condition은 서버로 그대로 전달되어 AI 파싱 없이 즉시 평가된다(응답 빠름 · 토큰 0).
          */
-        const TS_STRATEGY_PRESETS = [
+        const TS_TECHNIQUE_GROUPS = [
           {
-            id: "close-major-flow",
+            id: "close",
             icon: "ti-sunset-2",
-            name: "종가 수급매매",
-            desc: "외국인·기관이 이틀 이상 연달아 같이 사들이면서 거래대금까지 실린 종목. 장 막판 종가 부근 진입을 염두에 둔 수급 주도주 후보입니다.",
-            hint: "14:30·15:31 갱신",
-            summary: "종가 수급매매 조건",
-            condition: {
-              logic: "AND",
-              clauses: [
-                { type: "major_net_buy_streak", op: "gte", value: 2 },
-                { type: "trading_value", op: "gte", value: 200 },
-                { type: "price", op: "gte", value: 1000 },
-                { type: "volume_ratio", op: "gte", value: 100 },
-                { type: "disparity", period: 20, op: "gte", value: 100 },
-              ],
-            },
-          },
-          {
-            id: "pullback-flow",
-            icon: "ti-arrow-bounce",
-            name: "수급 눌림목",
-            desc: "최근 한 달 크게 오른 뒤 거래량이 말라붙으며 조정 중인데, 외국인이나 기관 수급은 아직 빠지지 않은 종목. 20일선 위에서 5일선까지 눌린 자리만 봅니다.",
-            summary: "수급 눌림목 조건",
-            condition: {
-              logic: "AND",
-              clauses: [
-                {
-                  type: "group",
-                  logic: "OR",
+            name: "종가매매",
+            tagline: "장 막판에 사서 다음 날 시초·오전에 파는 방식",
+            presets: [
+              {
+                id: "close-major-flow",
+                icon: "ti-users-group",
+                name: "종가 수급매매",
+                intraday: true,
+                desc: "외국인·기관이 이틀 이상 연달아 같이 사들이면서 거래대금까지 실린 종목.",
+                condition: {
+                  logic: "AND",
                   clauses: [
-                    { type: "foreign_net_buy", op: "gt", value: 0 },
-                    { type: "institution_net_buy", op: "gt", value: 0 },
-                  ],
-                },
-                { type: "period_return", days: 21, op: "gte", value: 10 },
-                { type: "disparity", period: 20, op: "gte", value: 100 },
-                { type: "disparity", period: 5, op: "lte", value: 102 },
-                { type: "volume_ratio", op: "lte", value: 80 },
-                { type: "trading_value", op: "gte", value: 50 },
-                { type: "price", op: "gte", value: 1000 },
-              ],
-            },
-          },
-          {
-            id: "breakout-flow",
-            icon: "ti-trending-up",
-            name: "신고가 돌파",
-            desc: "전고점이나 52주 신고가를 거래량을 실어 뚫은 종목 중, 외국인이나 기관 순매수가 함께 들어온 것만 남깁니다.",
-            summary: "신고가 돌파 조건",
-            condition: {
-              logic: "AND",
-              clauses: [
-                {
-                  type: "group",
-                  logic: "OR",
+                    { type: "major_net_buy_streak", op: "gte", value: 2 },
+                    { type: "trading_value", op: "gte", value: 200 },
+                    { type: "price", op: "gte", value: 1000 },
+                    { type: "volume_ratio", op: "gte", value: 100 },
+                    { type: "disparity", period: 20, op: "gte", value: 100 }
+                  ]
+                }
+              },
+              {
+                id: "close-pullback",
+                icon: "ti-stairs-down",
+                name: "종가 눌림목",
+                intraday: true,
+                desc: "오름세는 살아 있는데 오늘은 거래가 줄며 5일선까지 눌린 종목.",
+                condition: {
+                  logic: "AND",
                   clauses: [
-                    { type: "high52w_breakout" },
-                    { type: "high_breakout_n", windowBars: 60 },
+                    { type: "disparity", period: 20, op: "gte", value: 100 },
+                    { type: "disparity", period: 5, op: "lte", value: 101 },
+                    { type: "volume_ratio", op: "lte", value: 90 },
+                    { type: "period_return", days: 21, op: "gte", value: 5 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "close-strength",
+                icon: "ti-flag-bolt",
+                name: "종가 강세 마감",
+                intraday: true,
+                desc: "거래량을 실어 오늘 20일 내 최고가를 뚫고 강하게 마감한 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "price_change_pct", op: "gte", value: 3 },
                     { type: "high_breakout_n", windowBars: 20 },
-                  ],
-                },
-                { type: "volume_ratio", op: "gte", value: 150 },
-                {
-                  type: "group",
-                  logic: "OR",
+                    { type: "volume_ratio", op: "gte", value: 150 },
+                    { type: "trading_value", op: "gte", value: 100 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "close-money-rush",
+                icon: "ti-coins",
+                name: "종가 대금 급증",
+                intraday: true,
+                desc: "평소의 3배 넘는 거래량과 큰 거래대금이 몰린 종목.",
+                condition: {
+                  logic: "AND",
                   clauses: [
-                    { type: "foreign_net_buy", op: "gt", value: 0 },
-                    { type: "institution_net_buy", op: "gt", value: 0 },
-                  ],
-                },
-                { type: "trading_value", op: "gte", value: 300 },
-                { type: "price", op: "gte", value: 1000 },
-              ],
-            },
+                    { type: "trading_value", op: "gte", value: 300 },
+                    { type: "volume_ratio", op: "gte", value: 300 },
+                    { type: "price_change_pct", op: "gte", value: 2 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
           },
+          {
+            id: "trend",
+            icon: "ti-trending-up",
+            name: "추세추종",
+            tagline: "이미 오르는 흐름에 올라타 길게 끌고 가는 방식",
+            presets: [
+              {
+                id: "trend-template",
+                icon: "ti-award",
+                name: "미너비니 추세 템플릿",
+                desc: "이동평균 정배열 + 200일선 위 + 52주 고점 25% 이내 + 1년 30% 이상 상승.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "disparity", period: 200, op: "gte", value: 100 },
+                    { type: "high52w_near", withinPct: 25 },
+                    { type: "period_return", days: 252, op: "gte", value: 30 },
+                    { type: "trading_value", op: "gte", value: 20 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "trend-golden",
+                icon: "ti-arrows-cross",
+                name: "정배열 초입(골든크로스)",
+                desc: "최근 10봉 안에 20일선이 60일선을 위로 뚫은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    {
+                      type: "ma_cross",
+                      fast: 20,
+                      slow: 60,
+                      direction: "up",
+                      within: { bars: 10 }
+                    },
+                    { type: "disparity", period: 120, op: "gte", value: 100 },
+                    { type: "volume_ratio", op: "gte", value: 120 },
+                    { type: "trading_value", op: "gte", value: 30 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "trend-adx",
+                icon: "ti-chart-arrows-vertical",
+                name: "ADX 추세 강화",
+                desc: "추세 강도(ADX)가 25를 넘고 +DI가 -DI를 막 뚫은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "adx", op: "gte", value: 25 },
+                    {
+                      type: "di_cross",
+                      direction: "up",
+                      within: { bars: 15 }
+                    },
+                    { type: "disparity", period: 60, op: "gte", value: 100 },
+                    { type: "trading_value", op: "gte", value: 30 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "trend-momentum",
+                icon: "ti-rocket",
+                name: "1년 모멘텀 주도주",
+                desc: "1년 수익률 50% 이상, 최근 한 달도 꺾이지 않은 정배열 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "period_return", days: 252, op: "gte", value: 50 },
+                    { type: "period_return", days: 21, op: "gte", value: 0 },
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "breakout",
+            icon: "ti-arrow-big-up-line",
+            name: "돌파매매",
+            tagline: "저항선을 뚫는 순간을 노리는 방식",
+            presets: [
+              {
+                id: "breakout-flow",
+                icon: "ti-mountain",
+                name: "신고가 돌파",
+                desc: "전고점·52주 신고가를 거래량 싣고 뚫은 종목 중 수급이 함께 들어온 것.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    {
+                      type: "group",
+                      logic: "OR",
+                      clauses: [
+                        { type: "high52w_breakout" },
+                        { type: "high_breakout_n", windowBars: 60 },
+                        { type: "high_breakout_n", windowBars: 20 }
+                      ]
+                    },
+                    { type: "volume_ratio", op: "gte", value: 150 },
+                    {
+                      type: "group",
+                      logic: "OR",
+                      clauses: [
+                        { type: "foreign_net_buy", op: "gt", value: 0 },
+                        { type: "institution_net_buy", op: "gt", value: 0 }
+                      ]
+                    },
+                    { type: "trading_value", op: "gte", value: 300 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "breakout-darvas",
+                icon: "ti-box",
+                name: "박스권 돌파(다바스)",
+                desc: "60봉 박스 상단을 평소보다 많은 거래량으로 뚫은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "high_breakout_n", windowBars: 60 },
+                    { type: "volume_ratio", op: "gte", value: 150 },
+                    { type: "price_change_pct", op: "gte", value: 1 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "breakout-volume",
+                icon: "ti-wave-saw-tool",
+                name: "신고거래량 돌파",
+                desc: "120봉 중 최대 거래량이 터지면서 20봉 고점을 넘은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "volume_record_high_n", windowBars: 120 },
+                    { type: "high_breakout_n", windowBars: 20 },
+                    { type: "price_change_pct", op: "gte", value: 3 },
+                    { type: "trading_value", op: "gte", value: 100 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "breakout-bollinger",
+                icon: "ti-chart-candle",
+                name: "볼린저 상단 돌파",
+                desc: "볼린저밴드 상단을 종가로 뚫고 60일선 위에 있는 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "bollinger", position: "upper_break" },
+                    { type: "volume_ratio", op: "gte", value: 200 },
+                    { type: "disparity", period: 60, op: "gte", value: 100 },
+                    { type: "trading_value", op: "gte", value: 100 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "pullback",
+            icon: "ti-arrow-bounce",
+            name: "눌림목 매매",
+            tagline: "오르던 종목이 잠깐 쉬는 자리를 사는 방식",
+            presets: [
+              {
+                id: "pullback-flow",
+                icon: "ti-chart-arcs",
+                name: "수급 눌림목",
+                desc: "한 달간 크게 오른 뒤 거래량이 마르며 조정 중인데 수급은 아직 남은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    {
+                      type: "group",
+                      logic: "OR",
+                      clauses: [
+                        { type: "foreign_net_buy", op: "gt", value: 0 },
+                        { type: "institution_net_buy", op: "gt", value: 0 }
+                      ]
+                    },
+                    { type: "period_return", days: 21, op: "gte", value: 10 },
+                    { type: "disparity", period: 20, op: "gte", value: 100 },
+                    { type: "disparity", period: 5, op: "lte", value: 102 },
+                    { type: "volume_ratio", op: "lte", value: 80 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "pullback-ma20",
+                icon: "ti-ruler-2",
+                name: "20일선 눌림목",
+                desc: "정배열 상태에서 20일선 ±3% 안까지 눌린 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "disparity", period: 20, op: "lte", value: 103 },
+                    { type: "disparity", period: 20, op: "gte", value: 97 },
+                    { type: "period_return", days: 63, op: "gte", value: 15 },
+                    { type: "volume_ratio", op: "lte", value: 90 },
+                    { type: "trading_value", op: "gte", value: 30 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "pullback-vcp",
+                icon: "ti-arrows-minimize",
+                name: "VCP 변동성 수축",
+                desc: "고점 15% 이내에서 거래량이 평소의 60% 아래로 말라붙은 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "high52w_near", withinPct: 15 },
+                    { type: "volume_ratio", op: "lte", value: 60 },
+                    { type: "disparity", period: 20, op: "gte", value: 98 },
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "trading_value", op: "gte", value: 20 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "pullback-coil",
+                icon: "ti-target-arrow",
+                name: "신고가 직전 코일링",
+                desc: "52주 신고가 10% 이내에서 거래가 줄며 힘을 모으는 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "high52w_near", withinPct: 10 },
+                    { type: "volume_ratio", op: "lte", value: 90 },
+                    { type: "disparity", period: 60, op: "gte", value: 100 },
+                    { type: "trading_value", op: "gte", value: 10 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "reversal",
+            icon: "ti-arrow-back-up",
+            name: "역추세·반등",
+            tagline: "많이 빠진 자리에서 되돌림을 노리는 방식",
+            presets: [
+              {
+                id: "reversal-rsi",
+                icon: "ti-battery-1",
+                name: "RSI 과매도 반등",
+                desc: "RSI가 35 이하까지 눌려 과매도 구간에 들어간 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "rsi", op: "lte", value: 35 },
+                    { type: "trading_value", op: "gte", value: 10 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "reversal-divergence",
+                icon: "ti-chart-dots",
+                name: "강세 다이버전스",
+                desc: "주가는 더 낮은 저점인데 RSI는 더 높은 저점을 만든 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "rsi_divergence", direction: "bullish" },
+                    { type: "trading_value", op: "gte", value: 10 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "reversal-bollinger",
+                icon: "ti-arrow-down-bar",
+                name: "볼린저 하단 반등",
+                desc: "볼린저 하단을 이탈·터치하면서 스토캐스틱까지 과매도인 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    {
+                      type: "group",
+                      logic: "OR",
+                      clauses: [
+                        { type: "bollinger", position: "lower_break" },
+                        { type: "bollinger", position: "lower_touch" }
+                      ]
+                    },
+                    { type: "stochastic", line: "k", op: "lte", value: 20 },
+                    { type: "trading_value", op: "gte", value: 20 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "reversal-oversold-value",
+                icon: "ti-discount",
+                name: "낙폭과대 우량주",
+                desc: "3개월간 25% 넘게 빠졌지만 PBR 1배 미만에 이익은 내고 있는 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "period_return", days: 63, op: "lte", value: -25 },
+                    { type: "pbr", op: "lte", value: 1 },
+                    { type: "roe", op: "gte", value: 5 },
+                    { type: "market_cap", op: "gte", value: 1000 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "flow",
+            icon: "ti-users-group",
+            name: "수급매매",
+            tagline: "외국인·기관이 사는 종목을 따라가는 방식",
+            presets: [
+              {
+                id: "flow-both",
+                icon: "ti-arrows-join",
+                name: "외국인·기관 동반 매수",
+                desc: "외국인과 기관이 같은 날 사흘 이상 함께 순매수한 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "major_net_buy_streak", op: "gte", value: 3 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "flow-foreign-big",
+                icon: "ti-world-dollar",
+                name: "외국인 대량 순매수",
+                desc: "외국인이 하루에 50억 이상 사들인 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "foreign_net_buy_amount", op: "gte", value: 50 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "flow-inst-streak",
+                icon: "ti-building-bank",
+                name: "기관 연속 순매수",
+                desc: "기관이 닷새 이상 연달아 사고 있는 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "institution_net_buy_streak", op: "gte", value: 5 },
+                    { type: "trading_value", op: "gte", value: 30 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "flow-foreign-hold",
+                icon: "ti-shield-check",
+                name: "외국인 보유 주도주",
+                desc: "외국인 지분율 15% 이상에 오늘도 순매수가 들어온 정배열 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "foreign_hold_rate", op: "gte", value: 15 },
+                    { type: "foreign_net_buy", op: "gt", value: 0 },
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "momentum",
+            icon: "ti-flame",
+            name: "급등주·모멘텀",
+            tagline: "오늘 막 불이 붙은 종목을 잡는 방식",
+            presets: [
+              {
+                id: "momentum-gap",
+                icon: "ti-stairs-up",
+                name: "갭상승 출발",
+                desc: "전일 고가 위에서 출발해 거래량까지 두 배 이상 터진 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "gap", direction: "up" },
+                    { type: "volume_ratio", op: "gte", value: 200 },
+                    { type: "price_change_pct", op: "gte", value: 3 },
+                    { type: "trading_value", op: "gte", value: 100 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "momentum-streak",
+                icon: "ti-candle",
+                name: "3일 연속 양봉",
+                desc: "사흘 연속 양봉에 최근 5일 10% 이상 오른 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "consecutive_candles", direction: "up", count: 3 },
+                    { type: "period_return", days: 5, op: "gte", value: 10 },
+                    { type: "volume_ratio", op: "gte", value: 120 },
+                    { type: "trading_value", op: "gte", value: 50 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "momentum-burst",
+                icon: "ti-bolt",
+                name: "단기 급등 지속",
+                intraday: true,
+                desc: "일주일 새 20% 넘게 오르며 60봉 신고가까지 낸 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "period_return", days: 5, op: "gte", value: 20 },
+                    { type: "high_breakout_n", windowBars: 60 },
+                    { type: "trading_value", op: "gte", value: 100 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "momentum-volume",
+                icon: "ti-activity-heartbeat",
+                name: "거래량 폭발",
+                intraday: true,
+                desc: "평소의 4배 넘는 거래량과 함께 5% 이상 오른 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "volume_ratio", op: "gte", value: 400 },
+                    { type: "price_change_pct", op: "gte", value: 5 },
+                    { type: "trading_value", op: "gte", value: 200 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            id: "value",
+            icon: "ti-scale",
+            name: "가치·재무",
+            tagline: "실적과 재무가 받쳐주는 종목을 고르는 방식",
+            presets: [
+              {
+                id: "value-lowpbr",
+                icon: "ti-tag",
+                name: "저PBR 흑자기업",
+                desc: "PBR 0.8배 미만인데 ROE 10% 이상, 부채비율은 120% 이하인 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "pbr", op: "lte", value: 0.8 },
+                    { type: "roe", op: "gte", value: 10 },
+                    { type: "debt_ratio", op: "lte", value: 120 },
+                    { type: "market_cap", op: "gte", value: 2000 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "value-quality",
+                icon: "ti-diamond",
+                name: "고ROE 퀄리티",
+                desc: "ROE 15% 이상, 영업이익률 15% 이상, 부채비율 80% 이하인 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "roe", op: "gte", value: 15 },
+                    { type: "operating_margin", op: "gte", value: 15 },
+                    { type: "debt_ratio", op: "lte", value: 80 },
+                    { type: "market_cap", op: "gte", value: 3000 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "value-flow",
+                icon: "ti-zoom-money",
+                name: "저평가 + 수급",
+                desc: "PER 10배·PBR 1.2배 이하인데 외국인이 사고 있는 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "per", op: "lte", value: 10 },
+                    { type: "pbr", op: "lte", value: 1.2 },
+                    { type: "foreign_net_buy", op: "gt", value: 0 },
+                    { type: "trading_value", op: "gte", value: 20 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              },
+              {
+                id: "value-safe-trend",
+                icon: "ti-shield-bolt",
+                name: "재무안정 + 상승추세",
+                desc: "부채비율 100% 이하·유동비율 150% 이상이면서 정배열인 종목.",
+                condition: {
+                  logic: "AND",
+                  clauses: [
+                    { type: "debt_ratio", op: "lte", value: 100 },
+                    { type: "current_ratio", op: "gte", value: 150 },
+                    { type: "ma_alignment", direction: "bullish" },
+                    { type: "trading_value", op: "gte", value: 20 },
+                    { type: "price", op: "gte", value: 1000 }
+                  ]
+                }
+              }
+            ]
+          }
         ];
 
-        function renderStrategyPresets() {
-          const wrap = $("ts-presets");
+        /* 장 막판 스냅샷(scripts/intraday-close-scan.mjs)은 거래대금 상위 종목만 오늘 시세·수급으로
+         * 다시 계산한다. 그래서 "오늘 값이 중요한" 종가매매·급등주 계열만 intraday:true로 두고,
+         * 나머지는 전 종목이 담긴 전일 종가 캐시로 돌린다 — RSI·MACD처럼 장중에 갱신되지 않는
+         * 지표를 오늘 값인 척 보여주지 않기 위해서다. */
+        let tsOpenGroupId = null;
+
+        function tsGroupById(id) {
+          return TS_TECHNIQUE_GROUPS.find((g) => g.id === id) || null;
+        }
+
+        function tsPresetById(id) {
+          for (const g of TS_TECHNIQUE_GROUPS) {
+            const p = g.presets.find((x) => x.id === id);
+            if (p) return p;
+          }
+          return null;
+        }
+
+        function renderTechniqueGroups() {
+          const wrap = $("ts-groups");
           if (!wrap) return;
-          wrap.innerHTML = TS_STRATEGY_PRESETS.map(
-            (p) => `<button type="button" class="ts-preset" data-preset="${escapeHtml(p.id)}">
-                <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
-                <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
-                <span class="ts-preset__cond">${escapeHtml(conditionText(p.condition))}</span>
-                ${p.hint ? `<span class="ts-preset__cond" style="border:0;padding-top:0;margin-top:-4px;">${escapeHtml(p.hint)}</span>` : ""}
+          wrap.innerHTML = TS_TECHNIQUE_GROUPS.map(
+            (g) => `<button type="button" class="ts-group" data-group="${escapeHtml(g.id)}" aria-expanded="false" aria-controls="ts-sub">
+                <span class="ts-group__top">
+                  <span class="ts-group__icon" aria-hidden="true"><i class="ti ${escapeHtml(g.icon)}"></i></span>
+                  <span class="ts-group__name">${escapeHtml(g.name)}</span>
+                </span>
+                <span class="ts-group__cap">${escapeHtml(g.tagline)}</span>
+                <span class="ts-group__count">기법 ${g.presets.length}개<i class="ti ti-chevron-down" aria-hidden="true"></i></span>
               </button>`
           ).join("");
+          wrap.querySelectorAll("[data-group]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const id = btn.getAttribute("data-group");
+              if (tsOpenGroupId === id) closeTechniqueGroup();
+              else openTechniqueGroup(id);
+            });
+          });
           const note = $("ts-presets-note");
           if (note) {
             note.textContent =
-              "평일 14:30·15:31에 거래대금 상위 종목을 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 전에는 전일 종가 기준으로 보여드립니다. 특정 종목의 매수·매도를 권유하는 것이 아니며, 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
+              "종가매매·급등주 계열은 평일 14:30·15:31에 거래대금 상위 종목을 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 외 기법과 그 전 시간대는 전일 종가 기준입니다. 특정 종목의 매수·매도를 권유하는 것이 아니며, 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
           }
-          wrap.querySelectorAll("[data-preset]").forEach((btn) => {
-            btn.addEventListener("click", async () => {
-              const preset = TS_STRATEGY_PRESETS.find((p) => p.id === btn.getAttribute("data-preset"));
-              if (!preset) return;
-              $("ts-input").value = "";
-              // 프리셋 3종의 조건은 전부 오늘 봉으로 정확히 다시 계산되는 지표만 쓴다
-              // (lib/intraday-snapshot.js의 INTRADAY_UPDATED). 그래서 장 막판 스냅샷이
-              // 있으면 그걸로, 없으면 전일 종가로 자동 폴백한다.
-              // 프리셋은 AI 파싱을 거치지 않으므로 "조건 해석" 단계 문구는 빼고,
-              // 어떤 기법을 돌리는 중인지 이름을 그대로 보여준다.
-              await runScreen(
-                { condition: preset.condition, summary: preset.summary, source: "intraday" },
-                btn,
-                null,
-                null,
-                {
-                  loadingTitle: `‘${preset.name}’ 조건으로 찾는 중…`,
-                  loadingSteps: [
-                    "코스피·코스닥 전 종목을 스캔하고 있어요",
-                    "조건에 맞는 종목을 걸러내고 있어요",
-                    "시세·수급을 붙여 정리하고 있어요",
-                  ],
-                }
-              );
-            });
+        }
+
+        function closeTechniqueGroup() {
+          tsOpenGroupId = null;
+          const sub = $("ts-sub");
+          if (sub) {
+            sub.classList.add("ts-hidden");
+            sub.innerHTML = "";
+          }
+          document.querySelectorAll("#ts-groups [data-group]").forEach((b) => {
+            b.classList.remove("is-open");
+            b.setAttribute("aria-expanded", "false");
           });
         }
-        renderStrategyPresets();
+
+        function openTechniqueGroup(id) {
+          const g = tsGroupById(id);
+          const sub = $("ts-sub");
+          if (!g || !sub) return;
+          tsOpenGroupId = id;
+          document.querySelectorAll("#ts-groups [data-group]").forEach((b) => {
+            const on = b.getAttribute("data-group") === id;
+            b.classList.toggle("is-open", on);
+            b.setAttribute("aria-expanded", on ? "true" : "false");
+          });
+          sub.innerHTML = `
+            <div class="ts-sub__head">
+              <div>
+                <p class="ts-sub__title"><i class="ti ${escapeHtml(g.icon)}" aria-hidden="true"></i>${escapeHtml(g.name)}</p>
+                <p class="ts-sub__cap">${escapeHtml(g.tagline)} · 기법을 누르면 바로 검색합니다</p>
+              </div>
+              <button type="button" class="ts-sub__close" id="ts-sub-close" aria-label="닫기"><i class="ti ti-x" aria-hidden="true"></i></button>
+            </div>
+            <div class="ts-presets">
+              ${g.presets
+                .map(
+                  (p) => `<button type="button" class="ts-preset" data-preset="${escapeHtml(p.id)}">
+                    <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
+                    <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
+                    <span class="ts-preset__tags">
+                      <span class="ts-preset__tag">${p.intraday ? "장 막판 갱신" : "일봉 기준"}</span>
+                      <span class="ts-preset__tag ts-preset__tag--plain">조건 ${p.condition.clauses.length}개</span>
+                    </span>
+                    <span class="ts-preset__cond">${escapeHtml(conditionText(p.condition))}</span>
+                  </button>`
+                )
+                .join("")}
+            </div>`;
+          sub.classList.remove("ts-hidden");
+          const closeBtn = $("ts-sub-close");
+          if (closeBtn) closeBtn.addEventListener("click", closeTechniqueGroup);
+          sub.querySelectorAll("[data-preset]").forEach((btn) => {
+            btn.addEventListener("click", () => runTechniquePreset(btn.getAttribute("data-preset"), btn));
+          });
+          tsScrollToEl(sub);
+        }
+
+        async function runTechniquePreset(presetId, btn) {
+          const preset = tsPresetById(presetId);
+          if (!preset) return;
+          const input = $("ts-input");
+          if (input) input.value = "";
+          // 프리셋은 AI 파싱을 거치지 않으므로 "조건 해석" 단계 문구는 빼고,
+          // 어떤 기법을 돌리는 중인지 이름을 그대로 보여준다.
+          await runScreen(
+            {
+              condition: preset.condition,
+              summary: preset.summary || `${preset.name} 조건`,
+              source: preset.intraday ? "intraday" : "daily",
+            },
+            btn,
+            null,
+            null,
+            {
+              loadingTitle: `‘${preset.name}’ 조건으로 찾는 중…`,
+              loadingSteps: [
+                "코스피·코스닥 전 종목을 스캔하고 있어요",
+                "조건에 맞는 종목을 걸러내고 있어요",
+                "시세·수급을 붙여 정리하고 있어요",
+              ],
+            }
+          );
+        }
+
+        renderTechniqueGroups();
+
+        /* 자연어·HTS 조건식 검색은 보조 경로라 접어 둔다(2026-09-12). 타이핑이 번거롭다는
+         * 의견이 많아 클릭 경로를 위로 올렸고, 이 카드는 필요한 사람만 펼쳐 쓰게 한다. */
+        (function initNlToggle() {
+          const btn = $("ts-nl-toggle");
+          const body = $("ts-nl-body");
+          if (!btn || !body) return;
+          btn.addEventListener("click", () => {
+            const open = btn.getAttribute("aria-expanded") === "true";
+            btn.setAttribute("aria-expanded", open ? "false" : "true");
+            body.classList.toggle("ts-hidden", open);
+            if (!open) {
+              const t = $("ts-input");
+              if (t) t.focus({ preventScroll: true });
+            }
+          });
+        })();
 
         function renderExampleChips() {
           const wrap = $("ts-example-chips");
@@ -2532,7 +3417,15 @@
         function applyScreenResult(result) {
           currentScreen = result;
           savedRowCodes.clear();
-          $("ts-results-summary").textContent = conditionText(result.condition) || result.summary;
+          // 2026-09-12: 기법 이름을 제목으로 올리고, 긴 조건식은 그 아래 한 줄로 내린다.
+          // 기법이 32개가 되면서 "어떤 기법의 결과인지"가 먼저 보여야 하기 때문이다.
+          const condLine = conditionText(result.condition) || "";
+          $("ts-results-summary").textContent = result.summary || condLine;
+          const condEl = $("ts-results-cond");
+          if (condEl) {
+            condEl.textContent = condLine && condLine !== result.summary ? condLine : "";
+            condEl.classList.toggle("ts-hidden", !condEl.textContent);
+          }
           const shownCount = Array.isArray(result.stocks) ? result.stocks.length : 0;
           $("ts-results-count").textContent = result.sort
             ? `총 ${result.count}개 종목 중 상위 ${shownCount}개`
@@ -2579,6 +3472,9 @@
         function tsShowLoading(title, steps) {
           const box = $("ts-loading");
           if (!box) return;
+          // 2026-09-12: 결과 카드는 검색 전엔 숨겨 둔다(빈 카드가 자리만 차지하던 문제).
+          const card = $("ts-result-card");
+          if (card) card.classList.remove("ts-hidden");
           $("ts-results").classList.add("ts-hidden");
           $("ts-search-error").classList.add("ts-hidden");
           $("ts-loading-title").textContent = title;
@@ -2680,8 +3576,8 @@
           }
           const st = window.TM_AUTH_STATE || {};
           if (!st.isLoggedIn) {
-            $("ts-gate-title").textContent = "조건을 문장으로 검색하는 종목 스크리너";
-            $("ts-gate-text").textContent = "코스피·코스닥 전 종목에서 원하는 조건에 맞는 종목을 찾아주고, 조건이 다시 발생하면 알림까지 보내드립니다.";
+            $("ts-gate-title").textContent = "매매기법을 클릭하면 종목이 나오는 스크리너";
+            $("ts-gate-text").textContent = "국내외 대표 매매기법 32가지를 조건으로 담았습니다. 코스피·코스닥 전 종목에서 지금 그 조건에 맞는 종목을 찾아주고, 조건이 다시 발생하면 알림까지 보내드립니다.";
             const b1 = $("ts-gate-btn");
             if (b1) { b1.textContent = "무료 회원가입"; b1.setAttribute("href", "./signup.html?next=/trade-signal.html"); }
             const b2 = $("ts-gate-btn2");

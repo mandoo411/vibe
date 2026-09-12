@@ -374,10 +374,13 @@
     "./daily-market.html": 3,
     "./weekly-market.html": 4,
     "./realtime.html": 5,
-    "./us-market.html": 6,
+    // 2026-09-12: 시우 결정 — GNB 자리가 8개로 꽉 차서, 종가베팅을 노출하는 대신
+    // 미국주식을 "더보기"로 내린다. 수익화 기능(매매시그널·종가베팅·AI종목분석)을
+    // 앞에 두고, 정보성 페이지를 뒤로 미는 배치다.
+    "./close-betting.html": 6,
     "./trade-signal.html": 7,
     "./stock-analysis.html": 8,
-    "./close-betting.html": 9,
+    "./us-market.html": 9,
   };
 
   function bindNavPriorityMenu() {

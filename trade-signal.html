@@ -418,8 +418,10 @@
         display: grid;
         gap: 12px;
       }
-      @media (min-width: 860px) {
-        .ts-presets { grid-template-columns: repeat(3, 1fr); }
+      /* 데스크톱 오른쪽 칸은 폭이 한정돼 있어 2열이 한계다(3열이면 조건 문구가 잘게 쪼개진다).
+         모바일 아코디언 안에서는 1열. */
+      @media (min-width: 900px) {
+        .ts-tech__detail .ts-presets { grid-template-columns: repeat(2, 1fr); }
       }
       .ts-preset {
         position: relative;
@@ -504,110 +506,138 @@
       }
 
 
-      /* ── 매매기법 카테고리 (2026-09-12) ───────────────────────────────────
-         프리셋이 3개일 땐 카드 나열로 충분했지만 30개가 넘어가면 목록이 화면을
-         다 잡아먹는다. "대분류 타일 → 세부 기법 확장" 2단으로 바꿔서 첫 화면엔
-         계열 8개만 보이게 한다. 모바일 2열 / 데스크톱 4열. */
-      .ts-groups {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+      /* ── 매매기법 선택 (2026-09-12 v2) ────────────────────────────────────
+         v1은 타일 8개를 격자로 깔고 누르면 "격자 전체 아래"에 패널을 띄웠다.
+         누른 타일과 결과가 멀어지고 스크롤이 튀어서, 지금 뭘 고른 건지 감이
+         안 잡혔다. 화면 폭에 따라 맞는 패턴이 다르므로 둘로 나눈다:
+          · 900px 이상 — 왼쪽 계열 목록 + 오른쪽 기법 패널(마스터-디테일).
+            항상 하나가 선택돼 있고 오른쪽만 제자리에서 바뀐다. 스크롤 0.
+          · 900px 미만 — 누른 계열 "바로 아래" 아코디언. 누른 줄이 그대로
+            제자리에 있어서 위치를 잃지 않는다.
+         패널(#ts-sub)은 하나뿐이고 DOM 위치만 옮긴다(렌더 중복·상태 꼬임 방지). */
+      .ts-tech { display: grid; gap: 12px; }
+      @media (min-width: 900px) {
+        /* stretch — 오른쪽 패널이 왼쪽 목록보다 짧으면 아래가 휑하게 빈다. 높이를 맞춰
+           한 덩어리로 보이게 하고, 카드는 위쪽부터 차곡차곡 쌓는다. */
+        .ts-tech { grid-template-columns: 272px minmax(0, 1fr); gap: 16px; align-items: stretch; }
+        .ts-tech__detail { display: flex; }
+        .ts-tech__detail > .ts-sub { flex: 1 1 auto; }
+        .ts-tech__detail .ts-presets { align-content: start; }
       }
-      @media (min-width: 720px) {
-        .ts-groups { grid-template-columns: repeat(4, 1fr); }
-      }
-      .ts-group {
+      .ts-tech__list { display: flex; flex-direction: column; gap: 8px; }
+      .ts-tech__item { display: flex; flex-direction: column; }
+      .ts-tech__btn {
         position: relative;
+        overflow: hidden;
         appearance: none;
         font-family: inherit;
         text-align: left;
         cursor: pointer;
+        width: 100%;
         border: 1px solid var(--border-color);
         background: var(--ts-inset);
         color: var(--text-primary);
-        border-radius: 14px;
-        padding: 13px 13px 12px;
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-        transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
-      }
-      .ts-group:hover {
-        border-color: var(--ts-line);
-        background: var(--ts-soft-2);
-        transform: translateY(-2px);
-      }
-      .ts-group__top {
+        border-radius: 13px;
+        padding: 12px 13px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 11px;
+        transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
       }
-      .ts-group__icon {
+      .ts-tech__btn::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 3px;
+        background: var(--ts-accent);
+        opacity: 0;
+        transition: opacity 0.16s ease;
+      }
+      .ts-tech__btn:hover { border-color: var(--ts-line); background: var(--ts-soft-2); }
+      .ts-tech__icon {
         flex: 0 0 auto;
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
         display: grid;
         place-items: center;
         background: var(--ts-soft);
         border: 1px solid var(--ts-line);
         color: var(--ts-accent);
-        font-size: 17px;
-        transition: background 0.16s ease, color 0.16s ease;
+        font-size: 18px;
+        transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
       }
-      .ts-group__name {
+      .ts-tech__txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+      .ts-tech__name {
         font-size: 14.5px;
         font-weight: 800;
         letter-spacing: -0.02em;
         color: var(--text-title, var(--text-primary));
-        word-break: keep-all;
       }
-      .ts-group__cap {
+      .ts-tech__cap {
         font-size: 11.5px;
-        line-height: 1.6;
+        line-height: 1.5;
         color: var(--text-muted-ui, var(--text-secondary));
         word-break: keep-all;
       }
-      .ts-group__count {
+      .ts-tech__count {
+        flex: 0 0 auto;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--ts-accent);
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: auto;
-        padding-top: 2px;
+        background: var(--ts-soft);
+        border: 1px solid var(--ts-line);
+        border-radius: 999px;
+        padding: 3px 8px;
+        line-height: 1.3;
       }
-      .ts-group__count i { font-size: 13px; transition: transform 0.2s ease; }
-      .ts-group.is-open {
+      .ts-tech__chev {
+        flex: 0 0 auto;
+        font-size: 17px;
+        color: var(--text-muted-ui, var(--text-secondary));
+        transition: transform 0.2s ease;
+      }
+      @media (min-width: 900px) {
+        /* 데스크톱에선 접고 펴는 게 아니라 "선택"이므로 화살표를 오른쪽 방향으로 바꾼다 */
+        .ts-tech__chev { transform: rotate(-90deg); }
+      }
+      .ts-tech__item.is-open .ts-tech__btn {
         border-color: var(--ts-accent);
         background: var(--ts-soft);
-        box-shadow: 0 12px 26px -20px color-mix(in srgb, var(--ts-accent) 90%, transparent);
+        box-shadow: 0 12px 26px -22px color-mix(in srgb, var(--ts-accent) 90%, transparent);
       }
-      .ts-group.is-open .ts-group__icon {
+      .ts-tech__item.is-open .ts-tech__btn::before { opacity: 1; }
+      .ts-tech__item.is-open .ts-tech__icon {
         background: var(--ts-accent);
         border-color: var(--ts-accent);
-        color: var(--ts-on-accent, #fff);
+        color: #fff;
       }
-      [data-theme="dark"] .ts-group.is-open .ts-group__icon { color: #14181f; }
-      .ts-group.is-open .ts-group__count i { transform: rotate(180deg); }
+      [data-theme="dark"] .ts-tech__item.is-open .ts-tech__icon { color: #14181f; }
+      .ts-tech__item.is-open .ts-tech__chev { transform: rotate(180deg); }
+      @media (min-width: 900px) {
+        .ts-tech__item.is-open .ts-tech__chev { transform: rotate(-90deg); }
+      }
 
-      /* 선택한 계열의 세부 기법 패널 */
+      /* 선택한 계열의 세부 기법 패널 — 데스크톱은 오른쪽 칸, 모바일은 계열 바로 아래 */
       .ts-sub {
-        margin-top: 14px;
         padding: 15px 15px 16px;
         border: 1px solid var(--ts-line);
         border-radius: 14px;
         background: color-mix(in srgb, var(--ts-accent) 4%, var(--ts-surface));
-        animation: tsSubIn 0.22s ease both;
+        animation: tsSubIn 0.18s ease both;
+      }
+      .ts-tech__item > .ts-sub {
+        margin: 8px 0 4px;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
       }
       @keyframes tsSubIn {
-        from { opacity: 0; transform: translateY(-6px); }
+        from { opacity: 0; transform: translateY(-5px); }
         to { opacity: 1; transform: none; }
       }
       .ts-sub__head {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         gap: 10px;
         margin: 0 0 12px;
       }
@@ -624,8 +654,9 @@
       .ts-sub__title i { color: var(--ts-accent); font-size: 17px; }
       .ts-sub__cap {
         font-size: 11.5px;
+        line-height: 1.6;
         color: var(--text-muted-ui, var(--text-secondary));
-        margin: 2px 0 0;
+        margin: 3px 0 0;
         word-break: keep-all;
       }
       .ts-sub__close {
@@ -644,6 +675,10 @@
         font-size: 16px;
       }
       .ts-sub__close:hover { border-color: var(--ts-line); color: var(--ts-accent); }
+      @media (min-width: 900px) {
+        /* 데스크톱은 항상 하나가 선택돼 있어야 오른쪽 칸이 비지 않는다 — 닫기 버튼을 숨긴다 */
+        .ts-sub__close { display: none; }
+      }
       .ts-preset__tags {
         display: flex;
         flex-wrap: wrap;
@@ -1565,11 +1600,15 @@
                 <span class="ts-sec__icon" aria-hidden="true"><i class="ti ti-target-arrow"></i></span>
                 <div class="ts-sec__txt">
                   <h2 class="ts-sec__title">매매기법으로 찾기</h2>
-                  <p class="ts-sec__cap">계열을 고르면 세부 기법이 열립니다. 기법을 누르면 타이핑 없이 바로 검색해요.</p>
+                  <p class="ts-sec__cap">계열을 고른 뒤 기법을 누르면 타이핑 없이 바로 검색합니다.</p>
                 </div>
               </div>
-              <div class="ts-groups" id="ts-groups"></div>
-              <div class="ts-sub ts-hidden" id="ts-sub" aria-live="polite"></div>
+              <div class="ts-tech">
+                <div class="ts-tech__list" id="ts-tech-list"></div>
+                <div class="ts-tech__detail" id="ts-tech-detail">
+                  <div class="ts-sub ts-hidden" id="ts-sub" aria-live="polite"></div>
+                </div>
+              </div>
               <p class="ts-presets__note" id="ts-presets-note"></p>
             </section>
 
@@ -3256,6 +3295,10 @@
          * 나머지는 전 종목이 담긴 전일 종가 캐시로 돌린다 — RSI·MACD처럼 장중에 갱신되지 않는
          * 지표를 오늘 값인 척 보여주지 않기 위해서다. */
         let tsOpenGroupId = null;
+        /* 2026-09-12 v2: 900px 이상은 마스터-디테일(왼쪽 목록 + 오른쪽 패널), 미만은 아코디언.
+         * 패널 DOM은 #ts-sub 하나뿐이고 위치만 옮긴다 — 두 벌로 렌더하면 클릭 핸들러와
+         * 열림 상태가 따로 놀아서 반드시 어긋난다. */
+        const tsWideMq = window.matchMedia("(min-width: 900px)");
 
         function tsGroupById(id) {
           return TS_TECHNIQUE_GROUPS.find((g) => g.id === id) || null;
@@ -3269,23 +3312,37 @@
           return null;
         }
 
+        /** 패널을 지금 화면 폭에 맞는 자리로 옮긴다(데스크톱=오른쪽 칸, 모바일=선택한 계열 아래). */
+        function tsPlaceSubPanel() {
+          const sub = $("ts-sub");
+          if (!sub) return;
+          const target = tsWideMq.matches
+            ? $("ts-tech-detail")
+            : document.querySelector(`.ts-tech__item[data-item="${tsOpenGroupId}"]`);
+          if (target && sub.parentElement !== target) target.appendChild(sub);
+        }
+
         function renderTechniqueGroups() {
-          const wrap = $("ts-groups");
-          if (!wrap) return;
-          wrap.innerHTML = TS_TECHNIQUE_GROUPS.map(
-            (g) => `<button type="button" class="ts-group" data-group="${escapeHtml(g.id)}" aria-expanded="false" aria-controls="ts-sub">
-                <span class="ts-group__top">
-                  <span class="ts-group__icon" aria-hidden="true"><i class="ti ${escapeHtml(g.icon)}"></i></span>
-                  <span class="ts-group__name">${escapeHtml(g.name)}</span>
-                </span>
-                <span class="ts-group__cap">${escapeHtml(g.tagline)}</span>
-                <span class="ts-group__count">기법 ${g.presets.length}개<i class="ti ti-chevron-down" aria-hidden="true"></i></span>
-              </button>`
+          const list = $("ts-tech-list");
+          if (!list) return;
+          list.innerHTML = TS_TECHNIQUE_GROUPS.map(
+            (g) => `<div class="ts-tech__item" data-item="${escapeHtml(g.id)}">
+                <button type="button" class="ts-tech__btn" data-group="${escapeHtml(g.id)}" aria-expanded="false" aria-controls="ts-sub">
+                  <span class="ts-tech__icon" aria-hidden="true"><i class="ti ${escapeHtml(g.icon)}"></i></span>
+                  <span class="ts-tech__txt">
+                    <span class="ts-tech__name">${escapeHtml(g.name)}</span>
+                    <span class="ts-tech__cap">${escapeHtml(g.tagline)}</span>
+                  </span>
+                  <span class="ts-tech__count">${g.presets.length}</span>
+                  <i class="ti ti-chevron-down ts-tech__chev" aria-hidden="true"></i>
+                </button>
+              </div>`
           ).join("");
-          wrap.querySelectorAll("[data-group]").forEach((btn) => {
+          list.querySelectorAll("[data-group]").forEach((btn) => {
             btn.addEventListener("click", () => {
               const id = btn.getAttribute("data-group");
-              if (tsOpenGroupId === id) closeTechniqueGroup();
+              // 데스크톱은 "선택"이라 같은 걸 다시 눌러도 닫지 않는다(오른쪽 칸이 비면 어색하다).
+              if (tsOpenGroupId === id && !tsWideMq.matches) closeTechniqueGroup();
               else openTechniqueGroup(id);
             });
           });
@@ -3294,6 +3351,15 @@
             note.textContent =
               "종가매매·급등주 계열은 평일 14:30·15:31에 거래대금 상위 종목을 당일 시세·수급으로 다시 계산합니다(15:36 반영). 그 외 기법과 그 전 시간대는 전일 종가 기준입니다. 특정 종목의 매수·매도를 권유하는 것이 아니며, 투자 판단과 결과에 대한 책임은 투자자 본인에게 있습니다.";
           }
+          // 넓은 화면에선 첫 계열을 미리 열어 둔다 — 오른쪽 칸이 빈 채로 시작하면
+          // "여기서 뭘 해야 하는지"가 안 보인다. 좁은 화면은 8개 계열을 먼저 훑게 접어 둔다.
+          if (tsWideMq.matches) openTechniqueGroup(TS_TECHNIQUE_GROUPS[0].id, { noScroll: true });
+          const onBreakpoint = () => {
+            if (tsWideMq.matches && !tsOpenGroupId) openTechniqueGroup(TS_TECHNIQUE_GROUPS[0].id, { noScroll: true });
+            else tsPlaceSubPanel();
+          };
+          if (tsWideMq.addEventListener) tsWideMq.addEventListener("change", onBreakpoint);
+          else if (tsWideMq.addListener) tsWideMq.addListener(onBreakpoint);
         }
 
         function closeTechniqueGroup() {
@@ -3302,22 +3368,23 @@
           if (sub) {
             sub.classList.add("ts-hidden");
             sub.innerHTML = "";
+            const detail = $("ts-tech-detail");
+            if (detail && sub.parentElement !== detail) detail.appendChild(sub);
           }
-          document.querySelectorAll("#ts-groups [data-group]").forEach((b) => {
-            b.classList.remove("is-open");
-            b.setAttribute("aria-expanded", "false");
-          });
+          document.querySelectorAll("#ts-tech-list .ts-tech__item").forEach((it) => it.classList.remove("is-open"));
+          document.querySelectorAll("#ts-tech-list [data-group]").forEach((b) => b.setAttribute("aria-expanded", "false"));
         }
 
-        function openTechniqueGroup(id) {
+        function openTechniqueGroup(id, opts) {
           const g = tsGroupById(id);
           const sub = $("ts-sub");
           if (!g || !sub) return;
           tsOpenGroupId = id;
-          document.querySelectorAll("#ts-groups [data-group]").forEach((b) => {
-            const on = b.getAttribute("data-group") === id;
-            b.classList.toggle("is-open", on);
-            b.setAttribute("aria-expanded", on ? "true" : "false");
+          document.querySelectorAll("#ts-tech-list .ts-tech__item").forEach((it) => {
+            it.classList.toggle("is-open", it.getAttribute("data-item") === id);
+          });
+          document.querySelectorAll("#ts-tech-list [data-group]").forEach((b) => {
+            b.setAttribute("aria-expanded", b.getAttribute("data-group") === id ? "true" : "false");
           });
           sub.innerHTML = `
             <div class="ts-sub__head">
@@ -3325,7 +3392,7 @@
                 <p class="ts-sub__title"><i class="ti ${escapeHtml(g.icon)}" aria-hidden="true"></i>${escapeHtml(g.name)}</p>
                 <p class="ts-sub__cap">${escapeHtml(g.tagline)} · 기법을 누르면 바로 검색합니다</p>
               </div>
-              <button type="button" class="ts-sub__close" id="ts-sub-close" aria-label="닫기"><i class="ti ti-x" aria-hidden="true"></i></button>
+              <button type="button" class="ts-sub__close" id="ts-sub-close" aria-label="접기"><i class="ti ti-x" aria-hidden="true"></i></button>
             </div>
             <div class="ts-presets">
               ${g.presets
@@ -3343,12 +3410,18 @@
                 .join("")}
             </div>`;
           sub.classList.remove("ts-hidden");
+          tsPlaceSubPanel();
           const closeBtn = $("ts-sub-close");
           if (closeBtn) closeBtn.addEventListener("click", closeTechniqueGroup);
           sub.querySelectorAll("[data-preset]").forEach((btn) => {
             btn.addEventListener("click", () => runTechniquePreset(btn.getAttribute("data-preset"), btn));
           });
-          tsScrollToEl(sub);
+          // 좁은 화면에서 고른 줄이 화면 아래쪽에 있으면 펼친 내용이 접힌 채로 안 보인다.
+          // 이미 위쪽에 있으면 건드리지 않는다 — 누를 때마다 화면이 튀는 게 v1의 문제였다.
+          if (!(opts && opts.noScroll) && !tsWideMq.matches) {
+            const item = document.querySelector(`.ts-tech__item[data-item="${id}"]`);
+            if (item && item.getBoundingClientRect().top > window.innerHeight * 0.5) tsScrollToEl(item);
+          }
         }
 
         async function runTechniquePreset(presetId, btn) {

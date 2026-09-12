@@ -264,23 +264,33 @@ async function main() {
    * 1531은 이미 정규장이 끝나 매수를 못 하므로 랭킹을 내면 오해를 준다. */
   let closeBetting = null;
   if (slot === "1520") {
-    const earlyCloses = await fetchSlotCloses(asOfDate, "1430");
-    for (const row of stocks) {
-      const early = earlyCloses.get(row.code);
-      row.lateStrengthPct =
-        early && row.close != null ? Math.round(((row.close - early) / early) * 10000) / 100 : null;
+    /* try/catch가 반드시 있어야 한다: 이 시점에 이미 400종목을 4~5분간 긁어온 뒤라,
+     * 채점에서 예외가 나면 payload 저장까지 통째로 날아가 그날 1520 슬롯 자체가 사라진다.
+     * 랭킹은 스캔의 부가 산출물이지 스캔의 전제가 아니므로, 실패해도 스캔 결과는 저장한다.
+     * (화면은 closeBetting이 없으면 "집계 전"으로 표시하니 빈 랭킹이 노출되지도 않는다.) */
+    try {
+      const earlyCloses = await fetchSlotCloses(asOfDate, "1430");
+      for (const row of stocks) {
+        const early = earlyCloses.get(row.code);
+        row.lateStrengthPct =
+          early && row.close != null ? Math.round(((row.close - early) / early) * 10000) / 100 : null;
+      }
+      const { ranked, stats } = rankCloseBetting(stocks, 10);
+      closeBetting = {
+        ranked,
+        stats,
+        lateStrengthBase: earlyCloses.size ? "1430" : null,
+        scoredAt: new Date().toISOString(),
+      };
+      console.log(
+        `[intraday] 종가베팅 랭킹 — 후보 ${stats.total} → 필터통과 ${stats.passed} → 상위 ${ranked.length}\n` +
+          ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 +${r.changePct}%`).join("\n")
+      );
+    } catch (error) {
+      closeBetting = null;
+      console.log(`::warning::종가베팅 채점 실패 — 스캔 결과는 그대로 저장합니다: ${error && error.message}`);
+      console.error(error);
     }
-    const { ranked, stats } = rankCloseBetting(stocks, 10);
-    closeBetting = {
-      ranked,
-      stats,
-      lateStrengthBase: earlyCloses.size ? "1430" : null,
-      scoredAt: new Date().toISOString(),
-    };
-    console.log(
-      `[intraday] 종가베팅 랭킹 — 후보 ${stats.total} → 필터통과 ${stats.passed} → 상위 ${ranked.length}\n` +
-        ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 +${r.changePct}%`).join("\n")
-    );
   }
 
   const payload = {

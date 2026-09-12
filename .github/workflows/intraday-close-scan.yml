@@ -11,12 +11,17 @@ name: Intraday Close Scan
 #
 # pg_cron 쪽을 바꿀 때 Edge Function의 ALLOWED_WORKFLOWS에 이 파일명을 넣어야 한다 —
 # allowlist에 없으면 400을 돌려주고 아무 일도 없이 조용히 끝난다.
+#
+# 2026-09-11: 종가베팅 랭킹용 **1520 슬롯 추가**. pg_cron을 15:18 KST(UTC 06:18)에도
+# 걸어야 한다 — 스캔이 4~5분 걸리므로 15:18에 시작해야 15:23쯤 화면에 뜨고 정규장
+# 종가(15:30)까지 시간이 남는다. 기존 1531 슬롯은 이미 장이 끝난 뒤라 종가 매수를
+# 할 수 없어서, 랭킹은 1520 슬롯에서만 계산한다(scripts/intraday-close-scan.mjs).
 
 on:
   workflow_dispatch:
     inputs:
       slot:
-        description: "슬롯(1430=진입검토 / 1531=종가확정). 비우면 실행 시각으로 자동 판정"
+        description: "슬롯(1430=진입검토 / 1520=종가베팅 확정 / 1531=마감후). 비우면 실행 시각으로 자동 판정"
         required: false
         default: ""
       limit:
@@ -30,8 +35,10 @@ on:
   repository_dispatch:
     types: [trigger-intraday-close-scan]
   schedule:
-    # 백업용. UTC 05:30 = 14:30 KST, UTC 06:31 = 15:31 KST (실제로는 크게 밀린다)
+    # 백업용. UTC 05:30 = 14:30 KST, UTC 06:18 = 15:18 KST, UTC 06:31 = 15:31 KST
+    # (이 저장소의 schedule은 실측 1.5~6시간까지 밀린다 — 정시성은 pg_cron이 담당)
     - cron: "30 5 * * 1-5"
+    - cron: "18 6 * * 1-5"
     - cron: "31 6 * * 1-5"
 
 permissions:

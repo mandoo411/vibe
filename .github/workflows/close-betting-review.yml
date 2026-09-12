@@ -1,0 +1,78 @@
+name: Close Betting Review
+
+# 종가베팅 랭킹 사후 기록 — 직전 거래일 상위 10종목의 **익일 시가 수익률**을 남긴다.
+#
+# 왜 필요한가: lib/close-betting-score.js의 배점은 공개 연구 + 실전 통설로 세운 추정치다.
+# 이 기록이 매일 쌓여야 팩터별 적중률을 재고 배점을 고칠 수 있고, 화면에 "지난 N거래일
+# 평균 시가 수익률"을 실제 숫자로 띄울 수 있다. 없으면 그냥 또 하나의 조건검색기다.
+#
+# ⚠️ 정시 실행은 pg_cron → Edge Function github-workflow-dispatch가 담당한다.
+# **ALLOWED_WORKFLOWS에 close-betting-review.yml을 반드시 추가할 것** — 빠지면 400으로
+# 조용히 실패한다(2026-09-11 이전에 같은 함정을 한 번 밟았다).
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: "다시 채점할 랭킹 날짜(YYYY-MM-DD). 비우면 가장 최근 랭킹"
+        required: false
+        default: ""
+      dry_run:
+        description: "1이면 계산만 하고 저장 생략"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [trigger-close-betting-review]
+  schedule:
+    # 백업용. UTC 00:10 = 09:10 KST (schedule은 크게 밀리므로 정시성은 기대하지 않는다)
+    - cron: "10 0 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: close-betting-review
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      # 휴장일·주말엔 시가가 없다. 스크립트도 "오늘 랭킹"은 건너뛰지만, 굳이 KIS를
+      # 두드리지 않도록 여기서 먼저 막는다.
+      - name: 평일 여부 확인
+        id: guard
+        run: |
+          set -euo pipefail
+          DOW=$(TZ=Asia/Seoul date +%u)
+          if [ "$DOW" -ge 6 ]; then
+            echo "::notice::주말($DOW) — 채점 건너뜀"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run close betting review
+        if: steps.guard.outputs.run == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          REVIEW_TARGET_DATE: ${{ github.event.inputs.target_date || github.event.client_payload.target_date || '' }}
+          REVIEW_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}
+        run: node scripts/close-betting-review.mjs

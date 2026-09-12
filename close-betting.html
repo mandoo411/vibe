@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#07264b" />
+    <title>TotalMoney AI · 종가베팅 랭킹</title>
+    <meta name="description" content="거래대금·종가강도·차트 위치를 점수로 매긴 조건검색 결과 상위 종목. 매일 장 마감 직전 기준." />
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6">
+    <link rel="shortcut icon" href="/favicon.ico?v=6">
+    <link rel="manifest" href="/site.webmanifest?v=6">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/auth-config.js"></script>
+    <script src="./assets/auth.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+    <link rel="stylesheet" href="./typography.css?v=1" />
+    <style>
+      /* ══════════════════════════════════════════════════════════════════════
+         종가베팅 랭킹 — 2026-09-11 신설.
+         읽는 순서를 순위 → 점수 → 근거로 고정한다. 점수는 막대로도 같이 보여줘야
+         "79점과 62점이 얼마나 다른가"가 숫자만 볼 때보다 빨리 읽힌다.
+         상승 빨강 / 하락 파랑은 국내 관례를 그대로 따른다.
+         ══════════════════════════════════════════════════════════════════════ */
+      .cb-wrap {
+        padding-left: max(var(--shell-pad-inline, 24px), env(safe-area-inset-left));
+        padding-right: max(var(--shell-pad-inline-end, 32px), env(safe-area-inset-right));
+        padding-block: 20px 64px;
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      .cb-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 18px; margin-bottom: 6px; }
+      .cb-title { font-size: clamp(22px, 3.4vw, 30px); font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+      .cb-sub { color: var(--text-muted, #6b7a90); font-size: 13.5px; line-height: 1.6; margin: 6px 0 0; max-width: 62ch; }
+      .cb-stamp {
+        margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+        font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px;
+        padding: 6px 11px; border-radius: 999px;
+        border: 1px solid var(--border-soft, #d9e1ec); color: var(--text-muted, #6b7a90);
+        white-space: nowrap;
+      }
+      .cb-stamp b { color: var(--text-strong, #0f1c2e); font-weight: 700; }
+
+      .cb-note {
+        margin: 18px 0 22px; padding: 13px 15px; border-radius: 12px;
+        border: 1px solid var(--border-soft, #d9e1ec);
+        background: var(--surface-soft, #f5f8fc);
+        font-size: 12.5px; line-height: 1.75; color: var(--text-muted, #5b6b80);
+      }
+      .cb-note b { color: var(--text-strong, #0f1c2e); }
+
+      .cb-list { display: flex; flex-direction: column; gap: 10px; }
+      .cb-row {
+        border: 1px solid var(--border-soft, #d9e1ec); border-radius: 14px;
+        background: var(--surface, #fff); overflow: hidden;
+        transition: border-color .15s ease, box-shadow .15s ease;
+      }
+      .cb-row:hover { border-color: var(--accent, #1f8a8a); }
+      .cb-row[data-locked="true"]:hover { border-color: var(--border-soft, #d9e1ec); }
+
+      .cb-main {
+        display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 14px;
+        align-items: center; padding: 14px 16px; width: 100%;
+        /* button은 기본이 content-box라 이걸 빼면 잠긴 행(div)과 점수 칸이 32px 어긋난다 */
+        box-sizing: border-box;
+        background: none; border: 0; text-align: left; cursor: pointer; color: inherit; font: inherit;
+      }
+      .cb-row[data-locked="true"] .cb-main { cursor: default; }
+      .cb-rank {
+        font-family: "JetBrains Mono", monospace; font-size: 19px; font-weight: 700;
+        text-align: center; color: var(--text-muted, #8695a8);
+      }
+      .cb-row:nth-child(-n+3) .cb-rank { color: var(--accent, #1f8a8a); }
+
+      .cb-name { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+      .cb-code { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--text-muted, #8695a8); margin-left: 7px; font-weight: 500; }
+      .cb-meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-muted, #6b7a90); }
+      .cb-meta .up { color: #d13b3b; font-weight: 700; font-family: "JetBrains Mono", monospace; }
+      .cb-meta em { font-style: normal; font-family: "JetBrains Mono", monospace; }
+
+      .cb-scorebox { text-align: right; min-width: 116px; }
+      .cb-score { font-family: "JetBrains Mono", monospace; font-size: 24px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+      .cb-score span { font-size: 12px; font-weight: 500; color: var(--text-muted, #8695a8); margin-left: 2px; }
+      .cb-bar { margin-top: 7px; height: 5px; border-radius: 3px; background: var(--surface-soft, #eef2f7); overflow: hidden; }
+      .cb-bar i { display: block; height: 100%; border-radius: 3px; background: var(--accent, #1f8a8a); }
+
+      .cb-detail { display: none; padding: 0 16px 16px; border-top: 1px dashed var(--border-soft, #d9e1ec); }
+      .cb-row[data-open="true"] .cb-detail { display: block; }
+      .cb-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 14px; margin-top: 14px; }
+      .cb-group h4 { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text-muted, #8695a8); }
+      .cb-factor { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 6px 0; border-bottom: 1px solid var(--border-soft, #eef2f7); font-size: 12.5px; }
+      .cb-factor:last-child { border-bottom: 0; }
+      .cb-factor b { font-weight: 600; }
+      .cb-factor .pts { font-family: "JetBrains Mono", monospace; font-weight: 700; white-space: nowrap; }
+      .cb-factor .val { grid-column: 1 / -1; color: var(--text-muted, #8695a8); font-size: 11.5px; font-family: "JetBrains Mono", monospace; }
+      .cb-pen { margin-top: 12px; font-size: 12px; color: #d13b3b; }
+      .cb-missing { margin-top: 8px; font-size: 11.5px; color: var(--text-muted, #8695a8); }
+
+      .cb-locked .cb-name,
+      .cb-locked .cb-code { filter: blur(6px); user-select: none; }
+      .cb-locked .cb-meta { filter: blur(5px); user-select: none; }
+      .cb-lockcta {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+        margin-top: 12px; padding: 15px 16px; border-radius: 14px;
+        border: 1px dashed var(--accent, #1f8a8a);
+        background: color-mix(in srgb, var(--accent, #1f8a8a) 6%, transparent);
+        font-size: 13px;
+      }
+      .cb-lockcta a {
+        padding: 8px 16px; border-radius: 999px; background: var(--accent, #1f8a8a);
+        color: #fff; text-decoration: none; font-weight: 700; font-size: 13px; white-space: nowrap;
+      }
+
+      .cb-empty { padding: 44px 20px; text-align: center; color: var(--text-muted, #6b7a90); font-size: 14px; line-height: 1.8; }
+      .cb-foot { margin-top: 26px; font-size: 11.5px; line-height: 1.85; color: var(--text-muted, #8695a8); }
+      .cb-foot h3 { font-size: 12.5px; color: var(--text-strong, #0f1c2e); margin: 0 0 6px; }
+      .cb-sched { display: grid; grid-template-columns: 86px 1fr; gap: 3px 12px; margin: 8px 0 18px; font-size: 12px; }
+      .cb-sched dt { font-family: "JetBrains Mono", monospace; color: var(--text-strong, #0f1c2e); font-weight: 600; }
+      .cb-sched dd { margin: 0; color: var(--text-muted, #6b7a90); }
+
+      @media (max-width: 560px) {
+        .cb-main { grid-template-columns: 34px minmax(0, 1fr); row-gap: 10px; }
+        .cb-scorebox { grid-column: 1 / -1; text-align: left; }
+        .cb-stamp { margin-left: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="cb-wrap">
+      <div class="cb-head">
+        <div>
+          <h1 class="cb-title">종가베팅 랭킹</h1>
+          <p class="cb-sub">
+            거래대금·종가 강도·차트 위치를 정해진 조건식으로 채점해 점수가 높은 순으로 나열한
+            <b>조건검색 결과</b>입니다. 장 마감 직전(15:20) 시세 기준으로 하루 한 번 계산합니다.
+          </p>
+        </div>
+        <div class="cb-stamp" id="cbStamp">불러오는 중…</div>
+      </div>
+
+      <div class="cb-note">
+        점수는 <b>익일 시가까지 하룻밤</b>을 보는 기준으로만 만들어졌습니다. 수급(35) · 종가 강도(25) ·
+        차트 위치(20)를 더하고 과열 항목을 감점한 뒤 100점으로 환산합니다.
+        <b>당일 상승률은 높을수록 점수가 높지 않습니다</b> — +5~12%가 가장 높고 +20%를 넘으면 감점입니다.
+      </div>
+
+      <div class="cb-list" id="cbList">
+        <div class="cb-empty">불러오는 중…</div>
+      </div>
+
+      <div class="cb-foot">
+        <h3>계산·갱신 시각</h3>
+        <dl class="cb-sched">
+          <dt>15:20</dt><dd>거래대금 상위 후보를 당일 시세·수급으로 갱신하고 채점 → 이 화면 갱신</dd>
+          <dt>익일 09:00</dt><dd>전일 순위의 시가 대비 결과를 기록</dd>
+        </dl>
+        <h3>알아두실 점</h3>
+        <p>
+          배점은 공개된 연구(오버나이트 수익률 편향, 장 막판 모멘텀)와 실전에서 통용되는 기준을 합쳐
+          세운 <b>출발점</b>이며, 실제 성과 데이터가 쌓이는 대로 조정합니다. 데이터가 아직 없는 항목은
+          점수에 넣지 않고 각 종목 상세의 &lsquo;미반영&rsquo;에 표시합니다.
+        </p>
+        <p>
+          이 페이지는 공개된 시세·수급 데이터를 정해진 조건식으로 계산한 결과이며, 특정 종목의 매수·매도를
+          권유하지 않습니다. 투자 판단과 그 결과에 대한 책임은 이용자 본인에게 있습니다.
+        </p>
+      </div>
+    </main>
+
+    <script>
+      (function () {
+        var listEl = document.getElementById("cbList");
+        var stampEl = document.getElementById("cbStamp");
+
+        function esc(v) {
+          return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+          });
+        }
+        function eok(v) {
+          if (v == null) return "-";
+          if (v >= 10000) return (Math.round(v / 1000) / 10).toLocaleString("ko-KR") + "조";
+          return Math.round(v).toLocaleString("ko-KR") + "억";
+        }
+        async function token() {
+          try {
+            if (window.TMAuth && window.TMAuth.getAccessToken) return await window.TMAuth.getAccessToken();
+          } catch (e) {}
+          return null;
+        }
+
+        function factorHtml(f) {
+          return (
+            '<div class="cb-factor"><b>' + esc(f.label) + "</b>" +
+            '<span class="pts">' + esc(f.score) + "<small>/" + esc(f.max) + "</small></span>" +
+            '<span class="val">' + esc(f.value || "") + "</span></div>"
+          );
+        }
+
+        function detailHtml(r) {
+          var groups = {};
+          (r.factors || []).forEach(function (f) {
+            (groups[f.group] = groups[f.group] || []).push(f);
+          });
+          var html = '<div class="cb-groups">';
+          ["수급", "종가", "차트", "재료"].forEach(function (g) {
+            if (!groups[g]) return;
+            var sum = groups[g].reduce(function (a, f) { return a + f.score; }, 0);
+            var max = groups[g].reduce(function (a, f) { return a + f.max; }, 0);
+            html +=
+              '<div class="cb-group"><h4>' + esc(g) + " " + (Math.round(sum * 10) / 10) + "/" + max + "</h4>" +
+              groups[g].map(factorHtml).join("") + "</div>";
+          });
+          html += "</div>";
+          if (r.penalties && r.penalties.length) {
+            html += '<div class="cb-pen">감점 · ' +
+              r.penalties.map(function (p) { return esc(p.label) + " −" + p.points; }).join(" · ") + "</div>";
+          }
+          if (r.missing && r.missing.length) {
+            html += '<div class="cb-missing">미반영(데이터 없음, 분모에서도 제외) · ' +
+              r.missing.map(esc).join(" · ") + "</div>";
+          }
+          return '<div class="cb-detail">' + html + "</div>";
+        }
+
+        /* 잠긴 행과 열린 행은 **같은 마크업**을 쓴다. 예전엔 분기해서 따로 만들었더니
+           그리드 열 폭이 어긋나 점수 칸이 행마다 다른 위치에 찍혔다. 가려야 할 건
+           서버가 이미 지워서 보내므로(cbMaskRow) 여기서는 자리표시자만 채운다. */
+        function rowHtml(r) {
+          var locked = !!r.locked;
+          var tag = locked ? "div" : "button";
+          var meta = locked
+            ? '<span class="up">+0.00%</span><em>000억</em><em>시총 0,000억</em>'
+            : '<span class="up">+' + esc(r.changePct) + "%</span>" +
+              "<em>" + eok(r.tradingValueEok) + "</em>" +
+              "<em>시총 " + eok(r.marketCapEok) + "</em>" +
+              (r.sector ? "<span>" + esc(r.sector) + "</span>" : "");
+          return (
+            '<div class="cb-row' + (locked ? " cb-locked" : "") + '" data-open="false"' +
+            (locked ? ' data-locked="true"' : "") + ">" +
+            "<" + tag + (locked ? "" : ' type="button"') + ' class="cb-main">' +
+            '<div class="cb-rank">' + r.rank + "</div>" +
+            '<div><div><span class="cb-name">' + (locked ? "종목명 비공개" : esc(r.name)) +
+            '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span></div>" +
+            '<div class="cb-meta">' + meta + "</div></div>" +
+            '<div class="cb-scorebox"><div class="cb-score">' + r.score + '<span>점</span></div>' +
+            '<div class="cb-bar"><i style="width:' + Math.max(0, Math.min(100, r.score)) + '%"></i></div></div>' +
+            "</" + tag + ">" + (locked ? "" : detailHtml(r)) + "</div>"
+          );
+        }
+
+        function render(d) {
+          if (!d.ready) {
+            stampEl.textContent = "오늘 집계 전";
+            listEl.innerHTML =
+              '<div class="cb-empty">아직 오늘 집계가 없습니다.<br />평일 15:20 이후에 갱신됩니다.</div>';
+            return;
+          }
+          stampEl.innerHTML = "기준 <b>" + esc(d.asOfDate) + "</b> 15:20 · 후보 " +
+            esc((d.stats && d.stats.total) || "-") + " → 통과 " + esc((d.stats && d.stats.passed) || "-");
+
+          var html = d.ranked.map(rowHtml).join("");
+          if (!d.isPro && d.total > d.visible) {
+            html +=
+              '<div class="cb-lockcta"><span>' + (d.total - d.visible) +
+              "개 종목의 이름과 점수 근거는 Pro에서 볼 수 있습니다.</span>" +
+              '<a href="/pricing.html">플랜 보기</a></div>';
+          }
+          listEl.innerHTML = html;
+
+          listEl.querySelectorAll(".cb-main").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var row = btn.closest(".cb-row");
+              row.dataset.open = row.dataset.open === "true" ? "false" : "true";
+            });
+          });
+        }
+
+        async function load() {
+          try {
+            var t = await token();
+            var res = await fetch("/api/analyze?feature=close-betting", {
+              cache: "no-store",
+              headers: t ? { Authorization: "Bearer " + t } : {},
+            });
+            var d = await res.json();
+            if (!res.ok) throw new Error(d.error || "요청 실패");
+            render(d);
+          } catch (e) {
+            stampEl.textContent = "불러오기 실패";
+            listEl.innerHTML = '<div class="cb-empty">랭킹을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>';
+          }
+        }
+
+        load();
+        window.addEventListener("tm-auth-change", load);
+      })();
+    </script>
+  </body>
+</html>

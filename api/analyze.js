@@ -4575,6 +4575,98 @@ async function handleReports(req, res) {
 
 /* ═══════════════════════════ 매매 시그널 끝 ═══════════════════════════ */
 
+/* ═════════════════ 종가베팅 랭킹 (2026-09-11) ═════════════════
+ * scripts/intraday-close-scan.mjs가 15:20 슬롯에서 채점한 상위 10종목을 읽어 내보낸다.
+ * 여기서 다시 계산하지 않는다 — 점수는 스캔 시점의 시세로 매겨야 의미가 있고,
+ * 요청마다 재계산하면 같은 화면이 사람마다 달라진다.
+ *
+ * Vercel Hobby 서버리스 함수 12개 한도가 이미 꽉 차서(api/*.js 12개) 새 파일을 못 만든다.
+ * 매매시그널·리포트와 같은 방식으로 ?feature=close-betting 쿼리로 이 파일에 얹는다.
+ *
+ * 무료는 상위 3종목까지, Pro/Premium은 10종목 전체. 잠긴 항목은 순위·점수만 남기고
+ * 종목명과 근거를 지워서 보낸다 — 클라이언트에서 가리기만 하면 개발자도구로 다 보인다.
+ */
+const CB_FREE_LIMIT = 3;
+
+/** 잠긴 행 — 종목을 특정할 수 있는 값은 서버에서 지운다. */
+function cbMaskRow(row) {
+  return {
+    rank: row.rank,
+    score: row.score,
+    locked: true,
+    market: row.market || null,
+  };
+}
+
+async function cbLoadLatest() {
+  // 1520 슬롯만 랭킹을 담는다(1430은 후보 미확정, 1531은 이미 정규장 종료).
+  const res = await serviceRequest(
+    "trade_signal_intraday?slot=eq.1520&order=as_of_date.desc&limit=1&select=as_of_date,slot,scanned_at,payload",
+    { method: "GET" }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+  const cb = row && row.payload && row.payload.closeBetting;
+  if (!cb || !Array.isArray(cb.ranked) || !cb.ranked.length) return null;
+  return {
+    asOfDate: row.as_of_date,
+    scannedAt: row.scanned_at || cb.scoredAt || null,
+    flowAsOfDate: (row.payload && row.payload.flowAsOfDate) || null,
+    lateStrengthBase: cb.lateStrengthBase || null,
+    ranked: cb.ranked,
+    stats: cb.stats || null,
+  };
+}
+
+async function handleCloseBetting(req, res) {
+  setCors(res);
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+  if (req.method !== "GET") return json(res, 405, { error: "Method not allowed" });
+
+  try {
+    let isPro = false;
+    if (supabaseConfigured()) {
+      const user = await getUserFromToken(bearerToken(req));
+      if (user) {
+        const sub = await getSubscription(user.id);
+        isPro = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
+      }
+    }
+
+    const latest = await cbLoadLatest();
+    if (!latest) {
+      // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
+      return json(res, 200, { ready: false, isPro, ranked: [], total: 0 });
+    }
+
+    const total = latest.ranked.length;
+    const visible = isPro ? total : Math.min(CB_FREE_LIMIT, total);
+    const ranked = latest.ranked.map((r, i) => (i < visible ? Object.assign({ locked: false }, r) : cbMaskRow(r)));
+
+    return json(res, 200, {
+      ready: true,
+      isPro,
+      asOfDate: latest.asOfDate,
+      scannedAt: latest.scannedAt,
+      flowAsOfDate: latest.flowAsOfDate,
+      lateStrengthBase: latest.lateStrengthBase,
+      total,
+      visible,
+      freeLimit: CB_FREE_LIMIT,
+      stats: latest.stats,
+      ranked,
+    });
+  } catch (error) {
+    console.error("[close-betting] 실패", error && error.message);
+    return json(res, 500, { error: "랭킹을 불러오지 못했습니다." });
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.query && req.query.feature === "trade-signal") {
     return await handleTradeSignal(req, res);
@@ -4583,6 +4675,10 @@ module.exports = async function handler(req, res) {
   // 새 api/*.js를 만들지 않고 쿼리 파라미터로 이 파일에 얹는다(매매시그널과 같은 방식).
   if (req.query && req.query.feature === "reports") {
     return await handleReports(req, res);
+  }
+  // 2026-09-11: 종가베팅 랭킹. 같은 이유(함수 12개 한도)로 쿼리 파라미터로 얹는다.
+  if (req.query && req.query.feature === "close-betting") {
+    return await handleCloseBetting(req, res);
   }
   setCors(res);
 

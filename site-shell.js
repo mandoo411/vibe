@@ -70,6 +70,8 @@
     // "전체보기" 시트에서 접근할 방법이 없었다 — 데스크톱 GNB에는 있는데 모바일에는
     // 없는 상태였음. 수익화 핵심 기능이라 AI 종목분석과 나란히 상단에 노출한다.
     { id: "signal", href: "./trade-signal.html", label: "매매시그널", icon: "ti-bell" },
+    // 2026-09-11: 종가베팅 랭킹. 매매시그널과 같은 "지금 뭘 살까" 계열이라 나란히 둔다.
+    { id: "closebet", href: "./close-betting.html", label: "종가베팅", icon: "ti-trophy" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
@@ -120,6 +122,7 @@
     "/world-market.html": "world",
     "/stock-analysis.html": "analysis",
     "/trade-signal.html": "signal",
+    "/close-betting.html": "closebet",
     "/pricing.html": "pricing",
   };
 
@@ -374,6 +377,7 @@
     "./us-market.html": 6,
     "./trade-signal.html": 7,
     "./stock-analysis.html": 8,
+    "./close-betting.html": 9,
   };
 
   function bindNavPriorityMenu() {

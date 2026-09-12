@@ -61,6 +61,7 @@ async function buildOne(stock) {
       if (!candles.length) return null;
       const closes = candles.map((c) => c.close);
       const highs = candles.map((c) => c.high);
+      const opens = candles.map((c) => c.open);
       const lows = candles.map((c) => c.low);
       const volumes = candles.map((c) => c.volume);
 

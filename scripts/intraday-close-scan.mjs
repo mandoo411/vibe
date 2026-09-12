@@ -25,6 +25,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { fetchMarketSnapshot, fetchInvestorFlow } = require("../lib/kis-indicators.js");
 const { buildIntradaySnapshot } = require("../lib/intraday-snapshot.js");
+const { rankCloseBetting } = require("../lib/close-betting-score.js");
 
 const LIMIT = Number(process.env.INTRADAY_LIMIT || 400);
 /* 2026-09-09: 120 → 80ms. 400종목이면 종목당 sleep이 2회씩 들어가 순수 대기만 96초였다.
@@ -45,12 +46,40 @@ const seoulYmd = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul"
 const seoulHm = () =>
   new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date());
 
-/** 실행 시각으로 슬롯 판정. 14:00~15:00 → "1430"(진입 검토), 그 이후 → "1531"(종가 확정) */
+/* 슬롯 판정.
+ *   "1430" — 15:00 이전. 진입 검토용 예비 스캔.
+ *   "1520" — 15:00~15:29. **정규장 종가 매수를 위한 확정 스캔**(2026-09-11 신설).
+ *   "1531" — 15:30 이후. 장 마감 후 확정치(시간외·복기용).
+ * 1520을 새로 판 이유: 기존 1531은 이미 정규장이 끝난 뒤라 종가 매수를 할 수 없었다.
+ * 종가베팅 랭킹은 이 1520 슬롯에서만 계산한다. */
 function resolveSlot() {
   const explicit = String(process.env.INTRADAY_SLOT || "").trim();
   if (explicit) return explicit;
   const [h, m] = seoulHm().split(":").map(Number);
-  return h * 60 + m < 15 * 60 ? "1430" : "1531";
+  const mins = h * 60 + m;
+  if (mins < 15 * 60) return "1430";
+  if (mins < 15 * 60 + 30) return "1520";
+  return "1531";
+}
+
+/** 같은 날 앞선 슬롯의 종목별 종가 — 막판 강도(14:30 → 종가) 계산에 쓴다. */
+async function fetchSlotCloses(asOfDate, slot) {
+  if (!SUPABASE_URL || !SERVICE_KEY) return new Map();
+  try {
+    const url =
+      `${SUPABASE_URL}/rest/v1/trade_signal_intraday` +
+      `?as_of_date=eq.${asOfDate}&slot=eq.${slot}&select=payload&limit=1`;
+    const res = await fetch(url, { headers: { apikey: SERVICE_KEY, authorization: `Bearer ${SERVICE_KEY}` } });
+    if (!res.ok) return new Map();
+    const rows = await res.json();
+    const stocks = (rows && rows[0] && rows[0].payload && rows[0].payload.stocks) || [];
+    return new Map(stocks.filter((r) => r && r.code && r.close != null).map((r) => [r.code, r.close]));
+  } catch (error) {
+    // 막판 강도는 있으면 좋은 보조 팩터다. 못 받아도 스캔 자체를 실패시키지 않는다
+    // (close-betting-score가 값 없는 팩터를 분모에서 빼도록 만들어져 있다).
+    console.warn(`[intraday] ${slot} 슬롯 조회 실패 — 막판 강도는 채점에서 제외: ${error.message}`);
+    return new Map();
+  }
 }
 
 /* ── KIS 거래대금 순위 ────────────────────────────────────────────────────────
@@ -230,6 +259,30 @@ async function main() {
     [...flowDates.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d)[0] || null;
 
   const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
+  /* ── 종가베팅 랭킹 (2026-09-11 신설) ────────────────────────────────────
+   * 1520 슬롯(정규장 종가 매수 시점)에서만 계산한다. 1430은 후보가 아직 안 굳었고,
+   * 1531은 이미 정규장이 끝나 매수를 못 하므로 랭킹을 내면 오해를 준다. */
+  let closeBetting = null;
+  if (slot === "1520") {
+    const earlyCloses = await fetchSlotCloses(asOfDate, "1430");
+    for (const row of stocks) {
+      const early = earlyCloses.get(row.code);
+      row.lateStrengthPct =
+        early && row.close != null ? Math.round(((row.close - early) / early) * 10000) / 100 : null;
+    }
+    const { ranked, stats } = rankCloseBetting(stocks, 10);
+    closeBetting = {
+      ranked,
+      stats,
+      lateStrengthBase: earlyCloses.size ? "1430" : null,
+      scoredAt: new Date().toISOString(),
+    };
+    console.log(
+      `[intraday] 종가베팅 랭킹 — 후보 ${stats.total} → 필터통과 ${stats.passed} → 상위 ${ranked.length}\n` +
+        ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 +${r.changePct}%`).join("\n")
+    );
+  }
+
   const payload = {
     as_of_date: asOfDate,
     slot,
@@ -237,7 +290,7 @@ async function main() {
     base_as_of_date: cache.asOfDate || null,
     count: stocks.length,
     elapsed_sec: elapsedSec,
-    payload: { stocks, flowAsOfDate },
+    payload: { stocks, flowAsOfDate, closeBetting },
   };
   console.log(
     `[intraday] 완료 — ${stocks.length}종목 (기준없음 ${skippedNoBase}, 실패 ${failed}) · ${elapsedSec}초 · ` +

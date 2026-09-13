@@ -698,6 +698,11 @@
 
   function formatStckAvls(raw) {
     const n = Number(String(raw == null ? "" : raw).replace(/,/g, ""));
+    /* 2026-09-13: KIS 원본에 말도 안 되는 시총이 섞여 들어올 때가 있다.
+       (예: 2026-09-11 케이엠제약 682원 / 시총 200조 — 코스닥 전체 시총의 절반)
+       숫자를 지어내지 않는 대신, 명백히 틀린 값은 보여주지 않고 "—"로 비운다.
+       기준: 국내 최대 종목(삼성전자)이 1,500조대이므로 2,000조를 상한으로 둔다. */
+    if (Number.isFinite(n) && n > 2.0e15) return "—";
     return formatWonJoEok(n);
   }
 
@@ -2207,6 +2212,13 @@
     }
   }
 
+  /* 종목 아이콘 — 로고가 있으면 로고, 없으면 브랜드색 이니셜 배지.
+     assets/stock-logo.js가 아직 안 실려도 화면이 깨지지 않게 빈 문자열로 넘어간다. */
+  function tmLogo(code, name, cls) {
+    const L = window.TMStockLogo;
+    return L ? L.html(code, name, cls) : "";
+  }
+
   function stockRowHtml(r) {
     if (isMobileLayout()) {
       const nm = escapeHtml(r.name);
@@ -2215,7 +2227,7 @@
       const price = escapeHtml(fmtNum(r.price));
       const lastVal = mobileLastColumnValue(r);
       const rank = r.rank != null ? escapeHtml(String(r.rank)) : "—";
-      const nameBtn = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+      const nameBtn = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${tmLogo(r.code, r.name)}<span class="rt-name-text">${nm}</span></button>`;
       const row = [
         `<div class="rt-mobile-row">`,
         `  <span class="rt-col-rank">${rank}</span>`,
@@ -2228,7 +2240,7 @@
       return `<tr class="rt-stock-row" data-code="${escapeHtml(r.code)}"><td colspan="${tableColSpan()}">${row}</td></tr>`;
     }
     const nm = escapeHtml(r.name);
-    const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${nm}</button>`;
+    const nameCell = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="false">${tmLogo(r.code, r.name)}<span class="rt-name-text">${nm}</span></button>`;
     const ch = r.changePct;
     const cls = deltaClass(ch);
     const tv = formatRowTradeVal(r);

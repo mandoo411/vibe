@@ -1504,7 +1504,8 @@
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
-</head>
+    <script src="./assets/stock-logo.js" defer></script>
+  </head>
   <body class="page-tm-v2">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -2549,6 +2550,13 @@
           return chips ? `<div class="ts-why">${chips}</div>` : "";
         }
 
+        /* 종목 아이콘 — 로고가 있으면 로고, 없으면 브랜드색 이니셜 배지.
+                 assets/stock-logo.js가 아직 안 실려도 화면이 깨지지 않게 빈 문자열로 넘어간다. */
+        function tmLogo(code, name, cls) {
+                const L = window.TMStockLogo;
+                return L ? L.html(code, name, cls) : "";
+        }
+
         function renderResultList() {
           const wrap = $("ts-result-list");
           if (!currentScreen || !currentScreen.stocks || !currentScreen.stocks.length) {
@@ -2590,7 +2598,7 @@
               return `<div class="ts-result-item" data-item-code="${escapeHtml(s.code)}">
                 <div class="ts-result-row" role="button" tabindex="0" aria-expanded="false" data-toggle-code="${escapeHtml(s.code)}" data-toggle-name="${escapeHtml(s.name)}">
                   <div class="ts-result-row__main">
-                    <div class="ts-result-row__name">${escapeHtml(s.name)}</div>
+                    <div class="ts-result-row__name">${tmLogo(s.code, s.name)}<span>${escapeHtml(s.name)}</span></div>
                     <div class="ts-result-row__meta">${escapeHtml(s.code)} · ${escapeHtml(s.market || "")}</div>
                     ${whyHtml}
                   </div>
@@ -3531,6 +3539,9 @@
 
         /* 2026-09-08: 문장 검색과 프리셋 검색이 같은 응답을 같은 방식으로 그리도록 분리.
            프리셋은 body에 structured condition을 실어 보내므로 서버가 AI 파싱을 건너뛴다. */
+        // 테스트에서 결과 화면을 직접 그려볼 수 있게 열어 둔다(스크린샷 검증용)
+        window.__tsApply = (r) => applyScreenResult(r);
+
         function applyScreenResult(result) {
           currentScreen = result;
           savedRowCodes.clear();

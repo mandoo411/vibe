@@ -128,6 +128,13 @@
     return logoWrap(`<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" loading="lazy" data-fallback="${escapeHtml(fb)}" onerror="homeLogoFail(this)">`);
   }
 
+  /* 국내 종목 아이콘 — 미국주식·코인은 원격 CDN 로고를 쓰지만(위 stockLogoHtml/coinLogoHtml),
+     국내는 쓸만한 로고 이미지가 적어서 우리가 만든 로고/배지를 쓴다. assets/stock-logo.js 참고. */
+  function krLogo(code, name) {
+    const L = window.TMStockLogo;
+    return L ? logoWrap(L.html(code, name)) : "";
+  }
+
   function coinLogoUrl(coin) {
     const sym = String(coin?.symbol || "").toUpperCase();
     const id = coin?.id || COIN_CMC_IDS[sym];
@@ -344,7 +351,7 @@
         const metric = formatHomeRtMetric(r, homeRtTab);
         const ariaLabel = r.code ? `${r.name} ${r.code}` : String(r.name || "");
         const displayName = String(r.name || "").trim() || "—";
-        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(displayName)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div>${homeRtPctHtml(pct, chgCls)}<div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--rt" href="${escapeHtml(moreHref)}" aria-label="${escapeHtml(ariaLabel)}"><div class="home-rt-col home-rt-col--name">${rankHtml}${krLogo(r.code, r.name)}<div class="home-tr__name-stack"><div class="home-tr__name">${escapeHtml(displayName)}</div><div class="home-tr__code">${escapeHtml(r.code || "")}</div></div></div><div class="home-rt-col home-rt-col--price home-tr__price">${escapeHtml(price)}</div>${homeRtPctHtml(pct, chgCls)}<div class="home-rt-col home-rt-col--metric home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }

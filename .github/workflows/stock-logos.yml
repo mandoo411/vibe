@@ -1,0 +1,79 @@
+name: Stock Logos Refresh
+
+# 국내 종목 아이콘(assets/logos/kr/*.webp)과 manifest를 주 1회 갱신한다.
+#
+# 왜 주 1회인가: 신규 상장·사명 변경이 있을 때만 바뀌는 값이라 매일 돌릴 이유가 없다.
+# 그리고 이미 탈락한 종목은 assets/logos/kr-rejects.json에 기록해 두고 건너뛰므로,
+# 두 번째 실행부터는 새로 생긴 종목만 받는다(요청 수가 확 준다).
+#
+# 판정 기준(scripts/build-stock-logos.mjs)을 고쳤을 때는 workflow_dispatch로 돌리면서
+# force 입력을 true로 주면 전 종목을 다시 본다.
+on:
+  schedule:
+    - cron: "0 19 * * 0" # 매주 월요일 04:00 KST (일요일 19:00 UTC)
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "판정 기준을 바꿨을 때 — 전 종목 재검사"
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [trigger-stock-logos]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-logos
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+  VERCEL_ORG_ID: team_QubZdjmTuImLo6ClM59KHPrt
+  VERCEL_PROJECT_ID: prj_VnAs98x3Puq8qzzdylHyrGyYZHFJ
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # sharp만 있으면 된다. package.json 의존성이 아니라 여기서만 설치한다
+      # (Vercel 빌드에 필요 없는 무거운 네이티브 모듈이라 런타임에 끌고 가지 않는다).
+      - run: npm install --no-save sharp@0.34
+
+      - name: Build stock logos
+        run: node scripts/build-stock-logos.mjs ${{ (inputs.force && '--force') || '' }}
+
+      - name: Commit logos
+        id: commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A assets/logos
+          if git diff --staged --quiet; then
+            echo "::notice::로고 변경 없음"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            STAMP=$(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M KST')
+            git commit -m "chore(assets): 종목 로고 갱신 ${STAMP}"
+            git pull --rebase origin main
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # assets/ 커밋은 vercel.json의 ignoreCommand에 걸리지 않지만, 다른 워크플로와
+      # 같은 이유로(자동 배포가 건너뛰어지는 경우) 명시적으로 배포해 둔다.
+      - name: Deploy to Vercel
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes

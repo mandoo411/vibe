@@ -756,6 +756,11 @@
   function formatStckAvls(raw) {
     const n = numFromMoneyish(raw);
     if (n == null || n <= 0) return "—";
+    /* 2026-09-13: KIS 원본에 말도 안 되는 시총이 섞여 들어올 때가 있다.
+       (예: 2026-09-11 케이엠제약 682원 / 시총 200조 — 코스닥 전체 시총의 절반)
+       숫자를 지어내지 않는 대신, 명백히 틀린 값은 보여주지 않고 "—"로 비운다.
+       기준: 국내 최대 종목(삼성전자)이 1,500조대이므로 2,000조를 상한으로 둔다. */
+    if (n > 2.0e15) return "—";
     if (n >= 1e8) return formatWonJoEok(n);
     const eok = Math.round(n);
     if (eok >= 10000) return `${Math.round(eok / 10000)}조`;
@@ -1926,7 +1931,7 @@
           const row = [
             `<div class="rt-mobile-row dm-mobile-row">`,
             `  <span class="rt-col-rank">${escapeHtml(r.rank != null ? String(r.rank) : "—")}</span>`,
-            `  <span class="rt-col-name"><span class="rt-name-text">${escapeHtml(r.name)}</span></span>`,
+            `  <span class="rt-col-name">${tmLogo(r.code, r.name)}<span class="rt-name-text">${escapeHtml(r.name)}</span></span>`,
             `  <span class="rt-col-price">${escapeHtml(fmtNum(r.currentPrice))}</span>`,
             `  <span class="rt-col-change"><span class="delta ${cls}">${escapeHtml(formatChange(chg))}</span></span>`,
             `  <span class="rt-col-last">${lastVal}</span>`,
@@ -1948,7 +1953,7 @@
         const mcap = escapeHtml(formatStckAvls(r.stck_avls));
         const common = [
           `<td class="num rt-td-rank">${escapeHtml(r.rank != null ? String(r.rank) : "—")}</td>`,
-          `<td class="rt-td-name"><span class="rt-name-text">${escapeHtml(r.name)}</span></td>`,
+          `<td class="rt-td-name">${tmLogo(r.code, r.name)}<span class="rt-name-text">${escapeHtml(r.name)}</span></td>`,
           `<td class="num rt-td-price">${escapeHtml(fmtNum(r.currentPrice))}</td>`,
           `<td class="num rt-td-vs"><span class="${escapeHtml(vs.cls)}">${vs.html}</span></td>`,
           `<td class="num rt-td-chg"><span class="delta ${cls}">${escapeHtml(formatChange(chg))}</span></td>`,
@@ -1999,6 +2004,13 @@
 
   function dmxFoldKey(title) {
     return String((title && title.textContent) || "").replace(/\u2304/g, "").trim();
+  }
+
+  /* 종목 아이콘 — 로고가 있으면 로고, 없으면 브랜드색 이니셜 배지.
+     assets/stock-logo.js가 아직 안 실려도 화면이 깨지지 않게 빈 문자열로 넘어간다. */
+  function tmLogo(code, name, cls) {
+    const L = window.TMStockLogo;
+    return L ? L.html(code, name, cls) : "";
   }
 
   /* 2026-09-13: 접기/펼치기를 누르면 브라우저 스크롤 앵커링이 화면 아래쪽 요소를

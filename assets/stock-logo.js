@@ -20,7 +20,12 @@
 (function (global) {
   "use strict";
 
-  const MANIFEST_URL = "./assets/logos/kr-manifest.json";
+/* 🔴 manifest는 로고를 추가할 때마다 바뀐다. 예전에는 `cache: "force-cache"`로 받았는데,
+   그러면 브라우저가 **서버에 묻지도 않고** 예전 manifest를 계속 쓴다(서버가 must-revalidate를
+   보내도 force-cache가 이긴다). 로고를 127종목 추가하고 배포했는데 화면은 그대로 배지였던
+   원인이 이것이다. 기본 캐시 정책으로 두면 ETag로 되물어보고 안 바뀌었으면 304(수백 바이트)라
+   비용도 거의 같다. URL 뒤 v는 이미 굳어 버린 캐시를 한 번 털어내기 위한 것. */
+  const MANIFEST_URL = "./assets/logos/kr-manifest.json?v=473";
   const LOGO_DIR = "./assets/logos/kr/";
 
   /* 코드 해시로 고르는 기본 팔레트 — 브랜드색을 모를 때 쓴다.
@@ -98,7 +103,7 @@
 
   function ready() {
     if (loading) return loading;
-    loading = fetch(MANIFEST_URL, { cache: "force-cache" })
+    loading = fetch(MANIFEST_URL)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         codes = new Set(Array.isArray(j && j.codes) ? j.codes : []);

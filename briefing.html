@@ -2578,6 +2578,28 @@
         return window.matchMedia("(max-width: 768px)").matches;
       }
 
+      /* 사용자가 직접 펼치거나 접은 섹션은 그 선택을 기억한다.
+         데이터가 갱신되며 덱이 다시 그려져도 기본값으로 되돌아가지 않게 하기 위한 것. */
+      const bfxUserFold = new Map();
+      function bfxFoldKey(title) {
+        return String((title && title.textContent) || "").replace(/\u2304/g, "").trim();
+      }
+
+      /* 2026-09-13: 접기/펼치기를 누르면 브라우저 스크롤 앵커링이 화면 아래쪽 요소를
+         제자리에 붙잡으려고 스크롤을 같이 내려버려서, 방금 누른 제목이 화면 위로 밀려났다.
+         펼치기 전후로 제목의 화면상 위치를 재서 차이만큼 되돌려 제자리에 고정한다. */
+      function bfxKeepInPlace(el, mutate) {
+        if (!el || typeof el.getBoundingClientRect !== "function") { mutate(); return; }
+        const before = el.getBoundingClientRect().top;
+        mutate();
+        const delta = el.getBoundingClientRect().top - before;
+        if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+        requestAnimationFrame(() => {
+          const d2 = el.getBoundingClientRect().top - before;
+          if (Math.abs(d2) > 1) window.scrollBy(0, d2);
+        });
+      }
+
       function bfxApplyFolds() {
         const mobile = bfxIsMobile();
         document.querySelectorAll(".bfx-block").forEach((block) => {
@@ -2600,8 +2622,11 @@
             title.setAttribute("tabindex", "0");
             const toggle = () => {
               if (!bfxIsMobile()) return;
-              const folded = block.classList.toggle("is-folded");
-              title.setAttribute("aria-expanded", folded ? "false" : "true");
+              bfxKeepInPlace(title, () => {
+                const folded = block.classList.toggle("is-folded");
+                title.setAttribute("aria-expanded", folded ? "false" : "true");
+                bfxUserFold.set(bfxFoldKey(title), !folded);
+              });
             };
             title.addEventListener("click", toggle);
             title.addEventListener("keydown", (e) => {
@@ -2612,7 +2637,9 @@
             });
             block.dataset.foldReady = "1";
           }
-          const keepOpen = !mobile || BFX_OPEN_ON_MOBILE.test(title.textContent || "");
+          const bfKey = bfxFoldKey(title);
+          const bfRemembered = bfxUserFold.has(bfKey) ? bfxUserFold.get(bfKey) : null;
+          const keepOpen = !mobile || (bfRemembered !== null ? bfRemembered : BFX_OPEN_ON_MOBILE.test(bfKey));
           block.classList.toggle("is-folded", !keepOpen);
           title.setAttribute("aria-expanded", keepOpen ? "true" : "false");
         });

@@ -1622,3 +1622,239 @@ html body.page-tm-v2 .cb-hero [class*="__badge"] {
     min-height: 40px !important;
   }
 }
+
+/* ── 13. 시장지표(market.html) 안쪽 — 다른 페이지와 따로 노는 부분 ──────────
+   제보: "이 페이지에서 이 부분만 튄다". 원인 세 가지였다.
+   ① 제목 앞 4px 컬러 세로 바 + 틸 영문 대문자 kicker — 다른 페이지에서 이미 걷어낸 장식이
+      여기만 남아 있었다. ② 투자심리 섹션은 카드가 1~2개뿐인데 그리드가 3열 고정이라
+      오른쪽이 휑하게 비어 "덜 만든 화면"으로 보였다. ③ 카드 호버에 들어올림+그림자가 남아 있었다. */
+html body.page-tm-v2 .market-section__bar {
+  display: none !important;
+}
+html body.page-tm-v2 .market-section__en {
+  color: var(--r-text-3) !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: 3px !important;
+}
+html body.page-tm-v2 .market-section__ko {
+  color: var(--r-text) !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+}
+html body.page-tm-v2 .market-section__sub {
+  color: var(--r-text-3) !important;
+  font-size: 12.5px !important;
+}
+/* 카드 수에 맞춰 줄을 채운다(1개면 한 줄 전체, 2개면 반반) */
+html body.page-tm-v2 .market-sentiment-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+}
+/* 카드가 넓어지면 세로로 쌓인 게이지·숫자가 허전하다 — 가로로 눕힌다 */
+html body.page-tm-v2 .market-gauge-card__body {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px !important;
+}
+html body.page-tm-v2 .market-gauge-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--r-line-2) !important;
+}
+html body.page-tm-v2 .market-gauge-card,
+html body.page-tm-v2 .market-card {
+  background: var(--r-bg) !important;
+  border: 1px solid var(--r-line-2) !important;
+  border-radius: var(--r-radius) !important;
+  box-shadow: none !important;
+}
+html body.page-tm-v2 .market-gauge__value {
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+}
+html body.page-tm-v2 .market-gauge__label,
+html body.page-tm-v2 .market-gauge-card__name {
+  color: var(--r-text-3) !important;
+  font-size: 12.5px !important;
+}
+
+/* ── 14. 매매시그널 PC — 오른쪽 아래 큰 공백 ───────────────────────────────
+   왼쪽 계열 목록은 8행(길고) 오른쪽 기법 패널은 4장(짧아서), 오른쪽 아래가 통째로 비었다.
+   두 방향으로 동시에 좁힌다:
+    ① 오른쪽 패널을 목록 높이에 맞춰 늘리고 카드 4장이 그 높이를 나눠 갖게 한다(2×2, 1fr).
+    ② 왼쪽 목록은 "선택된 계열만" 설명을 보여 주고 나머지는 한 줄로 접는다.
+       — 목록이 짧아지는 동시에 지금 무엇을 고른 상태인지가 더 분명해진다. */
+@media (min-width: 900px) {
+  html body.page-tm-v2 .ts-tech {
+    align-items: stretch !important;
+  }
+  html body.page-tm-v2 .ts-tech__detail {
+    display: flex !important;
+  }
+  html body.page-tm-v2 .ts-tech__detail > .ts-sub {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  html body.page-tm-v2 .ts-tech__detail .ts-presets {
+    flex: 1 1 auto !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: 1fr !important;
+    align-content: stretch !important;
+  }
+  /* 선택되지 않은 계열은 한 줄로 — 목록 높이를 줄이고 선택 상태를 도드라지게 */
+  html body.page-tm-v2 .ts-tech__item:not(.is-open) .ts-tech__cap {
+    display: none !important;
+  }
+  html body.page-tm-v2 .ts-tech__item:not(.is-open) .ts-tech__btn {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   16) 접기/펼치기 섹션 — 스크롤 튐 방지 + 제목 정리
+   2026-09-13
+   - overflow-anchor:none : 접힌 블록이 펼쳐지며 높이가 변할 때 브라우저가
+     화면 아래쪽 요소를 붙잡으려고 스크롤을 같이 내려버리는 현상(스크롤 앵커링)을
+     이 영역 안에서 끈다. JS 쪽 위치 보정과 이중으로 건다.
+   - 제목 왼쪽 색막대는 토스식 정리 대상이라 없애고, 대신 글자를 키워 위계를 만든다.
+   ════════════════════════════════════════════════════════════════════ */
+
+html body.page-tm-v2 #dm-ai-content,
+html body.page-tm-v2 #bfx-deck,
+html body.page-tm-v2 .dmx-block,
+html body.page-tm-v2 .bfx-block,
+html body.page-tm-v2 .dm-section,
+html body.page-tm-v2 .dmx-fold,
+html body.page-tm-v2 .bfx-fold {
+  overflow-anchor: none !important;
+}
+
+/* 제목 왼쪽 색막대 제거 */
+html body.page-tm-v2 .dm-section__title.dmx-h::before {
+  display: none !important;
+}
+html body.page-tm-v2 .dm-section__title.dmx-h {
+  padding-left: 0 !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--r-text) !important;
+}
+
+/* 접이식 제목: 누를 수 있다는 게 보이게 — 전체 폭 · 여유 있는 탭 영역 */
+@media (max-width: 768px) {
+  html body.page-tm-v2 .dmx-toggle,
+  html body.page-tm-v2 .bfx-block__title--toggle {
+    cursor: pointer !important;
+    min-height: 44px !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+}
+
+/* ── 16-b) 접이식 섹션 제목 통일 ────────────────────────────────────
+   같은 접이식 목록인데 어떤 줄은 13px 회색 + 가로줄, 어떤 줄은 18px 검정이라
+   위계가 뒤죽박죽으로 보였다. 전부 같은 크기·같은 색·같은 여백으로 맞춘다.
+   ─────────────────────────────────────────────────────────────────── */
+
+/* 제목 오른쪽 가로 실선 제거 — 카드 테두리가 이미 구분을 하고 있다 */
+html body.page-tm-v2 .dmx-block__title::after,
+html body.page-tm-v2 .bfx-block__title::after {
+  display: none !important;
+}
+
+html body.page-tm-v2 .dmx-block__title,
+html body.page-tm-v2 .bfx-block__title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--r-text) !important;
+}
+
+@media (max-width: 768px) {
+  /* 접힌 카드: 높이·안쪽 여백·간격을 한 값으로 */
+  html body.page-tm-v2 .dm-tab-panel[data-dm-panel="ai"] .dm-section.is-folded,
+  html body.page-tm-v2 .dmx-block.is-folded,
+  html body.page-tm-v2 .bfx-block.is-folded {
+    padding: 14px 16px !important;
+    margin: 0 0 10px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--r-line-2) !important;
+    background: var(--r-bg) !important;
+  }
+
+  /* 펼친 카드도 같은 간격으로 */
+  html body.page-tm-v2 .dmx-on { gap: 10px !important; }
+  html body.page-tm-v2 .dm-tab-panel[data-dm-panel="ai"] .dm-section { margin-bottom: 10px !important; }
+
+  /* 제목 줄: 세로 가운데 정렬 + 오른쪽 끝에 화살표 */
+  html body.page-tm-v2 .dmx-toggle,
+  html body.page-tm-v2 .bfx-block__title--toggle {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .dm-section__title.dmx-h.dmx-toggle {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+  }
+  html body.page-tm-v2 .dmx-block__title .dmx-chev,
+  html body.page-tm-v2 .dmx-toggle .dmx-chev,
+  html body.page-tm-v2 .bfx-block__chev {
+    margin-left: auto !important;
+    transform: none !important;
+  }
+  html body.page-tm-v2 .is-folded > .dmx-toggle .dmx-chev,
+  html body.page-tm-v2 .is-folded .dmx-block__title.dmx-toggle .dmx-chev,
+  html body.page-tm-v2 .bfx-block.is-folded .bfx-block__chev {
+    transform: rotate(-90deg) !important;
+  }
+
+  /* 태그(실데이터 집계 등)는 제목 바로 옆에 붙여서 화살표와 겹치지 않게 */
+  html body.page-tm-v2 .dmx-block__tag,
+  html body.page-tm-v2 .bfx-block__tag { order: 0 !important; }
+}
+
+@media (max-width: 768px) {
+  /* .dm-section__title 기본 margin-top:22px 때문에 접힌 카드 높이가 74px / 96px로
+     들쭉날쭉했다. 접이식 목록에서는 위쪽 여백을 카드 padding으로만 준다. */
+  html body.page-tm-v2 .dm-tab-panel[data-dm-panel="ai"] .dm-section__title.dmx-toggle {
+    margin-top: 0 !important;
+  }
+}
+
+/* ── 16-c) 푸른빛 회색 바탕 중립화 ──────────────────────────────────
+   --bg-secondary(#f0f3fa) · --bg-tertiary(#e8ecf5)는 화면 전체에 옅은 파란 기운을
+   남긴다. 이게 "AI가 만든 티" 나는 요인 중 하나라서, 토스식 중립 회색으로 바꾼다.
+   라이트 모드에서만 바꾸고(다크는 --card-bg를 쓰므로 건드리지 않음),
+   토큰만 갈아끼우므로 이 두 색을 쓰는 모든 페이지에 한 번에 반영된다.
+   ─────────────────────────────────────────────────────────────────── */
+html:not([data-theme="dark"]) body.page-tm-v2,
+html:not([data-theme="dark"]) body.page-home-v2,
+html[data-theme="light"] body.page-tm-v2,
+html[data-theme="light"] body.page-home-v2 {
+  --bg-secondary: #f2f4f6;
+  /* #e5e8eb까지 내리면 이 위에 얹히는 파란 등락색이 4.47:1로 기준(4.5)에 못 미친다.
+     파란 기운만 걷어내고 밝기는 유지한 #e8ebee. */
+  --bg-tertiary: #e8ebee;
+}
+
+/* ── 16-d) 노란 형광 배경 위 강조어 대비 ───────────────────────────
+   크림색(#e8e1c5) 하이라이트 위의 10.5px 강조어가 4.4:1로 기준(4.5)에 못 미쳤다.
+   글자를 한 단계 더 진하게 + 조금 키워서 해결. */
+html body.page-tm-v2 .bfx-row em,
+html body.page-tm-v2 .bfx-card em,
+html body.page-tm-v2 .tm-main mark em,
+html body.page-tm-v2 .tm-main mark {
+  color: #0a5f63 !important;
+  font-size: 12px !important;
+}

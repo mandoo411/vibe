@@ -20,8 +20,8 @@
  * 주의: 하단 탭바 라벨(11px)과 로고 마크(10.5px)는 관례라 의도적으로 남겨둔 값이다.
  */
 /* 전 페이지 UI 자동 검사 — 대비·오버플로·터치영역·글자크기·잔존 그라데이션·팔레트 이탈 */
-const { chromium } = require("playwright");
-const fs = require("fs");
+import { chromium } from "playwright";
+import fs from "node:fs";
 
 const PAGES = ["index.html","realtime.html","stock-analysis.html","trade-signal.html","market.html",
   "close-betting.html","daily-market.html","briefing.html","crypto.html","us-market.html",

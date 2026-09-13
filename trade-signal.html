@@ -3407,10 +3407,21 @@
           document.querySelectorAll("#ts-tech-list [data-group]").forEach((b) => b.setAttribute("aria-expanded", "false"));
         }
 
+        /* 2026-09-13: 펼칠 때 브라우저 스크롤 앵커링이 아래쪽 요소를 붙잡으려고
+           스크롤을 같이 움직여서, 방금 누른 줄이 화면 밖으로 밀려나는 일이 있었다.
+           누른 줄의 화면상 위치를 기억했다가 틀어진 만큼 되돌린다. */
+        function tsKeepInPlace(el, before) {
+          if (!el || before == null) return;
+          const delta = el.getBoundingClientRect().top - before;
+          if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+        }
+
         function openTechniqueGroup(id, opts) {
           const g = tsGroupById(id);
           const sub = $("ts-sub");
           if (!g || !sub) return;
+          const tsAnchorEl = document.querySelector(`.ts-tech__item[data-item="${id}"]`);
+          const tsAnchorTop = tsAnchorEl ? tsAnchorEl.getBoundingClientRect().top : null;
           tsOpenGroupId = id;
           document.querySelectorAll("#ts-tech-list .ts-tech__item").forEach((it) => {
             it.classList.toggle("is-open", it.getAttribute("data-item") === id);
@@ -3449,6 +3460,8 @@
           });
           // 좁은 화면에서 고른 줄이 화면 아래쪽에 있으면 펼친 내용이 접힌 채로 안 보인다.
           // 이미 위쪽에 있으면 건드리지 않는다 — 누를 때마다 화면이 튀는 게 v1의 문제였다.
+          tsKeepInPlace(tsAnchorEl, tsAnchorTop);
+          requestAnimationFrame(() => tsKeepInPlace(tsAnchorEl, tsAnchorTop));
           if (!(opts && opts.noScroll) && !tsWideMq.matches) {
             const item = document.querySelector(`.ts-tech__item[data-item="${id}"]`);
             if (item && item.getBoundingClientRect().top > window.innerHeight * 0.5) tsScrollToEl(item);

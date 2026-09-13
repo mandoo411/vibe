@@ -2001,6 +2001,22 @@
     return String((title && title.textContent) || "").replace(/\u2304/g, "").trim();
   }
 
+  /* 2026-09-13: 접기/펼치기를 누르면 브라우저 스크롤 앵커링이 화면 아래쪽 요소를
+     제자리에 붙잡으려고 스크롤을 같이 내려버려서, 방금 누른 제목이 화면 위로 밀려났다.
+     ("됐다 안 됐다" 하는 이유도 앵커 선택이 그때그때 달라지기 때문.)
+     펼치기 전후로 제목의 화면상 위치를 재서 차이만큼 되돌려 제자리에 고정한다. */
+  function dmxKeepInPlace(el, mutate) {
+    if (!el || typeof el.getBoundingClientRect !== "function") { mutate(); return; }
+    const before = el.getBoundingClientRect().top;
+    mutate();
+    const delta = el.getBoundingClientRect().top - before;
+    if (Math.abs(delta) > 0.5) window.scrollBy(0, delta);
+    requestAnimationFrame(() => {
+      const d2 = el.getBoundingClientRect().top - before;
+      if (Math.abs(d2) > 1) window.scrollBy(0, d2);
+    });
+  }
+
   function dmxFoldOne(box, title, openRe, mobile) {
     if (!box || !title) return;
     if (box.dataset.foldReady !== "1") {
@@ -2020,9 +2036,11 @@
       title.setAttribute("tabindex", "0");
       const toggle = () => {
         if (!dmxIsMobile()) return;
-        const folded = box.classList.toggle("is-folded");
-        title.setAttribute("aria-expanded", folded ? "false" : "true");
-        dmxUserFold.set(dmxFoldKey(title), !folded);
+        dmxKeepInPlace(title, () => {
+          const folded = box.classList.toggle("is-folded");
+          title.setAttribute("aria-expanded", folded ? "false" : "true");
+          dmxUserFold.set(dmxFoldKey(title), !folded);
+        });
       };
       title.addEventListener("click", toggle);
       title.addEventListener("keydown", (e) => {

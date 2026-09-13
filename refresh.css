@@ -845,3 +845,389 @@ html body {
     overflow-anchor: none !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   데스크톱 (≥769px) — 2026-09-13
+   모바일과 같은 시각 언어를 쓰되 레이아웃은 PC용(2~3단)을 유지한다.
+   "폰과 PC가 서로 다른 사이트처럼 보이는" 상태를 없애는 게 목적이다.
+   여기서도 규칙은 하나다: 그라데이션·장식·그림자를 걷어내고, 흰 바탕 위에
+   헤어라인과 글자 굵기로만 위계를 만든다.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  /* ── 상단바 ─────────────────────────────────────────────────────────────── */
+  html body.page-tm-v2 .home-nav {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-nav__brand-sub {
+    display: none !important;
+  }
+  html body.page-tm-v2 .home-nav__brand-name {
+    color: var(--r-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+  }
+  html body.page-tm-v2 .home-nav__link {
+    color: var(--r-text-2) !important;
+    font-weight: 600 !important;
+  }
+  html body.page-tm-v2 .home-nav__link.is-active {
+    color: var(--r-text) !important;
+    background: var(--r-bg-sunken) !important;
+  }
+  html body.page-tm-v2 .home-ticker-bar {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-ticker {
+    color: var(--r-text-2) !important;
+  }
+
+  /* ── 히어로 — 그라데이션 띠 제거 ────────────────────────────────────────── */
+  html body.page-tm-v2 .home-hero,
+  html body.page-home-v2 .home-hero {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    padding: 28px 32px 30px !important;
+  }
+  html body.page-tm-v2 .home-hero::before,
+  html body.page-tm-v2 .home-hero::after {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-today__date,
+  html body.page-tm-v2 #hx-date,
+  html body.page-tm-v2 #hx-say-label,
+  html body.page-tm-v2 .hx-lead__k,
+  html body.page-tm-v2 .hx-mini__k,
+  html body.page-tm-v2 .home-hero__ai-time {
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .hx-today__phase {
+    color: var(--r-text-3) !important;
+    background: var(--r-bg-sunken) !important;
+    border: 0 !important;
+  }
+  html body.page-tm-v2 .hx-lead {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+  }
+  html body.page-tm-v2 .hx-lead__v {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    color: var(--r-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+  }
+  html body.page-tm-v2 .hx-lead__d,
+  html body.page-tm-v2 .hx-lead__pts {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    opacity: 1 !important;
+  }
+  html body.page-tm-v2 .hx-lead__main.is-down .hx-lead__d {
+    color: var(--r-down) !important;
+  }
+  html body.page-tm-v2 .hx-lead__main.is-up .hx-lead__d {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-say {
+    padding-left: 0 !important;
+  }
+  html body.page-tm-v2 .hx-say::before {
+    display: none !important;
+    content: none !important;
+  }
+  html body.page-tm-v2 .hx-say__text {
+    color: var(--r-text) !important;
+    font-size: 17px !important;
+    line-height: 1.62 !important;
+    font-weight: 600 !important;
+  }
+
+  /* 지수 미니 박스 — 반투명 검정 박스 대신 헤어라인으로 나눈 숫자 */
+  html body.page-tm-v2 .hx-mini {
+    background: none !important;
+    border: 0 !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 18px 0 0 !important;
+  }
+  html body.page-tm-v2 .hx-mini + .hx-mini {
+    border-left: 1px solid var(--r-line) !important;
+    padding-left: 18px !important;
+  }
+  html body.page-tm-v2 .hx-mini__v {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .hx-mini__p {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .hx-mini.is-up .hx-mini__p {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-mini.is-down .hx-mini__p {
+    color: var(--r-down) !important;
+  }
+
+  /* 히어로 오른쪽 패널(실시간 AI 분석) — 어두운 반투명 박스 → 옅은 카드 */
+  html body.page-tm-v2 .home-hero__ai-live,
+  html body.page-tm-v2 .home-hero__panel {
+    background: var(--r-bg-sub) !important;
+    border: 1px solid var(--r-line-2) !important;
+    border-radius: var(--r-radius) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-hero__panel-title {
+    color: var(--r-text) !important;
+    font-weight: 700 !important;
+  }
+  html body.page-tm-v2 .home-hero__ai-live-list li,
+  html body.page-tm-v2 .home-hero__ai-empty {
+    color: var(--r-text-2) !important;
+    border-color: var(--r-line) !important;
+  }
+
+  /* 히어로 버튼 */
+  html body.page-tm-v2 .home-hero__btn {
+    box-shadow: none !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary),
+  html body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary) {
+    background: var(--r-bg-sunken) !important;
+    border-color: var(--r-line-2) !important;
+    color: var(--r-text) !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary,
+  html body.page-tm-v2 .home-hero__btn--primary {
+    background: var(--r-accent) !important;
+    border-color: var(--r-accent) !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary span,
+  html body.page-tm-v2 .home-hero__btn--primary span {
+    color: #fff !important;
+  }
+
+  /* ── 리포트 카드 3장 — 컬러 상단 바·아이콘 타일·그림자 제거 ─────────────── */
+  html body.page-tm-v2 .hx-report {
+    background: var(--r-bg) !important;
+    border: 1px solid var(--r-line-2) !important;
+    border-radius: var(--r-radius) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .hx-report::before,
+  html body.page-tm-v2 .hx-report::after {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-report__icon {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-report__title {
+    color: var(--r-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+  }
+  html body.page-tm-v2 .hx-report__kicker,
+  html body.page-tm-v2 .hx-report__stamp {
+    color: var(--r-text-3) !important;
+    font-family: inherit !important;
+  }
+  html body.page-tm-v2 .hx-report__line {
+    color: var(--r-text-2) !important;
+    line-height: 1.68 !important;
+  }
+  html body.page-tm-v2 .hx-report__cta,
+  html[data-theme="light"] body.page-tm-v2 .hx-report__cta {
+    color: var(--r-accent) !important;
+  }
+  html body.page-tm-v2 .hx-report__points li::marker {
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .hx-chip {
+    background: var(--r-bg-sunken) !important;
+    border: 0 !important;
+    color: var(--r-text-2) !important;
+  }
+  html body.page-tm-v2 .hx-chip strong,
+  html body.page-tm-v2 .hx-chip em {
+    font-family: inherit !important;
+    font-style: normal !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+  html body.page-tm-v2 .hx-chip.is-up strong,
+  html body.page-tm-v2 .hx-chip.is-up em {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-chip.is-down strong,
+  html body.page-tm-v2 .hx-chip.is-down em {
+    color: var(--r-down) !important;
+  }
+  html body.page-tm-v2 .hx-report__btn {
+    background: var(--r-accent) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+  }
+  html body.page-tm-v2 .hx-report__input {
+    border: 1px solid var(--r-line-2) !important;
+    background: var(--r-bg-sub) !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  /* ── 페이지 제목 띠(masthead) — 12개 페이지 공용 ────────────────────────── */
+  html body.page-tm-v2 .masthead.masthead--title-only,
+  html body.page-home-v2 .masthead.masthead--title-only,
+  html body.page-tm-v2 .hub-hero {
+    background: var(--r-bg) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .masthead.masthead--title-only .masthead__title,
+  html body.page-home-v2 .masthead.masthead--title-only .masthead__title,
+  html body.page-tm-v2 .hub-hero__title {
+    color: var(--r-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+  }
+  html body.page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  html body.page-home-v2 .masthead.masthead--title-only .masthead__kicker,
+  html body.page-tm-v2 .masthead__kicker,
+  html body.page-tm-v2 .hub-hero__kicker,
+  html body.page-tm-v2 .section-kicker {
+    color: var(--r-text-3) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+  }
+  html body.page-tm-v2 .masthead__meta,
+  html body.page-tm-v2 .page-hero-sub {
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .masthead__meta strong {
+    color: var(--r-text-2) !important;
+  }
+
+  /* ── 섹션 카드·표 ───────────────────────────────────────────────────────── */
+  html body.page-tm-v2 .home-section,
+  html body.page-tm-v2 .tm-panel,
+  html body.page-tm-v2 .ail-card,
+  html body.page-tm-v2 .ts-card,
+  html body.page-tm-v2 .cb-card,
+  html body.page-tm-v2 .schedule-card,
+  html body.page-tm-v2 .crypto-metric-card,
+  html body.page-tm-v2 .crypto-news-card,
+  html body.page-tm-v2 .market-gauge-card,
+  html body.page-tm-v2 .tm-auth-card {
+    background: var(--r-bg) !important;
+    border: 1px solid var(--r-line-2) !important;
+    border-radius: var(--r-radius) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-section__title::before,
+  html body.page-tm-v2 .home-m-ai-live__title::before {
+    display: none !important;
+    content: none !important;
+  }
+  html body.page-tm-v2 .home-section__title {
+    color: var(--r-text) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+  }
+  html body.page-tm-v2 .home-section__more {
+    color: var(--r-text-3) !important;
+    font-weight: 600 !important;
+  }
+  html body.page-tm-v2 .home-rt-tabs {
+    display: flex !important;
+    gap: 0 !important;
+    padding: 3px !important;
+    background: var(--r-bg-sunken) !important;
+    border-radius: 10px !important;
+    border: 0 !important;
+  }
+  html body.page-tm-v2 .home-rt-tab {
+    flex: 1 1 0 !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: none !important;
+    box-shadow: none !important;
+    color: var(--r-text-3) !important;
+    font-weight: 600 !important;
+  }
+  html body.page-tm-v2 .home-rt-tab.is-active {
+    background: var(--r-bg) !important;
+    color: var(--r-text) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(25, 31, 40, 0.1) !important;
+  }
+  html body.page-tm-v2 .home-th {
+    background: none !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .home-row,
+  html body.page-tm-v2 .home-rt-row {
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  /* ── 푸터 — 짙은 그라데이션 → 옅은 회색 ──────────────────────────────────── */
+  html body.page-tm-v2 .home-footer {
+    background: var(--r-bg-sub) !important;
+    border-top: 1px solid var(--r-line) !important;
+  }
+  html body.page-tm-v2 .home-footer__brand-name {
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .home-footer__slogan,
+  html body.page-tm-v2 .home-footer__bottom,
+  html body.page-tm-v2 .home-footer__bottom span,
+  html body.page-tm-v2 .home-footer__links a,
+  html body.page-tm-v2 .home-footer__tg,
+  html body.page-tm-v2 .home-footer__sns a {
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .home-footer__divider {
+    background: var(--r-line-2) !important;
+  }
+  html body.page-tm-v2 .home-footer__sns a {
+    border-color: var(--r-line-2) !important;
+  }
+
+  /* 스크롤 앵커링 — 모바일과 같은 이유 */
+  html body.page-tm-v2 .home-wrap,
+  html body.page-tm-v2 .tm-main {
+    overflow-anchor: none !important;
+  }
+
+  /* 본문 바탕 — 푸른빛 회색(#f0f3fa)은 화면 전체에 색 기운을 남긴다. 중립 회색으로. */
+  html body.page-tm-v2 .home-main,
+  html body.page-tm-v2 .home-wrap,
+  html body.page-tm-v2 .tm-main {
+    background: var(--r-bg-sub) !important;
+  }
+  html body.page-tm-v2 .home-mini-card {
+    background: var(--r-bg) !important;
+    border: 1px solid var(--r-line-2) !important;
+    border-radius: var(--r-radius) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-mini-card__title {
+    color: var(--r-text) !important;
+    font-weight: 700 !important;
+  }
+}

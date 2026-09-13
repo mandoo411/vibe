@@ -940,8 +940,8 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-section--realtime .home-tr--rt {
-  grid-template-columns: minmax(0, 1fr) 72px 56px 62px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 66px 52px 58px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -957,17 +957,38 @@ body[data-theme="dark"] .home-nav__ai-badge {
 }
 
 .home-section--realtime .home-tr--rt .home-rt-col--name {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   column-gap: 6px;
-  row-gap: 0;
-  align-items: start;
   min-width: 0;
   overflow: hidden;
 }
 
 .home-section--realtime .home-tr--rt .home-rank {
-  margin-top: 2px;
+  margin-top: 0;
+}
+
+/* 실시간시세 카드는 종목명 열이 좁다 — 아이콘을 26px로 줄여 이름 폭을 벌어준다 (PC·모바일 공통) */
+.home-section--realtime .home-tr--rt .home-tr__logo-wrap {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  padding: 3px;
+}
+
+/* 헤더 '종목'을 데이터 행 종목명과 같은 x축에 둔다 (순위 16 + 6 + 아이콘 26 + 6).
+   모바일 헤더는 1727줄 이하 블록에서 따로 잡으므로 PC에서만 적용한다. */
+@media (min-width: 769px) {
+  .home-th--rt .home-rt-col--name {
+    display: flex;
+    align-items: center;
+    column-gap: 6px;
+  }
+
+  .home-th--rt .home-rt-col__name-label {
+    padding-left: 32px;
+  }
 }
 
 .home-section--realtime .home-tr__name-stack {

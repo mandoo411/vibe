@@ -1,0 +1,579 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   refresh.css — 디자인 리프레시 레이어 (2026-09-13)
+
+   왜 만들었나: 테스트 사용자들에게서 "AI가 만든 티가 난다"는 피드백을 받았다.
+   원인은 기능이 아니라 시각 언어였다 —
+     ① 그라데이션 배너 + 장식 원  ② 모든 섹션에 똑같은 "틴트 사각형 안 아이콘"
+     ③ 카드마다 컬러 상단 바·그림자  ④ 제목 앞 컬러 세로 바
+     ⑤ Noto Sans KR + 들쭉날쭉한 크기  ⑥ 낮은 정보 밀도(스크롤만 길다)
+   국내 금융앱(토스증권류)의 기본 문법은 정반대다: 흰 배경, 실선 대신 헤어라인,
+   장식 0, 숫자는 크고 굵게, 색은 등락과 버튼에만.
+
+   구조: 이 파일은 "마지막에 덮어쓰는 레이어"다. 각 페이지 <head>의 CSS 링크
+   맨 뒤에 한 줄 추가하면 적용되고, 그 줄을 지우면 원래대로 돌아온다.
+   페이지를 하나씩 옮겨오기 위해 이렇게 했다(한 번에 20개를 바꾸면 되돌릴 수 없다).
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* 중립색 — 회색 계단을 6단계로 고정한다. 예전엔 페이지마다 다른 회색을 썼다. */
+  --r-bg: #ffffff;
+  --r-bg-sub: #f9fafb;
+  --r-bg-sunken: #f2f4f6;
+  --r-line: #f2f4f6; /* 헤어라인(구분선) */
+  --r-line-2: #e5e8eb; /* 테두리 */
+  --r-text: #191f28; /* 제목·숫자 */
+  --r-text-2: #4e5968; /* 본문 */
+  --r-text-3: #8b95a1; /* 보조·라벨 */
+  --r-accent: #0f8387; /* 브랜드 틸 — 버튼·링크에만 쓴다 */
+  --r-accent-weak: #e7f3f3;
+  --r-up: #f04452;
+  --r-down: #3182f6;
+  --r-radius: 12px;
+}
+
+[data-theme="dark"] {
+  --r-bg: #10151d;
+  --r-bg-sub: #161c26;
+  --r-bg-sunken: #1c232f;
+  --r-line: #222a36;
+  --r-line-2: #2b3441;
+  --r-text: #f2f4f6;
+  --r-text-2: #b0b8c1;
+  --r-text-3: #7b8694;
+  --r-accent: #35c3c8;
+  --r-accent-weak: rgba(53, 195, 200, 0.12);
+}
+
+/* ── 타이포 ────────────────────────────────────────────────────────────────
+   Noto Sans KR은 본문용으로 자간이 넓고 굵기 대비가 약해서 "웹페이지" 느낌이 난다.
+   Pretendard는 국내 금융앱 표준에 가깝고 숫자(tabular)가 정돈돼 보인다. */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* 숫자는 어디서든 폭이 일정해야 표가 흔들리지 않는다 */
+.home-rt-price,
+.home-rt-pct,
+.home-ticker,
+.hx-report__stamp,
+[class*="__price"],
+[class*="__pct"],
+[class*="__chg"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* 배경 장식(방사형 글로우) 제거 — 흰 바탕이 기본이다 */
+html body {
+  background-image: none !important;
+  background-color: var(--r-bg) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   모바일 (≤768px)
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── 상단바 ─────────────────────────────────────────────────────────── */
+  html body.page-tm-v2 .home-nav {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+    padding: 10px 16px !important;
+  }
+  html body.page-tm-v2 .home-nav__logo-box {
+    border-radius: 9px !important;
+    box-shadow: none !important;
+  }
+  /* "powered by AI" — 서비스 이름 옆에 AI를 붙여 광고하는 순간 아마추어로 읽힌다.
+     AI는 결과로 증명하는 것이지 로고로 말하는 게 아니다. */
+  html body.page-tm-v2 .home-nav__brand-sub {
+    display: none !important;
+  }
+  html body.page-tm-v2 .home-nav__brand-name {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+    color: var(--r-text) !important;
+  }
+
+  /* 실시간 지표 띠 — 회색 박스 대신 흰 바탕 + 헤어라인 */
+  html body.page-tm-v2 .home-ticker-bar {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-ticker {
+    font-size: 12.5px !important;
+    color: var(--r-text-2) !important;
+  }
+
+  /* ── 히어로 ─────────────────────────────────────────────────────────────
+     그라데이션 배너 + 장식 원 = "AI가 만든 사이트" 1순위 신호였다.
+     흰 바탕에 오늘의 한 줄만 크게 세운다. 색이 아니라 글자 크기로 위계를 만든다. */
+  html body.page-tm-v2 .home-hero {
+    display: block !important;
+    background: var(--r-bg) !important;
+    padding: 20px 16px 18px !important;
+    gap: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+  }
+  html body.page-tm-v2 .home-hero::before,
+  html body.page-tm-v2 .home-hero::after,
+  html body.page-tm-v2 .home-hero__deco {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-today__meta {
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+  html body.page-tm-v2 .hx-today__date {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+    letter-spacing: -0.02em !important;
+  }
+  html body.page-tm-v2 .hx-today__phase {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+    background: var(--r-bg-sunken) !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    padding: 3px 7px !important;
+  }
+  html body.page-tm-v2 .hx-lead {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+  }
+  html body.page-tm-v2 .hx-lead__title,
+  html body.page-tm-v2 .hx-say__label {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: var(--r-text-3) !important;
+    margin-bottom: 6px !important;
+  }
+  html body.page-tm-v2 .hx-lead,
+  html body.page-tm-v2 .hx-lead p,
+  html body.page-tm-v2 .hx-say__text {
+    font-size: 18px !important;
+    line-height: 1.5 !important;
+    font-weight: 700 !important;
+    color: var(--r-text) !important;
+    letter-spacing: -0.03em !important;
+    word-break: keep-all !important;
+  }
+
+  html body.page-tm-v2 .home-hero__btns {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-top: 16px !important;
+  }
+  html body.page-tm-v2 .home-hero__btn {
+    height: 46px !important;
+    border-radius: 10px !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border: 1px solid transparent !important;
+    background: var(--r-bg-sunken) !important;
+    color: var(--r-text) !important;
+    letter-spacing: -0.02em !important;
+  }
+  html body.page-tm-v2 .home-hero__btn i {
+    display: none !important;
+  } /* 버튼마다 아이콘을 붙이면 장식이 된다 */
+  html body.page-tm-v2 .home-hero__btn--primary {
+    background: var(--r-accent) !important;
+    color: #fff !important;
+    border-color: var(--r-accent) !important;
+  }
+  html[data-theme="dark"] body.page-tm-v2 .home-hero__btn--primary {
+    color: #0b1016 !important;
+  }
+
+  /* ── 리포트 카드 ────────────────────────────────────────────────────────
+     가로 캐러셀은 카드가 화면 밖에서 잘려 "덜 만든 화면"으로 보였다.
+     세로로 쌓고, 컬러 상단 바·아이콘 타일·그림자를 걷어낸다. */
+  html body.page-tm-v2 .hx-reports {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  html body.page-tm-v2 .hx-report {
+    display: block !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: var(--r-bg) !important;
+    padding: 18px 16px !important;
+    scroll-snap-align: none !important;
+  }
+  html body.page-tm-v2 .hx-report::before,
+  html body.page-tm-v2 .hx-report::after {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-report__icon {
+    display: none !important;
+  }
+  html body.page-tm-v2 .hx-report__head {
+    align-items: baseline !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+  html body.page-tm-v2 .hx-report__kicker {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+    margin: 0 0 2px !important;
+    letter-spacing: -0.01em !important;
+  }
+  html body.page-tm-v2 .hx-report__title {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: var(--r-text) !important;
+    letter-spacing: -0.03em !important;
+    margin: 0 !important;
+  }
+  html body.page-tm-v2 .hx-report__stamp {
+    margin-left: auto !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    color: var(--r-text-3) !important;
+    font-weight: 500 !important;
+  }
+  html body.page-tm-v2 .hx-report__line {
+    font-size: 14.5px !important;
+    line-height: 1.62 !important;
+    color: var(--r-text-2) !important;
+    word-break: keep-all !important;
+  }
+  html body.page-tm-v2 .hx-report__points {
+    margin-top: 10px !important;
+  }
+  html body.page-tm-v2 .hx-report__points li {
+    font-size: 13.5px !important;
+    line-height: 1.6 !important;
+    color: var(--r-text-2) !important;
+  }
+  html body.page-tm-v2 .hx-report__points li::marker {
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .hx-report__cta {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-top: 14px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: var(--r-accent) !important;
+  }
+
+  /* AI 분석 입력 폼 */
+  html body.page-tm-v2 .hx-report__input {
+    height: 48px !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--r-line-2) !important;
+    background: var(--r-bg-sub) !important;
+    font-size: 14.5px !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .hx-report__btn {
+    height: 48px !important;
+    border-radius: 10px !important;
+    background: var(--r-accent) !important;
+    color: #fff !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+  html[data-theme="dark"] body.page-tm-v2 .hx-report__btn {
+    color: #0b1016 !important;
+  }
+  html body.page-tm-v2 .hx-report__note {
+    font-size: 11.5px !important;
+    color: var(--r-text-3) !important;
+  }
+
+  /* ── 섹션 제목 ──────────────────────────────────────────────────────────
+     제목 앞 컬러 세로 바는 템플릿 티가 가장 많이 나는 장식이다. 글자 굵기로 충분하다. */
+  html body.page-tm-v2 .home-m-section-bar,
+  html body.page-tm-v2 .home-section__bar {
+    display: none !important;
+  }
+  html body.page-tm-v2 .home-section,
+  html body.page-tm-v2 .home-m-ai-live {
+    background: var(--r-bg) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 20px 16px !important;
+  }
+  html body.page-tm-v2 .home-section__head,
+  html body.page-tm-v2 .home-m-ai-live__head {
+    margin-bottom: 12px !important;
+    align-items: center !important;
+  }
+  html body.page-tm-v2 .home-section__title,
+  html body.page-tm-v2 .home-m-ai-live__title {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: var(--r-text) !important;
+    letter-spacing: -0.03em !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+  html body.page-tm-v2 .home-section__more {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+  }
+
+  /* "Anthropic Claude로 생성됩니다" — 카드로 세워두면 AI 생성물이라고 광고하는 꼴이다.
+     고지는 필요하니 남기되, 각주 크기로 내린다. */
+  html body.page-tm-v2 .home-m-claude,
+  html body.page-tm-v2 .tm-claude-card {
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 10px 16px 14px !important;
+    margin: 0 !important;
+  }
+  html body.page-tm-v2 .tm-claude-card__line {
+    font-size: 11.5px !important;
+    color: var(--r-text-3) !important;
+    text-align: left !important;
+  }
+  html body.page-tm-v2 .tm-claude-card__mark {
+    color: var(--r-text-3) !important;
+    font-weight: 600 !important;
+  }
+
+  /* ── 탭(시가총액/상승률/거래대금) → 세그먼트 컨트롤 ───────────────────── */
+  html body.page-tm-v2 .home-rt-tabs {
+    display: flex !important;
+    gap: 0 !important;
+    padding: 3px !important;
+    background: var(--r-bg-sunken) !important;
+    border-radius: 10px !important;
+    border: 0 !important;
+  }
+  html body.page-tm-v2 .home-rt-tab {
+    flex: 1 1 0 !important;
+    height: 36px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: none !important;
+    box-shadow: none !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+    letter-spacing: -0.02em !important;
+  }
+  html body.page-tm-v2 .home-rt-tab.is-active {
+    background: var(--r-bg) !important;
+    color: var(--r-text) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 1px 3px rgba(25, 31, 40, 0.1) !important;
+  }
+
+  /* ── 시세 표 — 실제 데이터가 주인공 ───────────────────────────────────── */
+  html body.page-tm-v2 .home-th {
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    background: none !important;
+    padding: 10px 0 8px !important;
+    font-size: 11.5px !important;
+    color: var(--r-text-3) !important;
+    font-weight: 500 !important;
+  }
+  html body.page-tm-v2 .home-row,
+  html body.page-tm-v2 .home-rt-row {
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 12px 0 !important;
+    min-height: 0 !important;
+  }
+  html body.page-tm-v2 .home-row:last-child,
+  html body.page-tm-v2 .home-rt-row:last-child {
+    border-bottom: 0 !important;
+  }
+  html body.page-tm-v2 .home-rt-name,
+  html body.page-tm-v2 .home-row__name {
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    color: var(--r-text) !important;
+    letter-spacing: -0.02em !important;
+  }
+  html body.page-tm-v2 .home-rt-price,
+  html body.page-tm-v2 .home-row__price {
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .home-rt-pct,
+  html body.page-tm-v2 .home-row__pct {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+  }
+  html body.page-tm-v2 .home-rt-rank,
+  html body.page-tm-v2 .home-row__rank {
+    color: var(--r-text-3) !important;
+    font-weight: 600 !important;
+    background: none !important;
+    border: 0 !important;
+  }
+
+  /* ── 실시간 AI 분석 리스트 ─────────────────────────────────────────────── */
+  html body.page-tm-v2 .home-m-insight,
+  html body.page-tm-v2 .home-hero__ai-live-list li {
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+    padding: 12px 0 !important;
+  }
+  html body.page-tm-v2 .home-m-insight:last-child {
+    border-bottom: 0 !important;
+  }
+
+  /* ── 하단 탭바 ─────────────────────────────────────────────────────────── */
+  html body.page-tm-v2 .tm-bottom-nav {
+    background: var(--r-bg) !important;
+    border-top: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .tm-bottom-nav__item {
+    font-size: 11px !important;
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .tm-bottom-nav__item.is-active,
+  html body.page-tm-v2 .tm-bottom-nav__item[aria-current="page"] {
+    color: var(--r-accent) !important;
+  }
+
+  /* 카드 그림자 일괄 제거 — 흰 바탕에 헤어라인이면 충분하다.
+     (그림자를 겹겹이 쓰면 화면이 "떠다니는 상자 모음"처럼 보인다) */
+  html body.page-tm-v2 .home-section,
+  html body.page-tm-v2 .home-m-ai-live,
+  html body.page-tm-v2 .hx-report,
+  html body.page-tm-v2 .home-card,
+  html body.page-tm-v2 .home-panel {
+    box-shadow: none !important;
+  }
+
+  /* ── typography.css 보정 ────────────────────────────────────────────────
+     typography.css는 "그라데이션 히어로 위 흰 글씨"를 전제로 만든 대비 보정
+     레이어다(ID 선택자 + !important). 히어로가 흰 바탕이 되면 그 규칙들이
+     흰 글씨를 흰 배경에 올려버리므로, 같은 선택자로 되돌려 놓는다. */
+  html body.page-tm-v2 .home-hero__ai-time,
+  html body.page-tm-v2 .hx-mini__k,
+  html body.page-tm-v2 #hx-date,
+  html body.page-tm-v2 #hx-say-label,
+  html body.page-tm-v2 .hx-lead__k {
+    color: var(--r-text-3) !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary),
+  html body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary) {
+    background: var(--r-bg-sunken) !important;
+    border-color: var(--r-line-2) !important;
+    color: var(--r-text) !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .page-home-v2 .home-hero__btn--primary,
+  html body.page-tm-v2 .page-home-v2 .home-hero__btn--primary {
+    background: var(--r-accent) !important;
+    border-color: var(--r-accent) !important;
+  }
+  html[data-theme="light"] body.page-tm-v2 .page-home-v2 .home-hero__btn--primary span,
+  html body.page-tm-v2 .page-home-v2 .home-hero__btn--primary span {
+    color: #fff !important;
+  }
+
+  /* 섹션을 "카드"가 아니라 "구역"으로 — 좌우 여백을 없애고 헤어라인으로만 나눈다.
+     카드가 떠 있으면 화면이 조각나 보이고, 붙어 있으면 앱처럼 보인다. */
+  html body.page-tm-v2 .home-main,
+  html body.page-tm-v2 .home-m-body,
+  html body.page-tm-v2 .home-wrap {
+    background: var(--r-bg) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    gap: 0 !important;
+  }
+  html body.page-tm-v2 .home-section__body {
+    padding: 0 !important;
+  }
+
+  /* 푸터 — 짙은 그라데이션 대신 옅은 회색. 마지막까지 색을 쓰면 사이트가 무거워 보인다. */
+  html body.page-tm-v2 .home-footer {
+    background: var(--r-bg-sub) !important;
+    border-top: 1px solid var(--r-line) !important;
+  }
+  html body.page-tm-v2 .home-footer__brand-name {
+    color: var(--r-text) !important;
+    font-size: 14px !important;
+  }
+  html body.page-tm-v2 .home-footer__slogan,
+  html body.page-tm-v2 .home-footer__bottom,
+  html body.page-tm-v2 .home-footer__bottom span,
+  html body.page-tm-v2 .home-footer__links a,
+  html body.page-tm-v2 .home-footer__tg {
+    color: var(--r-text-3) !important;
+    font-size: 12px !important;
+  }
+  html body.page-tm-v2 .home-footer__divider {
+    background: var(--r-line-2) !important;
+  }
+
+  /* 리포트 CTA·불릿 색 — 카드마다 다른 테마색(주황/보라)을 쓰면 통일감이 깨진다 */
+  html body.page-tm-v2 .hx-report__cta,
+  html[data-theme="light"] body.page-tm-v2 .hx-report__cta {
+    color: var(--r-accent) !important;
+  }
+  html body.page-tm-v2 .hx-report__points li::marker {
+    color: var(--r-text-3) !important;
+  }
+
+  /* 히어로 본문 — 굵은 18px 5줄은 벽처럼 읽힌다. 한 단계 낮춘다. */
+  html body.page-tm-v2 .hx-lead,
+  html body.page-tm-v2 .hx-lead p,
+  html body.page-tm-v2 .hx-say__text {
+    font-size: 16.5px !important;
+    line-height: 1.58 !important;
+  }
+
+  /* 제목 앞 컬러 세로 바(::before) — home.css가 .page-home-v2로 걸어둔 장식 */
+  html body.page-tm-v2 .home-section__title::before,
+  html body.page-tm-v2 .home-m-ai-live__title::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* 세로 리듬 — 섹션마다 제각각이던 여백을 20px로 통일한다 */
+  html body.page-tm-v2 .home-section + .home-section {
+    margin-top: 0 !important;
+  }
+  html body.page-tm-v2 .home-m-ai-live {
+    padding-bottom: 8px !important;
+  }
+}

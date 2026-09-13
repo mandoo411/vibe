@@ -29,6 +29,14 @@
     <script src="./assets/auth.js"></script>
     <script src="./home.js" defer></script>
       <link rel="stylesheet" href="./typography.css?v=1" />
+    <!-- Pretendard — 국내 금융앱 표준 서체. Noto Sans KR은 본문에서 자간이 넓고
+         굵기 대비가 약해 "웹페이지" 인상을 준다(2026-09-13 디자인 리프레시). -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <!-- 디자인 리프레시 레이어 — 항상 마지막에 온다(덮어쓰기 레이어). 이 줄을 지우면 원래 디자인. -->
+    <link rel="stylesheet" href="./refresh.css?v=1" />
   </head>
   <body class="page-home-v2 page-tm-v2" data-tm-tab="home">
     <div class="home-wrap">
@@ -213,7 +221,7 @@
       <main class="home-main">
         <section class="home-section home-section--realtime" aria-label="실시간시세 미리보기">
           <div class="home-section__head">
-            <h2 class="home-section__title">🇰🇷 실시간시세</h2>
+            <h2 class="home-section__title">실시간시세</h2>
             <a class="home-section__more" id="home-rt-more" href="./realtime.html?tab=cap">더보기 →</a>
           </div>
           <div class="home-rt-tabs" role="tablist" aria-label="국내 순위">
@@ -238,7 +246,7 @@
         <div class="home-col-mid">
           <section class="home-section home-section--us">
             <div class="home-section__head">
-              <h2 class="home-section__title">🇺🇸 미국시장</h2>
+              <h2 class="home-section__title">미국시장</h2>
               <a class="home-section__more" href="./us-market.html">더보기 →</a>
             </div>
             <div class="home-rt-tabs" role="tablist" aria-label="미국시장">
@@ -261,7 +269,7 @@
           </section>
           <section class="home-section home-section--crypto">
             <div class="home-section__head">
-              <h2 class="home-section__title">₿ 암호화폐 TOP</h2>
+              <h2 class="home-section__title">암호화폐</h2>
               <a class="home-section__more" href="./crypto.html">더보기 →</a>
             </div>
             <div class="home-section__body">

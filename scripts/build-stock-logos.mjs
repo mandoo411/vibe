@@ -39,6 +39,9 @@ const MANIFEST = path.join(ROOT, "assets", "logos", "kr-manifest.json");
 const REJECTS = path.join(ROOT, "assets", "logos", "kr-rejects.json");
 // 손으로 지정한 배지 색 — 자동 추출이 실패하거나 엉뚱할 때만 채운다(삼성전자 등)
 const TINT_OVERRIDES = path.join(ROOT, "assets", "logos", "kr-tint-overrides.json");
+/* 회사 파비콘에서 만든 로고(build-stock-favicons.mjs). FMP 재빌드가 이걸 덮어쓰면
+   삼성전자·NAVER·카카오 같은 대표 종목이 다시 이니셜 배지로 돌아간다. --force에서도 보호한다. */
+const CURATED = path.join(ROOT, "assets", "logos", "kr-curated.json");
 const CACHE = path.join(ROOT, "data", "kr-screener-cache.json");
 
 const args = process.argv.slice(2);
@@ -290,8 +293,16 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const stocks = readStocks().slice(0, LIMIT === Infinity ? undefined : LIMIT);
   const accepted = new Set();
+  const curated = (() => {
+    if (!fs.existsSync(CURATED)) return new Set();
+    try {
+      const j = JSON.parse(fs.readFileSync(CURATED, "utf8"));
+      return new Set((j.codes || []).filter((c) => fs.existsSync(path.join(OUT_DIR, `${c}.webp`))));
+    } catch { return new Set(); }
+  })();
+  for (const c of curated) accepted.add(c);
   const byCode = new Map(stocks.map((s) => [s.code, s]));
-  const stats = { total: stocks.length, fetched: 0, missing: 0, accepted: 0, inherited: 0, skipped: 0 };
+  const stats = { total: stocks.length, fetched: 0, missing: 0, accepted: 0, inherited: 0, skipped: 0, curated: 0 };
   const rejects = new Map();
   const prevRejects = (() => {
     if (FORCE || !fs.existsSync(REJECTS)) return new Map();
@@ -308,6 +319,7 @@ async function main() {
     while (idx < stocks.length) {
       const s = stocks[idx++];
       const out = path.join(OUT_DIR, `${s.code}.webp`);
+      if (curated.has(s.code)) { stats.curated++; continue; }   // 파비콘본이 우선 — FMP로 덮지 않는다
       if (!FORCE && fs.existsSync(out)) { accepted.add(s.code); stats.accepted++; continue; }
       if (prevRejects.has(s.code)) { rejectedNow.set(s.code, prevRejects.get(s.code)); stats.skipped++; continue; }
       const buf = await fetchLogo(s.code, s.market);
@@ -347,6 +359,7 @@ async function main() {
   // 상장폐지 등으로 목록에서 빠진 코드의 파일은 지운다
   for (const f of fs.readdirSync(OUT_DIR)) {
     const code = f.replace(/\.webp$/, "");
+    if (curated.has(code)) continue;
     if (!byCode.has(code) && LIMIT === Infinity) fs.rmSync(path.join(OUT_DIR, f));
   }
 
@@ -375,6 +388,16 @@ async function main() {
     "utf8"
   );
 
+  /* 🔴 이미지를 실제로 분석한 종목만 tints에 값이 생긴다. 주간 실행은 대부분 캐시로 건너뛰므로
+     그대로 쓰면 지난번에 뽑아 둔 브랜드색 676개가 7개로 줄어든다(배지 색이 해시 팔레트로 후퇴).
+     → 이전 manifest의 tints를 바닥에 깔고 이번에 새로 뽑은 값만 덮어쓴다. */
+  if (!FORCE && fs.existsSync(MANIFEST)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
+      for (const [c, hex] of Object.entries(prev.tints || {})) if (!tints.has(c)) tints.set(c, hex);
+    } catch (e) { console.warn("이전 manifest 읽기 실패 — tints 병합 생략", e.message); }
+  }
+
   const codes = [...accepted].sort();
   fs.writeFileSync(
     MANIFEST,
@@ -390,7 +413,7 @@ async function main() {
 
   const bytes = fs.readdirSync(OUT_DIR).reduce((s, f) => s + fs.statSync(path.join(OUT_DIR, f)).size, 0);
   console.log(`대상 ${stats.total}  받음 ${stats.fetched}  없음 ${stats.missing}  전에 탈락해서 건너뜀 ${stats.skipped}`);
-  console.log(`채택 ${stats.accepted} (우선주 상속 ${stats.inherited})  → ${(bytes / 1048576).toFixed(2)}MB`);
+  console.log(`채택 ${stats.accepted} (우선주 상속 ${stats.inherited}, 파비콘본 보존 ${stats.curated})  → ${(bytes / 1048576).toFixed(2)}MB`);
   console.log("탈락 사유:", [...rejects.entries()].map(([k, v]) => `${k} ${v}`).join(", "));
   console.log(`manifest: 로고 ${codes.length}종목, 브랜드색 ${[...tints.keys()].filter((c) => !accepted.has(c)).length}종목`);
 }

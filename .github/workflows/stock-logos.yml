@@ -49,6 +49,11 @@ jobs:
       # (Vercel 빌드에 필요 없는 무거운 네이티브 모듈이라 런타임에 끌고 가지 않는다).
       - run: npm install --no-save sharp@0.34
 
+      # 회사 공식 파비콘에서 만든 로고를 먼저 채운다(삼성전자·NAVER·카카오 등 대표 종목).
+      # FMP 빌드보다 앞에 둬야 kr-curated.json이 최신이고, 그래야 FMP가 이걸 덮지 않는다.
+      - name: Build favicon logos
+        run: node scripts/build-stock-favicons.mjs
+
       - name: Build stock logos
         run: node scripts/build-stock-logos.mjs ${{ (inputs.force && '--force') || '' }}
 

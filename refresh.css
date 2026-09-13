@@ -576,4 +576,174 @@ html body {
   html body.page-tm-v2 .home-m-ai-live {
     padding-bottom: 8px !important;
   }
+
+  /* ── 지수 블록 (코스피/코스닥/원달러) ─────────────────────────────────────
+     원래는 "어두운 히어로 위 흰 글씨 + 반투명 검정 박스" 전제였다. 배경이 희어지면
+     대표 지수 숫자(흰색)가 통째로 사라져 큰 빈칸으로 보인다 — 실제 제보된 증상.
+     숫자를 주인공으로 세우고 박스는 없앤다. */
+  html body.page-tm-v2 .hx-lead__k {
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-3) !important;
+    margin-bottom: 2px !important;
+  }
+  html body.page-tm-v2 .hx-lead__v {
+    /* 등폭(mono) 폰트는 숫자 사이가 벌어져 "코드" 느낌이 난다.
+       본문 서체 + tabular-nums면 자릿수는 맞으면서 훨씬 자연스럽다. */
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    color: var(--r-text) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.04em !important;
+  }
+  html body.page-tm-v2 .hx-lead__d,
+  html body.page-tm-v2 .hx-lead__pts {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    opacity: 1 !important;
+  }
+  html body.page-tm-v2 .hx-lead__main.is-up .hx-lead__d,
+  html body.page-tm-v2 .hx-lead__main.is-up .hx-lead__v {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-lead__main.is-down .hx-lead__d {
+    color: var(--r-down) !important;
+  }
+  html body.page-tm-v2 .hx-lead__main.is-up .hx-lead__v,
+  html body.page-tm-v2 .hx-lead__main.is-down .hx-lead__v {
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .hx-lead__side {
+    gap: 0 !important;
+    margin-top: 14px !important;
+    border-top: 1px solid var(--r-line) !important;
+    padding-top: 12px !important;
+  }
+  html body.page-tm-v2 .hx-mini {
+    background: none !important;
+    border: 0 !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    gap: 1px !important;
+  }
+  html body.page-tm-v2 .hx-mini + .hx-mini {
+    border-left: 1px solid var(--r-line) !important;
+    padding-left: 14px !important;
+  }
+  html body.page-tm-v2 .hx-mini__k {
+    font-size: 12px !important;
+    color: var(--r-text-3) !important;
+    font-weight: 500 !important;
+  }
+  html body.page-tm-v2 .hx-mini__v {
+    font-family: inherit !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .hx-mini__p {
+    font-family: inherit !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    color: var(--r-text-3) !important;
+  }
+  html body.page-tm-v2 .hx-mini.is-up .hx-mini__p {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-mini.is-down .hx-mini__p {
+    color: var(--r-down) !important;
+  }
+
+  /* 마감시황 한 줄 — 왼쪽 장식 바 자리 비우기 */
+  html body.page-tm-v2 .hx-say {
+    padding-left: 0 !important;
+    margin-top: 16px !important;
+  }
+  html body.page-tm-v2 .hx-say::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* ── 구역 구분 ──────────────────────────────────────────────────────────
+     1px 헤어라인만으로는 스크롤 중에 구역이 안 나뉘어 "메모장에 붙여넣은" 느낌이 난다.
+     국내 금융앱이 쓰는 방식은 8px 짜리 옅은 회색 띠다 — 카드를 안 쓰면서도 단락이 나뉜다. */
+  html body.page-tm-v2 .home-hero,
+  html body.page-tm-v2 .hx-reports,
+  html body.page-tm-v2 .home-m-body,
+  html body.page-tm-v2 .home-section {
+    border-bottom: 8px solid var(--r-bg-sunken) !important;
+  }
+  html body.page-tm-v2 .hx-report {
+    border-bottom: 1px solid var(--r-line) !important;
+  }
+  html body.page-tm-v2 .hx-report:last-child {
+    border-bottom: 0 !important;
+  }
+  html body.page-tm-v2 .home-m-ai-live {
+    border-bottom: 0 !important;
+  }
+
+  /* ── 가독성 ─────────────────────────────────────────────────────────────
+     본문 14px 이하 + 줄간격 1.6은 모바일에서 눈이 미끄러진다. 한 단계씩 올린다. */
+  html body.page-tm-v2 .hx-report__line {
+    font-size: 15px !important;
+    line-height: 1.68 !important;
+    color: var(--r-text-2) !important;
+  }
+  html body.page-tm-v2 .hx-report__points li {
+    font-size: 14px !important;
+    line-height: 1.66 !important;
+  }
+  html body.page-tm-v2 .hx-report__title {
+    font-size: 18px !important;
+  }
+  html body.page-tm-v2 .home-section__title,
+  html body.page-tm-v2 .home-m-ai-live__title {
+    font-size: 18px !important;
+  }
+  html body.page-tm-v2 .hx-say__text,
+  html body.page-tm-v2 .hx-lead p {
+    font-size: 16px !important;
+    line-height: 1.62 !important;
+    font-weight: 600 !important;
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .home-rt-name,
+  html body.page-tm-v2 .home-row__name,
+  html body.page-tm-v2 .home-rt-price,
+  html body.page-tm-v2 .home-row__price {
+    font-size: 15px !important;
+  }
+
+  /* 마감시황 카드의 지수 칩 — 연보라 틴트는 팔레트에 없는 색이다. 중립 회색으로. */
+  html body.page-tm-v2 .hx-chip {
+    background: var(--r-bg-sunken) !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    padding: 7px 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--r-text-2) !important;
+  }
+  html body.page-tm-v2 .hx-chip strong,
+  html body.page-tm-v2 .hx-chip em {
+    font-family: inherit !important;
+    font-variant-numeric: tabular-nums !important;
+    font-style: normal !important;
+    font-weight: 700 !important;
+  }
+  html body.page-tm-v2 .hx-chip.is-up strong,
+  html body.page-tm-v2 .hx-chip.is-up em {
+    color: var(--r-up) !important;
+  }
+  html body.page-tm-v2 .hx-chip.is-down strong,
+  html body.page-tm-v2 .hx-chip.is-down em {
+    color: var(--r-down) !important;
+  }
 }

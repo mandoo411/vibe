@@ -120,6 +120,11 @@
     window.TMStrip.render("us-summary-strip", { breadth, highlights });
   }
 
+  function usLogo(ticker, name) {
+    const L = window.TMStockLogo;
+    return L ? L.usHtml(ticker, name || ticker) : "";
+  }
+
   function escapeHtml(s) {
     return String(s ?? "")
       .replace(/&/g, "&amp;")
@@ -777,7 +782,9 @@
     const chgCls = deltaClass(row.changePct);
     const vs = formatVsCell(row);
     const open = state.openTicker === row.ticker;
-    const nameBtn = `<button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${escapeHtml(row.name || row.ticker)}</button>`;
+    /* 종목 아이콘 — 로고가 있으면 로고, 없으면 티커 배지.
+       assets/stock-logo.js가 아직 안 실려도 화면이 깨지지 않게 빈 문자열로 넘어간다. */
+    const nameBtn = `<button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${usLogo(row.ticker, row.name)}<span class="rt-name-text">${escapeHtml(row.name || row.ticker)}</span></button>`;
 
     if (isMobileLayout()) {
       const rank = row.rank != null ? escapeHtml(String(row.rank)) : "—";

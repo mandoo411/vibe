@@ -27,6 +27,11 @@
    비용도 거의 같다. URL 뒤 v는 이미 굳어 버린 캐시를 한 번 털어내기 위한 것. */
   const MANIFEST_URL = "./assets/logos/kr-manifest.json?v=20260913b";
   const LOGO_DIR = "./assets/logos/kr/";
+  /* 미국·해외 종목. 예전에는 화면에서 financialmodelingprep.com을 직접 링크했는데,
+     남의 CDN이 막히면 전 종목 아이콘이 동시에 깨진다. 받아서 우리가 들고 있는다.
+     로고가 없으면 **티커 배지**로 떨어진다 — 미국 종목은 티커가 곧 이름이라 잘 읽힌다. */
+  const US_MANIFEST_URL = "./assets/logos/us-manifest.json?v=20260913a";
+  const US_LOGO_DIR = "./assets/logos/us/";
 
   /* 코드 해시로 고르는 기본 팔레트 — 브랜드색을 모를 때 쓴다.
      전부 흰 글씨 대비 4.5:1 이상으로 맞춰 뒀다(대비 검사에 걸리지 않게). */
@@ -38,6 +43,9 @@
   let codes = null;          // Set — 로고 이미지가 있는 코드
   let tints = null;          // { code: "#rrggbb" }
   let loading = null;
+  let usTickers = null;      // Set — 로고 이미지가 있는 티커
+  let usTints = null;
+  let usLoading = null;
 
   function hash(str) {
     let h = 5381;
@@ -50,10 +58,7 @@
      그래서 한글은 2자, 영문은 선두 영문 덩어리를 4자까지 그대로 쓴다.
      `KT&G`가 `KT`로 잘려 `KT`와 구별이 안 되던 것도 이걸로 해결된다. */
   const LABELS = {
-    "000270": "KIA",     // 기아 — 로고 자체가 KIA 워드마크다. "기아"보다 이게 맞다
-    "010950": "S-OIL",   // S-Oil — 영문 덩어리 규칙이 하이픈에서 끊겨 "S" 한 글자가 됐다
-    "033780": "KT&G",    // 데이터 출처에 따라 이름이 "KT&G"일 때도 "케이티앤지"일 때도 있다.
-                         // 후자면 "케이"가 되어 케이티(KT)와 구별이 안 되므로 코드로 못 박는다
+    "000270": "KIA",   // 기아 — 로고 자체가 KIA 워드마크다. "기아"보다 이게 맞다
   };
 
   /** 회사명에서 배지에 쓸 글자(2~4자). */
@@ -148,8 +153,8 @@
    * 종목명은 배지 텍스트가 아니라 data-name에서 읽는다(이니셜만 남아 있으므로).
    */
   function upgrade(root) {
-    if (!codes || !codes.size) return;
     const scope = root || document;
+    if (!codes || !codes.size) { upgradeUS(scope); return; }
     scope.querySelectorAll(".tm-logo--badge[data-code]").forEach((el) => {
       const code = el.getAttribute("data-code");
       if (codes.has(code)) {
@@ -165,10 +170,96 @@
       const t = tints && tints[code];
       if (t && el.style.background !== t) el.style.background = t;
     });
+    upgradeUS(scope);
   }
 
-  global.TMStockLogo = { ready, html, fail, upgrade, initials, tintOf, badgeHtml };
+  function upgradeUS(scope) {
+    if (!usTickers || !usTickers.size) return;
+    scope.querySelectorAll(".tm-logo--badge[data-ticker]").forEach((el) => {
+      const t = el.getAttribute("data-ticker");
+      if (usTickers.has(t)) {
+        const cls = [...el.classList]
+          .filter((x) => x !== "tm-logo" && x !== "tm-logo--badge" && !x.startsWith("tm-logo--len") && x !== "tm-logo--2")
+          .join(" ");
+        el.outerHTML = usImgHtml(t, el.getAttribute("data-name") || "", cls);
+        return;
+      }
+      const c = usTints && usTints[t];
+      if (c && el.style.background !== c) el.style.background = c;
+    });
+  }
+
+  /* ── 미국·해외 종목 ─────────────────────────────────────────────── */
+
+  /** 티커는 그대로 배지 글자로 쓴다(4자까지). AAPL·COST·CSCO는 로고보다 읽기 쉽다. */
+  function usLabel(ticker) {
+    const t = String(ticker || "").toUpperCase().replace(/[^A-Z0-9&]/g, "");
+    return t.slice(0, 4) || "?";
+  }
+
+  function usTintOf(ticker) {
+    const t = usTints && usTints[ticker];
+    if (t) return t;
+    return PALETTE[hash(String(ticker || "")) % PALETTE.length];
+  }
+
+  function usBadgeHtml(ticker, name, cls) {
+    const txt = usLabel(ticker);
+    const long = txt.length > 1 ? " tm-logo--2 tm-logo--len" + Math.min(txt.length, 4) : "";
+    return (
+      `<span class="tm-logo tm-logo--badge${long}${cls ? " " + cls : ""}" ` +
+      `style="background:${esc(usTintOf(ticker))}" data-ticker="${esc(ticker)}" data-name="${esc(name)}" ` +
+      `aria-hidden="true">${esc(txt)}</span>`
+    );
+  }
+
+  function usImgHtml(ticker, name, cls) {
+    return (
+      `<img class="tm-logo${cls ? " " + cls : ""}" src="${US_LOGO_DIR}${esc(ticker)}.webp" ` +
+      `alt="" loading="lazy" decoding="async" width="40" height="40" data-ticker="${esc(ticker)}" ` +
+      `onerror="TMStockLogo.usFail(this,'${esc(ticker).replace(/'/g, "&#39;")}')">`
+    );
+  }
+
+  /** 미국 종목 아이콘 — 로고가 있으면 로고, 없으면 티커 배지. */
+  function usHtml(ticker, name, cls) {
+    const t = String(ticker || "").trim().toUpperCase();
+    if (!t) return usBadgeHtml(t, name, cls);
+    if (usTickers && usTickers.has(t)) return usImgHtml(t, name, cls);
+    return usBadgeHtml(t, name, cls);
+  }
+
+  function usFail(img, ticker) {
+    if (!img || img.dataset.failed) return;
+    img.dataset.failed = "1";
+    const cls = [...img.classList].filter((x) => x !== "tm-logo").join(" ");
+    img.outerHTML = usBadgeHtml(ticker || img.getAttribute("data-ticker") || "", "", cls);
+  }
+
+  function readyUS() {
+    if (usLoading) return usLoading;
+    usLoading = fetch(US_MANIFEST_URL)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        usTickers = new Set(Array.isArray(j && j.tickers) ? j.tickers : []);
+        usTints = (j && j.tints) || {};
+        if (typeof document !== "undefined") {
+          const run = () => upgrade(document);
+          if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run, { once: true });
+          else run();
+        }
+      })
+      .catch(() => { usTickers = new Set(); usTints = {}; });
+    return usLoading;
+  }
+
+  global.TMStockLogo = {
+    ready, html, fail, upgrade, initials, tintOf, badgeHtml,
+    readyUS, usHtml, usFail, usLabel, usTintOf,
+    usHas: (t) => !!(usTickers && usTickers.has(String(t || "").trim().toUpperCase())),
+    usSrc: (t) => US_LOGO_DIR + String(t || "").trim().toUpperCase() + ".webp",
+  };
 
   // 페이지가 쓰기 전에 미리 받아 둔다
-  if (typeof document !== "undefined") ready();
+  if (typeof document !== "undefined") { ready(); readyUS(); }
 })(typeof window !== "undefined" ? window : globalThis);

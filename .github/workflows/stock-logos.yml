@@ -57,6 +57,10 @@ jobs:
       - name: Build stock logos
         run: node scripts/build-stock-logos.mjs ${{ (inputs.force && '--force') || '' }}
 
+      # 미국·해외 종목(FMP 로고). 화면에 나오는 티커만 받으므로 목록이 바뀌면 따라 늘어난다.
+      - name: Build US logos
+        run: node scripts/build-us-logos.mjs ${{ (inputs.force && '--force') || '' }}
+
       - name: Commit logos
         id: commit
         run: |

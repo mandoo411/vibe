@@ -111,21 +111,13 @@
     return `<span class="home-tr__logo-wrap">${inner}</span>`;
   }
 
-  function stockLogoUrl(symbol) {
-    const sym = String(symbol || "").toUpperCase();
-    return sym ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(sym)}.png` : "";
-  }
-
-  function stockLogoFallback(symbol) {
-    const sym = String(symbol || "").toUpperCase();
-    return sym ? `https://companiesmarketcap.com/img/company-logos/64/${encodeURIComponent(sym)}.png` : "";
-  }
-
-  function stockLogoHtml(symbol) {
-    const src = stockLogoUrl(symbol);
-    if (!src) return logoWrap(`<span class="home-tr__logo home-tr__logo--fallback" aria-hidden="true">•</span>`);
-    const fb = stockLogoFallback(symbol);
-    return logoWrap(`<img class="home-tr__logo" src="${escapeHtml(src)}" alt="" loading="lazy" data-fallback="${escapeHtml(fb)}" onerror="homeLogoFail(this)">`);
+  /* 미국 종목 아이콘 — 예전에는 financialmodelingprep.com을 화면에서 직접 링크했다.
+     남의 CDN이 막히면 전 종목이 동시에 깨지므로 국내와 같이 우리 저장소 파일로 바꿨다.
+     로고가 없는 티커는 티커 배지로 떨어진다. assets/stock-logo.js 참고. */
+  function stockLogoHtml(symbol, name) {
+    const L = window.TMStockLogo;
+    if (!L) return "";
+    return logoWrap(L.usHtml(symbol, name || symbol));
   }
 
   /* 국내 종목 아이콘 — 미국주식·코인은 원격 CDN 로고를 쓰지만(위 stockLogoHtml/coinLogoHtml),
@@ -457,7 +449,7 @@
           price = `$${pv.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
         }
         const metric = formatHomeUsMetric(r, tab);
-        return `<a class="home-tr home-tr--logo home-tr--us" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-tr__metric">${escapeHtml(metric)}</div></a>`;
+        return `<a class="home-tr home-tr--logo home-tr--us" href="./us-market.html">${identityCell(name, sym, stockLogoHtml(sym, name), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "—")}</div><div class="home-tr__metric">${escapeHtml(metric)}</div></a>`;
       })
       .join("");
   }

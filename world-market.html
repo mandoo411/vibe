@@ -459,7 +459,8 @@
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
-</head>
+    <script src="./assets/stock-logo.js" defer></script>
+  </head>
   <body class="page-tm-v2">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -721,6 +722,12 @@
         }
         function logoCell(row) {
           const flag = row.flag || "\u{1F310}";
+          /* 우리 저장소에 받아 둔 로고가 있으면 그걸 먼저 쓴다(남의 CDN 의존을 줄인다).
+             없으면 기존 원격 주소 → 국기 순으로 떨어진다. assets/logos/us/ 참고. */
+          const L = window.TMStockLogo;
+          if (L && L.usHas && L.usHas(row.symbol)) {
+            return `<img class="world-logo" src="${escapeHtml(L.usSrc(row.symbol))}" alt="" width="32" height="32" loading="lazy" data-flag="${escapeHtml(flag)}"${row.logo ? ` data-fallback="${escapeHtml(row.logo)}"` : ""} onerror="worldLogoFail(this)">`;
+          }
           if (!row.logo) {
             return `<span class="world-logo world-logo--fallback" aria-hidden="true">${escapeHtml(flag)}</span>`;
           }

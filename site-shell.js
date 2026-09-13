@@ -1,4 +1,31 @@
 (function () {
+  /* ── 페이지가 중간에서 열리는 문제 (2026-09-13) ──────────────────────────
+   * 본문이 fetch·인증 확인 후에 채워지는 페이지들은, 화면 위쪽 높이가 갑자기
+   * 늘어나는 순간 브라우저의 스크롤 앵커링이 "보고 있던 요소"를 붙잡으려고
+   * 스크롤을 내려버린다. 홈은 물론 매매시그널에서도 제보됐다(제목 띠를 건너뛰고
+   * 중간에서 열림). 공통 셸에 두어 모든 페이지가 같은 보호를 받게 한다.
+   *
+   * 원칙: 사용자의 스크롤을 절대 뺏지 않는다.
+   *  - 뒤로가기 복원(back_forward)이나 #앵커 링크면 아무것도 하지 않는다
+   *  - 사용자가 한 번이라도 스크롤·터치·키를 쓰면 즉시 중단한다
+   *  - 콘텐츠가 채워지는 약 2초 동안만 맨 위를 다시 맞춘다 */
+  (function pinTopUntilReady() {
+    try {
+      const nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
+      if ((nav && nav.type === "back_forward") || location.hash) return;
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      let touched = false;
+      const mark = () => { touched = true; };
+      ["wheel", "touchstart", "touchmove", "keydown", "pointerdown"].forEach((ev) =>
+        window.addEventListener(ev, mark, { once: true, passive: true })
+      );
+      const pin = () => { if (!touched && window.scrollY > 0) window.scrollTo(0, 0); };
+      pin();
+      window.addEventListener("load", pin, { once: true });
+      [250, 700, 1400, 2200].forEach((ms) => setTimeout(pin, ms));
+    } catch (_) { /* 무시 */ }
+  })();
+
   const BOTTOM_NAV_ICONS = {
     home:
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3L21 12V21H15V15H9V21H3V12Z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>',

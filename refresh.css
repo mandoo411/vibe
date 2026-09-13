@@ -1231,3 +1231,50 @@ html body {
     font-weight: 700 !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2026-09-13 실제 배포 화면 제보 2건 수정
+   ① "실시간 AI 분석" 피드 글씨가 안 보임 — 어두운 패널 전제로 흰 글씨였는데
+      패널을 옅은 카드로 바꾸면서 흰 배경에 흰 글씨가 됐다(배지도 마찬가지).
+   ② "경계가 없다" — 헤어라인(#f2f4f6)이 너무 옅어 상단바·티커·히어로가
+      한 덩어리로 붙어 보였다. 가로 구분선은 한 단계 진한 선(#e5e8eb)을 쓴다.
+   모바일·데스크톱 공통이므로 미디어쿼리 밖에 둔다.
+   ══════════════════════════════════════════════════════════════════════════ */
+html body.page-tm-v2 .home-hero__ai-item {
+  border-top: 1px solid var(--r-line) !important;
+}
+html body.page-tm-v2 .home-hero__ai-name {
+  color: var(--r-text) !important;
+}
+html body.page-tm-v2 .home-hero__ai-desc {
+  color: var(--r-text-2) !important;
+}
+html body.page-tm-v2 .home-hero__ai-time,
+html body.page-tm-v2 .home-hero__ai-empty {
+  color: var(--r-text-3) !important;
+}
+html body.page-tm-v2 .home-hero__ai-badge--buy {
+  background: color-mix(in srgb, var(--r-up) 12%, transparent) !important;
+  color: var(--r-up) !important;
+}
+html body.page-tm-v2 .home-hero__ai-badge--hold {
+  background: var(--r-bg-sunken) !important;
+  color: var(--r-text-2) !important;
+}
+html body.page-tm-v2 .home-hero__ai-badge--avoid {
+  background: color-mix(in srgb, var(--r-down) 10%, transparent) !important;
+  color: var(--r-down) !important;
+}
+
+/* 가로 구분선 — 화면을 가로지르는 선은 한 단계 진하게(붙어 보이던 문제) */
+html body.page-tm-v2 .home-nav,
+html body.page-tm-v2 .home-ticker-bar,
+html body.page-tm-v2 .home-hero,
+html body.page-home-v2 .home-hero,
+html body.page-tm-v2 .masthead.masthead--title-only,
+html body.page-home-v2 .masthead.masthead--title-only {
+  border-bottom: 1px solid var(--r-line-2) !important;
+}
+html body.page-tm-v2 .home-footer {
+  border-top: 1px solid var(--r-line-2) !important;
+}

@@ -1900,6 +1900,10 @@ html body.page-home-v2 .tm-logo--badge.tm-logo--2 {
 }
 
 /* ── 표 안에서의 배치 ── */
+/* 🔴 `.rt-col-name`은 모바일 헤더의 <span>이기도 하고 PC 표의 <col>이기도 하다.
+   <col>에 display:flex가 걸리면 그 열이 표의 열 계산에서 통째로 빠져
+   colgroup 폭이 한 칸씩 밀린다(종목명 142px / 시가총액 284px로 어긋났던 원인).
+   아래 규칙보다 뒤에 놓아 <col>만 되돌린다. */
 html body.page-tm-v2 .rt-name-chart-btn,
 html body.page-tm-v2 .rt-td-name,
 html body.page-tm-v2 .rt-col-name {
@@ -1908,6 +1912,11 @@ html body.page-tm-v2 .rt-col-name {
   gap: 8px !important;
   min-width: 0 !important;
   text-align: left !important;
+}
+html body.page-tm-v2 col.rt-col-name,
+html body.page-tm-v2 .rt-table col,
+html body.page-tm-v2 .dm-stock-table col {
+  display: table-column !important;
 }
 html body.page-tm-v2 .rt-td-name .rt-name-text,
 html body.page-tm-v2 .rt-col-name .rt-name-text,
@@ -1994,16 +2003,48 @@ html body.page-home-v2 .home-rt-col--name .tm-logo {
    "SK하이…"로 잘리는데 옆은 텅 비는 모양이 됐다.
    종목명 열만 auto로 바꿔 남는 폭을 흡수시키면 둘 다 해결된다. */
 @media (min-width: 769px) {
-  /* 열 폭 합이 830px인데 표는 화면 폭(≈1850px)까지 늘어나서, 남는 900px가
-     마지막 열(시가총액)에 몰려 큰 빈 구간이 생겼다. 표 자체를 콘텐츠 폭에 맞춰
-     가운데 두면 빈 구간이 사라지고 종목명도 넉넉해진다. */
+  /* 1차 시도는 표를 콘텐츠 폭(804px)에 맞춰 가운데 두는 것이었는데, 카드가 1198px라
+     좌우에 197px씩 빈 여백이 생겨 표가 떠 있는 것처럼 보였다(시우 지적).
+     → 표는 카드 폭을 100% 채우고, 열은 고정 px 대신 비율로 나눈다.
+
+     🔴 함정 1: realtime.html의 colgroup 순서가 실제 렌더 순서와 달랐다.
+        JS(tableHeadHtmlForTab)는 ...등락률·거래량·거래대금·시가총액 순으로 그리는데
+        colgroup은 ...등락률·거래대금·시가총액·거래량이었다. 전부 105px일 때는 티가 안 났지만
+        비율을 주자 시가총액 284px / 종목명 142px로 어긋났다. → colgroup 순서를 고쳤다.
+     🔴 함정 2: 거래대금·시가총액은 tv 탭에서 자리가 서로 바뀐다. → 둘은 같은 폭으로 둔다. */
   html body.page-tm-v2 .rt-table,
   html body.page-tm-v2 .dm-stock-table {
-    width: auto !important;          /* 열 폭 합만큼만 — 남는 폭을 마지막 열에 몰아주지 않는다 */
+    width: 100% !important;
     max-width: 100% !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
+  /* 🔴 함정 3: `.rt-td-name`에 display:flex를 걸어 두면(아이콘 정렬용) 그 칸이
+     표의 열 계산에서 빠져 colgroup 폭이 한 칸씩 밀린다. PC에서는 셀을 table-cell로
+     되돌리고, 정렬은 셀 안의 .rt-name-chart-btn(이미 flex, width:100%)이 맡는다. */
+  html body.page-tm-v2 .rt-table td.rt-td-name,
+  html body.page-tm-v2 .rt-table th.rt-td-name,
+  html body.page-tm-v2 .dm-stock-table td.rt-td-name,
+  html body.page-tm-v2 .dm-stock-table th.rt-td-name {
+    display: table-cell !important;
+  }
+
+  html body.page-tm-v2 .rt-table col.rt-col-rank,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-rank { width: 5% !important; }
   html body.page-tm-v2 .rt-table col.rt-col-name,
-  html body.page-tm-v2 .dm-stock-table col.rt-col-name { width: 260px !important; }
+  html body.page-tm-v2 .dm-stock-table col.rt-col-name { width: 24% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-price,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-price { width: 12% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-vs,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-vs { width: 11% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-chg,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-chg { width: 10% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-vol,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-vol { width: 13% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-tv,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-tv { width: 12.5% !important; }
+  html body.page-tm-v2 .rt-table col.rt-col-mcap,
+  html body.page-tm-v2 .dm-stock-table col.rt-col-mcap { width: 12.5% !important; }
 }
+
+

@@ -4428,6 +4428,14 @@ async function rpSaveReport(user, body, res) {
 }
 
 /** 국내 종목의 최근 종가를 전종목 지표 캐시에서 읽는다(신규 API 호출 없음). */
+/* 2026-09-12 버그 수정: 저장은 화면이 준 market을 그대로 쓰는데(KOSPI/KOSDAQ), 사후 추적은
+ * "KR"만 국내로 인정하고 있었다. 그래서 저장된 국내 리포트가 전부 영원히 "추적 대기"로 남았다
+ * (실제 DB 7건 중 KOSPI 6건, 추적값 0건). 세 표기를 모두 국내로 본다. */
+function rpIsDomestic(market) {
+  const m = String(market || "KR").toUpperCase();
+  return m === "KR" || m === "KOSPI" || m === "KOSDAQ";
+}
+
 function rpLatestKrPrice(code) {
   try {
     const cache = tsLoadScreenerCache();
@@ -4460,7 +4468,7 @@ async function rpListReports(user, res) {
     let trackedPrice = null;
     let trackedReturnPct = null;
     let trackedAsOf = null;
-    if (String(r.market || "KR").toUpperCase() === "KR" && Number.isFinite(base) && base > 0) {
+    if (rpIsDomestic(r.market) && Number.isFinite(base) && base > 0) {
       const latest = rpLatestKrPrice(r.stock_code);
       if (latest) {
         trackedPrice = latest.price;
@@ -4514,7 +4522,7 @@ async function rpGetReport(user, id, res) {
 
   const base = Number(row.price_at_report);
   let tracked = null;
-  if (String(row.market || "KR").toUpperCase() === "KR" && Number.isFinite(base) && base > 0) {
+  if (rpIsDomestic(row.market) && Number.isFinite(base) && base > 0) {
     const latest = rpLatestKrPrice(row.stock_code);
     if (latest) {
       tracked = {

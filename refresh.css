@@ -1278,3 +1278,36 @@ html body.page-home-v2 .masthead.masthead--title-only {
 html body.page-tm-v2 .home-footer {
   border-top: 1px solid var(--r-line-2) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2026-09-13 제보: "AI 종목분석" 버튼의 아이콘이 호버 전에는 안 보이고,
+   그래서 글자가 오른쪽으로 쏠려 보인다.
+   원인: home.css는 이 버튼을 "흰 배경 + 틸 글씨(호버 시 반전)"로 만들어 뒀다.
+   리프레시에서 배경을 틸로 바꾸면서 span 색만 흰색으로 덮었고 i(아이콘)는
+   틸 그대로 남아 틸 배경 위 틸 아이콘 = 투명이 됐다. 호버하면 원래 규칙이
+   흰색으로 바꿔주니 그때만 보였던 것.
+   덤으로 호버 배경이 주황 그라데이션(#fbbf24→#f59e0b)이라 팔레트 밖이었다 — 정리한다.
+   ══════════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary i,
+html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary span,
+html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary:hover i,
+html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary:hover span,
+html body.page-tm-v2 .home-hero__btn--primary i,
+html body.page-tm-v2 .home-hero__btn--primary span {
+  color: #fff !important;
+}
+html[data-theme="light"] body.page-tm-v2 .home-hero__btn--primary:hover,
+html body.page-tm-v2 .home-hero__btn--primary:hover {
+  background: color-mix(in srgb, var(--r-accent) 88%, #000) !important;
+  border-color: color-mix(in srgb, var(--r-accent) 88%, #000) !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"] body.page-tm-v2 .home-hero__btn--primary i,
+html[data-theme="dark"] body.page-tm-v2 .home-hero__btn--primary span {
+  color: #0b1016 !important;
+}
+/* 보조 버튼도 같은 함정이 있다(아이콘만 다른 색으로 남는 경우) */
+html body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary) i,
+html body.page-tm-v2 .home-hero__btn:not(.home-hero__btn--primary) span {
+  color: var(--r-text) !important;
+}

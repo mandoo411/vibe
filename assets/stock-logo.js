@@ -25,7 +25,7 @@
    보내도 force-cache가 이긴다). 로고를 127종목 추가하고 배포했는데 화면은 그대로 배지였던
    원인이 이것이다. 기본 캐시 정책으로 두면 ETag로 되물어보고 안 바뀌었으면 304(수백 바이트)라
    비용도 거의 같다. URL 뒤 v는 이미 굳어 버린 캐시를 한 번 털어내기 위한 것. */
-  const MANIFEST_URL = "./assets/logos/kr-manifest.json?v=473";
+  const MANIFEST_URL = "./assets/logos/kr-manifest.json?v=20260913b";
   const LOGO_DIR = "./assets/logos/kr/";
 
   /* 코드 해시로 고르는 기본 팔레트 — 브랜드색을 모를 때 쓴다.
@@ -45,16 +45,30 @@
     return h;
   }
 
-  /** 회사명에서 배지에 쓸 글자. 한글은 1자, 영문·숫자는 2자. */
+  /* 한 글자 배지는 못 알아본다 — "삼성전자·삼성전기·삼성생명"이 전부 `삼`,
+     "미래에셋증권"이 `미`, "효성중공업"이 `효`로 나왔다(시우 지적, 2026-09-13).
+     그래서 한글은 2자, 영문은 선두 영문 덩어리를 4자까지 그대로 쓴다.
+     `KT&G`가 `KT`로 잘려 `KT`와 구별이 안 되던 것도 이걸로 해결된다. */
+  const LABELS = {
+    "000270": "KIA",   // 기아 — 로고 자체가 KIA 워드마크다. "기아"보다 이게 맞다
+  };
+
+  /** 회사명에서 배지에 쓸 글자(2~4자). */
   function initials(name, code) {
+    const fixed = LABELS[String(code || "").trim()];
+    if (fixed) return fixed;
     let n = String(name || "").trim();
     n = n.replace(/\(주\)|주식회사|㈜/g, "").trim();
     // "삼성전자우" 같은 우선주 꼬리표는 떼고 본체로 판단
     n = n.replace(/[0-9]*우[BC]?$/, "") || n;
     if (!n) return String(code || "?").slice(0, 2);
-    const c = n.charAt(0);
-    if (c >= "가" && c <= "힣") return c;        // 한글 1자
-    return n.slice(0, 2).toUpperCase();                   // 영문·숫자 2자
+    // 영문으로 시작하면 그 덩어리를 통째로 (KT&G, HMM, BNK, F&F, CJ, LS …)
+    const en = n.match(/^[A-Za-z0-9&]+/);
+    if (en) return en[0].toUpperCase().slice(0, 4);
+    // 한글은 2자 (삼성, 기아, 미래, 효성, 하나 …)
+    const ko = n.match(/^[가-힣]{1,2}/);
+    if (ko) return ko[0];
+    return n.slice(0, 2).toUpperCase();
   }
 
   function tintOf(code) {
@@ -71,7 +85,8 @@
 
   function badgeHtml(code, name, cls) {
     const txt = initials(name, code);
-    const long = txt.length > 1 ? " tm-logo--2" : "";
+    // 글자 수에 따라 크기를 줄인다. tm-logo--2는 예전 이름이라 호환을 위해 같이 붙인다.
+    const long = txt.length > 1 ? " tm-logo--2 tm-logo--len" + Math.min(txt.length, 4) : "";
     return (
       `<span class="tm-logo tm-logo--badge${long}${cls ? " " + cls : ""}" ` +
       `style="background:${esc(tintOf(code))}" data-code="${esc(code)}" data-name="${esc(name)}" ` +

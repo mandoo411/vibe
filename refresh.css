@@ -1707,11 +1707,17 @@ html body.page-tm-v2 .market-gauge-card__name {
     grid-auto-rows: 1fr !important;
     align-content: stretch !important;
   }
-  /* 선택되지 않은 계열은 한 줄로 — 목록 높이를 줄이고 선택 상태를 도드라지게 */
-  html body.page-tm-v2 .ts-tech__item:not(.is-open) .ts-tech__cap {
+  /* 🔴 계열 줄은 **선택 여부와 상관없이 전부 같은 높이**로 둔다. (2026-09-13)
+     원래는 선택된 줄만 설명(.ts-tech__cap)을 보여줬는데, 그 줄이 다른 줄보다 25px 높았다.
+     → 계열을 바꿀 때마다 위쪽 줄들의 높이가 변해 방금 누른 줄이 25px 밀리고,
+       그걸 되돌리려고 JS가 스크롤을 움직이면서 "누를 때마다 화면이 움직이는" 증상이 됐다.
+       (시우 지적, 09-13) 높이를 고정하면 밀릴 일 자체가 없어진다.
+     설명 문구는 오른쪽 패널 제목 밑(.ts-sub__cap)에 이미 나오므로 목록에서는 빼도 손해가 없다.
+     선택 상태는 배경·아이콘 색·꺾쇠로 충분히 구분된다. */
+  html body.page-tm-v2 .ts-tech__item .ts-tech__cap {
     display: none !important;
   }
-  html body.page-tm-v2 .ts-tech__item:not(.is-open) .ts-tech__btn {
+  html body.page-tm-v2 .ts-tech__item .ts-tech__btn {
     padding-top: 10px !important;
     padding-bottom: 10px !important;
   }
@@ -1732,7 +1738,16 @@ html body.page-tm-v2 .dmx-block,
 html body.page-tm-v2 .bfx-block,
 html body.page-tm-v2 .dm-section,
 html body.page-tm-v2 .dmx-fold,
-html body.page-tm-v2 .bfx-fold {
+html body.page-tm-v2 .bfx-fold,
+/* 매매시그널 계열 메뉴(2026-09-13 추가) — 계열을 바꾸면 오른쪽 패널 내용이 통째로 교체되는데,
+   브라우저가 그 안의 노드를 스크롤 앵커로 잡고 있다가 놓치면서 화면이 수백 px씩 튀었다.
+   ("가치·재무를 누르면 스크롤이 위로 올라감" — 시우, 09-13)
+   JS의 tsKeepInPlace만으로는 못 막는다. 앵커링 자체를 이 구역에서 꺼야 한다. */
+html body.page-tm-v2 .ts-tech,
+html body.page-tm-v2 .ts-tech__list,
+html body.page-tm-v2 .ts-tech__detail,
+html body.page-tm-v2 .ts-tech__item,
+html body.page-tm-v2 .ts-sub {
   overflow-anchor: none !important;
 }
 
@@ -2064,3 +2079,76 @@ html body.page-home-v2 .home-rt-col--name .tm-logo {
 }
 
 
+
+/* ════════════════════════════════════════════════════════════════════
+   18) 표 밀도 — 실시간시세·마감시황·미국주식 (2026-09-13)
+   시우: "실시간시세 탭·표 밀도 정리"
+
+   - 탭 바가 61px을 먹고 버튼 3개가 화면 폭을 1/4씩 나눠 가져서, 정작 표는
+     한 화면에 14줄밖에 안 들어왔다. 탭은 "지금 어느 목록인지"를 알리는 장치라
+     내용만큼만 차지하면 된다 → 왼쪽에 모은 알약 탭으로.
+   - 행 높이 39px → 34px. 아이콘이 26px이라 위아래 4px씩이 한계다.
+     한 화면에 들어오는 줄 수가 14 → 17줄로 늘어난다.
+   - 폭 규칙(17-c)과 달리 #us-rank-table도 같이 적용한다 — 밀도는 세 표가 같아야
+     페이지를 옮겨 다닐 때 같은 서비스로 읽힌다.
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  html body.page-tm-v2 .rt-tabs {
+    --rt-tab-height: 36px;
+    --rt-tabs-pad-block: 6px;
+    --rt-tab-font-size: 13px;
+    --rt-tab-radius: 999px;
+    --rt-tabs-gap: 6px;
+  }
+  /* 탭 묶음이 남는 폭을 다 먹지 않게 — 검색창은 margin-left:auto로 계속 오른쪽에 붙는다 */
+  html body.page-tm-v2 .rt-tabs .rt-tabs-row-tabs {
+    flex: 0 0 auto !important;
+    width: auto !important;
+  }
+  html body.page-tm-v2 .rt-tabs .rt-tab {
+    flex: 0 0 auto !important;
+    padding: 0 16px !important;
+  }
+
+  /* 행 밀도 */
+  html body.page-tm-v2 .rt-table td,
+  html body.page-tm-v2 .dm-stock-table td {
+    padding: 4px 8px !important;
+    font-size: 13.5px !important;
+    line-height: 1.35 !important;
+  }
+  html body.page-tm-v2 .rt-table th,
+  html body.page-tm-v2 .dm-stock-table th {
+    padding: 6px 8px !important;
+    font-size: 12.5px !important;
+  }
+  /* 아이콘도 한 단계 줄여 행 높이를 맞춘다 */
+  html body.page-tm-v2 .rt-table .tm-logo,
+  html body.page-tm-v2 .dm-stock-table .tm-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+  }
+}
+
+/* 모바일도 같은 방향으로 — 390px 화면에서 7줄밖에 안 보였다.
+   (아이콘 22px이 바닥이라 세로 패딩과 글자 크기에서만 줄인다) */
+@media (max-width: 768px) {
+  html body.page-tm-v2 .rt-mobile-row {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+  html body.page-tm-v2 .rt-mobile-row .rt-col-name,
+  html body.page-tm-v2 .rt-mobile-row .rt-col-price,
+  html body.page-tm-v2 .rt-mobile-row .rt-col-change,
+  html body.page-tm-v2 .rt-mobile-row .rt-col-last {
+    font-size: 13.5px !important;
+    line-height: 1.35 !important;
+  }
+  html body.page-tm-v2 .rt-tabs {
+    --rt-tab-height: 38px;
+    --rt-tabs-pad-block: 6px;
+    --rt-tab-font-size: 13px;
+    --rt-tabs-gap: 6px;
+  }
+}

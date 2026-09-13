@@ -3393,13 +3393,87 @@
           }
           // 넓은 화면에선 첫 계열을 미리 열어 둔다 — 오른쪽 칸이 빈 채로 시작하면
           // "여기서 뭘 해야 하는지"가 안 보인다. 좁은 화면은 8개 계열을 먼저 훑게 접어 둔다.
+          tsSyncDetailMinHeight();
           if (tsWideMq.matches) openTechniqueGroup(TS_TECHNIQUE_GROUPS[0].id, { noScroll: true });
           const onBreakpoint = () => {
+            tsSyncDetailMinHeight();
             if (tsWideMq.matches && !tsOpenGroupId) openTechniqueGroup(TS_TECHNIQUE_GROUPS[0].id, { noScroll: true });
             else tsPlaceSubPanel();
           };
           if (tsWideMq.addEventListener) tsWideMq.addEventListener("change", onBreakpoint);
           else if (tsWideMq.addListener) tsWideMq.addListener(onBreakpoint);
+          /* 폭이 바뀌면 설명 줄바꿈이 달라져 가장 높은 계열도 달라진다 — 다시 잰다.
+             단 스크롤 중에는 재지 않는다(문서 높이가 바뀌면 그게 또 튐의 원인이 된다). */
+          let tsResizeTimer = null;
+          let tsLastW = window.innerWidth;
+          window.addEventListener("resize", () => {
+            if (window.innerWidth === tsLastW) return;   // 모바일 주소창 접힘 등 세로만 바뀐 경우 무시
+            tsLastW = window.innerWidth;
+            clearTimeout(tsResizeTimer);
+            tsResizeTimer = setTimeout(() => tsSyncDetailMinHeight(true), 200);
+          });
+        }
+
+        /** 계열 패널 내용. openTechniqueGroup과 높이 측정이 같은 마크업을 써야 한다. */
+        function tsSubHtml(g) {
+          return `
+            <div class="ts-sub__head">
+              <div>
+                <p class="ts-sub__title"><i class="ti ${escapeHtml(g.icon)}" aria-hidden="true"></i>${escapeHtml(g.name)}</p>
+                <p class="ts-sub__cap">${escapeHtml(g.tagline)} · 기법을 누르면 바로 검색합니다</p>
+              </div>
+              <button type="button" class="ts-sub__close" id="ts-sub-close" aria-label="접기"><i class="ti ti-x" aria-hidden="true"></i></button>
+            </div>
+            <div class="ts-presets">
+              ${g.presets
+                .map(
+                  (p) => `<button type="button" class="ts-preset" data-preset="${escapeHtml(p.id)}">
+                    <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
+                    <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
+                    <span class="ts-preset__foot">
+                      <span class="ts-preset__tag">${p.intraday ? "장 막판 갱신" : "일봉 기준"}</span>
+                      <span class="ts-preset__cta">검색<i class="ti ti-arrow-right" aria-hidden="true"></i></span>
+                    </span>
+                  </button>`
+                )
+                .join("")}
+            </div>`;
+        }
+
+        /* 🔴 계열을 바꿀 때 스크롤이 튀던 이유 (시우 지적, 2026-09-13)
+           계열마다 설명 줄 수가 달라 오른쪽 패널 높이가 달라진다 → 문서 전체 높이가 줄어든다 →
+           아래쪽까지 스크롤한 상태면 브라우저가 스크롤을 끝으로 당겨 붙인다(clamp).
+           그래서 "가치·재무를 누르면 화면이 위로 올라가는" 것처럼 보였다.
+           tsKeepInPlace의 scrollBy로는 못 막는다 — 더 내려갈 자리가 없기 때문이다.
+           → 오른쪽 칸 높이를 **가장 높은 계열 기준으로 고정**해서 문서 높이가 아예 안 변하게 한다. */
+        let tsDetailMeasuredW = 0;
+        function tsSyncDetailMinHeight(force) {
+          const detail = $("ts-tech-detail");
+          const sub = $("ts-sub");
+          if (!detail || !sub) return;
+          if (!tsWideMq.matches) { detail.style.minHeight = ""; tsDetailMeasuredW = 0; return; }  // 모바일은 패널이 목록 안으로 들어간다
+          /* 이 구역은 로그인 전까지 통째로 숨어 있다(.ts-hidden) — 그때는 폭이 0이라 재도 의미가 없다.
+             그래서 "잴 수 있을 때" 재고 결과를 기억해 둔다. openTechniqueGroup에서도 부르므로
+             화면에 나타난 뒤 첫 클릭에서 자동으로 채워진다. */
+          const w = detail.clientWidth;
+          if (!w) return;
+          if (!force && w === tsDetailMeasuredW && detail.style.minHeight) return;
+          const probe = document.createElement("div");
+          probe.className = sub.className.split(" ").filter((c) => c !== "ts-hidden").join(" ");
+          probe.setAttribute("aria-hidden", "true");
+          probe.style.cssText = "position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;";
+          probe.style.width = (detail.clientWidth || sub.clientWidth || 520) + "px";
+          detail.appendChild(probe);
+          let max = 0;
+          for (const g of TS_TECHNIQUE_GROUPS) {
+            probe.innerHTML = tsSubHtml(g);
+            max = Math.max(max, probe.offsetHeight);
+          }
+          probe.remove();
+          if (max > 0) {
+            detail.style.minHeight = max + "px";
+            tsDetailMeasuredW = w;
+          }
         }
 
         function closeTechniqueGroup() {
@@ -3428,6 +3502,7 @@
           const g = tsGroupById(id);
           const sub = $("ts-sub");
           if (!g || !sub) return;
+          tsSyncDetailMinHeight();   // 로그인 후 처음 보일 때 여기서 채워진다
           const tsAnchorEl = document.querySelector(`.ts-tech__item[data-item="${id}"]`);
           const tsAnchorTop = tsAnchorEl ? tsAnchorEl.getBoundingClientRect().top : null;
           tsOpenGroupId = id;
@@ -3437,28 +3512,7 @@
           document.querySelectorAll("#ts-tech-list [data-group]").forEach((b) => {
             b.setAttribute("aria-expanded", b.getAttribute("data-group") === id ? "true" : "false");
           });
-          sub.innerHTML = `
-            <div class="ts-sub__head">
-              <div>
-                <p class="ts-sub__title"><i class="ti ${escapeHtml(g.icon)}" aria-hidden="true"></i>${escapeHtml(g.name)}</p>
-                <p class="ts-sub__cap">${escapeHtml(g.tagline)} · 기법을 누르면 바로 검색합니다</p>
-              </div>
-              <button type="button" class="ts-sub__close" id="ts-sub-close" aria-label="접기"><i class="ti ti-x" aria-hidden="true"></i></button>
-            </div>
-            <div class="ts-presets">
-              ${g.presets
-                .map(
-                  (p) => `<button type="button" class="ts-preset" data-preset="${escapeHtml(p.id)}">
-                    <span class="ts-preset__name"><i class="ti ${escapeHtml(p.icon)}" aria-hidden="true"></i>${escapeHtml(p.name)}</span>
-                    <span class="ts-preset__desc">${escapeHtml(p.desc)}</span>
-                    <span class="ts-preset__foot">
-                      <span class="ts-preset__tag">${p.intraday ? "장 막판 갱신" : "일봉 기준"}</span>
-                      <span class="ts-preset__cta">검색<i class="ti ti-arrow-right" aria-hidden="true"></i></span>
-                    </span>
-                  </button>`
-                )
-                .join("")}
-            </div>`;
+          sub.innerHTML = tsSubHtml(g);
           sub.classList.remove("ts-hidden");
           tsPlaceSubPanel();
           const closeBtn = $("ts-sub-close");

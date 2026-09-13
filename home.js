@@ -1130,6 +1130,26 @@
       window.scrollTo(0, 0);
       // Safari는 load 이후에 복원을 시도하는 경우가 있어 한 번 더 맞춰 준다
       window.addEventListener("load", () => window.scrollTo(0, 0), { once: true });
+
+      /* 2026-09-13: 위 두 번으로도 부족했다. 홈의 본문(시황·리포트)은 fetch가 끝난 뒤에
+         들어오는데, 그때 화면 위쪽 높이가 크게 늘어나면 브라우저의 스크롤 앵커링이
+         "보고 있던 요소"를 붙잡으려고 스크롤을 내려버린다. 실제로 홈이 AI 종목분석
+         입력란 근처에서 열리는 제보가 있었다.
+         → 사용자가 아직 한 번도 스크롤하지 않았다면, 콘텐츠가 채워지는 2초 동안만
+           맨 위를 다시 맞춘다. 사용자가 손을 대는 순간 즉시 멈춘다. */
+      let touched = false;
+      const markTouched = () => {
+        touched = true;
+      };
+      ["wheel", "touchstart", "touchmove", "keydown", "pointerdown"].forEach((ev) =>
+        window.addEventListener(ev, markTouched, { once: true, passive: true })
+      );
+      [250, 700, 1400, 2200].forEach((ms) =>
+        setTimeout(() => {
+          if (touched) return;
+          if (window.scrollY > 0) window.scrollTo(0, 0);
+        }, ms)
+      );
     } catch (_) { /* 무시 */ }
   }
 

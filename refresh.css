@@ -746,4 +746,102 @@ html body {
   html body.page-tm-v2 .hx-chip.is-down em {
     color: var(--r-down) !important;
   }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     공통 셸 — 홈 외 페이지에도 그대로 적용되는 부분
+     (masthead 그라데이션 띠는 12개 페이지가 함께 쓴다. 여기 한 번만 고치면 전부 바뀐다)
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* 페이지 제목 띠 — 남색→틸 그라데이션을 흰 바탕 + 큰 제목으로 */
+  html body.page-tm-v2 .masthead.masthead--title-only,
+  html body.page-home-v2 .masthead.masthead--title-only,
+  html body.page-tm-v2 .hub-hero {
+    background: var(--r-bg) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 18px 16px 16px !important;
+  }
+  html body.page-tm-v2 .masthead.masthead--title-only .masthead__title,
+  html body.page-home-v2 .masthead.masthead--title-only .masthead__title,
+  html body.page-tm-v2 .hub-hero__title {
+    color: var(--r-text) !important;
+    font-size: 22px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.04em !important;
+    margin: 0 !important;
+  }
+  /* 영문 대문자 kicker(TRADE SIGNAL 같은)는 템플릿 티가 난다 — 작은 회색 라벨로 낮춘다 */
+  html body.page-tm-v2 .masthead.masthead--title-only .masthead__kicker,
+  html body.page-home-v2 .masthead.masthead--title-only .masthead__kicker,
+  html body.page-tm-v2 .masthead__kicker,
+  html body.page-tm-v2 .hub-hero__kicker,
+  html body.page-tm-v2 .section-kicker {
+    color: var(--r-text-3) !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+    margin-bottom: 3px !important;
+  }
+  html body.page-tm-v2 .masthead__meta,
+  html body.page-tm-v2 .page-hero-sub {
+    color: var(--r-text-3) !important;
+    font-size: 12.5px !important;
+  }
+  html body.page-tm-v2 .masthead__meta strong {
+    color: var(--r-text-2) !important;
+  }
+
+  /* 본문 컨테이너 — 좌우 여백은 각 구역이 직접 갖는다(전폭 구역 구조) */
+  html body.page-tm-v2 .tm-main,
+  html body.page-tm-v2 .tm-main > .page,
+  html body.page-tm-v2 .tm-main .page {
+    background: var(--r-bg) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* 공통 카드류 — 그림자·굵은 테두리 제거, 흰 카드 + 헤어라인 */
+  html body.page-tm-v2 .tm-panel,
+  html body.page-tm-v2 .ail-card,
+  html body.page-tm-v2 .ts-card,
+  html body.page-tm-v2 .cb-card,
+  html body.page-tm-v2 .schedule-card,
+  html body.page-tm-v2 .crypto-metric-card,
+  html body.page-tm-v2 .crypto-news-card,
+  html body.page-tm-v2 .market-gauge-card,
+  html body.page-tm-v2 .tm-auth-card {
+    box-shadow: none !important;
+    border-color: var(--r-line-2) !important;
+    border-radius: var(--r-radius) !important;
+  }
+
+  /* 공통 상단바·하단바·푸터 (홈 외 페이지도 같은 마크업을 쓴다) */
+  html body.page-tm-v2 .home-nav {
+    background: var(--r-bg) !important;
+    border-bottom: 1px solid var(--r-line) !important;
+    box-shadow: none !important;
+  }
+  html body.page-tm-v2 .home-footer {
+    background: var(--r-bg-sub) !important;
+    border-top: 1px solid var(--r-line) !important;
+  }
+  html body.page-tm-v2 .home-footer__brand-name {
+    color: var(--r-text) !important;
+  }
+  html body.page-tm-v2 .home-footer__slogan,
+  html body.page-tm-v2 .home-footer__bottom,
+  html body.page-tm-v2 .home-footer__bottom span,
+  html body.page-tm-v2 .home-footer__links a,
+  html body.page-tm-v2 .home-footer__tg {
+    color: var(--r-text-3) !important;
+  }
+
+  /* 스크롤 앵커링 — 비동기로 채워지는 화면에서 브라우저가 스크롤을 잡아끄는 것을 막는다
+     (홈이 AI 종목분석 입력란에서 열리던 증상의 CSS 쪽 대책) */
+  html body.page-tm-v2 .home-wrap,
+  html body.page-tm-v2 .tm-main {
+    overflow-anchor: none !important;
+  }
 }

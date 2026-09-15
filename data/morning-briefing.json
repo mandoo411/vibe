@@ -33,82 +33,82 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29459.75,
+        "close": 29488,
         "previousClose": 29387,
-        "changePct": 0.25,
-        "changePoints": 72.75
+        "changePct": 0.34,
+        "changePoints": 101
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
         "close": 176.22,
-        "previousClose": 188.72,
-        "changePct": -6.62,
-        "changePoints": -12.5
+        "previousClose": 182.78,
+        "changePct": -3.59,
+        "changePoints": -6.56
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 332.08,
-      "changePct": -0.06,
-      "changePoints": 0.19
+      "price": 333.08,
+      "changePct": 1.99,
+      "changePoints": 6.51
     },
     {
       "symbol": "MSFT",
-      "price": 503.98,
-      "changePct": 1.68,
-      "changePoints": 8.35
+      "price": 505.41,
+      "changePct": 2.63,
+      "changePoints": 12.97
     },
     {
       "symbol": "NVDA",
-      "price": 212.3,
-      "changePct": -2.74,
-      "changePoints": 5.99
+      "price": 210.96,
+      "changePct": -3.39,
+      "changePoints": -7.4
     },
     {
       "symbol": "AMZN",
-      "price": 253.64,
-      "changePct": -1.22,
-      "changePoints": 3.14
+      "price": 253.54,
+      "changePct": 0.66,
+      "changePoints": 1.65
     },
     {
       "symbol": "META",
-      "price": 665.32,
-      "changePct": 2.67,
-      "changePoints": 17.29
+      "price": 665.6,
+      "changePct": 3.29,
+      "changePoints": 21.22
     },
     {
       "symbol": "TSLA",
-      "price": 359.7,
-      "changePct": -1.57,
-      "changePoints": 5.74
+      "price": 358.97,
+      "changePct": -1.26,
+      "changePoints": -4.59
     },
     {
       "symbol": "GOOGL",
-      "price": 347.08,
-      "changePct": 2.53,
-      "changePoints": 8.58
+      "price": 349.39,
+      "changePct": 5.05,
+      "changePoints": 16.79
     },
     {
       "symbol": "AMD",
-      "price": 494.25,
-      "changePct": -4.24,
-      "changePoints": 21.88
+      "price": 493.41,
+      "changePct": -2.02,
+      "changePoints": -10.19
     },
     {
       "symbol": "PLTR",
-      "price": 172.8,
-      "changePct": 3.33,
-      "changePoints": 5.57
+      "price": 173.31,
+      "changePct": 4.49,
+      "changePoints": 7.45
     },
     {
       "symbol": "COIN",
-      "price": 188.05,
-      "changePct": 7.3,
-      "changePoints": 12.79
+      "price": 191.45,
+      "changePct": 11.13,
+      "changePoints": 19.17
     }
   ],
   "sectors": [
@@ -117,113 +117,113 @@
       "sector": "기술",
       "name": "기술 (XLK)",
       "price": 184.28,
-      "changePct": -1.81
+      "changePct": -0.51
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
       "price": 57.03,
-      "changePct": -0.38
+      "changePct": 0.28
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
       "price": 64.53,
-      "changePct": -0.94
+      "changePct": -0.62
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
       "price": 167.75,
-      "changePct": 1.45
+      "changePct": 1.26
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
       "price": 169.93,
-      "changePct": -1.42
+      "changePct": -0.36
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
       "price": 112.85,
-      "changePct": -0.1
+      "changePct": 0.79
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
       "price": 84.42,
-      "changePct": 1.25
+      "changePct": 1.6
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
       "price": 41.82,
-      "changePct": -1.34
+      "changePct": -1.65
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
       "price": 50.49,
-      "changePct": -0.9
+      "changePct": -0.53
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 43.12,
-      "changePct": -0.69
+      "changePct": 0.16
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1342.63,
-      "USD/JPY": 153.61,
-      "USD/CNY": 6.72,
+      "USD/KRW": 1347.2,
+      "USD/JPY": 154.39,
+      "USD/CNY": 6.73,
       "EUR/USD": 1.16
     },
     "base": "USD",
-    "updatedAt": "Mon, 14 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Tue, 15 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 101.97,
-        "changePct": 1.92,
-        "changePoints": 1.92
+        "price": 102.59,
+        "changePct": 2.54,
+        "changePoints": 2.54
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4331.6,
-        "changePct": -1.75,
-        "changePoints": -77.3
+        "price": 4337,
+        "changePct": -1.63,
+        "changePoints": -71.9
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 63.69,
-        "changePct": -1.33,
-        "changePoints": -0.86
+        "price": 63.66,
+        "changePct": -1.38,
+        "changePoints": -0.89
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.4,
-        "changePct": -1.08,
-        "changePoints": -0.07
+        "price": 6.39,
+        "changePct": -1.24,
+        "changePoints": -0.08
       },
       {
         "id": "sox",
@@ -240,47 +240,47 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 78406,
-        "changePct24h": 2.31,
-        "marketCapUsd": 1574735456329.3
+        "priceUsd": 77949,
+        "changePct24h": 1.51,
+        "marketCapUsd": 1565550698814.76
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2525.23,
-        "changePct24h": 2.15,
-        "marketCapUsd": 308196806562.63
+        "priceUsd": 2513.55,
+        "changePct24h": 1.16,
+        "marketCapUsd": 307002745062.7
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 102.82,
-        "changePct24h": 3.35,
-        "marketCapUsd": 60351581275.54
+        "priceUsd": 102.46,
+        "changePct24h": 2.79,
+        "marketCapUsd": 60134359640.98
       }
     ]
   },
   "news": [
     {
-      "title": "‘월가 암살자’가 노리는 韓기업은 … “K디스카운트 빠르게 해체중”",
-      "url": "https://www.mk.co.kr/news/society/12152279",
+      "title": "[MK 골든크로스 돌파종목 : 한컴위드(054920) & 아시아경제(127710)]",
+      "url": "https://www.mk.co.kr/news/stock/12152792",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T20:00:00.000Z",
-      "summary": "‘공매도 투자자에서 행동주의 투자자로 변신’ 파미 콰디르 사프켓 센티넬 설립자 인터뷰‘공매도 투자자에서 행동주의 투자자로 변신.’ 캐나다 제약사 발리언트, 독일 핀테크 기업 와이어.."
+      "publishedAt": "2026-09-15T00:25:51.000Z",
+      "summary": "안녕하세요. 국내 핫 이슈 종목을 분석해드리는 AI 기자 ‘MK시그널’ 입니다. MK시그널이 오늘 분석한 핫 이슈 골든크로스 종목은 한컴위드 & 아시아경제 입니다. - 한컴위드(0.."
     },
     {
-      "title": "기후 위기 해결에 머리 맞대는 카카오…‘한국기후위크’ 출범 선언",
-      "url": "https://www.mk.co.kr/news/it/12152625",
+      "title": "“의료기기 거치 가능해요”…현대차, 중증 장애아동에 특수 유모차 지원",
+      "url": "https://www.mk.co.kr/news/business/12152783",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T14:10:01.000Z",
-      "summary": "카카오가 기후 문제 대응을 논의하는 ‘한국기후위크’ 출범을 선언했다. 14일 카카오에 따르면 카카오임팩트재단은 지난 10일부터 12일까지 제주도 제주시 카카오 제주오피스 스페이스닷.."
+      "publishedAt": "2026-09-15T00:21:31.000Z",
+      "summary": "현대자동차가 일반 유모차나 휠체어 이용이 어려운 중증 장애아동을 위해 맞춤형 특수 유모차 500대를 지원한다고 15일 밝혔다. 의료장비 거치와 대용량 수납, 원터치 폴딩 등을 적용.."
     },
     {
-      "title": "“한국인은 중국인 싫어해” 외국인 여성들 난투극…쇼핑몰 난장판 이유가",
-      "url": "https://www.mk.co.kr/news/society/12152600",
+      "title": "FOMC 앞둔 연준... 금리인상은 확정적인가",
+      "url": "https://www.mk.co.kr/news/stock/12152777",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T13:18:17.000Z",
-      "summary": "홍익대 인근의 쇼핑몰에서 외국인 여성들이 과격한 몸싸움을 벌였다. 14일 온라인 커뮤니티에 따르면 최근 ‘한국의 쇼핑몰 안에서 외국인 여성들이 싸우는 영상’이라는 제목의 게시물이 .."
+      "publishedAt": "2026-09-15T00:18:11.000Z",
+      "summary": "AI 속도조절론이 월가를 강타한 가운데 연준의 금리결정이 핵심 변수로 떠오르고 있습니다. 자세한 내용 불앤베어 영상에 담았습니다. ◆ 유의사항 : 본 영상은 2026.09.15(화.."
     },
     {
       "title": "[클릭 e종목]\"에스엠, 탄탄한 IP…북미서 성장 필요\"",
@@ -374,32 +374,32 @@
       "summary": "코스피, 225.54P 내린 6684.37 마감(3.26%↓)"
     },
     {
-      "title": "‘수시먹통’ 외양간 고치는 교육부…“5시50분 저장이력 있다면 구제”",
-      "url": "https://www.mk.co.kr/news/society/12152701",
+      "title": "“정말 한심해”…서경덕, 중국 BTS ‘스윔’ CD 불법 유통에 일갈",
+      "url": "https://www.mk.co.kr/news/culture/12152825",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T20:53:07.000Z",
-      "summary": "5시50분 접수 이력 있으면 구제 대학 경쟁률 발표방식 개선 검토교육부가 2027학년도 대입 수시모집의 원서 접수 ‘먹통’ 사태를 두고 개선 대책 마련에 나섰다. 14일 교육부는 .."
+      "publishedAt": "2026-09-15T01:02:11.000Z",
+      "summary": "그룹 방탄소년단(BTS)의 ‘스윔’(SWIM) 싱글 CD가 중국 대형 온라인 쇼핑몰에서 불법으로 판매돼 논란이 일고 있다. 서경덕 성신여대 교수는 15일 자신의 사회관계망서비스(S.."
     },
     {
-      "title": "고유가는 핑계고 15조짜리 담합이었다…석화사 7곳 경영진 구속영장",
-      "url": "https://www.mk.co.kr/news/society/12152700",
+      "title": "“추미애 사퇴하라” 도민 청원 3만명 돌파",
+      "url": "https://www.mk.co.kr/news/economy/12152822",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T20:52:47.000Z",
-      "summary": "OCI 대표·PKC 전 대표 등 8명 21년부터 8개 품목서 담합혐의 중동전쟁發 불안 틈타 부당이득검찰이 15조원대 석유화학제품 가격을 담합한 혐의로 국내 주요 석유화학업체 전현직.."
+      "publishedAt": "2026-09-15T00:53:02.000Z",
+      "summary": "비상재정·관사논란 여론싸늘 ‘추미애 경기도정’ 최대 위기추미애 경기도지사의 비상 재정이 여론의 역풍을 맞고 있다. 추미애 지사의 사퇴를 촉구하는 도민 청원이 게시 나흘만에 참여인원.."
     },
     {
-      "title": "나스닥 데뷔하는 앤트로픽…국민연금 참여하지만 국민은 못삽니다",
-      "url": "https://www.mk.co.kr/news/stock/12152699",
+      "title": "“전기트럭 실운행 1억6000만km 돌파”…다임러트럭의 친환경 운송 비전",
+      "url": "https://www.mk.co.kr/news/business/12152820",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T20:52:36.000Z",
-      "summary": "2조달러 대어, 이르면 10월 상장 국민연금도 공모참여…펀드 전무 한국개미, 상장이후 거래가능할듯인공지능(AI) 모델 ‘클로드’ 개발사인 앤트로픽이 이르면 오는 10월 나스닥 상장.."
+      "publishedAt": "2026-09-15T00:50:32.000Z",
+      "summary": "다임러트럭의 장거리 전기트럭 ‘벤츠 e악트로스 600’이 유럽 실제 운송 현장에서 누적 1억6000만km 이상 주행을 달성했다. 다임러트럭은 신형 전기트럭과 수소전기트럭 등 친환경.."
     },
     {
-      "title": "“우량아 선발대회 열 것도 아니고”…위기의 우유회사 ‘운동족’ 노린다",
-      "url": "https://www.mk.co.kr/news/business/12152698",
+      "title": "직장 동료에 ‘너무 일 안한다’ 따졌더니…돌아오는 대답이 가관이네요",
+      "url": "https://www.mk.co.kr/news/society/12152818",
       "source": "매일경제",
-      "publishedAt": "2026-09-14T20:52:15.000Z",
-      "summary": "저출산·소비패턴 변화 등에 우유소비 매년 2~3% 감소 우유업체, 기능성 음료 경쟁 에너지젤·단백질 제품 공략저출산과 소비패턴 변화 등으로 우유 소비가 둔화하는 가운데 우유업계가 .."
+      "publishedAt": "2026-09-15T00:49:24.000Z",
+      "summary": "“내가 안 해도 남들이 해주니까” 제이미 다이먼 JP모건체이스 CEO 조직 내 ‘사회적 태만’ 현상 조명 팀원 많아지면 일부 개인 노력 줄여사람을 더 붙이면 일은 더 빨리 끝날 것.."
     }
   ],
   "aiAnalysis": {

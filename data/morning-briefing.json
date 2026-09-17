@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29677,
+        "close": 29710,
         "previousClose": 28963.5,
-        "changePct": 2.46,
-        "changePoints": 713.5
+        "changePct": 2.58,
+        "changePoints": 746.5
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 336.26,
-      "changePct": 1.16,
-      "changePoints": 3.85
+      "price": 336.39,
+      "changePct": 1.2,
+      "changePoints": 3.98
     },
     {
       "symbol": "MSFT",
-      "price": 496,
-      "changePct": 1.16,
-      "changePoints": 5.7
+      "price": 495.91,
+      "changePct": 1.14,
+      "changePoints": 5.61
     },
     {
       "symbol": "NVDA",
-      "price": 219.28,
-      "changePct": 2.51,
-      "changePoints": 5.38
+      "price": 219.25,
+      "changePct": 2.5,
+      "changePoints": 5.35
     },
     {
       "symbol": "AMZN",
-      "price": 250.66,
-      "changePct": 1.91,
-      "changePoints": 4.7
+      "price": 250.55,
+      "changePct": 1.87,
+      "changePoints": 4.59
     },
     {
       "symbol": "META",
-      "price": 680.82,
+      "price": 680.84,
       "changePct": 1.12,
-      "changePoints": 7.51
+      "changePoints": 7.53
     },
     {
       "symbol": "TSLA",
-      "price": 365.5,
-      "changePct": 2.07,
-      "changePoints": 7.42
+      "price": 365.65,
+      "changePct": 2.11,
+      "changePoints": 7.57
     },
     {
       "symbol": "GOOGL",
-      "price": 346.45,
-      "changePct": 1.04,
-      "changePoints": 3.58
+      "price": 346.5,
+      "changePct": 1.06,
+      "changePoints": 3.63
     },
     {
       "symbol": "AMD",
-      "price": 545.5,
-      "changePct": 6.44,
-      "changePoints": 33
+      "price": 545.3,
+      "changePct": 6.4,
+      "changePoints": 32.8
     },
     {
       "symbol": "PLTR",
-      "price": 175.33,
-      "changePct": 0.57,
-      "changePoints": 0.99
+      "price": 175.3,
+      "changePct": 0.55,
+      "changePoints": 0.96
     },
     {
       "symbol": "COIN",
-      "price": 172.5,
-      "changePct": 4.86,
-      "changePoints": 7.99
+      "price": 172.75,
+      "changePct": 5.01,
+      "changePoints": 8.24
     }
   ],
   "sectors": [
@@ -197,33 +197,33 @@
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 101.17,
-        "changePct": -1.23,
-        "changePoints": -1.26
+        "price": 101.2,
+        "changePct": -1.2,
+        "changePoints": -1.23
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4382.1,
-        "changePct": -0.12,
-        "changePoints": -5.4
+        "price": 4382.8,
+        "changePct": -0.11,
+        "changePoints": -4.7
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.81,
-        "changePct": 2.36,
-        "changePoints": 1.52
+        "price": 65.88,
+        "changePct": 2.47,
+        "changePoints": 1.59
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.61,
-        "changePct": 2.8,
-        "changePoints": 0.18
+        "price": 6.62,
+        "changePct": 2.95,
+        "changePoints": 0.19
       },
       {
         "id": "sox",
@@ -240,23 +240,23 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 76406,
-        "changePct24h": 0.94,
-        "marketCapUsd": 1534625584686.71
+        "priceUsd": 76420,
+        "changePct24h": 0.59,
+        "marketCapUsd": 1534974077691.83
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2446.18,
-        "changePct24h": 2.2,
-        "marketCapUsd": 298514863528.74
+        "priceUsd": 2446.13,
+        "changePct24h": 1.64,
+        "marketCapUsd": 298559578070.78
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 101.42,
-        "changePct24h": 4,
-        "marketCapUsd": 59532630116.12
+        "priceUsd": 101.49,
+        "changePct24h": 3.45,
+        "marketCapUsd": 59593682259.47
       }
     ]
   },
@@ -269,11 +269,11 @@
       "summary": "한국 주식을 매도해온 외국인 투자자들이 지난달 국내 주식시장에서 8개월 만에 순매수로 전환했다. 반면 채권시장에서는 외국인의 자금 이탈이 확인됐다. 18일 금융감독원이 발표한 '2026년 8월 외국인 증권투자 동향'에 따르면 지난달 외국인은 상장주식 3440억원을 순매수했다. 유가증권시장에서 1조8880억원을 순매수한 반면 코스닥시장에서는 1조5450억원을 순매도했다. 이에 따라 지난달 말을 기준으로 한 외국인 상장주식 보유 잔액은 2280조6000억원으로 전월보다 25조1000억원 증가했다. 전체 시가총액에서 외국인이 차지하는 비"
     },
     {
-      "title": "악재소멸? 뉴욕증시 3대지수 상승[월가월부]",
+      "title": "“나올 악재들은 다 나온건가?”…뉴욕증시 3대지수 상승[월가월부]",
       "url": "https://www.mk.co.kr/news/stock/12156008",
       "source": "매일경제",
       "publishedAt": "2026-09-17T20:51:56.000Z",
-      "summary": "17(현지시간) 뉴욕증시 3대지수는 일제히 상승 마감했다. 다우지수는 0.61% 올랐고, S&P500 지수는 1.14% 올랐다. 기술주 중심의 나스닥 지수는 1.69% 오르며 전날.."
+      "summary": "17(현지시간) 뉴욕증시 3대지수는 일제히 상승 마감했다. 다우지수는 0.61% 올랐고, S&P500 지수는 1.14% 올랐다. 기술주 중심의 나스닥 지수는 1.69% 오르며 최근.."
     },
     {
       "title": "“AI 감시하려면 AI 더 필요” … ‘20% 추가 연산’ 주목하는 반도체 업계",

@@ -87,6 +87,7 @@ jobs:
           KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
           INTRADAY_SLOT: ${{ github.event.inputs.slot || github.event.client_payload.slot || '' }}
           INTRADAY_LIMIT: ${{ github.event.inputs.limit || github.event.client_payload.limit || '400' }}
           INTRADAY_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}

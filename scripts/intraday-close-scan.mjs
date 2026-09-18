@@ -25,7 +25,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { fetchMarketSnapshot, fetchInvestorFlow } = require("../lib/kis-indicators.js");
 const { buildIntradaySnapshot } = require("../lib/intraday-snapshot.js");
-const { rankCloseBetting } = require("../lib/close-betting-score.js");
+const { rankCloseBetting, applyHardFilters } = require("../lib/close-betting-score.js");
 
 const LIMIT = Number(process.env.INTRADAY_LIMIT || 400);
 /* 2026-09-09: 120 → 80ms. 400종목이면 종목당 sleep이 2회씩 들어가 순수 대기만 96초였다.
@@ -275,6 +275,28 @@ async function main() {
         row.lateStrengthPct =
           early && row.close != null ? Math.round(((row.close - early) / early) * 10000) / 100 : null;
       }
+
+      // 재료(당일 DART 공시) — 2026-09-18 신설. 하드필터를 통과할 종목 전원에게만
+      // 붙인다(scoreCloseBetting과 동일한 필터를 미리 돌려 대상을 추린다). 실패해도
+      // closeBetting 계산 자체는 재료 없이 계속 진행 — 재료는 부가 팩터일 뿐이다.
+      try {
+        const { fetchCatalystsForCandidates } = require("../lib/close-betting-catalyst.js");
+        const passing = stocks.filter((row) => applyHardFilters(row).passed);
+        if (passing.length) {
+          const catalystMap = await fetchCatalystsForCandidates(
+            passing.map((r) => ({ code: r.code, name: r.name })),
+            asOfDate
+          );
+          if (catalystMap.size) {
+            for (const row of passing) {
+              row.catalyst = catalystMap.get(row.code) || null;
+            }
+          }
+        }
+      } catch (error) {
+        console.log(`::warning::재료(DART) 조회 실패 — 재료 없이 채점 진행: ${error && error.message}`);
+      }
+
       const { ranked, stats } = rankCloseBetting(stocks, 10);
       closeBetting = {
         ranked,

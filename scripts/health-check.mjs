@@ -158,7 +158,7 @@ function checkMorningBriefingPublishStamp() {
     }
 }
 
-// 7) 인스타 발행 스탬프 — 평일 발행 시각을 한참 지났는데 오늘 발행 기록이 없으면 경고
+// 7) 인스타 발행 스탬프 — 평일/토요일 발행 시각을 한참 지났는데 오늘 발행 기록이 없으면 경고
 function checkInstagramPublishStamps() {
     const now = new Date();
     const kst = new Date(now.getTime() + 9 * 3600 * 1000);
@@ -167,14 +167,16 @@ function checkInstagramPublishStamps() {
     const today = seoulYmd();
 
   const slots = [
-        // { slot, label, publishHourKst, weekdaysOnly }
-    { slot: "morning", label: "모닝브리핑", publishHourKst: 8, weekdaysOnly: true },
-    { slot: "closing", label: "마감시황", publishHourKst: 17, weekdaysOnly: true },
+        // { folder, label, publishHourKst, weekdaysOnly, saturdayOnly }
+    { folder: "carousel-morning", label: "아침 카드뉴스", publishHourKst: 8, weekdaysOnly: true },
+    { folder: "carousel-v2", label: "오후 카드뉴스", publishHourKst: 17, weekdaysOnly: true },
+    { folder: "carousel-ranking", label: "주간 랭킹", publishHourKst: 10, saturdayOnly: true },
       ];
-    for (const { slot, label, publishHourKst, weekdaysOnly } of slots) {
+    for (const { folder, label, publishHourKst, weekdaysOnly, saturdayOnly } of slots) {
           if (weekdaysOnly && (weekday === 0 || weekday === 6)) continue;
+      if (saturdayOnly && weekday !== 6) continue;
           if (hour < publishHourKst + 1) continue; // 발행 예정 시각+1시간 전엔 아직 스킵
-      const stampPath = path.resolve(`generated/${slot}/last-published-date.txt`);
+      const stampPath = path.resolve(`generated/${folder}/last-published-date.txt`);
           if (!existsSync(stampPath)) {
                   fail("instagram-stamp-missing", `인스타 ${label} 발행 기록 파일이 없음`);
                   continue;
@@ -183,7 +185,7 @@ function checkInstagramPublishStamps() {
           if (stamped !== today) {
                   fail(
                             "instagram-not-published",
-                            `인스타 ${label}이(가) 오늘(${today}) 아직 발행되지 않음 (마지막 발행: ${stamped || "기록 없음"})`
+                            `인스타 ${label} 오늘(${today}) 미발행 (마지막: ${stamped || "없음"})`
                           );
           }
     }

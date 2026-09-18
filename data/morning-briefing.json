@@ -33,82 +33,82 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 29710,
+        "close": 29666.25,
         "previousClose": 28963.5,
-        "changePct": 2.58,
-        "changePoints": 746.5
+        "changePct": 2.43,
+        "changePoints": 702.75
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
         "close": 182.39,
-        "previousClose": 175.54,
-        "changePct": 3.9,
-        "changePoints": 6.85
+        "previousClose": 176.49,
+        "changePct": 3.34,
+        "changePoints": 5.9
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 336.39,
-      "changePct": 1.2,
-      "changePoints": 3.98
-    },
-    {
-      "symbol": "MSFT",
-      "price": 495.91,
-      "changePct": 1.14,
-      "changePoints": 5.61
-    },
-    {
-      "symbol": "NVDA",
-      "price": 219.25,
-      "changePct": 2.5,
-      "changePoints": 5.35
-    },
-    {
-      "symbol": "AMZN",
-      "price": 250.55,
-      "changePct": 1.87,
+      "price": 337,
+      "changePct": 1.38,
       "changePoints": 4.59
     },
     {
+      "symbol": "MSFT",
+      "price": 497.75,
+      "changePct": 1.52,
+      "changePoints": 7.45
+    },
+    {
+      "symbol": "NVDA",
+      "price": 219.34,
+      "changePct": 2.54,
+      "changePoints": 5.44
+    },
+    {
+      "symbol": "AMZN",
+      "price": 251.19,
+      "changePct": 2.13,
+      "changePoints": 5.23
+    },
+    {
       "symbol": "META",
-      "price": 680.84,
-      "changePct": 1.12,
-      "changePoints": 7.53
+      "price": 682.31,
+      "changePct": 1.34,
+      "changePoints": 9
     },
     {
       "symbol": "TSLA",
-      "price": 365.65,
-      "changePct": 2.11,
-      "changePoints": 7.57
+      "price": 366.2,
+      "changePct": 2.27,
+      "changePoints": 8.12
     },
     {
       "symbol": "GOOGL",
-      "price": 346.5,
-      "changePct": 1.06,
-      "changePoints": 3.63
+      "price": 347.33,
+      "changePct": 1.3,
+      "changePoints": 4.46
     },
     {
       "symbol": "AMD",
-      "price": 545.3,
-      "changePct": 6.4,
-      "changePoints": 32.8
+      "price": 545.09,
+      "changePct": 6.36,
+      "changePoints": 32.59
     },
     {
       "symbol": "PLTR",
-      "price": 175.3,
-      "changePct": 0.55,
-      "changePoints": 0.96
+      "price": 176.24,
+      "changePct": 1.09,
+      "changePoints": 1.9
     },
     {
       "symbol": "COIN",
-      "price": 172.75,
-      "changePct": 5.01,
-      "changePoints": 8.24
+      "price": 173.97,
+      "changePct": 5.75,
+      "changePoints": 9.46
     }
   ],
   "sectors": [
@@ -117,49 +117,49 @@
       "sector": "기술",
       "name": "기술 (XLK)",
       "price": 188.06,
-      "changePct": 2.25
+      "changePct": 2.35
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
       "price": 55.88,
-      "changePct": -0.09
+      "changePct": -1.71
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
       "price": 64.48,
-      "changePct": 0.7
+      "changePct": -2.2
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
       "price": 168.81,
-      "changePct": 0.62
+      "changePct": 0.69
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
       "price": 169.01,
-      "changePct": 0.18
+      "changePct": 0.09
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
       "price": 111.39,
-      "changePct": 1.1
+      "changePct": 0.46
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
       "price": 83.49,
-      "changePct": 0.19
+      "changePct": -0.29
     },
     {
       "symbol": "XLU",
@@ -173,57 +173,57 @@
       "sector": "소재",
       "name": "소재 (XLB)",
       "price": 50.71,
-      "changePct": 0.69
+      "changePct": -0.04
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
       "price": 42.94,
-      "changePct": 0.3
+      "changePct": -0.3
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1369.81,
-      "USD/JPY": 155.58,
+      "USD/KRW": 1380.5,
+      "USD/JPY": 155.84,
       "USD/CNY": 6.72,
       "EUR/USD": 1.15
     },
     "base": "USD",
-    "updatedAt": "Thu, 17 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Fri, 18 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 101.2,
-        "changePct": -1.2,
-        "changePoints": -1.23
+        "price": 100.87,
+        "changePct": -1.52,
+        "changePoints": -1.56
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4382.8,
-        "changePct": -0.11,
-        "changePoints": -4.7
+        "price": 4396.6,
+        "changePct": 0.21,
+        "changePoints": 9.1
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 65.88,
-        "changePct": 2.47,
-        "changePoints": 1.59
+        "price": 66.17,
+        "changePct": 2.92,
+        "changePoints": 1.88
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.62,
-        "changePct": 2.95,
-        "changePoints": 0.19
+        "price": 6.63,
+        "changePct": 3.11,
+        "changePoints": 0.2
       },
       {
         "id": "sox",
@@ -240,47 +240,54 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 76420,
-        "changePct24h": 0.59,
-        "marketCapUsd": 1534974077691.83
+        "priceUsd": 76371,
+        "changePct24h": 0.03,
+        "marketCapUsd": 1533971929729.25
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2446.13,
-        "changePct24h": 1.64,
-        "marketCapUsd": 298559578070.78
+        "priceUsd": 2440.25,
+        "changePct24h": 0.8,
+        "marketCapUsd": 297846826585.33
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 101.49,
-        "changePct24h": 3.45,
-        "marketCapUsd": 59593682259.47
+        "priceUsd": 101.15,
+        "changePct24h": 2.4,
+        "marketCapUsd": 59397422212.57
       }
     ]
   },
   "news": [
+    {
+      "title": "[MK 골든크로스 돌파종목 : 프로이천(321260) & 코오롱인더(120110)]",
+      "url": "https://www.mk.co.kr/news/stock/12156166",
+      "source": "매일경제",
+      "publishedAt": "2026-09-18T00:47:29.000Z",
+      "summary": "안녕하세요. 국내 핫 이슈 종목을 분석해드리는 AI 기자 ‘MK시그널’ 입니다. MK시그널이 오늘 분석한 핫 이슈 골든크로스 종목은 프로이천 & 코오롱인더 입니다. - 프로이천(3.."
+    },
+    {
+      "title": "한주동안 삼전닉스 13조 판 외국인들…증권가선 반도체 전망 엇갈려",
+      "url": "https://www.mk.co.kr/news/stock/12156151",
+      "source": "매일경제",
+      "publishedAt": "2026-09-18T00:40:34.000Z",
+      "summary": "외국인 투자자가 최근 일주일간 삼성전자와 SK하이닉스 주식을 12조원 넘게 팔아치웠다. 인공지능(AI) 투자 속도조절론과 메모리 피크아웃 우려 등이 겹치면서 반도체에 대한 경계감이.."
+    },
+    {
+      "title": "창업가들을 위한 공동체…카카오벤처스 ‘템프서울’ 문 열어",
+      "url": "https://www.mk.co.kr/news/it/12156149",
+      "source": "매일경제",
+      "publishedAt": "2026-09-18T00:39:02.000Z",
+      "summary": "창업가들 모여 함께 개발·몰입 “경험·시행착오 나누며 성장”카카오벤처스가 창업자를 위한 몰입 공동체 공간 ‘템프서울(/tmp Seoul)’을 공식 개관하고 ‘언카피어블(Uncopy.."
+    },
     {
       "title": "\"돌아온 외국인\" 8개월 만에 韓주식 순매수…채권은 자금 이탈",
       "url": "https://view.asiae.co.kr/article/2026091719365567812",
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-17T21:00:00.000Z",
       "summary": "한국 주식을 매도해온 외국인 투자자들이 지난달 국내 주식시장에서 8개월 만에 순매수로 전환했다. 반면 채권시장에서는 외국인의 자금 이탈이 확인됐다. 18일 금융감독원이 발표한 '2026년 8월 외국인 증권투자 동향'에 따르면 지난달 외국인은 상장주식 3440억원을 순매수했다. 유가증권시장에서 1조8880억원을 순매수한 반면 코스닥시장에서는 1조5450억원을 순매도했다. 이에 따라 지난달 말을 기준으로 한 외국인 상장주식 보유 잔액은 2280조6000억원으로 전월보다 25조1000억원 증가했다. 전체 시가총액에서 외국인이 차지하는 비"
-    },
-    {
-      "title": "“나올 악재들은 다 나온건가?”…뉴욕증시 3대지수 상승[월가월부]",
-      "url": "https://www.mk.co.kr/news/stock/12156008",
-      "source": "매일경제",
-      "publishedAt": "2026-09-17T20:51:56.000Z",
-      "summary": "17(현지시간) 뉴욕증시 3대지수는 일제히 상승 마감했다. 다우지수는 0.61% 올랐고, S&P500 지수는 1.14% 올랐다. 기술주 중심의 나스닥 지수는 1.69% 오르며 최근.."
-    },
-    {
-      "title": "“AI 감시하려면 AI 더 필요” … ‘20% 추가 연산’ 주목하는 반도체 업계",
-      "url": "https://www.mk.co.kr/news/business/12155508",
-      "source": "매일경제",
-      "publishedAt": "2026-09-17T20:00:00.000Z",
-      "summary": "AI 속도조절시 메모리 반도체 운명은인간은 오래전부터 자신을 대신해 일하고 생각하는 기계를 꿈꾸어 왔다. 2700년 전 그리스 신화의 청동 거인 탈로스에서 오늘날 AI까지, 그 꿈.."
     },
     {
       "title": "삼성증권, 발행어음 상품 첫 출시… 연 5.5% 초단기 특판",
@@ -393,13 +400,6 @@
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-17T06:56:09.000Z",
       "summary": "네이버가 국내 배달앱 시장 1위 서비스 배달의민족의 지분을 인수하지 않기로 최종 결정했다. 네이버(NAVER)는 17일 해명공시를 통해 \"배달의민족 지분 인수에 대해 검토했지만, 경영환경 등의 변화에 따라 인수하지 않기로 결정했다\"고 밝혔다. 지난 5월 한 매체는 우버와 네이버가 배달의민족 최대주주인 독일 딜리버리히어로(DH)의 인수를 위한 컨소시엄을 구성했다고 보도했다. 업계에 따르면 당시 언급됐던 매각 규모는 약 8조원에 달한다. 인수가 논의됐을 당시 지분 구성은 네이버와 우버가 각각 2대 8 수준이었던 걸로 알려졌다. 당시"
-    },
-    {
-      "title": "카카오뱅크 개인사업자 신용대출, 네이버페이서 비교·조회한다",
-      "url": "https://www.mk.co.kr/news/economy/12155481",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-09-17T06:49:49.000Z",
-      "summary": "카카오뱅크는 ‘개인사업자 신용대출’을 네이버페이(Npay)의 ‘Npay 대출비교’에 입점했다고 17일 밝혔다. 지난 6월 개인사업자 부동산담보대출에 이어 신용대출로 제휴 범위를 넓.."
     }
   ],
   "aiAnalysis": {

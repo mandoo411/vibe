@@ -100,6 +100,13 @@
   },
   "routes": [
     {
+      "src": "/close-betting.html",
+      "status": 301,
+      "headers": {
+        "Location": "/close-signal.html"
+      }
+    },
+    {
       "handle": "filesystem"
     },
     {

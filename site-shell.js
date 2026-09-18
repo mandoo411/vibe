@@ -98,7 +98,7 @@
     // 없는 상태였음. 수익화 핵심 기능이라 AI 종목분석과 나란히 상단에 노출한다.
     { id: "signal", href: "./trade-signal.html", label: "매매시그널", icon: "ti-bell" },
     // 2026-09-11: 종가베팅 랭킹. 매매시그널과 같은 "지금 뭘 살까" 계열이라 나란히 둔다.
-    { id: "closebet", href: "./close-betting.html", label: "종가시그널", icon: "ti-chart-candle" },
+    { id: "closebet", href: "./close-signal.html", label: "종가시그널", icon: "ti-chart-candle" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
@@ -155,7 +155,7 @@
     "/world-market.html": "world",
     "/stock-analysis.html": "analysis",
     "/trade-signal.html": "signal",
-    "/close-betting.html": "closebet",
+    "/close-signal.html": "closebet",
     "/pricing.html": "pricing",
   };
 
@@ -410,7 +410,7 @@
     // 2026-09-12: 시우 결정 — GNB 자리가 8개로 꽉 차서, 종가베팅을 노출하는 대신
     // 미국주식을 "더보기"로 내린다. 수익화 기능(매매시그널·종가베팅·AI종목분석)을
     // 앞에 두고, 정보성 페이지를 뒤로 미는 배치다.
-    "./close-betting.html": 6,
+    "./close-signal.html": 6,
     "./trade-signal.html": 7,
     "./stock-analysis.html": 8,
     "./us-market.html": 9,

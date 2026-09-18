@@ -98,7 +98,7 @@
     // 없는 상태였음. 수익화 핵심 기능이라 AI 종목분석과 나란히 상단에 노출한다.
     { id: "signal", href: "./trade-signal.html", label: "매매시그널", icon: "ti-bell" },
     // 2026-09-11: 종가베팅 랭킹. 매매시그널과 같은 "지금 뭘 살까" 계열이라 나란히 둔다.
-    { id: "closebet", href: "./close-betting.html", label: "종가베팅", icon: "ti-trophy" },
+    { id: "closebet", href: "./close-betting.html", label: "종가시그널", icon: "ti-chart-candle" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
@@ -129,7 +129,7 @@
     home: "홈",
     realtime: "시세",
     signal: "매매시그널",
-    closebet: "종가베팅",
+    closebet: "종가시그널",
     analysis: "AI분석",
     schedule: "일정",
     briefing: "브리핑",

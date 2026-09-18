@@ -1363,6 +1363,10 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
+  /* 2026-09-18: 기본값 stretch면 왼쪽(전망/가격/종합의견)이 짧을 때
+     오른쪽(시나리오 카드 A/B/C) 높이만큼 강제로 늘어나 아래에 빈 공간이 남는다.
+     각 컬럼이 자기 콘텐츠 높이만큼만 차지하도록 stretch를 끈다. */
+  align-items: start;
 }
 
 .ai-opinion-col {

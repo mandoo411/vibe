@@ -675,6 +675,15 @@
   border-bottom: 1px solid var(--color-border, rgba(156, 163, 175, 0.25));
 }
 
+/* 2026-09-18: 장중 잠정치 참고문구 — 실적 카드의 .fin__note와 같은 톤(작고 옅은 캡션)으로
+   맞춘다. 경고가 아니라 담백한 안내이므로 색을 강조하지 않는다. */
+.ai-supply-fact__note {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--color-text-muted, #9ca3af);
+}
+
 /* 2026-08-28: flex-wrap이라 1일/5일/20일이 제멋대로 줄바꿈되며 열이 어긋났다.
    고정 그리드로 바꿔 외국인·기관 두 줄의 같은 기간끼리 세로로 맞춰 읽히게 한다. */
 .ai-supply-fact__row {

@@ -506,11 +506,11 @@ function mpHeadline(items, peerLabel, rawByKey) {
     const bothExpensive = vs.length === 2 && vs.every((v) => v.percentileTop <= 30);
     const bothCheap = vs.length === 2 && vs.every((v) => v.percentileTop >= 71);
     let lead;
-    if (bothExpensive) lead = `PER·PBR 모두 ${peerLabel}에서 비싼 축이다.`;
-    else if (bothCheap) lead = `PER·PBR 모두 ${peerLabel}에서 싼 축이다.`;
-    else if (tone) lead = `${pick.label} ${pick.valueText}로 ${peerLabel}에서 ${tone} 축이다.`;
-    else lead = `${pick.label} ${pick.valueText}로 ${peerLabel} 중간 수준이다.`;
-    const ratioSent = ratio && ratio !== "중앙값과 비슷" ? ` ${pick.label}은 ${ratio}.` : "";
+    if (bothExpensive) lead = `PER·PBR 모두 ${peerLabel}에서 비싼 축입니다.`;
+    else if (bothCheap) lead = `PER·PBR 모두 ${peerLabel}에서 싼 축입니다.`;
+    else if (tone) lead = `${pick.label} ${pick.valueText}로 ${peerLabel}에서 ${tone} 축입니다.`;
+    else lead = `${pick.label} ${pick.valueText}로 ${peerLabel} 중간 수준입니다.`;
+    const ratioSent = ratio && ratio !== "중앙값과 비슷" ? ` ${pick.label}은 ${ratio}입니다.` : "";
     out.push(lead + ratioSent);
   }
 
@@ -522,13 +522,13 @@ function mpHeadline(items, peerLabel, rawByKey) {
   if (rets.length >= 2) {
     const allTop = rets.every((r) => r.percentileTop <= 30);
     const allBottom = rets.every((r) => r.percentileTop >= 71);
-    if (allTop) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 상위권이다.`);
-    else if (allBottom) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 하위권이다.`);
+    if (allTop) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 상위권입니다.`);
+    else if (allBottom) out.push(`1개월·3개월·1년 수익률이 모두 ${peerLabel} 하위권입니다.`);
     else if (y1 && m3 && y1.percentileTop <= 30 && m3.percentileTop >= 61)
-      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}인데 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 밀렸다 — 상승 흐름이 최근 꺾였다.`);
+      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}인데 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 밀렸습니다 — 상승 흐름이 최근 꺾였습니다.`);
     else if (y1 && m3 && y1.percentileTop >= 71 && m3.percentileTop <= 30)
-      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}지만 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 올라섰다 — 최근 들어 반전 시도가 나왔다.`);
-    else if (y1) out.push(`1년 수익률 ${y1.valueText}로 ${peerLabel} ${mpTierWord(y1.percentileTop)}이다.`);
+      out.push(`1년 수익률은 ${mpTierWord(y1.percentileTop)}지만 최근 3개월은 ${mpJosaRo(mpTierWord(m3.percentileTop))} 올라섰습니다 — 최근 들어 반전 시도가 나왔습니다.`);
+    else if (y1) out.push(`1년 수익률 ${y1.valueText}로 ${peerLabel} ${mpTierWord(y1.percentileTop)}입니다.`);
   }
 
   // ③ 시장의 관심 — 시총 대비 거래대금이 튀면 그 자체가 신호다.
@@ -536,10 +536,10 @@ function mpHeadline(items, peerLabel, rawByKey) {
   const mc = by("marketCapEok");
   const fh = by("foreignHoldRate");
   if (tv && mc && tv.percentileTop + 10 < mc.percentileTop)
-    out.push(`시가총액은 ${mpTierWord(mc.percentileTop)}인데 거래대금은 상위 ${tv.percentileTop}%다 — 덩치에 비해 손바뀜이 활발하다.`);
-  else if (tv && tv.percentileTop <= 10) out.push(`거래대금 상위 ${tv.percentileTop}%로 시장의 관심이 몰려 있다.`);
-  else if (fh && fh.percentileTop <= 10) out.push(`외국인 보유 비중이 상위 ${fh.percentileTop}%다.`);
-  else if (tv && tv.percentileTop >= 81) out.push(`거래대금은 ${mpJosaRo(mpTierWord(tv.percentileTop))} 손바뀜이 뜸하다.`);
+    out.push(`시가총액은 ${mpTierWord(mc.percentileTop)}인데 거래대금은 상위 ${tv.percentileTop}%입니다 — 덩치에 비해 손바뀜이 활발합니다.`);
+  else if (tv && tv.percentileTop <= 10) out.push(`거래대금 상위 ${tv.percentileTop}%로 시장의 관심이 몰려 있습니다.`);
+  else if (fh && fh.percentileTop <= 10) out.push(`외국인 보유 비중이 상위 ${fh.percentileTop}%입니다.`);
+  else if (tv && tv.percentileTop >= 81) out.push(`거래대금은 ${mpJosaRo(mpTierWord(tv.percentileTop))} 손바뀜이 뜸합니다.`);
 
   return out.slice(0, 3).join(" ");
 }
@@ -668,9 +668,12 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
   · 카드마다 짧은 단문 하나로 강약을 준다(예: "문제는 수급입니다."). 카드당 1회까지만.
 - [수급 숫자 인용 상한 — 어기기 쉬우니 세면서 쓸 것] 외국인·기관의 1일/5일/20일 순매수 수량과 원화 환산액 여섯 개는 supplyDemand 바로 위 FACT 표에 코드가 이미 출력하고 있다. 그래서 supplyDemand 본문에 쓸 수 있는 금액·수량 표기는 **최대 2개**다. 세 개째부터는 규칙 위반이니, 문장을 다 쓴 뒤 숫자 개수를 직접 세어 확인한다.
   · 금지 예: "외국인은 -4,953억원, 기관은 -4,247억원을 던졌습니다. 최근 5거래일도 외국인 -2조 5,476억원, 기관 -1조 8,792억원입니다." (표 전사, 숫자 4개)
-  · 정답 예: "오늘은 외국인과 기관이 같은 방향으로 팔았습니다. 5일로 넓혀 봐도 방향이 그대로입니다. 차익실현이라기보다 리스크 회피에 가깝습니다."
+  · 정답 예(대괄호는 supplyDirectionFact의 실제 방향으로 채워 쓴다 — 아래 방향을 그대로 옮기면 사실과 반대되는 문장이 된다): "오늘은 외국인과 기관이 [같은 방향입니다 / 서로 반대 방향입니다]. 5일로 넓혀 봐도 [방향이 그대로입니다 / 방향이 갈립니다]. [차익실현 / 리스크 회피 / 저가매수]에 가깝습니다."
   · 기간별로 방향이 엇갈릴 때(예: 20일 누적만 순매수)는 그 엇갈림 자체가 핵심 정보이니 반드시 짚되, 인용하는 숫자는 그 한 개로 끝낸다.
   · 나열형 재탕은 고객이 가장 지루해하는 부분이다. 본문의 역할은 표를 읽어주는 게 아니라 표가 무슨 뜻인지 말해주는 것이다.
+- [수급 방향은 코드가 확정한다 — 반드시 준수] 입력 데이터의 supplyDirectionFact가 외국인·기관의 오늘/5일/20일 방향(순매수·순매도·보합)과 "둘이 같은 방향인지 반대 방향인지"를 이미 확정해 놓은 문장이다. 수급 방향을 말하는 모든 문장(summary·story·supplyDemand·opinion·시나리오 basis 전부)은 이 문장의 방향과 정확히 일치해야 한다.
+  · 방향 단어를 쓰기 전에 supplyDirectionFact를 다시 읽고, 외국인과 기관이 같은 방향인지 반대 방향인지부터 확인한다. 이 지침서의 예문이나 다른 종목 리포트에서 본 방향 표현을 그대로 옮겨 쓰지 않는다 — 2026-09-18에 "외국인과 기관이 같은 방향으로 팔았습니다"라는 예문이 기관은 실제로 순매수였던 종목의 요약 카드에 그대로 들어가, 같은 리포트의 수급 카드와 정반대인 채로 고객에게 노출된 사고가 있었다.
+  · summary(1번)는 결론 카드다 — 수급을 언급하더라도 "수급은 엇갈립니다"/"수급은 한쪽으로 쏠려 있습니다" 수준의 한 마디까지만 쓰고, 누가 사고 누가 팔았는지의 서술은 supplyDemand(3번)에 맡긴다.
 - [내부 필드명 노출 금지 — 반드시 준수] 고객이 읽는 문장에 JSON 필드명·내부 변수명을 절대 쓰지 않는다. scenarioA/scenarioB/scenarioC, entry, entryPrice, stopLoss, target, target2, reflectionPct, reflectionBasis, supplyDemand, materialAnalysis, aiJudgment, upcomingEvents 같은 표기는 전부 금지다. 반드시 화면 라벨 그대로 한국어로 쓴다 — "scenarioB.entry를 160만5000원으로 둔 이유는"(오답) → "중립 시나리오 진입가를 160만5000원으로 잡은 이유는"(정답).
 - [숫자 중복 금지] 그 밖의 카드에서도 같은 수치를 한 카드 안에서 두 번 이상 적지 않는다.
 - [섹션 역할 분담 — 반드시 준수] 같은 재료·같은 논거를 세 개 이상 섹션에서 반복하지 않는다(최대 두 곳). 각 섹션의 역할은 이렇게 나눈다.
@@ -699,7 +702,7 @@ function buildSystemPrompt(today, quote) {
 - "수급 정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장은 절대 쓰지 말 것 — 반드시 검색해서 찾은 실제 방향성(순매수/순매도, 규모)으로 확정적으로 서술할 것.
 - [본문 숫자 상한 2개 — 반드시 세면서 지킬 것] 1일/5일/20일 수량과 원화 환산액은 이 카드 바로 위 FACT 표에 코드가 이미 전부 출력하고 있다. 그래서 supplyDemand 본문에 적을 수 있는 금액·수량 표기는 전체를 통틀어 최대 2개다. 문장을 다 쓴 뒤 숫자 개수를 직접 세어 확인하고, 3개 이상이면 지우고 다시 쓴다.
   · 금지(표 전사): "외국인은 71만3101주, -1조 1,788억원 순매도했고 기관도 27만3134주, -4,515억원입니다. 최근 5거래일도 외국인 -5조 3,686억원, 기관 -6,405억원입니다."
-  · 정답(해석): "오늘은 외국인과 기관이 같은 방향으로 팔았습니다. 5일·20일로 넓혀 봐도 방향이 그대로입니다. 차익실현이라기보다 리스크 회피 쪽에 가깝습니다."
+  · 정답(해석 — 대괄호는 supplyDirectionFact의 실제 방향으로 채워 쓴다. 아래 방향을 그대로 옮기지 말 것): "오늘은 외국인과 기관이 [같은 방향입니다 / 서로 반대 방향입니다]. 5일·20일로 넓혀 봐도 [방향이 그대로입니다 / 방향이 갈립니다]. [차익실현 / 리스크 회피 / 저가매수] 쪽에 가깝습니다."
 - foreignNetBuy5d/20d, institutionNetBuy5d/20d 값은 "오늘 하루"와 "중기 추세"의 방향이 같은지 다른지 판단하는 데 쓰고, 결과는 방향 비교 문장으로만 서술한다(세 기간 수치를 나란히 적지 않는다). 다만 방향이 실제로 엇갈릴 때(예: 오늘은 순매도인데 20일 누적은 순매수)는 그 괴리가 핵심 정보이므로 반드시 짚고, 그때만 해당 기간 금액 하나를 근거로 인용한다.
 - (위 상한 안에서) 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
@@ -1986,6 +1989,38 @@ function buildSupplyFlowFact(quote) {
   };
 }
 
+/** 2026-09-18(2차): 수급 "방향"을 코드가 한 문장으로 확정해서 프롬프트에 실어 보낸다.
+ * 사고 경위 — ANALYST_PERSONA_RULES의 [수급 숫자 인용 상한] 항목에 있던 정답 예문
+ * ("오늘은 외국인과 기관이 같은 방향으로 팔았습니다…")을 모델이 문장째로 복사해서,
+ * 기관이 실제로는 순매수였던 삼성전자 요약 카드에 그대로 넣었다. 수급 카드(3번)는
+ * 맞는데 요약(1번)만 반대인 상태로 배포됐다.
+ * 대책 — 방향 판정을 AI에게 맡기지 않는다. 이 함수가 만든 문장을 입력 데이터에
+ * supplyDirectionFact로 넣고, 프롬프트에서 "방향 단어는 이 문장과 일치해야 한다"를
+ * 강제한다(금액·수량은 기존 FACT 표/WonText 필드가 이미 담당). */
+function buildSupplyDirectionFact(quote) {
+  const q = quote || {};
+  const g = (f) => toNum(q[f]);
+  const f1 = g("foreignNetBuy"), i1 = g("institutionNetBuy");
+  const f5 = g("foreignNetBuy5d"), i5 = g("institutionNetBuy5d");
+  const f20 = g("foreignNetBuy20d"), i20 = g("institutionNetBuy20d");
+  if ([f1, i1, f5, i5, f20, i20].every((v) => v == null)) return null;
+  const word = (v) => (v == null ? "집계 없음" : v > 0 ? "순매수" : v < 0 ? "순매도" : "보합");
+  const dayLabel = q.investorFlowIsToday
+    ? "오늘(장중 누적 잠정치)"
+    : q.investorFlowDate
+      ? `최근 확정 거래일(${q.investorFlowDate})`
+      : "최근 거래일";
+  const pairWord = (a, b) => {
+    if (a == null || b == null || a === 0 || b === 0) return null;
+    return Math.sign(a) === Math.sign(b) ? "외국인·기관 같은 방향" : "외국인·기관 서로 반대 방향";
+  };
+  const seg = (label, a, b) => {
+    const pw = pairWord(a, b);
+    return `${label} 외국인 ${word(a)}·기관 ${word(b)}${pw ? `(${pw})` : ""}`;
+  };
+  return [seg(`${dayLabel}:`, f1, i1), seg("5일 누적:", f5, i5), seg("20일 누적:", f20, i20)].join(" / ");
+}
+
 /** 순매수 수량(1일/5일/20일, 외국인/기관)을 현재가 기준 금액(억원)으로 코드가 직접
  * 환산한 값. 예전엔 AI가 프롬프트 안에서 이 곱셈(수량×현재가)을 직접 계산해서 문장에
  * 썼는데, 실제로 자릿수를 잘못 옮기는 오류(예: 6,585억원을 658억원으로 10배 축소해서
@@ -2655,7 +2690,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - [본문 숫자 상한 2개 — 반드시 세면서 지킬 것] 1일/5일/20일 수량과 원화 환산액은 이 카드 바로 위 FACT 표에 코드가 이미 전부 출력하고 있다. 그래서 supplyDemand 본문에 적을 수 있는 금액·수량 표기는 전체를 통틀어 최대 2개다. 문장을 다 쓴 뒤 숫자 개수를 직접 세어 확인하고, 3개 이상이면 지우고 다시 쓴다.
   · 금지(표 전사): "외국인은 71만3101주, -1조 1,788억원 순매도했고 기관도 27만3134주, -4,515억원입니다. 최근 5거래일도 외국인 -5조 3,686억원, 기관 -6,405억원입니다."
-  · 정답(해석): "오늘은 외국인과 기관이 같은 방향으로 팔았습니다. 5일·20일로 넓혀 봐도 방향이 그대로입니다. 차익실현이라기보다 리스크 회피 쪽에 가깝습니다."
+  · 정답(해석 — 대괄호는 supplyDirectionFact의 실제 방향으로 채워 쓴다. 아래 방향을 그대로 옮기지 말 것): "오늘은 외국인과 기관이 [같은 방향입니다 / 서로 반대 방향입니다]. 5일·20일로 넓혀 봐도 [방향이 그대로입니다 / 방향이 갈립니다]. [차익실현 / 리스크 회피 / 저가매수] 쪽에 가깝습니다."
 - foreignNetBuy5d/20d, institutionNetBuy5d/20d 값은 "오늘 하루"와 "중기 추세"의 방향이 같은지 다른지 판단하는 데 쓰고, 결과는 방향 비교 문장으로만 서술한다(세 기간 수치를 나란히 적지 않는다). 다만 방향이 실제로 엇갈릴 때(예: 오늘은 순매도인데 20일 누적은 순매수)는 그 괴리가 핵심 정보이므로 반드시 짚고, 그때만 해당 기간 금액 하나를 근거로 인용한다.
 - (위 상한 안에서) 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
@@ -2756,6 +2791,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      supplyDirectionFact: buildSupplyDirectionFact(quote),
       investorFlowDate: quote.investorFlowDate,
       investorFlowIsToday: quote.investorFlowIsToday,
       foreignHoldRate: quote.foreignHoldRate,
@@ -2894,7 +2930,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 - "정보가 제공되지 않아 단정하기 어렵습니다" 같은 문장 절대 금지.
 - [본문 숫자 상한 2개 — 반드시 세면서 지킬 것] 1일/5일/20일 수량과 원화 환산액은 이 카드 바로 위 FACT 표에 코드가 이미 전부 출력하고 있다. 그래서 supplyDemand 본문에 적을 수 있는 금액·수량 표기는 전체를 통틀어 최대 2개다. 문장을 다 쓴 뒤 숫자 개수를 직접 세어 확인하고, 3개 이상이면 지우고 다시 쓴다.
   · 금지(표 전사): "외국인은 71만3101주, -1조 1,788억원 순매도했고 기관도 27만3134주, -4,515억원입니다. 최근 5거래일도 외국인 -5조 3,686억원, 기관 -6,405억원입니다."
-  · 정답(해석): "오늘은 외국인과 기관이 같은 방향으로 팔았습니다. 5일·20일로 넓혀 봐도 방향이 그대로입니다. 차익실현이라기보다 리스크 회피 쪽에 가깝습니다."
+  · 정답(해석 — 대괄호는 supplyDirectionFact의 실제 방향으로 채워 쓴다. 아래 방향을 그대로 옮기지 말 것): "오늘은 외국인과 기관이 [같은 방향입니다 / 서로 반대 방향입니다]. 5일·20일로 넓혀 봐도 [방향이 그대로입니다 / 방향이 갈립니다]. [차익실현 / 리스크 회피 / 저가매수] 쪽에 가깝습니다."
 - foreignNetBuy5d/20d, institutionNetBuy5d/20d 값은 "오늘 하루"와 "중기 추세"의 방향이 같은지 다른지 판단하는 데 쓰고, 결과는 방향 비교 문장으로만 서술한다(세 기간 수치를 나란히 적지 않는다). 다만 방향이 실제로 엇갈릴 때(예: 오늘은 순매도인데 20일 누적은 순매수)는 그 괴리가 핵심 정보이므로 반드시 짚고, 그때만 해당 기간 금액 하나를 근거로 인용한다.
 - (위 상한 안에서) 순매수 금액을 언급할 때는 절대 직접 계산·변환하지 말 것 — 입력 데이터의 foreignNetBuyWonText1d/5d/20d, institutionNetBuyWonText1d/5d/20d(코드가 이미 "+2조 397억원"처럼 한국식 조/억 단위의 완성된 문자열로 만들어 둔 값, 소수점 없음)를 그 형태 그대로 문장에 붙여넣는다. 직접 곱셈하면 자릿수를 잘못 옮기는 오류가, 억 단위 숫자를 그대로 나열하면 "20,397.1억원"처럼 소수점 붙은 어색한 표기가 실제로 나온 적이 있다 — 이 필드를 그대로 인용하면 둘 다 해결된다. 하루 동안 여러 체결가에서 거래되므로 실제 매매금액과 정확히 일치하는 값은 아니라는 것도 함께 인지한다.
 - 이 섹션은 외국인·기관·개인의 매매 "행동(수급)"만 다룬다. 자사주 매입/소각·실적·공시 같은 "재료·이벤트"를 이 섹션에서 반영률(%)로 환산해 말하지 않는다 — 그건 5번 재료 분석(materials)의 몫이다.`
@@ -2963,6 +2999,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       foreignNetBuy20d: quote.foreignNetBuy20d,
       institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      supplyDirectionFact: buildSupplyDirectionFact(quote),
       investorFlowDate: quote.investorFlowDate,
       investorFlowIsToday: quote.investorFlowIsToday,
       ma20: toNum(ind.ma20),
@@ -3137,6 +3174,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         foreignNetBuy20d: quote.foreignNetBuy20d,
         institutionNetBuy20d: quote.institutionNetBuy20d,
       ...supplyWonEokFields(quote),
+      supplyDirectionFact: buildSupplyDirectionFact(quote),
       investorFlowDate: quote.investorFlowDate,
       investorFlowIsToday: quote.investorFlowIsToday,
         ma20: toNum(ind.ma20),

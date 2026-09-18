@@ -1933,7 +1933,7 @@
       <div class="mpos__head"><span class="mpos__peer">${head}</span>${asOf}</div>
       ${headline}
       ${sections}
-      <p class="mpos__note">눈금은 비교군 안에서의 위치다. 왼쪽이 가장 작고 오른쪽이 가장 크다.<br>종목 중앙값은 비교군을 <b>한 종목당 한 표</b>로 세어 정가운데에 오는 값이다. 뉴스에 나오는 <b>코스피 PBR(지수 PBR)</b>은 시가총액으로 가중한 값이라 대형주 영향이 커서 이 숫자보다 훨씬 높게 나온다 — 서로 다른 지표다.</p>
+      <p class="mpos__note">눈금은 비교군 안에서의 위치입니다. 왼쪽이 가장 작고 오른쪽이 가장 큽니다.<br>종목 중앙값은 비교군을 <b>한 종목당 한 표</b>로 세어 정가운데에 오는 값입니다. 뉴스에 나오는 <b>코스피 PBR(지수 PBR)</b>은 시가총액으로 가중한 값이라 대형주 영향이 커서 이 숫자보다 훨씬 높게 나옵니다 — 서로 다른 지표입니다.</p>
     </div>`;
   }
 
@@ -2039,7 +2039,7 @@
       <div class="fin__head"><span class="fin__basis">${escapeHtml(head)}</span><span class="fin__src">DART 전자공시</span></div>
       ${quarterHtml}
       ${annualHtml}
-      <p class="fin__note">금융감독원 전자공시(DART)에 실제 제출된 보고서의 숫자다. 공시되지 않은 기간·항목은 추정하지 않고 비워 둔다.</p>
+      <p class="fin__note">금융감독원 전자공시(DART)에 실제 제출된 보고서의 숫자입니다. 공시되지 않은 기간·항목은 추정하지 않고 비워 둡니다.</p>
     </div>`;
   }
 

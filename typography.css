@@ -10,8 +10,8 @@
  * 어떻게 골랐나 (감각이 아니라 측정)
  *   전 페이지를 라이트/다크 × 데스크톱/모바일로 렌더링해서, 실제 화면 픽셀에서
  *   글자색과 배경색을 뽑아 WCAG 대비를 계산했다. 본문 4.5:1, 큰 글씨 3:1 기준.
- *   아래 색들은 모두 실제 배경(#fff / #f0f3fa / #e8ecf5 / #0d172a / #111d35 /
- *   #132038) 위에서 기준을 넘도록 계산해서 고른 값이다.
+ *   아래 색들은 모두 실제 배경(#fff / #f4f4f5 / #e4e4e7 / #09090b / #18181b /
+ *   #27272a) 위에서 기준을 넘도록 계산해서 고른 값이다.
  *
  * !important 를 쓴 이유
  *   원본 규칙들이 body.page-home-v2 .xxx 처럼 특이도가 제각각이라,
@@ -28,8 +28,8 @@ body[data-theme="light"] {
   /* 하락 파랑: #3b82f6 은 3.3~3.7 → 5.0~5.5 */
   --down-color: #1d63d6;
   --down: #1d63d6;
-  /* 본문에 쓰이는 브랜드 teal: #0f8387 은 4.1 → 5.7 (버튼 배경색은 그대로 둔다) */
-  --accent-text: #0b6a6d;
+  /* 본문에 쓰이는 브랜드 teal: #059669 은 4.1 → 5.7 (버튼 배경색은 그대로 둔다) */
+  --accent-text: #047857;
   --text-secondary: #4e525e;
   --text-muted-ui: #5f6875;
   --status-open: #15803d;
@@ -42,7 +42,7 @@ body[data-theme="dark"] {
   --up: #f4726d;
   --down-color: #5b9bff;
   --down: #5b9bff;
-  --accent-text: var(--accent-gold, #d4af37);
+  --accent-text: var(--accent-gold, #10b981);
   --text-secondary: #b7c1d1;
   --text-muted-ui: #98a3b6;
 }
@@ -231,7 +231,7 @@ html[data-theme="dark"] .tms-hi__lbl {
   color: #98a3b6 !important;
 }
 
-/* 라이트에서 본문 teal 링크·라벨 (#0f8387 → 4.1) */
+/* 라이트에서 본문 teal 링크·라벨 (#059669 → 4.1) */
 html[data-theme="light"] .ail-link,
 html[data-theme="light"] .ail-card__no,
 html[data-theme="light"] .ail-mock__badge,
@@ -251,7 +251,7 @@ html[data-theme="light"] .dm-issue__tag,
 html[data-theme="light"] .dm-verdict,
 html[data-theme="light"] .section-kicker,
 html[data-theme="light"] .ai-archive__rerun {
-  color: #0b6a6d !important;
+  color: #047857 !important;
 }
 
 /* LIVE 배지 초록 (#22c55e 는 흰 배경에서 2.3) */
@@ -392,7 +392,7 @@ body {
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
-/* 라이트에서 아직 #0f8387 로 남아 있던 곳들 */
+/* 라이트에서 아직 #059669 로 남아 있던 곳들 */
 html[data-theme="light"] .home-nav__link[aria-current="page"],
 html[data-theme="light"] .home-nav__link:hover,
 html[data-theme="light"] #briefing-today-weekday,
@@ -401,7 +401,7 @@ html[data-theme="light"] .bfx-alloc__weight,
 html[data-theme="light"] .event-analysis-heading,
 html[data-theme="light"] .event-analysis-badge,
 html[data-theme="light"] .kr-schedule-title {
-  color: #0b6a6d !important;
+  color: #047857 !important;
 }
 
 /* 하드코딩 빨강이 남아 있던 게이지 라벨 */
@@ -541,7 +541,7 @@ html[data-theme="light"] .world-col-rank {
 /* 암호화폐 게이지 점수·통화 토글의 teal */
 html[data-theme="light"] .crypto-gauge__score,
 html[data-theme="light"] .crypto-currency-btn {
-  color: #0b6a6d !important;
+  color: #047857 !important;
 }
 
 /* 배경이 브랜드색(빨강/골드)인 배지·버튼 위의 흰 글자 */
@@ -632,10 +632,10 @@ html[data-theme="light"] .world-table th {
 /* 매매시그널의 accent — 라이트에서 연한 teal 틴트 위에 올라가 3.1~3.8 이었다.
    버튼 배경으로도 쓰이는 값이라 한 단계 진하게 바꾸면 흰 글자 대비도 함께 좋아진다. */
 html[data-theme="light"] .ts-body {
-  --ts-accent: #0b6a6d;
+  --ts-accent: #047857;
 }
 html[data-theme="light"] .ail-facts__title {
-  color: #0b6a6d !important;
+  color: #047857 !important;
 }
 
 /* .ail-hero__kicker 는 어두운 네이비 히어로 위에 있다 — 밝은 글자라야 읽힌다 */
@@ -646,7 +646,7 @@ html[data-theme="light"] .ail-facts__title {
 /* 매매시그널 히어로의 알약 라벨은 연한 teal 틴트 위 — 한 단계 더 진하게 */
 html[data-theme="light"] .ts-hero__kicker,
 html[data-theme="light"] .ts-hero__step-no {
-  color: #08585b !important;
+  color: #047857 !important;
 }
 
 /* 어두운 히어로 위 흰 글씨의 불투명도 */
@@ -685,7 +685,7 @@ html[data-theme="light"] .dm-missing__text {
 /* 실시간시세 갱신 안내 — 4.48 로 0.02 모자랐다 */
 html[data-theme="light"] #rt-data-freshness,
 html[data-theme="light"] .rt-data-freshness--loading {
-  color: #08585b !important;
+  color: #047857 !important;
 }
 
 
@@ -693,7 +693,7 @@ html[data-theme="light"] .rt-data-freshness--loading {
    적용되지 않도록 구간별로 다시 잡아 준다 — 값과 라벨을 같은 색으로 유지한다. */
 html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__value,
 html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="fear"] .market-gauge__label {
-  color: #0b6a6d !important;
+  color: #047857 !important;
 }
 html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__value,
 html[data-theme="light"] .page-market .market-gauge-card--fng[data-fng-tone="neutral"] .market-gauge__label {
@@ -720,7 +720,7 @@ html[data-theme="light"] .market-vix--caution {
 /* 홈 히어로의 보조 버튼 — 흰 글씨가 밝은 teal 위에 올라가 4.1 이었다.
    버튼 색을 한 단계 진하게 해 흰 글씨를 살린다(글자 크기는 그대로). */
 html[data-theme="light"] .home-hero__btn:not(.home-hero__btn--primary) {
-  background: rgba(4, 60, 63, 0.55) !important;
+  background: rgba(6, 78, 59, 0.55) !important;
   border-color: rgba(255, 255, 255, 0.34) !important;
 }
 

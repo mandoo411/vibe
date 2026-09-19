@@ -982,7 +982,7 @@ a:hover {
 
 .schedule-filter.is-active {
   border-color: transparent;
-  background: var(--gradient-primary, linear-gradient(135deg, #07264b 0%, #0f8387 100%));
+  background: var(--gradient-primary, linear-gradient(135deg, #047857 0%, #059669 100%));
   color: #fff;
 }
 
@@ -1005,7 +1005,7 @@ a:hover {
 .countdown {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
 }
 
 [data-theme="dark"] .countdown {
@@ -1137,9 +1137,9 @@ a:hover {
 }
 
 .earnings-market-tab.is-active {
-  border-color: var(--accent-brand, #0f8387);
-  color: var(--accent-brand, #0f8387);
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent);
+  border-color: var(--accent-brand, #059669);
+  color: var(--accent-brand, #059669);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 12%, transparent);
 }
 
 [data-theme="dark"] .earnings-market-tab.is-active {
@@ -1201,8 +1201,8 @@ a:hover {
   border-radius: 999px;
   font-size: 10px;
   font-weight: 700;
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 14%, transparent);
-  color: var(--accent-brand, #0f8387);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 14%, transparent);
+  color: var(--accent-brand, #059669);
 }
 
 [data-theme="dark"] .earnings-hour-badge {
@@ -1457,9 +1457,9 @@ a:hover {
   flex-shrink: 0;
   padding: 2px 7px;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--accent-gold, #d4af37) 22%, #fff8e6);
+  background: color-mix(in srgb, var(--accent-gold, #10b981) 22%, #fff8e6);
   color: #6b5208;
-  border: 1px solid color-mix(in srgb, var(--accent-gold, #d4af37) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-gold, #10b981) 40%, transparent);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.35;
@@ -1496,25 +1496,25 @@ a:hover {
 }
 
 [data-theme="dark"] .key-indicator-badge {
-  background: color-mix(in srgb, var(--accent-gold) 22%, var(--card-bg, #111d35));
+  background: color-mix(in srgb, var(--accent-gold) 22%, var(--card-bg, #18181b));
   color: #f0d878;
   border: 1px solid color-mix(in srgb, var(--accent-gold) 42%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--high {
-  background: color-mix(in srgb, var(--up-color, #e24b4a) 18%, var(--card-bg, #111d35));
+  background: color-mix(in srgb, var(--up-color, #e24b4a) 18%, var(--card-bg, #18181b));
   color: color-mix(in srgb, var(--up-color, #e24b4a) 72%, #fff);
   border: 1px solid color-mix(in srgb, var(--up-color, #e24b4a) 36%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--medium {
-  background: color-mix(in srgb, var(--accent-gold) 16%, var(--card-bg, #111d35));
+  background: color-mix(in srgb, var(--accent-gold) 16%, var(--card-bg, #18181b));
   color: #e8c96a;
   border: 1px solid color-mix(in srgb, var(--accent-gold) 32%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--low {
-  background: color-mix(in srgb, var(--text-muted-ui, #8a95a8) 12%, var(--card-bg, #111d35));
+  background: color-mix(in srgb, var(--text-muted-ui, #71717a) 12%, var(--card-bg, #18181b));
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
@@ -1674,7 +1674,7 @@ a:hover {
   background: var(--gradient-primary);
   color: #ffffff;
   border: none;
-  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .tab {
@@ -2496,8 +2496,8 @@ a:hover {
   white-space: nowrap;
 }
 .earnings-hour--bmo {
-  color: var(--accent-brand, #0f8387);
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 14%, transparent);
+  color: var(--accent-brand, #059669);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 14%, transparent);
 }
 .earnings-hour--amc {
   color: #7c3aed;
@@ -2773,9 +2773,9 @@ a:hover {
   margin-left: 6px;
   padding: 1px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent, #0f8387) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--accent, #0f8387) 28%, transparent);
-  color: var(--accent-bright, var(--accent, #0f8387));
+  background: color-mix(in srgb, var(--accent, #059669) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent, #059669) 28%, transparent);
+  color: var(--accent-bright, var(--accent, #059669));
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2787,8 +2787,8 @@ a:hover {
   margin-left: auto;
   padding: 1px 7px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent, #0f8387) 10%, transparent);
-  color: var(--accent-bright, var(--accent, #0f8387));
+  background: color-mix(in srgb, var(--accent, #059669) 10%, transparent);
+  color: var(--accent-bright, var(--accent, #059669));
   font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -2876,7 +2876,7 @@ a:hover {
   padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent, #0f8387) 7%, transparent);
+  background: color-mix(in srgb, var(--accent, #059669) 7%, transparent);
   color: var(--text-body, var(--text-primary));
   font-size: 11.5px;
   line-height: 1.5;
@@ -2972,7 +2972,7 @@ a:hover {
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent, #0f8387) 5%, transparent);
+  background: color-mix(in srgb, var(--accent, #059669) 5%, transparent);
 }
 
 .mstat__v {
@@ -3012,7 +3012,7 @@ a:hover {
 }
 
 .event-analysis-heading i {
-  color: var(--accent-bright, var(--accent, #0f8387));
+  color: var(--accent-bright, var(--accent, #059669));
   font-size: 14px;
 }
 
@@ -3058,8 +3058,8 @@ a:hover {
 }
 
 .event-analysis-badge--macro {
-  background: color-mix(in srgb, var(--accent, #0f8387) 14%, transparent);
-  color: var(--accent-bright, var(--accent, #0f8387));
+  background: color-mix(in srgb, var(--accent, #059669) 14%, transparent);
+  color: var(--accent-bright, var(--accent, #059669));
 }
 
 .event-analysis-badge--earnings {

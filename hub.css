@@ -6,70 +6,71 @@ body.page-home-premium {
 }
 
 [data-theme="light"].page-home-premium {
-  --home-brand-start: #07264b;
-  --home-brand-end: #0f8387;
-  --home-brand-shadow: rgba(15, 131, 135, 0.24);
+  --home-brand-start: #047857;
+  --home-brand-end: #059669;
+  --home-brand-shadow: rgba(5, 150, 105, 0.24);
   --home-header-bg: rgba(255, 255, 255, 0.76);
-  --home-header-border: rgba(15, 131, 135, 0.22);
-  --home-header-shadow: 0 20px 40px rgba(7, 38, 75, 0.09);
-  --home-body-top: #f0f7f7;
-  --home-body-glow: rgba(15, 131, 135, 0.10);
-  --home-body-glow-soft: rgba(7, 38, 75, 0.06);
+  --home-header-border: rgba(228, 228, 231, 0.9);
+  --home-header-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --home-body-top: #fafafa;
+  --home-body-glow: transparent;
+  --home-body-glow-soft: transparent;
   --home-card-bg: rgba(255, 255, 255, 0.8);
-  --home-card-border: rgba(15, 131, 135, 0.18);
-  --home-card-shadow: 0 20px 46px rgba(7, 38, 75, 0.08);
-  --home-card-hover-shadow: 0 26px 64px rgba(15, 131, 135, 0.12);
+  --home-card-border: rgba(228, 228, 231, 0.9);
+  --home-card-shadow: 0 20px 46px rgba(0, 0, 0, 0.06);
+  --home-card-hover-shadow: 0 26px 64px rgba(5, 150, 105, 0.12);
   --home-card-highlight: rgba(255, 255, 255, 0.6);
-  --home-title: #0f172a;
-  --home-desc: #475569;
-  --home-muted: #64748b;
-  --home-divider: rgba(148, 163, 184, 0.16);
+  --home-title: #09090b;
+  --home-desc: #52525b;
+  --home-muted: #71717a;
+  --home-divider: rgba(161, 161, 170, 0.16);
   --home-status-bg: #ecfdf5;
   --home-status-text: #059669;
   --home-status-dot: #10b981;
-  --home-icon-a: #07264b;
-  --home-icon-b: #0f8387;
-  --home-icon-c: #14b8a6;
+  --home-icon-a: #047857;
+  --home-icon-b: #059669;
+  --home-icon-c: #34d399;
   --home-icon-d: rgba(255, 255, 255, 0.9);
-  --home-icon-shell: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(224, 247, 247, 0.72));
-  --home-icon-inner: linear-gradient(135deg, rgba(167, 243, 243, 0.42), rgba(204, 251, 241, 0.62));
-  --home-icon-stroke: rgba(15, 131, 135, 0.18);
-  --home-icon-shadow: rgba(7, 38, 75, 0.18);
-  --home-nav-shadow: rgba(15, 131, 135, 0.22);
+  --home-icon-shell: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(209, 250, 229, 0.72));
+  --home-icon-inner: linear-gradient(135deg, rgba(167, 243, 208, 0.42), rgba(209, 250, 229, 0.62));
+  --home-icon-stroke: rgba(5, 150, 105, 0.18);
+  --home-icon-shadow: rgba(0, 0, 0, 0.14);
+  --home-nav-shadow: rgba(5, 150, 105, 0.22);
 }
 
 [data-theme="dark"].page-home-premium {
-  --home-brand-start: #0a1324;
-  --home-brand-end: #0f8387;
-  --home-brand-shadow: rgba(15, 131, 135, 0.22);
-  --home-header-bg: rgba(10, 19, 36, 0.72);
-  --home-header-border: rgba(212, 175, 55, 0.15);
-  --home-header-shadow: 0 22px 48px rgba(2, 8, 23, 0.48);
-  --home-body-top: #0d172a;
-  --home-body-glow: rgba(15, 131, 135, 0.18);
-  --home-body-glow-soft: rgba(212, 175, 55, 0.08);
-  --home-card-bg: rgba(17, 29, 53, 0.72);
-  --home-card-border: rgba(212, 175, 55, 0.12);
-  --home-card-shadow: 0 26px 52px rgba(2, 8, 23, 0.46);
-  --home-card-hover-shadow: 0 30px 66px rgba(2, 8, 23, 0.56), 0 0 30px rgba(212, 175, 55, 0.1);
-  --home-card-highlight: rgba(148, 163, 184, 0.06);
-  --home-title: #f8fafc;
-  --home-desc: #aab4c5;
-  --home-muted: #8a95a8;
-  --home-divider: rgba(148, 163, 184, 0.12);
-  --home-status-bg: rgba(15, 131, 135, 0.18);
-  --home-status-text: #5eead4;
-  --home-status-dot: #0f8387;
-  --home-icon-a: #d4af37;
-  --home-icon-b: #0f8387;
-  --home-icon-c: #5eead4;
+  --home-brand-start: #09090b;
+  --home-brand-end: #10b981;
+  --home-brand-shadow: rgba(16, 185, 129, 0.22);
+  --home-header-bg: rgba(9, 9, 11, 0.72);
+  --home-header-border: rgba(39, 39, 42, 0.9);
+  --home-header-shadow: 0 22px 48px rgba(0, 0, 0, 0.48);
+  --home-body-top: #09090b;
+  --home-body-glow: transparent;
+  --home-body-glow-soft: transparent;
+  --home-card-bg: rgba(24, 24, 27, 0.72);
+  --home-card-border: rgba(39, 39, 42, 0.9);
+  --home-card-shadow: 0 26px 52px rgba(0, 0, 0, 0.46);
+  --home-card-hover-shadow: 0 30px 66px rgba(0, 0, 0, 0.56), 0 0 30px rgba(16, 185, 129, 0.14);
+  --home-card-highlight: rgba(161, 161, 170, 0.06);
+  --home-title: #f4f4f5;
+  --home-desc: #a1a1aa;
+  --home-muted: #71717a;
+  --home-divider: rgba(161, 161, 170, 0.12);
+  --home-status-bg: rgba(16, 185, 129, 0.18);
+  --home-status-text: #34d399;
+  --home-status-dot: #10b981;
+  --home-icon-a: #10b981;
+  --home-icon-b: #059669;
+  --home-icon-c: #34d399;
   --home-icon-d: rgba(255, 255, 255, 0.92);
-  --home-icon-shell: linear-gradient(180deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.74));
-  --home-icon-inner: linear-gradient(135deg, rgba(7, 38, 75, 0.82), rgba(15, 131, 135, 0.34));
-  --home-icon-stroke: rgba(212, 175, 55, 0.18);
-  --home-icon-shadow: rgba(15, 131, 135, 0.18);
-  --home-nav-shadow: rgba(212, 175, 55, 0.18);
+  --home-icon-shell: linear-gradient(180deg, rgba(39, 39, 42, 0.82), rgba(24, 24, 27, 0.74));
+  --home-icon-inner: linear-gradient(135deg, rgba(4, 120, 87, 0.6), rgba(16, 185, 129, 0.34));
+  --home-icon-stroke: rgba(16, 185, 129, 0.18);
+  --home-icon-shadow: rgba(0, 0, 0, 0.2);
+  --home-nav-shadow: rgba(16, 185, 129, 0.18);
 }
+
 
 body.page-home-premium .page {
   position: relative;
@@ -91,7 +92,7 @@ body.page-home-premium .tm-market-ticker__track {
 
 body.page-home-premium .tm-site-nav__link[aria-current="page"] {
   background: var(--gradient-primary);
-  box-shadow: 0 14px 30px rgba(15, 131, 135, 0.26);
+  box-shadow: 0 14px 30px rgba(5, 150, 105, 0.26);
 }
 
 [data-theme="dark"].page-home-premium .tm-site-nav__link[aria-current="page"],
@@ -112,7 +113,7 @@ body.page-home-premium .tm-site-nav__link[aria-current="page"] {
 
 body.page-home-premium .tm-theme-toggle {
   background: var(--gradient-primary);
-  box-shadow: 0 16px 28px rgba(15, 131, 135, 0.26);
+  box-shadow: 0 16px 28px rgba(5, 150, 105, 0.26);
 }
 
 body.page-home-premium .tm-theme-toggle:hover,
@@ -171,7 +172,7 @@ body.page-home-premium .masthead__copy {
   font-weight: 700;
   background: var(--gradient-primary);
   color: white;
-  box-shadow: 0 10px 20px rgba(15, 131, 135, 0.18);
+  box-shadow: 0 10px 20px rgba(5, 150, 105, 0.18);
 }
 
 body.page-home-premium .market-sub {
@@ -208,14 +209,14 @@ body.page-home-premium .market-sub {
   background: #ffffff;
   border-radius: 20px;
   padding: 20px 16px;
-  box-shadow: 0 4px 16px rgba(15, 131, 135, 0.1), inset 0 1px 1px rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.1), inset 0 1px 1px rgba(255, 255, 255, 1);
   border: 0.5px solid rgba(200, 210, 255, 0.5);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .menu-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(15, 131, 135, 0.18);
+  box-shadow: 0 8px 24px rgba(5, 150, 105, 0.18);
   text-decoration: none;
 }
 
@@ -232,7 +233,7 @@ body.page-home-premium .market-sub {
   height: 52px !important;
   border-radius: 14px !important;
   background: var(--gradient-primary) !important;
-  box-shadow: 0 4px 14px rgba(15, 131, 135, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.4) !important;
 }
 
 .menu-card .icon-box i {
@@ -304,7 +305,7 @@ body.page-home-premium .market-sub {
   height: 18px;
   padding: 0 7px;
   border-radius: 999px;
-  background: rgba(15, 131, 135, 0.1);
+  background: rgba(5, 150, 105, 0.1);
   color: var(--accent-brand);
   font-size: 10px;
   font-weight: 900;
@@ -423,7 +424,7 @@ body.page-home-premium .ai-stock-section {
 
 [data-theme="dark"].page-home-premium .menu-card__mini-badge,
 .dark-mode.page-home-premium .menu-card__mini-badge {
-  background: rgba(15, 131, 135, 0.2);
+  background: rgba(5, 150, 105, 0.2);
   color: color-mix(in srgb, var(--accent-brand) 55%, #fff);
 }
 

@@ -1462,7 +1462,7 @@ details[open] .admin__summary {
   color: #ffffff;
   border: none;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 
 [data-theme="dark"] .page--daily-market .dm-tab-date.is-active,
@@ -1477,12 +1477,12 @@ details[open] .admin__summary {
   box-sizing: border-box;
   padding: 10px 12px 12px;
   border-top: 1px solid var(--color-border-tertiary, rgba(0, 0, 0, 0.08));
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 4%, #ffffff);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 4%, #ffffff);
 }
 
 [data-theme="dark"] .dm-date-picker,
 .dark-mode .dm-date-picker {
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 8%, var(--card-bg, #1a1f35));
+  background: color-mix(in srgb, var(--accent-brand, #059669) 8%, var(--card-bg, #1a1f35));
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -1532,8 +1532,8 @@ details[open] .admin__summary {
 }
 
 .dm-date-picker__nav:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 35%, var(--color-border, var(--border)));
-  color: var(--accent-brand, #0f8387);
+  border-color: color-mix(in srgb, var(--accent-brand, #059669) 35%, var(--color-border, var(--border)));
+  color: var(--accent-brand, #059669);
 }
 
 .dm-date-picker__nav:disabled {
@@ -1600,8 +1600,8 @@ button.dm-date-picker__cell {
 }
 
 button.dm-date-picker__cell:hover {
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 40%, transparent);
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 8%, #ffffff);
+  border-color: color-mix(in srgb, var(--accent-brand, #059669) 40%, transparent);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 8%, #ffffff);
 }
 
 .dm-date-picker__cell--blank {
@@ -1621,14 +1621,14 @@ button.dm-date-picker__cell:hover {
 }
 
 .dm-date-picker__cell--today:not(.dm-date-picker__cell--active) {
-  border-color: color-mix(in srgb, var(--accent-brand, #0f8387) 55%, transparent);
+  border-color: color-mix(in srgb, var(--accent-brand, #059669) 55%, transparent);
 }
 
 .dm-date-picker__cell--active {
   background: var(--gradient-primary);
   color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 1px 4px rgba(7, 38, 75, 0.22);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
 }
 
 [data-theme="dark"] .dm-date-picker__cell,
@@ -1639,7 +1639,7 @@ button.dm-date-picker__cell:hover {
 
 [data-theme="dark"] button.dm-date-picker__cell:hover,
 .dark-mode button.dm-date-picker__cell:hover {
-  background: color-mix(in srgb, var(--accent-brand, #0f8387) 18%, rgba(255, 255, 255, 0.06));
+  background: color-mix(in srgb, var(--accent-brand, #059669) 18%, rgba(255, 255, 255, 0.06));
 }
 
 [data-theme="dark"] .dm-date-picker__cell--blank,
@@ -1670,9 +1670,9 @@ button.dm-date-picker__cell:hover {
   margin: 0 auto;
   padding: 32px 24px 28px;
   border-radius: 16px;
-  background: var(--color-surface-muted, rgba(7, 38, 75, 0.04));
-  border: 1px solid var(--color-border-subtle, rgba(7, 38, 75, 0.08));
-  box-shadow: 0 8px 28px rgba(7, 38, 75, 0.06);
+  background: var(--color-surface-muted, rgba(0, 0, 0, 0.04));
+  border: 1px solid var(--color-border-subtle, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06);
 }
 
 .dm-preparing__icon {
@@ -1689,7 +1689,7 @@ button.dm-date-picker__cell:hover {
 }
 
 .dm-preparing--today .dm-preparing__inner {
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06) 0%, var(--color-surface-muted, rgba(7, 38, 75, 0.04)) 100%);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.06) 0%, var(--color-surface-muted, rgba(0, 0, 0, 0.04)) 100%);
   border-color: rgba(37, 99, 235, 0.18);
 }
 
@@ -1736,7 +1736,7 @@ button.dm-date-picker__cell:hover {
 
 /* 다크모드 empty state 수정 */
 [data-theme="dark"] .dm-preparing__inner {
-  background: var(--card-bg, #111d35);
+  background: var(--card-bg, #18181b);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
@@ -1744,7 +1744,7 @@ button.dm-date-picker__cell:hover {
   color: var(--text-primary, #ffffff);
 }
 [data-theme="dark"] .dm-preparing__hint {
-  color: var(--text-secondary, #aab4c5);
+  color: var(--text-secondary, #a1a1aa);
 }
 [data-theme="dark"] .dm-preparing .loading-bar-track {
   background: rgba(255, 255, 255, 0.08);
@@ -1754,7 +1754,7 @@ button.dm-date-picker__cell:hover {
   height: 4px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(7, 38, 75, 0.08);
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .dm-preparing .loading-bar-inner {
@@ -2508,10 +2508,10 @@ button.dm-date-picker__cell:hover {
   color: #fff;
   border-color: transparent;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 [data-theme="dark"] .dm-tab {
-  background: var(--card-bg, #111d35);
+  background: var(--card-bg, #18181b);
   border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-primary, #fff);
 }
@@ -2553,8 +2553,8 @@ button.dm-date-picker__cell:hover {
   justify-content: center;
 }
 [data-theme="dark"] .dm-card {
-  background: var(--card-bg, #111d35);
-  border-color: var(--border-color, rgba(212, 175, 55, 0.15));
+  background: var(--card-bg, #18181b);
+  border-color: var(--border-color, rgba(16, 185, 129, 0.15));
   box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.28));
 }
 .dm-card__label { font-size: 13px; color: var(--text-secondary, #5d606b); font-weight: 600; }
@@ -2597,9 +2597,9 @@ button.dm-date-picker__cell:hover {
   color: #fff;
   border-color: transparent;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(7, 38, 75, 0.28);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
-[data-theme="dark"] .dm-subtab { background: var(--card-bg, #111d35); border-color: rgba(255, 255, 255, 0.1); color: var(--text-primary, #fff); }
+[data-theme="dark"] .dm-subtab { background: var(--card-bg, #18181b); border-color: rgba(255, 255, 255, 0.1); color: var(--text-primary, #fff); }
 [data-theme="dark"] .dm-subtab[aria-selected="true"] { background: var(--gradient-primary); border-color: transparent; }
 
 .dm-table-wrap {
@@ -2609,7 +2609,7 @@ button.dm-date-picker__cell:hover {
   border-radius: 12px;
   background: var(--bg-secondary, #f0f3fa);
 }
-[data-theme="dark"] .dm-table-wrap { background: var(--card-bg, #111d35); border-color: var(--border-color, rgba(212, 175, 55, 0.15)); }
+[data-theme="dark"] .dm-table-wrap { background: var(--card-bg, #18181b); border-color: var(--border-color, rgba(16, 185, 129, 0.15)); }
 .dm-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 460px; }
 .dm-table th, .dm-table td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); white-space: nowrap; }
 .dm-table th { font-size: 12px; font-weight: 700; color: var(--text-secondary, #5d606b); }
@@ -2623,7 +2623,7 @@ button.dm-date-picker__cell:hover {
 .dm-headline { font-size: 18px; font-weight: 700; color: var(--text-primary, #131722); margin: 0; }
 .dm-summary p { font-size: 16px; line-height: 1.75; color: var(--text-primary, #131722); margin: 0 0 10px; }
 .dm-summary p:last-child { margin-bottom: 0; }
-.dm-verdict { font-size: 16px; font-weight: 700; color: var(--accent-brand, #0f8387); margin: 6px 0 0; }
+.dm-verdict { font-size: 16px; font-weight: 700; color: var(--accent-brand, #059669); margin: 6px 0 0; }
 .dm-claude-note { font-size: 12px; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
 
 .dm-issue { padding: 12px 0; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); }
@@ -2631,7 +2631,7 @@ button.dm-date-picker__cell:hover {
 .dm-issue__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .dm-issue__name { font-size: 16px; font-weight: 700; color: var(--text-primary, #131722); }
 .dm-issue__chg { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.dm-issue__tag { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--accent-brand, #0f8387); background: color-mix(in srgb, var(--accent-brand, #0f8387) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
+.dm-issue__tag { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; color: var(--accent-brand, #059669); background: color-mix(in srgb, var(--accent-brand, #059669) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
 .dm-issue__desc { font-size: 15px; line-height: 1.65; color: var(--text-secondary, #5d606b); margin: 8px 0 0; }
 
 .dm-error { margin: 16px max(var(--shell-pad-inline, 24px), env(safe-area-inset-left)); color: var(--up-color, #e24b4a); font-size: 14px; }
@@ -2669,7 +2669,7 @@ button.dm-date-picker__cell:hover {
   bottom: 3px;
   width: 3px;
   border-radius: 2px;
-  background: var(--accent, #0f766e);
+  background: var(--accent, #059669);
 }
 
 .dmx-on {
@@ -3071,7 +3071,7 @@ button.dm-date-picker__cell:hover {
   padding: 12px 14px;
   border-radius: 10px;
   background: var(--tag-bg, rgba(148, 163, 184, 0.12));
-  border-left: 3px solid var(--accent, #0f766e);
+  border-left: 3px solid var(--accent, #059669);
   font-size: 14px;
   line-height: 1.7;
   color: var(--text);
@@ -3217,7 +3217,7 @@ button.dm-date-picker__cell:hover {
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--accent, #0f766e);
+  color: var(--accent, #059669);
 }
 
 .dmx-strat__col p {
@@ -3419,7 +3419,7 @@ button.dm-date-picker__cell:hover {
   border-radius: 6px;
   display: grid;
   place-items: center;
-  background: var(--accent, #0f766e);
+  background: var(--accent, #059669);
   color: #fff;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 11px;
@@ -3431,7 +3431,7 @@ button.dm-date-picker__cell:hover {
 [data-theme="dark"] .dmx-hero {
   background:
     linear-gradient(135deg, var(--dmx-hero-tint, transparent) 0%, transparent 62%),
-    var(--card-bg, #111d35);
+    var(--card-bg, #18181b);
   border-color: rgba(255, 255, 255, 0.09);
 }
 
@@ -3584,7 +3584,7 @@ button.dm-date-picker__cell:hover {
   .dm-section.is-folded .dm-section__title { margin-bottom: 0; }
 
   [data-theme="dark"] .dm-section.is-folded {
-    background: var(--card-bg, #111d35);
+    background: var(--card-bg, #18181b);
     border-color: rgba(255, 255, 255, 0.09);
   }
 }

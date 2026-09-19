@@ -624,6 +624,11 @@ body.page-home-v2 {
   gap: 4px;
   opacity: 1;
   transition: opacity 0.15s ease;
+  /* 2026-09-19: <a> 태그라 브라우저 기본 밑줄이 생기는데, 이 밑줄 색은 텍스트(span/i)의
+     개별 color가 아니라 이 앵커 자신이 상속하는 .home-nav__theme의 color(#ffd84d, 원래
+     테마 토글 아이콘용 골드)를 그대로 따른다. 그래서 로그인 글자는 하얀/초록인데 밑줄만
+     노랗게 남는 버그가 있었다 — text-decoration:none으로 밑줄 자체를 없앤다. */
+  text-decoration: none;
 }
 
 /* 2026-07-11: 로그인 상태 확인이 끝나기 전에는 숨겨서, "로그인"으로 잘못 그렸다가

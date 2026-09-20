@@ -43,7 +43,7 @@
   function getLwTheme() {
     const dark = isDarkTheme();
     return {
-      bg: dark ? "#131722" : "#ffffff",
+      bg: dark ? "#161616" : "#ffffff",
       text: dark ? "#d1d4dc" : "#131722",
       grid: dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
     };
@@ -93,7 +93,7 @@
       ".tm-lw-ohlc-tooltip__row span:first-child{color:var(--text-secondary,#5d606b);flex-shrink:0;}" +
       ".tm-lw-ohlc-tooltip__row span:last-child{color:var(--text-primary,#131722);" +
       "text-align:right;font-variant-numeric:tabular-nums;}" +
-      '[data-theme="dark"] .tm-lw-ohlc-tooltip{background:rgba(28,32,48,.98);' +
+      '[data-theme="dark"] .tm-lw-ohlc-tooltip{background:rgba(22,22,22,.98);' +
       "border-color:rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(0,0,0,.55);}" +
       '[data-theme="dark"] .tm-lw-ohlc-tooltip__dt{color:var(--accent-bright,var(--accent-brand));' +
       "border-bottom-color:rgba(255,255,255,.08);}" +

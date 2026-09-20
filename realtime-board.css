@@ -1585,6 +1585,15 @@
           inset 0 1px 0 var(--accent-dim);
         overflow: visible;
       }
+      /* 2026-09-20: 다크모드에서 패널 테두리가 에메랄드 틴트(--accent-highlight/-dim)라
+         네모 상자 전체에 녹색 테두리가 도는 것처럼 보였다(시우 지적) -- 무채색으로 교체. */
+      [data-theme="dark"] .rt-panel,
+      .dark-mode .rt-panel {
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow:
+          var(--sheet-shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
       .rt-scroll {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;

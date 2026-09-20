@@ -2203,7 +2203,7 @@
 [data-theme="dark"] .ail-card,
 [data-theme="dark"] .ail-facts,
 [data-theme="dark"] .ail-preview {
-  background: var(--card-bg, #18181b);
+  background: var(--card-bg, #161616);
   border-color: rgba(255, 255, 255, 0.09);
 }
 
@@ -3337,7 +3337,7 @@
   border-color: var(--sa-line);
   background:
     radial-gradient(140% 180% at 0% 0%, var(--sa-soft) 0%, transparent 58%),
-    linear-gradient(150deg, #16233f 0%, var(--card-bg, #18181b) 100%);
+    linear-gradient(150deg, #1a1a1a 0%, var(--card-bg, #161616) 100%);
 }
 .ai-search-card--hero::after {
   content: "";

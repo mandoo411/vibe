@@ -1736,7 +1736,7 @@ button.dm-date-picker__cell:hover {
 
 /* 다크모드 empty state 수정 */
 [data-theme="dark"] .dm-preparing__inner {
-  background: var(--card-bg, #18181b);
+  background: var(--card-bg, #161616);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
@@ -2511,7 +2511,7 @@ button.dm-date-picker__cell:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
 [data-theme="dark"] .dm-tab {
-  background: var(--card-bg, #18181b);
+  background: var(--card-bg, #161616);
   border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-primary, #fff);
 }
@@ -2553,7 +2553,7 @@ button.dm-date-picker__cell:hover {
   justify-content: center;
 }
 [data-theme="dark"] .dm-card {
-  background: var(--card-bg, #18181b);
+  background: var(--card-bg, #161616);
   border-color: var(--border-color, rgba(16, 185, 129, 0.15));
   box-shadow: var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.28));
 }
@@ -2599,7 +2599,7 @@ button.dm-date-picker__cell:hover {
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 }
-[data-theme="dark"] .dm-subtab { background: var(--card-bg, #18181b); border-color: rgba(255, 255, 255, 0.1); color: var(--text-primary, #fff); }
+[data-theme="dark"] .dm-subtab { background: var(--card-bg, #161616); border-color: rgba(255, 255, 255, 0.1); color: var(--text-primary, #fff); }
 [data-theme="dark"] .dm-subtab[aria-selected="true"] { background: var(--gradient-primary); border-color: transparent; }
 
 .dm-table-wrap {
@@ -2609,7 +2609,7 @@ button.dm-date-picker__cell:hover {
   border-radius: 12px;
   background: var(--bg-secondary, #f0f3fa);
 }
-[data-theme="dark"] .dm-table-wrap { background: var(--card-bg, #18181b); border-color: var(--border-color, rgba(16, 185, 129, 0.15)); }
+[data-theme="dark"] .dm-table-wrap { background: var(--card-bg, #161616); border-color: var(--border-color, rgba(16, 185, 129, 0.15)); }
 .dm-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 460px; }
 .dm-table th, .dm-table td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.06)); white-space: nowrap; }
 .dm-table th { font-size: 12px; font-weight: 700; color: var(--text-secondary, #5d606b); }
@@ -3431,7 +3431,7 @@ button.dm-date-picker__cell:hover {
 [data-theme="dark"] .dmx-hero {
   background:
     linear-gradient(135deg, var(--dmx-hero-tint, transparent) 0%, transparent 62%),
-    var(--card-bg, #18181b);
+    var(--card-bg, #161616);
   border-color: rgba(255, 255, 255, 0.09);
 }
 
@@ -3584,7 +3584,7 @@ button.dm-date-picker__cell:hover {
   .dm-section.is-folded .dm-section__title { margin-bottom: 0; }
 
   [data-theme="dark"] .dm-section.is-folded {
-    background: var(--card-bg, #18181b);
+    background: var(--card-bg, #161616);
     border-color: rgba(255, 255, 255, 0.09);
   }
 }

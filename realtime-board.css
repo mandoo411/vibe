@@ -254,7 +254,7 @@
       }
       [data-theme="dark"] .rt-table-loading-cell,
       .dark-mode .rt-table-loading-cell {
-        background: var(--card-bg, #18181b) !important;
+        background: var(--card-bg, #161616) !important;
       }
       .rt-table-loading-inner {
         display: flex;
@@ -281,7 +281,7 @@
       }
       [data-theme="dark"] .rt-skel-row > td,
       .dark-mode .rt-skel-row > td {
-        background: var(--card-bg, #18181b) !important;
+        background: var(--card-bg, #161616) !important;
         border-bottom-color: rgba(255, 255, 255, 0.05);
       }
       .rt-skel-line {
@@ -504,7 +504,7 @@
       [data-theme="dark"] .rt-tab-search input,
       .dark-mode .rt-tab-search input {
         border-color: rgba(255, 255, 255, 0.16);
-        background: var(--body-bg, #09090b);
+        background: var(--body-bg, #000000);
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
         color: #ffffff;
       }

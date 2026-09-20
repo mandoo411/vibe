@@ -1496,25 +1496,25 @@ a:hover {
 }
 
 [data-theme="dark"] .key-indicator-badge {
-  background: color-mix(in srgb, var(--accent-gold) 22%, var(--card-bg, #18181b));
+  background: color-mix(in srgb, var(--accent-gold) 22%, var(--card-bg, #161616));
   color: #f0d878;
   border: 1px solid color-mix(in srgb, var(--accent-gold) 42%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--high {
-  background: color-mix(in srgb, var(--up-color, #e24b4a) 18%, var(--card-bg, #18181b));
+  background: color-mix(in srgb, var(--up-color, #e24b4a) 18%, var(--card-bg, #161616));
   color: color-mix(in srgb, var(--up-color, #e24b4a) 72%, #fff);
   border: 1px solid color-mix(in srgb, var(--up-color, #e24b4a) 36%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--medium {
-  background: color-mix(in srgb, var(--accent-gold) 16%, var(--card-bg, #18181b));
+  background: color-mix(in srgb, var(--accent-gold) 16%, var(--card-bg, #161616));
   color: #e8c96a;
   border: 1px solid color-mix(in srgb, var(--accent-gold) 32%, transparent);
 }
 
 [data-theme="dark"] .impact-badge--low {
-  background: color-mix(in srgb, var(--text-muted-ui, #71717a) 12%, var(--card-bg, #18181b));
+  background: color-mix(in srgb, var(--text-muted-ui, #71717a) 12%, var(--card-bg, #161616));
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }

@@ -76,7 +76,7 @@
    문제가 없었으므로, 라이트 테마의 이 버튼만 같은 검정 계열로 맞춘다 — 전체 테마의
    에메랄드 포인트는 다른 곳(링크, 포커스 링, 로고 등)에 그대로 유지된다. */
 html[data-theme="light"] .tm-auth-submit {
-  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+  background: linear-gradient(135deg, #161616 0%, #000000 100%);
 }
 
 .tm-auth-submit:hover:not(:disabled) {

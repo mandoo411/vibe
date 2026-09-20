@@ -2630,7 +2630,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
   background-image:
     radial-gradient(ellipse 88% 72% at 10% -12%, var(--hero-dark-glow-teal, rgba(5, 150, 105, 0.26)) 0%, transparent 56%),
     radial-gradient(ellipse 58% 48% at 92% 4%, var(--hero-dark-glow-gold, rgba(16, 185, 129, 0.14)) 0%, transparent 52%),
-    linear-gradient(180deg, #18181b 0%, var(--header-bg) 55%, #09090b 100%);
+    linear-gradient(180deg, #161616 0%, var(--header-bg) 55%, #000000 100%);
   border-bottom: 1px solid rgba(16, 185, 129, 0.2);
   box-shadow: var(--hero-elev-shadow);
 }

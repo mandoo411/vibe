@@ -39,17 +39,17 @@ body.page-home-premium {
 }
 
 [data-theme="dark"].page-home-premium {
-  --home-brand-start: #09090b;
+  --home-brand-start: #000000;
   --home-brand-end: #10b981;
   --home-brand-shadow: rgba(16, 185, 129, 0.22);
-  --home-header-bg: rgba(9, 9, 11, 0.72);
-  --home-header-border: rgba(39, 39, 42, 0.9);
+  --home-header-bg: rgba(0, 0, 0, 0.72);
+  --home-header-border: rgba(38, 38, 38, 0.9);
   --home-header-shadow: 0 22px 48px rgba(0, 0, 0, 0.48);
-  --home-body-top: #09090b;
+  --home-body-top: #000000;
   --home-body-glow: transparent;
   --home-body-glow-soft: transparent;
-  --home-card-bg: rgba(24, 24, 27, 0.72);
-  --home-card-border: rgba(39, 39, 42, 0.9);
+  --home-card-bg: rgba(22, 22, 22, 0.72);
+  --home-card-border: rgba(38, 38, 38, 0.9);
   --home-card-shadow: 0 26px 52px rgba(0, 0, 0, 0.46);
   --home-card-hover-shadow: 0 30px 66px rgba(0, 0, 0, 0.56), 0 0 30px rgba(16, 185, 129, 0.14);
   --home-card-highlight: rgba(161, 161, 170, 0.06);
@@ -64,7 +64,7 @@ body.page-home-premium {
   --home-icon-b: #059669;
   --home-icon-c: #34d399;
   --home-icon-d: rgba(255, 255, 255, 0.92);
-  --home-icon-shell: linear-gradient(180deg, rgba(39, 39, 42, 0.82), rgba(24, 24, 27, 0.74));
+  --home-icon-shell: linear-gradient(180deg, rgba(38, 38, 38, 0.82), rgba(22, 22, 22, 0.74));
   --home-icon-inner: linear-gradient(135deg, rgba(4, 120, 87, 0.6), rgba(16, 185, 129, 0.34));
   --home-icon-stroke: rgba(16, 185, 129, 0.18);
   --home-icon-shadow: rgba(0, 0, 0, 0.2);

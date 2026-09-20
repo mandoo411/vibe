@@ -32,11 +32,11 @@
 }
 
 [data-theme="dark"] {
-  --r-bg: #10151d;
-  --r-bg-sub: #161c26;
-  --r-bg-sunken: #1c232f;
-  --r-line: #222a36;
-  --r-line-2: #2b3441;
+  --r-bg: #000000;
+  --r-bg-sub: #161616;
+  --r-bg-sunken: #1f1f1f;
+  --r-line: #262626;
+  --r-line-2: #2e2e2e;
   --r-text: #f2f4f6;
   --r-text-2: #b0b8c1;
   --r-text-3: #7b8694;
@@ -1590,7 +1590,7 @@ html body.page-tm-v2 .tm-auth-submit {
    보이므로, 이 버튼만 검정 계열로 분리한다. 다크 테마는 이미 어두운 배경 위라
    --r-accent(#10b981)와 네이버 그린이 뚜렷이 구분되므로 그대로 둔다. */
 html[data-theme="light"] body.page-tm-v2 .tm-auth-submit {
-  background: linear-gradient(135deg, #18181b 0%, #09090b 100%) !important;
+  background: linear-gradient(135deg, #161616 0%, #000000 100%) !important;
 }
 
 /* ── 9. 옛 팔레트가 남은 배경 위의 작은 컬러 글자 ─────────────────────────

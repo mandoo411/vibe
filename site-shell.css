@@ -398,7 +398,7 @@ body.page-home-v2 {
   color: var(--text-secondary, #444);
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* 2026-07-31: weekly-market.css 등 일부 페이지 CSS(a:hover{text-decoration:underline})가
@@ -406,16 +406,31 @@ body.page-home-v2 {
    호버 시 네비 링크에도 그대로 적용돼 버린다(사용자 피드백: "다른페이지들도 밑줄 다 없애줘").
    명시적으로 none을 선언해 페이지별 전역 규칙보다 우선하도록 한다. */
 .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: transparent;
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
   color: var(--accent, var(--accent-brand));
+  transform: translateY(-1px);
   text-decoration: none;
 }
 
+/* 2026-09-20: 시우 요청 -- 클릭한(현재) 메뉴에 녹색 배경이 채워지던 효과를 없애고,
+   무채색 필 배경 + 하단 포인트 바(accent 밑줄)로 대체. 눌렀다는 느낌은 위 hover의
+   미세한 배경+승강 애니메이션이 대신 담당한다. */
 .home-nav__link[aria-current="page"] {
   position: relative;
-  background: rgba(5, 150, 105, 0.12);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
   color: var(--accent-brand, #059669);
   font-weight: 700;
+}
+
+.home-nav__link[aria-current="page"]:not(.home-nav__home-btn)::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent-brand, #059669);
 }
 
 .home-nav__auth-link {
@@ -1722,13 +1737,14 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .home-nav__link:not(.home-nav__home-btn):not(.home-nav__theme):hover {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
+  transform: translateY(-1px);
   text-decoration: none;
 }
 
 [data-theme="dark"] .home-nav__link[aria-current="page"] {
-  background: rgba(16, 185, 129, 0.16);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--accent-gold);
   font-weight: 700;
 }

@@ -1587,6 +1587,14 @@ a:hover {
   border-color: rgba(48, 164, 108, 0.38);
 }
 
+/* 2026-09-20: 다크모드 KOSDAQ 배지에 남아있던 네이비 계열(rgba(60,130,246,..))을
+   제거 -- 사이트 팔레트는 무채색+에메랄드만 쓰므로 파랑은 하락(--down-color) 의미로만
+   남기고, 시장 구분 배지는 중립 회색으로 바꾼다. */
+[data-theme="dark"] .kr-pill--kosdaq {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 .kr-earnings-groups {
   display: grid;
   gap: 8px;

@@ -81,6 +81,9 @@
         height: 3px;
         background: linear-gradient(90deg, var(--ts-accent) 0%, color-mix(in srgb, var(--ts-accent) 18%, transparent) 72%, transparent 100%);
       }
+      [data-theme="dark"] .ts-hero {
+        background: var(--ts-surface);
+      }
       .ts-hero__kicker {
         display: inline-flex;
         align-items: center;
@@ -233,6 +236,9 @@
         background:
           radial-gradient(120% 150% at 50% 0%, var(--ts-soft) 0%, transparent 60%),
           var(--ts-surface);
+      }
+      [data-theme="dark"] .ts-gate {
+        background: var(--ts-surface);
       }
       .ts-gate__title {
         font-size: 21px;
@@ -628,6 +634,9 @@
         border-radius: 14px;
         background: color-mix(in srgb, var(--ts-accent) 5%, var(--bg-tertiary));
         animation: tsSubIn 0.18s ease both;
+      }
+      [data-theme="dark"] .ts-sub {
+        background: var(--bg-tertiary);
       }
       .ts-tech__item > .ts-sub {
         margin: 8px 0 4px;

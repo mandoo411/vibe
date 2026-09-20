@@ -3335,9 +3335,7 @@
 }
 [data-theme="dark"] .ai-search-card--hero {
   border-color: var(--sa-line);
-  background:
-    radial-gradient(140% 180% at 0% 0%, var(--sa-soft) 0%, transparent 58%),
-    linear-gradient(150deg, #1a1a1a 0%, var(--card-bg, #161616) 100%);
+  background: var(--card-bg, #161616);
 }
 .ai-search-card--hero::after {
   content: "";

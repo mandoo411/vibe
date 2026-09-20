@@ -1582,6 +1582,17 @@ html body.page-tm-v2 .tm-auth-submit {
   color: #fff !important;
 }
 
+/* 2026-09-20: 이 파일이 !important로 위 규칙을 덮어써서 assets/auth.css 쪽에 넣은
+   "로그인 버튼을 네이버 버튼과 다른 색으로" 수정이 실제로는 적용되지 않고 있었다
+   (raw fetch로는 auth.css가 바뀐 게 보이는데, 실제 렌더링은 refresh.css의 !important가
+   이기고 있었음 — 실물 브라우저 렌더까지 확인해서 잡은 버그). 라이트 테마에서는
+   --r-accent(#059669)가 네이버 브랜드 그린(#03c75a)과 나란히 있으면 초록끼리 겹쳐
+   보이므로, 이 버튼만 검정 계열로 분리한다. 다크 테마는 이미 어두운 배경 위라
+   --r-accent(#10b981)와 네이버 그린이 뚜렷이 구분되므로 그대로 둔다. */
+html[data-theme="light"] body.page-tm-v2 .tm-auth-submit {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%) !important;
+}
+
 /* ── 9. 옛 팔레트가 남은 배경 위의 작은 컬러 글자 ─────────────────────────
    주간일정 달력·지수 칩 등은 예전 푸른 회색(#f0f3fa·#e8ecf5) 위에 accent/등락색
    작은 글씨를 얹고 있어 대비가 3.4~4.1이었다. 바탕을 중립 회색으로 맞춘다. */

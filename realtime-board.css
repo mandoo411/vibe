@@ -1865,7 +1865,7 @@
         --rt-lw-chart-text: #555555;
       }
       [data-theme="dark"] {
-        --rt-lw-chart-bg: #131722;
+        --rt-lw-chart-bg: #161616;
         --rt-lw-chart-grid: rgba(255, 255, 255, 0.05);
         --rt-lw-chart-text: #aaaaaa;
       }
@@ -2090,7 +2090,7 @@
         font-variant-numeric: tabular-nums;
       }
       [data-theme="dark"] .rt-lw-ohlc-tooltip {
-        background: rgba(28, 32, 48, 0.98);
+        background: rgba(22, 22, 22, 0.98);
         border-color: rgba(255, 255, 255, 0.12);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
         color: var(--text-primary, #d1d4dc);
@@ -2164,22 +2164,15 @@
       }
       [data-theme="dark"] .rt-loading,
       .dark-mode .rt-loading {
-        background:
-          radial-gradient(circle at 18% 14%, rgba(16, 185, 129, 0.10), transparent 52%),
-          radial-gradient(circle at 78% 22%, rgba(16, 185, 129, 0.08), transparent 55%),
-          radial-gradient(circle at 40% 82%, rgba(255, 255, 255, 0.03), transparent 55%),
-          #000000;
+        background: #000000;
       }
+      /* 2026-09-20: 시우가 두 번째로 "이거도 녹색이네"라고 지적 -- ::before 레이어의
+         opacity:0.55 + blur(40px)가 살아있어서 옅게 줄여도 여전히 눈에 띄었다.
+         다크모드는 아예 색 없이 순수 검정만 남긴다. */
       [data-theme="dark"] .rt-loading::before,
       .dark-mode .rt-loading::before {
-        background: conic-gradient(
-          from 180deg,
-          rgba(16, 185, 129, 0) 0deg,
-          rgba(16, 185, 129, 0.14) 90deg,
-          rgba(16, 185, 129, 0.10) 180deg,
-          rgba(255, 255, 255, 0.04) 260deg,
-          rgba(16, 185, 129, 0) 360deg
-        );
+        background: none;
+        opacity: 0;
       }
       .rt-loading::before {
         content: "";

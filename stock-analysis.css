@@ -3424,7 +3424,7 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 [data-theme="dark"] .ai-search-card--hero .ai-search-card__input {
-  background: rgba(9, 17, 33, 0.66);
+  background: rgba(0, 0, 0, 0.45);
   border-color: var(--border-color);
 }
 .ai-search-card--hero .ai-search-card__input:focus {

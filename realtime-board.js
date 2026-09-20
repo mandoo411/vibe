@@ -998,7 +998,7 @@
   function getLwChartTheme() {
     const dark = isLwChartDarkTheme();
     return {
-      bg: dark ? "#131722" : "#ffffff",
+      bg: dark ? "#161616" : "#ffffff",
       textColor: dark ? "#aaaaaa" : "#555555",
       gridColor: dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
     };

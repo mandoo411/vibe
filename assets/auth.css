@@ -54,7 +54,7 @@
 
 .tm-auth-field input:focus {
   outline: none;
-  border-color: var(--accent-brand, #0f8387);
+  border-color: var(--accent-brand, #059669);
 }
 
 .tm-auth-submit {
@@ -62,12 +62,25 @@
   padding: 13px 14px;
   border: none;
   border-radius: 10px;
-  background: var(--gradient-primary, linear-gradient(135deg, #07264b, #0f8387));
+  background: var(--gradient-primary, linear-gradient(135deg, #047857, #059669));
   color: #fff;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   margin-top: 4px;
+}
+
+/* 2026-09-20: 라이트 테마에서는 --gradient-primary가 에메랄드 그린이라 바로 아래
+   네이버 로그인 버튼(공식 브랜드 색 #03c75a, 절대 변경 불가)과 초록끼리 겹쳐 보인다는
+   시우 피드백. 다크 테마는 --gradient-primary가 이미 검정 계열(zinc) 그라디언트라
+   문제가 없었으므로, 라이트 테마의 이 버튼만 같은 검정 계열로 맞춘다 — 전체 테마의
+   에메랄드 포인트는 다른 곳(링크, 포커스 링, 로고 등)에 그대로 유지된다. */
+html[data-theme="light"] .tm-auth-submit {
+  background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+}
+
+.tm-auth-submit:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 
 .tm-auth-submit:disabled {
@@ -94,8 +107,8 @@
 }
 
 .tm-auth-msg--ok {
-  background: rgba(15, 131, 135, 0.12);
-  color: var(--accent-brand, #0f8387);
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--accent-brand, #059669);
 }
 
 .tm-auth-switch {
@@ -106,7 +119,7 @@
 }
 
 .tm-auth-switch a {
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
   font-weight: 700;
   text-decoration: none;
 }
@@ -151,8 +164,8 @@
   border-radius: 999px;
   font-size: 13px;
   font-weight: 700;
-  background: rgba(15, 131, 135, 0.12);
-  color: var(--accent-brand, #0f8387);
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--accent-brand, #059669);
 }
 
 .tm-plan-badge--free {
@@ -181,7 +194,7 @@
 }
 
 .tm-btn--primary {
-  background: var(--gradient-primary, linear-gradient(135deg, #07264b, #0f8387));
+  background: var(--gradient-primary, linear-gradient(135deg, #047857, #059669));
   color: #fff;
 }
 
@@ -212,15 +225,15 @@
 }
 
 .tm-plan-card--highlight {
-  border-color: var(--accent-brand, #0f8387);
-  box-shadow: var(--interactive-hover-glow, 0 0 0 1px rgba(15, 131, 135, 0.3));
+  border-color: var(--accent-brand, #059669);
+  box-shadow: var(--interactive-hover-glow, 0 0 0 1px rgba(5, 150, 105, 0.3));
 }
 
 .tm-plan-card__badge {
   position: absolute;
   top: -12px;
   right: 20px;
-  background: var(--accent-brand, #0f8387);
+  background: var(--accent-brand, #059669);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -267,7 +280,7 @@
 
 .tm-plan-card__features li::before {
   content: "✓ ";
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
   font-weight: 700;
 }
 
@@ -284,7 +297,7 @@
 }
 
 .tm-plan-card--highlight .tm-plan-card__cta {
-  background: var(--gradient-primary, linear-gradient(135deg, #07264b, #0f8387));
+  background: var(--gradient-primary, linear-gradient(135deg, #047857, #059669));
   color: #fff;
 }
 
@@ -293,7 +306,7 @@
   margin: 0 auto 20px;
   padding: 12px 16px;
   border-radius: 10px;
-  background: rgba(212, 175, 55, 0.14);
+  background: rgba(16, 185, 129, 0.14);
   color: #8a6d1f;
   font-size: 13px;
   text-align: center;
@@ -492,7 +505,7 @@
 }
 
 .tm-auth-pwtoggle:hover {
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
 }
 
 /* ---------- 비밀번호 강도바 ---------- */
@@ -524,7 +537,7 @@
 }
 
 .tm-pwmeter[data-level="strong"] .tm-pwmeter__fill {
-  background: var(--accent-brand, #0f8387);
+  background: var(--accent-brand, #059669);
 }
 
 .tm-pwmeter__text {
@@ -582,7 +595,7 @@
   height: 17px;
   margin: 1px 0 0;
   flex: none;
-  accent-color: var(--accent-brand, #0f8387);
+  accent-color: var(--accent-brand, #059669);
   cursor: pointer;
 }
 
@@ -595,7 +608,7 @@
 }
 
 .tm-consent__req {
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
   font-weight: 700;
 }
 
@@ -611,7 +624,7 @@
 }
 
 .tm-consent__label a:hover {
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
 }
 
 .tm-consent__note {
@@ -639,7 +652,7 @@
 }
 
 .tm-auth-links a:hover {
-  color: var(--accent-brand, #0f8387);
+  color: var(--accent-brand, #059669);
   text-decoration: underline;
 }
 
@@ -656,7 +669,7 @@
   margin: 0 auto 14px;
   border-radius: 50%;
   border: 3px solid var(--border-color, rgba(0, 0, 0, 0.12));
-  border-top-color: var(--accent-brand, #0f8387);
+  border-top-color: var(--accent-brand, #059669);
   animation: tm-auth-spin 0.8s linear infinite;
 }
 

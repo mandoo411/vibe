@@ -1482,7 +1482,7 @@ details[open] .admin__summary {
 
 [data-theme="dark"] .dm-date-picker,
 .dark-mode .dm-date-picker {
-  background: color-mix(in srgb, var(--accent-brand, #059669) 8%, var(--card-bg, #1a1f35));
+  background: var(--card-bg, #161616);
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -1543,7 +1543,7 @@ details[open] .admin__summary {
 
 [data-theme="dark"] .dm-date-picker__nav,
 .dark-mode .dm-date-picker__nav {
-  background: var(--card-bg, #1a1f35);
+  background: var(--card-bg, #161616);
   border-color: rgba(255, 255, 255, 0.1);
   color: var(--text-body, #d1d5db);
 }

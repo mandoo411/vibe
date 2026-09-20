@@ -119,7 +119,7 @@
 
       [data-theme="dark"] .rt-tabs,
       .dark-mode .rt-tabs {
-        background: var(--panel-surface, #1a1f35);
+        background: var(--panel-surface, #161616);
         border-bottom-color: rgba(255, 255, 255, 0.1);
       }
       .rt-tabs-row-tabs {
@@ -655,7 +655,7 @@
       [data-theme="dark"] .rt-acc-close--mobile,
       .dark-mode .rt-acc-close--pill,
       .dark-mode .rt-acc-close--mobile {
-        background: var(--card-bg, #1a1f35);
+        background: var(--card-bg, #161616);
         border-color: rgba(255, 255, 255, 0.12);
         color: var(--text-primary, #f3f4f6);
       }
@@ -2156,10 +2156,21 @@
       [data-theme="dark"] .rt-loading,
       .dark-mode .rt-loading {
         background:
-          radial-gradient(circle at 18% 14%, rgba(85, 96, 232, 0.22), transparent 52%),
-          radial-gradient(circle at 78% 22%, rgba(5, 150, 105, 0.18), transparent 55%),
-          radial-gradient(circle at 40% 82%, rgba(255, 255, 255, 0.06), transparent 55%),
-          #0f1320;
+          radial-gradient(circle at 18% 14%, rgba(16, 185, 129, 0.10), transparent 52%),
+          radial-gradient(circle at 78% 22%, rgba(16, 185, 129, 0.08), transparent 55%),
+          radial-gradient(circle at 40% 82%, rgba(255, 255, 255, 0.03), transparent 55%),
+          #000000;
+      }
+      [data-theme="dark"] .rt-loading::before,
+      .dark-mode .rt-loading::before {
+        background: conic-gradient(
+          from 180deg,
+          rgba(16, 185, 129, 0) 0deg,
+          rgba(16, 185, 129, 0.14) 90deg,
+          rgba(16, 185, 129, 0.10) 180deg,
+          rgba(255, 255, 255, 0.04) 260deg,
+          rgba(16, 185, 129, 0) 360deg
+        );
       }
       .rt-loading::before {
         content: "";
@@ -2201,9 +2212,9 @@
       }
       [data-theme="dark"] .rt-loading__inner,
       .dark-mode .rt-loading__inner {
-        background: rgba(18, 24, 40, 0.72);
-        border-color: rgba(255, 255, 255, 0.10);
-        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42), inset 0 1px 1px rgba(255, 255, 255, 0.04);
+        background: rgba(22, 22, 22, 0.82);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.03);
       }
       .rt-loading__brand {
         display: flex;
@@ -2259,7 +2270,7 @@
         }
         50% {
           transform: translateY(-2px);
-          box-shadow: 0 14px 40px rgba(85, 96, 232, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.92);
+          box-shadow: 0 14px 40px rgba(16, 185, 129, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.92);
         }
       }
       .rt-loading__text {
@@ -2342,7 +2353,7 @@
       [data-theme="dark"] .page-tm-v2 .page--realtime .rt-tabs,
       .dark-mode .page-tm-v2 .page--daily-market .rt-tabs,
       .dark-mode .page-tm-v2 .page--realtime .rt-tabs {
-        background: var(--panel-surface, #1a1f35);
+        background: var(--panel-surface, #161616);
         border-bottom-color: rgba(255, 255, 255, 0.1);
       }
 

@@ -476,7 +476,7 @@ body.page-home-v2 {
 }
 
 [data-theme="dark"] .ai-access-gate__card {
-  background: var(--panel-surface, #1a1f35);
+  background: var(--panel-surface, #161616);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -1783,7 +1783,7 @@ body[data-theme="dark"] .home-ticker-bar__label {
 }
 
 [data-theme="dark"] .ai-search-card {
-  background: var(--panel-surface, #1a1f35);
+  background: var(--panel-surface, #161616);
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }

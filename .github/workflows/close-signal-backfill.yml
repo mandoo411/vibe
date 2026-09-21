@@ -1,0 +1,56 @@
+name: Close Signal Backfill
+
+# 종가시그널 성과 달력의 과거 칸을 채운다 — 저장된 1520 스캔 스냅샷으로 그날 상위 5종목을
+# 다시 뽑고, KIS 일봉에서 실제 익일 시가·고가·저가·종가를 받아 결과를 기록한다.
+#
+# 수동 실행 전용이다(정기 스케줄 없음). 새 채점 모델을 적용했거나 기록이 빈 구간이 생겼을 때만 돌린다.
+# 이미 실기록(source=live, phase=close)이 있는 날짜는 덮어쓰지 않는다.
+#
+# ⚠️ workflow_dispatch API는 이 PAT로 403이 난다 — 세션에서 돌릴 때는
+# POST /repos/mandoo411/vibe/dispatches 로 repository_dispatch를 쏜다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1이면 계산만 하고 저장 생략"
+        required: false
+        default: ""
+      limit_days:
+        description: "훑을 스캔 일수(기본 40)"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [trigger-close-signal-backfill]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: close-signal-backfill
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Run close signal backfill
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          BACKFILL_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}
+          BACKFILL_LIMIT_DAYS: ${{ github.event.inputs.limit_days || github.event.client_payload.limit_days || '40' }}
+        run: node scripts/close-signal-backfill.mjs

@@ -297,7 +297,7 @@ async function main() {
         console.log(`::warning::재료(DART) 조회 실패 — 재료 없이 채점 진행: ${error && error.message}`);
       }
 
-      const { ranked, stats } = rankCloseBetting(stocks, 10);
+      const { ranked, stats } = rankCloseBetting(stocks, 5);
       closeBetting = {
         ranked,
         stats,
@@ -305,8 +305,8 @@ async function main() {
         scoredAt: new Date().toISOString(),
       };
       console.log(
-        `[intraday] 종가베팅 랭킹 — 후보 ${stats.total} → 필터통과 ${stats.passed} → 상위 ${ranked.length}\n` +
-          ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 +${r.changePct}%`).join("\n")
+        `[intraday] 종가시그널 랭킹 — 후보 ${stats.total} → 필터통과 ${stats.passed} → 기법포착 ${stats.withStrategy} → 상위 ${ranked.length}\n` +
+          ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 합의${r.consensus} +${r.changePct}%`).join("\n")
       );
     } catch (error) {
       closeBetting = null;

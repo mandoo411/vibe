@@ -4643,12 +4643,16 @@ async function handleReports(req, res) {
  * 종목명과 근거를 지워서 보낸다 — 클라이언트에서 가리기만 하면 개발자도구로 다 보인다.
  */
 const CB_FREE_LIMIT = 3;
+const CB_HISTORY_MAX_DAYS = 120;
+
+const { STRATEGIES: CB_STRATEGIES } = require("../lib/close-signal-strategies.js");
 
 /** 잠긴 행 — 종목을 특정할 수 있는 값은 서버에서 지운다. */
 function cbMaskRow(row) {
   return {
     rank: row.rank,
     score: row.score,
+    consensus: row.consensus != null ? row.consensus : null,
     locked: true,
     market: row.market || null,
   };
@@ -4669,9 +4673,86 @@ async function cbLoadLatest() {
     asOfDate: row.as_of_date,
     scannedAt: row.scanned_at || cb.scoredAt || null,
     flowAsOfDate: (row.payload && row.payload.flowAsOfDate) || null,
-    lateStrengthBase: cb.lateStrengthBase || null,
     ranked: cb.ranked,
     stats: cb.stats || null,
+  };
+}
+
+/* ── 성과 기록 (2026-09-21 신설) ────────────────────────────────────────────
+ * scripts/close-betting-review.mjs가 close_signal_results에 하루 한 행씩 쌓는다.
+ * 여기서는 읽어서 전달만 한다 — 수익률을 화면이나 API가 다시 계산하지 않는다.
+ * 과거 기록은 잠그지 않는다. 이미 지나간 결과이고, 이 기능의 가치를 증명하는 유일한 근거다.
+ */
+function cbTrimPick(p) {
+  return {
+    rank: p.rank,
+    code: p.code,
+    name: p.name,
+    score: p.score,
+    consensus: p.consensus != null ? p.consensus : null,
+    strategies: Array.isArray(p.strategies) ? p.strategies.slice(0, 8) : [],
+    buyPrice: p.buyPrice,
+    open: p.open,
+    high: p.high,
+    low: p.low,
+    close: p.close,
+    openReturnPct: p.openReturnPct,
+    highReturnPct: p.highReturnPct,
+    lowReturnPct: p.lowReturnPct,
+    closeReturnPct: p.closeReturnPct,
+  };
+}
+
+function cbTrimDay(row) {
+  return {
+    asOfDate: row.as_of_date,
+    reviewDate: row.review_date,
+    phase: row.phase,
+    source: row.source,
+    pickCount: row.pick_count,
+    summary: row.summary || {},
+    picks: Array.isArray(row.picks) ? row.picks.map(cbTrimPick) : [],
+  };
+}
+
+async function cbLoadResults(limit) {
+  const n = Math.min(Number(limit) || CB_HISTORY_MAX_DAYS, CB_HISTORY_MAX_DAYS);
+  const res = await serviceRequest(
+    `close_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,review_date,phase,source,pick_count,picks,summary`,
+    { method: "GET" }
+  );
+  if (!res.ok) return [];
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows.map(cbTrimDay) : [];
+}
+
+/** 누적 통계. 종목 단위가 아니라 **거래일 단위 평균**도 같이 낸다 — 하루에 몰아서 난
+ * 수익이 전체 평균을 끌어올리는 착시를 막기 위함이다. */
+function cbBuildRecord(days) {
+  const picks = days.flatMap((d) => d.picks || []);
+  const wOpen = picks.filter((p) => p.openReturnPct != null);
+  const wClose = picks.filter((p) => p.closeReturnPct != null);
+  const mean = (arr) => (arr.length ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 100) / 100 : null);
+  const rate = (arr) => (arr.length ? Math.round((arr.filter((v) => v > 0).length / arr.length) * 1000) / 10 : null);
+  const dayOpen = days.map((d) => (d.summary || {}).avgOpenReturnPct).filter((v) => v != null);
+  const dayClose = days.map((d) => (d.summary || {}).avgCloseReturnPct).filter((v) => v != null);
+  return {
+    days: days.length,
+    tradedDaysOpen: dayOpen.length,
+    tradedDaysClose: dayClose.length,
+    picks: picks.length,
+    avgOpenReturnPct: mean(wOpen.map((p) => p.openReturnPct)),
+    openWinRatePct: rate(wOpen.map((p) => p.openReturnPct)),
+    avgCloseReturnPct: mean(wClose.map((p) => p.closeReturnPct)),
+    closeWinRatePct: rate(wClose.map((p) => p.closeReturnPct)),
+    avgHighReturnPct: mean(picks.filter((p) => p.highReturnPct != null).map((p) => p.highReturnPct)),
+    plusDaysOpen: dayOpen.filter((v) => v > 0).length,
+    plusDaysClose: dayClose.filter((v) => v > 0).length,
+    bestDay: dayClose.length
+      ? days
+          .filter((d) => (d.summary || {}).avgCloseReturnPct != null)
+          .sort((a, b) => b.summary.avgCloseReturnPct - a.summary.avgCloseReturnPct)[0].asOfDate
+      : null,
   };
 }
 
@@ -4685,6 +4766,14 @@ async function handleCloseBetting(req, res) {
   if (req.method !== "GET") return json(res, 405, { error: "Method not allowed" });
 
   try {
+    const view = String((req.query && req.query.view) || "").trim();
+
+    // 달력·누적 통계 전용 응답. 로그인 여부와 무관하게 전부 공개한다.
+    if (view === "history") {
+      const days = await cbLoadResults(req.query && req.query.days);
+      return json(res, 200, { days, record: cbBuildRecord(days) });
+    }
+
     let isPro = false;
     if (supabaseConfigured()) {
       const user = await getUserFromToken(bearerToken(req));
@@ -4694,10 +4783,14 @@ async function handleCloseBetting(req, res) {
       }
     }
 
-    const latest = await cbLoadLatest();
+    const [latest, recent] = await Promise.all([cbLoadLatest(), cbLoadResults(30)]);
+    const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
+    const record = cbBuildRecord(recent);
+    const yesterday = recent.length ? recent[0] : null;
+
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
-      return json(res, 200, { ready: false, isPro, ranked: [], total: 0 });
+      return json(res, 200, { ready: false, isPro, ranked: [], total: 0, strategies, yesterday, record });
     }
 
     const total = latest.ranked.length;
@@ -4710,12 +4803,14 @@ async function handleCloseBetting(req, res) {
       asOfDate: latest.asOfDate,
       scannedAt: latest.scannedAt,
       flowAsOfDate: latest.flowAsOfDate,
-      lateStrengthBase: latest.lateStrengthBase,
       total,
       visible,
       freeLimit: CB_FREE_LIMIT,
       stats: latest.stats,
       ranked,
+      strategies,
+      yesterday,
+      record,
     });
   } catch (error) {
     console.error("[close-betting] 실패", error && error.message);

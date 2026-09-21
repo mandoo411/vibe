@@ -1,6 +1,7 @@
 name: Close Betting Review
 
-# 종가베팅 랭킹 사후 기록 — 직전 거래일 상위 10종목의 **익일 시가 수익률**을 남긴다.
+# 종가시그널 성과 추적 — 직전 거래일 선정 5종목의 **익일 시가·종가 수익률**을 남긴다.
+# 평일 09:10(phase=open, 시가만) / 15:45(phase=close, 하루 결과 확정) 두 번 돈다.
 #
 # 왜 필요한가: lib/close-betting-score.js의 배점은 공개 연구 + 실전 통설로 세운 추정치다.
 # 이 기록이 매일 쌓여야 팩터별 적중률을 재고 배점을 고칠 수 있고, 화면에 "지난 N거래일
@@ -15,6 +16,10 @@ on:
     inputs:
       target_date:
         description: "다시 채점할 랭킹 날짜(YYYY-MM-DD). 비우면 가장 최근 랭킹"
+        required: false
+        default: ""
+      phase:
+        description: "open = 익일 시가만 기록(09:10) / close = 장 마감 후 시가·고가·저가·종가 확정(15:45). 비우면 시각으로 자동 판정"
         required: false
         default: ""
       dry_run:
@@ -74,5 +79,6 @@ jobs:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           REVIEW_TARGET_DATE: ${{ github.event.inputs.target_date || github.event.client_payload.target_date || '' }}
+          REVIEW_PHASE: ${{ github.event.inputs.phase || github.event.client_payload.phase || 'auto' }}
           REVIEW_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}
         run: node scripts/close-betting-review.mjs

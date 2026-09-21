@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#07264b" />
-    <title>TotalMoney AI · 종가시그널 랭킹</title>
-    <meta name="description" content="거래대금·종가 강도·차트 위치를 점수로 매긴 조건검색 결과 상위 종목. 매일 장 마감 직전 기준." />
+    <meta name="theme-color" content="#000000" />
+    <title>TotalMoney AI · 종가시그널</title>
+    <meta name="description" content="9가지 매매기법이 동시에 가리킨 종목만 5개. 다음 거래일 시가·종가 결과를 매일 기록해 달력으로 보여줍니다." />
     <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=6">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=6">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=6">
@@ -28,22 +28,22 @@
     <link rel="stylesheet" href="./typography.css?v=1" />
     <style>
       /* ══════════════════════════════════════════════════════════════════════
-         종가베팅 랭킹 — 2026-09-12 디자인 통일.
-         매매시그널(.ts-*)과 같은 언어를 쓴다: 히어로 배너(상단 3px 액센트 바 +
-         kicker 필 + 23px 제목) → 섹션 헤더(아이콘 타일) → 카드. 토큰 이름만 --cb-*로
-         바꿔 같은 값을 참조하므로, 두 페이지가 나란히 놓여도 다른 사이트처럼 안 보인다.
+         종가시그널 — 2026-09-21 전면 개편.
+         화면이 답해야 하는 질문이 셋으로 늘었다:
+           ① 오늘 뭘 사야 하나 (상위 5종목 + 어떤 기법에 걸렸는지)
+           ② 어제 산 건 어떻게 됐나 (시가에 팔았다면 / 종가까지 들고 있었다면)
+           ③ 이 기능은 믿을 만한가 (거래일별 기록이 쌓인 달력 + 누적 승률)
+         그래서 섹션을 [오늘의 시그널] → [어제 결과] → [성과 달력] 순으로 둔다.
+         제일 위 히어로에는 누적 성적을 먼저 박는다 — 근거 없는 랭킹은 아무도 안 믿는다.
 
-         점수 막대 규칙(데이터 시각화 원칙):
+         수익/손실 색은 국내 관례(상승 빨강·하락 파랑)를 따른다. theme.css의
+         --up-color/--down-color를 그대로 쓰고 여기서 새로 정의하지 않는다.
+
+         점수 막대 규칙(v1에서 이어받음):
           · 크기 비교는 한 가지 색(액센트)만 쓴다 — 순위별로 색을 바꾸지 않는다.
-            색이 순위를 뜻하는 것처럼 보이면 실제 점수 차이를 오독하게 된다.
-          · 채워지지 않은 트랙은 회색이 아니라 **같은 색의 옅은 단계**로 둔다.
-            그래야 막대 전체가 하나의 눈금으로 읽힌다.
-          · 막대 끝은 4px 라운드, 시작점은 항상 왼쪽 기준선에 붙인다.
-          · 숫자는 세로로 줄맞춤돼야 하므로 tabular(고정폭) 자릿수를 쓴다.
-          · 색은 보조 수단일 뿐이라, 모든 값에 숫자 라벨을 함께 붙인다.
+          · 채워지지 않은 트랙은 회색이 아니라 같은 색의 옅은 단계로 둔다.
+          · 색은 보조 수단이라 모든 값에 숫자 라벨을 함께 붙인다.
          ══════════════════════════════════════════════════════════════════════ */
-      /* masthead 제목은 h1이라 브라우저 기본 margin(18.76px)이 붙어 배너가 다른 페이지보다
-         31px 높아졌다. 다른 페이지는 각자 스타일에서 이미 눌러두고 있어 여기서도 맞춘다. */
       .page-close-betting .masthead__title { margin: 0; }
 
       .cb-body {
@@ -53,7 +53,7 @@
         padding-bottom: 56px;
 
         --cb-r: 16px;
-        --cb-accent: var(--accent, #0f8387);
+        --cb-accent: var(--accent, #10b981);
         --cb-soft: color-mix(in srgb, var(--cb-accent) 12%, transparent);
         --cb-soft-2: color-mix(in srgb, var(--cb-accent) 7%, transparent);
         --cb-track: color-mix(in srgb, var(--cb-accent) 15%, transparent);
@@ -61,233 +61,160 @@
         --cb-shadow: 0 1px 2px rgba(10, 20, 40, 0.04), 0 18px 40px -26px rgba(10, 20, 40, 0.3);
         --cb-surface: var(--card-bg, var(--bg-secondary));
         --cb-inset: var(--bg-tertiary);
-        --cb-up: #d64545;
+        --cb-up: var(--up-color, #e24b4a);
+        --cb-down: var(--down-color, #3b82f6);
+        --cb-mono: var(--font-mono, "JetBrains Mono", monospace);
       }
       [data-theme="dark"] .cb-body {
         --cb-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 18px 44px -26px rgba(0, 0, 0, 0.9);
         --cb-track: color-mix(in srgb, var(--cb-accent) 22%, transparent);
-        --cb-up: #ff6b6b;
       }
+
+      .cb-num { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; }
+      .cb-up { color: var(--cb-up); }
+      .cb-down { color: var(--cb-down); }
+      .cb-flat { color: var(--text-muted-ui, var(--text-secondary)); }
 
       /* ── 히어로 ─────────────────────────────────────────────────────────── */
       .cb-hero {
-        position: relative;
-        overflow: hidden;
-        margin: 0 0 18px;
-        padding: 24px 26px 22px;
-        border-radius: var(--cb-r);
-        border: 1px solid var(--cb-line);
-        background:
-          radial-gradient(140% 180% at 0% 0%, var(--cb-soft) 0%, transparent 58%),
-          radial-gradient(120% 150% at 100% 10%, var(--cb-soft-2) 0%, transparent 55%),
-          linear-gradient(140deg, var(--cb-surface) 0%, var(--bg-primary) 100%);
+        position: relative; overflow: hidden;
+        margin: 0 0 18px; padding: 24px 26px 22px;
+        border-radius: var(--cb-r); border: 1px solid var(--cb-line);
+        background: linear-gradient(140deg, var(--cb-surface) 0%, var(--bg-primary) 100%);
         box-shadow: var(--cb-shadow);
       }
       .cb-hero::after {
-        content: "";
-        position: absolute;
-        inset: 0 0 auto 0;
-        height: 3px;
+        content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
         background: linear-gradient(90deg, var(--cb-accent) 0%, color-mix(in srgb, var(--cb-accent) 18%, transparent) 72%, transparent 100%);
       }
-      [data-theme="dark"] .cb-hero {
-        background: var(--cb-surface);
-      }
+      [data-theme="dark"] .cb-hero { background: var(--cb-surface); }
       .cb-hero__kicker {
         display: inline-flex; align-items: center; gap: 7px;
-        margin: 0 0 10px; padding: 4px 11px 4px 8px;
-        border-radius: 999px;
-        border: 1px solid var(--cb-line);
-        background: var(--cb-soft);
-        color: var(--cb-accent);
+        margin: 0 0 10px; padding: 4px 11px 4px 8px; border-radius: 999px;
+        border: 1px solid var(--cb-line); background: var(--cb-soft); color: var(--cb-accent);
         font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
       }
       .cb-hero__kicker i { font-size: 14px; }
       .cb-hero__title {
-        margin: 0 0 10px;
-        font-size: 23px; font-weight: 800; line-height: 1.42; letter-spacing: -0.025em;
-        color: var(--text-title, var(--text-primary));
-        word-break: keep-all;
+        margin: 0 0 10px; font-size: 23px; font-weight: 800; line-height: 1.42;
+        letter-spacing: -0.025em; color: var(--text-title, var(--text-primary)); word-break: keep-all;
       }
       .cb-hero__title em { font-style: normal; color: var(--cb-accent); }
       .cb-hero__desc {
-        margin: 0; max-width: 660px;
-        font-size: 14px; line-height: 1.8; color: var(--text-secondary);
-        word-break: keep-all;
-      }
-      .cb-hero__desc b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
-      .cb-axes {
-        display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
-        margin: 18px 0 0; padding: 0; list-style: none;
-      }
-      .cb-axis {
-        display: flex; align-items: flex-start; gap: 11px;
-        padding: 12px 14px; border-radius: 12px;
-        border: 1px solid var(--border-color);
-        background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
-      }
-      .cb-axis__pts {
-        flex: 0 0 auto; min-width: 34px; height: 24px; padding: 0 7px;
-        border-radius: 8px; display: grid; place-items: center;
-        background: var(--cb-soft); color: var(--cb-accent);
-        font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
-      }
-      .cb-axis__txt { min-width: 0; }
-      .cb-axis__name {
-        display: block; font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em;
-        color: var(--text-title, var(--text-primary));
-      }
-      .cb-axis__sub {
-        display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.55;
-        color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all;
-      }
-
-      /* ── 섹션 헤더 ──────────────────────────────────────────────────────── */
-      .cb-sec { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; flex-wrap: wrap; }
-      .cb-sec__icon {
-        flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px;
-        display: grid; place-items: center;
-        background: var(--cb-soft); border: 1px solid var(--cb-line);
-        color: var(--cb-accent); font-size: 19px;
-      }
-      .cb-sec__txt { min-width: 0; flex: 1 1 260px; }
-      .cb-sec__title {
-        margin: 0; font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em;
-        color: var(--text-title, var(--text-primary));
-      }
-      .cb-sec__cap {
-        margin: 3px 0 0; font-size: 12.5px; line-height: 1.6;
+        margin: 0; max-width: 680px; font-size: 14px; line-height: 1.8;
         color: var(--text-secondary); word-break: keep-all;
       }
+      .cb-hero__desc b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+
+      /* 누적 성적 — 숫자 3칸. 값이 없으면 칸 자체를 그리지 않는다(빈 숫자를 보여주지 않는다). */
+      .cb-record { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 18px 0 0; }
+      .cb-rec {
+        padding: 13px 15px; border-radius: 12px; border: 1px solid var(--border-color);
+        background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+      }
+      .cb-rec__k { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-rec__v {
+        display: block; margin-top: 5px; font-family: var(--cb-mono); font-variant-numeric: tabular-nums;
+        font-size: 21px; font-weight: 700; letter-spacing: -0.02em; color: var(--text-title, var(--text-primary));
+      }
+      .cb-rec__s { display: block; margin-top: 3px; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+
+      /* ── 섹션 헤더 ──────────────────────────────────────────────────────── */
+      .cb-sec { display: flex; align-items: center; gap: 12px; margin: 26px 0 16px; flex-wrap: wrap; }
+      .cb-sec:first-of-type { margin-top: 0; }
+      .cb-sec__icon {
+        flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center;
+        background: var(--cb-soft); border: 1px solid var(--cb-line); color: var(--cb-accent); font-size: 19px;
+      }
+      .cb-sec__txt { min-width: 0; flex: 1 1 260px; }
+      .cb-sec__title { margin: 0; font-size: 16.5px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-title, var(--text-primary)); }
+      .cb-sec__cap { margin: 3px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all; }
       .cb-stamp {
-        flex: 0 0 auto; margin-left: auto;
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 7px 12px; border-radius: 999px;
-        border: 1px solid var(--border-color); background: var(--cb-inset);
-        font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-size: 11.5px; font-variant-numeric: tabular-nums;
+        flex: 0 0 auto; margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
+        padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--cb-inset);
+        font-family: var(--cb-mono); font-size: 11.5px; font-variant-numeric: tabular-nums;
         color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap;
       }
       .cb-stamp b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
 
       /* ── 카드 ───────────────────────────────────────────────────────────── */
       .cb-card {
-        position: relative; background: var(--cb-surface);
-        border: 1px solid var(--border-color); border-radius: var(--cb-r);
-        padding: 20px 22px 22px; margin-bottom: 16px; box-shadow: var(--cb-shadow);
+        position: relative; background: var(--cb-surface); border: 1px solid var(--border-color);
+        border-radius: var(--cb-r); padding: 20px 22px 22px; margin-bottom: 16px; box-shadow: var(--cb-shadow);
       }
 
       /* ── 랭킹 행 ────────────────────────────────────────────────────────── */
       .cb-list { display: flex; flex-direction: column; gap: 8px; }
       .cb-row {
-        border: 1px solid var(--border-color); border-radius: 13px;
-        background: var(--bg-primary); overflow: hidden;
-        transition: border-color .15s ease, box-shadow .15s ease;
+        border: 1px solid var(--border-color); border-radius: 13px; background: var(--bg-primary);
+        overflow: hidden; transition: border-color .15s ease;
       }
       .cb-row:hover { border-color: var(--cb-line); }
       .cb-row[data-locked="true"]:hover { border-color: var(--border-color); }
       .cb-row[data-open="true"] { border-color: var(--cb-line); }
-
       .cb-main {
-        display: grid; grid-template-columns: 34px minmax(0, 1fr) 152px;
-        gap: 16px; align-items: center;
+        display: grid; grid-template-columns: 34px minmax(0, 1fr) 152px; gap: 16px; align-items: center;
         width: 100%; box-sizing: border-box; padding: 13px 16px;
-        background: none; border: 0; text-align: left; color: inherit; font: inherit;
-        cursor: pointer;
+        background: none; border: 0; text-align: left; color: inherit; font: inherit; cursor: pointer;
       }
       .cb-row[data-locked="true"] .cb-main { cursor: default; }
       .cb-rank {
         width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
         background: var(--cb-inset); border: 1px solid var(--border-color);
-        font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+        font-family: var(--cb-mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
         color: var(--text-secondary);
       }
-      /* 상위 3개는 무료로 공개되는 구간이라 테두리로만 구분한다 —
-         색으로 강조하면 점수 막대의 색과 섞여 "순위=색"으로 오독된다. */
-      .cb-row:nth-child(-n + 3) .cb-rank {
-        border-color: var(--cb-line); background: var(--cb-soft); color: var(--cb-accent);
-      }
-
+      .cb-row:nth-child(-n + 3) .cb-rank { border-color: var(--cb-line); background: var(--cb-soft); color: var(--cb-accent); }
       .cb-idn { min-width: 0; }
-      .cb-name {
-        font-size: 15.5px; font-weight: 700; letter-spacing: -0.015em;
-        color: var(--text-title, var(--text-primary));
-      }
-      .cb-code {
-        margin-left: 7px; font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-size: 11px; font-weight: 500; color: var(--text-muted-ui, var(--text-secondary));
-      }
+      .cb-name { font-size: 15.5px; font-weight: 700; letter-spacing: -0.015em; color: var(--text-title, var(--text-primary)); }
+      .cb-code { margin-left: 7px; font-family: var(--cb-mono); font-size: 11px; font-weight: 500; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-meta { margin-top: 5px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 9px; font-size: 12px; }
-      .cb-meta .up {
-        color: var(--cb-up); font-weight: 700;
-        font-family: var(--font-mono, "JetBrains Mono", monospace); font-variant-numeric: tabular-nums;
-      }
-      .cb-meta em {
-        font-style: normal; font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-variant-numeric: tabular-nums; color: var(--text-secondary);
-      }
-      .cb-meta .sector {
-        padding: 1.5px 7px; border-radius: 5px; background: var(--cb-inset);
-        font-size: 11px; color: var(--text-muted-ui, var(--text-secondary));
-      }
+      .cb-meta .up { color: var(--cb-up); font-weight: 700; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; }
+      .cb-meta em { font-style: normal; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+      .cb-meta .sector { padding: 1.5px 7px; border-radius: 5px; background: var(--cb-inset); font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-dot { color: var(--border-color); }
+
+      /* 기법 칩 — "왜 이 종목인가"의 첫 번째 답. 접기 전에도 보여야 한다. */
+      .cb-chips { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 5px; }
+      .cb-chip {
+        padding: 2.5px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap;
+        border: 1px solid var(--cb-line); background: var(--cb-soft); color: var(--cb-accent);
+      }
+      .cb-chip--count { border-style: dashed; background: transparent; }
 
       .cb-scorebox { text-align: right; }
       .cb-score {
-        display: block;
-        font-family: var(--font-mono, "JetBrains Mono", monospace);
-        font-size: 25px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-        color: var(--text-title, var(--text-primary));
+        display: block; font-family: var(--cb-mono); font-size: 25px; font-weight: 700; line-height: 1;
+        letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--text-title, var(--text-primary));
       }
       .cb-score span { font-size: 11.5px; font-weight: 500; color: var(--text-muted-ui, var(--text-secondary)); margin-left: 3px; }
-      /* 눈금(track)은 회색이 아니라 액센트의 옅은 단계 — 막대 전체가 하나의 자로 읽힌다 */
-      /* span으로 두면 inline이라 height가 무시된다 — 반드시 블록 */
       .cb-bar { display: block; margin-top: 8px; height: 6px; border-radius: 4px; background: var(--cb-track); overflow: hidden; }
       .cb-bar i { display: block; height: 100%; border-radius: 4px; background: var(--cb-accent); }
 
       /* ── 상세(팩터 근거) ────────────────────────────────────────────────── */
       .cb-detail { display: none; padding: 2px 16px 16px; }
       .cb-row[data-open="true"] .cb-detail { display: block; }
-      .cb-groups {
-        display: grid; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr));
-        gap: 8px; padding-top: 14px; border-top: 1px solid var(--border-color);
-      }
+      .cb-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(238px, 1fr)); gap: 8px; padding-top: 14px; border-top: 1px solid var(--border-color); }
       .cb-group { padding: 13px 14px; border-radius: 11px; background: var(--cb-inset); }
-      .cb-group__head {
-        display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
-        margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
-      }
+      .cb-group__head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
       .cb-group__name { font-size: 12px; font-weight: 800; letter-spacing: .03em; color: var(--text-title, var(--text-primary)); }
-      .cb-group__pts {
-        font-family: var(--font-mono, "JetBrains Mono", monospace); font-size: 11.5px; font-weight: 700;
-        font-variant-numeric: tabular-nums; color: var(--cb-accent);
-      }
+      .cb-group__pts { font-family: var(--cb-mono); font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--cb-accent); }
       .cb-f { margin-bottom: 9px; }
       .cb-f:last-child { margin-bottom: 0; }
       .cb-f__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; }
       .cb-f__name { font-weight: 600; color: var(--text-secondary); }
-      .cb-f__pts {
-        font-family: var(--font-mono, "JetBrains Mono", monospace); font-size: 11px; font-weight: 700;
-        font-variant-numeric: tabular-nums; color: var(--text-title, var(--text-primary)); white-space: nowrap;
-      }
+      .cb-f__pts { font-family: var(--cb-mono); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-title, var(--text-primary)); white-space: nowrap; }
       .cb-f__pts small { font-weight: 400; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-f__bar { display: block; margin: 5px 0 3px; height: 4px; border-radius: 3px; background: var(--cb-track); overflow: hidden; }
       .cb-f__bar i { display: block; height: 100%; border-radius: 3px; background: var(--cb-accent); }
-      .cb-f__val {
-        font-family: var(--font-mono, "JetBrains Mono", monospace); font-size: 11px;
-        font-variant-numeric: tabular-nums; color: var(--text-muted-ui, var(--text-secondary));
-      }
-      .cb-pen, .cb-missing {
-        margin-top: 12px; font-size: 11.5px; line-height: 1.7; word-break: keep-all;
-      }
+      .cb-f__val { font-family: var(--cb-mono); font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-muted-ui, var(--text-secondary)); line-height: 1.6; }
+      .cb-f__note { display: block; margin-top: 2px; font-family: inherit; font-size: 10.5px; color: var(--text-muted-ui, var(--text-secondary)); opacity: .8; }
+      .cb-pen, .cb-missing { margin-top: 12px; font-size: 11.5px; line-height: 1.7; word-break: keep-all; }
       .cb-pen { color: var(--cb-up); font-weight: 600; }
       .cb-missing { color: var(--text-muted-ui, var(--text-secondary)); }
 
       /* ── 잠금 / CTA ─────────────────────────────────────────────────────── */
-      .cb-locked .cb-name, .cb-locked .cb-code, .cb-locked .cb-meta { filter: blur(6px); user-select: none; }
+      .cb-locked .cb-name, .cb-locked .cb-code, .cb-locked .cb-meta, .cb-locked .cb-chips { filter: blur(6px); user-select: none; }
       .cb-cta {
         display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
         margin-top: 10px; padding: 16px 18px; border-radius: 13px;
@@ -295,49 +222,118 @@
         font-size: 13px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all;
       }
       .cb-cta b { color: var(--text-title, var(--text-primary)); }
-      .cb-cta a {
-        padding: 9px 18px; border-radius: 999px; background: var(--cb-accent);
-        color: #fff; text-decoration: none; font-weight: 700; font-size: 13px; white-space: nowrap;
-      }
-      .cb-empty {
-        padding: 52px 20px; text-align: center; color: var(--text-secondary);
-        font-size: 14px; line-height: 1.9; word-break: keep-all;
-      }
+      .cb-cta a { padding: 9px 18px; border-radius: 999px; background: var(--cb-accent); color: #fff; text-decoration: none; font-weight: 700; font-size: 13px; white-space: nowrap; }
+      .cb-empty { padding: 44px 20px; text-align: center; color: var(--text-secondary); font-size: 13.5px; line-height: 1.9; word-break: keep-all; }
       .cb-empty i { display: block; font-size: 30px; color: var(--cb-accent); opacity: .55; margin-bottom: 12px; }
+
+      /* ── 성적표 (전일 결과) ─────────────────────────────────────────────── */
+      .cb-verdict {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px;
+        padding: 14px 16px; margin-bottom: 14px; border-radius: 12px;
+        border: 1px solid var(--border-color); background: var(--cb-inset);
+      }
+      .cb-verdict__item { display: flex; flex-direction: column; gap: 3px; }
+      .cb-verdict__k { font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-verdict__v { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 700; }
+      .cb-verdict__tag {
+        margin-left: auto; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        border: 1px solid var(--border-color); color: var(--text-muted-ui, var(--text-secondary));
+      }
+
+      /* 좁은 화면에서 첫 칸이 쥐어짜여 "산일\n전기"처럼 글자가 세로로 찢어졌다.
+         min-width를 줘서 칸을 줄이는 대신 .cb-scroll이 가로로 스크롤되게 한다. */
+      .cb-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 13px; }
+      .cb-table th, .cb-table td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+      .cb-table th {
+        font-size: 11px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary));
+        border-bottom-color: var(--cb-line); text-align: right;
+      }
+      .cb-table th:first-child, .cb-table td:first-child { text-align: left; }
+      .cb-table td.cb-t-name { font-weight: 700; color: var(--text-title, var(--text-primary)); }
+      .cb-table td small { display: block; margin-top: 2px; font-weight: 400; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-table tbody tr:last-child td { border-bottom: 0; }
+      .cb-table .cb-ret { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-weight: 700; }
+      .cb-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      /* ── 성과 달력 ──────────────────────────────────────────────────────── */
+      .cb-calhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+      .cb-calnav { display: flex; align-items: center; gap: 6px; }
+      .cb-calnav button {
+        width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+        border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary);
+        cursor: pointer; font-size: 15px;
+      }
+      .cb-calnav button:disabled { opacity: .35; cursor: default; }
+      .cb-calnav strong { min-width: 104px; text-align: center; font-family: var(--cb-mono); font-size: 14px; font-weight: 700; color: var(--text-title, var(--text-primary)); }
+      .cb-seg { margin-left: auto; display: inline-flex; padding: 3px; border-radius: 999px; background: var(--cb-inset); border: 1px solid var(--border-color); }
+      .cb-seg button {
+        padding: 6px 14px; border-radius: 999px; border: 0; background: none; cursor: pointer;
+        font-size: 12px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary));
+      }
+      .cb-seg button[aria-pressed="true"] { background: var(--cb-accent); color: #fff; }
+
+      .cb-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+      .cb-cal__dow { padding: 4px 0 6px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-cal__dow:first-child { color: var(--cb-up); }
+      .cb-cal__dow:last-child { color: var(--cb-down); }
+      .cb-cell {
+        position: relative; min-height: 62px; padding: 6px 7px; border-radius: 10px;
+        border: 1px solid var(--border-color); background: var(--bg-primary);
+        display: flex; flex-direction: column; gap: 3px; text-align: left;
+        font: inherit; color: inherit; cursor: default;
+      }
+      .cb-cell--pad { border: 0; background: none; min-height: 0; }
+      .cb-cell--none { background: var(--cb-inset); border-style: dashed; opacity: .55; }
+      .cb-cell--data { cursor: pointer; }
+      .cb-cell--data:hover { border-color: var(--cb-accent); }
+      .cb-cell[aria-pressed="true"] { border-color: var(--cb-accent); box-shadow: 0 0 0 1px var(--cb-accent) inset; }
+      .cb-cell__d { font-family: var(--cb-mono); font-size: 11px; font-weight: 600; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-cell__v { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 14.5px; font-weight: 700; letter-spacing: -0.02em; }
+      .cb-cell__w { font-size: 10.5px; color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap; }
+      .cb-cell__flag { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted-ui, var(--text-secondary)); opacity: .45; }
+      .cb-callegend { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-callegend span { display: inline-flex; align-items: center; gap: 5px; }
+      .cb-callegend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+      .cb-daydetail { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color); }
+      .cb-daydetail__h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
+      .cb-daydetail__h h3 { margin: 0; font-size: 14px; font-weight: 800; color: var(--text-title, var(--text-primary)); }
+      .cb-daydetail__h span { font-size: 12px; color: var(--text-muted-ui, var(--text-secondary)); }
+
+      /* ── 기법 카탈로그 ──────────────────────────────────────────────────── */
+      .cb-strats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+      .cb-strat { padding: 11px 13px; border-radius: 11px; border: 1px solid var(--border-color); background: var(--cb-inset); }
+      .cb-strat b { display: block; font-size: 12.5px; font-weight: 700; color: var(--text-title, var(--text-primary)); }
+      .cb-strat span { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.6; color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all; }
 
       /* ── 하단 안내 ──────────────────────────────────────────────────────── */
       .cb-foot { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
-      .cb-foot h3 {
-        margin: 0 0 9px; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em;
-        color: var(--text-title, var(--text-primary));
-      }
-      .cb-foot p {
-        margin: 0 0 9px; font-size: 11.5px; line-height: 1.85;
-        color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all;
-      }
+      .cb-foot h3 { margin: 0 0 9px; font-size: 12.5px; font-weight: 800; letter-spacing: -0.01em; color: var(--text-title, var(--text-primary)); }
+      .cb-foot p { margin: 0 0 9px; font-size: 11.5px; line-height: 1.85; color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all; }
       .cb-foot p:last-child { margin-bottom: 0; }
       .cb-foot b { color: var(--text-secondary); }
       .cb-sched { display: grid; grid-template-columns: 82px 1fr; gap: 5px 12px; margin: 0; font-size: 11.5px; }
-      .cb-sched dt {
-        font-family: var(--font-mono, "JetBrains Mono", monospace); font-variant-numeric: tabular-nums;
-        color: var(--cb-accent); font-weight: 700;
-      }
+      .cb-sched dt { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; color: var(--cb-accent); font-weight: 700; }
       .cb-sched dd { margin: 0; color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all; }
 
       @media (max-width: 720px) {
-        .cb-axes { grid-template-columns: 1fr; }
         .cb-hero { padding: 20px 18px 18px; }
         .cb-card { padding: 16px 14px 18px; }
         .cb-stamp { margin-left: 0; }
+        .cb-seg { margin-left: 0; }
+        .cb-cell { min-height: 54px; padding: 5px; }
+        .cb-cell__v { font-size: 12px; letter-spacing: -0.04em; }
+        .cb-cell__w { font-size: 9.5px; }
+        .cb-cell__w em { display: none; }
       }
       @media (max-width: 560px) {
         .cb-main { grid-template-columns: 30px minmax(0, 1fr); row-gap: 11px; padding: 12px 13px; }
         .cb-rank { width: 30px; height: 30px; font-size: 12px; }
         .cb-scorebox { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; text-align: left; }
-        .cb-score { flex: 0 0 auto; }
-        .cb-score { font-size: 21px; }
+        .cb-score { flex: 0 0 auto; font-size: 21px; }
         .cb-bar { margin-top: 0; flex: 1 1 auto; }
         .cb-detail { padding: 2px 13px 14px; }
+        .cb-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
     </style>
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
@@ -397,81 +393,116 @@
         <div class="page">
           <header class="masthead masthead--title-only">
             <div class="masthead__copy">
-              <p class="masthead__kicker">CLOSE BETTING</p>
-              <h1 class="masthead__title">종가시그널 랭킹</h1>
+              <p class="masthead__kicker">CLOSE SIGNAL</p>
+              <h1 class="masthead__title">종가시그널</h1>
             </div>
           </header>
 
           <div class="cb-body">
-          <section class="cb-hero" aria-label="종가시그널 랭킹 소개">
-            <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>채점 기준</p>
-            <h2 class="cb-hero__title">오늘 장 막판에 강했던 종목을 <em>점수순으로</em> 정리했습니다</h2>
-            <p class="cb-hero__desc">
-              장 마감 직전(15:20) 시세로 거래대금 상위 종목을 채점한 <b>조건검색 결과</b>입니다.
-              하룻밤 뒤 시가까지만 보는 기준이라 <b>당일 상승률은 높을수록 점수가 높지 않습니다</b> —
-              +5~12%가 가장 높고 +20%를 넘으면 오히려 감점입니다.
-            </p>
-            <ul class="cb-axes">
-              <li class="cb-axis">
-                <span class="cb-axis__pts">35점</span>
-                <span class="cb-axis__txt">
-                  <strong class="cb-axis__name">수급 강도</strong>
-                  <span class="cb-axis__sub">시총 대비 거래대금 · 거래량 급증 · 외국인·기관</span>
-                </span>
-              </li>
-              <li class="cb-axis">
-                <span class="cb-axis__pts">25점</span>
-                <span class="cb-axis__txt">
-                  <strong class="cb-axis__name">종가 강도</strong>
-                  <span class="cb-axis__sub">고점 대비 종가 위치 · 등락률 구간 · 캔들 · 막판 흐름</span>
-                </span>
-              </li>
-              <li class="cb-axis">
-                <span class="cb-axis__pts">20점</span>
-                <span class="cb-axis__txt">
-                  <strong class="cb-axis__name">차트 위치</strong>
-                  <span class="cb-axis__sub">이평 정배열 · 신고가 · 이격도 · 최근 5일</span>
-                </span>
-              </li>
-            </ul>
-          </section>
+            <section class="cb-hero" aria-label="종가시그널 소개">
+              <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>선정 기준</p>
+              <h2 class="cb-hero__title">9가지 매매기법이 <em>동시에 가리킨</em> 종목만 5개</h2>
+              <p class="cb-hero__desc">
+                장 마감 직전(15:20) 시세로 거래대금 상위 400종목을 훑어, 성격이 다른 매매기법 9종을
+                각각 돌립니다. <b>여러 기법이 겹쳐서 잡아낸 종목</b>일수록 점수가 높아지고, 그중 상위
+                5종목만 남깁니다. 선정된 종목은 다음 거래일 시가·종가 결과를 <b>매일 기록</b>합니다.
+              </p>
+              <div class="cb-record" id="cbRecord" aria-label="누적 성적"></div>
+            </section>
 
-          <div class="cb-sec">
-            <span class="cb-sec__icon"><i class="ti ti-list-numbers" aria-hidden="true"></i></span>
-            <span class="cb-sec__txt">
-              <h2 class="cb-sec__title">점수 상위 종목</h2>
-              <p class="cb-sec__cap">종목을 누르면 어떤 항목에서 몇 점을 받았는지 볼 수 있습니다.</p>
-            </span>
-            <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
-          </div>
+            <div class="cb-sec">
+              <span class="cb-sec__icon"><i class="ti ti-list-numbers" aria-hidden="true"></i></span>
+              <span class="cb-sec__txt">
+                <h2 class="cb-sec__title">오늘의 시그널</h2>
+                <p class="cb-sec__cap">종목을 누르면 어떤 기법에 어떤 값으로 걸렸는지 볼 수 있습니다.</p>
+              </span>
+              <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
+            </div>
 
-          <div class="cb-card">
-            <div class="cb-list" id="cbList">
+            <div class="cb-card">
+              <div class="cb-list" id="cbList">
+                <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+              </div>
+            </div>
+
+            <div class="cb-sec">
+              <span class="cb-sec__icon"><i class="ti ti-report-analytics" aria-hidden="true"></i></span>
+              <span class="cb-sec__txt">
+                <h2 class="cb-sec__title">직전 선정 결과</h2>
+                <p class="cb-sec__cap">선정일 종가에 샀다면, 다음 거래일 시초가와 종가에 각각 얼마가 됐는지입니다.</p>
+              </span>
+              <span class="cb-stamp" id="cbYdStamp">—</span>
+            </div>
+
+            <div class="cb-card" id="cbYesterday">
               <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
             </div>
-          </div>
 
-          <div class="cb-card cb-foot">
-            <div>
-              <h3>계산·갱신 시각</h3>
-              <dl class="cb-sched">
-                <dt>15:20</dt><dd>거래대금 상위 후보를 당일 시세·수급으로 갱신하고 채점 → 이 화면 갱신</dd>
-                <dt>익일 09:10</dt><dd>전일 순위의 시가 대비 결과를 기록</dd>
-              </dl>
+            <div class="cb-sec">
+              <span class="cb-sec__icon"><i class="ti ti-calendar-stats" aria-hidden="true"></i></span>
+              <span class="cb-sec__txt">
+                <h2 class="cb-sec__title">성과 달력</h2>
+                <p class="cb-sec__cap">거래일마다 그날 선정 5종목의 평균 수익률입니다. 날짜를 누르면 종목별로 펼쳐집니다.</p>
+              </span>
             </div>
-            <div>
-              <h3>알아두실 점</h3>
-              <p>
-                배점은 공개된 연구(오버나이트 수익률 편향, 장 막판 모멘텀)와 실전에서 통용되는 기준을
-                합쳐 세운 <b>출발점</b>이며, 실제 성과 데이터가 쌓이는 대로 조정합니다. 데이터가 아직
-                없는 항목은 점수에 넣지 않고 각 종목 상세의 &lsquo;미반영&rsquo;에 표시합니다.
+
+            <div class="cb-card" id="cbCalendarCard">
+              <div class="cb-calhead">
+                <div class="cb-calnav">
+                  <button type="button" id="cbPrev" aria-label="이전 달"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+                  <strong id="cbMonth">—</strong>
+                  <button type="button" id="cbNext" aria-label="다음 달"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+                </div>
+                <div class="cb-seg" role="group" aria-label="매도 기준">
+                  <button type="button" id="cbModeOpen" aria-pressed="true">시가 매도</button>
+                  <button type="button" id="cbModeClose" aria-pressed="false">종가 매도</button>
+                </div>
+              </div>
+              <div class="cb-cal" id="cbCal"></div>
+              <p class="cb-callegend">
+                <span><i style="background:var(--cb-up)"></i>수익</span>
+                <span><i style="background:var(--cb-down)"></i>손실</span>
+                <span><i style="background:var(--cb-inset);border:1px dashed var(--border-color)"></i>기록 없음</span>
+                <span><i style="background:var(--text-muted-ui,var(--text-secondary));opacity:.45;border-radius:50%"></i>과거 스캔으로 사후 검증한 날</span>
               </p>
-              <p>
-                이 페이지는 공개된 시세·수급 데이터를 정해진 조건식으로 계산한 결과이며, 특정 종목의
-                매수·매도를 권유하지 않습니다. 투자 판단과 그 결과에 대한 책임은 이용자 본인에게 있습니다.
-              </p>
+              <div class="cb-daydetail" id="cbDayDetail" hidden></div>
             </div>
-          </div>
+
+            <div class="cb-sec">
+              <span class="cb-sec__icon"><i class="ti ti-checklist" aria-hidden="true"></i></span>
+              <span class="cb-sec__txt">
+                <h2 class="cb-sec__title">사용하는 매매기법</h2>
+                <p class="cb-sec__cap">각 기법은 따로 돌아갑니다. 한 종목이 여러 기법에 동시에 걸릴수록 점수가 올라갑니다.</p>
+              </span>
+            </div>
+
+            <div class="cb-card">
+              <div class="cb-strats" id="cbStrats"></div>
+            </div>
+
+            <div class="cb-card cb-foot">
+              <div>
+                <h3>계산·갱신 시각</h3>
+                <dl class="cb-sched">
+                  <dt>15:20</dt><dd>거래대금 상위 400종목을 당일 시세·수급으로 갱신하고 채점 → 이 화면 갱신</dd>
+                  <dt>익일 09:10</dt><dd>전일 선정 종목의 <b>시초가</b> 결과 기록</dd>
+                  <dt>익일 15:45</dt><dd>장 마감 후 <b>시가·고가·저가·종가</b>까지 확정해 달력에 기록</dd>
+                </dl>
+              </div>
+              <div>
+                <h3>알아두실 점</h3>
+                <p>
+                  수익률은 <b>선정일 종가에 매수</b>한 것으로 가정해 계산합니다. 세금·수수료·슬리피지는
+                  반영하지 않았고, 실제 체결가는 다를 수 있습니다. 달력에 회색 점이 찍힌 날은 그날 실제로
+                  화면에 나갔던 선정이 아니라, 저장된 스캔 기록으로 <b>사후에 검증한 결과</b>입니다.
+                </p>
+                <p>
+                  이 페이지는 공개된 시세·수급·공시 데이터를 정해진 조건식으로 계산한 결과이며, 특정 종목의
+                  매수·매도를 권유하지 않습니다. 과거 기록이 미래 수익을 보장하지 않으며, 투자 판단과 그
+                  결과에 대한 책임은 이용자 본인에게 있습니다.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -506,8 +537,30 @@
 
     <script>
       (function () {
+        /* ────────────────────────────────────────────────────────────────────
+           화면은 계산하지 않는다. 수익률·승률은 전부 서버(close_signal_results)가
+           기록해 둔 값을 그대로 그린다 — 화면에서 다시 계산하면 기록과 표시가
+           언젠가 어긋나고, 어느 쪽이 맞는지 알 수 없게 된다.
+           값이 없는 칸은 지어내지 않고 "—"로 둔다.
+           ──────────────────────────────────────────────────────────────────── */
         var listEl = document.getElementById("cbList");
         var stampEl = document.getElementById("cbStamp");
+        var recordEl = document.getElementById("cbRecord");
+        var stratsEl = document.getElementById("cbStrats");
+        var ydEl = document.getElementById("cbYesterday");
+        var ydStampEl = document.getElementById("cbYdStamp");
+        var calEl = document.getElementById("cbCal");
+        var monthEl = document.getElementById("cbMonth");
+        var prevBtn = document.getElementById("cbPrev");
+        var nextBtn = document.getElementById("cbNext");
+        var modeOpenBtn = document.getElementById("cbModeOpen");
+        var modeCloseBtn = document.getElementById("cbModeClose");
+        var dayDetailEl = document.getElementById("cbDayDetail");
+
+        var HISTORY = { days: [], byDate: {}, months: [], record: null };
+        var calMonth = null;      // "YYYY-MM"
+        var calMode = "open";     // open | close
+        var calSelected = null;
 
         function esc(v) {
           return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
@@ -519,41 +572,86 @@
           if (v >= 10000) return (Math.round(v / 1000) / 10).toLocaleString("ko-KR") + "조";
           return Math.round(v).toLocaleString("ko-KR") + "억";
         }
-        function pctWidth(v, max) {
-          if (!max) return 0;
-          return Math.max(0, Math.min(100, (v / max) * 100));
-        }
+        function won(v) { return v == null ? "—" : Math.round(v).toLocaleString("ko-KR"); }
+        function pctWidth(v, max) { return !max ? 0 : Math.max(0, Math.min(100, (v / max) * 100)); }
+        function sign(v) { return v == null ? "—" : (v > 0 ? "+" : "") + v.toFixed(2) + "%"; }
+        /* 달력 칸은 폭이 46px 남짓이라 소수점 둘째 자리까지 넣으면 잘린다. 한 자리면 충분하다. */
+        function signShort(v) { return v == null ? "—" : (v > 0 ? "+" : "") + v.toFixed(1) + "%"; }
+        function tone(v) { return v == null ? "cb-flat" : v > 0 ? "cb-up" : v < 0 ? "cb-down" : "cb-flat"; }
         async function token() {
           try {
             if (window.TMAuth && window.TMAuth.getAccessToken) return await window.TMAuth.getAccessToken();
           } catch (e) {}
           return null;
         }
+        function dLabel(s) {
+          if (!s) return "—";
+          var p = String(s).split("-");
+          return p.length === 3 ? p[1] + "/" + p[2] : s;
+        }
 
-        /* 팩터 하나 = 이름 + 점수 + 눈금 막대 + 실제 측정값.
-           막대만 두면 "몇 점인지"를 색으로 짐작하게 되므로 숫자를 항상 같이 적는다. */
+        /* ── 누적 성적 ─────────────────────────────────────────────────────── */
+        function renderRecord(rec) {
+          if (!rec || !rec.tradedDaysOpen) { recordEl.innerHTML = ""; return; }
+          function cell(k, v, cls, s) {
+            return '<div class="cb-rec"><span class="cb-rec__k">' + esc(k) + "</span>" +
+              '<span class="cb-rec__v ' + (cls || "") + '">' + v + "</span>" +
+              (s ? '<span class="cb-rec__s">' + esc(s) + "</span>" : "") + "</div>";
+          }
+          var html = cell("기록된 거래일", rec.tradedDaysOpen + "일", "", "선정 " + rec.picks + "종목");
+          html += cell("시가 매도 평균", sign(rec.avgOpenReturnPct), tone(rec.avgOpenReturnPct),
+            rec.openWinRatePct == null ? "" : "수익 종목 비율 " + rec.openWinRatePct + "%");
+          if (rec.tradedDaysClose) {
+            html += cell("종가 매도 평균", sign(rec.avgCloseReturnPct), tone(rec.avgCloseReturnPct),
+              rec.closeWinRatePct == null ? "" : "수익 종목 비율 " + rec.closeWinRatePct + "%");
+            html += cell("플러스로 끝난 날", rec.plusDaysClose + " / " + rec.tradedDaysClose, "", "종가 매도 기준");
+          } else {
+            html += cell("플러스로 끝난 날", rec.plusDaysOpen + " / " + rec.tradedDaysOpen, "", "시가 매도 기준");
+          }
+          recordEl.innerHTML = html;
+        }
+
+        /* ── 기법 카탈로그 ─────────────────────────────────────────────────── */
+        function renderStrats(list) {
+          if (!list || !list.length) { stratsEl.innerHTML = ""; return; }
+          stratsEl.innerHTML = list.map(function (s) {
+            return '<div class="cb-strat"><b>' + esc(s.label) + "</b><span>" + esc(s.desc || "") + "</span></div>";
+          }).join("");
+        }
+
+        /* ── 오늘의 시그널 ─────────────────────────────────────────────────── */
         function factorHtml(f) {
           return (
             '<div class="cb-f">' +
             '<div class="cb-f__top"><span class="cb-f__name">' + esc(f.label) + "</span>" +
-            '<span class="cb-f__pts">' + esc(f.score) + "<small>/" + esc(f.max) + "</small></span></div>" +
+            '<span class="cb-f__pts">' + esc(f.score) + "<small>" + (f.bonus ? " 가산" : "/" + esc(f.max)) + "</small></span></div>" +
             '<div class="cb-f__bar"><i style="width:' + pctWidth(f.score, f.max) + '%"></i></div>' +
-            '<div class="cb-f__val">' + esc(f.value || "") + "</div></div>"
+            '<div class="cb-f__val">' + esc(f.value || "") +
+            (f.note ? '<span class="cb-f__note">' + esc(f.note) + "</span>" : "") + "</div></div>"
           );
         }
-
         function detailHtml(r) {
+          var html = "";
+          if (r.strategies && r.strategies.length) {
+            html += '<div class="cb-group" style="margin-bottom:8px"><div class="cb-group__head">' +
+              '<span class="cb-group__name">포착된 매매기법</span>' +
+              '<span class="cb-group__pts">' + r.strategies.length + "개</span></div>" +
+              r.strategies.map(function (s) {
+                return '<div class="cb-f"><div class="cb-f__top"><span class="cb-f__name">' + esc(s.label) +
+                  "</span></div>" + '<div class="cb-f__val">' + esc(s.why || "") + "</div></div>";
+              }).join("") + "</div>";
+          }
           var groups = {};
           (r.factors || []).forEach(function (f) { (groups[f.group] = groups[f.group] || []).push(f); });
-          var html = '<div class="cb-groups">';
-          ["수급", "종가", "차트", "재료"].forEach(function (g) {
+          html += '<div class="cb-groups">';
+          ["기법 합의", "수급", "당일 흐름", "추세 위치", "재료"].forEach(function (g) {
             if (!groups[g]) return;
             var sum = groups[g].reduce(function (a, f) { return a + f.score; }, 0);
-            var max = groups[g].reduce(function (a, f) { return a + f.max; }, 0);
+            var max = groups[g].reduce(function (a, f) { return a + (f.bonus ? 0 : f.max); }, 0);
             html +=
               '<div class="cb-group"><div class="cb-group__head">' +
               '<span class="cb-group__name">' + esc(g) + "</span>" +
-              '<span class="cb-group__pts">' + (Math.round(sum * 10) / 10) + " / " + max + "</span></div>" +
+              '<span class="cb-group__pts">' + (Math.round(sum * 10) / 10) + (max ? " / " + max : " 가산") + "</span></div>" +
               groups[g].map(factorHtml).join("") + "</div>";
           });
           html += "</div>";
@@ -562,14 +660,10 @@
               r.penalties.map(function (p) { return esc(p.label) + " −" + p.points; }).join(" · ") + "</p>";
           }
           if (r.missing && r.missing.length) {
-            html += '<p class="cb-missing">미반영(데이터 없음, 만점 계산에서도 제외) · ' +
-              r.missing.map(esc).join(" · ") + "</p>";
+            html += '<p class="cb-missing">미반영(데이터 없음, 만점 계산에서도 제외) · ' + r.missing.map(esc).join(" · ") + "</p>";
           }
           return '<div class="cb-detail">' + html + "</div>";
         }
-
-        /* 잠긴 행과 열린 행은 같은 마크업을 쓴다 — 분기해서 따로 만들면 그리드 열 폭이
-           어긋나 점수 칸이 행마다 다른 자리에 찍힌다. 가려야 할 값은 서버가 이미 지우고 보낸다. */
         function rowHtml(r) {
           var locked = !!r.locked;
           var tag = locked ? "div" : "button";
@@ -579,6 +673,15 @@
               '<span class="cb-dot">·</span><em>' + eok(r.tradingValueEok) + "</em>" +
               '<span class="cb-dot">·</span><em>시총 ' + eok(r.marketCapEok) + "</em>" +
               (r.sector ? '<span class="sector">' + esc(r.sector) + "</span>" : "");
+          var chips = "";
+          if (locked) {
+            chips = '<span class="cb-chip">기법 0000</span><span class="cb-chip">기법 000000</span>';
+          } else if (r.strategies && r.strategies.length) {
+            chips = r.strategies.slice(0, 4).map(function (s) {
+              return '<span class="cb-chip">' + esc(s.label) + "</span>";
+            }).join("");
+            if (r.strategies.length > 4) chips += '<span class="cb-chip cb-chip--count">+' + (r.strategies.length - 4) + "</span>";
+          }
           return (
             '<div class="cb-row' + (locked ? " cb-locked" : "") + '" data-open="false"' +
             (locked ? ' data-locked="true"' : "") + ">" +
@@ -586,14 +689,16 @@
             '<span class="cb-rank">' + r.rank + "</span>" +
             '<span class="cb-idn"><span><span class="cb-name">' + (locked ? "종목명 비공개" : esc(r.name)) +
             '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span></span>" +
-            '<span class="cb-meta">' + meta + "</span></span>" +
+            '<span class="cb-meta">' + meta + "</span>" +
+            (chips ? '<span class="cb-chips">' + chips + "</span>" : "") + "</span>" +
             '<span class="cb-scorebox"><span class="cb-score">' + r.score + "<span>점</span></span>" +
             '<span class="cb-bar"><i style="width:' + pctWidth(r.score, 100) + '%"></i></span></span>' +
             "</" + tag + ">" + (locked ? "" : detailHtml(r)) + "</div>"
           );
         }
-
-        function render(d) {
+        function renderRanking(d) {
+          var old = document.querySelector(".cb-cta");
+          if (old) old.remove();
           if (!d.ready) {
             stampEl.textContent = "오늘 집계 전";
             listEl.innerHTML =
@@ -601,22 +706,21 @@
               "아직 오늘 집계가 없습니다.<br />평일 15:20 이후에 갱신됩니다.</div>";
             return;
           }
+          var st = d.stats || {};
           stampEl.innerHTML =
-            "<b>" + esc(d.asOfDate) + "</b> 15:20 기준 · 후보 " +
-            esc((d.stats && d.stats.total) || "-") + " → 통과 " + esc((d.stats && d.stats.passed) || "-");
-
-          var html = d.ranked.map(rowHtml).join("");
-          listEl.innerHTML = html;
+            "<b>" + esc(d.asOfDate) + "</b> 15:20 기준 · 후보 " + esc(st.total || "-") +
+            " → 조건 통과 " + esc(st.passed || "-") +
+            (st.withStrategy != null ? " → 기법 포착 " + esc(st.withStrategy) : "");
+          listEl.innerHTML = d.ranked.map(rowHtml).join("");
 
           if (!d.isPro && d.total > d.visible) {
             var cta = document.createElement("div");
             cta.className = "cb-cta";
             cta.innerHTML =
-              "<span><b>" + (d.total - d.visible) + "개 종목</b>의 이름과 점수 근거는 Pro에서 볼 수 있습니다.</span>" +
+              "<span><b>" + (d.total - d.visible) + "개 종목</b>의 이름과 근거는 Pro에서 볼 수 있습니다. 지난 성과 기록은 모두 공개입니다.</span>" +
               '<a href="./pricing.html">플랜 보기</a>';
             listEl.parentNode.appendChild(cta);
           }
-
           listEl.querySelectorAll("button.cb-main").forEach(function (btn) {
             btn.addEventListener("click", function () {
               var row = btn.closest(".cb-row");
@@ -625,7 +729,187 @@
           });
         }
 
-        async function load() {
+        /* ── 결과 표 (전일 성적표 / 달력 상세 공용) ─────────────────────────── */
+        function resultTableHtml(day) {
+          var picks = day.picks || [];
+          if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
+          var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
+          var head =
+            "<tr><th>종목</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +
+            (hasClose ? "<th>다음날 종가</th><th>종가 매도</th><th>하루 고·저</th>" : "") + "</tr>";
+          var body = picks.map(function (p) {
+            var row =
+              '<td class="cb-t-name">' + esc(p.name) +
+              "<small>" + esc(p.code) + (p.score != null ? " · " + p.score + "점" : "") +
+              (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
+              '<td class="cb-num">' + won(p.buyPrice) + "</td>" +
+              '<td class="cb-num">' + won(p.open) + "</td>" +
+              '<td class="cb-ret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</td>";
+            if (hasClose) {
+              row +=
+                '<td class="cb-num">' + won(p.close) + "</td>" +
+                '<td class="cb-ret ' + tone(p.closeReturnPct) + '">' + sign(p.closeReturnPct) + "</td>" +
+                '<td class="cb-num"><span class="' + tone(p.highReturnPct) + '">' + sign(p.highReturnPct) + "</span>" +
+                ' <span class="cb-flat">/</span> <span class="' + tone(p.lowReturnPct) + '">' + sign(p.lowReturnPct) + "</span></td>";
+            }
+            return "<tr>" + row + "</tr>";
+          }).join("");
+          return '<div class="cb-scroll"><table class="cb-table"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+        }
+        function verdictHtml(day) {
+          var s = day.summary || {};
+          var items = "";
+          function item(k, v, cls, sub) {
+            return '<div class="cb-verdict__item"><span class="cb-verdict__k">' + esc(k) + "</span>" +
+              '<span class="cb-verdict__v ' + (cls || "") + '">' + v + (sub ? ' <span class="cb-verdict__k">' + esc(sub) + "</span>" : "") + "</span></div>";
+          }
+          items += item("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct),
+            s.openWins != null ? s.openWins + "/" + s.measured + " 수익" : "");
+          if (s.avgCloseReturnPct != null) {
+            items += item("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct),
+              s.closeWins != null ? s.closeWins + "/" + s.picks + " 수익" : "");
+          }
+          if (s.best) items += item("가장 좋았던 종목", esc(s.best.name) + " " + sign(s.best.returnPct), tone(s.best.returnPct));
+          if (s.worst && (!s.best || s.worst.code !== s.best.code)) {
+            items += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));
+          }
+          var tag = day.source === "backfill" ? "사후 검증 기록" : day.phase === "open" ? "시초가만 확정 · 15:45에 마감 반영" : "확정";
+          items += '<span class="cb-verdict__tag">' + esc(tag) + "</span>";
+          return '<div class="cb-verdict">' + items + "</div>";
+        }
+        function renderYesterday(day) {
+          if (!day) {
+            ydStampEl.textContent = "기록 준비 중";
+            ydEl.innerHTML =
+              '<div class="cb-empty"><i class="ti ti-history" aria-hidden="true"></i>' +
+              "아직 기록된 결과가 없습니다.<br />선정 다음 거래일 09:10부터 채워집니다.</div>";
+            return;
+          }
+          ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과";
+          ydEl.innerHTML = verdictHtml(day) + resultTableHtml(day);
+        }
+
+        /* ── 성과 달력 ─────────────────────────────────────────────────────── */
+        function monthKey(dateStr) { return String(dateStr).slice(0, 7); }
+        function valueOf(day) {
+          var s = day.summary || {};
+          return calMode === "close" ? s.avgCloseReturnPct : s.avgOpenReturnPct;
+        }
+        function winOf(day) {
+          var s = day.summary || {};
+          return calMode === "close"
+            ? (s.closeWins != null ? s.closeWins + "/" + s.picks : null)
+            : (s.openWins != null ? s.openWins + "/" + s.measured : null);
+        }
+        function cellTint(v) {
+          if (v == null) return "";
+          var pctv = Math.min(30, 7 + Math.abs(v) * 4);
+          var c = v > 0 ? "var(--cb-up)" : v < 0 ? "var(--cb-down)" : "transparent";
+          return "background:color-mix(in srgb, " + c + " " + pctv + "%, var(--bg-primary));";
+        }
+        function renderCalendar() {
+          if (!calMonth) { calEl.innerHTML = ""; return; }
+          var y = Number(calMonth.slice(0, 4));
+          var m = Number(calMonth.slice(5, 7));
+          monthEl.textContent = y + "년 " + m + "월";
+          var idx = HISTORY.months.indexOf(calMonth);
+          prevBtn.disabled = idx <= 0;
+          nextBtn.disabled = idx < 0 || idx >= HISTORY.months.length - 1;
+
+          var nowKst = new Date(Date.now() + 9 * 3600 * 1000);
+          var todayKey = nowKst.toISOString().slice(0, 10);
+          var first = new Date(Date.UTC(y, m - 1, 1));
+          var lead = first.getUTCDay();
+          var dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+          var html = ["일", "월", "화", "수", "목", "금", "토"]
+            .map(function (d) { return '<div class="cb-cal__dow">' + d + "</div>"; }).join("");
+          for (var i = 0; i < lead; i++) html += '<div class="cb-cell cb-cell--pad"></div>';
+          for (var d = 1; d <= dim; d++) {
+            var key = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+            var day = HISTORY.byDate[key];
+            var dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+            if (!day) {
+              /* 주말과 "아직 오지 않은 날"은 빈칸으로 둔다. 오늘 선정분의 결과는 다음 거래일에
+                 나오므로, 오늘 칸에 '기록 없음'을 찍으면 고장난 것처럼 보인다. */
+              var weekend = dow === 0 || dow === 6;
+              var future = key >= todayKey;
+              html += '<div class="cb-cell ' + (weekend || future ? "cb-cell--pad" : "cb-cell--none") + '">' +
+                (weekend || future ? "" : '<span class="cb-cell__d">' + d + "</span>") + "</div>";
+              continue;
+            }
+            var v = valueOf(day);
+            var wtxt = winOf(day);
+            html +=
+              '<button type="button" class="cb-cell cb-cell--data" data-date="' + key + '"' +
+              ' aria-pressed="' + (calSelected === key ? "true" : "false") + '" style="' + cellTint(v) + '">' +
+              (day.source === "backfill" ? '<span class="cb-cell__flag" title="사후 검증 기록"></span>' : "") +
+              '<span class="cb-cell__d">' + d + "</span>" +
+              '<span class="cb-cell__v ' + tone(v) + '">' + signShort(v) + "</span>" +
+              (wtxt ? '<span class="cb-cell__w">' + wtxt + "<em> 수익</em></span>" : "") +
+              "</button>";
+          }
+          calEl.innerHTML = html;
+          calEl.querySelectorAll("button.cb-cell").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              selectDay(btn.dataset.date === calSelected ? null : btn.dataset.date);
+            });
+          });
+        }
+        function selectDay(key) {
+          calSelected = key;
+          renderCalendar();
+          if (!key || !HISTORY.byDate[key]) { dayDetailEl.hidden = true; dayDetailEl.innerHTML = ""; return; }
+          var day = HISTORY.byDate[key];
+          dayDetailEl.hidden = false;
+          dayDetailEl.innerHTML =
+            '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + " 선정 " + (day.pickCount || 0) + "종목</h3>" +
+            "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span></div>" +
+            verdictHtml(day) + resultTableHtml(day);
+          dayDetailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+        function buildMonths() {
+          var set = {};
+          HISTORY.days.forEach(function (d) { set[monthKey(d.asOfDate)] = 1; });
+          var now = new Date();
+          var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+          set[cur] = 1;
+          HISTORY.months = Object.keys(set).sort();
+          if (!calMonth || HISTORY.months.indexOf(calMonth) < 0) calMonth = HISTORY.months[HISTORY.months.length - 1];
+        }
+        prevBtn.addEventListener("click", function () {
+          var i = HISTORY.months.indexOf(calMonth);
+          if (i > 0) { calMonth = HISTORY.months[i - 1]; renderCalendar(); }
+        });
+        nextBtn.addEventListener("click", function () {
+          var i = HISTORY.months.indexOf(calMonth);
+          if (i >= 0 && i < HISTORY.months.length - 1) { calMonth = HISTORY.months[i + 1]; renderCalendar(); }
+        });
+        function setMode(mode) {
+          calMode = mode;
+          modeOpenBtn.setAttribute("aria-pressed", mode === "open" ? "true" : "false");
+          modeCloseBtn.setAttribute("aria-pressed", mode === "close" ? "true" : "false");
+          renderCalendar();
+        }
+        modeOpenBtn.addEventListener("click", function () { setMode("open"); });
+        modeCloseBtn.addEventListener("click", function () { setMode("close"); });
+
+        /* ── 로드 ──────────────────────────────────────────────────────────── */
+        async function loadHistory() {
+          try {
+            var res = await fetch("/api/analyze?feature=close-betting&view=history&days=120", { cache: "no-store" });
+            var d = await res.json();
+            if (!res.ok) throw new Error(d.error || "요청 실패");
+            HISTORY.days = d.days || [];
+            HISTORY.byDate = {};
+            HISTORY.days.forEach(function (x) { HISTORY.byDate[x.asOfDate] = x; });
+            HISTORY.record = d.record || null;
+            buildMonths();
+            renderCalendar();
+          } catch (e) {
+            calEl.innerHTML = '<div class="cb-empty" style="grid-column:1/-1">기록을 불러오지 못했습니다.</div>';
+          }
+        }
+        async function loadToday() {
           try {
             var t = await token();
             var res = await fetch("/api/analyze?feature=close-betting", {
@@ -634,19 +918,21 @@
             });
             var d = await res.json();
             if (!res.ok) throw new Error(d.error || "요청 실패");
-            var old = document.querySelector(".cb-cta");
-            if (old) old.remove();
-            render(d);
+            renderRanking(d);
+            renderStrats(d.strategies);
+            renderRecord(d.record);
+            renderYesterday(d.yesterday);
           } catch (e) {
             stampEl.textContent = "불러오기 실패";
             listEl.innerHTML =
               '<div class="cb-empty"><i class="ti ti-alert-triangle" aria-hidden="true"></i>' +
-              "랭킹을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>";
+              "종목을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>";
           }
         }
 
-        load();
-        window.addEventListener("tm-auth-change", load);
+        loadToday();
+        loadHistory();
+        window.addEventListener("tm-auth-change", loadToday);
       })();
     </script>
   </body>

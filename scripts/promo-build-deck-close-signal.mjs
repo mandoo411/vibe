@@ -1,5 +1,5 @@
 /**
- * 카드뉴스 v2 — 종가시그널 성적표 덱 생성 (2026-09-21 신설)
+ * 카드뉴스 v2 — 종가시그널 기록 덱 생성 (2026-09-21 신설)
  *
  * 왜 이 카드인가: 무료 시세 사이트가 절대 못 보여주는 게 "이 서비스가 찍은 종목이 실제로
  * 어땠는가"다. close_signal_results에 거래일마다 쌓이는 기록이 그 자체로 콘텐츠가 된다.
@@ -43,7 +43,7 @@ async function loadResults() {
   );
   if (!res.ok) throw new Error(`Supabase HTTP ${res.status}`);
   const rows = await res.json();
-  // 종가까지 확정된 날만 성적표에 쓴다. 시가만 찍힌 당일 행은 아직 반쪽이라 뺀다.
+  // 종가까지 확정된 날만 쓴다. 시가만 찍힌 당일 행은 아직 반쪽이라 뺀다.
   return (Array.isArray(rows) ? rows : []).filter((r) => r.phase === "close");
 }
 
@@ -71,20 +71,27 @@ function computeFacts(days) {
   };
 }
 
-/** 훅은 실제 성적을 따라간다. 마이너스 구간에서 "수익났다"고 쓰면 그날로 끝이다. */
+/** 훅은 실제 기록을 따라간다. 마이너스 구간에서 "수익났다"고 쓰면 그날로 끝이다.
+ *
+ * ⚠️ 문구 규칙(2026-09-21, 시우 지적 → 금감원 제재 사례 확인 후 반영):
+ * **승부·도박·적중을 연상시키는 말을 쓰지 않는다** — "이긴 날/진 날", "맞혔다", "적중",
+ * "성적표", "승률", "베팅". '종가베팅'을 '종가시그널'로 개명한 것과 같은 이유다.
+ * 대신 사실 그대로만 쓴다: "수익 난 날 / 손실 난 날", "수익 종목 비율", "기록".
+ * 또 **결과가 좋은 구간만 골라 보여주지 않는다** — 좋은 기간만 제시하는 표시·광고는
+ * 금감원이 실제로 과태료를 매긴 유형이다. 거래일을 연속으로 싣는 지금 구조를 깨지 말 것. */
 function pickHook(f) {
   const good = (f.avgClose || 0) > 0;
   if (good) {
     return {
-      tag: "종가시그널 성적표",
-      html: `${f.dayCount}거래일 성적을<br><em>숨김 없이</em><br>전부 공개합니다`,
+      tag: "종가시그널 기록",
+      html: `${f.dayCount}거래일 기록을<br><em>숨김 없이</em><br>전부 공개합니다`,
       sub: `매일 장 마감 직전 5종목을 고르고,<br>다음 날 결과를 그대로 기록했습니다.`,
     };
   }
   return {
-    tag: "종가시그널 성적표",
-    html: `진 날도<br><em>그대로</em><br>남깁니다`,
-    sub: `${f.dayCount}거래일 기록 전부입니다.<br>손실 난 날을 빼고 보여주지 않습니다.`,
+    tag: "종가시그널 기록",
+    html: `손실 난 날도<br><em>그대로</em><br>남깁니다`,
+    sub: `${f.dayCount}거래일 기록 전부입니다.<br>결과가 나쁜 날을 빼고 보여주지 않습니다.`,
   };
 }
 
@@ -131,7 +138,7 @@ export async function buildCloseSignalDeck() {
     slot: "close-signal",
     layout: "close-signal",
     date: today,
-    slotLabel: "종가시그널 성적표",
+    slotLabel: "종가시그널 기록",
     dateLabel: mdLabel(today),
     dateFull: `${Number(today.slice(5, 7))}월 ${Number(today.slice(8, 10))}일`,
 
@@ -144,9 +151,9 @@ export async function buildCloseSignalDeck() {
       { name: "종가 매도", text: pctText(f.avgClose), dir: dirOf(f.avgClose) },
     ],
 
-    /* 2. 누적 성적 */
+    /* 2. 누적 기록 */
     csRecordKicker: `${f.dayCount}거래일 · 선정 ${f.picks}종목 누적`,
-    csRecordTitle: "종가에 샀다면<br>어떻게 됐나",
+    csRecordTitle: "종가에 매수했다면<br>어떻게 됐나",
     csRecordCells: [
       { k: "다음날 시가에 팔았다면", v: pctText(f.avgOpen), dir: dirOf(f.avgOpen), s: `수익 종목 비율 ${f.winOpen ?? "—"}%`, hi: false },
       { k: "다음날 종가에 팔았다면", v: pctText(f.avgClose), dir: dirOf(f.avgClose), s: `수익 종목 비율 ${f.winClose ?? "—"}%`, hi: true },
@@ -159,13 +166,16 @@ export async function buildCloseSignalDeck() {
         hi: false,
       },
     ],
+    /* 금감원이 실제로 과태료를 매긴 유형 중 하나가 **필수 기재사항 누락**이다
+     * (원금 손실 가능성 / 개별 투자상담 불가 / 정식 금융투자업자가 아님).
+     * 숫자가 가장 크게 박히는 이 장에 원금 손실 가능성을 같이 둔다. */
     csRecordNote:
-      `선정일 <b>종가에 매수</b>한 것으로 가정한 수치입니다. ` +
-      `세금·수수료는 반영하지 않았고, 과거 기록이 미래 수익을 보장하지 않습니다.`,
+      `선정일 <b>종가에 매수</b>한 것으로 가정한 수치입니다. 세금·수수료는 반영하지 않았습니다. ` +
+      `<b>원금 손실이 발생할 수 있으며</b>, 과거 기록이 미래 수익을 보장하지 않습니다.`,
 
     /* 3. 거래일별 */
     csDailyKicker: `최근 ${csDailyRows.length}거래일`,
-    csDailyTitle: "이긴 날과<br>진 날",
+    csDailyTitle: "수익 난 날과<br>손실 난 날",
     csDailyRows,
     csDailyFoot: "각 거래일 선정 5종목의 평균 · 다음날 종가 매도 기준",
 
@@ -177,19 +187,20 @@ export async function buildCloseSignalDeck() {
       `시가 매도 <b>${pctText(num(ls.avgOpenReturnPct))}</b> · ` +
       `종가 매도 <b>${pctText(num(ls.avgCloseReturnPct))}</b>` +
       (ls.closeWins != null ? ` · 5종목 중 <b>${ls.closeWins}종목</b> 수익` : ""),
-    csPicksFoot: "종목 선정은 조건검색 결과이며 매수·매도 권유가 아닙니다",
+    csPicksFoot: "조건검색 결과이며 매수·매도 권유가 아닙니다 · 개별 투자상담을 하지 않습니다",
 
     csFoot: "totalmoney.kr · 종가시그널",
 
     /* 5. CTA */
-    ctaTitle: "찍은 종목을<br><em>전부 기록</em>합니다.",
-    ctaSub: "맞힌 날만 올리는 계정과 구분되는 지점입니다.",
+    ctaTitle: "고른 종목을<br><em>전부 기록</em>합니다.",
+    ctaSub: "결과가 나쁜 날을 빼지 않고 그대로 싣습니다.",
     ctaReasons: [
       "매일 장 마감 직전 <b>9가지 매매기법</b>이 겹쳐서 잡은 5종목을 고릅니다.",
       "다음 거래일 <b>시가와 종가</b> 결과를 자동으로 기록합니다.",
-      "거래일별 성적을 <b>달력</b>으로 모두 공개합니다 — 진 날도 그대로 있습니다.",
+      "거래일별 결과를 <b>달력</b>으로 모두 공개합니다 — 손실 난 날도 그대로 있습니다.",
     ],
-    saveNudge: "<b>저장</b>해두고 다음 주 성적과 비교해보세요.<br>기록은 매 거래일 쌓입니다.",
+    saveNudge: "<b>저장</b>해두고 다음 주 기록과 비교해보세요.<br>기록은 매 거래일 쌓입니다.",
+    ctaFoot: "원금 손실이 발생할 수 있습니다 · 개별 투자상담을 하지 않습니다 · 정식 금융투자업자가 아닙니다",
   };
 
   const capLines = [
@@ -204,12 +215,14 @@ export async function buildCloseSignalDeck() {
     "",
     ...capLines,
     "",
-    "🔖 저장해두고 다음 주 성적과 비교해보세요.",
+    "🔖 저장해두고 다음 주 기록과 비교해보세요.",
     "매 거래일 기록을 쌓아 공개합니다 → @totalmoney_ai",
     "",
-    "※ 조건검색 결과이며 특정 종목의 매수·매도를 권유하지 않습니다. 과거 기록이 미래 수익을 보장하지 않으며, 투자 판단과 결과의 책임은 본인에게 있습니다.",
+    "※ 공개된 시세·수급·공시 데이터를 정해진 조건식으로 계산한 조건검색 결과이며, 특정 종목의 매수·매도를 권유하지 않습니다.",
+    "※ 원금 손실이 발생할 수 있습니다. 과거 기록이 미래 수익을 보장하지 않으며, 투자 판단과 그 결과의 책임은 본인에게 있습니다.",
+    "※ 개별 투자상담은 하지 않습니다. 정식 금융투자업자가 아닙니다.",
     "",
-    "#종가매매 #국내주식 #주식투자 #단타 #매매기법 #퀀트투자 #주식공부 #토탈머니",
+    "#종가매매 #국내주식 #주식투자 #매매기법 #퀀트투자 #주식공부 #투자공부 #토탈머니",
   ].join("\n");
   return deck;
 }

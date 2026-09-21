@@ -205,7 +205,7 @@ export function slideCTA(d) {
     </div>
     <div class="save"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1Z" fill="#25E0C8"/></svg></div><div class="tx">${d.saveNudge}</div></div>
   </div>
-  ${foot("투자 참고용 정보이며 투자 판단의 책임은 본인에게 있습니다", "", 4)}
+  ${foot(d.ctaFoot || "투자 참고용 정보이며 투자 판단의 책임은 본인에게 있습니다", "", 4)}
   </div>`, css);
 }
 

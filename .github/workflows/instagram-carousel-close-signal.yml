@@ -1,0 +1,170 @@
+name: Instagram Carousel (종가시그널 성적표)
+
+# 종가시그널 성적표 카드뉴스 — 주 1회(토요일) 캐러셀 5장 발행.
+#
+# 왜 이 카드인가: 무료 시세 사이트가 못 보여주는 게 "이 서비스가 찍은 종목이 실제로 어땠나"다.
+# close_signal_results에 거래일마다 쌓이는 기록이 그대로 콘텐츠가 된다.
+#
+# ⚠️ 덱 생성 단계는 **AI를 부르지 않는다**(숫자·문장 전부 코드). 발행당 토큰 비용이 0이다.
+# ⚠️ 기록이 CS_MIN_DAYS(기본 10거래일) 미만이면 덱 파일을 만들지 않고 정상 종료한다.
+#    그때는 이 워크플로도 렌더·발행 없이 성공으로 끝난다 — 매주 가짜 실패 알림이 울리지 않게 하려는 것.
+#
+# ⚠️ 정시성은 pg_cron → edge function github-workflow-dispatch가 담당한다.
+#    ALLOWED_WORKFLOWS에 이 파일명을 반드시 추가할 것(빠지면 400으로 조용히 실패).
+
+on:
+  schedule:
+    # 백업용. UTC 02:00 = 11:00 KST 토요일 (schedule은 크게 밀리므로 정시성은 기대하지 않는다)
+    - cron: "0 2 * * 6"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "1이면 렌더까지만 하고 발행하지 않음"
+        required: false
+        default: ""
+      force:
+        description: "1이면 같은 날 중복 발행 가드를 무시"
+        required: false
+        default: "0"
+      min_days:
+        description: "발행 하한 거래일 수(기본 10)"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [close-signal-carousel]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-carousel-close-signal
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  build-render-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve inputs
+        id: cfg
+        run: |
+          DRY="${{ github.event.inputs.dry_run || github.event.client_payload.dry_run }}"
+          MIN="${{ github.event.inputs.min_days || github.event.client_payload.min_days }}"
+          echo "dry=${DRY:-0}" >> "$GITHUB_OUTPUT"
+          echo "min=${MIN:-10}" >> "$GITHUB_OUTPUT"
+
+      # 같은 날 두 번 나가지 않게 막는다(재시도·수동 실행 대비).
+      - name: Dedup guard
+        id: guard
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ=Asia/Seoul date '+%Y-%m-%d')
+          STAMP="generated/carousel-close-signal/last-published-date.txt"
+          FORCE_FLAG="${{ github.event.inputs.force || github.event.client_payload.force }}"
+          GUARD=1
+          if [ "$FORCE_FLAG" = "1" ] || [ "$FORCE_FLAG" = "true" ]; then GUARD=0; fi
+          if [ "$GUARD" = "1" ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$TODAY" ]; then
+            echo "::notice::오늘 이미 발행 완료 — 스킵"
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node.js
+        if: steps.guard.outputs.go == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.guard.outputs.go == 'true'
+        run: npm ci
+
+      - name: Install Korean fonts
+        if: steps.guard.outputs.go == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk fonts-noto-cjk-extra
+          fc-cache -f
+
+      # 기록이 모자라면 덱 파일을 만들지 않는다. 지난 주 파일이 남아 있으면 그걸 다시 발행하게
+      # 되므로, 만들기 전에 반드시 지운다.
+      - name: Build deck
+        id: deck
+        if: steps.guard.outputs.go == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CS_MIN_DAYS: ${{ steps.cfg.outputs.min }}
+        run: |
+          set -euo pipefail
+          rm -f data/promo/latest-close-signal.json
+          node scripts/promo-build-deck-close-signal.mjs --out=data/promo/latest-close-signal.json
+          if [ -f data/promo/latest-close-signal.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::기록이 아직 모자랍니다 — 이번 주는 발행하지 않습니다"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Render carousel
+        if: steps.deck.outputs.ready == 'true'
+        run: node scripts/promo-render-carousel.mjs --deck=data/promo/latest-close-signal.json --out=generated/carousel-close-signal
+
+      - name: Commit deck and images
+        if: steps.deck.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add generated/carousel-close-signal data/promo/latest-close-signal.json
+          if git diff --staged --quiet; then
+            echo "::notice::변경 없음 — 커밋 생략"; exit 0
+          fi
+          git commit -m "chore(promo): carousel-close-signal $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M %Z')"
+          # 다른 발행 워크플로가 같은 시각에 push하면 non-fast-forward로 밀린다.
+          # 데이터·이미지 커밋이라 rebase 후 재시도하면 안전하다.
+          for i in 1 2 3; do
+            git push origin HEAD:${GITHUB_REF_NAME} && break
+            echo "::notice::push 경합 — rebase 후 재시도 ($i/3)"
+            git pull --rebase origin ${GITHUB_REF_NAME}
+            sleep $((i * 4))
+          done
+
+      # Graph API는 공개 URL만 읽는다 — raw.githubusercontent.com에 반영될 때까지 기다린다.
+      - name: Wait for CDN
+        if: steps.deck.outputs.ready == 'true'
+        run: sleep 25
+
+      - name: Publish carousel
+        if: steps.deck.outputs.ready == 'true'
+        env:
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          PROMO_DRY_RUN: ${{ steps.cfg.outputs.dry }}
+        run: node scripts/promo-publish-carousel.mjs --dir=carousel-close-signal --deck=data/promo/latest-close-signal.json
+
+      - name: Record published date
+        if: steps.deck.outputs.ready == 'true' && steps.cfg.outputs.dry != '1'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mkdir -p generated/carousel-close-signal
+          TZ=Asia/Seoul date '+%Y-%m-%d' > generated/carousel-close-signal/last-published-date.txt
+          git add generated/carousel-close-signal/last-published-date.txt
+          if git diff --staged --quiet; then exit 0; fi
+          git commit -m "chore(promo): mark carousel-close-signal published $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          for i in 1 2 3; do
+            git push origin HEAD:${GITHUB_REF_NAME} && break
+            echo "::notice::push 경합 — rebase 후 재시도 ($i/3)"
+            git pull --rebase origin ${GITHUB_REF_NAME}
+            sleep $((i * 4))
+          done

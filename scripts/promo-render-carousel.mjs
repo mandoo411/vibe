@@ -17,6 +17,7 @@ import { join } from "node:path";
 import {
   slideHook, slideVerdict, slideFlow, slideStocks, slideCTA,
   slideIndex, slideWatch, slideRank, slideKrRank, slideFocus,
+  slideCsRecord, slideCsDaily, slideCsPicks,
 } from "./promo-carousel-slides.mjs";
 import { setPager } from "./promo-carousel-css.mjs";
 
@@ -27,6 +28,7 @@ export const LAYOUTS = {
   closing: [slideHook, slideFocus, slideVerdict, slideFlow, slideStocks, slideCTA],
   morning: [slideHook, slideIndex, slideVerdict, slideWatch, slideCTA],
   ranking: [slideHook, slideRank, slideKrRank, slideFlow, slideCTA],
+  "close-signal": [slideHook, slideCsRecord, slideCsDaily, slideCsPicks, slideCTA],
 };
 
 export function buildersFor(deck) {

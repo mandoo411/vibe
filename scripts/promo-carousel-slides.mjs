@@ -435,3 +435,127 @@ export function slideFocus(d) {
   ${foot("출처 · 한국투자증권 실시간 시세 · 거래대금 상위 30종목 기준", "", 1)}
   </div>`, css);
 }
+
+/* ═══════════════════ 종가시그널 성적표 (2026-09-21 신설) ═══════════════════
+ * 이 3장은 **AI가 문장을 쓰지 않는다.** 전부 close_signal_results에 기록된 숫자를
+ * 코드가 문자열로 만든다 — 성과 수치는 한 글자라도 틀리면 안 되는 값이고,
+ * 이 계정에서 가장 검증하기 쉬운 주장이라 할루시네이션 여지를 아예 없앴다.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/** 누적 성적 — 큰 숫자 4칸. 이 장 하나로 "믿을 만한가"에 답해야 한다. */
+export function slideCsRecord(d) {
+  const css = `
+  .csr{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:18px;}
+  .csr-g{margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .csr-c{padding:30px 30px 28px;border-radius:22px;background:rgba(255,255,255,.05);
+    border:1px solid var(--line);}
+  .csr-c.hi{background:linear-gradient(135deg,rgba(37,224,200,.15),rgba(37,224,200,.04));
+    border-color:rgba(37,224,200,.36);}
+  .csr-k{font-size:30px;font-weight:600;color:var(--dim);letter-spacing:-.4px;}
+  .csr-v{margin-top:12px;font-size:76px;font-weight:800;letter-spacing:-3px;line-height:1;}
+  .csr-s{margin-top:12px;font-size:28px;font-weight:600;color:var(--dim-2);letter-spacing:-.3px;}
+  .csr-n{margin-top:26px;padding:26px 30px;border-radius:20px;
+    background:rgba(255,255,255,.045);border:1px solid var(--line);
+    font-size:33px;font-weight:600;line-height:1.5;letter-spacing:-.6px;color:var(--body);}
+  .csr-n b{font-weight:800;color:#fff;}
+  `;
+  const cells = d.csRecordCells.map((c) => `
+    <div class="csr-c ${c.hi ? "hi" : ""}">
+      <div class="csr-k">${esc(c.k)}</div>
+      <div class="csr-v ${c.dir || ""} mono">${esc(c.v)}</div>
+      <div class="csr-s">${esc(c.s)}</div>
+    </div>`).join("");
+  return shell(`<div class="wrap">
+  ${topBar(d.slotLabel, d.dateLabel)}
+  <div class="csr">
+    <div class="kicker" style="margin-bottom:20px;">◆ ${esc(d.csRecordKicker)}</div>
+    <div class="ptitle">${d.csRecordTitle}</div>
+    <div class="csr-g">${cells}</div>
+    <div class="csr-n">${d.csRecordNote}</div>
+  </div>
+  ${foot(esc(d.csFoot), "")}
+  </div>`, css);
+}
+
+/** 거래일별 성적 — 0선을 가운데 둔 좌우 막대. 이긴 날만 보여주지 않는다는 게 요점이다. */
+export function slideCsDaily(d) {
+  const css = `
+  .csd{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:18px;}
+  /* 12줄일 때 1389px로 넘쳤다(렌더러가 1350px 초과를 즉시 실패시킨다) → 행 높이를 46px로 조인다 */
+  .csd-l{margin-top:22px;display:flex;flex-direction:column;gap:7px;}
+  .csd-r{display:grid;grid-template-columns:132px 1fr 150px;align-items:center;gap:16px;
+    padding:10px 20px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--line);}
+  .csd-d{font-size:30px;font-weight:700;color:var(--dim);letter-spacing:-.4px;}
+  .csd-t{position:relative;height:26px;}
+  .csd-t::before{content:'';position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;
+    background:rgba(255,255,255,.22);}
+  .csd-b{position:absolute;top:3px;height:20px;border-radius:5px;}
+  .csd-b.up{background:linear-gradient(90deg,rgba(255,107,107,.55),var(--up));}
+  .csd-b.down{background:linear-gradient(270deg,rgba(107,165,255,.55),var(--down));}
+  .csd-v{font-size:32px;font-weight:800;text-align:right;letter-spacing:-.7px;}
+  .csd-lg{margin-top:20px;display:flex;gap:26px;font-size:28px;font-weight:600;color:var(--dim-2);}
+  .csd-lg i{display:inline-block;width:20px;height:12px;border-radius:4px;margin-right:9px;
+    vertical-align:middle;}
+  `;
+  const rows = d.csDailyRows.map((r) => {
+    const half = r.pct >= 0
+      ? `left:50%;width:${r.w}%;`
+      : `right:50%;width:${r.w}%;`;
+    return `<div class="csd-r">
+      <div class="csd-d mono">${esc(r.label)}</div>
+      <div class="csd-t"><div class="csd-b ${r.dir}" style="${half}"></div></div>
+      <div class="csd-v ${r.dir} mono">${esc(r.text)}</div>
+    </div>`;
+  }).join("");
+  return shell(`<div class="wrap">
+  ${topBar(d.slotLabel, d.dateLabel)}
+  <div class="csd">
+    <div class="kicker" style="margin-bottom:20px;">◆ ${esc(d.csDailyKicker)}</div>
+    <div class="ptitle">${d.csDailyTitle}</div>
+    <div class="csd-l">${rows}</div>
+    <div class="csd-lg">
+      <span><i style="background:var(--up)"></i>수익</span>
+      <span><i style="background:var(--down)"></i>손실</span>
+    </div>
+  </div>
+  ${foot(esc(d.csDailyFoot), "")}
+  </div>`, css);
+}
+
+/** 직전 거래일 선정 5종목 — 종목별로 시가·종가 두 경우를 나란히 보여준다. */
+export function slideCsPicks(d) {
+  const css = `
+  .csp{flex:1;display:flex;flex-direction:column;justify-content:center;padding-top:18px;}
+  .csp-h{margin-top:24px;display:grid;grid-template-columns:1fr 180px 180px;gap:16px;
+    padding:0 22px 12px;font-size:28px;font-weight:700;color:var(--dim-2);letter-spacing:-.3px;}
+  .csp-h span:not(:first-child){text-align:right;}
+  .csp-l{display:flex;flex-direction:column;gap:9px;}
+  .csp-r{display:grid;grid-template-columns:1fr 180px 180px;align-items:center;gap:16px;
+    padding:18px 22px;border-radius:15px;background:rgba(255,255,255,.045);border:1px solid var(--line);}
+  .csp-n{font-size:35px;font-weight:700;letter-spacing:-.8px;}
+  .csp-n small{display:block;margin-top:5px;font-size:26px;font-weight:600;color:var(--dim-2);letter-spacing:-.2px;}
+  .csp-v{font-size:34px;font-weight:800;text-align:right;letter-spacing:-.8px;}
+  .csp-sum{margin-top:22px;padding:24px 28px;border-radius:20px;
+    background:linear-gradient(135deg,rgba(37,224,200,.14),rgba(37,224,200,.04));
+    border:1px solid rgba(37,224,200,.34);
+    font-size:33px;font-weight:600;line-height:1.5;letter-spacing:-.6px;color:#DFF7F3;}
+  .csp-sum b{font-weight:800;color:var(--teal);}
+  `;
+  const rows = d.csPickRows.map((r) => `
+    <div class="csp-r">
+      <div class="csp-n">${esc(r.name)}<small>${esc(r.sub)}</small></div>
+      <div class="csp-v ${r.openDir} mono">${esc(r.open)}</div>
+      <div class="csp-v ${r.closeDir} mono">${esc(r.close)}</div>
+    </div>`).join("");
+  return shell(`<div class="wrap">
+  ${topBar(d.slotLabel, d.dateLabel)}
+  <div class="csp">
+    <div class="kicker" style="margin-bottom:20px;">◆ ${esc(d.csPicksKicker)}</div>
+    <div class="ptitle">${d.csPicksTitle}</div>
+    <div class="csp-h"><span>종목</span><span>시가 매도</span><span>종가 매도</span></div>
+    <div class="csp-l">${rows}</div>
+    <div class="csp-sum">${d.csPicksSummary}</div>
+  </div>
+  ${foot(esc(d.csPicksFoot), "")}
+  </div>`, css);
+}

@@ -1,19 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="TotalMoney">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#5560e8"/>
-      <stop offset="100%" stop-color="#3339BF"/>
-    </linearGradient>
-  </defs>
-  <rect width="180" height="180" rx="34" fill="url(#bg)"/>
-  <text
-    x="90"
-    y="102"
-    text-anchor="middle"
-    dominant-baseline="central"
-    font-family="Arial Black, sans-serif"
-    font-size="118"
-    font-weight="900"
-    fill="#f59e0b"
-  >T</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <title>TotalMoney AI</title>
+  <rect width="48" height="48" rx="11" fill="#0B0B0C"/>
+  <rect x="1" y="1" width="46" height="46" rx="10" fill="none" stroke="#10b981" stroke-opacity=".45" stroke-width="1.5"/>
+  <path d="M11 36V15h8.5L24 24l4.5-9H37v21" fill="none" stroke="#10b981" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 24V11" fill="none" stroke="#34d399" stroke-width="4.4" stroke-linecap="round"/>
 </svg>

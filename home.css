@@ -50,6 +50,12 @@ body.page-home-v2 {
   flex-shrink: 0;
 }
 
+.home-nav__brand-name em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--accent-icon, #10b981);
+}
+
 .home-nav__brand-name {
   font-size: 15px;
   font-weight: 800;
@@ -240,7 +246,7 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
 
 [data-theme="dark"] .home-nav__logo-box,
 body[data-theme="dark"] .home-nav__logo-box {
-  background: var(--gradient-primary);
+  background: #0b0b0c;
   box-shadow: none;
 }
 

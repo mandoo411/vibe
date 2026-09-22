@@ -92,17 +92,26 @@ body.page-home-v2 {
 }
 
 .home-nav__logo-box {
-  background: var(--gradient-primary);
-  border-radius: 10px;
+  /* 2026-09-22 로고 교체: TM/AI 9px 텍스트 두 줄 → 상승 캔들 마크(SVG).
+     판(plate)은 다크·라이트 양쪽에서 같게 보이도록 검정 고정 + 에메랄드 헤어라인이다.
+     안쪽 SVG는 viewBox(0 0 48 48) 안에 여백을 이미 갖고 있어 판을 꽉 채워도 된다. */
+  box-sizing: border-box;
+  background: #0b0b0c;
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
+  border-radius: 12px;
   width: 40px;
   height: 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  overflow: hidden;
+  padding: 0;
   box-shadow: none;
-  gap: 0;
   flex-shrink: 0;
+}
+
+.home-nav__logo-box svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .home-nav__logo-box span {
@@ -121,6 +130,13 @@ body.page-home-v2 {
 /* 로고 박스 "AI" — TM은 흰색, AI는 앰버 (모바일·데스크탑 공통) */
 .home-nav__logo-box span:last-child {
   color: #f59e0b;
+}
+
+/* 워드마크 한 줄 — "TotalMoney AI"의 AI만 액센트 (2026-09-22) */
+.home-nav__brand-name em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--accent-icon, #10b981);
 }
 
 .home-nav__brand-name {
@@ -685,7 +701,8 @@ body[data-theme="dark"] .home-nav__account-link {
 /* 헤더 로고·배지 — index.html(home.css)와 동일 */
 [data-theme="dark"] .home-nav__logo-box,
 body[data-theme="dark"] .home-nav__logo-box {
-  background: var(--gradient-primary);
+  /* 로고 판은 테마와 무관하게 같다 — 마크가 두 배경에서 모두 읽히도록 검정 고정 */
+  background: #0b0b0c;
   box-shadow: none;
 }
 
@@ -2108,10 +2125,10 @@ body[data-theme="dark"] .home-ticker-bar__label {
   }
 
   .page-tm-v2 .home-nav__logo-box {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: var(--gradient-primary);
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: #0b0b0c;
     box-shadow: none;
   }
 

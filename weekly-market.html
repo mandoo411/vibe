@@ -730,6 +730,10 @@
         function filterEconomicRows(rows) {
           return (rows || []).filter((row) => {
             if (!isUsOrKrCountry(row)) return false;
+            // 2026-09-23: "참고"(중요도 낮음) 지표는 일정 페이지에서 상시 제외 — 요청 반영.
+            // 캘린더 점·이번 달 통계·오늘/다가오는 일정 전부 이 함수를 거치므로 한 곳만 고치면
+            // 전체 화면에서 일관되게 빠진다.
+            if (resolveImpactKey(row) === "low") return false;
             const cc = normalizeCountryCode(row?.country);
             if (state.scheduleFilter === "key") return isKeyIndicator(row);
             if (state.scheduleFilter === "us") return cc === "US";

@@ -745,8 +745,10 @@ a:hover {
   /* 2026-09-22: 목업(Type A 카드형 대시보드) 요청 — 카드 내부 색을 진회색(--bg-panel)이 아니라
      검정으로. refresh.css의 "html body.page-tm-v2 .schedule-card{background:var(--r-bg) !important}"
      규칙(데스크톱 min-width:769px)이 !important + 더 높은 specificity라 이 규칙만으로는 못 이겨서,
-     파일 하단에 refresh.css보다 specificity가 높은 대응 규칙을 별도로 둔다(실제 적용은 거기서). */
-  background: #000;
+     파일 하단에 refresh.css보다 specificity가 높은 대응 규칙을 별도로 둔다(실제 적용은 거기서).
+     2026-09-23: 검정을 하드코딩했더니 라이트 모드에서도 카드가 계속 검정으로 떠 있었다 —
+     refresh.css가 쓰는 것과 같은 변수(--r-bg: 라이트=#fff, 다크=#000)로 바꿔 테마를 따라가게 한다. */
+  background: var(--r-bg, #000);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--sheet-shadow);
@@ -1372,9 +1374,17 @@ a:hover {
     0 0 18px color-mix(in srgb, var(--up-color, #e24b4a) 22%, transparent);
 }
 
-/* 주목(medium) 카드 강조 색상은 사이트 기본 골드 대신, 사용자가 지정한 목업 이미지의
-   라임/옐로그린 색을 그대로 쓴다(요청: "주목 1시간후 저런건 저이미지색으로 써도 괜찮음"). */
+/* 주목(medium) 카드 강조 색상 — 라이트 모드 기본값은 사이트의 기존 .impact-badge--medium
+   라이트 배지와 같은 앰버 계열(#a16207). 다크 모드에서만 사용자가 지정한 목업 이미지의
+   라임/옐로그린(#bef264)을 그대로 쓴다(요청: "주목 1시간후 저런건 저이미지색으로 써도 괜찮음"
+   — 이 허락은 다크 목업 기준이라 라이트에는 적용하지 않는다). */
 .econ-card--medium {
+  border-color: color-mix(in srgb, #a16207 45%, var(--border-strong));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #a16207 30%, transparent),
+    0 0 14px color-mix(in srgb, #a16207 16%, transparent);
+}
+[data-theme="dark"] .econ-card--medium {
   border-color: color-mix(in srgb, #bef264 55%, var(--border-strong));
   box-shadow:
     0 0 0 1px color-mix(in srgb, #bef264 40%, transparent),
@@ -1415,10 +1425,16 @@ a:hover {
   color: var(--accent-gold, #f5b347);
 }
 
-/* 임박(2시간 이내) 지표의 카운트다운 pill — 사용자가 지정한 목업 이미지의 시안색 사용. */
+/* 임박(2시간 이내) 지표의 카운트다운 pill — 다크 모드는 사용자가 지정한 목업 이미지의 밝은
+   시안(#22d3ee). 라이트 모드는 흰 배경에 너무 튀어서 톤을 낮춘 청록(#0e7490)을 기본값으로. */
 .econ-card__countdown--urgent {
   padding: 2px 8px;
   border-radius: 999px;
+  background: color-mix(in srgb, #0e7490 14%, var(--bg-tertiary));
+  color: #0e7490;
+  border: 1px solid color-mix(in srgb, #0e7490 35%, transparent);
+}
+[data-theme="dark"] .econ-card__countdown--urgent {
   background: color-mix(in srgb, #22d3ee 22%, var(--card-bg, #161616));
   color: #22d3ee;
   border: 1px solid color-mix(in srgb, #22d3ee 45%, transparent);
@@ -3309,7 +3325,9 @@ a:hover {
    카드들과 공유), 이 파일(weekly-market.css, 이 페이지 전용)에서 클래스를 중복 지정해
    specificity를 refresh.css보다 확실히 높여 되찾는다. 2026-09-22. */
 html body.page-tm-v2 .schedule-card.schedule-card {
-  background: #000 !important;
+  /* 2026-09-23: 라이트 모드 대응 — var(--r-bg)는 refresh.css가 이미 라이트=#fff/다크=#000으로
+     테마별로 정의해 둔 변수라, 여기서도 그대로 쓰면 테마 전환에 자동으로 맞는다. */
+  background: var(--r-bg, #000) !important;
   border-color: var(--border) !important;
 }
 

@@ -429,8 +429,18 @@
     const params = new URLSearchParams(window.location.search);
     const urlCode = code6Maybe(params.get("code") || "");
     const urlName = String(params.get("name") || "").trim();
-    if (/^[0-9A-Z]{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
-      return { code: urlCode, name: urlName || q, market: "KR" };
+    if (urlName && /^[0-9A-Z]{6}$/.test(urlCode) && (q === urlCode || q === urlName || !params.get("q"))) {
+      return { code: urlCode, name: urlName, market: "KR" };
+    }
+
+    // 2026-09-23: URL에 code만 있고 name이 없는 경우(예: 종가시그널에서 넘어올 때)
+    // 예전엔 위 분기가 name 없이도 걸려서 코드를 그대로 이름으로 써버렸다(예: "440110"이
+    // 화면 제목에 뜸). 이제는 그 경우 아래 로컬 종목 리스트 조회로 흘려보내
+    // resolveQueryLocal이 stockList에서 실제 종목명을 찾게 한다.
+    if (/^[0-9A-Z]{6}$/.test(urlCode) && (q === urlCode || !params.get("q"))) {
+      const byUrlCode = resolveQueryLocal(urlCode);
+      if (byUrlCode) return byUrlCode;
+      return { code: urlCode, name: urlCode, market: "KR" };
     }
 
     const local = resolveQueryLocal(q);

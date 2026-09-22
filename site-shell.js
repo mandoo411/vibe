@@ -845,7 +845,12 @@
       window.tmBindThemeToggle();
     }
     if (typeof window.tmApplyTheme === "function") {
-      const cur = document.documentElement.getAttribute("data-theme") || "light";
+      // 2026-09-23: 기본 테마가 다크로 바뀐 지 오래인데(theme.js 2026-09-22) 여기 폴백값만
+      // "light"로 남아 있었다. data-theme 속성이 아직 안 잡힌 드문 타이밍에 이 분기를 타면
+      // tmApplyTheme가 localStorage까지 "light"로 덮어써버려서, 다크모드로 쓰던 사용자가
+      // 페이지 이동 중 가끔 라이트모드로 강제 전환되고 그 이후로도 계속 라이트로 남는
+      // 원인이었다(AI종목분석 페이지 제보). theme.js의 기본값(dark)과 맞춘다.
+      const cur = document.documentElement.getAttribute("data-theme") || "dark";
       window.tmApplyTheme(cur);
     }
   }

@@ -647,7 +647,7 @@
         }
         function detailHtml(r) {
           var html =
-            '<a class="cb-ai-link" href="./stock-analysis.html?code=' + encodeURIComponent(r.code) + '">' +
+            '<a class="cb-ai-link" href="./stock-analysis.html?code=' + encodeURIComponent(r.code) + '&name=' + encodeURIComponent(r.name || '') + '">' +
             '<i class="ti ti-chart-candle" aria-hidden="true"></i>' +
             "AI종목분석으로 " + esc(r.name) + "의 현재 위치 확인하기" +
             '<i class="ti ti-chevron-right" aria-hidden="true"></i></a>';
@@ -758,7 +758,7 @@
             (hasClose ? "<th>다음날 종가</th><th>종가 매도</th><th>하루 고·저</th>" : "") + "</tr>";
           var body = picks.map(function (p) {
             var row =
-              '<td class="cb-t-name"><a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '">' +
+              '<td class="cb-t-name"><a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
               esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
               "<small>" + esc(p.code) + (p.score != null ? " · " + p.score + "점" : "") +
               (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +

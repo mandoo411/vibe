@@ -169,7 +169,7 @@ body.page-home-v2 {
   border: 1px solid rgba(5, 150, 105, 0.18);
   border-radius: 50%;
   background: #ffffff;
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -188,7 +188,7 @@ body.page-home-v2 {
 
 .home-nav__theme i,
 .home-nav__theme #theme-icon {
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   font-size: 17px;
 }
 
@@ -408,7 +408,7 @@ body[data-theme="dark"] .home-nav__ai-badge {
 
 .home-hero__title em {
   font-style: normal;
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
 }
 
 [data-theme="dark"] .home-hero__title em {

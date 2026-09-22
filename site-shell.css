@@ -609,7 +609,7 @@ body.page-home-v2 {
   border: 1px solid rgba(5, 150, 105, 0.18);
   border-radius: 50%;
   background: #ffffff;
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -628,7 +628,7 @@ body.page-home-v2 {
 
 .home-nav__theme i,
 .home-nav__theme #theme-icon {
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   font-size: 17px;
 }
 
@@ -639,11 +639,16 @@ body.page-home-v2 {
   gap: 4px;
   opacity: 1;
   transition: opacity 0.15s ease;
-  /* 2026-09-19: <a> 태그라 브라우저 기본 밑줄이 생기는데, 이 밑줄 색은 텍스트(span/i)의
-     개별 color가 아니라 이 앵커 자신이 상속하는 .home-nav__theme의 color(#ffd84d, 원래
-     테마 토글 아이콘용 골드)를 그대로 따른다. 그래서 로그인 글자는 하얀/초록인데 밑줄만
-     노랗게 남는 버그가 있었다 — text-decoration:none으로 밑줄 자체를 없앤다. */
+  /* 2026-09-19: <a> 태그라 브라우저 기본 밑줄이 생기는데, 그 밑줄 색은 텍스트(span/i)의
+     개별 color가 아니라 **이 앵커 자신이 상속하는 색**을 따른다. 부모 .home-nav__theme이
+     테마 토글 아이콘용 골드(#ffd84d)를 갖고 있어서, 글자는 초록인데 밑줄만 노랗게 남았다.
+     2026-09-22: 같은 증상이 '마이페이지' 상태에서 재발해 두 겹으로 막았다 —
+     ①골드 토큰 자체를 팔레트 색으로 교체(#ffd84d 전멸) ②여기서 color를 직접 지정해
+     부모 색을 아예 상속하지 않게 한다. 밑줄 제거(text-decoration:none)도 그대로 둔다. */
+  color: var(--accent-brand, #059669);
   text-decoration: none;
+  -webkit-text-decoration-color: transparent;
+  text-decoration-color: transparent;
 }
 
 /* 2026-07-11: 로그인 상태 확인이 끝나기 전에는 숨겨서, "로그인"으로 잘못 그렸다가
@@ -669,7 +674,12 @@ body.page-home-v2 {
 body[data-theme="dark"] .home-nav__account-link i,
 [data-theme="dark"] .home-nav__account-link-label,
 body[data-theme="dark"] .home-nav__account-link-label {
-  color: var(--accent-gold, #ffd84d);
+  color: var(--accent-icon, #10b981);
+}
+
+[data-theme="dark"] .home-nav__account-link,
+body[data-theme="dark"] .home-nav__account-link {
+  color: var(--accent-icon, #10b981);
 }
 
 /* 헤더 로고·배지 — index.html(home.css)와 동일 */

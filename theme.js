@@ -1,23 +1,27 @@
 (function () {
   const STORAGE_KEY = "theme";
 
+  /* 2026-09-22: 기본 테마를 다크로 전환(시우 요청). 저장값이 없거나 알 수 없는 값이면 다크다.
+     예전에는 반대로 "dark"만 다크로 보고 나머지를 전부 라이트로 떨어뜨렸다. */
   function normalizeTheme(value) {
-    return value === "dark" ? "dark" : "light";
+    return value === "light" ? "light" : "dark";
   }
 
   function getStoredTheme() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "light" || stored === "dark") return stored;
-      return "light";
+      return "dark";
     } catch (_) {
-      return "light";
+      return "dark";
     }
   }
 
   function setMetaThemeColor(theme) {
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", theme === "light" ? "#ffffff" : "#0d172a");
+    /* 다크값이 옛 네이비(#0d172a)로 남아 있어서 모바일 브라우저 주소창만 다른 색이었다.
+       Jet Black & Steel 팔레트의 --body-bg(#000000)와 맞춘다. */
+    if (meta) meta.setAttribute("content", theme === "light" ? "#ffffff" : "#000000");
   }
 
   function updateThemeIcon(theme) {
@@ -54,7 +58,7 @@
   }
 
   function toggleTheme() {
-    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
     applyTheme(current === "light" ? "dark" : "light");
   }
 

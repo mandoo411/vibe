@@ -128,7 +128,7 @@
   border: 1px solid rgba(5, 150, 105, 0.18);
   border-radius: 50%;
   background: var(--bg-secondary);
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -147,7 +147,7 @@
 #theme-toggle i {
   font-size: 19px;
   line-height: 1;
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
 }
 
 /* Tabler CDN 실패 시(data-fallback) 이모지 표시 */
@@ -184,7 +184,7 @@
 [data-theme="dark"] #theme-toggle {
   background: var(--accent-blue);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
 }
 
@@ -192,7 +192,7 @@
 .dark-mode #theme-toggle i,
 [data-theme="dark"] .tm-theme-toggle i,
 [data-theme="dark"] #theme-toggle i {
-  color: #ffd84d;
+  color: var(--accent-icon, #10b981);
 }
 
 .dark-mode .tm-theme-toggle:hover,

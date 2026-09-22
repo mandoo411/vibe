@@ -775,8 +775,13 @@ a:hover {
 .section-date {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-secondary);
   white-space: nowrap;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-strong);
 }
 
 .calendar-nav {
@@ -1281,6 +1286,7 @@ a:hover {
 
 .kr-ipo-list {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 8px;
 }
 
@@ -1325,6 +1331,131 @@ a:hover {
 
 .kr-pill--kospi {
   border-color: color-mix(in srgb, var(--up-color) 35%, var(--border));
+}
+
+/* 2026-09-22: 경제지표 카드형 레이아웃 (Type A 목업 반영).
+   기존 .schedule-table* 규칙들은 다른 곳에서 더 이상 쓰이지 않지만, 혹시 모를
+   회귀에 대비해 그대로 둔다 — 데드 코드라도 사이트 다른 곳을 건드리지 않는 편이 안전. */
+.econ-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.econ-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-tertiary);
+  transition: opacity 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.econ-card--high {
+  border-color: color-mix(in srgb, var(--up-color, #e24b4a) 55%, var(--border-strong));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--up-color, #e24b4a) 35%, transparent),
+    0 0 18px color-mix(in srgb, var(--up-color, #e24b4a) 22%, transparent);
+}
+
+/* 주목(medium) 카드 강조 색상은 사이트 기본 골드 대신, 사용자가 지정한 목업 이미지의
+   라임/옐로그린 색을 그대로 쓴다(요청: "주목 1시간후 저런건 저이미지색으로 써도 괜찮음"). */
+.econ-card--medium {
+  border-color: color-mix(in srgb, #bef264 55%, var(--border-strong));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #bef264 40%, transparent),
+    0 0 18px color-mix(in srgb, #bef264 24%, transparent);
+}
+
+.econ-card--done {
+  opacity: 0.5;
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+
+.econ-card__time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.econ-card__time-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.econ-card__countdown {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.econ-card__countdown--plain {
+  color: var(--accent-gold, #f5b347);
+}
+
+/* 임박(2시간 이내) 지표의 카운트다운 pill — 사용자가 지정한 목업 이미지의 시안색 사용. */
+.econ-card__countdown--urgent {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #22d3ee 22%, var(--card-bg, #161616));
+  color: #22d3ee;
+  border: 1px solid color-mix(in srgb, #22d3ee 45%, transparent);
+}
+
+.econ-card__countdown--done {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.econ-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.econ-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.econ-card__country {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.econ-card__impact {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+[data-theme="dark"] .econ-card .impact-badge--medium {
+  background: color-mix(in srgb, #bef264 20%, var(--card-bg, #161616));
+  color: #bef264;
+  border: 1px solid color-mix(in srgb, #bef264 40%, transparent);
+}
+
+@media (max-width: 480px) {
+  .econ-card {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .econ-card__impact {
+    order: -1;
+    margin-left: auto;
+  }
 }
 
 .kr-pill--kosdaq {

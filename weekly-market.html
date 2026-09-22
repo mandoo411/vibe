@@ -762,21 +762,24 @@
         }
 
         function countdownLabel(row) {
+          // 2026-09-22: urgent 플래그 추가 — 카드형 UI에서 임박한(2시간 이내) 지표의
+          // 카운트다운을 강조 pill로 보여주기 위함. 기존 text/done 필드는 그대로 유지.
           const target = eventDateTime(row);
-          if (Number.isNaN(target.getTime())) return { text: "", done: false };
+          if (Number.isNaN(target.getTime())) return { text: "", done: false, urgent: false };
           const now = new Date();
-          if (now >= target) return { text: "발표완료", done: true };
+          if (now >= target) return { text: "발표완료", done: true, urgent: false };
           const diffMs = target - now;
           const diffMin = Math.floor(diffMs / 60000);
-          if (diffMin < 60) return { text: `${Math.max(1, diffMin)}분 후`, done: false };
+          const urgent = diffMin < 120;
+          if (diffMin < 60) return { text: `${Math.max(1, diffMin)}분 후`, done: false, urgent };
           const diffHr = Math.floor(diffMin / 60);
-          if (diffHr < 24) return { text: `${diffHr}시간 후`, done: false };
+          if (diffHr < 24) return { text: `${diffHr}시간 후`, done: false, urgent };
           const today = seoulYmd();
           const d0 = new Date(`${today}T12:00:00+09:00`).getTime();
           const d1 = new Date(`${String(row.date).slice(0, 10)}T12:00:00+09:00`).getTime();
           const dayDiff = Math.round((d1 - d0) / (24 * 3600 * 1000));
-          if (dayDiff > 0) return { text: `D-${dayDiff}`, done: false };
-          return { text: `${diffHr}시간 후`, done: false };
+          if (dayDiff > 0) return { text: `D-${dayDiff}`, done: false, urgent: false };
+          return { text: `${diffHr}시간 후`, done: false, urgent };
         }
 
         function timeCellHtml(row) {
@@ -1031,43 +1034,53 @@
             return d !== 0 ? d : String(a.time || "").localeCompare(String(b.time || ""));
           });
           if (!list.length) return '<p class="empty-text">경제지표 일정 없음</p>';
-          return `<div class="schedule-table-wrap"><table class="schedule-table schedule-table--economic">
-            <thead><tr><th>시간</th><th>지표명</th><th>이전 · 예측 · 실제</th><th>중요도</th></tr></thead>
-            <tbody>${list
-              .map((r) => {
-                const impactKey = resolveImpactKey(r);
-                // 2026-09-02: 중요도 컬럼이 '핵심'을 그대로 표시하게 되어 좌측 핵심 배지는 중복 — 제거.
-                const isKey = impactKey === "high";
-                const rowClass = [`impact-${impactKey}`, isKey ? "schedule-row--key" : ""].filter(Boolean).join(" ");
-                const keyBadge = "";
-                const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
-                const actualText = fmtEconValue(r.actual, r.unit);
-                const sClass = surpriseClass(r.actual, r.estimate);
-                const prev = escapeHtml(fmtEconValue(r.previous, r.unit));
-                const est = escapeHtml(fmtEconValue(r.estimate, r.unit));
-                const act = `<span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span>`;
-                // 2026-07-31: FOMC 성명서·기자회견처럼 애초에 수치 자체가 없는 이벤트는
-                // 이전·예측·실제 칸이 전부 "—"로만 채워져 지저분해 보인다는 피드백에 따라,
-                // 세 값이 전부 비어 있으면 "이전/예측/실제" 라벨 자체를 렌더링하지 않는다.
-                const hasMetrics = [r.previous, r.estimate, r.actual].some(
-                  (v) => v !== null && v !== undefined && String(v).trim() !== ""
-                );
-                const metricsHtml = hasMetrics
-                  ? `<div class="schedule-metrics-inline">
-                      <span class="schedule-metric"><span class="schedule-metric__lbl">이전</span>${prev}</span>
-                      <span class="schedule-metric"><span class="schedule-metric__lbl">예측</span>${est}</span>
-                      <span class="schedule-metric"><span class="schedule-metric__lbl">실제</span>${act}</span>
-                    </div>`
-                  : "";
-                return `<tr class="${rowClass}">
-                  <td class="schedule-td-time" data-label="시간">${timeCellHtml(r)}</td>
-                  <td class="schedule-td-event" data-label="지표명"><div class="schedule-event-head">${keyBadge}<span class="indicator-label">${labelHtml}</span></div><span class="schedule-event-country">${escapeHtml(r.country || "")}</span></td>
-                  <td class="schedule-td-metrics">${metricsHtml}</td>
-                  <td class="schedule-td-impact" data-label="중요도">${impactBadgeHtml(impactKey)}</td>
-                </tr>`;
-              })
-              .join("")}</tbody>
-          </table></div>`;
+          // 2026-09-22: 표(table) 레이아웃 → 카드(econ-card) 레이아웃으로 전환.
+          // 사용자 제공 목업(Type A: 카드형 대시보드) 반영 — 시간/카운트다운, 지표명+수치,
+          // 중요도 배지를 한 카드 안에 배치하고 핵심/주목 지표는 강조 테두리로 표시한다.
+          return `<div class="econ-card-list">${list
+            .map((r) => {
+              const impactKey = resolveImpactKey(r);
+              const cd = countdownLabel(r);
+              const cdCls = cd.done
+                ? "econ-card__countdown econ-card__countdown--done"
+                : cd.urgent
+                ? "econ-card__countdown econ-card__countdown--urgent"
+                : "econ-card__countdown econ-card__countdown--plain";
+              const labelHtml = indicatorDisplayHtml(r) || escapeHtml("—");
+              const actualText = fmtEconValue(r.actual, r.unit);
+              const sClass = surpriseClass(r.actual, r.estimate);
+              const prev = escapeHtml(fmtEconValue(r.previous, r.unit));
+              const est = escapeHtml(fmtEconValue(r.estimate, r.unit));
+              const act = `<span class="surprise-value ${sClass}">${escapeHtml(actualText)}</span>`;
+              const hasMetrics = [r.previous, r.estimate, r.actual].some(
+                (v) => v !== null && v !== undefined && String(v).trim() !== ""
+              );
+              const metricsHtml = hasMetrics
+                ? `<div class="schedule-metrics-inline">
+                    <span class="schedule-metric"><span class="schedule-metric__lbl">이전</span>${prev}</span>
+                    <span class="schedule-metric"><span class="schedule-metric__lbl">예측</span>${est}</span>
+                    <span class="schedule-metric"><span class="schedule-metric__lbl">실제</span>${act}</span>
+                  </div>`
+                : "";
+              const cardClass = ["econ-card", `econ-card--${impactKey}`, cd.done ? "econ-card--done" : ""]
+                .filter(Boolean)
+                .join(" ");
+              return `<div class="${cardClass}">
+                <div class="econ-card__time">
+                  <span class="econ-card__time-val">${escapeHtml(r.time || "—")}</span>
+                  ${cd.text ? `<span class="${cdCls}">${escapeHtml(cd.text)}</span>` : ""}
+                </div>
+                <div class="econ-card__body">
+                  <div class="econ-card__head">
+                    <span class="indicator-label">${labelHtml}</span>
+                    <span class="econ-card__country">${escapeHtml(r.country || "")}</span>
+                  </div>
+                  ${metricsHtml}
+                </div>
+                <div class="econ-card__impact">${impactBadgeHtml(impactKey)}</div>
+              </div>`;
+            })
+            .join("")}</div>`;
         }
 
         function renderKRIPO(rows, showTitle = true) {

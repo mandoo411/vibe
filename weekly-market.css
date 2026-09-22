@@ -2620,7 +2620,15 @@ a:hover {
    다가오는 주요일정
    ════════════════════════════════════════ */
 .upcoming-date-group {
-  margin-bottom: 24px;
+  /* 2026-09-22: 기존엔 하단 1px 구분선만 있어서 신규상장 등 마지막 항목이 다음 날짜
+     그룹과 경계 없이 붙어 보였다 — 날짜별로 실제 박스(테두리+배경)를 둘러서, 그 날의
+     경제지표·실적·신규상장이 전부 "같은 박스 안"으로 명확히 읽히게 한다. */
+  margin-bottom: 16px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius, 10px);
+  background: var(--bg-tertiary);
+  overflow: hidden;
 }
 .upcoming-date-group:last-child {
   margin-bottom: 0;
@@ -2630,8 +2638,8 @@ a:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  margin-bottom: 8px;
+  padding: 10px 16px;
+  margin-bottom: 0;
   background: var(--surface);
   border-left: 3px solid var(--border-strong);
 }
@@ -2660,7 +2668,7 @@ a:hover {
 }
 
 .upcoming-events {
-  padding: 0 4px;
+  padding: 10px 16px 4px;
 }
 
 /* ════════════════════════════════════════
@@ -2670,14 +2678,11 @@ a:hover {
   padding: 24px 16px;
   text-align: center;
 }
+/* 2026-09-22: 위 .upcoming-date-group 박스화로 대체 — 하단 선 구분은 더 이상 필요 없음 */
 #upcoming-list .upcoming-date-group {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-  margin-bottom: 16px;
+  border-bottom: none;
 }
 #upcoming-list .upcoming-date-group:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
   margin-bottom: 0;
 }
 
@@ -2702,14 +2707,14 @@ a:hover {
 }
 
 .page-tm-v2 .upcoming-date-header {
-  padding: 6px 10px;
-  margin-bottom: 6px;
+  padding: 8px 12px;
+  margin-bottom: 0;
 }
 .page-tm-v2 .upcoming-date-chip {
   font-size: 12px;
 }
 .page-tm-v2 .upcoming-events {
-  padding: 0 2px;
+  padding: 8px 12px 4px;
 }
 
 .page-tm-v2 .date-nav-bar {
@@ -2725,7 +2730,6 @@ a:hover {
 }
 
 .page-tm-v2 #upcoming-list .upcoming-date-group {
-  padding-bottom: 12px;
   margin-bottom: 12px;
 }
 

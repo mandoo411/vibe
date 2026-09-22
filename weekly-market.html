@@ -1085,7 +1085,9 @@
 
         function renderKRIPO(rows, showTitle = true) {
           if (!rows?.length) return "";
-          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title">📋 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
+          // 2026-09-22: 이 헤더만 이모지(📋)를 쓰고 있어서, 같은 페이지의 "경제지표"(ti-chart-bar)·
+          // "실적 발표"(ti-trending-up) 아이콘과 스타일이 안 맞고 다른 걸로 보였다 — 아이콘 폰트로 통일.
+          return `<div class="kr-schedule-block">${showTitle ? '<h4 class="kr-schedule-title"><i class="ti ti-building-bank"></i> 신규상장</h4>' : ""}<div class="kr-ipo-list">${rows
             .map((r) => {
               const name = cleanIpoName(r.name);
               const market = r.market || "—";

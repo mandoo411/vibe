@@ -742,11 +742,11 @@ a:hover {
 }
 
 .schedule-card {
-  /* 2026-09-22: refresh.css의 "html body.page-tm-v2 .schedule-card{background:var(--r-bg) !important}"
-     규칙(데스크톱 min-width:769px, --r-bg:#000000)이 !important + 더 높은 specificity로 아래 배경을
-     조용히 검정으로 덮어써 왔다(카드 사이 틈이 "검정색이 섞인" 것처럼 보이던 원인). 이 규칙만으로는
-     못 이겨서 파일 하단에 refresh.css보다 specificity가 높은 대응 규칙을 별도로 둔다. */
-  background: var(--bg-panel);
+  /* 2026-09-22: 목업(Type A 카드형 대시보드) 요청 — 카드 내부 색을 진회색(--bg-panel)이 아니라
+     검정으로. refresh.css의 "html body.page-tm-v2 .schedule-card{background:var(--r-bg) !important}"
+     규칙(데스크톱 min-width:769px)이 !important + 더 높은 specificity라 이 규칙만으로는 못 이겨서,
+     파일 하단에 refresh.css보다 specificity가 높은 대응 규칙을 별도로 둔다(실제 적용은 거기서). */
+  background: #000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--sheet-shadow);
@@ -760,7 +760,10 @@ a:hover {
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-secondary);
+  /* 2026-09-22: 카드 배경을 검정으로 통일하면서 헤더만 --bg-secondary로 남아있으면 카드 안에서
+     헤더/본문이 두 톤으로 갈라져 보인다 — 헤더 배경을 없애 부모(.schedule-card)의 검정이
+     그대로 이어지게 한다. */
+  background: transparent;
 }
 
 .section-kicker {
@@ -1708,7 +1711,10 @@ a:hover {
 }
 
 .kr-schedule-title {
+  /* 2026-09-22: 부모 .upcoming-events가 좌우 패딩 0이 되면서, subsection-title과 같은 위치에
+     오도록 이 제목 자체에 좌우 패딩을 준다(다가오는 주요일정에서만 쓰이는 클래스). */
   margin: 0 0 8px;
+  padding: 0 16px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--accent-bright);
@@ -2762,26 +2768,26 @@ a:hover {
 .upcoming-date-group {
   /* 2026-09-22: 기존엔 하단 1px 구분선만 있어서 신규상장 등 마지막 항목이 다음 날짜
      그룹과 경계 없이 붙어 보였다 — 날짜별로 실제 박스(테두리+배경)를 둘러서, 그 날의
-     경제지표·실적·신규상장이 전부 "같은 박스 안"으로 명확히 읽히게 한다. */
+     경제지표·실적·신규상장이 전부 "같은 박스 안"으로 명확히 읽히게 한다.
+     2026-09-22 추가: "오늘 일정" 박스와 레이아웃·색상·모양이 완전히 같아야 한다는 요청 —
+     배경/테두리/라운딩은 이제 HTML에 같이 붙인 .schedule-card 클래스가 그대로 책임지므로
+     여기서는 지운다(따로 정의하면 값이 미묘하게 갈릴 위험이 있다). 간격만 이 클래스 몫. */
   margin-bottom: 16px;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius, 10px);
-  background: var(--bg-tertiary);
-  overflow: hidden;
 }
 .upcoming-date-group:last-child {
   margin-bottom: 0;
 }
 
 .upcoming-date-header {
+  /* 2026-09-22: TODAY 카드의 .section-head와 같은 모양(하단 보더 구분선, 투명 배경, 같은 패딩)으로
+     통일 — 기존 좌측 강조선+다른 배경 톤은 제거. */
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 14px 16px;
   margin-bottom: 0;
-  background: var(--surface);
-  border-left: 3px solid var(--border-strong);
+  background: transparent;
+  border-bottom: 1px solid var(--border);
 }
 .upcoming-date-header--today {
   border-left-color: var(--accent-bright);
@@ -2808,7 +2814,9 @@ a:hover {
 }
 
 .upcoming-events {
-  padding: 10px 16px 4px;
+  /* 2026-09-22: TODAY 카드(#day-schedule-content, 좌우 패딩 0 — econ-card/kr-ipo-item이
+     패널 가장자리까지 꽉 참)와 레이아웃을 맞추기 위해 좌우 패딩 제거. */
+  padding: 10px 0 4px;
 }
 
 /* ════════════════════════════════════════
@@ -2847,14 +2855,28 @@ a:hover {
 }
 
 .page-tm-v2 .upcoming-date-header {
-  padding: 8px 12px;
+  /* 2026-09-22: .page-tm-v2 .schedule-card .section-head와 같은 패딩(10px 12px)으로 맞춤 */
+  padding: 10px 12px;
   margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 768px) {
+  /* 2026-09-22: .page-tm-v2 .schedule-card .section-head도 이 폭에서 12px 14px로 커지므로 맞춤.
+     (바로 위 무조건 규칙과 specificity가 같아 소스상 나중인 이 규칙이 이 폭에서 이긴다) */
+  .page-tm-v2 .upcoming-date-header {
+    padding: 12px 14px;
+  }
 }
 .page-tm-v2 .upcoming-date-chip {
   font-size: 12px;
 }
 .page-tm-v2 .upcoming-events {
-  padding: 8px 12px 4px;
+  /* 2026-09-22: TODAY 카드와 맞추기 위해 좌우 패딩 제거(카드가 가장자리까지 꽉 차는 레이아웃) */
+  padding: 8px 0 4px;
+}
+.page-tm-v2 .kr-schedule-title {
+  /* 2026-09-22: .page-tm-v2 .day-sub-section .subsection-title과 같은 좌우 패딩(10px)으로 맞춤 */
+  padding: 0 10px;
 }
 
 .page-tm-v2 .date-nav-bar {
@@ -3287,7 +3309,7 @@ a:hover {
    카드들과 공유), 이 파일(weekly-market.css, 이 페이지 전용)에서 클래스를 중복 지정해
    specificity를 refresh.css보다 확실히 높여 되찾는다. 2026-09-22. */
 html body.page-tm-v2 .schedule-card.schedule-card {
-  background: var(--bg-panel) !important;
+  background: #000 !important;
   border-color: var(--border) !important;
 }
 

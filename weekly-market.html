@@ -1283,7 +1283,8 @@
           const diff = Math.round((d1 - d0) / 86400000);
           if (diff === 0) return "오늘";
           if (diff === 1) return "내일";
-          if (diff > 1) return `D-${diff}`;
+          if (diff === 2) return "모레";
+          if (diff > 2) return `D-${diff}`;
           return "";
         }
 

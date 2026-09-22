@@ -3452,10 +3452,12 @@
     const body = $("rt-tbody");
     if (!body || body.dataset.rtChartWire === "1") return;
     body.dataset.rtChartWire = "1";
+    /* 2026-09-22: 종목명만 눌러야 상세정보가 열리던 것을, 행(row) 어디를 눌러도 열리게 확장.
+       rt-stock-row 안에는 종목명 버튼 외 다른 클릭 가능 요소가 없어 행 전체를 눌러도 안전하다. */
     body.addEventListener("click", (ev) => {
-      const btn = ev.target.closest(".rt-name-chart-btn");
-      if (!btn || !body.contains(btn)) return;
-      const code = stockCodeFromChartBtn(btn);
+      const row = ev.target.closest("tr.rt-stock-row");
+      if (!row || !body.contains(row)) return;
+      const code = code6Maybe(row.getAttribute("data-code") || "");
       if (!isValidStockCode(code)) return;
       if (code6Maybe(state.openChartCode) === code) {
         abortDetailFetch();

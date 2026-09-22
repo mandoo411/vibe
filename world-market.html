@@ -348,6 +348,10 @@
       .world-row.is-open {
         background: var(--accent-dim);
       }
+      /* 2026-09-22: 모바일 — 행 전체 클릭 가능(이름만 아니라 어디든) — 커서로 안내 */
+      .world-row[data-key] {
+        cursor: pointer;
+      }
       @media (max-width: 768px) {
         .world-scroll {
           overflow-x: hidden !important;
@@ -873,9 +877,10 @@
           body.dataset.worldWire = "1";
           body.addEventListener("click", (ev) => {
             if (!isMobile()) return;
-            const btn = ev.target.closest(".world-name-btn");
-            if (!btn || !body.contains(btn)) return;
-            const key = btn.getAttribute("data-key");
+            /* 2026-09-22: 종목명뿐 아니라 행 전체를 클릭해도 상세정보가 열리도록 확장 */
+            const row = ev.target.closest("tr.world-row[data-key]");
+            if (!row || !body.contains(row)) return;
+            const key = row.getAttribute("data-key");
             state.openKey = state.openKey === key ? null : key;
             renderBody();
           });

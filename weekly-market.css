@@ -733,6 +733,10 @@ a:hover {
 
 .schedule-card--today {
   order: -2;
+  /* 2026-09-22: "오늘 일정" 박스가 아래 다가오는 일정 카드와 구분 없이 붙어 보인다는
+     피드백 — 상단에 강조색 바를 둬서 하나의 뚜렷한 박스로 묶여 보이게 한다. */
+  border-top: 3px solid var(--accent-bright, var(--accent-brand));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 .schedule-card {
@@ -1287,8 +1291,11 @@ a:hover {
   justify-content: space-between;
   gap: 6px 10px;
   padding: 10px 12px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
+  /* 2026-09-22: 기존엔 background가 부모 카드(.schedule-card)와 완전히 같은 색이라
+     border 1px만으로는 박스로 안 보였다 — 한 단계 밝은 톤 + 강한 테두리로 구분 */
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius, 8px);
+  background: var(--bg-tertiary);
   color: var(--text);
   text-decoration: none;
   transition:

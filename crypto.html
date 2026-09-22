@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
     <script src="./assets/data-url.js"></script>
-    <script src="./assets/lw-candle-chart.js?v=1"></script>
+    <script src="./assets/lw-candle-chart.js?v=2"></script>
     <link rel="stylesheet" href="./typography.css?v=1" />
     <style>
       .crypto-wrap,
@@ -272,6 +272,10 @@
       }
       .crypto-table tr:hover td {
         background: var(--accent-dim);
+      }
+      /* 2026-09-22: 코인명뿐 아니라 행 전체 클릭 가능 — 커서로 안내 */
+      .crypto-table tbody tr[data-symbol] {
+        cursor: pointer;
       }
       .crypto-table .num {
         text-align: right;
@@ -1585,9 +1589,11 @@
           if (!body || body.dataset.cryptoWire === "1") return;
           body.dataset.cryptoWire = "1";
           body.addEventListener("click", (ev) => {
-            const btn = ev.target.closest(".crypto-name-btn");
-            if (!btn || !body.contains(btn)) return;
-            const symbol = btn.getAttribute("data-symbol");
+            /* 2026-09-22: 코인명뿐 아니라 행 전체를 클릭해도 상세정보가 열리도록 확장 */
+            const row = ev.target.closest("tr[data-symbol]");
+            if (!row || !body.contains(row)) return;
+            const symbol = row.getAttribute("data-symbol");
+            if (!symbol) return;
             const opening = state.openSymbol !== symbol;
             if (state.chartHandle && window.tmDisposeCandleChart) {
               window.tmDisposeCandleChart(state.chartHandle);

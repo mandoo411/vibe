@@ -1751,6 +1751,10 @@
       .rt-table tr:hover td {
         background: var(--accent-dim);
       }
+      /* 2026-09-22: 종목명뿐 아니라 행 전체를 클릭해도 상세정보가 열리도록 확장 — 커서로 안내 */
+      .rt-table tbody tr.rt-stock-row {
+        cursor: pointer;
+      }
       .rt-table .num {
         text-align: right;
         font-variant-numeric: tabular-nums;

@@ -3771,3 +3771,244 @@ html body.page-tm-v2 .schedule-aside .calendar-nav,
 html body.page-tm-v2 .schedule-aside .calendar-nav__btn {
   background: transparent !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   2026-09-23 (3차) — 라이트 바탕 일원화 + 모바일 레이아웃 재구성 (시우 요청)
+   ① 라이트: 본문(.tm-main)만 회색이고 그 안 .page·body는 흰색이라 바탕이 두 톤이었다 → 전부 #f2f4f6.
+   ② 모바일(≤960px): 달력·핵심지표·요약이 한 줄 레이아웃에서 맨 밑으로 밀려 "있으나 마나"였다.
+      → 사이드는 숨기고, 맨 위에 "다음 핵심 지표" 한 줄 + 가로로 넘기는 날짜 띠(#wk-mtop)를 둔다.
+      이번 달 요약(건수)은 모바일에서 판단에 쓰이지 않아 뺐다.
+   ③ 모바일 카드 안 일정분석은 세로로 3장 쌓이면 오늘 카드가 화면 몇 개를 먹었다 → 옆으로 넘기는 캐러셀.
+   ════════════════════════════════════════════════════════════════════════════ */
+/* refresh.css 모바일 블록이 html body.page-tm-v2 .tm-main .page 에 --r-bg(흰색)를 !important로 건다 →
+   그보다 센 선택자로 덮는다 */
+html:not([data-theme="dark"]) body.page-tm-v2:has(.schedule-page),
+html:not([data-theme="dark"]) body.page-tm-v2:has(.schedule-page) .tm-wrap,
+html:not([data-theme="dark"]) body.page-tm-v2 .tm-main:has(.schedule-page),
+html:not([data-theme="dark"]) body.page-tm-v2 .tm-main .page:has(.schedule-page) {
+  background: #f2f4f6 !important;
+}
+html[data-theme="dark"] body.page-tm-v2 .tm-main:has(.schedule-page),
+html[data-theme="dark"] body.page-tm-v2 .tm-main .page:has(.schedule-page) {
+  background: #000000 !important;
+}
+html body .page:has(.schedule-page) .masthead {
+  background: transparent !important;
+}
+
+/* 모바일 상단 — 데스크톱에서는 숨김 */
+html body .wk-days.wk-mtop {
+  display: none;
+}
+@media (max-width: 960px) {
+  html body.page-tm-v2 .schedule-aside {
+    display: none !important;
+  }
+  html body .wk-days.wk-mtop {
+    display: flex;
+    gap: 10px;
+  }
+  html body .wk-days.wk-mtop:empty {
+    display: none;
+  }
+}
+html body .wk-mtop .wk-next {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "top when" "name name";
+  gap: 4px 10px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid var(--wk-border);
+  border-radius: 16px;
+  background: var(--wk-card);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+html body .wk-mtop .wk-next__top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+html body .wk-mtop .wk-next__k {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wk-t3);
+}
+html body .wk-mtop .wk-next__cd {
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wk-high);
+  background: var(--wk-high-bg);
+}
+html body .wk-mtop .wk-next__when {
+  grid-area: when;
+  align-self: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wk-t3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+html body .wk-mtop .wk-next__name {
+  grid-area: name;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--wk-t1);
+  word-break: keep-all;
+}
+html body .wk-mtop .wk-next__cty {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wk-t3);
+}
+
+html body .wk-mtop .wk-strip-card {
+  padding: 12px 0 10px;
+  border: 1px solid var(--wk-border);
+  border-radius: 16px;
+  background: var(--wk-card);
+  overflow: hidden;
+}
+html body .wk-mtop .wk-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+}
+html body .wk-mtop .wk-strip-head strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--wk-t1);
+}
+html body .wk-mtop .wk-strip-today {
+  padding: 3px 10px;
+  border: 1px solid var(--wk-border);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--wk-accent);
+  cursor: pointer;
+}
+html body .wk-mtop .wk-strip {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+html body .wk-mtop .wk-strip::-webkit-scrollbar {
+  display: none;
+}
+html body .wk-mtop .wk-strip__d {
+  flex: 0 0 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 0 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  scroll-snap-align: center;
+}
+html body .wk-mtop .wk-strip__w {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--wk-t3);
+  white-space: nowrap;
+}
+html body .wk-mtop .wk-strip__n {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--wk-t1);
+  font-variant-numeric: tabular-nums;
+}
+html body .wk-mtop .wk-strip__d.is-empty .wk-strip__n {
+  color: var(--wk-t3);
+  font-weight: 500;
+}
+html body .wk-mtop .wk-strip__d.is-sun .wk-strip__w {
+  color: var(--wk-high);
+}
+html body .wk-mtop .wk-strip__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wk-t3);
+}
+html body .wk-mtop .wk-strip__dot.is-key {
+  background: var(--wk-accent);
+}
+html body .wk-mtop .wk-strip__dot.is-none {
+  background: transparent;
+}
+html body .wk-mtop .wk-strip__d.is-today {
+  border-color: var(--wk-accent);
+}
+html body .wk-mtop .wk-strip__d.is-sel {
+  background: var(--wk-accent);
+  border-color: var(--wk-accent);
+}
+html body .wk-mtop .wk-strip__d.is-sel .wk-strip__w,
+html body .wk-mtop .wk-strip__d.is-sel .wk-strip__n {
+  color: #ffffff;
+}
+html[data-theme="dark"] body .wk-mtop .wk-strip__d.is-sel .wk-strip__w,
+html[data-theme="dark"] body .wk-mtop .wk-strip__d.is-sel .wk-strip__n {
+  color: #000000;
+}
+html body .wk-mtop .wk-strip__d.is-sel .wk-strip__dot {
+  background: currentColor;
+  color: #ffffff;
+}
+html[data-theme="dark"] body .wk-mtop .wk-strip__d.is-sel .wk-strip__dot {
+  color: #000000;
+}
+html body .wk-mtop .wk-strip__d.is-sel .wk-strip__dot.is-none {
+  background: transparent;
+}
+
+/* 모바일: 일정분석은 옆으로 넘기는 캐러셀 */
+@media (max-width: 768px) {
+  html body .wk-days .wk-insights {
+    display: flex;
+    gap: 8px;
+    margin-right: -14px;
+    padding-right: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  html body .wk-days .wk-insights::-webkit-scrollbar {
+    display: none;
+  }
+  html body .wk-days .wk-in {
+    flex: 0 0 86%;
+    scroll-snap-align: start;
+  }
+  html body .wk-days .wk-insights > .wk-in:only-child {
+    flex-basis: 100%;
+  }
+}
+/* 모바일에서 카드가 화면 가장자리에 붙어 둥근 모서리가 잘려 보였다 → 좌우 12px 여백 */
+@media (max-width: 768px) {
+  html body.page-tm-v2 .schedule-page .schedule-main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}

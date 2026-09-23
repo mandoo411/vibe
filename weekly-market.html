@@ -31,7 +31,7 @@
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
 
-    <link rel="stylesheet" href="./weekly-market.css?v=20260923b" />
+    <link rel="stylesheet" href="./weekly-market.css?v=20260923c" />
     <script src="./assets/data-url.js"></script>
     <script src="./assets/key-indicators.js"></script>
         <link rel="stylesheet" href="./typography.css?v=1" />
@@ -101,6 +101,9 @@
           <!-- 2026-09-23: 하루 = 카드 한 장. 선택한 날짜 카드(그날 일정 + 그날 일정분석)가 맨 위,
                그 아래로 다음 날짜들이 같은 카드로 이어진다. "오늘 일정 / 일정 분석 / 다가오는 주요일정"
                같은 소제목은 자리만 차지해서 없앴다(시우 요청) — 날짜 머리글이 그 역할을 한다. -->
+          <!-- 2026-09-23: 모바일(≤960px) 전용 상단 — 다음 핵심 지표 한 줄 + 가로로 넘기는 날짜 띠.
+               오른쪽 사이드(달력·요약)는 모바일에서 맨 밑으로 밀려 쓸모가 없었다 → 숨기고 이걸로 대신한다. -->
+          <div id="wk-mtop" class="wk-days wk-mtop"></div>
           <div id="day-schedule-content" class="wk-days" aria-live="polite">
             <p class="wk-loading"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
           </div>
@@ -1420,6 +1423,85 @@
         function renderAsideExtras() {
           renderNextKeyEvent();
           renderMonthStat();
+          renderMobileTop();
+        }
+
+        /* ── 모바일 상단: 다음 핵심 지표 + 날짜 띠 ───────────────────────────── */
+        function wkIndicatorName(r) {
+          const formal = resolveFormalIndicator(r);
+          return formal.nameKo || stripLegacyPeriodLabel(translateIndicator(r?.event || "")) || r?.event || "";
+        }
+        function renderMobileTop() {
+          const el = $("wk-mtop");
+          if (!el || !state.data) return;
+          const today = seoulYmd();
+          const sel = state.selectedDate || today;
+          const now = new Date();
+          const nk = (state.data.economicCalendar || [])
+            .filter((r) => isKeyIndicator(r))
+            .filter((r) => {
+              const t = eventDateTime(r);
+              return !Number.isNaN(t.getTime()) && t > now;
+            })
+            .sort((a, b) => eventDateTime(a) - eventDateTime(b))[0];
+          let html = "";
+          if (nk) {
+            const cd = countdownLabel(nk);
+            const [, nm, nd] = String(nk.date).split("-").map(Number);
+            html += `<button type="button" class="wk-next" data-date="${escapeHtml(nk.date)}">
+              <span class="wk-next__top"><span class="wk-next__k">다음 핵심 지표</span><span class="wk-next__cd">${escapeHtml(cd.text || ddayLabel(nk.date))}</span></span>
+              <span class="wk-next__name">${escapeHtml(wkIndicatorName(nk))}<span class="wk-next__cty">${escapeHtml(nk.country || "")}</span></span>
+              <span class="wk-next__when">${nm}월 ${nd}일 (${WD[kstDayOfWeek(nk.date)]}) ${escapeHtml(nk.time || "")}</span>
+            </button>`;
+          }
+          const allDates = [
+            ...(state.data.economicCalendar || []),
+            ...(state.data.krEarnings || []),
+            ...(state.data.krIPO || []),
+          ].map((r) => r.date).filter(Boolean).sort();
+          const maxDate = allDates.length ? allDates[allDates.length - 1] : addDays(today, 30);
+          const start = addDays(sel < today ? sel : today, -7);
+          const chips = [];
+          for (let i = 0, d = start; i < 60 && (d <= maxDate || d <= sel); i++, d = addDays(start, i)) {
+            const econ = filterEconomicRows(itemsForDate("economicCalendar", d));
+            const cnt = econ.length + itemsForDate("krEarnings", d).length + itemsForDate("krIPO", d).length;
+            const key = econ.some((r) => isKeyIndicator(r));
+            const dow = kstDayOfWeek(d);
+            const day = Number(d.slice(8, 10));
+            const cls = ["wk-strip__d", d === sel ? "is-sel" : "", d === today ? "is-today" : "", cnt ? "" : "is-empty", dow === 0 ? "is-sun" : "", dow === 6 ? "is-sat" : ""]
+              .filter(Boolean)
+              .join(" ");
+            const top = day === 1 ? `${Number(d.slice(5, 7))}월` : WD[dow];
+            chips.push(`<button type="button" class="${cls}" data-date="${d}"><span class="wk-strip__w">${top}</span><span class="wk-strip__n">${day}</span><span class="wk-strip__dot${key ? " is-key" : cnt ? "" : " is-none"}"></span></button>`);
+          }
+          const selMonth = Number(sel.slice(5, 7));
+          html += `<div class="wk-strip-card">
+            <div class="wk-strip-head"><strong>${selMonth}월</strong>${sel !== today ? '<button type="button" class="wk-strip-today" data-date="' + today + '">오늘</button>' : ""}</div>
+            <div class="wk-strip" role="listbox" aria-label="날짜 선택">${chips.join("")}</div>
+          </div>`;
+          const prevLeft = el.querySelector(".wk-strip")?.scrollLeft;
+          el.innerHTML = html;
+          const strip = el.querySelector(".wk-strip");
+          const selEl = strip && strip.querySelector(".is-sel");
+          if (strip) {
+            if (el.dataset.centered !== sel && selEl) {
+              strip.scrollLeft = selEl.offsetLeft - strip.clientWidth / 2 + selEl.clientWidth / 2;
+              el.dataset.centered = sel;
+            } else if (prevLeft != null) {
+              strip.scrollLeft = prevLeft;
+            }
+          }
+          if (!el.dataset.wired) {
+            el.dataset.wired = "1";
+            el.addEventListener("click", (ev) => {
+              const btn = ev.target.closest("[data-date]");
+              if (!btn) return;
+              state.selectedDate = btn.dataset.date;
+              state.month = monthKey(state.selectedDate);
+              renderCalendar();
+              renderSelectedDate(state.selectedDate);
+            });
+          }
         }
 
         /* 2026-09-23: 일정분석은 이제 그날 카드 안(wkInsightHtml)에서 그린다 — 별도 섹션 없음. */

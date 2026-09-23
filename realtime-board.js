@@ -2288,43 +2288,25 @@
         </tr>`;
   }
 
+  /* 2026-09-23: 상세 패널이 열려 있는 동안 시세 갱신은 이 함수로 행을 "패치"한다.
+     예전엔 셀 번호를 하드코딩한 옛 6칸 구조(순위/이름/가격/등락률/대금/시총) 그대로라,
+     대비·거래량 칸과 종목 로고가 추가된 뒤로는 상세를 열면 아래 행들이 로고 없이
+     한 칸씩 밀려(대비 칸에 등락률, 등락률 칸에 거래대금…) 보였다. 처음 그릴 때와 같은
+     stockRowHtml로 행 내용을 통째로 다시 만들어 두 경로가 절대 어긋나지 않게 한다.
+     클릭은 tbody 위임 방식이라 행 내용을 갈아끼워도 리스너가 사라지지 않는다. */
   function applyRowToTr(tr, r) {
-    if (isMobileLayout()) {
-      const row = tr.querySelector(".rt-mobile-row");
-      if (!row) return;
-      const rankEl = row.querySelector(".rt-col-rank");
-      if (rankEl) rankEl.textContent = r.rank != null ? String(r.rank) : "—";
-      const btn = row.querySelector(".rt-name-chart-btn");
-      if (btn) {
-        btn.textContent = r.name;
-        btn.setAttribute(
-          "aria-expanded",
-          code6Maybe(state.openChartCode) === rowStockCode(r) ? "true" : "false"
-        );
-      }
-      const priceEl = row.querySelector(".rt-col-price");
-      if (priceEl) priceEl.textContent = fmtNum(r.price);
-      const chg = row.querySelector(".rt-col-change .delta");
-      if (chg) {
-        const cls = deltaClass(r.changePct);
-        chg.className = `delta ${cls}`;
-        chg.textContent = fmtPct(r.changePct);
-      }
-      const lastEl = row.querySelector(".rt-col-last");
-      if (lastEl) lastEl.innerHTML = mobileLastColumnValue(r);
-      return;
+    const tmp = document.createElement("tbody");
+    tmp.innerHTML = stockRowHtml(r);
+    const fresh = tmp.firstElementChild;
+    if (!fresh) return;
+    tr.innerHTML = fresh.innerHTML;
+    const btn = tr.querySelector(".rt-name-chart-btn");
+    if (btn) {
+      btn.setAttribute(
+        "aria-expanded",
+        code6Maybe(state.openChartCode) === rowStockCode(r) ? "true" : "false"
+      );
     }
-    const nm = escapeHtml(r.name);
-    tr.cells[0].textContent = r.rank != null ? String(r.rank) : "—";
-
-    tr.cells[1].innerHTML = `<button type="button" class="rt-name-chart-btn" data-code="${escapeHtml(r.code)}" aria-expanded="${code6Maybe(state.openChartCode) === rowStockCode(r) ? "true" : "false"}">${nm}</button>`;
-
-    const ch = r.changePct;
-    const cls = deltaClass(ch);
-    tr.cells[2].textContent = fmtNum(r.price);
-    tr.cells[3].innerHTML = `<span class="delta ${cls}">${escapeHtml(fmtPct(ch))}</span>`;
-    tr.cells[4].textContent = formatRowTradeVal(r);
-    tr.cells[5].textContent = formatStckAvls(readStckAvlsRaw(r));
   }
 
   function syncDetailDomAfterRows(body, rows) {

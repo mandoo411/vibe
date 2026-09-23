@@ -267,11 +267,15 @@
         padding-left: 10px;
         text-align: left;
       }
-      .crypto-table tbody tr:nth-child(even) td {
-        background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent);
-      }
-      .crypto-table tr:hover td {
+      /* 2026-09-23: 행 줄무늬 제거(한 가지 색으로 통일) + 호버를 직계 행으로 한정 —
+         예전 선택자가 차트 라이브러리 내부 <table>까지 칠해 차트 배경이 여러 색으로 나뉘었다. */
+      .crypto-table > tbody > tr[data-symbol]:hover > td {
         background: var(--accent-dim);
+      }
+      .crypto-table .tv-lightweight-charts tr,
+      .crypto-table .tv-lightweight-charts td {
+        background: transparent !important;
+        border: 0 !important;
       }
       /* 2026-09-22: 코인명뿐 아니라 행 전체 클릭 가능 — 커서로 안내 */
       .crypto-table tbody tr[data-symbol] {

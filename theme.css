@@ -224,7 +224,7 @@ body {
   --tag-bg: var(--bg-tertiary);
   --rail-bg: linear-gradient(180deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
   --font-sans: "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+  --font-mono: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; /* 2026-09-23: 숫자·라벨의 모노 서체(JetBrains Mono)를 본문 서체로 통일 — 한 카드 안에 서체 두 벌이 섞여 조잡해 보였다. 자릿수 정렬은 tabular-nums가 맡는다 */
   --font-display: "Cormorant Garamond", "Times New Roman", serif;
   --radius: 3px;
   --shadow: 0 1px 0 color-mix(in srgb, var(--text-primary) 4%, transparent) inset;

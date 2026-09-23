@@ -461,6 +461,7 @@
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
+    <link rel="stylesheet" href="./premium.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
   </head>
   <body class="page-tm-v2">
@@ -538,13 +539,13 @@
             <thead>
               <tr>
                 <th class="world-col-rank world-rank" id="world-th-rank">#</th>
-                <th class="world-col-name" id="world-th-name">Name</th>
-                <th class="world-col-symbol world-col-hide-desktop" id="world-th-symbol">Ticker</th>
-                <th class="world-col-num world-col-metric world-num" id="world-metric-header">Market Cap</th>
-                <th class="world-col-num world-col-price world-num world-col-hide-mobile">Price</th>
-                <th class="world-col-num world-col-today world-num world-col-hide-mobile">Today</th>
-                <th class="world-col-spark world-col-hide-mobile">Price (30 days)</th>
-                <th class="world-col-country" id="world-th-country">Country</th>
+                <th class="world-col-name" id="world-th-name">종목</th>
+                <th class="world-col-symbol world-col-hide-desktop" id="world-th-symbol">티커</th>
+                <th class="world-col-num world-col-metric world-num" id="world-metric-header">시가총액</th>
+                <th class="world-col-num world-col-price world-num world-col-hide-mobile">가격</th>
+                <th class="world-col-num world-col-today world-num world-col-hide-mobile">오늘</th>
+                <th class="world-col-spark world-col-hide-mobile">30일 추이</th>
+                <th class="world-col-country" id="world-th-country">국가</th>
               </tr>
             </thead>
             <tbody id="world-body"></tbody>
@@ -593,7 +594,7 @@
         const state = { type: "marketCap", openKey: null, rows: [], allRows: null, sparksLoaded: false };
         const STORAGE_KEY_PREFIX = "tm-world-market:";
         const labels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" };
-        const valueLabels = { marketCap: "Market Cap", netIncome: "Earnings", revenue: "Revenue" };
+        const valueLabels = { marketCap: "시가총액", netIncome: "순이익", revenue: "매출액" }; /* 2026-09-23: 표 머리만 영어라 다른 페이지와 어긋났다 → 한글 */
         const metricHeadersMobile = { marketCap: "시총", netIncome: "순이익", revenue: "매출" };
         const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
         const $ = (id) => document.getElementById(id);
@@ -631,7 +632,8 @@
         }
         function fmtPrice(value, currency) {
           const n = Number(value);
-          if (!Number.isFinite(n)) return "—";
+          // 2026-09-23: 시세를 못 받은 종목이 "$0"으로 찍혔다(메타·사우디 아람코) — 없는 값은 비운다
+          if (!Number.isFinite(n) || n <= 0) return "—";
           if (currency === "KRW") {
             return `₩${n.toLocaleString("ko-KR", { maximumFractionDigits: 0 })}`;
           }
@@ -759,9 +761,9 @@
           const thName = document.getElementById("world-th-name");
           const thSymbol = document.getElementById("world-th-symbol");
           const thCountry = document.getElementById("world-th-country");
-          if (thName) thName.textContent = mobile ? "이름" : "Name";
-          if (thSymbol) thSymbol.textContent = mobile ? "티커" : "Ticker";
-          if (thCountry) thCountry.textContent = mobile ? "국가" : "Country";
+          if (thName) thName.textContent = mobile ? "이름" : "종목";
+          if (thSymbol) thSymbol.textContent = "티커";
+          if (thCountry) thCountry.textContent = "국가";
         }
         function syncMobileTableLayout() {
           const mobile = isMobile();

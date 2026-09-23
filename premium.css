@@ -1,0 +1,300 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   premium.css — 마감 레이어 (2026-09-23 시작)
+   refresh.css 다음, 모든 페이지 맨 마지막에 로드된다. 지우면 refresh.css 상태로 돌아간다.
+
+   왜 만들었나 — 전 페이지를 한 번에 훑어 보니 "상품" 느낌을 깎는 원인이 기능이 아니라
+   표면(surface) 체계에 있었다.
+     ① 다크에서 본문 바탕(#161616 띠)이 카드(#000)보다 밝았다 — 명암 위계가 뒤집혀 카드가
+        '떠 있는' 게 아니라 '구멍 난' 것처럼 보였다. 좌우 바탕(#000)과 본문 띠(#161616)도 갈려
+        화면이 세 톤으로 쪼개졌다.
+     ② 라이트에서는 좌우 흰색 / 본문 회색 띠 / 카드 흰색 — 페이지마다 바탕이 바뀌었다(시우 지적).
+     ③ 카드 안의 카드 안의 카드(3겹 테두리), 숫자만 모노 서체.
+   원칙 — 바탕은 한 색(라이트 흰색 / 다크 검정), 영역은 카드 한 겹 + 헤어라인으로만 나눈다.
+   카드 안 보조 면은 테두리 없이 한 단계 밝은 면(inset)으로.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --p-page: #ffffff;
+  --p-card: #ffffff;
+  --p-inset: #f6f7f9;
+  --p-border: #e6e8eb;
+  --p-line: #eef0f2;
+  --p-radius: 16px;
+  --p-accent: #059669;
+}
+[data-theme="dark"] {
+  --p-page: #000000;
+  --p-card: #111113;
+  --p-inset: #1a1a1d;
+  --p-border: #232326;
+  --p-line: #1e1e21;
+  --p-accent: #10b981;
+  /* refresh.css 토큰을 카드 기준으로 다시 잡는다: r-bg = 카드 면, r-bg-sub = 카드 안 보조 면 */
+  --r-bg: #111113;
+  --r-bg-sub: #1a1a1d;
+  --r-line: #1e1e21;
+  --r-line-2: #26262a;
+  --card-bg: #111113;
+}
+
+/* 숫자는 어디서든 자릿수 폭이 같게 — 모노 서체를 걷어낸 대신 */
+html body {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 바탕 한 색 ─────────────────────────────────────────────────────────── */
+html[lang] body.page-tm-v2,
+html[lang] body.page-tm-v2 .tm-wrap,
+html[lang] body.page-tm-v2 .home-wrap,
+html[lang] body.page-tm-v2 .home-main,
+html[lang] body.page-tm-v2 .tm-main,
+html[lang] body.page-tm-v2 .tm-main > .page,
+html[lang] body.page-tm-v2 .tm-main .page,
+html[lang] body.page-tm-v2 .home-top,
+html[lang] body.page-tm-v2 .home-nav,
+html[lang] body.page-tm-v2 .home-ticker-bar,
+html[lang] body.page-tm-v2 .home-ticker,
+html[lang] body.page-tm-v2 .masthead,
+html[lang] body.page-tm-v2 .home-footer {
+  background: var(--p-page) !important;
+  background-image: none !important;
+}
+html[lang] body.page-tm-v2 .home-footer {
+  border-top: 1px solid var(--p-line) !important;
+}
+
+/* ── 카드 한 겹: 모든 페이지의 "섹션 카드"를 같은 면·테두리·라운드로 ────────── */
+html[lang] body.page-tm-v2 .bfx-hero,
+html[lang] body.page-tm-v2 .bfx-block,
+html[lang] body.page-tm-v2 .dmx-hero,
+html[lang] body.page-tm-v2 .dmx-block,
+html[lang] body.page-tm-v2 .ts-hero,
+html[lang] body.page-tm-v2 .ts-card,
+html[lang] body.page-tm-v2 .cb-hero,
+html[lang] body.page-tm-v2 .cb-card,
+html[lang] body.page-tm-v2 .ail-hero,
+html[lang] body.page-tm-v2 .ail-facts,
+html[lang] body.page-tm-v2 .rt-panel:not(.dm-panel),
+html[lang] body.page-tm-v2 .crypto-panel,
+html[lang] body.page-tm-v2 .world-panel,
+html[lang] body.page-tm-v2 .tms,
+html[lang] body.page-tm-v2 .market-gauge-card,
+html[lang] body.page-tm-v2 .schedule-card {
+  background: var(--p-card) !important;
+  border: 1px solid var(--p-border) !important;
+  border-radius: var(--p-radius) !important;
+  box-shadow: none !important;
+}
+html[lang] body.page-tm-v2 .rt-panel:not(.dm-panel),
+html[lang] body.page-tm-v2 .crypto-panel,
+html[lang] body.page-tm-v2 .world-panel {
+  overflow: hidden;
+}
+/* 카드 위에 또 카드를 씌우던 바깥 판들 — 투명하게 */
+html[lang] body.page-tm-v2 .rt-panel.dm-panel,
+html[lang] body.page-tm-v2 .home-hero,
+html[lang] body.page-tm-v2 .hx-reports {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+/* 페이지 상단 메타 줄(날짜 이동·업데이트 시각) — 박스 대신 헤어라인 한 줄 */
+html[lang] body.page-tm-v2 .page-meta-bar {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--p-line) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+/* 카드 안 보조 면 — 테두리 없이 한 단계 밝은 면 */
+html[lang] body.page-tm-v2 .ts-hero__steps,
+html[lang] body.page-tm-v2 .ts-gate__demo,
+html[lang] body.page-tm-v2 .cb-verdict,
+html[lang] body.page-tm-v2 .cb-row,
+html[lang] body.page-tm-v2 .bfx-callout,
+html[lang] body.page-tm-v2 .dmx-callout {
+  background: var(--p-inset) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+/* 브리핑·마감시황 카드 안 타일(지수·시장온도·종목·체크리스트) — 테두리·색 상단바를 걷고 면만 */
+html[lang] body.page-tm-v2 :is(.bfx-block, .bfx-hero, .dmx-block, .dmx-hero) :is(article, li, [class*="__item"], .bfx-pillar, .bfx-tier) {
+  background: var(--p-inset) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html[lang] body.page-tm-v2 :is(.bfx-block, .dmx-block) :is(article, [class*="__item"], .bfx-pillar, .bfx-tier) {
+  border-radius: 12px !important;
+}
+/* 마감시황 탭 줄 — 띠 대신 바탕 위에 칩만 */
+html[lang] body.page-tm-v2 .dm-panel > .rt-tabs,
+html[lang] body.page-tm-v2 #dm-tab-bar {
+  background: transparent !important;
+  border: 0 !important;
+}
+/* 나머지 페이지의 카드들도 같은 규격으로 */
+html[lang] body.page-tm-v2 .market-card,
+html[lang] body.page-tm-v2 .ail-card,
+html[lang] body.page-tm-v2 .crypto-metric-card,
+html[lang] body.page-tm-v2 .tm-plan-card,
+html[lang] body.page-tm-v2 .tm-auth-card,
+html[lang] body.page-tm-v2 .tm-account-row {
+  background: var(--p-card) !important;
+  border: 1px solid var(--p-border) !important;
+  border-radius: var(--p-radius) !important;
+  box-shadow: none !important;
+}
+html[lang] body.page-tm-v2 .tm-plan-card--highlight {
+  border-color: color-mix(in srgb, var(--p-accent) 55%, var(--p-border)) !important;
+}
+/* 카드 안 보조 면(2차) — 종가시그널 히어로 지표·기록, 매매시그널 단계·데모 */
+html[lang] body.page-tm-v2 .cb-hero li,
+html[lang] body.page-tm-v2 .cb-rec,
+html[lang] body.page-tm-v2 .ts-hero__step,
+html[lang] body.page-tm-v2 .ts-hero__step-txt {
+  background: var(--p-inset) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html[lang] body.page-tm-v2 .ts-hero__steps {
+  background: transparent !important;
+  gap: 8px !important;
+}
+html[lang] body.page-tm-v2 .ts-hero__step {
+  border-radius: 12px !important;
+}
+html[lang] body.page-tm-v2 .ts-gate__demo li {
+  background: var(--p-card) !important;
+  border-color: transparent !important;
+}
+/* 표 머리 — 진한 회색 띠 대신 옅은 면 */
+html[lang] body.page-tm-v2 .world-table thead th,
+html[lang] body.page-tm-v2 .rt-table thead th,
+html[lang] body.page-tm-v2 .crypto-table thead th {
+  background: var(--p-inset) !important;
+}
+html[lang] body.page-tm-v2 .world-toolbar {
+  background: transparent !important;
+}
+/* 등락 수치 안의 <em>이 refresh.css의 ".tm-main em { 초록 }"에 먹혀 +/−가 전부 초록으로 보였다
+   (브리핑·마감시황 지수 등락률). 등락 맥락에서는 부모의 빨강/파랑을 그대로 쓴다. */
+html[lang] body.page-tm-v2 .tm-main :is(.is-up, .is-down, .is-flat, [class*="delta"], [class*="__chg"], [class*="__pct"]) em {
+  color: inherit !important;
+  font-style: normal;
+}
+/* '주요 버튼' 그라데이션 — 다크에서는 검정→남색→회색 그라데이션이라 버튼이 꺼진 것처럼 보였다
+   (요금제 Pro 구독, 실시간시세 AI 분석하기 등). 라이트와 같은 브랜드 초록 한 색으로. */
+:root {
+  --gradient-primary: linear-gradient(0deg, #059669, #059669);
+}
+[data-theme="dark"] {
+  --gradient-primary: linear-gradient(0deg, #059669, #059669);
+}
+/* AI 종목분석 소개 카드 — 카드마다 얹힌 초록 상단 띠(장식)를 걷는다 */
+html[lang] body.page-tm-v2 .ail-card::before,
+html[lang] body.page-tm-v2 .ail-card::after {
+  display: none !important;
+}
+html[lang] body.page-tm-v2 .ail-facts__list li {
+  background: var(--p-inset) !important;
+  border-color: transparent !important;
+}
+/* 모바일: 제목 배너(마스트헤드)만 좌우 32px라 본문(16px)과 왼쪽 선이 어긋났다 */
+@media (max-width: 768px) {
+  html[lang] body.page-tm-v2 .masthead {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  html[lang] body.page-tm-v2 .masthead .masthead__copy {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+/* 홈 사이드 '오늘의 특징주' — 빨강 왼쪽 굵은 띠 + 회색 면(장식 두 겹) → 보조 면 하나만, 등락은 숫자 색으로 */
+html[lang] body.page-tm-v2 .hx-feat {
+  background: var(--p-inset) !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+/* ── 다크 주요 버튼: 에메랄드 위 흰 글씨(대비 2.5:1 — 기준 4.5 미달)를 짙은 글씨로 ──────────
+   ui-audit 전수 검사에서 대비 미달 41건 중 30여 건이 전부 이 조합이었다. 초록 면은 그대로 두고
+   글자만 거의 검정(#03140e, 대비 8:1 이상)으로 바꾼다 — 어두운 화면에서 초록 버튼+검정 글씨가
+   더 또렷하고 단단해 보인다. */
+html[data-theme="dark"] body :is(
+  .hx-report__btn,
+  #stock-search-btn,
+  #us-stock-search-btn,
+  .ail-btn--primary,
+  .ts-btn:not(.ts-btn--ghost),
+  .crypto-tab.active,
+  .tm-btn--primary,
+  .tm-auth-submit,
+  .home-hero__btn--primary,
+  .rt-tab[aria-selected="true"]
+),
+html[data-theme="dark"] body :is(.crypto-tab.active, .rt-tab[aria-selected="true"], .home-hero__btn--primary, .tm-btn--primary, .ail-btn--primary) * {
+  color: #03140e !important;
+}
+/* 다크: 밝은 칩 위 흰 글씨(브리핑 혼조·배지, 마감시황 전강후약) → 짙은 글씨 */
+html[data-theme="dark"][lang] body.page-tm-v2 :is(.bfx-hero, .dmx-hero, .bfx-block) :is(.bfx-hero__tone, .dmx-hero__tone, .bfx-card__badge, .bfx-tier__rank) {
+  color: #0b0b0c !important;
+}
+/* 다크: 브리핑 본문 강조어가 라이트용 짙은 초록(#047857)으로 남아 어두운 면에서 안 보였다 */
+html[data-theme="dark"][lang] body.page-tm-v2 .bfx-block em:not(:is(.is-up, .is-down, .is-flat, [class*="delta"]) em) {
+  color: #34d399 !important;
+}
+/* 다크: 일요일 빨강(#c62828)이 검정 면에서 3.3:1 → 밝은 빨강 */
+html[data-theme="dark"][lang] body.page-tm-v2 :is(.calendar-weekday--sun, .calendar-cell--sun, .calendar-day--sun, .calendar-date--sun) {
+  color: #f4726d !important;
+}
+/* 모바일: 브리핑 '주목 섹터' 칩이 한 줄로 400px까지 늘어나 화면 밖으로 나갔다 → 줄바꿈 허용 */
+html[lang] body.page-tm-v2 .bfx-chip {
+  white-space: normal !important;
+  max-width: 100%;
+}
+/* 제목 줄바꿈 — "스크리\n너"처럼 한 글자만 다음 줄로 떨어지는 것을 막는다 */
+html[lang] body.page-tm-v2 :is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+html[lang] body.page-tm-v2 .tm-main p {
+  text-wrap: pretty;
+}
+/* 요금제: 모바일에서 카드가 화면 끝에 붙었다 → 다른 페이지와 같은 12px 여백, 마스트헤드도 같은 규격 */
+@media (max-width: 768px) {
+  html[lang] body.page-pricing .tm-main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  html[lang] body.page-pricing .tm-main .masthead {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+/* 암호화폐 모바일: 순위 탭·표가 화면 끝(0px)에 붙었다(위 요약 카드는 12px) → 같은 여백 */
+@media (max-width: 768px) {
+  html[lang] body.page-tm-v2 .crypto-section--rank {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+/* 마이페이지: 로그아웃 상태인데 계정 카드(hidden)가 CSS display에 밀려 같이 보였다 —
+   모바일에서는 두 칸으로 찌그러졌다. hidden 속성을 이긴다. */
+html[lang] body.page-tm-v2 :is(.tm-account-card, .tm-auth-card)[hidden] {
+  display: none !important;
+}
+/* 마감시황·브리핑 첫 카드 왼쪽 굵은 색 띠(장식) 제거 — 방향은 옆의 톤 칩이 이미 말한다 */
+html[lang] body.page-tm-v2 :is(.dmx-hero, .bfx-hero)::before,
+html[lang] body.page-tm-v2 :is(.dmx-hero, .bfx-hero)::after {
+  display: none !important;
+}
+/* 라이트: 시장지표 본문(.market-body)만 회색 띠가 남아 있었다 */
+html[lang] body.page-tm-v2 .market-body {
+  background: transparent !important;
+}
+/* 라이트: 로그인·회원가입·마이페이지 주요 버튼만 검정 그라데이션이었다 — 사이트 주요 버튼(초록)과 통일 */
+html[data-theme="light"][lang] body.page-tm-v2 :is(.tm-auth-submit, .tm-btn--primary) {
+  background: #059669 !important;
+  color: #ffffff !important;
+}

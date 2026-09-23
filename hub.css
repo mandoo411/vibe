@@ -2,7 +2,7 @@
 
 body.page-home-premium {
   --font-sans: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "Inter", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif; /* 2026-09-23: 숫자·라벨의 모노 서체(JetBrains Mono)를 본문 서체로 통일 — 한 카드 안에 서체 두 벌이 섞여 조잡해 보였다. 자릿수 정렬은 tabular-nums가 맡는다 */
 }
 
 [data-theme="light"].page-home-premium {

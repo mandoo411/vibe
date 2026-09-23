@@ -31,7 +31,7 @@
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
 
-    <link rel="stylesheet" href="./weekly-market.css" />
+    <link rel="stylesheet" href="./weekly-market.css?v=20260923a" />
     <script src="./assets/data-url.js"></script>
     <script src="./assets/key-indicators.js"></script>
         <link rel="stylesheet" href="./typography.css?v=1" />
@@ -98,48 +98,13 @@
         <div class="schedule-layout">
         <div class="schedule-main">
 
-          <!-- 섹션 1: 오늘 일정 -->
-          <section class="schedule-card schedule-card--today" aria-labelledby="day-sched-title">
-            <div class="section-head">
-              <div>
-                <p class="section-kicker">Today</p>
-                <h2 class="section-title" id="day-sched-title">오늘 일정</h2>
-              </div>
-              <span class="section-date" id="today-date">—</span>
-            </div>
-            <div id="day-schedule-content">
-              <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
-            </div>
-          </section>
-
-          <!-- 섹션 2: 일정 분석 -->
-          <!-- 2026-07-15: 선택한 날짜에 AI 일정분석이 없으면 이 섹션 자체를 숨긴다(renderAnalysis 참고).
-               초기 로딩 중에는 보여야 하므로 hidden 속성은 넣지 않고 JS가 매번 최신 상태로 갱신한다. -->
-          <section class="schedule-card" id="analysis-section" aria-labelledby="ai-title">
-            <div class="section-head">
-              <div>
-                <p class="section-kicker">Analysis</p>
-                <h2 class="section-title" id="ai-title">일정 분석</h2>
-              </div>
-              <span class="section-date" id="analysis-date">—</span>
-            </div>
-            <div class="analysis-grid" id="analysis-grid" hidden></div>
-            <p class="analysis-placeholder" id="analysis-placeholder"><i class="ti ti-sparkles" aria-hidden="true"></i>매일 오전 6시 AI 분석 업데이트</p>
-          </section>
-
-          <!-- 섹션 3: 다가오는 주요일정 -->
-          <section class="schedule-card" aria-labelledby="upcoming-title">
-            <div class="section-head">
-              <div>
-                <p class="section-kicker">Upcoming</p>
-                <h2 class="section-title" id="upcoming-title">다가오는 주요일정</h2>
-                <p class="section-sub">선택한 날짜 이후 일정만 표시합니다</p>
-              </div>
-            </div>
-            <div id="upcoming-list">
-              <p class="analysis-placeholder"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
-            </div>
-          </section>
+          <!-- 2026-09-23: 하루 = 카드 한 장. 선택한 날짜 카드(그날 일정 + 그날 일정분석)가 맨 위,
+               그 아래로 다음 날짜들이 같은 카드로 이어진다. "오늘 일정 / 일정 분석 / 다가오는 주요일정"
+               같은 소제목은 자리만 차지해서 없앴다(시우 요청) — 날짜 머리글이 그 역할을 한다. -->
+          <div id="day-schedule-content" class="wk-days" aria-live="polite">
+            <p class="wk-loading"><i class="ti ti-loader-2 spin-icon" aria-hidden="true"></i>로딩 중…</p>
+          </div>
+          <div id="upcoming-list" class="wk-days"></div>
 
         </div>
 
@@ -1160,45 +1125,152 @@
           }).join("")}</div>`;
         }
 
-        /* ── 선택 날짜 일정 렌더링 (섹션 1) ──────── */
+        /* ── 2026-09-23 하루 카드 ─────────────────────────────────────────────
+           하루 = 카드 한 장. 카드 안에 그날의 경제지표·실적·신규상장이 한 목록으로 들어가고,
+           그날의 AI 일정분석도 같은 카드 아래쪽에 붙는다. 선택한 날짜와 이후 날짜들이
+           전부 이 함수 하나로 그려지므로 모양이 절대 어긋나지 않는다. */
+        const WK_DOW = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+
+        function wkDateHead(ymd) {
+          const [, m, d] = String(ymd).split("-").map(Number);
+          const dow = WK_DOW[kstDayOfWeek(ymd)] || "";
+          const dday = ddayLabel(ymd);
+          const chipCls = dday === "오늘" ? "wk-chip wk-chip--today" : "wk-chip";
+          return `<header class="wk-day__head">
+              <h2 class="wk-day__date">${m}월 ${d}일 <span class="wk-day__dow">${escapeHtml(dow)}</span></h2>
+              ${dday ? `<span class="${chipCls}">${escapeHtml(dday)}</span>` : ""}
+            </header>`;
+        }
+
+        function wkEconRows(rows) {
+          return filterEconomicRows(rows)
+            .sort((a, b) => {
+              const t = String(a.time || "").localeCompare(String(b.time || ""));
+              return t !== 0 ? t : impactRank(resolveImpactKey(b)) - impactRank(resolveImpactKey(a));
+            })
+            .map((r) => {
+              const key = resolveImpactKey(r);
+              const cd = countdownLabel(r);
+              // 내일 이후 카드에서 "D-1" 같은 카운트다운은 날짜 머리글 칩과 똑같은 말이라 뺀다.
+              if (/^D-\d+$/.test(cd.text || "")) cd.text = "";
+              const cdCls = cd.done ? "wk-ev__cd wk-ev__cd--done" : cd.urgent ? "wk-ev__cd wk-ev__cd--urgent" : "wk-ev__cd";
+              const has = (v) => v !== null && v !== undefined && String(v).trim() !== "";
+              const nums = [
+                ["이전", r.previous, ""],
+                ["예측", r.estimate, ""],
+                ["실제", r.actual, surpriseClass(r.actual, r.estimate)],
+              ]
+                .filter(([, v]) => has(v))
+                .map(([lbl, v, cls]) => `<span class="wk-num"><span class="wk-num__l">${lbl}</span><b class="${cls}">${escapeHtml(fmtEconValue(v, r.unit))}</b></span>`)
+                .join("");
+              const badge = key === "high" ? '<span class="wk-badge wk-badge--high">핵심</span>' : key === "medium" ? '<span class="wk-badge wk-badge--mid">주목</span>' : "";
+              return `<li class="wk-ev wk-ev--${key}${cd.done ? " wk-ev--done" : ""}">
+                <div class="wk-ev__time"><span class="wk-ev__clock">${escapeHtml(r.time || "—")}</span>${cd.text ? `<span class="${cdCls}">${escapeHtml(cd.text)}</span>` : ""}</div>
+                <div class="wk-ev__main">
+                  <div class="wk-ev__title"><span class="indicator-label">${indicatorDisplayHtml(r) || "—"}</span>${r.country ? `<span class="wk-ev__cty">${escapeHtml(r.country)}</span>` : ""}</div>
+                  ${nums ? `<div class="wk-ev__nums">${nums}</div>` : ""}
+                </div>
+                ${badge}
+              </li>`;
+            })
+            .join("");
+        }
+
+        function wkEarnRows(rows) {
+          return (rows || [])
+            .map((r) => {
+              const info = KR_SECTOR_MAP[r.code] || {};
+              const name = info.name || r.name || r.code;
+              const sector = info.sector || r.sector || "";
+              const rtype = r.confirmed === false ? "" : cleanReportName(r.reportName || "잠정실적");
+              const figs = [
+                ["매출", r.revenueEok],
+                ["영업이익", r.operatingProfitEok],
+                ["순이익", r.netIncomeEok],
+              ]
+                .filter(([, v]) => v != null)
+                .map(([lbl, v]) => `<span class="wk-num"><span class="wk-num__l">${lbl}</span><b>${escapeHtml(formatEokToKo(v))}</b></span>`)
+                .join("");
+              const meta = [sector, r.code].filter(Boolean).map(escapeHtml).join(" · ");
+              return `<li class="wk-ev wk-ev--earn">
+                <div class="wk-ev__time"><span class="wk-ev__kind">실적</span></div>
+                <div class="wk-ev__main">
+                  <div class="wk-ev__title"><span class="wk-ev__name">${escapeHtml(name)}</span>${meta ? `<span class="wk-ev__cty">${meta}</span>` : ""}</div>
+                  ${figs ? `<div class="wk-ev__nums">${figs}</div>` : ""}
+                </div>
+                ${rtype ? `<span class="wk-badge">${escapeHtml(rtype)}</span>` : ""}
+              </li>`;
+            })
+            .join("");
+        }
+
+        function wkIpoRows(rows) {
+          return (rows || [])
+            .map((r) => {
+              const name = cleanIpoName(r.name) || "종목명";
+              const price = formatOfferingPrice(r.offeringPrice);
+              const meta = [r.market, price ? `공모가 ${price}` : ""].filter(Boolean).map(escapeHtml).join(" · ");
+              return `<li class="wk-ev wk-ev--ipo">
+                <div class="wk-ev__time"><span class="wk-ev__kind">상장</span></div>
+                <div class="wk-ev__main">
+                  <div class="wk-ev__title"><a class="wk-ev__name wk-ev__link" href="${escapeHtml(ipoDetailUrl(r))}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a>${meta ? `<span class="wk-ev__cty">${meta}</span>` : ""}</div>
+                </div>
+              </li>`;
+            })
+            .join("");
+        }
+
+        /* 그날의 AI 일정분석 — 소제목 없이 카드 아래쪽에 구분선 하나만 두고 붙인다. */
+        function wkInsightHtml(ymd) {
+          const items = (state.data?.eventAnalysis || []).filter((i) => i && i.date === ymd);
+          if (!items.length) return "";
+          const cards = items
+            .map((item) => {
+              const why = String(item.why || "").trim();
+              const bull = String(item.bull || "").trim();
+              const bear = String(item.bear || "").trim();
+              const watch = Array.isArray(item.watch) ? item.watch.map((w) => String(w || "").trim()).filter(Boolean) : [];
+              const legacy = String(item.analysis || "").trim();
+              const kind = item.type === "macro" ? "경제지표" : "실적";
+              let body = "";
+              if (why || bull || bear || watch.length) {
+                if (why) body += `<p class="wk-in__why">${escapeHtml(why)}</p>`;
+                if (bull) body += `<p class="wk-in__sc wk-in__sc--up"><span>예상 상회</span>${escapeHtml(bull)}</p>`;
+                if (bear) body += `<p class="wk-in__sc wk-in__sc--down"><span>예상 하회</span>${escapeHtml(bear)}</p>`;
+                if (watch.length) body += `<div class="wk-in__tags">${watch.map((w) => `<span>${escapeHtml(w)}</span>`).join("")}</div>`;
+              } else if (legacy) {
+                body = `<p class="wk-in__why">${escapeHtml(legacy)}</p>`;
+              }
+              return `<div class="wk-in">
+                <div class="wk-in__head"><span class="wk-in__kind">${kind}</span><strong class="wk-in__title">${escapeHtml(item.title || "")}</strong></div>
+                ${item.expected ? `<div class="wk-in__exp">${escapeHtml(item.expected)}</div>` : ""}
+                ${body}
+              </div>`;
+            })
+            .join("");
+          return `<div class="wk-insights">${cards}</div>`;
+        }
+
+        function wkDayCardHtml(ymd, opts = {}) {
+          const econ = itemsForDate("economicCalendar", ymd);
+          const earn = itemsForDate("krEarnings", ymd);
+          const ipo = itemsForDate("krIPO", ymd);
+          const rows = wkEconRows(econ) + wkEarnRows(earn) + wkIpoRows(ipo);
+          const insight = wkInsightHtml(ymd);
+          if (!rows && !insight && !opts.keepEmpty) return "";
+          const list = rows
+            ? `<ul class="wk-list">${rows}</ul>`
+            : '<p class="wk-empty"><i class="ti ti-calendar-off" aria-hidden="true"></i>이 날은 주요 일정이 없습니다</p>';
+          return `<article class="wk-day${opts.selected ? " wk-day--selected" : ""}" data-date="${escapeHtml(ymd)}">
+            ${wkDateHead(ymd)}
+            ${list}
+            ${insight}
+          </article>`;
+        }
+
         function renderDateSchedule(ymd) {
-          const economic = itemsForDate("economicCalendar", ymd);
-          const krIPO = itemsForDate("krIPO", ymd);
-          const krEarnings = itemsForDate("krEarnings", ymd);
-          const economicFiltered = filterEconomicRows(economic);
-          const hasAny = economicFiltered.length || krEarnings.length || krIPO.length;
-
-          if ($("today-date")) $("today-date").textContent = fmtDate(ymd);
-          if ($("date-nav-label")) $("date-nav-label").textContent = fmtDate(ymd);
-
-          let html = "";
-          if (!hasAny) {
-            html = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>이 날은 주요 일정이 없습니다</p>';
-          } else {
-            // 경제지표
-            if (economicFiltered.length) {
-              html += `<div class="day-sub-section">
-                <h3 class="subsection-title"><i class="ti ti-chart-bar"></i> 경제지표</h3>
-                ${renderEconomic(economic)}
-              </div>`;
-            }
-            // 실적발표
-            if (krEarnings.length) {
-              html += `<div class="day-sub-section">
-                <h3 class="subsection-title"><i class="ti ti-trending-up"></i> 실적 발표</h3>
-                ${renderKrEarningsList(krEarnings)}
-              </div>`;
-            }
-            // 신규상장
-            if (krIPO.length) {
-              html += `<div class="day-sub-section">
-                <h3 class="subsection-title"><i class="ti ti-building-bank"></i> 신규상장</h3>
-                ${renderKRIPO(krIPO, false)}
-              </div>`;
-            }
-          }
           const el = $("day-schedule-content");
-          if (el) el.innerHTML = html;
+          if (el) el.innerHTML = wkDayCardHtml(ymd, { selected: true, keepEmpty: true });
         }
 
         function renderCalendar() {
@@ -1233,52 +1305,26 @@
           });
         }
 
-        /* ── 다가오는 주요일정 (섹션 3) ───────────── */
+        /* ── 다가오는 날짜들 — 선택한 날짜 다음날부터 같은 하루 카드로 최대 6장 ── */
         const UPCOMING_MAX_GROUPS = 6;
-        /* 2026-09-02: 이전엔 항상 '오늘'부터 그려서 위쪽 '오늘 일정' 섹션과 첫 그룹이 통째로
-           중복됐다. 지금은 화면에 펼쳐둔 날짜의 다음날부터, 최대 6개 날짜 그룹만 보여준다. */
         function renderUpcoming(fromYmd) {
           const el = $("upcoming-list");
           if (!el) return;
-          const allEconomic = (state.data?.economicCalendar || []).filter((r) => r.date >= fromYmd && isUsOrKrCountry(r));
-          const allKrEarnings = (state.data?.krEarnings || []).filter((r) => r.date >= fromYmd);
-          const allKrIPO = (state.data?.krIPO || []).filter((r) => r.date >= fromYmd);
-          const allDates = new Set([...allEconomic.map((r) => r.date), ...allKrEarnings.map((r) => r.date), ...allKrIPO.map((r) => r.date)]);
-          if (!allDates.size) {
-            el.innerHTML = '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>데이터 범위 내 다가오는 주요 일정이 없습니다</p>';
-            return;
-          }
-          const sortedDates = [...allDates].sort().slice(0, UPCOMING_MAX_GROUPS * 3);
+          const d = state.data || {};
+          const dates = new Set();
+          (d.economicCalendar || []).forEach((r) => r.date >= fromYmd && dates.add(r.date));
+          (d.krEarnings || []).forEach((r) => r.date >= fromYmd && dates.add(r.date));
+          (d.krIPO || []).forEach((r) => r.date >= fromYmd && dates.add(r.date));
           let html = "";
-          let groups = 0;
-          for (const date of sortedDates) {
-            if (groups >= UPCOMING_MAX_GROUPS) break;
-            const econ = allEconomic.filter((r) => r.date === date);
-            const earn = allKrEarnings.filter((r) => r.date === date);
-            const ipo = allKrIPO.filter((r) => r.date === date);
-            const econFiltered = filterEconomicRows(econ);
-            if (!econFiltered.length && !earn.length && !ipo.length) continue;
-            groups += 1;
-            const dday = ddayLabel(date);
-            // 2026-09-22: "오늘 일정" 박스와 레이아웃·색상·모양이 완전히 같아야 한다는 요청 —
-            // .schedule-card 클래스를 같이 붙여 배경/테두리/라운딩을 그대로 공유한다.
-            html += `<div class="upcoming-date-group schedule-card">
-              <div class="upcoming-date-header">
-                <span class="upcoming-date-chip">${escapeHtml(fmtDate(date))}</span>
-                ${dday ? `<span class="upcoming-dday">${escapeHtml(dday)}</span>` : ""}
-              </div>
-              <div class="upcoming-events">`;
-            if (econFiltered.length) html += renderEconomic(econ);
-            if (earn.length) {
-              html += `<div class="kr-schedule-block">
-                <h4 class="kr-schedule-title"><i class="ti ti-trending-up"></i> 실적 발표</h4>
-                ${renderKrEarningsList(earn)}
-              </div>`;
-            }
-            if (ipo.length) html += renderKRIPO(ipo, true);
-            html += "</div></div>";
+          let n = 0;
+          for (const date of [...dates].sort()) {
+            if (n >= UPCOMING_MAX_GROUPS) break;
+            const card = wkDayCardHtml(date);
+            if (!card) continue;
+            html += card;
+            n += 1;
           }
-          el.innerHTML = html || '<p class="empty-text"><i class="ti ti-calendar-off" aria-hidden="true"></i>다가오는 주요 일정이 없습니다</p>';
+          el.innerHTML = html;
         }
 
         /* 선택 날짜가 바뀔 때 화면 전체를 한 번에 맞춘다.
@@ -1376,41 +1422,8 @@
           renderMonthStat();
         }
 
-        function renderAnalysis(ymd) {
-          const allItems = (state.data?.eventAnalysis || []).filter(Boolean);
-          const items = ymd ? allItems.filter((i) => i.date === ymd) : allItems;
-          const grid = $("analysis-grid");
-          const placeholder = $("analysis-placeholder");
-          const section = $("analysis-section");
-          if ($("analysis-date")) $("analysis-date").textContent = ymd ? fmtDate(ymd) : "—";
-          // 2026-07-15: 선택한 날짜에 AI 일정분석이 하나도 없으면(그날 이벤트가 없거나,
-          // 데이터 수집 실패로 못 만든 경우 모두 포함) 안내 문구 대신 섹션 자체를 숨긴다.
-          if (!items.length) {
-            if (section) section.hidden = true;
-            if (grid) grid.hidden = true;
-            if (placeholder) placeholder.hidden = true;
-            return;
-          }
-          if (section) section.hidden = false;
-          if (placeholder) placeholder.hidden = true;
-          if (grid) {
-            grid.hidden = false;
-            const macros = items.filter((i) => i.type === "macro");
-            const earnings = items.filter((i) => i.type !== "macro");
-            let html = "";
-            if (macros.length) {
-              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading"><i class="ti ti-chart-bar" aria-hidden="true"></i> 매크로 이벤트</h3><ul class="event-analysis-list">${macros
-                .map((item) => analysisItemHtml(item, "macro"))
-                .join("")}</ul></div>`;
-            }
-            if (earnings.length) {
-              html += `<div class="event-analysis-section"><h3 class="event-analysis-heading"><i class="ti ti-trending-up" aria-hidden="true"></i> 실적 발표</h3><ul class="event-analysis-list">${earnings
-                .map((item) => analysisItemHtml(item, "earnings"))
-                .join("")}</ul></div>`;
-            }
-            grid.innerHTML = html;
-          }
-        }
+        /* 2026-09-23: 일정분석은 이제 그날 카드 안(wkInsightHtml)에서 그린다 — 별도 섹션 없음. */
+        function renderAnalysis() {}
 
         /* 2026-09-02: 예전엔 AI가 "예상 상회 시 …할 가능성이 높습니다 / 예상 하회 시 …할 수
            있습니다"를 한 문단으로 써내서 4건이 전부 같은 문형으로 보였다(프롬프트가 그 문형을

@@ -2674,7 +2674,9 @@ body[data-theme="dark"] .home-ticker-bar__label {
     radial-gradient(ellipse 88% 72% at 10% -12%, var(--hero-dark-glow-teal, rgba(5, 150, 105, 0.26)) 0%, transparent 56%),
     radial-gradient(ellipse 58% 48% at 92% 4%, var(--hero-dark-glow-gold, rgba(16, 185, 129, 0.14)) 0%, transparent 52%),
     linear-gradient(180deg, #161616 0%, var(--header-bg) 55%, #000000 100%);
-  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+  /* 2026-09-23: 실시간 지표 띠 바로 아래 초록 줄의 정체 — 띠(.home-ticker-bar)가 이미 회색
+     하단선을 갖고 있어서 여기 초록 선이 그 밑에 겹쳐 보였다. 선은 띠 쪽 하나만 남긴다. */
+  border-bottom: 0;
   box-shadow: var(--hero-elev-shadow);
 }
 

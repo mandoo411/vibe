@@ -40,12 +40,15 @@
     return document.documentElement.getAttribute("data-theme") === "dark";
   }
 
+  /* 2026-09-23: 매매시그널 차트 스타일로 전 페이지 통일(시우 요청) — 배경은 투명(카드 배경을
+     그대로 씀), 세로 격자 없음, 가로 격자 0.08, 글자·200일선은 --text-muted-ui. */
   function getLwTheme() {
     const dark = isDarkTheme();
+    const muted = getComputedStyle(document.documentElement).getPropertyValue("--text-muted-ui").trim();
     return {
-      bg: dark ? "#161616" : "#ffffff",
-      text: dark ? "#d1d4dc" : "#131722",
-      grid: dark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.06)",
+      bg: "transparent",
+      text: muted || (dark ? "#8a95a8" : "#555555"),
+      grid: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
     };
   }
 
@@ -174,14 +177,14 @@
       width,
       height,
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       localization: { priceFormatter: priceFormatterFor(market) },
     });
 
     const UP_COLOR = "#e24b4a";
-    const DOWN_COLOR = "#3b82f6";
+    const DOWN_COLOR = "#2d7ff9";
     const candleOpts = {
       upColor: UP_COLOR,
       downColor: DOWN_COLOR,
@@ -189,6 +192,8 @@
       borderDownColor: DOWN_COLOR,
       wickUpColor: UP_COLOR,
       wickDownColor: DOWN_COLOR,
+      lastValueVisible: false,
+      priceLineVisible: false,
     };
     let candleSeries;
     if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
@@ -199,6 +204,7 @@
       throw new Error("캔들 시리즈를 초기화하지 못했습니다.");
     }
     candleSeries.setData(chartData.candles);
+    candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
 
     // 거래량 히스토그램 — 캔들과 동일한 상승/하락 색을 그대로 써서 절대 어긋나지 않는다
     // (TradingView 위젯처럼 별도 색상 오버라이드에 의존하지 않음).
@@ -207,7 +213,7 @@
       .map((cd) => ({
         time: cd.time,
         value: Math.max(0, Number(cd.volume) || 0),
-        color: cd.close >= cd.open ? UP_COLOR : DOWN_COLOR,
+        color: cd.close >= cd.open ? "rgba(226,75,74,0.55)" : "rgba(45,127,249,0.55)",
       }));
     if (volumeData.length) {
       const volumeOpts = {
@@ -224,7 +230,7 @@
       }
       if (volumeSeries) {
         // 거래량은 하단 18%만 차지하게 해서 캔들과 절대 겹치지 않도록 한다.
-        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
         volumeSeries.setData(volumeData);
       }
     }
@@ -234,7 +240,7 @@
       [chartData.ma20, "#FF0000", 1],
       [chartData.ma60, "#1E90FF", 1],
       [chartData.ma120, "#008000", 1],
-      [chartData.ma200, isDark ? "#f5f5f5" : "#000000", 2],
+      [chartData.ma200, getLwTheme().text, 2],
     ];
     // 2026-07-11: 다크모드 전환 시 200일선(마지막 인덱스)만 검정↔흰색으로 다시 칠해야 해서
     // 라인 시리즈 참조를 index 그대로 보관해둔다(handle.maSeries) — applyCandleChartTheme 참고.
@@ -297,12 +303,12 @@
     const t = getLwTheme();
     handle.chart.applyOptions({
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
     });
     // 2026-07-11: 배경/그리드만 갱신하고 200일 이평선 색은 그대로 남아있던 버그 — 다크모드에서는
     // 검정 200일선이 어두운 배경에 묻혀 안 보였다. 다크/라이트 전환 때마다 흰색↔검정으로 다시 칠한다.
     if (handle.maSeries && handle.maSeries[3]) {
-      handle.maSeries[3].applyOptions({ color: isDarkTheme() ? "#f5f5f5" : "#000000" });
+      handle.maSeries[3].applyOptions({ color: getLwTheme().text });
     }
   }
 

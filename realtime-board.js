@@ -938,9 +938,10 @@
   }
 
   const CANDLE_UP = "#e24b4a";
-  const CANDLE_DOWN = "#3b82f6";
-  const VOL_UP = "rgba(226, 75, 74, 0.5)";
-  const VOL_DOWN = "rgba(59, 130, 246, 0.5)";
+  /* 2026-09-23: 매매시그널 차트 색으로 전 페이지 통일 */
+  const CANDLE_DOWN = "#2d7ff9";
+  const VOL_UP = "rgba(226, 75, 74, 0.55)";
+  const VOL_DOWN = "rgba(45, 127, 249, 0.55)";
 
   function isLwChartDarkTheme() {
     return (
@@ -951,8 +952,12 @@
 
   /** 2026-07-11: us-market/crypto "차트 보기"와 동일한 이동평균선 색상 — 200일선은 다크모드에서
    * 흰색으로 바뀐다(검은 선이 어두운 배경에 안 보이는 문제 방지). */
+  function lwMutedTextColor() {
+    const v = getComputedStyle(document.documentElement).getPropertyValue("--text-muted-ui").trim();
+    return v || (isLwChartDarkTheme() ? "#8a95a8" : "#555555");
+  }
   function lwMa200Color() {
-    return isLwChartDarkTheme() ? "#f5f5f5" : "#000000";
+    return lwMutedTextColor();
   }
 
   const LW_MA_LINE_SPECS = [
@@ -998,9 +1003,9 @@
   function getLwChartTheme() {
     const dark = isLwChartDarkTheme();
     return {
-      bg: dark ? "#161616" : "#ffffff",
-      textColor: dark ? "#aaaaaa" : "#555555",
-      gridColor: dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
+      bg: "transparent",
+      textColor: lwMutedTextColor(),
+      gridColor: dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.08)",
     };
   }
   const LW_CHART_TOTAL_H = 300;
@@ -1011,8 +1016,11 @@
     // 2026-08-06: 모바일 거래량 패널이 너무 커서 캔들이 상대적으로 작아 보인다는 피드백 —
     // 거래량 높이를 기존의 80%(70 -> 56)로 줄이고, 줄어든 만큼(14px)을 캔들 패널에 더해
     // 전체 차트 높이는 그대로 유지하면서 캔들 영역만 키운다.
-    if (isMobileLayout()) return { candle: 174, vol: 56 };
-    return { candle: LW_CANDLE_H, vol: LW_VOL_H };
+    /* 2026-09-23: 캔들·거래량을 한 차트(한 패널)에 그린다 — 매매시그널 차트와 동일.
+       vol 값은 옛 호출부(chartVol.applyOptions)가 같은 차트에 높이를 덮어쓰지 않도록 같게 둔다.
+       .rt-chart-panes 높이(데스크톱 300 / 모바일 230)와 반드시 일치시킬 것. */
+    const h = isMobileLayout() ? 230 : LW_CHART_TOTAL_H;
+    return { candle: h, vol: h };
   }
 
   /** 2026-07-11: 일봉 기준 약 2년치(400개)가 보이도록 상향 — us-market/crypto 자체 차트와
@@ -1085,7 +1093,7 @@
         horzLine: { labelVisible: true },
       },
       grid: {
-        vertLines: { color: t.gridColor },
+        vertLines: { visible: false },
         horzLines: { color: t.gridColor },
       },
       leftPriceScale: { visible: false },
@@ -1096,7 +1104,15 @@
 
   /** 이중 차트: 우측 눈금 폭·barSpacing 맞춤 (격자/봉 위치 일치) */
   function syncLwDualChartAxes(chartCandle, chartVol) {
-    if (!chartCandle || !chartVol || chartCandle === chartVol) return;
+    if (chartCandle && chartCandle === chartVol) {
+      try {
+        chartCandle.timeScale().fitContent();
+      } catch (e) {
+        /* noop */
+      }
+      return;
+    }
+    if (!chartCandle || !chartVol) return;
     try {
       chartCandle.timeScale().applyOptions({ ...LW_TIME_SCALE_BASE, visible: false });
       chartVol.timeScale().applyOptions({ ...LW_TIME_SCALE_BASE, visible: true });
@@ -1124,6 +1140,8 @@
       borderDownColor: CANDLE_DOWN,
       wickUpColor: CANDLE_UP,
       wickDownColor: CANDLE_DOWN,
+      lastValueVisible: false,
+      priceLineVisible: false,
     };
     if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
       return chart.addSeries(LC.CandlestickSeries, opts);
@@ -1135,6 +1153,7 @@
   function addVolSeries(LC, chart) {
     const opts = {
       priceFormat: { type: "volume" },
+      priceScaleId: "rt-vol",
       priceLineVisible: false,
       lastValueVisible: false,
     };
@@ -1154,6 +1173,7 @@
   }
 
   function linkCrosshairSync(chartCandle, candleSeries, chartVol, volSeries, bundle) {
+    if (chartCandle === chartVol) return;
     if (
       !chartCandle ||
       !chartVol ||
@@ -1196,38 +1216,30 @@
    * @returns {{ chartCandle, chartVol, candle, vol }}
    */
   function createLwDualPanelCharts(LC, mounts, opts) {
+    /* 2026-09-23: 예전엔 캔들 차트와 거래량 차트를 위아래 두 개로 따로 만들어서
+       거래량 칸에 별도 눈금(10M)·로고·경계가 생겼다. 매매시그널처럼 한 차트 안에
+       캔들(위 72%) + 거래량(아래 22%, 눈금 숨김)을 겹쳐 그린다. chartVol은 같은 차트를
+       가리키게 해서 기존 호출부(리사이즈·테마·정리)가 그대로 동작한다. */
     const { width, localization } = opts;
-    const { candle: ch, vol: vh } = lwChartHeights();
+    const { candle: ch } = lwChartHeights();
     mounts.candleHost.innerHTML = "";
     mounts.volHost.innerHTML = "";
-    const chartCandle = LC.createChart(
-      mounts.candleHost,
-      lwChartLayoutOptions(width, ch, false, localization)
-    );
-    const chartVol = LC.createChart(
-      mounts.volHost,
-      lwChartLayoutOptions(width, vh, true, localization)
-    );
-    const candle = addCandleSeries(LC, chartCandle);
-    const vol = addVolSeries(LC, chartVol);
+    const chart = LC.createChart(mounts.candleHost, lwChartLayoutOptions(width, ch, true, localization));
+    const candle = addCandleSeries(LC, chart);
+    const vol = addVolSeries(LC, chart);
     if (!candle || !vol) throw new Error("차트 시리즈를 초기화하지 못했습니다.");
-    /* 2026-07-20: 기본 scaleMargins(top:0.2/bottom:0.1)이 각 패널 안에 캔들/거래량
-       봉이 위아래로 붕 뜨게 만들어 두 패널 사이가 넓어 보이는 문제 -> 여백을 좁혀
-       캔들 영역이 패널을 더 채우도록 함. */
     try {
-      candle.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.06 } });
+      candle.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
     } catch (e) {
       /* noop */
     }
     try {
-      vol.priceScale().applyOptions({ scaleMargins: { top: 0.15, bottom: 0 } });
+      vol.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
     } catch (e) {
       /* noop */
     }
-    const maSeries = addMaLineSeries(LC, chartCandle);
-    linkLogicalRangeSync(chartCandle, chartVol);
-    syncLwDualChartAxes(chartCandle, chartVol);
-    return { chartCandle, chartVol, candle, vol, maSeries };
+    const maSeries = addMaLineSeries(LC, chart);
+    return { chartCandle: chart, chartVol: chart, candle, vol, maSeries };
   }
 
   function applyLwChartSeriesData(bundle, candles, limit, maData) {
@@ -1257,7 +1269,7 @@
         textColor: t.textColor,
       },
       grid: {
-        vertLines: { color: t.gridColor },
+        vertLines: { visible: false },
         horzLines: { color: t.gridColor },
       },
     };
@@ -1361,6 +1373,7 @@
   }
 
   function linkLogicalRangeSync(chartA, chartB) {
+    if (chartA === chartB) return;
     const tsA = chartA.timeScale();
     const tsB = chartB.timeScale();
     if (typeof tsA.subscribeVisibleLogicalRangeChange !== "function") return;
@@ -2553,7 +2566,7 @@
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,
-      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:var(--text-muted-ui)"></i>200일</span>`,
       `</div>`,
       `<div class="rt-chart-body">`,
       `  <p class="rt-chart-loading-msg" aria-live="polite" hidden>차트 불러오는 중...</p>`,

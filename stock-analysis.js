@@ -1046,12 +1046,15 @@
     }
   }
 
+  /* 2026-09-23: 매매시그널 차트 스타일로 전 페이지 통일(시우 요청) — 배경은 투명(카드 배경을
+     그대로 씀), 세로 격자 없음, 가로 격자 0.08, 글자·200일선은 --text-muted-ui. */
   function getLwTheme() {
     const dark = isDarkTheme();
+    const muted = getComputedStyle(document.documentElement).getPropertyValue("--text-muted-ui").trim();
     return {
-      bg: dark ? "#161616" : "#ffffff",
-      text: dark ? "#aaaaaa" : "#555555",
-      grid: dark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.06)",
+      bg: "transparent",
+      text: muted || (dark ? "#8a95a8" : "#555555"),
+      grid: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
     };
   }
 
@@ -1170,7 +1173,7 @@
       width: w,
       height: h,
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       localization: {
@@ -1178,7 +1181,7 @@
       },
     });
     const UP_COLOR = "#e24b4a";
-    const DOWN_COLOR = "#3b82f6";
+    const DOWN_COLOR = "#2d7ff9";
     const candleOpts = {
       upColor: UP_COLOR,
       downColor: DOWN_COLOR,
@@ -1186,6 +1189,8 @@
       borderDownColor: DOWN_COLOR,
       wickUpColor: UP_COLOR,
       wickDownColor: DOWN_COLOR,
+      lastValueVisible: false,
+      priceLineVisible: false,
     };
     let candleSeries;
     if (LC.CandlestickSeries && typeof chart.addSeries === "function") {
@@ -1196,6 +1201,7 @@
       throw new Error("캔들 시리즈를 초기화하지 못했습니다.");
     }
     candleSeries.setData(chartData.candles);
+    candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
 
     // 2026-07-11: 캔들 밑에 거래량 바 추가. 색상은 일봉 캔들과 동일하게 상승/하락 색을 맞춘다.
     // priceScaleId를 별도(overlay)로 두고 scaleMargins로 하단 20%만 차지하게 해서 가격 차트와
@@ -1205,7 +1211,7 @@
       .map((cd) => ({
         time: cd.time,
         value: Math.max(0, Number(cd.volume) || 0),
-        color: cd.close >= cd.open ? UP_COLOR : DOWN_COLOR,
+        color: cd.close >= cd.open ? "rgba(226,75,74,0.55)" : "rgba(45,127,249,0.55)",
       }));
     if (volumeData.length) {
       const volumeOpts = { priceFormat: { type: "volume" }, priceScaleId: "ai-volume", lastValueVisible: false, priceLineVisible: false };
@@ -1216,7 +1222,7 @@
         volumeSeries = chart.addHistogramSeries(volumeOpts);
       }
       if (volumeSeries) {
-        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
         volumeSeries.setData(volumeData);
       }
     }
@@ -1229,7 +1235,7 @@
       [chartData.ma20, "#FF0000", 1],
       [chartData.ma60, "#1E90FF", 1],
       [chartData.ma120, "#008000", 1],
-      [chartData.ma200, isDark ? "#f5f5f5" : "#000000", 2],
+      [chartData.ma200, getLwTheme().text, 2],
     ];
     for (const [arr, color, lineWidth] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
@@ -1270,7 +1276,7 @@
     const t = getLwTheme();
     aiChartBundle.chart.applyOptions({
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { color: t.grid }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
     });
   }
 
@@ -1296,7 +1302,7 @@
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#FF0000"></i>20일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#1E90FF"></i>60일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#008000"></i>120일</span>` +
-      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot ai-chart-legend__dot--ma200" style="background:#000000"></i>200일</span>` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot ai-chart-legend__dot--ma200" style="background:var(--text-muted-ui)"></i>200일</span>` +
       `</div>` +
       `<div class="ai-lw-chart-host" role="region" aria-label="캔들 차트"></div>` +
       `</div>` +

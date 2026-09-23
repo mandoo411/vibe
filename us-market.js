@@ -489,7 +489,7 @@
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,
-      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:var(--text-muted-ui)"></i>200일</span>`,
       `  </div>`,
       `  <div id="${escapeHtml(chartHostId)}" class="tm-lw-chart-host" data-lw-symbol="${escapeHtml(ticker)}" role="region" aria-label="캔들 차트"></div>`,
       `</div>`,

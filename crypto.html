@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
     <script src="./assets/data-url.js"></script>
-    <script src="./assets/lw-candle-chart.js?v=2"></script>
+    <script src="./assets/lw-candle-chart.js?v=3"></script>
     <link rel="stylesheet" href="./typography.css?v=1" />
     <style>
       .crypto-wrap,
@@ -505,7 +505,7 @@
         display: inline-block;
       }
       [data-theme="dark"] .tm-lw-legend-dot--ma200 {
-        background: #f5f5f5 !important;
+        background: var(--text-muted-ui) !important;
       }
       .tm-lw-chart-error {
         padding: 24px 12px;
@@ -1441,7 +1441,7 @@
                     <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>
                     <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>
                     <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>
-                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:#000000"></i>200일</span>
+                    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:var(--text-muted-ui)"></i>200일</span>
                   </div>
                   <div class="tm-lw-chart-host" data-lw-symbol="${escapeHtml(c.symbol)}" role="region" aria-label="캔들 차트"></div>
                 </div>

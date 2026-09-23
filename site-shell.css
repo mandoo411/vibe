@@ -2718,3 +2718,56 @@ body[data-theme="dark"] .home-ticker-bar__label {
   background: rgba(5, 150, 105, 0.18);
   border-color: rgba(16, 185, 129, 0.32);
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   2026-09-23 로고 교체 — "스텝 마크" + 소문자 워드마크
+   · 마크: 기울기·폭이 같은 평행사변형 두 개. 작은 막대(높이 1)에서 큰 막대(높이 2)로 한 계단
+     올라간다 — 상승을 설명하지 않고 형태로 보여준다. 간격도 막대와 평행하게 4 단위로 일정하다.
+   · 판(검정 박스+초록 테두리)을 없앴다 — 틀이 있으면 로고가 아니라 앱 아이콘 자리표시자로 읽힌다.
+     판은 파비콘/앱 아이콘(에메랄드 타일)에서만 쓴다.
+   · 워드마크: 표기는 소문자 "totalmoney" + 대문자 AI(에메랄드). HTML 글자는 그대로 "TotalMoney"라서
+     검색·접근성은 그대로이고, 모양만 CSS로 바꾼다.
+   ════════════════════════════════════════════════════════════════════════════ */
+html body .home-nav .home-nav__logo-box,
+html body .home-nav__logo .home-nav__logo-box {
+  width: 30px !important;
+  height: 30px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+html body .home-nav__logo {
+  gap: 8px !important;
+}
+html body.page-tm-v2 .home-nav .home-nav__brand-name,
+html body.page-home-v2 .home-nav .home-nav__brand-name,
+html body .home-nav .home-nav__brand-name {
+  text-transform: lowercase !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1 !important;
+}
+html body .home-nav .home-nav__brand-name em {
+  text-transform: none !important;
+  margin-left: 0.06em;
+  letter-spacing: -0.02em;
+  color: #10b981 !important;
+}
+html:not([data-theme="dark"]) body .home-nav .home-nav__brand-name em {
+  color: #059669 !important;
+}
+@media (max-width: 768px) {
+  html body .home-nav .home-nav__logo-box,
+  html body .home-nav__logo .home-nav__logo-box {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  html body.page-tm-v2 .home-nav .home-nav__brand-name,
+  html body.page-home-v2 .home-nav .home-nav__brand-name,
+  html body .home-nav .home-nav__brand-name {
+    font-size: 19px !important;
+  }
+}

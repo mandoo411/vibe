@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
   <title>TotalMoney AI</title>
-  <!-- 16/32px 전용 단순화 버전: 상승 획을 빼고 굵은 M만 남긴다.
-       작은 크기에서는 획 사이 여백이 먼저 메워져 디테일을 남기면 덩어리로 보인다. -->
-  <rect width="48" height="48" rx="10" fill="#0B0B0C"/>
-  <path d="M10 37V14h7.5L24 26l6.5-12H38v23" fill="none" stroke="#10b981" stroke-width="6.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 16/32px 전용: 막대를 더 크게(여백 축소) 넣어 탭 아이콘에서도 두 막대가 갈라져 보이게 -->
+  <rect width="48" height="48" rx="10" fill="#10B981"/>
+  <g transform="translate(4.3 3.2) scale(0.86)">
+    <path d="M6 40h9l6-16h-9z" fill="#0B0B0C"/>
+    <path d="M19 40h9l12-32h-9z" fill="#0B0B0C"/>
+  </g>
 </svg>

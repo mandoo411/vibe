@@ -8,11 +8,11 @@
     />
     <meta name="theme-color" content="#000000" />
     <title>TotalMoney AI · 매일 증시 일정</title>
-    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=7">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=7">
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=7">
-    <link rel="shortcut icon" href="/favicon.ico?v=7">
-    <link rel="manifest" href="/site.webmanifest?v=7">
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=8">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=8">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=8">
+    <link rel="shortcut icon" href="/favicon.ico?v=8">
+    <link rel="manifest" href="/site.webmanifest?v=8">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,7 +31,7 @@
       href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
     />
 
-    <link rel="stylesheet" href="./weekly-market.css?v=20260923c" />
+    <link rel="stylesheet" href="./weekly-market.css?v=20260923d" />
     <script src="./assets/data-url.js"></script>
     <script src="./assets/key-indicators.js"></script>
         <link rel="stylesheet" href="./typography.css?v=1" />
@@ -44,7 +44,7 @@
       <header class="home-nav" aria-label="주요 메뉴">
         <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
           <div class="home-nav__logo-box" aria-hidden="true">
-            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><path d="M11 36V15h8.5L24 24l4.5-9H37v21" fill="none" stroke="#10b981" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 24V11" fill="none" stroke="#34d399" stroke-width="4.4" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><path d="M6 40h9l6-16h-9z" fill="#059669"/><path d="M19 40h9l12-32h-9z" fill="#10b981"/></svg>
           </div>
           <div class="home-nav__brand">
             <span class="home-nav__brand-name">TotalMoney <em>AI</em></span>
@@ -1139,9 +1139,15 @@
           const dow = WK_DOW[kstDayOfWeek(ymd)] || "";
           const dday = ddayLabel(ymd);
           const chipCls = dday === "오늘" ? "wk-chip wk-chip--today" : "wk-chip";
+          // 2026-09-23: 신규상장이 있는 날은 머리글에 눈에 띄는 칩(맥박 점)을 단다 — "아 오늘 상장 있구나"
+          const ipoN = itemsForDate("krIPO", ymd).length;
+          const ipoChip = ipoN
+            ? `<span class="wk-ipo-chip"><i class="wk-pulse" aria-hidden="true"></i>${dday === "오늘" ? "오늘 상장" : "신규상장"} ${ipoN}</span>`
+            : "";
           return `<header class="wk-day__head">
               <h2 class="wk-day__date">${m}월 ${d}일 <span class="wk-day__dow">${escapeHtml(dow)}</span></h2>
               ${dday ? `<span class="${chipCls}">${escapeHtml(dday)}</span>` : ""}
+              ${ipoChip}
             </header>`;
         }
 
@@ -1214,7 +1220,7 @@
               const price = formatOfferingPrice(r.offeringPrice);
               const meta = [r.market, price ? `공모가 ${price}` : ""].filter(Boolean).map(escapeHtml).join(" · ");
               return `<li class="wk-ev wk-ev--ipo">
-                <div class="wk-ev__time"><span class="wk-ev__kind">상장</span></div>
+                <div class="wk-ev__time"><span class="wk-ev__kind wk-ev__kind--ipo">상장</span></div>
                 <div class="wk-ev__main">
                   <div class="wk-ev__title"><a class="wk-ev__name wk-ev__link" href="${escapeHtml(ipoDetailUrl(r))}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a>${meta ? `<span class="wk-ev__cty">${meta}</span>` : ""}</div>
                 </div>
@@ -1466,13 +1472,14 @@
             const econ = filterEconomicRows(itemsForDate("economicCalendar", d));
             const cnt = econ.length + itemsForDate("krEarnings", d).length + itemsForDate("krIPO", d).length;
             const key = econ.some((r) => isKeyIndicator(r));
+            const hasIpo = itemsForDate("krIPO", d).length > 0;
             const dow = kstDayOfWeek(d);
             const day = Number(d.slice(8, 10));
             const cls = ["wk-strip__d", d === sel ? "is-sel" : "", d === today ? "is-today" : "", cnt ? "" : "is-empty", dow === 0 ? "is-sun" : "", dow === 6 ? "is-sat" : ""]
               .filter(Boolean)
               .join(" ");
             const top = day === 1 ? `${Number(d.slice(5, 7))}월` : WD[dow];
-            chips.push(`<button type="button" class="${cls}" data-date="${d}"><span class="wk-strip__w">${top}</span><span class="wk-strip__n">${day}</span><span class="wk-strip__dot${key ? " is-key" : cnt ? "" : " is-none"}"></span></button>`);
+            chips.push(`<button type="button" class="${cls}" data-date="${d}"><span class="wk-strip__w">${top}</span><span class="wk-strip__n">${day}</span><span class="wk-strip__dots"><span class="wk-strip__dot${key ? " is-key" : cnt ? "" : " is-none"}"></span>${hasIpo ? '<span class="wk-strip__dot is-ipo"></span>' : ""}</span></button>`);
           }
           const selMonth = Number(sel.slice(5, 7));
           html += `<div class="wk-strip-card">

@@ -3346,7 +3346,7 @@ html body.page-tm-v2 .schedule-card.schedule-card.schedule-card--today {
    ════════════════════════════════════════════════════════════════════════════ */
 html body .wk-days {
   --wk-card: #ffffff;
-  --wk-border: #e5e8eb;
+  --wk-border: #dde1e6;
   --wk-line: #f2f4f6;
   --wk-sunken: #f5f6f8;
   --wk-t1: #191f28;
@@ -3724,11 +3724,11 @@ html[data-theme="dark"] body .tm-main:has(.schedule-page) {
   background: #000000 !important;
 }
 html:not([data-theme="dark"]) body .tm-main:has(.schedule-page) {
-  background: #f2f4f6 !important;
+  background: #ffffff !important; /* 2026-09-23 4차: 다른 페이지와 같은 흰 바탕 — 카드는 테두리로 구분 */
 }
 html body.page-tm-v2 .schedule-aside .schedule-card {
   background: #ffffff !important;
-  border: 1px solid #e5e8eb !important;
+  border: 1px solid #dde1e6 !important;
   border-radius: 16px !important;
   box-shadow: none !important;
 }
@@ -3786,7 +3786,7 @@ html:not([data-theme="dark"]) body.page-tm-v2:has(.schedule-page),
 html:not([data-theme="dark"]) body.page-tm-v2:has(.schedule-page) .tm-wrap,
 html:not([data-theme="dark"]) body.page-tm-v2 .tm-main:has(.schedule-page),
 html:not([data-theme="dark"]) body.page-tm-v2 .tm-main .page:has(.schedule-page) {
-  background: #f2f4f6 !important;
+  background: #ffffff !important; /* 좌우 바탕까지 다른 페이지와 같은 흰색(시우: 페이지 이동 시 바탕이 바뀌어 통일감 없음) */
 }
 html[data-theme="dark"] body.page-tm-v2 .tm-main:has(.schedule-page),
 html[data-theme="dark"] body.page-tm-v2 .tm-main .page:has(.schedule-page) {
@@ -4010,5 +4010,110 @@ html body .wk-mtop .wk-strip__d.is-sel .wk-strip__dot.is-none {
   html body.page-tm-v2 .schedule-page .schedule-main {
     padding-left: 12px !important;
     padding-right: 12px !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   2026-09-23 (4차) — 신규상장 강조 (시우: "아 오늘 상장 종목 있구나" 알 수 있게)
+   색은 앰버 한 가지로 고정 — 초록(브랜드·핵심지표), 빨강/파랑(등락)과 겹치지 않는 유일한 색.
+   ① 날짜 머리글에 "오늘 상장 N / 신규상장 N" 칩 + 맥박 점(천천히 퍼지는 링)
+   ② 상장 행은 앰버 옅은 면 + 왼쪽 강조선으로 카드 안에서 한 덩어리로 튀게
+   ③ 모바일 날짜 띠에 앰버 점
+   움직임을 줄이는 설정(prefers-reduced-motion)이면 맥박은 끈다.
+   ════════════════════════════════════════════════════════════════════════════ */
+html body .wk-days {
+  --wk-ipo: #b45309;
+  --wk-ipo-strong: #d97706;
+  --wk-ipo-bg: rgba(245, 158, 11, 0.1);
+  --wk-ipo-line: rgba(245, 158, 11, 0.45);
+}
+html[data-theme="dark"] body .wk-days {
+  --wk-ipo: #fbbf24;
+  --wk-ipo-strong: #f59e0b;
+  --wk-ipo-bg: rgba(251, 191, 36, 0.09);
+  --wk-ipo-line: rgba(251, 191, 36, 0.5);
+}
+html body .wk-days .wk-ipo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 4px 10px 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--wk-ipo);
+  background: var(--wk-ipo-bg);
+  border: 1px solid var(--wk-ipo-line);
+  white-space: nowrap;
+}
+html body .wk-days .wk-pulse {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wk-ipo-strong);
+  flex: none;
+}
+html body .wk-days .wk-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--wk-ipo-strong);
+  animation: wk-pulse 1.8s ease-out infinite;
+}
+@keyframes wk-pulse {
+  0% { transform: scale(1); opacity: 0.7; }
+  80%, 100% { transform: scale(3); opacity: 0; }
+}
+html body .wk-days .wk-ev.wk-ev--ipo {
+  margin: 8px 0;
+  padding: 12px 12px 12px 10px;
+  border: 0;
+  border-left: 3px solid var(--wk-ipo-strong);
+  border-radius: 10px;
+  background: var(--wk-ipo-bg);
+  align-items: center;
+}
+html body .wk-days .wk-ev.wk-ev--ipo + .wk-ev.wk-ev--ipo {
+  margin-top: 0;
+}
+html body .wk-days .wk-ev__kind--ipo {
+  color: #ffffff;
+  background: var(--wk-ipo-strong);
+  font-weight: 700;
+}
+html[data-theme="dark"] body .wk-days .wk-ev__kind--ipo {
+  color: #1a1204;
+}
+html body .wk-days .wk-ev--ipo .wk-ev__name {
+  font-size: 16px;
+  font-weight: 800;
+}
+html body .wk-days .wk-ev--ipo .wk-ev__link:hover {
+  color: var(--wk-ipo);
+}
+/* 모바일 날짜 띠 — 점 두 개까지 */
+html body .wk-mtop .wk-strip__dots {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+}
+html body .wk-mtop .wk-strip__dot.is-ipo {
+  background: var(--wk-ipo-strong);
+}
+html body .wk-mtop .wk-strip__d.is-sel .wk-strip__dot.is-ipo {
+  background: #fbbf24;
+}
+@media (max-width: 768px) {
+  html body .wk-days .wk-ev.wk-ev--ipo .wk-ev__name {
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html body .wk-days .wk-pulse::after {
+    animation: none;
   }
 }

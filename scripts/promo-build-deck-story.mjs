@@ -148,6 +148,12 @@ ${prevHooks.length ? prevHooks.map((h) => `- ${h}`).join("\n") : "- (없음)"}
 }`;
 }
 
+
+/** 이슈가 2개 미만이거나 사슬이 3단계 미만이면 같은 모델에 한 번 더 요청한다(9/24 실측: 2단계만 쓴 날이 있었다) */
+const thinStory = (raw) => !raw || !Array.isArray(raw.issues) || raw.issues.length < 2 ||
+  raw.issues.some((it) => !Array.isArray(it?.chain) || it.chain.length < 3);
+const RETRY_NOTE = "\n\n# 재요청\n직전 출력은 issues가 2개 미만이거나 chain이 3단계 미만이었다. issues는 반드시 2개, 각 chain은 3~4단계(마지막은 결과)로 다시 써라.";
+
 /* ───────── 메인 ───────── */
 
 /**
@@ -182,6 +188,14 @@ export async function buildStoryCopy(f, day, { prevHooks = [], writer } = {}) {
       const out = await fn(SYSTEM, prompt);
       raw = typeof out === "string" ? parseJson(out) : out;
       console.log(`[story] ${label} 문장 생성 완료`);
+      if (thinStory(raw)) {
+        console.warn("[story] 이슈/사슬이 부족해 한 번 더 요청합니다");
+        try {
+          const again = await fn(SYSTEM, prompt + RETRY_NOTE);
+          const r2 = typeof again === "string" ? parseJson(again) : again;
+          if (!thinStory(r2)) raw = r2;
+        } catch (e) { console.warn(`[story] 재요청 실패: ${String(e?.message || e).slice(0, 120)}`); }
+      }
       break;
     } catch (e) {
       console.warn(`[story] ${label} 실패: ${String(e?.message || e).slice(0, 200)}`);

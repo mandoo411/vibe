@@ -75,6 +75,18 @@ function entityPctConsistent(text, ents) {
   return true;
 }
 
+
+/** 이슈가 2개 미만이거나 사슬이 3단계 미만이면 같은 모델에 한 번 더 요청한다(9/24 실측: 2단계만 쓴 날이 있었다) */
+const thinStory = (raw) => !raw || !Array.isArray(raw.issues) || raw.issues.length < 2 ||
+  raw.issues.some((it) => !Array.isArray(it?.chain) || it.chain.length < 3);
+const RETRY_NOTE = "\n\n# 재요청\n직전 출력은 issues가 2개 미만이거나 chain이 3단계 미만이었다. issues는 반드시 2개, 각 chain은 3~4단계(마지막은 결과)로 다시 써라.";
+
+/** 3대 지수가 모두 1.5% 미만으로 움직인 날 "급락·폭락·급등·폭등"은 과장이다 → 하락/상승으로 낮춘다 */
+function tameWords(html, maxAbs) {
+  if (maxAbs >= 1.5) return html;
+  return String(html ?? "").replace(/급락|폭락/g, "하락").replace(/급등|폭등/g, "상승");
+}
+
 const SYSTEM = `너는 한국 증시 인스타그램 아침 카드뉴스 편집자다.
 독자는 장 열리기 전 5분 동안 "간밤에 무슨 일이 있었고, 그게 오늘 한국장에 무슨 뜻인지"를 알려고 카드를 넘긴다.
 숫자 나열은 실패다. 사건 → 시장 반응 → 한국장 영향의 인과를 쉬운 말로 보여준다.
@@ -116,6 +128,7 @@ ${prevHooks.length ? prevHooks.map((h) => `- ${h}`).join("\n") : "- (없음)"}
 1. 숫자는 원문·실측에 적힌 숫자만 그대로. 지수·원자재 등락률을 쓸 거면 실측 데이터 값을 쓴다. 새 숫자·어림값 금지(코드가 검사해서 버린다).
 2. "매수 추천", "수익", "무조건" 금지. 전망은 "~할 수 있다"로. 상투구 금지.
 3. 어려운 용어는 쉬운 말로(예: 국채금리 → 미국 국채금리(나라 빚의 이자)).
+   과장 금지: 1.5% 미만 움직임을 "급락·폭락·급등"이라 부르지 않는다. 0.1% 안팎은 "보합"이다.
 4. HTML은 <br> <b> <em>만. 훅·질문 핵심어 1개만 <em>, 본문 핵심어는 <b>.
 5. 훅(hookHTML)은 한 문장, <br>로 3줄, 한 줄은 공백 포함 11자 이내. 숫자는 많아야 1개.
 6. chain 각 단계 25~40자, 누가·무엇을·얼마나가 들어간 구체적 문장. "미국 증시 하락" 같은 짧은 문장 금지.
@@ -162,12 +175,28 @@ export async function buildMorningStoryCopy(m, { prevHooks = [], writer } = {}) 
       const out = await fn(SYSTEM, prompt);
       raw = typeof out === "string" ? parseJson(out) : out;
       console.log(`[morning-story] ${label} 문장 생성 완료`);
+      if (thinStory(raw)) {
+        console.warn("[morning-story] 이슈/사슬이 부족해 한 번 더 요청합니다");
+        try {
+          const again = await fn(SYSTEM, prompt + RETRY_NOTE);
+          const r2 = typeof again === "string" ? parseJson(again) : again;
+          if (!thinStory(r2)) raw = r2;
+        } catch (e) { console.warn(`[morning-story] 재요청 실패: ${String(e?.message || e).slice(0, 120)}`); }
+      }
       break;
     } catch (e) {
       console.warn(`[morning-story] ${label} 실패: ${String(e?.message || e).slice(0, 200)}`);
     }
   }
   if (!raw) return null;
+
+  // 과장 표현 낮추기: 기준은 3대 지수 중 가장 크게 움직인 폭
+  const majorMax = Math.max(0, ...(m.usMarket?.indices || [])
+    .filter((i) => ["nasdaq", "sp500", "dow"].includes(i.id)).map((i) => Math.abs(n(i.changePct) ?? 0)));
+  raw.hookHTML = tameWords(raw.hookHTML, majorMax);
+  raw.hookSub = tameWords(raw.hookSub, majorMax);
+  raw.hookTag = tameWords(raw.hookTag, majorMax);
+  for (const it of raw.issues || []) if (it) it.question = tameWords(it.question, majorMax);
 
   const bad = (where, text) => {
     const okNum = numbersVerified(text, allowed);

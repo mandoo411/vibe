@@ -56,22 +56,26 @@
         </button>
         <nav class="home-nav__menu">
           <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <div class="home-nav__group" id="home-nav-market">
+            <button type="button" class="home-nav__link home-nav__group-btn" id="home-nav-market-btn" aria-haspopup="true" aria-expanded="false" aria-controls="home-nav-market-panel" aria-current="page">시장 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+            <div class="home-nav__group-panel" id="home-nav-market-panel" role="menu">
+              <a class="home-nav__sublink" role="menuitem" href="./market.html"><i class="ti ti-chart-line" aria-hidden="true"></i><span><b>시장지표</b><small>지수·환율·금리·원자재 한눈에</small></span></a>
+              <a class="home-nav__sublink" role="menuitem" href="./briefing.html"><i class="ti ti-sunrise" aria-hidden="true"></i><span><b>장전브리핑</b><small>장 시작 전 AI 체크포인트</small></span></a>
+              <a class="home-nav__sublink" role="menuitem" href="./daily-market.html"><i class="ti ti-chart-bar" aria-hidden="true"></i><span><b>마감시황</b><small>오늘 장 마감 AI 분석</small></span></a>
+              <a class="home-nav__sublink" role="menuitem" href="./weekly-market.html" aria-current="page"><i class="ti ti-calendar" aria-hidden="true"></i><span><b>일정</b><small>경제지표·실적 발표 일정</small></span></a>
+              <a class="home-nav__sublink" role="menuitem" href="./world-market.html"><i class="ti ti-world" aria-hidden="true"></i><span><b>글로벌 랭킹</b><small>세계 시가총액 순위</small></span></a>
+            </div>
+          </div>
           <div class="home-nav__links" id="home-nav-links">
-          <a class="home-nav__link" href="./market.html">시장지표</a>
-          <a class="home-nav__link" href="./briefing.html">브리핑</a>
-          <a class="home-nav__link" href="./daily-market.html">마감시황</a>
-          <a class="home-nav__link" href="./weekly-market.html" aria-current="page">일정</a>
           <a class="home-nav__link" href="./realtime.html">실시간시세</a>
           <a class="home-nav__link" href="./us-market.html">미국주식</a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./close-signal.html">종가시그널</a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a></div>
-  <div class="home-nav__more" id="home-nav-more">
-            <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
-            <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu">
           <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./world-market.html">글로벌 랭킹</a>
-          </div>
+          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./close-signal.html">종가시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a></div>
+          <div class="home-nav__more" id="home-nav-more">
+            <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+            <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
           </div>
 
           <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">

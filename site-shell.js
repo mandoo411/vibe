@@ -401,20 +401,41 @@
   // (JS가 관리하는 #home-nav-links 풀에는 아래 8개만 있음). 이 우선순위 숫자는
   // 좁은 화면에서 8개가 다 안 들어갈 때 무엇부터 접을지를 지정 순서대로 결정한다
   // (뒤쪽 — AI종목분석/매매시그널 — 부터 먼저 접힘).
+  // 2026-09-24 시우 결정 — GNB 재구성: [시장▾] 실시간시세 미국주식 암호화폐 매매시그널PRO 종가시그널PRO AI종목분석PRO.
+  // "시장"은 드롭다운 그룹(시장지표·장전브리핑·마감시황·일정·글로벌 랭킹)이라 이 풀 밖(#home-nav-market)에 있고
+  // 항상 보인다. 좁을 때는 정보성(암호화폐→미국주식→실시간시세)부터 "더보기"로 접고, PRO 3종은 끝까지 남긴다.
   const NAV_PRIORITY = {
-    "./market.html": 1,
-    "./briefing.html": 2,
-    "./daily-market.html": 3,
-    "./weekly-market.html": 4,
-    "./realtime.html": 5,
-    // 2026-09-12: 시우 결정 — GNB 자리가 8개로 꽉 차서, 종가베팅을 노출하는 대신
-    // 미국주식을 "더보기"로 내린다. 수익화 기능(매매시그널·종가베팅·AI종목분석)을
-    // 앞에 두고, 정보성 페이지를 뒤로 미는 배치다.
-    "./close-signal.html": 6,
-    "./trade-signal.html": 7,
-    "./stock-analysis.html": 8,
-    "./us-market.html": 9,
+    "./trade-signal.html": 1,
+    "./close-signal.html": 2,
+    "./stock-analysis.html": 3,
+    "./realtime.html": 4,
+    "./us-market.html": 5,
+    "./crypto.html": 6,
   };
+
+  // 2026-09-24: 상단 "시장" 드롭다운. 클릭으로 열고 닫는다(데스크톱은 마우스를 올려도 열림).
+  function bindNavGroups() {
+    document.querySelectorAll(".home-nav__group").forEach((grp) => {
+      const btn = grp.querySelector(".home-nav__group-btn");
+      if (!btn) return;
+      let hoverTimer = 0;
+      const setOpen = (open) => {
+        grp.classList.toggle("is-open", open);
+        btn.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setOpen(!grp.classList.contains("is-open"));
+      });
+      const canHover = window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      if (canHover) {
+        grp.addEventListener("mouseenter", () => { clearTimeout(hoverTimer); setOpen(true); });
+        grp.addEventListener("mouseleave", () => { clearTimeout(hoverTimer); hoverTimer = setTimeout(() => setOpen(false), 160); });
+      }
+      document.addEventListener("click", (e) => { if (!grp.contains(e.target)) setOpen(false); });
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
+    });
+  }
 
   function bindNavPriorityMenu() {
     const nav = document.querySelector(".home-nav");
@@ -859,6 +880,7 @@
     enhanceShell();
     applyAnalysisNavLock();
     bindNavToggle();
+    bindNavGroups();
     bindNavPriorityMenu();
     if (!document.body.classList.contains("page-home-v2")) {
       renderTicker();

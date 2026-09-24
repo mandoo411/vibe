@@ -45,12 +45,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
+      - name: KRX 거래일 확인
+        id: krx
+        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }}
+
       - name: Setup Node.js
+        if: steps.krx.outputs.open == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Resolve stage
+        if: steps.krx.outputs.open == 'true'
         id: cfg
         run: |
           set -euo pipefail
@@ -61,6 +68,7 @@ jobs:
           echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
 
       - name: Check today's closing report
+        if: steps.krx.outputs.open == 'true'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}

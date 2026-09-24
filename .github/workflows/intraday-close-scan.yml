@@ -67,16 +67,15 @@ jobs:
 
       # 휴장일·주말에 헛돌지 않게 한다. 국내 증시가 안 열린 날은 전일 캐시와 같은 값을
       # 오늘 것처럼 저장하게 되므로(실데이터가 아닌 걸 최신인 척 보여주는 셈) 막는다.
-      - name: 평일 여부 확인
+      - name: KRX 거래일 확인 (주말·공휴일 휴장이면 스캔 건너뜀)
         id: guard
         run: |
-          set -euo pipefail
-          DOW=$(TZ=Asia/Seoul date +%u)
-          if [ "$DOW" -ge 6 ]; then
-            echo "::notice::주말($DOW) — 스캔 건너뜀"
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          else
+          # 2026-09-24: 주말만 거르던 것을 휴장일 달력(lib/krx-calendar.js)으로 교체.
+          # 추석(9/24)에 KIS가 9/23 시세를 돌려줘 가짜 결과가 저장된 사고의 재발 방지.
+          if node scripts/krx-guard.mjs --exit-code; then
             echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run intraday close scan

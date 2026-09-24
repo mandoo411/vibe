@@ -42,14 +42,22 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT_REPO_SECRETS_WRITE || github.token }}
 
+      # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
+      - name: KRX 거래일 확인
+        id: krx
+        run: node scripts/krx-guard.mjs
+
       - uses: actions/setup-node@v4
+        if: steps.krx.outputs.open == 'true'
         with:
           node-version: "20"
           cache: "npm"
 
       - run: npm ci
+        if: steps.krx.outputs.open == 'true'
 
       - name: Build screener cache
+        if: steps.krx.outputs.open == 'true'
         run: node scripts/build-screener-cache.mjs
         env:
           KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
@@ -58,6 +66,7 @@ jobs:
           KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
 
       - name: Commit data/kr-screener-cache.json
+        if: steps.krx.outputs.open == 'true'
         id: commit
         run: |
           set -euo pipefail
@@ -79,7 +88,7 @@ jobs:
       # 건너뛰기 때문에, 여기서 명시적으로 배포하지 않으면 스크리너 데이터가 커밋만 되고
       # 실제 서비스에는 영원히 반영되지 않는다. daily-market-sync.yml과 동일한 패턴.
       - name: Deploy to Vercel
-        if: steps.commit.outputs.changed == 'true'
+        if: steps.krx.outputs.open == 'true' && (steps.commit.outputs.changed == 'true')
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes

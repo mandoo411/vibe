@@ -672,9 +672,32 @@ function sanityCheckChangePct(rows, kind, getLabel, errors) {
   }
 }
 
+const PUBLISH_STAMP_PATH = path.resolve("generated/morning-briefing/last-published-date.txt");
+async function readPublishStamp() {
+  try { return (await fs.readFile(PUBLISH_STAMP_PATH, "utf8")).trim(); } catch { return ""; }
+}
+
 async function main() {
   const errors = [];
-  const updatedAt = kstIso(seoulYmd(), "06:00");
+  const today = seoulYmd();
+  const updatedAt = kstIso(today, "06:00");
+
+  // 2026-09-24: 오늘 AI 분석이 이미 발행됐으면 수치를 더 이상 덮어쓰지 않는다.
+  // 9/24 실측 — 08:14 분석 작성 시점엔 EWY -3.62%·WTI -2.49%였는데, 08:21·09:57 재수집이
+  // EWY -1.86%·WTI -3.18%로 덮어써서 화면의 숫자와 분석 문장이 서로 다른 말을 했다.
+  // 아침 브리핑은 "장 열기 전 스냅샷"이므로 분석과 같은 시점의 숫자로 고정하는 게 맞다.
+  // 강제로 다시 받으려면 BRIEFING_FORCE_REFRESH=1.
+  const stamp = await readPublishStamp();
+  const existingEarly = await loadExistingBriefing();
+  if (
+    process.env.BRIEFING_FORCE_REFRESH !== "1" &&
+    stamp === today &&
+    existingEarly && String(existingEarly.updatedAt || "").slice(0, 10) === today &&
+    !isAiAnalysisEmpty(existingEarly.aiAnalysis)
+  ) {
+    console.log("[morning-briefing] 오늘 AI 분석이 이미 발행됨 — 분석 시점의 수치로 고정하고 재수집하지 않습니다");
+    return;
+  }
 
   const usMarket = await safeCollect("usMarket", { indices: [] }, fetchUsMarket, errors);
   const topStocks = await safeCollect("topStocks", [], fetchTopStocks, errors);
@@ -683,14 +706,19 @@ async function main() {
   const crypto = await safeCollect("crypto", { assets: [] }, fetchCrypto, errors);
   const news = await safeCollect("news", [], fetchDomesticNews, errors);
 
-  // aiAnalysis는 Cowork가 별도 커밋으로 채움. 숫자 데이터만 갱신할 때 기존 분석을 지우지 않는다.
-  const existing = await loadExistingBriefing();
+  // aiAnalysis는 Cowork가 별도 커밋으로 채움. 숫자 데이터만 갱신할 때 **오늘 쓴** 분석은 지우지 않는다.
+  // 2026-09-24: 예전엔 어제 분석도 그대로 남겨서, Cowork가 실패한 날엔 어제 문장이 오늘 숫자 옆에
+  // 붙어 나갔다. 발행 기록(stamp)이 오늘이 아니면 분석은 비운다(화면은 분석 없이 수치만 보여준다).
+  const existing = existingEarly;
+  const aiIsToday = stamp === today;
   const preservedAi =
-    existing?.aiAnalysis && !isAiAnalysisEmpty(existing.aiAnalysis)
+    aiIsToday && existing?.aiAnalysis && !isAiAnalysisEmpty(existing.aiAnalysis)
       ? existing.aiAnalysis
       : EMPTY_AI_ANALYSIS;
   if (preservedAi !== EMPTY_AI_ANALYSIS) {
-    console.log("[morning-briefing] preserving existing aiAnalysis");
+    console.log("[morning-briefing] preserving today's aiAnalysis");
+  } else if (existing?.aiAnalysis && !isAiAnalysisEmpty(existing.aiAnalysis)) {
+    console.log(`[morning-briefing] 지난 분석(발행일 ${stamp || "없음"})은 오늘 수치와 섞이지 않게 비웁니다`);
   }
 
   sanityCheckChangePct(usMarket.indices, "index", (r) => r.name || r.id, errors);

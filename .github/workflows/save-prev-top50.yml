@@ -22,12 +22,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
+      - name: KRX 거래일 확인
+        id: krx
+        run: node scripts/krx-guard.mjs
+
       - name: Setup Node
+        if: steps.krx.outputs.open == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Fetch TOP50 and write data/prev-top50.json
+        if: steps.krx.outputs.open == 'true'
         env:
           KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
@@ -36,6 +43,7 @@ jobs:
         run: node scripts/save-prev-top50.mjs
 
       - name: Commit and push
+        if: steps.krx.outputs.open == 'true'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"

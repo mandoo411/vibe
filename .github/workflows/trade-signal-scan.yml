@@ -28,16 +28,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
+      - name: KRX 거래일 확인
+        id: krx
+        run: node scripts/krx-guard.mjs
+
       - name: Setup Node.js
+        if: steps.krx.outputs.open == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.krx.outputs.open == 'true'
         run: npm ci
 
       - name: Run trade signal scan
+        if: steps.krx.outputs.open == 'true'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

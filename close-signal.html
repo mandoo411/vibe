@@ -719,15 +719,21 @@
         function renderRanking(d) {
           var old = document.querySelector(".cb-cta");
           if (old) old.remove();
+          var mk = d.market || {};
           if (!d.ready) {
-            stampEl.textContent = "오늘 집계 전";
+            stampEl.textContent = mk.closedReason ? "휴장일" : "오늘 집계 전";
             listEl.innerHTML =
               '<div class="cb-empty"><i class="ti ti-clock-hour-4" aria-hidden="true"></i>' +
-              "아직 오늘 집계가 없습니다.<br />평일 15:20 이후에 갱신됩니다.</div>";
+              (mk.closedReason
+                ? "오늘은 " + esc(mk.closedReason) + "로 증시가 쉽니다.<br />다음 시그널은 " + esc(mk.nextLabel) + " 15:20에 나옵니다."
+                : "아직 오늘 집계가 없습니다.<br />평일 15:20 이후에 갱신됩니다.") + "</div>";
             return;
           }
           var st = d.stats || {};
+          // 2026-09-24: 오늘 것이 아니면(휴장일·장 시작 전) 그 사실을 먼저 밝힌다
+          var notToday = mk.today && d.asOfDate !== mk.today;
           stampEl.innerHTML =
+            (notToday ? (mk.closedReason ? "오늘 휴장 · " : "") + "직전 거래일 " : "") +
             "<b>" + esc(d.asOfDate) + "</b> 15:20 기준 · 후보 " + esc(st.total || "-") +
             " → 조건 통과 " + esc(st.passed || "-") +
             (st.withStrategy != null ? " → 기법 포착 " + esc(st.withStrategy) : "");
@@ -798,7 +804,14 @@
           items += '<span class="cb-verdict__tag">' + esc(tag) + "</span>";
           return '<div class="cb-verdict">' + items + "</div>";
         }
-        function renderYesterday(day) {
+        function pendingHtml(p) {
+          if (!p) return "";
+          return '<div class="cb-empty" style="padding:18px 16px;margin-bottom:12px">' +
+            '<i class="ti ti-hourglass" aria-hidden="true"></i>' +
+            "<b>" + esc(p.asOfDate) + "</b> 선정 " + esc(p.pickCount) + "종목의 결과는 " +
+            "<b>" + esc(p.resultLabel) + "</b> 09:10 시초가부터 기록됩니다.<br />아래는 그 이전 선정분의 결과입니다.</div>";
+        }
+        function renderYesterday(day, pending) {
           if (!day) {
             ydStampEl.textContent = "기록 준비 중";
             ydEl.innerHTML =
@@ -807,7 +820,7 @@
             return;
           }
           ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과";
-          ydEl.innerHTML = verdictHtml(day) + resultTableHtml(day);
+          ydEl.innerHTML = pendingHtml(pending) + verdictHtml(day) + resultTableHtml(day);
         }
 
         /* ── 성과 달력 ─────────────────────────────────────────────────────── */
@@ -942,7 +955,7 @@
             renderRanking(d);
             renderStrats(d.strategies);
             renderRecord(d.record);
-            renderYesterday(d.yesterday);
+            renderYesterday(d.yesterday, d.pending);
           } catch (e) {
             stampEl.textContent = "불러오기 실패";
             listEl.innerHTML =

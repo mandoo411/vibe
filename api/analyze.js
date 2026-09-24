@@ -4646,6 +4646,23 @@ const CB_FREE_LIMIT = 3;
 const CB_HISTORY_MAX_DAYS = 120;
 
 const { STRATEGIES: CB_STRATEGIES } = require("../lib/close-signal-strategies.js");
+const KRX_CAL = require("../lib/krx-calendar.js");
+
+/** 2026-09-24: 화면이 "오늘 휴장인지·결과가 언제 나오는지"를 말할 수 있게 달력 정보를 같이 준다 */
+function cbMarketInfo() {
+  const today = KRX_CAL.seoulYmd();
+  const closedReason = KRX_CAL.closedReason(today);
+  const next = KRX_CAL.nextTradingDay(today);
+  return { today, closedReason, nextTradingDay: next, nextLabel: KRX_CAL.shortLabel(next) };
+}
+
+/** 가장 최근 선정분의 결과가 아직 없으면(휴장일·다음 거래일 09:10 전) 언제 나오는지 알려준다 */
+function cbPending(latest, yesterday, market) {
+  if (!latest || latest.asOfDate >= market.today) return null;
+  if (yesterday && yesterday.asOfDate >= latest.asOfDate) return null;
+  const resultDate = KRX_CAL.nextTradingDay(latest.asOfDate);
+  return { asOfDate: latest.asOfDate, pickCount: latest.ranked.length, resultDate, resultLabel: KRX_CAL.shortLabel(resultDate) };
+}
 
 /** 잠긴 행 — 종목을 특정할 수 있는 값은 서버에서 지운다. */
 function cbMaskRow(row) {
@@ -4787,10 +4804,12 @@ async function handleCloseBetting(req, res) {
     const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
     const record = cbBuildRecord(recent);
     const yesterday = recent.length ? recent[0] : null;
+    const market = cbMarketInfo();
+    const pending = cbPending(latest, yesterday, market);
 
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
-      return json(res, 200, { ready: false, isPro, ranked: [], total: 0, strategies, yesterday, record });
+      return json(res, 200, { ready: false, isPro, ranked: [], total: 0, strategies, yesterday, record, market, pending });
     }
 
     const total = latest.ranked.length;
@@ -4811,6 +4830,8 @@ async function handleCloseBetting(req, res) {
       strategies,
       yesterday,
       record,
+      market,
+      pending,
     });
   } catch (error) {
     console.error("[close-betting] 실패", error && error.message);

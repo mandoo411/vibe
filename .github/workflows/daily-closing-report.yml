@@ -58,16 +58,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
+      - name: KRX 거래일 확인
+        id: krx
+        env:
+          KRX_FORCE: ${{ github.event.inputs.force || github.event.client_payload.force || '' }}
+        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }}
+
       - name: Setup Node.js
+        if: steps.krx.outputs.open == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
       - name: Install dependencies
+        if: steps.krx.outputs.open == 'true'
         run: npm ci
 
       - name: Generate closing report
+        if: steps.krx.outputs.open == 'true'
         id: gen
         env:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
@@ -83,6 +93,7 @@ jobs:
         run: node scripts/daily-closing-report.mjs
 
       - name: Commit report
+        if: steps.krx.outputs.open == 'true'
         id: commit
         run: |
           set -euo pipefail
@@ -106,7 +117,7 @@ jobs:
           fi
 
       - name: Deploy to Vercel
-        if: steps.commit.outputs.changed == '1'
+        if: steps.krx.outputs.open == 'true' && (steps.commit.outputs.changed == '1')
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: npx --yes vercel@53.2.0 deploy --prod --token "$VERCEL_TOKEN" --yes

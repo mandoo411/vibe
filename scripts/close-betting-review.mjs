@@ -28,6 +28,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { fetchMarketSnapshot } = require("../lib/kis-indicators.js");
 const { buildPickResult, buildSummary } = require("../lib/close-signal-results.js");
+const krx = require("../lib/krx-calendar.js");
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -59,18 +60,21 @@ async function sb(pathAndQuery, init) {
   return res;
 }
 
-/** 채점 대상 랭킹. 오늘 날짜 랭킹은 아직 결과가 없으므로 제외한다. */
+/** 채점 대상 랭킹. 오늘 날짜 랭킹은 아직 결과가 없으므로 제외한다.
+ *  2026-09-24: 최신 1행만 보던 것을 "종목이 들어 있는 가장 최근 행"으로 바꿨다 — 비어 있는 행
+ *  (휴장일 헛스캔 등)이 맨 위에 있으면 진짜 대상 랭킹을 못 찾고 통째로 건너뛰었다. */
 async function loadRanking(today) {
   const filter = TARGET_DATE ? `as_of_date=eq.${TARGET_DATE}` : `as_of_date=lt.${today}`;
   const res = await sb(
-    `trade_signal_intraday?slot=eq.1520&${filter}&order=as_of_date.desc&limit=1&select=as_of_date,payload`,
+    `trade_signal_intraday?slot=eq.1520&${filter}&order=as_of_date.desc&limit=5&select=as_of_date,payload`,
     { method: "GET" }
   );
   const rows = await res.json();
-  const row = Array.isArray(rows) && rows.length ? rows[0] : null;
-  const ranked = row && row.payload && row.payload.closeBetting && row.payload.closeBetting.ranked;
-  if (!Array.isArray(ranked) || !ranked.length) return null;
-  return { asOfDate: row.as_of_date, ranked };
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const ranked = row && row.payload && row.payload.closeBetting && row.payload.closeBetting.ranked;
+    if (Array.isArray(ranked) && ranked.length) return { asOfDate: row.as_of_date, ranked };
+  }
+  return null;
 }
 
 /** 종목 하나의 익일 시세. 못 받으면 지어내지 않고 null을 남긴다. */
@@ -87,6 +91,15 @@ async function main() {
   if (!SUPABASE_URL || !SERVICE_KEY) throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 없음");
   const today = seoulYmd();
   const phase = resolvePhase();
+
+  // 2026-09-24 사고: 추석(휴장)에 돌아서 KIS가 돌려준 9/23 시세를 "9/24 결과"로 저장했다.
+  // 휴장일엔 익일 시세가 존재하지 않는다 — 워크플로 가드와 별개로 여기서도 막는다.
+  const closed = krx.closedReason(today);
+  if (closed) {
+    console.log(`::notice::${today}는 휴장(${closed}) — 결과는 다음 거래일 ${krx.nextTradingDay(today)}에 기록됩니다.`);
+    return;
+  }
+
   const target = await loadRanking(today);
   if (!target) {
     console.log("::notice::채점할 종가시그널 랭킹이 없습니다 — 건너뜁니다.");
@@ -94,6 +107,13 @@ async function main() {
   }
   if (target.asOfDate === today) {
     console.log(`::notice::${today} 랭킹은 아직 결과가 나오지 않았습니다 — 건너뜁니다.`);
+    return;
+  }
+  // 결과일은 반드시 "선정일 다음 거래일"이어야 한다. 그 사이 거래일이 끼어 있으면(스캔 실패 등)
+  // 오늘 시세는 그 랭킹의 익일 결과가 아니다 — 지어내지 않고 건너뛴다.
+  const expected = krx.nextTradingDay(target.asOfDate);
+  if (expected !== today) {
+    console.log(`::warning::${target.asOfDate} 선정분의 결과일은 ${expected}인데 오늘은 ${today} — 기록하지 않습니다.`);
     return;
   }
   console.log(`[review] phase=${phase} · ${target.asOfDate} 선정 ${target.ranked.length}종목 → ${today} 결과 측정`);

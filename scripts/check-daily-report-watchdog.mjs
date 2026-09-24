@@ -26,7 +26,15 @@
  *   first — 1차 점검(16:40 KST). "아직 안 됐다" 알림.
  *   final — 마지막 점검(19:00 KST). "오늘 발행 못 한다" 알림.
  */
+import { createRequire } from "node:module";
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
+
+// 2026-09-24: "거래일인가"를 데이터 모양으로 추측하던 것을 휴장일 달력으로 바꿨다.
+// 추석(9/24)에 시세 동기화가 9/23 순위를 복사한 "9/24" 항목을 만들었고, 등락률이 0이 아니라서
+// 거래일로 오판해 "마감시황 누락" 알림을 보냈다. 반대로 진짜 거래일에 동기화가 실패하면
+// "휴장일이거나 동기화 전"으로 보고 조용히 넘어갔다 — 둘 다 달력으로 해결한다.
+const require = createRequire(import.meta.url);
+const krx = require("../lib/krx-calendar.js");
 
 const DATA_PATH = process.env.DAILY_MARKET_PATH || "data/daily-market.json";
 const stageArg = process.argv.find((a) => a.startsWith("--stage="));
@@ -90,10 +98,27 @@ async function main() {
     return;
   }
 
+  const closed = krx.closedReason(today);
+  if (closed) {
+    console.log("[watchdog] " + today + ": 한국 증시 휴장(" + closed + ") — 점검 생략");
+    return;
+  }
+
   const day = data && data.days ? data.days[today] : null;
 
   if (!isTradingDay(day)) {
-    console.log("[watchdog] " + today + ": 거래 데이터 없음 — 휴장일이거나 KIS 동기화 전. 알림 생략");
+    // 달력상 거래일인데 순위 데이터가 없다 = 15:40 시세 동기화(Daily Market Sync) 실패
+    console.log("[watchdog] " + today + ": 거래일인데 시세 데이터 없음 — 알림");
+    await sendAlert([
+      STAGE === "final" ? "🚨 *[운영] 오늘 시세 동기화 실패*" : "⚠️ *[운영] 시세 동기화 누락 감지*",
+      "",
+      "날짜: " + today + " (거래일)",
+      "15:40 Daily Market Sync가 오늘 순위·등락률을 저장하지 못했습니다.",
+      "이 데이터가 없으면 마감시황·마감 카드뉴스가 모두 만들어지지 않습니다.",
+      "",
+      "GitHub Actions → Daily Market Sync 실행 기록을 확인하거나,",
+      "Claude에게 \"오늘 시세 동기화 실패 확인해줘\"라고 요청하세요.",
+    ].join("\n"));
     return;
   }
 
@@ -109,16 +134,17 @@ async function main() {
     STAGE === "final"
       ? "🚨 *[운영] 오늘 마감시황 발행 실패*"
       : "⚠️ *[운영] 마감시황 리포트 누락 감지*";
+  // 2026-09-11부터 마감 리포트는 PC(Cowork)가 아니라 GitHub Actions(Daily Closing Report, 16:20)가 만든다.
   const tail =
     STAGE === "final"
       ? [
-          "이 상태로는 오늘 인스타 카드뉴스가 나가지 않습니다.",
-          "지금이라도 Cowork 마감시황 작업을 돌리면,",
-          "데이터가 커밋되는 즉시 카드뉴스가 자동 발행됩니다.",
+          "이 상태로는 오늘 인스타 마감 카드가 나가지 않습니다.",
+          "리포트가 커밋되는 즉시 카드는 자동 발행됩니다.",
+          "Claude에게 \"오늘 마감시황 미발행 확인해줘\"라고 요청하세요.",
         ]
       : [
-          "PC가 켜져 있고 Claude 앱이 로그인돼 있는지 확인해 주세요.",
-          "Cowork 마감시황 작업을 수동으로 돌려도 됩니다.",
+          "16:20 Daily Closing Report(GitHub Actions)가 실패했거나 아직 끝나지 않았습니다.",
+          "19:00에 한 번 더 확인합니다.",
         ];
 
   const text = [
@@ -128,7 +154,7 @@ async function main() {
     "누락: " + miss.join(", "),
     "",
     "거래대금·등락률 순위는 수집됐지만,",
-    "Cowork 마감 리포트 단계가 반영되지 않았습니다.",
+    "마감 리포트(지수·총평·수급·특징주)가 반영되지 않았습니다.",
     "",
   ].concat(tail).join("\n");
 

@@ -1,0 +1,97 @@
+name: Close Signal Learn
+
+# 종가시그널 자기학습 (2026-09-24 신설, 내부용 — 사이트에 노출하지 않음)
+#  - 거래일 16:05 KST  collect: 필터 통과 후보 전원의 익일 시가·종가 결과를 close_signal_outcomes에 쌓는다
+#  - 토요일 09:00 KST learn  : 최근 60거래일로 기법별 성적 → 가중치(data/close-signal-weights.json) 갱신
+#                              → 텔레그램 주간 보고. 가중치는 다음 15:20 스캔부터 자동 적용된다.
+# 정시성이 중요하지 않아 GitHub schedule만 쓴다(몇 시간 밀려도 무방).
+on:
+  schedule:
+    - cron: "5 7 * * 1-5"   # 16:05 KST collect
+    - cron: "0 0 * * 6"     # 토 09:00 KST learn
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "collect | learn"
+        required: false
+        default: "collect"
+      dry_run:
+        description: "1이면 저장·커밋·발송 없이 출력만"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [close-signal-learn]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: close-signal-learn
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 모드 결정
+        id: cfg
+        run: |
+          MODE="${{ github.event.inputs.mode || github.event.client_payload.mode || '' }}"
+          if [ -z "$MODE" ]; then
+            if [ "${{ github.event.schedule }}" = "0 0 * * 6" ]; then MODE=learn; else MODE=collect; fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "dry=${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}" >> "$GITHUB_OUTPUT"
+          echo "[learn] mode=$MODE"
+
+      # collect는 거래일에만(휴장일엔 새 결과가 없다). learn은 토요일이라 가드 없음.
+      - name: KRX 거래일 확인
+        id: krx
+        run: |
+          if [ "${{ steps.cfg.outputs.mode }}" = "learn" ] || node scripts/krx-guard.mjs --exit-code; then
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "open=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.krx.outputs.open == 'true'
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+        if: steps.krx.outputs.open == 'true'
+
+      - name: Run
+        if: steps.krx.outputs.open == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          LEARN_DRY_RUN: ${{ steps.cfg.outputs.dry }}
+        run: node scripts/close-signal-learn.mjs --mode=${{ steps.cfg.outputs.mode }}
+
+      - name: Commit weights
+        if: steps.krx.outputs.open == 'true' && steps.cfg.outputs.mode == 'learn' && steps.cfg.outputs.dry != '1'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/close-signal-weights.json
+          if git diff --staged --quiet; then echo "::notice::가중치 변경 없음"; exit 0; fi
+          git commit -m "chore(close-signal): 주간 학습 가중치 갱신 $(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          for i in 1 2 3; do
+            git push origin HEAD:${GITHUB_REF_NAME} && break
+            git pull --rebase origin ${GITHUB_REF_NAME}; sleep $((i * 4))
+          done

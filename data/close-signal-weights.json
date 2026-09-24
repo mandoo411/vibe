@@ -1,0 +1,16 @@
+{
+  "updatedAt": null,
+  "note": "초기값 — 학습 전(전부 1.0). scripts/close-signal-learn.mjs가 매주 갱신",
+  "weights": {
+    "institution": 1,
+    "bothFlow": 1,
+    "gapHold": 1,
+    "gapModerate": 1,
+    "smallTurnover": 1,
+    "momentum": 1,
+    "kosdaqLead": 1,
+    "longTrend": 1,
+    "liquidity": 1,
+    "catalyst": 1
+  }
+}

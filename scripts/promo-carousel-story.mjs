@@ -13,6 +13,13 @@ const CHIP_CSS = `
 const chips = (arr) => `<div class="chips">${arr.map((c) =>
   `<div class="chip"><b>${esc(c.name)}</b><s class="${c.dir} mono">${esc(c.text)}</s></div>`).join("")}</div>`;
 
+/* 훅 한 줄이 길면 글자를 줄인다. 84px에서 한 줄은 공백 포함 약 11자 — 넘으면 "출/발,"처럼 단어가 잘린다 */
+function hookSize(html) {
+  const lines = String(html ?? "").split(/<br\s*\/?>/i).map((l) => l.replace(/<[^>]+>/g, "").trim());
+  const max = Math.max(0, ...lines.map((l) => l.length));
+  return max > 13 ? "xs" : max > 11 ? "sm" : "";
+}
+
 /* 1. 훅 — 그날의 사건을 질문으로 */
 export function slideStoryHook(d) {
   const css = CHIP_CSS + `
@@ -23,11 +30,12 @@ export function slideStoryHook(d) {
   .hk em{font-style:normal;color:var(--teal);}
   .hk-sub{margin-top:34px;font-size:36px;line-height:1.52;color:var(--body);font-weight:500;letter-spacing:-.8px;}
   .hk-sub b{color:#fff;}
+  .hk.sm{font-size:74px;letter-spacing:-2.8px;} .hk.xs{font-size:64px;letter-spacing:-2.4px;}
   .chips{margin-top:44px;}`;
   return shell(`<div class="wrap">${topBar(d.slotLabel, d.dateLabel)}
   <div class="hookwrap">
     <div class="hk-tag">${esc(d.hookTag)}</div>
-    <div class="hk">${d.hookHTML}</div>
+    <div class="hk ${hookSize(d.hookHTML)}">${d.hookHTML}</div>
     <div class="hk-sub">${d.hookSub}</div>
     ${chips(d.indexChips)}
   </div>

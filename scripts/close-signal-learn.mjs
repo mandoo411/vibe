@@ -96,7 +96,7 @@ async function collect() {
   const today = krx.seoulYmd();
   // 결과가 이미 들어간 가장 최근 스캔일
   const doneRes = await sb("close_signal_outcomes?select=as_of_date&order=as_of_date.desc&limit=1");
-  const done = (await doneRes.json())[0]?.as_of_date || "0000-00-00";
+  const done = (await doneRes.json())[0]?.as_of_date || "2000-01-01";
 
   const scansRes = await sb(`trade_signal_intraday?slot=eq.1520&as_of_date=gt.${done}&as_of_date=lt.${today}&order=as_of_date.asc&select=as_of_date,payload`);
   const scans = await scansRes.json();

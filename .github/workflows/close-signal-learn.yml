@@ -19,6 +19,10 @@ on:
         description: "1이면 저장·커밋·발송 없이 출력만"
         required: false
         default: ""
+      force:
+        description: "1이면 휴장일에도 collect 실행(과거분 백필용)"
+        required: false
+        default: ""
   repository_dispatch:
     types: [close-signal-learn]
 
@@ -53,6 +57,8 @@ jobs:
       # collect는 거래일에만(휴장일엔 새 결과가 없다). learn은 토요일이라 가드 없음.
       - name: KRX 거래일 확인
         id: krx
+        env:
+          KRX_FORCE: ${{ github.event.inputs.force || github.event.client_payload.force || '' }}
         run: |
           if [ "${{ steps.cfg.outputs.mode }}" = "learn" ] || node scripts/krx-guard.mjs --exit-code; then
             echo "open=true" >> "$GITHUB_OUTPUT"

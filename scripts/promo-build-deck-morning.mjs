@@ -11,6 +11,8 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { chooseHook, recentHookTypes, appendHookType } from "./promo-hook-history.mjs";
 import { dirname } from "node:path";
+import { existsSync } from "node:fs";
+import { buildMorningStoryCopy } from "./promo-build-deck-morning-story.mjs";
 import { firstSentence, callClaude, callOpenAI, composeCaption } from "./promo-deck-ai.mjs";
 
 const num = (v) => {
@@ -355,7 +357,7 @@ function clampCopy(copy, f) {
   return copy;
 }
 
-export async function buildMorningDeck(path = "data/morning-briefing.json") {
+export async function buildMorningDeck(path = "data/morning-briefing.json", opts = {}) {
   const m = JSON.parse(readFileSync(path, "utf8"));
   const f = computeMorningFacts(m);
   if (!f.nasdaq && !f.sp && !f.dow) throw new Error("간밤 지수 데이터가 없습니다");
@@ -364,9 +366,40 @@ export async function buildMorningDeck(path = "data/morning-briefing.json") {
   const deck = buildMorningSkeleton(f);
   deck.hookType = hookType;
 
+  // 2026-09-24 v3 "이슈 스토리" 먼저. 검증을 통과 못 하면 아래 v2로 폴백.
+  if (!opts.forceV2) {
+    let prevHooks = [];
+    try {
+      const prevPath = "data/promo/latest-morning.json";
+      if (existsSync(prevPath)) {
+        const prev = JSON.parse(readFileSync(prevPath, "utf8"));
+        if (prev.date !== f.date && prev.hookHTML) prevHooks = [plain(prev.hookHTML).replace(/\s+/g, " ").trim()];
+      }
+    } catch {}
+    const story = await buildMorningStoryCopy(m, { prevHooks, writer: opts.storyWriter });
+    if (story) {
+      const chips = [];
+      if (f.nasdaq) chips.push({ name: "나스닥100", text: pctText(f.nasdaq.pct).replace(" ", ""), dir: dirOf(f.nasdaq.pct) });
+      if (f.sp) chips.push({ name: "S&P500", text: pctText(f.sp.pct).replace(" ", ""), dir: dirOf(f.sp.pct) });
+      if (f.ewy) chips.push({ name: "한국 ETF", text: pctText(f.ewy.pct).replace(" ", ""), dir: dirOf(f.ewy.pct) });
+      Object.assign(deck, story, {
+        layout: "morning-story", theme: "site", hookType: "S",
+        hookFoot: "간밤 미국장 마감 기준", indexChips: chips,
+      });
+      deck.caption = composeCaption({
+        hook: story.hookHTML, sub: story.hookSub, lines: story.captionLines, themeTags: story.themeTags,
+        saveLine: "🔖 저장해두고 9시 장 열릴 때 한 번 더 보세요.",
+        ctaLine: "매일 아침 8시, AI가 정리한 장전 브리핑을 올립니다 → @totalmoney_ai",
+        extraTags: ["미국주식", "나스닥", "아침브리핑", "증시브리핑"],
+      });
+      console.log(`[morning] v3 이슈 스토리 덱 · 이슈 ${story.issues.length} · 볼 곳 ${story.movers.length} · 체크 ${story.next.length}`);
+      return deck;
+    }
+  }
+
   const prompt = buildPrompt(f, hookType);
   let copy = null;
-  for (const [label, fn] of [["Claude", callClaude], ["OpenAI", callOpenAI]]) {
+  for (const [label, fn] of [["OpenAI", callOpenAI], ["Claude", callClaude]]) {
     try {
       copy = await fn(SYSTEM, prompt);
       console.log(`[morning] ${label} 문장 생성 완료 (훅 유형 ${hookType})`);

@@ -33,7 +33,7 @@ const keyOf = (n, u) => {
   return `${t}|${u ? u.replace(/\s/g, "") : ""}`;
 };
 
-function numberSet(corpus) {
+export function numberSet(corpus) {
   const set = new Set();
   for (const m of String(corpus).matchAll(NUM_RE)) {
     set.add(keyOf(m[1], m[2]));
@@ -273,7 +273,7 @@ function commaNum(str) {
     return Number(int).toLocaleString("en-US") + dec;
   });
 }
-function withCommas(v) {
+export function withCommas(v) {
   if (typeof v === "string") return commaNum(v);
   if (Array.isArray(v)) return v.map(withCommas);
   if (v && typeof v === "object") {

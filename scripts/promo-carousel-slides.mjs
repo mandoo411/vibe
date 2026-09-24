@@ -200,7 +200,7 @@ export function slideCTA(d) {
     <div class="ct-s">${d.ctaSub}</div>
     <div class="rs">${rows}</div>
     <div class="cta">
-      <div class="cta-b p"><div class="k">매일 오후 5시 업데이트</div><div class="v">팔로우 @totalmoney_ai</div></div>
+      <div class="cta-b p"><div class="k">${d.slot === "morning" ? "매일 아침 8시 업데이트" : "매일 오후 5시 업데이트"}</div><div class="v">팔로우 @totalmoney_ai</div></div>
       <div class="cta-b s"><div class="k">전체 리포트</div><div class="v">totalmoney.kr</div></div>
     </div>
     <div class="save"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1Z" fill="#25E0C8"/></svg></div><div class="tx">${d.saveNudge}</div></div>

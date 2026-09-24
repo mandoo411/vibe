@@ -737,6 +737,7 @@ export async function buildClosingDeck(snapshotPath = "data/daily-market.json", 
       const sg = (x) => `${x > 0 ? "▲" : x < 0 ? "▼" : ""}${Math.abs(x).toFixed(2)}%`;
       Object.assign(deck, story, {
         layout: "closing-story",
+        theme: "site", // 2026-09-24 시우 결정: 카드 색을 사이트(검정+에메랄드)와 통일
         hookType: "S",
         indexChips: [
           { name: "코스피", text: `${f.kospi.close.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${sg(f.kospi.pct)}`, dir: up(f.kospi.pct) },

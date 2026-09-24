@@ -272,13 +272,13 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
     var list = rows(), tb = $("#tb");
     if (!list.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">조건에 맞는 종목이 없습니다.</td></tr>'; $("#more").hidden = true; fresh(0); return; }
     tb.innerHTML = list.slice(0, state.shown).map(function (r) {
-      return '<tr data-href="' + aiHref(r) + '"><td class="c rk">' + r._rk + "</td>" +
+      return '<tr' + (r.kind === "S" ? ' data-href="' + aiHref(r) + '"' : "") + '><td class="c rk">' + r._rk + "</td>" +
         '<td class="l"><span class="nm">' + logo(r) + esc(r.name) + '<span class="mk">' + (r.mkt === "KOSDAQ" ? "코스닥" : "코스피") + "</span></span></td>" +
         "<td><b>" + n0(r.price) + "</b></td>" +
         '<td class="' + cls(r.pct) + '">' + (r.chg > 0 ? "▲ " : r.chg < 0 ? "▼ " : "") + (r.chg == null ? "—" : Math.abs(r.chg).toLocaleString("ko-KR")) + "</td>" +
         '<td class="' + cls(r.pct) + '"><b>' + sgn(r.pct) + "</b></td>" +
         "<td>" + n0(r.vol) + "</td><td>" + tv(r.tv) + "</td><td>" + mcap(r.mcap) + "</td>" +
-        '<td class="c"><a class="ai" href="' + aiHref(r) + '"><i class="ti ti-robot"></i>AI 분석</a></td></tr>';
+        '<td class="c">' + (r.kind === "S" ? '<a class="ai" href="' + aiHref(r) + '"><i class="ti ti-robot"></i>AI 분석</a>' : "") + "</td></tr>";
     }).join("");
     $("#more").hidden = list.length <= state.shown;
     $("#more").textContent = "더 보기 (" + Math.min(state.shown, list.length).toLocaleString() + " / " + list.length.toLocaleString() + ")";

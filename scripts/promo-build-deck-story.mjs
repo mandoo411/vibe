@@ -110,6 +110,9 @@ ${prevHooks.length ? prevHooks.map((h) => `- ${h}`).join("\n") : "- (없음)"}
    나쁜 예) "오늘 증시의 돈 8조가 두 종목에 몰렸습니다" (매일 같은 얘기)
 2·3번 이슈 카드: 오늘 시장을 움직인 서로 다른 원인 2개. 각각
    question = 독자가 궁금해할 질문형 제목, chain = 사건→반응→결과 3~4단계, stocks = 그 이슈로 움직인 종목 이름 1~3개.
+   issues는 반드시 2개, chain은 각각 3~4단계. question에 사건명을 넣는다.
+   질문 좋은 예) "이란이 '호르무즈를<br>열겠다'고 하자" / "배당기준일 앞두고<br>삼성전자만 오른 이유"
+   질문 나쁜 예) "국제유가 급락,<br>효과는?" / "오늘 시장<br>무슨 일?" (사건이 흐릿하다)
    두 이슈는 원인이 달라야 한다(예: ① 해외 뉴스로 급등 출발 ② 연휴 부담으로 밀림). "삼성전자가 거래대금 1위" 같은 순위 나열은 이슈가 아니다.
 4번 급등 이유: 상한가·급등 종목 2~3개와 "왜 올랐는지" 한 문장. 테마명 태그를 붙인다.
 5번: 수급 한 줄 해석(누가 팔고 누가 받았나) + 다음 거래일 전에 확인할 것 3가지.
@@ -128,8 +131,8 @@ ${prevHooks.length ? prevHooks.map((h) => `- ${h}`).join("\n") : "- (없음)"}
   "hookSub": "훅 아래 2줄, <br> 1개, 50자 이내. 답의 실마리만 준다",
   "issues": [
     {"kicker": "카드 머리 라벨 12자 이내 (예: 아침 급등의 이유)",
-     "question": "질문형 제목, <br>로 2~3줄, 28자 이내",
-     "chain": [{"label": "사건|반응|겹친 호재|부담|버팀목|배경 중 하나", "text": "45자 이내"}, {"label": "결과", "text": "마지막은 반드시 label=결과"}],
+     "question": "질문형 제목, <br>로 2~3줄, 28자 이내. 구체적 사건명이 들어가야 한다",
+     "chain": [{"label": "사건|반응|겹친 호재|부담|버팀목|배경 중 하나", "text": "40자 이내"}, {"label": "결과", "text": "마지막은 반드시 label=결과"}],
      "stocks": ["종목명"]},
     {"kicker": "", "question": "", "chain": [], "stocks": []}
   ],
@@ -207,12 +210,18 @@ export async function buildStoryCopy(f, day, { prevHooks = [], writer } = {}) {
     if (!it || !it.question || !Array.isArray(it.chain)) return null;
     if (!clip(it.question, 30) || bad(`issue${i + 1}.q`, it.question)) return null;
     const chain = it.chain
-      .filter((s) => s && s.text && clip(s.text, 56) && !bad(`issue${i + 1}.chain`, s.text))
-      .slice(0, 4);
-    if (chain.length < 3 || chain[chain.length - 1].label !== "결과") {
-      console.warn(`[story] 이슈 ${i + 1} 사슬이 3단계 미만이거나 결과로 안 끝남 → 버림`);
+      .filter((s) => {
+        if (!s || !s.text) return false;
+        if (!clip(s.text, 60)) { console.warn(`[story] 이슈 ${i + 1} 단계가 너무 김 → 뺌: ${plain(s.text).slice(0, 40)}`); return false; }
+        return !bad(`issue${i + 1}.chain`, s.text);
+      })
+      .slice(0, 4)
+      .map((s) => ({ label: String(s.label || "").slice(0, 6) || "배경", text: s.text }));
+    if (chain.length < 2) {
+      console.warn(`[story] 이슈 ${i + 1} 남은 단계 ${chain.length}개 → 버림`);
       return null;
     }
+    chain[chain.length - 1].label = "결과"; // 마지막 단계는 항상 결과로 표시
     const stocks = (it.stocks || []).map(chipOf).filter(Boolean).slice(0, 2);
     return { kicker: String(it.kicker || "").slice(0, 14), question: it.question, chain, stocks,
              source: "출처 · 당일 마감 리포트 · 한국투자증권 시세" };

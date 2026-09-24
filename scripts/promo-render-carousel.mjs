@@ -12,7 +12,7 @@
  *   node scripts/promo-render-carousel.mjs --deck=data/promo/closing-2026-09-04.json --out=generated/closing-v2
  */
 import puppeteer from "puppeteer";
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   slideHook, slideVerdict, slideFlow, slideStocks, slideCTA,
@@ -54,6 +54,11 @@ export function buildersFor(deck) {
 export async function renderDeckToPNG(deck, outDir) {
   const builders = buildersFor(deck);
   mkdirSync(outDir, { recursive: true });
+  // 2026-09-24: 레이아웃마다 장 수가 달라졌다(v3는 5~6장). 이전 회차의 slide-6.png가 남아 있으면
+  // 발행 스크립트가 "있는 파일 전부"를 올리므로 지난 카드가 섞여 나간다. 렌더 전에 비운다.
+  for (const f of readdirSync(outDir)) {
+    if (/^slide-\d+\.png$/.test(f)) unlinkSync(join(outDir, f));
+  }
 
   const browser = await puppeteer.launch({
     headless: true,

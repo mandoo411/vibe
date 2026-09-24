@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>TotalMoney AI · 실시간 랭킹 (리뉴얼 프로토타입)</title>
+<title>TotalMoney · 개인 시세 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/auth-config.js"></script>
+<script src="/assets/auth.js"></script>
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=8">
 <script>
   /* 사이트 공통 테마 저장값("theme")을 그대로 쓴다. 기본 다크. */
@@ -91,6 +94,13 @@ tbody tr{cursor:pointer} tbody tr:last-child td{border-bottom:0} tbody tr:hover 
 th.l,td.l{text-align:left} th.c,td.c{text-align:center}
 td.rk{color:var(--t3);font-weight:600;width:52px}
 .nm{display:flex;align-items:center;gap:11px;font-weight:700}
+/* 개인 도구 잠금 (2026-09-25) — 운영자 계정이 확인되기 전엔 본문을 숨긴다. 실제 데이터 보호는 Supabase RLS가 한다. */
+body:not(.owner-ok) .body,body:not(.owner-ok) .ticker{display:none}
+.gate{max-width:420px;margin:120px auto;text-align:center;padding:32px 24px;border:1px solid var(--line,#333);border-radius:16px}
+.gate h2{margin:0 0 10px;font-size:20px}.gate p{opacity:.75;margin:0 0 18px;line-height:1.6}
+.gate a{display:inline-block;padding:10px 18px;border-radius:10px;background:var(--acc,#22c55e);color:#fff;font-weight:700;text-decoration:none}
+body.owner-ok .gate{display:none}
+.nx{display:block;font-size:11px;font-weight:600;opacity:.7;margin-top:2px}
 .nm img,.nm .bd{width:28px;height:28px;border-radius:50%;flex:0 0 auto;object-fit:cover;background:#fff}
 .nm .bd{display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;background:#64748b}
 .mk{font-size:11px;font-weight:700;color:var(--t3);border:1px solid var(--line);border-radius:5px;padding:0 5px}
@@ -148,6 +158,7 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
   </nav>
   <div class="right"><a href="./login.html"><i class="ti ti-login"></i> 로그인</a><button class="round" id="themeBtn" type="button" aria-label="테마 전환"><i class="ti ti-sun"></i></button></div>
 </div></header>
+<div class="gate" id="gate"><h2>개인 도구</h2><p id="gatemsg">로그인 상태를 확인하는 중…</p><a id="gatebtn" href="/login.html?next=/lab-realtime.html" hidden>로그인</a></div>
 <div class="ticker"><div class="shell num" id="tk"></div></div>
 
 <div class="shell body">
@@ -175,7 +186,7 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
   </aside>
 
   <main>
-    <h1>실시간 랭킹</h1>
+    <h1>실시간 랭킹 <small style="font-size:13px;font-weight:600;opacity:.6">개인용 · 1분 갱신</small></h1>
     <div class="bar">
       <div class="seg" id="mkt"><button class="on" data-m="ALL">전체</button><button data-m="KOSPI">코스피</button><button data-m="KOSDAQ">코스닥</button></div>
       <div class="seg" id="kind"><button class="on" data-k="S">주식</button><button data-k="F">ETF</button><button data-k="N">ETN</button></div>
@@ -210,7 +221,7 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
     </div>
   </aside>
 </div>
-<div class="labtag">리뉴얼 프로토타입</div>
+<div class="labtag">개인 도구 · 비공개</div>
 
 <script>
 (function () {
@@ -242,9 +253,13 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
   // 거래대금(백만원) → "5.50조" / "1,441억"
   function tv(m) { if (!m) return "—"; var won = m * 1e6; return won >= 1e12 ? (won / 1e12).toFixed(2) + "조" : Math.round(won / 1e8).toLocaleString() + "억"; }
   function aiHref(r) { return "./stock-analysis.html?code=" + encodeURIComponent(r.code) + "&name=" + encodeURIComponent(r.name || ""); }
+  // 개인 도구라 네이버 종목 로고를 그대로 쓴다(주식만 존재, ETF·ETN은 404). 실패하면 이니셜 배지.
+  function badge(r) { return '<span class="bd">' + esc((r.name || "").slice(0, 2)) + "</span>"; }
+  window.__lgFail = function (img) { var s = document.createElement("span"); s.className = "bd"; s.textContent = img.getAttribute("data-b") || ""; img.replaceWith(s); };
   function logo(r) {
+    if (r.kind === "S") return '<img src="https://ssl.pstatic.net/imgstock/fn/real/logo/stock/Stock' + esc(r.code) + '.svg" alt="" loading="lazy" data-b="' + esc((r.name || "").slice(0, 2)) + '" onerror="__lgFail(this)">';
     if (logoCodes && logoCodes.has(r.code)) return '<img src="/assets/logos/kr/' + esc(r.code) + '.webp" alt="" loading="lazy">';
-    return '<span class="bd">' + esc((r.name || "").slice(0, 2)) + "</span>";
+    return badge(r);
   }
   var SORT = {
     cap: function (a, b) { return (b.mcap || 0) - (a.mcap || 0); },
@@ -274,7 +289,7 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
     tb.innerHTML = list.slice(0, state.shown).map(function (r) {
       return '<tr' + (r.kind === "S" ? ' data-href="' + aiHref(r) + '"' : "") + '><td class="c rk">' + r._rk + "</td>" +
         '<td class="l"><span class="nm">' + logo(r) + esc(r.name) + '<span class="mk">' + (r.mkt === "KOSDAQ" ? "코스닥" : "코스피") + "</span></span></td>" +
-        "<td><b>" + n0(r.price) + "</b></td>" +
+        "<td><b>" + n0(r.price) + "</b>" + (r.nxP && r.nxP !== r.price ? '<span class="nx">NXT ' + n0(r.nxP) + "</span>" : "") + "</td>" +
         '<td class="' + cls(r.pct) + '">' + (r.chg > 0 ? "▲ " : r.chg < 0 ? "▼ " : "") + (r.chg == null ? "—" : Math.abs(r.chg).toLocaleString("ko-KR")) + "</td>" +
         '<td class="' + cls(r.pct) + '"><b>' + sgn(r.pct) + "</b></td>" +
         "<td>" + n0(r.vol) + "</td><td>" + tv(r.tv) + "</td><td>" + mcap(r.mcap) + "</td>" +
@@ -316,12 +331,15 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
     var tr = e.target.closest("tr[data-href]"); if (tr) location.href = tr.getAttribute("data-href");
   });
 
+  var sb = null;
   function loadBoard() {
-    return fetch("/api/repo-data?path=data/kr-all.json&t=" + Date.now()).then(function (r) { return r.json(); })
+    if (!sb) return Promise.resolve();
+    return sb.from("personal_snapshots").select("payload").eq("id", "kr-all").single()
+      .then(function (res) { if (res.error) throw res.error; return res.data.payload; })
       .then(function (d) {
         if (!d || !Array.isArray(d.rows)) throw new Error("no rows");
         tradedAt = d.tradedAt || d.updatedAt;
-        state.data = d.rows.map(function (a) { return { code: a[0], name: a[1], mkt: a[2] === "Q" ? "KOSDAQ" : "KOSPI", price: a[3], chg: a[4], pct: a[5], vol: a[6], tv: a[7], mcap: a[8], kind: a[9] || "S" }; })
+        state.data = d.rows.map(function (a) { return { code: a[0], name: a[1], mkt: a[2] === "Q" ? "KOSDAQ" : "KOSPI", price: a[3], chg: a[4], pct: a[5], vol: a[6], tv: a[7], mcap: a[8], kind: a[9] || "S", nxP: a[10], nxPct: a[11] }; })
           .map(function (r) { r.mkt = r.mkt; return r; });
         render();
       })
@@ -355,8 +373,20 @@ td.rk{color:var(--t3);font-weight:600;width:52px}
 
   fetch("/assets/logos/kr-manifest.json?v=20260913b").then(function (r) { return r.json(); })
     .then(function (m) { logoCodes = new Set(m.codes || []); render(); }).catch(function () {});
-  loadBoard(); loadTicker(); loadSignal();
-  setInterval(function () { if (document.visibilityState === "visible") { loadBoard(); loadTicker(); } }, 60000);
+  function gate(msg, showLogin) { $("#gatemsg").textContent = msg; $("#gatebtn").hidden = !showLogin; }
+  (async function boot() {
+    try {
+      sb = window.TMAuth && window.TMAuth.getClient();
+      if (!sb) { gate("로그인 모듈을 불러오지 못했습니다.", false); return; }
+      var ses = (await sb.auth.getSession()).data.session;
+      if (!ses) { gate("운영자 계정으로 로그인해야 볼 수 있습니다.", true); return; }
+      var own = await sb.rpc("is_owner");
+      if (own.error || own.data !== true) { gate("이 페이지는 비공개입니다.", false); return; }
+      document.body.classList.add("owner-ok");
+      loadBoard(); loadTicker(); loadSignal();
+    } catch (e) { gate("확인 중 오류가 났습니다. 새로고침해 주세요.", false); }
+  })();
+  setInterval(function () { if (document.visibilityState === "visible" && document.body.classList.contains("owner-ok")) { loadBoard(); loadTicker(); } }, 60000);
 })();
 </script>
 </body>

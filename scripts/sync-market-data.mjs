@@ -186,8 +186,8 @@ async function syncKrAll() {
 const ONLY = (process.env.SYNC_ONLY || "").toLowerCase();
 if (ONLY !== "kr") await syncUs();
 if (ONLY !== "us") await syncKr();
-if (ONLY !== "us") {
-  try { await syncKrAll(); } catch (e) { console.error(`KR all-stocks sync failed: ${e.message}`); }
-}
+// 2026-09-25: 국내 전 종목 시세(kr-all.json)는 공개 저장소에 두지 않는다.
+// 개인 도구 전용으로 Supabase Edge Function personal-kr-collector가 1분마다 수집해
+// public.personal_snapshots(운영자만 읽기)에 넣는다. syncKrAll()은 참고용으로만 남겨 둔다.
 console.log(`sync-market-data done (files written: ${wrote})`);
 if (wrote === 0) process.exit(1);

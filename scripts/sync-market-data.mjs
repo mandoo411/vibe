@@ -115,8 +115,79 @@ async function syncKr() {
   });
 }
 
+/**
+ * 2026-09-24 국내 전 종목(코스피+코스닥, 약 2,700개) — 리뉴얼 실시간 랭킹 프로토타입(lab-realtime.html)용.
+ * 네이버 모바일 시가총액 목록을 시장별로 끝까지 넘겨 받는다(페이지당 100, 시장당 ~10~19쪽).
+ * 용량을 줄이려고 행을 배열로 저장한다:
+ *   [code, name, mkt("P"|"Q"), price, chgAmt(부호 포함), pct, volume, tradingValue(백만원), marketCap(억원), kind("S"주식|"F"ETF|"N"ETN)]
+ * 네이버 코스피 목록에는 ETF·ETN이 섞여 있다(코스피 2,484개 중 상당수). 화면은 kind로 나눠 쓴다.
+ * 정렬(시총/상승/하락/거래대금/거래량)과 시장 필터·검색은 브라우저가 한다 → AI·토큰 사용 없음.
+ */
+async function syncKrAll() {
+  const toNum = (v) => {
+    const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  const rows = [];
+  let asOf = null;
+  for (const [mkt, tag] of [["KOSPI", "P"], ["KOSDAQ", "Q"]]) {
+    let total = Infinity;
+    for (let page = 1; (page - 1) * 100 < total && page <= 40; page++) {
+      const url = `https://m.stock.naver.com/api/stocks/marketValue/${mkt}?pageSize=100&page=${page}`;
+      let data = null;
+      for (let attempt = 0; attempt < 3 && !data; attempt++) {
+        try {
+          const r = await fetch(url, { headers: { "user-agent": "Mozilla/5.0", accept: "application/json" } });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          data = await r.json();
+        } catch (e) {
+          if (attempt === 2) throw new Error(`${mkt} p${page}: ${e.message}`);
+          await new Promise((res) => setTimeout(res, 800));
+        }
+      }
+      total = Number(data.totalCount) || 0;
+      for (const st of data.stocks || []) {
+        const code = String(st.itemCode || "");
+        if (!/^[0-9A-Z]{6}$/.test(code)) continue;
+        const dir = st.compareToPreviousPrice && st.compareToPreviousPrice.name;
+        const sign = dir === "FALLING" || dir === "LOWER_LIMIT" ? -1 : 1;
+        const amt = toNum(st.compareToPreviousClosePrice);
+        const pct = toNum(st.fluctuationsRatio);
+        rows.push([
+          code, String(st.stockName || ""), tag,
+          toNum(st.closePrice),
+          amt == null ? null : sign * Math.abs(amt),
+          pct,
+          toNum(st.accumulatedTradingVolume),
+          toNum(st.accumulatedTradingValue),
+          toNum(st.marketValue),
+          st.stockEndType === "etf" ? "F" : st.stockEndType === "etn" ? "N" : "S",
+        ]);
+        if (!asOf && st.localTradedAt) asOf = st.localTradedAt;
+      }
+      await new Promise((res) => setTimeout(res, 150));
+    }
+  }
+  if (rows.length < 1000) throw new Error(`too few rows (${rows.length})`);
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    tradedAt: asOf,
+    source: "naver",
+    fields: ["code", "name", "mkt", "price", "chgAmt", "pct", "volume", "tvMillion", "mcapEok", "kind"],
+    count: rows.length,
+    rows,
+  };
+  await fs.writeFile(path.join(DATA_DIR, "kr-all.json"), JSON.stringify(payload) + "\n", "utf8");
+  wrote += 1;
+  console.log(`wrote kr-all.json (${rows.length} rows)`);
+}
+
 const ONLY = (process.env.SYNC_ONLY || "").toLowerCase();
 if (ONLY !== "kr") await syncUs();
 if (ONLY !== "us") await syncKr();
+if (ONLY !== "us") {
+  try { await syncKrAll(); } catch (e) { console.error(`KR all-stocks sync failed: ${e.message}`); }
+}
 console.log(`sync-market-data done (files written: ${wrote})`);
 if (wrote === 0) process.exit(1);

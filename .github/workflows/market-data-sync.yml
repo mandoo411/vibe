@@ -49,6 +49,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/us-market-cap.json data/us-market-gainers.json data/us-market-volume.json \
                   data/kr-realtime.json
+          if [ -f data/kr-all.json ]; then git add data/kr-all.json; fi
           if git diff --staged --quiet; then
             echo "::notice::No market data changes to commit"
           else

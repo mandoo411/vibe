@@ -2840,13 +2840,23 @@ body[data-theme="dark"] .home-nav__sublink[aria-current="page"] > i { color: #04
   .home-nav__group-panel { position: static; width: auto; transform: none; box-shadow: none; }
 }
 /* 2026-09-24 GNB 항목 아이콘(드롭다운 하위 메뉴와 같은 계열) */
-.home-nav__ico { font-size: 15px; line-height: 1; opacity: .78; }
-.home-nav__link:hover .home-nav__ico, .home-nav__link[aria-current="page"] .home-nav__ico { opacity: 1; color: var(--accent-brand, #059669); }
+/* 하위 메뉴(시장지표·일정 등)와 같은 모양 — 연한 초록 타일 안의 아이콘. 현재 페이지는 채운 타일. */
+.home-nav__ico {
+  display: inline-grid; place-items: center; flex: 0 0 auto;
+  width: 21px; height: 21px; border-radius: 6px; margin-right: 1px;
+  font-size: 13px; line-height: 1; color: var(--accent-brand, #059669);
+  background: color-mix(in srgb, var(--accent-brand, #059669) 12%, transparent);
+  transition: background .15s ease, color .15s ease;
+}
+.home-nav__link:hover .home-nav__ico { background: color-mix(in srgb, var(--accent-brand, #059669) 20%, transparent); }
+.home-nav__link[aria-current="page"] .home-nav__ico { background: var(--accent-brand, #059669); color: #fff; }
+[data-theme="dark"] .home-nav__link[aria-current="page"] .home-nav__ico,
+body[data-theme="dark"] .home-nav__link[aria-current="page"] .home-nav__ico { color: #04120c; }
 /* 아이콘이 붙은 만큼 항목 간격을 줄여 1200px 폭 안에 7개가 다 들어가게 */
 @media (min-width: 769px) {
-  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1.5ch; }
+  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1ch; }
   .home-nav__menu .home-nav__link { gap: 3px; }
-  .home-nav__links .home-nav__ai-badge { padding: 1px 6px; }
+  .home-nav__links .home-nav__ai-badge { padding: 1px 5px; }
 }
 /* 2026-09-24 GNB 좌우 여백 균형 — 로고 왼쪽 여백(24px)과 테마 버튼 오른쪽 여백을 같게.
    숨어 있는 "더보기"가 자리를 차지해 AI종목분석~로그인 사이만 벌어지던 것도 흐름에서 뺀다
@@ -2857,4 +2867,11 @@ body[data-theme="dark"] .home-nav__sublink[aria-current="page"] > i { color: #04
   .home-nav__menu { position: relative; }
   .home-nav__more:not(.has-overflow) { position: absolute; right: 0; top: 0; }
   body.page-home-v2 .home-nav__menu > .home-nav__more + *, body.page-tm-v2 .home-nav__menu > .home-nav__more + * { margin-left: auto; }
+}
+/* 2026-09-24 시우: 데스크톱 GNB의 홈 버튼 제거 — 로고(totalmoney AI)가 홈 링크 역할을 한다.
+   마크업은 남겨 둔다(현재 페이지 표시 등 스크립트가 참조). 모바일은 원래 하단바로 이동. */
+@media (min-width: 769px) {
+  body.page-home-v2 .home-nav__menu > .home-nav__home-btn, body.page-tm-v2 .home-nav__menu > .home-nav__home-btn { display: none; }
+  body.page-home-v2 .home-nav__menu, body.page-tm-v2 .home-nav__menu { padding-left: 0; }
+  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1.3ch; }
 }

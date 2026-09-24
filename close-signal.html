@@ -274,6 +274,17 @@
 
       /* 2026-09-24 모바일 결과 목록 — 표를 좌우로 밀지 않고 한 화면에 본다.
          가장 중요한 "시가 매도·종가 매도" 두 숫자를 오른쪽에 크게, 가격 흐름은 아래 한 줄로. */
+      /* 2026-09-24 선정 순위·점수 vs 수익 순위 — "5위였는데 수익은 1위" 같은 역전을 한눈에 */
+      .cb-pk { display: inline-flex; align-items: center; gap: 5px; margin-right: 7px; padding: 2px 8px; border-radius: 999px;
+        background: var(--cb-accent); color: #04120c; font-size: 11px; font-weight: 800; letter-spacing: -0.01em; vertical-align: 1px; white-space: nowrap; }
+      .cb-pk b { font-weight: 800; font-variant-numeric: tabular-nums; }
+      .cb-pk i { font-style: normal; opacity: .55; }
+      .cb-rr { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent); color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap; font-variant-numeric: tabular-nums; }
+      .cb-rr--top { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-soft); }
+      .cb-rr--flip { border-color: var(--cb-up); color: var(--cb-up); background: color-mix(in srgb, var(--cb-up) 10%, transparent); }
+      .cb-rr--drop { color: var(--cb-down, #3b82f6); }
+      .cb-rrcell { text-align: center !important; }
       .cb-mlist { display: none; }
       .cb-mhead, .cb-mrow { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; column-gap: 8px; align-items: center; }
       .cb-mhead { padding: 0 2px 8px; border-bottom: 1px solid var(--cb-line); font-size: 11px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary)); }
@@ -281,6 +292,7 @@
       .cb-mrow { padding: 12px 2px 11px; border-bottom: 1px solid var(--border-color); row-gap: 5px; }
       .cb-mrow:last-child { border-bottom: 0; }
       .cb-mname { min-width: 0; font-weight: 700; font-size: 14px; color: var(--text-title, var(--text-primary)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .cb-mname small { overflow: visible; white-space: normal; margin-top: 5px !important; line-height: 1.9; }
       .cb-mname a { color: inherit; text-decoration: none; }
       .cb-mname small { display: block; margin-top: 2px; font-weight: 400; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-mret { text-align: right; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-weight: 800; font-size: 15px; }
@@ -780,15 +792,35 @@
           var picks = day.picks || [];
           if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
           var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
+          // 수익 순위 — 종가 매도가 있으면 종가 기준, 없으면(09:10~15:45) 시가 기준
+          var rkey = hasClose ? "closeReturnPct" : "openReturnPct";
+          var rlabel = hasClose ? "종가" : "시가";
+          var byRet = picks.filter(function (p) { return p[rkey] != null; }).slice()
+            .sort(function (a, b) { return b[rkey] - a[rkey]; });
+          var retRank = {};
+          byRet.forEach(function (p, i) { retRank[p.code] = i + 1; });
+          function pickBadge(p) {
+            return '<span class="cb-pk">선정 <b>' + esc(p.rank) + "위</b>" +
+              (p.score != null ? "<i>·</i><b>" + esc(p.score) + "점</b>" : "") + "</span>";
+          }
+          function retBadge(p) {
+            var rr = retRank[p.code];
+            if (!rr) return "";
+            var diff = (p.rank || 0) - rr; // +면 선정 순위보다 수익 순위가 높다(역전)
+            var cls = (rr === 1 && diff > 0) || diff >= 2 ? "cb-rr cb-rr--flip" : rr === 1 ? "cb-rr cb-rr--top" : diff <= -2 ? "cb-rr cb-rr--drop" : "cb-rr";
+            var mark = diff > 0 ? " ▲" + diff : diff < 0 ? " ▼" + (-diff) : "";
+            return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' +
+              (rr === 1 && diff > 0 ? "역전 · " : "") + rlabel + " 수익 " + rr + "위" + mark + "</span>";
+          }
           var head =
-            "<tr><th>종목</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +
+            "<tr><th>종목</th><th>선정 → 수익 순위</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +
             (hasClose ? "<th>다음날 종가</th><th>종가 매도</th><th>하루 고·저</th>" : "") + "</tr>";
           var body = picks.map(function (p) {
             var row =
-              '<td class="cb-t-name"><a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
+              '<td class="cb-t-name">' + pickBadge(p) + '<a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
               esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
-              "<small>" + esc(p.code) + (p.score != null ? " · " + p.score + "점" : "") +
-              (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
+              "<small>" + esc(p.code) + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
+              '<td class="cb-rrcell">' + (retBadge(p) || "—") + "</td>" +
               '<td class="cb-num">' + won(p.buyPrice) + "</td>" +
               '<td class="cb-num">' + won(p.open) + "</td>" +
               '<td class="cb-ret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</td>";
@@ -809,7 +841,7 @@
                 ' 저 <i class="' + tone(p.lowReturnPct) + '" style="font-style:normal">' + sign(p.lowReturnPct) + "</i></span>" : "");
             return '<div class="cb-mrow">' +
               '<div class="cb-mname"><a href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "") + '">' +
-              esc(p.name) + "</a><small>" + (p.score != null ? p.score + "점" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></div>" +
+              esc(p.name) + "</a><small>" + pickBadge(p) + retBadge(p) + "</small></div>" +
               '<div class="cb-mret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</div>" +
               '<div class="cb-mret ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</div>" +
               '<div class="cb-mflow">' + flow + "</div></div>";

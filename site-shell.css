@@ -2779,8 +2779,8 @@ html:not([data-theme="dark"]) body .home-nav .home-nav__brand-name em {
 .home-nav__group-btn { cursor: pointer; background: none; border: none; font-family: inherit; line-height: inherit; }
 .page-home-v2 .home-nav__menu > .home-nav__group > .home-nav__group-btn,
 .page-tm-v2 .home-nav__menu > .home-nav__group > .home-nav__group-btn { padding-left: 0; padding-right: 0; }
-.home-nav__group-btn i { font-size: 12px; margin-left: 1px; opacity: .7; transition: transform .18s ease; }
-.home-nav__group.is-open .home-nav__group-btn i { transform: rotate(180deg); }
+.home-nav__group-btn .ti-chevron-down { font-size: 12px; margin-left: 1px; opacity: .7; transition: transform .18s ease; }
+.home-nav__group.is-open .home-nav__group-btn .ti-chevron-down { transform: rotate(180deg); }
 .home-nav__group.is-open .home-nav__group-btn { color: var(--accent-brand, #059669); }
 /* 버튼과 패널 사이 틈에서 마우스가 빠져도 닫히지 않게 투명 다리를 깐다 */
 .home-nav__group::after { content: ""; position: absolute; left: -8px; right: -8px; top: 100%; height: 14px; display: none; }
@@ -2838,4 +2838,13 @@ body[data-theme="dark"] .home-nav__sublink[aria-current="page"] > i { color: #04
 }
 @media (max-width: 768px) {
   .home-nav__group-panel { position: static; width: auto; transform: none; box-shadow: none; }
+}
+/* 2026-09-24 GNB 항목 아이콘(드롭다운 하위 메뉴와 같은 계열) */
+.home-nav__ico { font-size: 15px; line-height: 1; opacity: .78; }
+.home-nav__link:hover .home-nav__ico, .home-nav__link[aria-current="page"] .home-nav__ico { opacity: 1; color: var(--accent-brand, #059669); }
+/* 아이콘이 붙은 만큼 항목 간격을 줄여 1200px 폭 안에 7개가 다 들어가게 */
+@media (min-width: 769px) {
+  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1ch; }
+  .home-nav__menu .home-nav__link { gap: 3px; }
+  .home-nav__links .home-nav__ai-badge { padding: 1px 6px; }
 }

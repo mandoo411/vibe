@@ -283,7 +283,9 @@
         border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent); color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap; font-variant-numeric: tabular-nums; }
       .cb-rr--top { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-soft); }
       .cb-rr--flip { border-color: var(--cb-up); color: var(--cb-up); background: color-mix(in srgb, var(--cb-up) 10%, transparent); }
-      .cb-rr--drop { color: var(--cb-down, #3b82f6); }
+      .cb-rr--drop { border-color: var(--cb-down, #3b82f6); color: var(--cb-down, #3b82f6); background: color-mix(in srgb, var(--cb-down, #3b82f6) 10%, transparent); }
+      .cb-rr { min-width: 78px; justify-content: center; }
+      .cb-rr__mk { font-style: normal; color: inherit !important; font-weight: inherit; display: inline-block; min-width: 20px; text-align: left; }
       .cb-rrcell { text-align: left !important; }
       /* 2026-09-24 PC 결과 표 재정렬 — 순위 번호 | 종목명(먼저) + 코드·점수·기법 | 수익 순위 | 숫자.
          앞 세 칸은 내용 폭만 쓰고(width:1%), 남는 폭은 숫자 칸들이 고르게 나눠 가진다. */
@@ -425,7 +427,7 @@
         <nav class="home-nav__menu">
           <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
           <div class="home-nav__group" id="home-nav-market">
-            <button type="button" class="home-nav__link home-nav__group-btn" id="home-nav-market-btn" aria-haspopup="true" aria-expanded="false" aria-controls="home-nav-market-panel">시장 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+            <button type="button" class="home-nav__link home-nav__group-btn" id="home-nav-market-btn" aria-haspopup="true" aria-expanded="false" aria-controls="home-nav-market-panel"><i class="ti ti-chart-line home-nav__ico" aria-hidden="true"></i>시장 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__group-panel" id="home-nav-market-panel" role="menu">
               <a class="home-nav__sublink" role="menuitem" href="./market.html"><i class="ti ti-chart-line" aria-hidden="true"></i><span><b>시장지표</b><small>지수·환율·금리·원자재 한눈에</small></span></a>
               <a class="home-nav__sublink" role="menuitem" href="./briefing.html"><i class="ti ti-sunrise" aria-hidden="true"></i><span><b>장전브리핑</b><small>장 시작 전 AI 체크포인트</small></span></a>
@@ -435,12 +437,12 @@
             </div>
           </div>
           <div class="home-nav__links" id="home-nav-links">
-          <a class="home-nav__link" href="./realtime.html">실시간시세</a>
-          <a class="home-nav__link" href="./us-market.html">미국주식</a>
-          <a class="home-nav__link" href="./crypto.html">암호화폐</a>
-          <a class="home-nav__link" href="./trade-signal.html">매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./close-signal.html" aria-current="page">종가시그널 <span class="home-nav__ai-badge">PRO</span></a>
-          <a class="home-nav__link" href="./stock-analysis.html">AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a></div>
+          <a class="home-nav__link" href="./realtime.html"><i class="ti ti-activity home-nav__ico" aria-hidden="true"></i>실시간시세</a>
+          <a class="home-nav__link" href="./us-market.html"><i class="ti ti-building-skyscraper home-nav__ico" aria-hidden="true"></i>미국주식</a>
+          <a class="home-nav__link" href="./crypto.html"><i class="ti ti-currency-bitcoin home-nav__ico" aria-hidden="true"></i>암호화폐</a>
+          <a class="home-nav__link" href="./trade-signal.html"><i class="ti ti-bell home-nav__ico" aria-hidden="true"></i>매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./close-signal.html" aria-current="page"><i class="ti ti-chart-candle home-nav__ico" aria-hidden="true"></i>종가시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html"><i class="ti ti-robot home-nav__ico" aria-hidden="true"></i>AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a></div>
           <div class="home-nav__more" id="home-nav-more">
             <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
             <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
@@ -829,10 +831,11 @@
             var rr = retRank[p.code];
             if (!rr) return "";
             var diff = (p.rank || 0) - rr; // +면 선정 순위보다 수익 순위가 높다(역전)
-            var cls = (rr === 1 && diff > 0) || diff >= 2 ? "cb-rr cb-rr--flip" : rr === 1 ? "cb-rr cb-rr--top" : diff <= -2 ? "cb-rr cb-rr--drop" : "cb-rr";
-            var mark = diff > 0 ? " ▲" + diff : diff < 0 ? " ▼" + (-diff) : "";
+            // 2026-09-24 시우: 오르면 빨강, 내리면 파랑, 그대로면 '–'(1위 그대로는 초록). 기호 칸을 항상 둬서 배지 폭을 맞춘다.
+            var cls = diff > 0 ? "cb-rr cb-rr--flip" : diff < 0 ? "cb-rr cb-rr--drop" : rr === 1 ? "cb-rr cb-rr--top" : "cb-rr";
+            var mark = '<span class="cb-rr__mk">' + (diff > 0 ? "▲" + diff : diff < 0 ? "▼" + (-diff) : "–") + "</span>";
             return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' +
-              (rr === 1 && diff > 0 ? "역전 · " : "") + rlabel + " " + rr + "위" + mark + "</span>";
+              rlabel + " " + rr + "위" + mark + "</span>";
           }
           var head =
             "<tr><th class=\"cb-t-fit\">선정</th><th class=\"cb-t-fit\">종목</th><th class=\"cb-t-fit\">수익 순위</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +

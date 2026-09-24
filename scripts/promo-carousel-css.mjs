@@ -64,8 +64,9 @@ body{
 .top{display:flex;align-items:center;gap:18px;padding-right:190px;}
 .logo{flex:0 0 auto;width:62px;height:62px;border-radius:18px;
   background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dim) 100%);
-  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;
-  color:#04121F;letter-spacing:-.5px;}
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+/* 2026-09-24: TM 글자 배지 → 사이트와 같은 스텝 마크(청록 타일 + 짙은 막대). 모양은 assets/favicon-master.svg와 동일 */
+.logo svg{display:block;}
 .brand-t{font-size:33px;font-weight:700;letter-spacing:-.5px;line-height:1.18;}
 .brand-s{display:flex;align-items:center;gap:11px;margin-top:5px;
   font-size:28px;font-weight:600;color:var(--dim);letter-spacing:-.3px;line-height:1.2;}
@@ -96,7 +97,7 @@ export const shell = (body, extraCss = "") => `<!doctype html><html lang="ko"><h
 
 export const topBar = (slotLabel, dateLabel) => `
 <div class="top">
-  <div class="logo">TM</div>
+  <div class="logo"><svg viewBox="0 0 48 48" width="62" height="62" aria-hidden="true"><g transform="translate(7.3 6.5) scale(0.73)"><path d="M6 40h9l6-16h-9z" fill="#04121F"/><path d="M19 40h9l12-32h-9z" fill="#04121F"/></g></svg></div>
   <div>
     <div class="brand-t">TotalMoney AI</div>
     <div class="brand-s"><span class="dot"></span>${slotLabel} · ${dateLabel}</div>

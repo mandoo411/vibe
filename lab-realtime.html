@@ -100,6 +100,9 @@ body:not(.owner-ok) .body,body:not(.owner-ok) .ticker{display:none}
 .gate h2{margin:0 0 10px;font-size:20px}.gate p{opacity:.75;margin:0 0 18px;line-height:1.6}
 .gate a{display:inline-block;padding:10px 18px;border-radius:10px;background:var(--acc,#22c55e);color:#fff;font-weight:700;text-decoration:none}
 body.owner-ok .gate{display:none}
+.st{background:none;border:0;cursor:pointer;font-size:17px;line-height:1;color:var(--mut,#888);padding:2px}.st.on{color:#f5b301}
+.more[hidden]{display:none}
+.chip.wl.on{background:#f5b301;color:#111;border-color:#f5b301}
 .nx{display:block;font-size:11px;font-weight:600;opacity:.7;margin-top:2px}
 .nm img,.nm .bd{width:28px;height:28px;border-radius:50%;flex:0 0 auto;object-fit:cover;background:#fff}
 .nm .bd{display:grid;place-items:center;font-size:10.5px;font-weight:800;color:#fff;background:#64748b}
@@ -190,7 +193,7 @@ body.owner-ok .gate{display:none}
     <div class="bar">
       <div class="seg" id="mkt"><button class="on" data-m="ALL">전체</button><button data-m="KOSPI">코스피</button><button data-m="KOSDAQ">코스닥</button></div>
       <div class="seg" id="kind"><button class="on" data-k="S">주식</button><button data-k="F">ETF</button><button data-k="N">ETN</button></div>
-      <button class="chip on" data-t="cap">시가총액</button><button class="chip" data-t="tv">거래대금</button><button class="chip" data-t="up">상승</button><button class="chip" data-t="down">하락</button><button class="chip" data-t="vol">거래량</button>
+      <button class="chip on" data-t="cap">시가총액</button><button class="chip" data-t="tv">거래대금</button><button class="chip" data-t="up">상승</button><button class="chip" data-t="down">하락</button><button class="chip" data-t="vol">거래량</button><button class="chip wl" id="wlBtn" type="button">★ 관심</button>
       <span class="sp"></span>
       <label class="search"><i class="ti ti-search"></i><input id="q" type="search" placeholder="종목명·코드 (Enter: AI 분석)" autocomplete="off"></label>
     </div>
@@ -198,8 +201,8 @@ body.owner-ok .gate{display:none}
     <div class="tblwrap">
       <div class="tblscroll">
         <table class="num">
-          <thead><tr><th class="c">순위</th><th class="l">종목명</th><th>현재가</th><th>전일대비</th><th>등락률</th><th>거래량</th><th>거래대금</th><th>시가총액</th><th class="c">분석</th></tr></thead>
-          <tbody id="tb"><tr><td colspan="9" class="empty">불러오는 중…</td></tr></tbody>
+          <thead><tr><th class="c"></th><th class="c">순위</th><th class="l">종목명</th><th>현재가</th><th>전일대비</th><th>등락률</th><th>거래량</th><th>거래대금</th><th>시가총액</th><th class="c">분석</th></tr></thead>
+          <tbody id="tb"><tr><td colspan="10" class="empty">불러오는 중…</td></tr></tbody>
         </table>
       </div>
       <button class="more" id="more" hidden>더 보기</button>
@@ -227,7 +230,8 @@ body.owner-ok .gate{display:none}
 (function () {
   "use strict";
   var $ = function (s) { return document.querySelector(s); };
-  var state = { tab: "cap", mkt: "ALL", kind: "S", q: "", shown: 50, data: null };
+  var state = { tab: "cap", mkt: "ALL", kind: "S", q: "", shown: 50, data: null, wl: false };
+  var watch = new Set();
   var logoCodes = null;
 
   // 테마 — 사이트 공통 저장값 사용
@@ -272,7 +276,7 @@ body.owner-ok .gate{display:none}
 
   function rows() {
     if (!state.data) return [];
-    var list = state.data.filter(function (r) { return r.kind === state.kind && (state.mkt === "ALL" || r.mkt === state.mkt); });
+    var list = state.data.filter(function (r) { return state.wl ? watch.has(r.code) : (r.kind === state.kind && (state.mkt === "ALL" || r.mkt === state.mkt)); });
     // 상승·하락은 거래가 거의 없는 종목이 튀는 걸 막으려고 거래대금 1억 이상만
     if (state.tab === "up" || state.tab === "down") list = list.filter(function (r) { return (r.tv || 0) >= 100; });
     list = list.slice().sort(SORT[state.tab]);
@@ -285,9 +289,9 @@ body.owner-ok .gate{display:none}
   function render() {
     if (!state.data) return;
     var list = rows(), tb = $("#tb");
-    if (!list.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">조건에 맞는 종목이 없습니다.</td></tr>'; $("#more").hidden = true; fresh(0); return; }
+    if (!list.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">' + (state.wl ? "관심종목이 없습니다. 종목 왼쪽 ☆를 눌러 추가하세요." : "조건에 맞는 종목이 없습니다.") + '</td></tr>'; $("#more").hidden = true; fresh(0); return; }
     tb.innerHTML = list.slice(0, state.shown).map(function (r) {
-      return '<tr' + (r.kind === "S" ? ' data-href="' + aiHref(r) + '"' : "") + '><td class="c rk">' + r._rk + "</td>" +
+      return '<tr' + (r.kind === "S" ? ' data-href="' + aiHref(r) + '"' : "") + '><td class="c"><button type="button" class="st' + (watch.has(r.code) ? " on" : "") + '" data-star="' + esc(r.code) + '" data-nm="' + esc(r.name) + '" aria-label="관심종목">' + (watch.has(r.code) ? "★" : "☆") + '</button></td><td class="c rk">' + r._rk + "</td>" +
         '<td class="l"><span class="nm">' + logo(r) + esc(r.name) + '<span class="mk">' + (r.mkt === "KOSDAQ" ? "코스닥" : "코스피") + "</span></span></td>" +
         "<td><b>" + n0(r.price) + "</b>" + (r.nxP && r.nxP !== r.price ? '<span class="nx">NXT ' + n0(r.nxP) + "</span>" : "") + "</td>" +
         '<td class="' + cls(r.pct) + '">' + (r.chg > 0 ? "▲ " : r.chg < 0 ? "▼ " : "") + (r.chg == null ? "—" : Math.abs(r.chg).toLocaleString("ko-KR")) + "</td>" +
@@ -304,7 +308,7 @@ body.owner-ok .gate{display:none}
   function fresh(count) {
     var d = tradedAt ? new Date(tradedAt) : null;
     var when = d ? d.toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) + " 기준" : "";
-    var kindLabel = { S: "종목", F: "ETF", N: "ETN" }[state.kind];
+    var kindLabel = state.wl ? "관심종목" : { S: "종목", F: "ETF", N: "ETN" }[state.kind];
     $("#fresh").innerHTML = '<span class="dot"></span>' + when + " · " + LABEL[state.tab] + " 순 · 전체 " + count.toLocaleString() + "개 " + kindLabel;
   }
 
@@ -326,7 +330,21 @@ body.owner-ok .gate{display:none}
     if (first) location.href = aiHref(first);
   });
   $("#more").addEventListener("click", function () { state.shown += 100; render(); });
+  $("#wlBtn").addEventListener("click", function () { state.wl = !state.wl; this.classList.toggle("on", state.wl); state.shown = 50; render(); });
+  function loadWatch() {
+    return sb.from("personal_watchlist").select("code").then(function (res) { if (!res.error) { watch = new Set((res.data || []).map(function (x) { return x.code; })); render(); } });
+  }
   $("#tb").addEventListener("click", function (e) {
+    var stb = e.target.closest("[data-star]");
+    if (stb) {
+      e.stopPropagation();
+      var code = stb.getAttribute("data-star"), on = watch.has(code);
+      if (on) watch.delete(code); else watch.add(code);
+      render();
+      var q = on ? sb.from("personal_watchlist").delete().eq("code", code) : sb.from("personal_watchlist").insert({ code: code, name: stb.getAttribute("data-nm") });
+      q.then(function (res) { if (res.error) { if (on) watch.add(code); else watch.delete(code); render(); } });
+      return;
+    }
     if (e.target.closest("a")) return;
     var tr = e.target.closest("tr[data-href]"); if (tr) location.href = tr.getAttribute("data-href");
   });
@@ -343,7 +361,7 @@ body.owner-ok .gate{display:none}
           .map(function (r) { r.mkt = r.mkt; return r; });
         render();
       })
-      .catch(function () { if (!state.data) $("#tb").innerHTML = '<tr><td colspan="9" class="empty">시세를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</td></tr>'; });
+      .catch(function () { if (!state.data) $("#tb").innerHTML = '<tr><td colspan="10" class="empty">시세를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</td></tr>'; });
   }
   function loadTicker() {
     fetch("/api/market-ticker").then(function (r) { return r.json(); }).then(function (d) {
@@ -383,7 +401,7 @@ body.owner-ok .gate{display:none}
       var own = await sb.rpc("is_owner");
       if (own.error || own.data !== true) { gate("이 페이지는 비공개입니다.", false); return; }
       document.body.classList.add("owner-ok");
-      loadBoard(); loadTicker(); loadSignal();
+      loadBoard(); loadTicker(); loadSignal(); loadWatch();
     } catch (e) { gate("확인 중 오류가 났습니다. 새로고침해 주세요.", false); }
   })();
   setInterval(function () { if (document.visibilityState === "visible" && document.body.classList.contains("owner-ok")) { loadBoard(); loadTicker(); } }, 60000);

@@ -284,7 +284,20 @@
       .cb-rr--top { border-color: var(--cb-accent); color: var(--cb-accent); background: var(--cb-soft); }
       .cb-rr--flip { border-color: var(--cb-up); color: var(--cb-up); background: color-mix(in srgb, var(--cb-up) 10%, transparent); }
       .cb-rr--drop { color: var(--cb-down, #3b82f6); }
-      .cb-rrcell { text-align: center !important; }
+      .cb-rrcell { text-align: left !important; }
+      /* 2026-09-24 PC 결과 표 재정렬 — 순위 번호 | 종목명(먼저) + 코드·점수·기법 | 수익 순위 | 숫자.
+         앞 세 칸은 내용 폭만 쓰고(width:1%), 남는 폭은 숫자 칸들이 고르게 나눠 가진다. */
+      .cb-table th.cb-t-fit, .cb-table td.cb-t-fit { width: 1%; }
+      .cb-table th.cb-t-fit, .cb-table td.cb-t-fit { text-align: left; }
+      .cb-table th.cb-t-fit:first-child { text-align: center; }
+      .cb-table td.cb-t-no { padding-right: 4px; }
+      .cb-tno { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+        background: var(--cb-inset); border: 1px solid var(--border-color);
+        font-family: var(--cb-mono); font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+      .cb-tno--top { border-color: var(--cb-line); background: var(--cb-soft); color: var(--cb-accent); }
+      .cb-table td.cb-t-name { padding-right: 18px; }
+      .cb-table td.cb-t-name .cb-t-link { font-size: 14px; }
+      .cb-table td.cb-t-name small b { font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
       .cb-mlist { display: none; }
       .cb-mhead, .cb-mrow { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; column-gap: 8px; align-items: center; }
       .cb-mhead { padding: 0 2px 8px; border-bottom: 1px solid var(--cb-line); font-size: 11px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary)); }
@@ -294,6 +307,11 @@
       .cb-mname { min-width: 0; font-weight: 700; font-size: 14px; color: var(--text-title, var(--text-primary)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .cb-mname small { overflow: visible; white-space: normal; margin-top: 5px !important; line-height: 1.9; }
       .cb-mname a { color: inherit; text-decoration: none; }
+      /* 모바일 목록에선 선정 배지를 글자로 낮춰 한 줄에 "선정 1위 · 95.1점 [종가 1위]"가 들어가게 */
+      .cb-mtags { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: -1px; }
+      .cb-mtags .cb-pk { background: none; color: var(--cb-accent); padding: 0; margin-right: 0; font-weight: 700; }
+      .cb-mtags .cb-pk b { font-weight: 700; }
+      .cb-mtags .cb-rr { padding: 1px 6px; font-size: 10.5px; }
       .cb-mname small { display: block; margin-top: 2px; font-weight: 400; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-mret { text-align: right; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-weight: 800; font-size: 15px; }
       .cb-mflow { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.55; color: var(--text-muted-ui, var(--text-secondary)); font-variant-numeric: tabular-nums; }
@@ -810,17 +828,18 @@
             var cls = (rr === 1 && diff > 0) || diff >= 2 ? "cb-rr cb-rr--flip" : rr === 1 ? "cb-rr cb-rr--top" : diff <= -2 ? "cb-rr cb-rr--drop" : "cb-rr";
             var mark = diff > 0 ? " ▲" + diff : diff < 0 ? " ▼" + (-diff) : "";
             return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' +
-              (rr === 1 && diff > 0 ? "역전 · " : "") + rlabel + " 수익 " + rr + "위" + mark + "</span>";
+              (rr === 1 && diff > 0 ? "역전 · " : "") + rlabel + " " + rr + "위" + mark + "</span>";
           }
           var head =
-            "<tr><th>종목</th><th>선정 → 수익 순위</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +
+            "<tr><th class=\"cb-t-fit\">선정</th><th class=\"cb-t-fit\">종목</th><th class=\"cb-t-fit\">수익 순위</th><th>매수가<br><small>선정일 종가</small></th><th>다음날 시가</th><th>시가 매도</th>" +
             (hasClose ? "<th>다음날 종가</th><th>종가 매도</th><th>하루 고·저</th>" : "") + "</tr>";
           var body = picks.map(function (p) {
             var row =
-              '<td class="cb-t-name">' + pickBadge(p) + '<a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
+              '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '" title="선정 순위">' + esc(p.rank) + "</span></td>" +
+              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
               esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
-              "<small>" + esc(p.code) + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
-              '<td class="cb-rrcell">' + (retBadge(p) || "—") + "</td>" +
+              "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
+              '<td class="cb-t-fit cb-rrcell">' + (retBadge(p) || "—") + "</td>" +
               '<td class="cb-num">' + won(p.buyPrice) + "</td>" +
               '<td class="cb-num">' + won(p.open) + "</td>" +
               '<td class="cb-ret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</td>";
@@ -841,9 +860,10 @@
                 ' 저 <i class="' + tone(p.lowReturnPct) + '" style="font-style:normal">' + sign(p.lowReturnPct) + "</i></span>" : "");
             return '<div class="cb-mrow">' +
               '<div class="cb-mname"><a href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "") + '">' +
-              esc(p.name) + "</a><small>" + pickBadge(p) + retBadge(p) + "</small></div>" +
+              esc(p.name) + "</a></div>" +
               '<div class="cb-mret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</div>" +
               '<div class="cb-mret ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</div>" +
+              '<div class="cb-mtags">' + pickBadge(p) + retBadge(p) + "</div>" +
               '<div class="cb-mflow">' + flow + "</div></div>";
           }).join("");
           var mlist = '<div class="cb-mlist"><div class="cb-mhead"><span>종목</span><span>시가 매도</span><span>종가 매도</span></div>' + mrows + "</div>";

@@ -43,7 +43,7 @@ window.TM_AUTH_CONFIG = {
   //     승인 나면 카카오 동의항목에서 이메일을 켠 뒤 아래를 true 로 바꾸세요)
   //  - 이메일 없이 가입되면 결제·구독 연동이 깨지므로, 이메일이 열리기 전엔 켜지 마세요.
   SOCIAL_ENABLED: {
-    google: false, // Google Cloud + Supabase 설정 완료 후 true
+    google: true,  // 2026-09-24 연동 완료(OAuth 앱 프로덕션 게시, 같은 이메일은 기존 계정에 자동 연결)
     kakao: false,  // 비즈 앱 전환 승인 + 이메일 동의항목 활성화 후 true
     naver: true,   // 2026-09-03 연동 완료
   },

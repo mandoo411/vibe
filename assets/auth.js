@@ -172,6 +172,8 @@
       hasProAccess: active,
       hasPremiumAccess: premium,
       provider: meta.tm_provider || appMeta.provider || "email",
+      // 연결된 로그인 수단 전부(같은 이메일로 구글을 연결하면 email+google 둘 다 들어온다)
+      providers: Array.from(new Set([].concat(appMeta.providers || [], meta.tm_provider ? [meta.tm_provider] : []).filter(Boolean))),
       hasConsent: !!meta.terms_agreed_at,
       marketingAgreed: !!meta.marketing_agreed,
     });

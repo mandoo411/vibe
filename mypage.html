@@ -213,8 +213,12 @@
           }
 
           const PROVIDER_LABEL = { email: "이메일 + 비밀번호", google: "구글 계정", kakao: "카카오 계정", naver: "네이버 계정" };
-          const isEmailAccount = !state.provider || state.provider === "email";
-          document.getElementById("acc-provider").textContent = PROVIDER_LABEL[state.provider] || "이메일 + 비밀번호";
+          const provList = (state.providers && state.providers.length) ? state.providers : [state.provider || "email"];
+          const isEmailAccount = provList.indexOf("email") !== -1;
+          const ORDER = ["email", "google", "kakao", "naver"];
+          document.getElementById("acc-provider").textContent = provList
+            .slice().sort(function (a, b) { return ORDER.indexOf(a) - ORDER.indexOf(b); })
+            .map(function (p) { return PROVIDER_LABEL[p] || p; }).join(" · ");
           document.getElementById("acc-pw-row").hidden = !isEmailAccount;
 
           const mkt = document.getElementById("acc-marketing");

@@ -15,6 +15,8 @@
  */
 import Anthropic from "@anthropic-ai/sdk";
 import { firstSentence } from "./promo-deck-ai.mjs";
+import { buildStoryCopy } from "./promo-build-deck-story.mjs";
+import { existsSync } from "node:fs";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { chooseHook, recentHookTypes, appendHookType } from "./promo-hook-history.mjs";
 import { dirname } from "node:path";
@@ -719,8 +721,36 @@ export async function buildClosingDeck(snapshotPath = "data/daily-market.json", 
   // 2번 카드 머리말: 훅이 두 종목을 가리킨 날에만 "그 두 종목은"이 말이 된다
   deck.focusKicker = hookType === "A" ? "그 두 종목은" : "오늘 거래대금 1·2위";
 
+  // 2026-09-24 v3 "이슈 스토리" 덱을 먼저 시도한다. 검증을 통과 못 하면 아래 v2 덱으로 폴백.
+  if (!opts.forceV2) {
+    let prevHooks = [];
+    try {
+      const prevPath = "data/promo/latest-closing.json";
+      if (existsSync(prevPath)) {
+        const prev = JSON.parse(readFileSync(prevPath, "utf8"));
+        if (prev.date !== date && prev.hookHTML) prevHooks = [String(prev.hookHTML).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()];
+      }
+    } catch {}
+    const story = await buildStoryCopy(f, day, { prevHooks, writer: opts.storyWriter });
+    if (story) {
+      const up = (x) => (x > 0 ? "up" : x < 0 ? "down" : "flat");
+      const sg = (x) => `${x > 0 ? "▲" : x < 0 ? "▼" : ""}${Math.abs(x).toFixed(2)}%`;
+      Object.assign(deck, story, {
+        layout: "closing-story",
+        hookType: "S",
+        indexChips: [
+          { name: "코스피", text: `${f.kospi.close.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${sg(f.kospi.pct)}`, dir: up(f.kospi.pct) },
+          { name: "코스닥", text: `${f.kosdaq.close.toLocaleString("en-US", { minimumFractionDigits: 2 })} ${sg(f.kosdaq.pct)}`, dir: up(f.kosdaq.pct) },
+        ],
+      });
+      deck.caption = buildCaption(deck, story);
+      console.log(`[deck] v3 이슈 스토리 덱 · 이슈 ${story.issues.length} · 급등 ${story.movers.length} · 체크 ${story.next.length}`);
+      return deck;
+    }
+  }
+
   let copy = null;
-  for (const [label, fn] of [["Claude", writeCopyWithClaude], ["OpenAI", writeCopyWithOpenAI]]) {
+  for (const [label, fn] of [["OpenAI", writeCopyWithOpenAI], ["Claude", writeCopyWithClaude]]) {
     try {
       copy = await fn(f, deck, hookType, day.analysis || "");
       console.log(`[deck] ${label} 문장 생성 완료 (훅 유형 ${hookType})`);

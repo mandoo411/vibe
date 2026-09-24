@@ -20,6 +20,7 @@ import {
   slideCsRecord, slideCsDaily, slideCsPicks,
 } from "./promo-carousel-slides.mjs";
 import { setPager } from "./promo-carousel-css.mjs";
+import { slideStoryHook, slideIssue, slideMovers, slideNext } from "./promo-carousel-story.mjs";
 
 const TEMPLATES_DIR = join(process.cwd(), "templates");
 
@@ -32,6 +33,15 @@ export const LAYOUTS = {
 };
 
 export function buildersFor(deck) {
+  // 2026-09-24 마감 v3: 이슈 카드 수·급등주 유무에 따라 장 수가 달라진다(5~6장)
+  if (deck.layout === "closing-story") {
+    const out = [slideStoryHook];
+    (deck.issues || []).forEach((_, i) => out.push((d) => slideIssue(d, d.issues[i])));
+    if ((deck.movers || []).length) out.push(slideMovers);
+    if ((deck.next || []).length) out.push(slideNext);
+    out.push(slideCTA);
+    return out;
+  }
   const layout = LAYOUTS[deck.layout || deck.slot];
   if (!layout) throw new Error(`알 수 없는 레이아웃: ${deck.layout || deck.slot}`);
   return layout;

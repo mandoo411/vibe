@@ -485,7 +485,14 @@
         .filter((el) => el !== linksWrap)
         .reduce((sum, el) => sum + el.getBoundingClientRect().width, 0);
       const rowGaps = menuChildren.length > 1 ? (menuChildren.length - 1) * menuGap : 0;
-      const available = menu.clientWidth - menuPadX - siblingsWidth - rowGaps;
+      let available = menu.clientWidth - menuPadX - siblingsWidth - rowGaps;
+      // 2026-09-24: "더보기"는 넘칠 때만 흐름에 들어온다(CSS: 평소엔 absolute). 전부 들어가면
+      // 더보기 자리를 예약하지 않아도 되므로, 먼저 "더보기 없이 전부" 들어가는지 본다.
+      if (staticMoreCount === 0) {
+        const moreW = moreWrap.getBoundingClientRect().width + menuGap;
+        const allW = items.reduce((sum, it, i) => sum + it.width + (i > 0 ? gap : 0), 0);
+        if (allW <= available + moreW) available += moreW;
+      }
 
       const visible = new Set();
       let used = 0;

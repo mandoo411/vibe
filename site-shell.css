@@ -2844,7 +2844,17 @@ body[data-theme="dark"] .home-nav__sublink[aria-current="page"] > i { color: #04
 .home-nav__link:hover .home-nav__ico, .home-nav__link[aria-current="page"] .home-nav__ico { opacity: 1; color: var(--accent-brand, #059669); }
 /* 아이콘이 붙은 만큼 항목 간격을 줄여 1200px 폭 안에 7개가 다 들어가게 */
 @media (min-width: 769px) {
-  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1ch; }
+  body.page-home-v2, body.page-tm-v2 { --home-nav-menu-gap: 1.5ch; }
   .home-nav__menu .home-nav__link { gap: 3px; }
   .home-nav__links .home-nav__ai-badge { padding: 1px 6px; }
+}
+/* 2026-09-24 GNB 좌우 여백 균형 — 로고 왼쪽 여백(24px)과 테마 버튼 오른쪽 여백을 같게.
+   숨어 있는 "더보기"가 자리를 차지해 AI종목분석~로그인 사이만 벌어지던 것도 흐름에서 뺀다
+   (폭은 그대로 측정되도록 absolute — site-shell.js 폭 계산은 영향 없음). */
+@media (min-width: 769px) {
+  body.page-home-v2 .home-nav, body.page-tm-v2 .home-nav { padding-right: var(--shell-pad-inline, 24px); }
+  body.page-home-v2 .home-nav__menu, body.page-tm-v2 .home-nav__menu { padding-right: 0; }
+  .home-nav__menu { position: relative; }
+  .home-nav__more:not(.has-overflow) { position: absolute; right: 0; top: 0; }
+  body.page-home-v2 .home-nav__menu > .home-nav__more + *, body.page-tm-v2 .home-nav__menu > .home-nav__more + * { margin-left: auto; }
 }

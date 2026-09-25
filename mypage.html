@@ -119,7 +119,7 @@
         <!-- 2026-09-25 회원 승인제: 운영자만 보이는 승인 관리 -->
         <div class="tm-account-card" id="owner-members" hidden style="margin-top:16px">
           <h2 class="tm-auth-card__title" style="font-size:18px;margin-bottom:4px">회원 승인 관리</h2>
-          <p class="tm-consent__note" style="margin:0 0 10px">승인된 회원만 사이트를 볼 수 있습니다. 새로 가입한 사람은 '대기'로 들어옵니다.</p>
+          <p class="tm-consent__note" style="margin:0 0 10px">승인된 회원만 사이트를 볼 수 있습니다. 새로 가입한 사람은 '대기'로 들어옵니다. 요금제는 결제 없이 바로 부여되며 기한이 없습니다(다시 FREE로 바꿀 때까지 유지).</p>
           <div id="owner-members-list">불러오는 중…</div>
         </div>
 
@@ -283,23 +283,47 @@
           var box = document.getElementById("owner-members");
           box.hidden = false;
           var list = document.getElementById("owner-members-list");
-          var r = await c.from("site_members").select("user_id,email,status,created_at,decided_at").order("status", { ascending: false }).order("created_at", { ascending: false });
+          var r = await c.rpc("owner_list_members");
           if (r.error) { list.textContent = "불러오지 못했습니다: " + r.error.message; return; }
           var rows = r.data || [];
+          var PLAN = { free: "FREE", pro: "PRO", premium: "PREMIUM" };
           list.innerHTML = rows.length ? rows.map(function (m) {
-            var btn = function (st, txt) {
+            var sbtn = function (st, txt) {
               return m.status === st ? "" : '<button type="button" class="tm-btn tm-btn--ghost" style="padding:4px 10px;font-size:12px" data-uid="' + esc(m.user_id) + '" data-st="' + st + '">' + txt + "</button>";
             };
-            return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 0;border-top:1px solid var(--border-color)">' +
-              '<span style="flex:1 1 220px;min-width:0;word-break:break-all">' + esc(m.email || m.user_id) + "</span>" +
-              '<span class="tm-plan-badge">' + esc(LABEL[m.status] || m.status) + "</span>" +
-              '<span style="font-size:12px;color:var(--text-muted-ui,var(--text-secondary))">' + esc(String(m.created_at || "").slice(0, 10)) + " 가입</span>" +
-              btn("approved", "승인") + btn("pending", "대기") + btn("blocked", "차단") + "</div>";
+            var pbtn = function (pl) {
+              var on = (m.plan || "free") === pl;
+              return '<button type="button" class="tm-btn ' + (on ? "tm-btn--primary" : "tm-btn--ghost") + '" style="padding:4px 10px;font-size:12px"' +
+                (on ? " disabled" : ' data-uid="' + esc(m.user_id) + '" data-plan="' + pl + '"') + ">" + PLAN[pl] + "</button>";
+            };
+            return '<div style="padding:10px 0;border-top:1px solid var(--border-color)">' +
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+              '<span style="flex:1 1 220px;min-width:0;word-break:break-all;font-weight:600">' + esc(m.email || m.user_id) + "</span>" +
+              (m.is_owner
+                ? '<span class="tm-plan-badge" style="background:var(--accent,#10b981);color:#04120c">OWNER</span>'
+                : '<span class="tm-plan-badge">' + esc(LABEL[m.status] || m.status) + "</span>") +
+              '<span style="font-size:12px;color:var(--text-muted-ui,var(--text-secondary))">' + esc(String(m.created_at || "").slice(0, 10)) + " 가입</span></div>" +
+              '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px">' +
+              // 운영자 본인 줄에는 접근(승인/대기/차단) 버튼을 두지 않는다 — 실수로 자기 계정을 막지 않게
+              (m.is_owner ? "" :
+                '<span style="font-size:12px;color:var(--text-muted-ui,var(--text-secondary));min-width:40px">접근</span>' +
+                sbtn("approved", "승인") + sbtn("pending", "대기") + sbtn("blocked", "차단")) +
+              '<span style="font-size:12px;color:var(--text-muted-ui,var(--text-secondary));margin-left:' + (m.is_owner ? "0" : "10px") + ';min-width:40px">요금제</span>' +
+              pbtn("free") + pbtn("pro") + pbtn("premium") + "</div></div>";
           }).join("") : "회원이 없습니다.";
-          list.querySelectorAll("button[data-uid]").forEach(function (b) {
+          list.querySelectorAll("button[data-st]").forEach(function (b) {
             b.addEventListener("click", async function () {
               b.disabled = true;
               var u = await c.from("site_members").update({ status: b.getAttribute("data-st"), decided_at: new Date().toISOString() }).eq("user_id", b.getAttribute("data-uid"));
+              if (u.error) alertBox(u.error.message);
+              load();
+            });
+          });
+          // 2026-09-25: 요금제 바로 변경(운영자 전용 RPC owner_set_plan — 결제 없이 수동 부여, 기한 없음)
+          list.querySelectorAll("button[data-plan]").forEach(function (b) {
+            b.addEventListener("click", async function () {
+              b.disabled = true;
+              var u = await c.rpc("owner_set_plan", { p_user: b.getAttribute("data-uid"), p_plan: b.getAttribute("data-plan") });
               if (u.error) alertBox(u.error.message);
               load();
             });

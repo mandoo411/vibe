@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-09-25 08:46 KST",
-    "from": "2026-09-25",
-    "to": "2026-10-09",
-    "historyFrom": "2026-06-27",
+    "lastUpdatedKst": "2026-09-26 08:47 KST",
+    "from": "2026-09-26",
+    "to": "2026-10-10",
+    "historyFrom": "2026-06-28",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -166,18 +166,6 @@
     },
     {
       "date": "2026-07-01",
-      "event": "ISM Manufacturing PMI",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "53.3",
-      "previous": "54",
-      "estimate": "54",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-01",
       "event": "ISM Manufacturing Employment",
       "country": "US",
       "time": "23:00",
@@ -186,6 +174,18 @@
       "actual": "49.7",
       "previous": "48.6",
       "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-01",
+      "event": "ISM Manufacturing PMI",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "53.3",
+      "previous": "54",
+      "estimate": "54",
       "unit": ""
     },
     {
@@ -223,6 +223,18 @@
       "previous": "3.1",
       "estimate": "3.2",
       "unit": "%"
+    },
+    {
+      "date": "2026-07-02",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "215",
+      "previous": "216",
+      "estimate": "220",
+      "unit": ""
     },
     {
       "date": "2026-07-02",
@@ -286,18 +298,6 @@
     },
     {
       "date": "2026-07-02",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "215",
-      "previous": "216",
-      "estimate": "220",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-02",
       "event": "Factory Orders MoM",
       "country": "US",
       "time": "23:00",
@@ -346,18 +346,6 @@
     },
     {
       "date": "2026-07-07",
-      "event": "Imports",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "395.3",
-      "previous": "382.8",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-07-07",
       "event": "Exports",
       "country": "US",
       "time": "21:30",
@@ -365,6 +353,18 @@
       "importance": 3,
       "actual": "317.7",
       "previous": "328.2",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-07-07",
+      "event": "Imports",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "395.3",
+      "previous": "382.8",
       "estimate": "",
       "unit": "$"
     },
@@ -742,18 +742,6 @@
     },
     {
       "date": "2026-07-15",
-      "event": "PPI MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.3",
-      "previous": "0.6",
-      "estimate": "0",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-15",
       "event": "NY Empire State Manufacturing Index",
       "country": "US",
       "time": "21:30",
@@ -774,6 +762,18 @@
       "actual": "0.2",
       "previous": "0.1",
       "estimate": "0.4",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-15",
+      "event": "PPI MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-0.3",
+      "previous": "0.6",
+      "estimate": "0",
       "unit": "%"
     },
     {
@@ -802,18 +802,6 @@
     },
     {
       "date": "2026-07-15",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-1.533",
-      "previous": "-1.904",
-      "estimate": "-0.8",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-15",
       "event": "EIA Crude Oil Stocks Change",
       "country": "US",
       "time": "23:30",
@@ -822,6 +810,18 @@
       "actual": "-1.693",
       "previous": "2.998",
       "estimate": "-2.6",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-15",
+      "event": "EIA Gasoline Stocks Change",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-1.533",
+      "previous": "-1.904",
+      "estimate": "-0.8",
       "unit": ""
     },
     {
@@ -862,18 +862,6 @@
     },
     {
       "date": "2026-07-16",
-      "event": "Retail Sales MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.2",
-      "previous": "1",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-16",
       "event": "Initial Jobless Claims",
       "country": "US",
       "time": "21:30",
@@ -886,15 +874,27 @@
     },
     {
       "date": "2026-07-16",
-      "event": "Philadelphia Fed Manufacturing Index",
+      "event": "Retail Sales MoM",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "41.4",
-      "previous": "10.3",
-      "estimate": "13",
-      "unit": ""
+      "actual": "0.2",
+      "previous": "1",
+      "estimate": "0.2",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-16",
+      "event": "Retail Sales Control Group MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.5",
+      "previous": "0.8",
+      "estimate": "0.5",
+      "unit": "%"
     },
     {
       "date": "2026-07-16",
@@ -910,15 +910,15 @@
     },
     {
       "date": "2026-07-16",
-      "event": "Retail Sales Control Group MoM",
+      "event": "Philadelphia Fed Manufacturing Index",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "0.5",
-      "previous": "0.8",
-      "estimate": "0.5",
-      "unit": "%"
+      "actual": "41.4",
+      "previous": "10.3",
+      "estimate": "13",
+      "unit": ""
     },
     {
       "date": "2026-07-16",
@@ -994,6 +994,18 @@
     },
     {
       "date": "2026-07-17",
+      "event": "Housing Starts",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "1.427",
+      "previous": "1.199",
+      "estimate": "1.31",
+      "unit": ""
+    },
+    {
+      "date": "2026-07-17",
       "event": "Export Prices MoM",
       "country": "US",
       "time": "21:30",
@@ -1002,30 +1014,6 @@
       "actual": "-0.6",
       "previous": "1.2",
       "estimate": "-0.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-17",
-      "event": "Building Permits MoM Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-3",
-      "previous": "-0.9",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-17",
-      "event": "Housing Starts MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "19",
-      "previous": "-15.2",
-      "estimate": "",
       "unit": "%"
     },
     {
@@ -1042,15 +1030,27 @@
     },
     {
       "date": "2026-07-17",
-      "event": "Housing Starts",
+      "event": "Housing Starts MoM",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "1.427",
-      "previous": "1.199",
-      "estimate": "1.31",
-      "unit": ""
+      "actual": "19",
+      "previous": "-15.2",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-17",
+      "event": "Building Permits MoM Prel",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-3",
+      "previous": "-0.9",
+      "estimate": "",
+      "unit": "%"
     },
     {
       "date": "2026-07-17",
@@ -1150,18 +1150,6 @@
     },
     {
       "date": "2026-07-23",
-      "event": "GDP Growth Rate QoQ Adv",
-      "country": "KR",
-      "time": "08:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.6",
-      "previous": "1.8",
-      "estimate": "0.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-23",
       "event": "GDP Growth Rate YoY Adv",
       "country": "KR",
       "time": "08:00",
@@ -1170,6 +1158,18 @@
       "actual": "3.7",
       "previous": "3.8",
       "estimate": "3.5",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-23",
+      "event": "GDP Growth Rate QoQ Adv",
+      "country": "KR",
+      "time": "08:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.6",
+      "previous": "1.8",
+      "estimate": "0.4",
       "unit": "%"
     },
     {
@@ -1210,18 +1210,6 @@
     },
     {
       "date": "2026-07-24",
-      "event": "S&P Global Services PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "51.5",
-      "unit": ""
-    },
-    {
-      "date": "2026-07-24",
       "event": "S&P Global Manufacturing PMI Flash",
       "country": "US",
       "time": "22:45",
@@ -1234,14 +1222,14 @@
     },
     {
       "date": "2026-07-24",
-      "event": "New Home Sales",
+      "event": "S&P Global Services PMI Flash",
       "country": "US",
-      "time": "23:00",
+      "time": "22:45",
       "impact": "high",
       "importance": 3,
-      "actual": "0.628",
-      "previous": "0.618",
-      "estimate": "0.61",
+      "actual": "",
+      "previous": "",
+      "estimate": "51.5",
       "unit": ""
     },
     {
@@ -1257,16 +1245,16 @@
       "unit": "%"
     },
     {
-      "date": "2026-07-27",
-      "event": "Durable Goods Orders MoM",
+      "date": "2026-07-24",
+      "event": "New Home Sales",
       "country": "US",
-      "time": "21:30",
+      "time": "23:00",
       "impact": "high",
       "importance": 3,
-      "actual": "0.3",
-      "previous": "-4",
-      "estimate": "2.5",
-      "unit": "%"
+      "actual": "0.628",
+      "previous": "0.618",
+      "estimate": "0.61",
+      "unit": ""
     },
     {
       "date": "2026-07-27",
@@ -1278,6 +1266,18 @@
       "actual": "0.6",
       "previous": "1.8",
       "estimate": "0.8",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-27",
+      "event": "Durable Goods Orders MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.3",
+      "previous": "-4",
+      "estimate": "2.5",
       "unit": "%"
     },
     {
@@ -1318,6 +1318,18 @@
     },
     {
       "date": "2026-07-28",
+      "event": "Goods Trade Balance Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-101.5",
+      "previous": "-105.89",
+      "estimate": "-100",
+      "unit": "$"
+    },
+    {
+      "date": "2026-07-28",
       "event": "Wholesale Inventories MoM Adv",
       "country": "US",
       "time": "21:30",
@@ -1339,18 +1351,6 @@
       "previous": "0.2",
       "estimate": "",
       "unit": "%"
-    },
-    {
-      "date": "2026-07-28",
-      "event": "Goods Trade Balance Adv",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-101.5",
-      "previous": "-105.89",
-      "estimate": "-100",
-      "unit": "$"
     },
     {
       "date": "2026-07-28",
@@ -1462,6 +1462,30 @@
     },
     {
       "date": "2026-07-30",
+      "event": "Personal Income MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.2",
+      "previous": "0.7",
+      "estimate": "0.3",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-30",
+      "event": "GDP Price Index QoQ Adv",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "6.3",
+      "previous": "3.6",
+      "estimate": "3.6",
+      "unit": "%"
+    },
+    {
+      "date": "2026-07-30",
       "event": "PCE Price Index YoY",
       "country": "US",
       "time": "21:30",
@@ -1530,30 +1554,6 @@
       "actual": "1.5",
       "previous": "2.1",
       "estimate": "2.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-30",
-      "event": "Personal Income MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.2",
-      "previous": "0.7",
-      "estimate": "0.3",
-      "unit": "%"
-    },
-    {
-      "date": "2026-07-30",
-      "event": "GDP Price Index QoQ Adv",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.3",
-      "previous": "3.6",
-      "estimate": "3.6",
       "unit": "%"
     },
     {
@@ -1714,18 +1714,6 @@
     },
     {
       "date": "2026-08-04",
-      "event": "Factory Orders MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.3",
-      "previous": "-1.1",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-04",
       "event": "JOLTs Job Openings",
       "country": "US",
       "time": "23:00",
@@ -1735,6 +1723,18 @@
       "previous": "7.537",
       "estimate": "7.4",
       "unit": ""
+    },
+    {
+      "date": "2026-08-04",
+      "event": "Factory Orders MoM",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-0.3",
+      "previous": "-1.1",
+      "estimate": "0.2",
+      "unit": "%"
     },
     {
       "date": "2026-08-05",
@@ -1870,30 +1870,6 @@
     },
     {
       "date": "2026-08-07",
-      "event": "Unemployment Rate",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4.1",
-      "previous": "4.2",
-      "estimate": "4.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-07",
-      "event": "Average Hourly Earnings YoY",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "3.2",
-      "previous": "3.4",
-      "estimate": "3.5",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-07",
       "event": "Average Hourly Earnings MoM",
       "country": "US",
       "time": "21:30",
@@ -1902,6 +1878,30 @@
       "actual": "0.1",
       "previous": "0.3",
       "estimate": "0.3",
+      "unit": "%"
+    },
+    {
+      "date": "2026-08-07",
+      "event": "Non Farm Payrolls",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-23",
+      "previous": "20",
+      "estimate": "80",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-07",
+      "event": "Unemployment Rate",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "4.1",
+      "previous": "4.2",
+      "estimate": "4.2",
       "unit": "%"
     },
     {
@@ -1918,15 +1918,15 @@
     },
     {
       "date": "2026-08-07",
-      "event": "Non Farm Payrolls",
+      "event": "Average Hourly Earnings YoY",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "-23",
-      "previous": "20",
-      "estimate": "80",
-      "unit": ""
+      "actual": "3.2",
+      "previous": "3.4",
+      "estimate": "3.5",
+      "unit": "%"
     },
     {
       "date": "2026-08-07",
@@ -1978,18 +1978,6 @@
     },
     {
       "date": "2026-08-11",
-      "event": "Existing Home Sales MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-1.7",
-      "previous": "-1.4",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-11",
       "event": "Existing Home Sales",
       "country": "US",
       "time": "23:00",
@@ -1999,6 +1987,18 @@
       "previous": "4.13",
       "estimate": "4.05",
       "unit": ""
+    },
+    {
+      "date": "2026-08-11",
+      "event": "Existing Home Sales MoM",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-1.7",
+      "previous": "-1.4",
+      "estimate": "",
+      "unit": "%"
     },
     {
       "date": "2026-08-12",
@@ -2050,6 +2050,18 @@
     },
     {
       "date": "2026-08-12",
+      "event": "CPI s.a",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "332.81",
+      "previous": "332.57",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-12",
       "event": "Inflation Rate YoY",
       "country": "US",
       "time": "21:30",
@@ -2095,18 +2107,6 @@
       "previous": "-0.4",
       "estimate": "0.1",
       "unit": "%"
-    },
-    {
-      "date": "2026-08-12",
-      "event": "CPI s.a",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "332.81",
-      "previous": "332.57",
-      "estimate": "",
-      "unit": ""
     },
     {
       "date": "2026-08-12",
@@ -2218,18 +2218,6 @@
     },
     {
       "date": "2026-08-14",
-      "event": "Retail Sales Ex Autos MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.3",
-      "previous": "-0.2",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-14",
       "event": "Retail Sales Control Group MoM",
       "country": "US",
       "time": "21:30",
@@ -2250,6 +2238,18 @@
       "actual": "-0.6",
       "previous": "0.2",
       "estimate": "0.1",
+      "unit": "%"
+    },
+    {
+      "date": "2026-08-14",
+      "event": "Retail Sales Ex Autos MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "-0.3",
+      "previous": "-0.2",
+      "estimate": "0.2",
       "unit": "%"
     },
     {
@@ -2338,6 +2338,18 @@
     },
     {
       "date": "2026-08-18",
+      "event": "Building Permits Prel",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "1.443",
+      "previous": "1.374",
+      "estimate": "1.37",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-18",
       "event": "Housing Starts",
       "country": "US",
       "time": "21:30",
@@ -2395,18 +2407,6 @@
       "previous": "19.7",
       "estimate": "",
       "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Building Permits Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.443",
-      "previous": "1.374",
-      "estimate": "1.37",
-      "unit": ""
     },
     {
       "date": "2026-08-18",
@@ -2530,6 +2530,18 @@
     },
     {
       "date": "2026-08-21",
+      "event": "S&P Global Composite PMI Flash",
+      "country": "US",
+      "time": "22:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-21",
       "event": "S&P Global Manufacturing PMI Flash",
       "country": "US",
       "time": "22:45",
@@ -2550,18 +2562,6 @@
       "actual": "",
       "previous": "",
       "estimate": "54",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-21",
-      "event": "S&P Global Composite PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
       "unit": ""
     },
     {
@@ -2638,6 +2638,18 @@
     },
     {
       "date": "2026-08-25",
+      "event": "CB Consumer Confidence",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "89.4",
+      "previous": "90.2",
+      "estimate": "90.2",
+      "unit": ""
+    },
+    {
+      "date": "2026-08-25",
       "event": "New Home Sales MoM",
       "country": "US",
       "time": "23:00",
@@ -2658,18 +2670,6 @@
       "actual": "0.607",
       "previous": "0.678",
       "estimate": "0.62",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-25",
-      "event": "CB Consumer Confidence",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "89.4",
-      "previous": "90.2",
-      "estimate": "90.2",
       "unit": ""
     },
     {
@@ -2914,18 +2914,6 @@
     },
     {
       "date": "2026-08-27",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "203",
-      "previous": "207",
-      "estimate": "208",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-27",
       "event": "Retail Inventories Ex Autos MoM Adv",
       "country": "US",
       "time": "21:30",
@@ -2935,6 +2923,18 @@
       "previous": "-0.5",
       "estimate": "",
       "unit": "%"
+    },
+    {
+      "date": "2026-08-27",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "203",
+      "previous": "207",
+      "estimate": "208",
+      "unit": ""
     },
     {
       "date": "2026-08-27",
@@ -2974,14 +2974,14 @@
     },
     {
       "date": "2026-08-28",
-      "event": "Fed Chair Warsh Speech",
+      "event": "Michigan Consumer Sentiment Final",
       "country": "US",
       "time": "23:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
+      "actual": "51.7",
+      "previous": "55.2",
+      "estimate": "51",
       "unit": ""
     },
     {
@@ -2998,14 +2998,14 @@
     },
     {
       "date": "2026-08-28",
-      "event": "Michigan Consumer Sentiment Final",
+      "event": "Fed Chair Warsh Speech",
       "country": "US",
       "time": "23:00",
       "impact": "high",
       "importance": 3,
-      "actual": "51.7",
-      "previous": "55.2",
-      "estimate": "51",
+      "actual": "",
+      "previous": "",
+      "estimate": "",
       "unit": ""
     },
     {
@@ -3082,18 +3082,6 @@
     },
     {
       "date": "2026-09-01",
-      "event": "ISM Manufacturing Employment",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "51.2",
-      "previous": "52.8",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-01",
       "event": "ISM Manufacturing PMI",
       "country": "US",
       "time": "23:00",
@@ -3102,6 +3090,18 @@
       "actual": "54.6",
       "previous": "55.6",
       "estimate": "55.2",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-01",
+      "event": "ISM Manufacturing Employment",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "51.2",
+      "previous": "52.8",
+      "estimate": "",
       "unit": ""
     },
     {
@@ -3286,6 +3286,30 @@
     },
     {
       "date": "2026-09-04",
+      "event": "Unemployment Rate",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "4.1",
+      "previous": "4.1",
+      "estimate": "4.1",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-04",
+      "event": "Participation Rate",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "61.6",
+      "previous": "61.4",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-04",
       "event": "Average Hourly Earnings YoY",
       "country": "US",
       "time": "21:30",
@@ -3310,18 +3334,6 @@
     },
     {
       "date": "2026-09-04",
-      "event": "Participation Rate",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "61.6",
-      "previous": "61.4",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-09-04",
       "event": "Non Farm Payrolls",
       "country": "US",
       "time": "21:30",
@@ -3331,18 +3343,6 @@
       "previous": "21",
       "estimate": "56",
       "unit": ""
-    },
-    {
-      "date": "2026-09-04",
-      "event": "Unemployment Rate",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4.1",
-      "previous": "4.1",
-      "estimate": "4.1",
-      "unit": "%"
     },
     {
       "date": "2026-09-09",
@@ -3394,18 +3394,6 @@
     },
     {
       "date": "2026-09-10",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "206",
-      "previous": "207",
-      "estimate": "205",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-10",
       "event": "PPI MoM",
       "country": "US",
       "time": "21:30",
@@ -3415,6 +3403,18 @@
       "previous": "0.1",
       "estimate": "0.4",
       "unit": "%"
+    },
+    {
+      "date": "2026-09-10",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "206",
+      "previous": "207",
+      "estimate": "205",
+      "unit": ""
     },
     {
       "date": "2026-09-10",
@@ -3466,18 +3466,6 @@
     },
     {
       "date": "2026-09-11",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "01:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.269",
-      "previous": "-1.173",
-      "estimate": "-1.4",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-11",
       "event": "EIA Crude Oil Stocks Change",
       "country": "US",
       "time": "01:00",
@@ -3490,15 +3478,15 @@
     },
     {
       "date": "2026-09-11",
-      "event": "Core Inflation Rate YoY",
+      "event": "EIA Gasoline Stocks Change",
       "country": "US",
-      "time": "21:30",
+      "time": "01:00",
       "impact": "high",
       "importance": 3,
-      "actual": "2.4",
-      "previous": "2.5",
-      "estimate": "2.4",
-      "unit": "%"
+      "actual": "1.269",
+      "previous": "-1.173",
+      "estimate": "-1.4",
+      "unit": ""
     },
     {
       "date": "2026-09-11",
@@ -3558,6 +3546,18 @@
       "actual": "0.4",
       "previous": "0.1",
       "estimate": "0.4",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-11",
+      "event": "Core Inflation Rate YoY",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "2.4",
+      "previous": "2.5",
+      "estimate": "2.4",
       "unit": "%"
     },
     {
@@ -3634,18 +3634,6 @@
     },
     {
       "date": "2026-09-16",
-      "event": "Retail Sales MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.2",
-      "previous": "-0.5",
-      "estimate": "0.8",
-      "unit": "%"
-    },
-    {
-      "date": "2026-09-16",
       "event": "Export Prices MoM",
       "country": "US",
       "time": "21:30",
@@ -3690,6 +3678,18 @@
       "actual": "0.7",
       "previous": "-0.3",
       "estimate": "0.4",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-16",
+      "event": "Retail Sales MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "1.2",
+      "previous": "-0.5",
+      "estimate": "0.8",
       "unit": "%"
     },
     {
@@ -3742,18 +3742,6 @@
     },
     {
       "date": "2026-09-17",
-      "event": "Fed Interest Rate Decision",
-      "country": "US",
-      "time": "03:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4",
-      "previous": "3.75",
-      "estimate": "4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-09-17",
       "event": "FOMC Economic Projections",
       "country": "US",
       "time": "03:00",
@@ -3763,6 +3751,18 @@
       "previous": "",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-09-17",
+      "event": "Fed Interest Rate Decision",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "4",
+      "previous": "3.75",
+      "estimate": "4",
+      "unit": "%"
     },
     {
       "date": "2026-09-17",
@@ -3787,18 +3787,6 @@
       "previous": "174.4",
       "estimate": "146.3",
       "unit": "$"
-    },
-    {
-      "date": "2026-09-17",
-      "event": "Housing Starts",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.275",
-      "previous": "1.309",
-      "estimate": "1.31",
-      "unit": ""
     },
     {
       "date": "2026-09-17",
@@ -3847,6 +3835,18 @@
       "previous": "-9",
       "estimate": "",
       "unit": "%"
+    },
+    {
+      "date": "2026-09-17",
+      "event": "Housing Starts",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "1.275",
+      "previous": "1.309",
+      "estimate": "1.31",
+      "unit": ""
     },
     {
       "date": "2026-09-17",
@@ -4018,18 +4018,6 @@
     },
     {
       "date": "2026-09-23",
-      "event": "Consumer Confidence",
-      "country": "KR",
-      "time": "06:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "106.6",
-      "previous": "104.5",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-23",
       "event": "API Crude Oil Stock Change",
       "country": "US",
       "time": "06:00",
@@ -4038,6 +4026,18 @@
       "actual": "1.786",
       "previous": "7.14",
       "estimate": "-0.5",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-23",
+      "event": "Consumer Confidence",
+      "country": "KR",
+      "time": "06:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "106.6",
+      "previous": "104.5",
+      "estimate": "",
       "unit": ""
     },
     {
@@ -4066,6 +4066,18 @@
     },
     {
       "date": "2026-09-23",
+      "event": "S&P Global Manufacturing PMI Flash",
+      "country": "US",
+      "time": "22:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "53.6",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-23",
       "event": "S&P Global Composite PMI Flash",
       "country": "US",
       "time": "22:45",
@@ -4086,18 +4098,6 @@
       "actual": "",
       "previous": "",
       "estimate": "56",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-23",
-      "event": "S&P Global Manufacturing PMI Flash",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "53.6",
       "unit": ""
     },
     {
@@ -4222,18 +4222,6 @@
     },
     {
       "date": "2026-09-24",
-      "event": "New Home Sales",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.684",
-      "previous": "0.643",
-      "estimate": "0.62",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-24",
       "event": "New Home Sales MoM",
       "country": "US",
       "time": "23:00",
@@ -4243,6 +4231,18 @@
       "previous": "-4.3",
       "estimate": "",
       "unit": "%"
+    },
+    {
+      "date": "2026-09-24",
+      "event": "New Home Sales",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0.684",
+      "previous": "0.643",
+      "estimate": "0.62",
+      "unit": ""
     },
     {
       "date": "2026-09-24",
@@ -4282,26 +4282,26 @@
     },
     {
       "date": "2026-09-25",
-      "event": "Durable Goods Orders MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0",
-      "previous": "1.1",
-      "estimate": "-0.4",
-      "unit": "%"
-    },
-    {
-      "date": "2026-09-25",
       "event": "Durable Goods Orders Ex Transp MoM",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "0.3",
-      "previous": "0.4",
+      "previous": "0.7",
       "estimate": "0.6",
+      "unit": "%"
+    },
+    {
+      "date": "2026-09-25",
+      "event": "Durable Goods Orders MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "0",
+      "previous": "0.9",
+      "estimate": "-0.4",
       "unit": "%"
     },
     {
@@ -4354,6 +4354,18 @@
     },
     {
       "date": "2026-09-29",
+      "event": "Fed Barkin Speech",
+      "country": "US",
+      "time": "02:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-29",
       "event": "Business Confidence",
       "country": "KR",
       "time": "06:00",
@@ -4373,20 +4385,8 @@
       "importance": 3,
       "actual": "",
       "previous": "2.1",
-      "estimate": "",
+      "estimate": "2.2",
       "unit": "%"
-    },
-    {
-      "date": "2026-09-29",
-      "event": "CB Consumer Confidence",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "89.4",
-      "estimate": "",
-      "unit": ""
     },
     {
       "date": "2026-09-29",
@@ -4397,7 +4397,19 @@
       "importance": 3,
       "actual": "",
       "previous": "7.271",
-      "estimate": "",
+      "estimate": "7.23",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-29",
+      "event": "CB Consumer Confidence",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "89.4",
+      "estimate": "90",
       "unit": ""
     },
     {
@@ -4469,7 +4481,7 @@
       "importance": 3,
       "actual": "",
       "previous": "38",
-      "estimate": "",
+      "estimate": "70",
       "unit": ""
     },
     {
@@ -4481,7 +4493,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.3",
-      "estimate": "",
+      "estimate": "1.1",
       "unit": "%"
     },
     {
@@ -4529,7 +4541,7 @@
       "importance": 3,
       "actual": "",
       "previous": "-118.8",
-      "estimate": "",
+      "estimate": "-108.5",
       "unit": "$"
     },
     {
@@ -4541,7 +4553,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.2",
-      "estimate": "",
+      "estimate": "0.4",
       "unit": "%"
     },
     {
@@ -4553,7 +4565,7 @@
       "importance": 3,
       "actual": "",
       "previous": "2.1",
-      "estimate": "1.5",
+      "estimate": "1.6",
       "unit": "%"
     },
     {
@@ -4565,7 +4577,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.2",
-      "estimate": "",
+      "estimate": "0.8",
       "unit": "%"
     },
     {
@@ -4577,7 +4589,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.2",
-      "estimate": "",
+      "estimate": "0.3",
       "unit": "%"
     },
     {
@@ -4589,7 +4601,7 @@
       "importance": 3,
       "actual": "",
       "previous": "0.4",
-      "estimate": "",
+      "estimate": "0.4",
       "unit": "%"
     },
     {
@@ -4601,6 +4613,18 @@
       "importance": 3,
       "actual": "",
       "previous": "47.1",
+      "estimate": "51.3",
+      "unit": ""
+    },
+    {
+      "date": "2026-09-30",
+      "event": "EIA Gasoline Stocks Change",
+      "country": "US",
+      "time": "23:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "-1.686",
       "estimate": "",
       "unit": ""
     },
@@ -4613,18 +4637,6 @@
       "importance": 3,
       "actual": "",
       "previous": "2.969",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-09-30",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "-1.686",
       "estimate": "",
       "unit": ""
     },
@@ -4645,6 +4657,18 @@
       "event": "Fed Goolsbee Speech",
       "country": "US",
       "time": "06:10",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-10-01",
+      "event": "Fed Kashkari Speech",
+      "country": "US",
+      "time": "07:00",
       "impact": "high",
       "importance": 3,
       "actual": "",
@@ -4685,7 +4709,7 @@
       "importance": 3,
       "actual": "",
       "previous": "197",
-      "estimate": "",
+      "estimate": "199",
       "unit": ""
     },
     {
@@ -4714,18 +4738,6 @@
     },
     {
       "date": "2026-10-01",
-      "event": "ISM Manufacturing PMI",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "54.6",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-10-01",
       "event": "ISM Manufacturing Employment",
       "country": "US",
       "time": "23:00",
@@ -4734,6 +4746,18 @@
       "actual": "",
       "previous": "51.2",
       "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-10-01",
+      "event": "ISM Manufacturing PMI",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "54.6",
+      "estimate": "54.8",
       "unit": ""
     },
     {
@@ -4774,13 +4798,37 @@
     },
     {
       "date": "2026-10-02",
-      "event": "Participation Rate",
+      "event": "Unemployment Rate",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "61.6",
+      "previous": "4.1",
+      "estimate": "4.2",
+      "unit": "%"
+    },
+    {
+      "date": "2026-10-02",
+      "event": "Non Farm Payrolls",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "162",
+      "estimate": "100",
+      "unit": ""
+    },
+    {
+      "date": "2026-10-02",
+      "event": "Average Hourly Earnings MoM",
+      "country": "US",
+      "time": "21:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.3",
       "estimate": "",
       "unit": ""
     },
@@ -4798,39 +4846,15 @@
     },
     {
       "date": "2026-10-02",
-      "event": "Average Hourly Earnings MoM",
+      "event": "Participation Rate",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "0.3",
+      "previous": "61.6",
       "estimate": "",
       "unit": ""
-    },
-    {
-      "date": "2026-10-02",
-      "event": "Non Farm Payrolls",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "162",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-10-02",
-      "event": "Unemployment Rate",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "4.1",
-      "estimate": "",
-      "unit": "%"
     },
     {
       "date": "2026-10-02",
@@ -4841,8 +4865,8 @@
       "importance": 3,
       "actual": "",
       "previous": "0.9",
-      "estimate": "",
-      "unit": ""
+      "estimate": "-0.1",
+      "unit": "%"
     },
     {
       "date": "2026-10-05",
@@ -4870,13 +4894,13 @@
     },
     {
       "date": "2026-10-06",
-      "event": "Imports",
+      "event": "Balance of Trade",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "399.3",
+      "previous": "-88.6",
       "estimate": "",
       "unit": ""
     },
@@ -4894,13 +4918,13 @@
     },
     {
       "date": "2026-10-06",
-      "event": "Balance of Trade",
+      "event": "Imports",
       "country": "US",
       "time": "21:30",
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-88.6",
+      "previous": "399.3",
       "estimate": "",
       "unit": ""
     },
@@ -4913,6 +4937,18 @@
       "importance": 3,
       "actual": "",
       "previous": "1.786",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-10-07",
+      "event": "Fed Logan Speech",
+      "country": "US",
+      "time": "08:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
       "estimate": "",
       "unit": ""
     },
@@ -4996,7 +5032,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "47.8",
+      "previous": "48.1",
       "estimate": "",
       "unit": ""
     }
@@ -5043,44 +5079,30 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-09-25",
-      "title": "내구재 주문 (Durable Goods)",
-      "expected": "예측 -0.4% / 이전 1.1%",
-      "why": "내구재 주문은 경제의 전반적인 건강을 나타내며, 소비자 신뢰도와 기업 투자 의향을 반영합니다.",
-      "bull": "예상보다 높은 수치는 제조업체의 생산 증가로 이어져 주식 시장이 상승할 것입니다.",
-      "bear": "예상보다 낮은 수치는 경기 둔화 신호로 해석되어 주식 시장이 하락할 가능성이 큽니다.",
+      "date": "2026-09-29",
+      "title": "기업신뢰지수",
+      "expected": "예측 81 / 이전 81",
+      "why": "기업신뢰지수는 경기 전망을 반영하며, 현재 경제 상황에 대한 기업의 심리를 보여준다.",
+      "bull": "지수가 상승하면 주식시장에 긍정적인 영향을 미쳐 주요 지수가 오를 가능성이 높다.",
+      "bear": "지수가 하락하면 경기 둔화 우려가 커져 주식시장이 부진할 수 있다.",
       "watch": [
-        "소비자 신뢰지수",
-        "제조업 PMI",
-        "S&P 500"
-      ]
-    },
-    {
-      "type": "macro",
-      "date": "2026-09-25",
-      "title": "소비자 신뢰지수 (Michigan Consumer Sentiment)",
-      "expected": "예측 47.6 / 이전 51.7",
-      "why": "소비자 신뢰지수는 소비자들의 경제에 대한 전망을 보여주며, 소비 지출에 큰 영향을 미칩니다.",
-      "bull": "신뢰도가 예상보다 높으면 소비 증가로 이어져 주식 시장이 긍정적인 반응을 보일 것입니다.",
-      "bear": "신뢰도가 예상보다 낮으면 소비 위축으로 이어져 주식 시장이 부정적인 영향을 받을 것입니다.",
-      "watch": [
-        "소비자 물가 지수",
-        "내구재 주문",
-        "소비지출"
+        "소비자신뢰지수",
+        "제조업지수",
+        "코스피"
       ]
     },
     {
       "type": "macro",
       "date": "2026-09-28",
-      "title": "달라스 연준 제조업 지수 (Dallas Fed Manufacturing Index)",
-      "expected": "예측 없음 / 이전 11.6",
-      "why": "제조업 지수는 지역 경제의 건강성을 나타내며, 경기 회복 여부를 판단하는 데 중요한 지표입니다.",
-      "bull": "지수가 상승하면 제조업체의 활동 증가로 이어져 주식 시장이 상승할 것입니다.",
-      "bear": "지수가 하락하면 경기 둔화 신호로 해석되어 주식 시장이 하락할 가능성이 높습니다.",
+      "title": "달라스 연준 제조업지수",
+      "expected": "이전 11.6",
+      "why": "제조업지수는 미국 경제의 건강성을 나타내며, 글로벌 시장에 큰 영향을 미친다.",
+      "bull": "지수가 상승하면 원화 강세와 함께 한국 수출주가 상승할 수 있다.",
+      "bear": "지수가 하락하면 원화 약세가 우려되며, 수출주가 부진할 수 있다.",
       "watch": [
-        "ISM 제조업 지수",
-        "내구재 주문",
-        "S&P 500"
+        "미국 고용지표",
+        "한국 제조업지수",
+        "환율"
       ]
     }
   ]

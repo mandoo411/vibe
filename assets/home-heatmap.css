@@ -265,3 +265,29 @@ body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr) !imp
   .hm-idx__v { font-size: 20px; }
   .hm-idx__p { font-size: 14px; }
 }
+
+
+/* ════════ 2026-09-26 라이트 모드 — 지도·섹터·말풍선이 어두운 색으로 고정돼 있던 것 ════════ */
+[data-theme="light"] .hm__panel { background: #ffffff; border-color: #e3e7ed; }
+[data-theme="light"] .hm__map { background: #e9edf2; }
+[data-theme="light"] .hm__empty { color: #6b7483; }
+[data-theme="light"] .hm-sec { background: #f6f8fb; }
+[data-theme="light"] .hm-sec__head { color: #1b2230; }
+[data-theme="light"] .hm-sec__surge { color: #a15c00; }
+[data-theme="light"] .hm-sec .is-up, [data-theme="light"] .hm-tip .is-up,
+[data-theme="light"] .hm-idx.is-up .hm-idx__p { color: #d92626; }
+[data-theme="light"] .hm-sec .is-down, [data-theme="light"] .hm-tip .is-down,
+[data-theme="light"] .hm-idx.is-down .hm-idx__p { color: #1d5fe0; }
+[data-theme="light"] .hm-idx { border-left-color: #e3e7ed; }
+[data-theme="light"] .hm-idx:first-child { border-left: 0; }
+[data-theme="light"] .hm__tabs { background: #f1f3f6; border-color: #e3e7ed; }
+[data-theme="light"] .hm__tab { color: #4b5563; }
+[data-theme="light"] .hm__tab:hover { color: #111827; }
+[data-theme="light"] .hm__tab.is-active { color: #ffffff; }
+[data-theme="light"] .hm-tile:hover { outline-color: rgba(17, 24, 39, 0.6); }
+[data-theme="light"] .hm-tip { background: rgba(255, 255, 255, 0.98); border-color: #dde2e9; color: #1b2230; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16); }
+[data-theme="light"] .hm-tip__id, [data-theme="light"] .hm-tip__sec { color: #6b7483; }
+/* 범례도 라이트 모드 칸 색과 맞춘다(-1%·0%·+1%만 바뀐다) */
+[data-theme="light"] .hm__scale i:nth-child(2) { background: rgb(91, 127, 205) !important; }
+[data-theme="light"] .hm__scale i:nth-child(3) { background: rgb(150, 158, 172) !important; }
+[data-theme="light"] .hm__scale i:nth-child(4) { background: rgb(183, 97, 103) !important; }

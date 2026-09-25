@@ -186,11 +186,14 @@
   }
 
   /* ───────── 색·숫자 ───────── */
+  // 라이트 모드는 보합(회색) 칸을 밝게 — 흰 바탕에서 어두운 회색 덩어리가 튀지 않게. 빨강·파랑 끝색은 같다.
+  const isLight = () => document.documentElement.getAttribute("data-theme") === "light";
   function tileColor(p) {
-    if (p == null || !isFinite(p)) return "rgb(70,76,90)";
+    const base = isLight() ? [150, 158, 172] : [70, 76, 90];
+    const flat = `rgb(${base[0]},${base[1]},${base[2]})`;
+    if (p == null || !isFinite(p)) return flat;
     const a = Math.min(Math.abs(p) / 3, 1);
-    if (Math.abs(p) < 0.05) return "rgb(70,76,90)";
-    const base = [70, 76, 90];
+    if (Math.abs(p) < 0.05) return flat;
     const tgt = p > 0 ? [214, 40, 40] : [37, 99, 235];
     const t = 0.28 + 0.72 * a;
     const c = base.map((b, i) => Math.round(b + (tgt[i] - b) * t));
@@ -321,6 +324,10 @@
     return { fs: MIN, lines: [], pct: false };
   }
 
+  // 테마를 바꾸면 칸 색(자바스크립트가 칠함)도 다시 칠한다
+  try {
+    new MutationObserver(() => { try { render(); } catch (_) {} }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  } catch (_) {}
   function render() {
     const box = $("hm-map");
     const layer = $("hm-layer");

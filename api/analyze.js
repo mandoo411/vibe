@@ -4732,8 +4732,8 @@ function cbTrimDay(row) {
   };
 }
 
-/* 2026-09-25 시세 라이선스 재편(시우 결정 B안): 공개 응답에는 원 단위 가격과 종목별 수익률(%)을
- * 싣지 않는다. 종목별로는 수익/손실 여부와 수익 순위만, %는 하루·누적 평균만 공개한다.
+/* 2026-09-25 시세 라이선스 재편(시우 결정 A안): 공개 응답에는 원 단위 가격(매수가·시가·고가·저가·종가)을
+ * 싣지 않는다. 수익률(%)과 수익 순위는 그대로 공개한다.
  * 누적 통계(cbBuildRecord)는 가격이 붙은 원본으로 먼저 계산한 뒤 이 함수로 공개용으로 바꾼다. */
 function cbResultMark(v) {
   return v == null ? null : v > 0 ? "up" : v < 0 ? "down" : "flat";
@@ -4751,12 +4751,7 @@ function cbPublicDay(day) {
     .forEach((p, i) => {
       retRank[p.code] = i + 1;
     });
-  const s = day.summary || {};
-  const summary = Object.assign({}, s);
-  if (s.best) summary.best = { code: s.best.code, name: s.best.name, result: cbResultMark(s.best.returnPct) };
-  if (s.worst) summary.worst = { code: s.worst.code, name: s.worst.name, result: cbResultMark(s.worst.returnPct) };
   return Object.assign({}, day, {
-    summary,
     retRankBy: hasClose ? "close" : "open",
     picks: picks.map((p) => ({
       rank: p.rank,
@@ -4765,8 +4760,10 @@ function cbPublicDay(day) {
       score: p.score,
       consensus: p.consensus,
       strategies: p.strategies,
-      openResult: cbResultMark(p.openReturnPct),
-      closeResult: cbResultMark(p.closeReturnPct),
+      openReturnPct: p.openReturnPct,
+      closeReturnPct: p.closeReturnPct,
+      highReturnPct: p.highReturnPct,
+      lowReturnPct: p.lowReturnPct,
       retRank: retRank[p.code] || null,
     })),
   });

@@ -513,7 +513,7 @@
               <span class="cb-sec__icon"><i class="ti ti-report-analytics" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">직전 선정 결과</h2>
-                <p class="cb-sec__cap">선정일 종가에 샀다면, 다음 거래일 시초가와 종가에 팔았을 때 각각 수익이었는지 손실이었는지입니다. 수익률은 5종목 평균으로 보여드립니다.</p>
+                <p class="cb-sec__cap">선정일 종가에 샀다면, 다음 거래일 시초가와 종가에 팔았을 때 각각 몇 % 수익·손실이었는지입니다.</p>
               </span>
               <span class="cb-stamp" id="cbYdStamp">—</span>
             </div>
@@ -849,7 +849,7 @@
         function resultTableHtml(day) {
           var picks = day.picks || [];
           if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
-          var hasClose = picks.some(function (p) { return p.closeResult != null; });
+          var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
           // 수익 순위 — 서버가 계산해 준다(종가 매도가 있으면 종가 기준, 없으면 시가 기준)
           var rlabel = day.retRankBy === "close" ? "종가" : "시가";
           function pickBadge(p) {
@@ -866,10 +866,11 @@
             return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' +
               rlabel + " " + rr + "위" + mark + "</span>";
           }
-          function resCell(m) { return '<span class="cb-res ' + resTone(m) + '">' + resTxt(m) + "</span>"; }
+          // 2026-09-25 시우 A안: 원 단위 가격 열만 뺀다. 수익률(%)은 종목별로 그대로 보여준다.
           var head =
             "<tr><th class=\"cb-t-fit\">선정</th><th class=\"cb-t-fit\">종목</th><th class=\"cb-t-fit\">수익 순위</th>" +
-            "<th>시가 매도<br><small>다음날 시초가</small></th><th>종가 매도<br><small>다음날 종가</small></th></tr>";
+            "<th>시가 매도<br><small>다음날 시초가</small></th>" +
+            (hasClose ? "<th>종가 매도<br><small>다음날 종가</small></th><th>하루 고·저</th>" : "") + "</tr>";
           var body = picks.map(function (p) {
             return "<tr>" +
               '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '" title="선정 순위">' + esc(p.rank) + "</span></td>" +
@@ -877,8 +878,12 @@
               esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
               "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
               '<td class="cb-t-fit cb-rrcell">' + (retBadge(p) || "—") + "</td>" +
-              '<td class="cb-ret">' + resCell(p.openResult) + "</td>" +
-              '<td class="cb-ret">' + (hasClose ? resCell(p.closeResult) : '<span class="cb-flat">15:45 반영</span>') + "</td>" +
+              '<td class="cb-ret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</td>" +
+              (hasClose
+                ? '<td class="cb-ret ' + tone(p.closeReturnPct) + '">' + sign(p.closeReturnPct) + "</td>" +
+                  '<td class="cb-num"><span class="' + tone(p.highReturnPct) + '">' + sign(p.highReturnPct) + "</span>" +
+                  ' <span class="cb-flat">/</span> <span class="' + tone(p.lowReturnPct) + '">' + sign(p.lowReturnPct) + "</span></td>"
+                : "") +
               "</tr>";
           }).join("");
           // 모바일(≤560px)은 표 대신 아래 목록을 보여준다(CSS로 전환).
@@ -886,9 +891,14 @@
             return '<div class="cb-mrow">' +
               '<div class="cb-mname"><a href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "") + '">' +
               esc(p.name) + "</a></div>" +
-              '<div class="cb-mret">' + resCell(p.openResult) + "</div>" +
-              '<div class="cb-mret">' + (hasClose ? resCell(p.closeResult) : '<span class="cb-flat">—</span>') + "</div>" +
-              '<div class="cb-mtags">' + pickBadge(p) + retBadge(p) + "</div></div>";
+              '<div class="cb-mret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</div>" +
+              '<div class="cb-mret ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</div>" +
+              '<div class="cb-mtags">' + pickBadge(p) + retBadge(p) + "</div>" +
+              (p.highReturnPct != null
+                ? '<div class="cb-mflow"><span>하루 고 <i class="' + tone(p.highReturnPct) + '" style="font-style:normal">' + sign(p.highReturnPct) + "</i>" +
+                  ' · 저 <i class="' + tone(p.lowReturnPct) + '" style="font-style:normal">' + sign(p.lowReturnPct) + "</i></span></div>"
+                : "") +
+              "</div>";
           }).join("");
           var mlist = '<div class="cb-mlist"><div class="cb-mhead"><span>종목</span><span>시가 매도</span><span>종가 매도</span></div>' + mrows + "</div>";
           return '<div class="cb-scroll cb-has-m"><table class="cb-table"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" + mlist;
@@ -906,9 +916,9 @@
             items += item("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct),
               s.closeWins != null ? s.closeWins + "/" + s.picks + " 수익" : "");
           }
-          if (s.best) items += item("가장 좋았던 종목", esc(s.best.name), resTone(s.best.result));
+          if (s.best) items += item("가장 좋았던 종목", esc(s.best.name) + " " + sign(s.best.returnPct), tone(s.best.returnPct));
           if (s.worst && (!s.best || s.worst.code !== s.best.code)) {
-            items += item("가장 나빴던 종목", esc(s.worst.name), resTone(s.worst.result));
+            items += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));
           }
           var tag = day.source === "backfill" ? "사후 검증 기록" : day.phase === "open" ? "시초가만 확정 · 15:45에 마감 반영" : "확정";
           items += '<span class="cb-verdict__tag">' + esc(tag) + "</span>";

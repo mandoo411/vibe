@@ -28,8 +28,8 @@
     <script src="./assets/auth-config.js"></script>
     <script src="./assets/auth.js"></script>
     <script src="./home.js" defer></script>
-    <link rel="stylesheet" href="./assets/home-heatmap.css?v=1" />
-    <script src="./assets/home-heatmap.js?v=1" defer></script>
+    <link rel="stylesheet" href="./assets/home-heatmap.css?v=2" />
+    <script src="./assets/home-heatmap.js?v=2" defer></script>
       <link rel="stylesheet" href="./typography.css?v=1" />
     <!-- Pretendard — 국내 금융앱 표준 서체. Noto Sans KR은 본문에서 자간이 넓고
          굵기 대비가 약해 "웹페이지" 인상을 준다(2026-09-13 디자인 리프레시). -->
@@ -111,8 +111,11 @@
              그 자리에 섹터 히트맵(코스피/코스닥/미국/암호화폐)을 둔다 — assets/home-heatmap.js -->
         <div class="home-hero__left hm" id="home-heatmap">
           <div class="hm__head">
-            <h2 class="hm__title">섹터 히트맵</h2>
-            <span class="hm__meta" id="hm-meta"></span>
+            <div class="hm__titlebox">
+              <h2 class="hm__title">섹터 히트맵</h2>
+              <span class="hm__meta" id="hm-meta"></span>
+            </div>
+            <div class="hm__idx" id="hm-idx" aria-label="주요 지수"></div>
             <div class="hm__tabs" id="hm-tabs" role="tablist" aria-label="시장 선택"></div>
           </div>
           <div class="hm__map" id="hm-map" aria-label="섹터 히트맵"><div id="hm-layer"><p class="hm__empty">불러오는 중…</p></div><div class="hm-tip" id="hm-tip" hidden></div></div>

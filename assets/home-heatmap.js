@@ -453,6 +453,32 @@
     }, REFRESH_MS[tab]);
   }
 
+  /* ───────── 머리글 지수(코스피·코스닥·나스닥선물·원/달러) — /api/market-ticker 실데이터만 ───────── */
+  const IDX = [
+    { ids: ["0001", "kospi"], label: "코스피", d: 2 },
+    { ids: ["1001", "kosdaq"], label: "코스닥", d: 2 },
+    { ids: ["NQ=F", "nasdaq-futures"], label: "나스닥선물", d: 2 },
+    { ids: ["usdkrw"], label: "원/달러", d: 2 },
+  ];
+  async function loadIdx() {
+    const box = $("hm-idx");
+    if (!box) return;
+    try {
+      const j = await getJson("/api/market-ticker?t=" + Date.now());
+      const items = Array.isArray(j.items) ? j.items : [];
+      const html = IDX.map((d) => {
+        const r = items.find((x) => x && (d.ids.includes(x.id) || x.label === d.label));
+        const v = r && r.value != null && isFinite(Number(r.value)) ? Number(r.value) : null;
+        if (v == null) return ""; // 값이 없으면 칸을 만들지 않는다
+        const p = r.changePct != null && isFinite(Number(r.changePct)) ? Number(r.changePct) : null;
+        return `<div class="hm-idx ${pctCls(p)}"><span class="hm-idx__k">${esc(d.label)}</span><span class="hm-idx__row"><b class="hm-idx__v">${v.toLocaleString("en-US", { minimumFractionDigits: d.d, maximumFractionDigits: d.d })}</b>${p == null ? "" : `<span class="hm-idx__p">${esc(pctText(p))}</span>`}</span></div>`;
+      }).join("");
+      if (html) box.innerHTML = html;
+    } catch (_) {
+      /* 실패하면 이전 값을 그대로 둔다 */
+    }
+  }
+
   function init() {
     const root = $("home-heatmap");
     if (!root) return;
@@ -474,6 +500,10 @@
     });
     state.ro.observe($("hm-map"));
     show("KOSPI");
+    loadIdx();
+    setInterval(() => {
+      if (document.visibilityState === "visible") loadIdx();
+    }, 60000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

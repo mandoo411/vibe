@@ -453,12 +453,17 @@
     }, REFRESH_MS[tab]);
   }
 
-  /* ───────── 머리글 지수(코스피·코스닥·나스닥선물·원/달러) — /api/market-ticker 실데이터만 ───────── */
+  /* ───────── 머리글 지수 8개 — /api/market-ticker 실데이터만 ───────── */
+  // 2026-09-25 시우: 8개 — 삼성전자·SK하이닉스는 items가 아니라 hub에 있다
   const IDX = [
     { ids: ["0001", "kospi"], label: "코스피", d: 2 },
     { ids: ["1001", "kosdaq"], label: "코스닥", d: 2 },
     { ids: ["NQ=F", "nasdaq-futures"], label: "나스닥선물", d: 2 },
     { ids: ["usdkrw"], label: "원/달러", d: 2 },
+    { ids: ["wti", "CL=F"], label: "WTI유가", d: 2, pre: "$" },
+    { ids: ["btc"], label: "비트코인", d: 0, pre: "$" },
+    { hub: "samsung", label: "삼성전자", d: 0, suf: "원" },
+    { hub: "skhynix", label: "SK하이닉스", d: 0, suf: "원" },
   ];
   async function loadIdx() {
     const box = $("hm-idx");
@@ -467,11 +472,11 @@
       const j = await getJson("/api/market-ticker?t=" + Date.now());
       const items = Array.isArray(j.items) ? j.items : [];
       const html = IDX.map((d) => {
-        const r = items.find((x) => x && (d.ids.includes(x.id) || x.label === d.label));
+        const r = d.hub ? j.hub && j.hub[d.hub] : items.find((x) => x && (d.ids.includes(x.id) || x.label === d.label));
         const v = r && r.value != null && isFinite(Number(r.value)) ? Number(r.value) : null;
         if (v == null) return ""; // 값이 없으면 칸을 만들지 않는다
         const p = r.changePct != null && isFinite(Number(r.changePct)) ? Number(r.changePct) : null;
-        return `<div class="hm-idx ${pctCls(p)}"><span class="hm-idx__k">${esc(d.label)}</span><span class="hm-idx__row"><b class="hm-idx__v">${v.toLocaleString("en-US", { minimumFractionDigits: d.d, maximumFractionDigits: d.d })}</b>${p == null ? "" : `<span class="hm-idx__p">${esc(pctText(p))}</span>`}</span></div>`;
+        return `<div class="hm-idx ${pctCls(p)}"><span class="hm-idx__k">${esc(d.label)}</span><span class="hm-idx__row"><b class="hm-idx__v">${d.pre || ""}${v.toLocaleString("en-US", { minimumFractionDigits: d.d, maximumFractionDigits: d.d })}${d.suf ? `<small>${d.suf}</small>` : ""}</b>${p == null ? "" : `<span class="hm-idx__p">${esc(pctText(p))}</span>`}</span></div>`;
       }).join("");
       if (html) box.innerHTML = html;
     } catch (_) {

@@ -6,30 +6,27 @@
   height: 100%;
   gap: 12px;
 }
-.hm__head {
-  display: flex;
-  align-items: center;
-  gap: 16px 28px;
-  flex-wrap: wrap;
-  min-height: 48px;
-}
-.hm__titlebox { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* 2026-09-25 v3: 맨 위 지수 8개 한 줄 → 그 아래 히트맵 박스(머리줄에 제목·시장 탭 + 지도) */
+.hm__titlebox { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex-wrap: wrap; }
 /* 머리글 지수: 이름(작게) 위, 값+등락률 아래 — 세로 구분선으로 나눈다 */
 .hm__idx {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   align-items: stretch;
-  flex: 1 1 auto;
   min-width: 0;
+  min-height: 46px;
 }
 .hm-idx {
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 3px;
-  padding: 0 22px;
+  min-width: 0;
+  padding: 0 16px;
   border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
-.hm-idx:first-child { border-left: 0; padding-left: 26px; border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.1)); }
+.hm-idx:first-child { border-left: 0; padding-left: 2px; }
+.hm-idx__v small { font-size: 0.72em; font-weight: 700; margin-left: 1px; opacity: 0.85; }
 .hm-idx__k {
   font-size: 12px;
   font-weight: 600;
@@ -47,14 +44,21 @@
 .hm-idx__p { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .hm-idx.is-up .hm-idx__p { color: #ff5b5b; }
 .hm-idx.is-down .hm-idx__p { color: #4f8dff; }
-@media (max-width: 1280px) {
-  .hm-idx { padding: 0 14px; }
-  .hm-idx:first-child { padding-left: 16px; }
+@media (max-width: 1400px) {
+  .hm-idx { padding: 0 11px; }
   .hm-idx__v { font-size: 16px; }
+  .hm-idx__p { font-size: 12px; }
+  .hm-idx__row { gap: 5px; }
+}
+/* 1100~1400px: 8칸이 빠듯하다 — 값 글자를 한 단계 줄이고 '원' 꼬리는 뺀다 */
+@media (min-width: 1100px) and (max-width: 1400px) {
+  .hm-idx { padding: 0 9px; }
+  .hm-idx__v { font-size: 15px; }
+  .hm-idx__v small { display: none; }
 }
 .hm__title {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -63,6 +67,24 @@
 .hm__meta {
   font-size: 12px;
   color: var(--text-muted-ui, var(--text-secondary, #9aa3b2));
+}
+/* 히트맵 박스: 머리줄과 지도가 한 카드 — 지도 바탕색과 같은 색으로 이어 붙인다 */
+.hm__panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: 14px;
+  background: #0d1117;
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.09));
+  overflow: hidden;
+}
+.hm__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  padding: 10px 12px 10px 16px;
 }
 .hm__tabs {
   margin-left: auto;
@@ -94,7 +116,8 @@
   position: relative;
   flex: 1 1 auto;
   min-height: 420px;
-  border-radius: 12px;
+  margin: 0 6px 6px;
+  border-radius: 9px;
   overflow: hidden;
   background: #0d1117;
 }
@@ -212,25 +235,26 @@ body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr) !imp
   body.page-tm-v2 .home-hero--heatmap .hm__map { min-height: 640px; }
 }
 @media (max-width: 1099px) {
-  .hm__idx { order: 3; flex-basis: 100%; }
-  .hm-idx:first-child { border-left: 0; padding-left: 0; }
+  .hm__idx { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 12px; }
+  .hm-idx:nth-child(4n + 1) { border-left: 0; padding-left: 2px; }
 }
 @media (max-width: 700px) {
-  .hm__idx { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 0; }
+  .hm__idx { grid-template-columns: 1fr 1fr; gap: 10px 0; }
   .hm-idx, .hm-idx:first-child { padding: 0 12px; border-left: 0; }
-  .hm-idx:nth-child(odd) { padding-left: 0; }
+  .hm-idx:nth-child(odd) { padding-left: 2px; }
   .hm-idx:nth-child(even) { border-left: 1px solid var(--border-color, rgba(255,255,255,0.1)); }
   .hm-idx__v { font-size: 16px; }
+  .hm__bar { padding: 12px 12px 10px; }
   .hm__tabs { margin-left: 0; width: 100%; }
   .hm__tab { flex: 1 1 0; padding: 7px 4px; }
-  .hm__map { min-height: 620px; }
+  .hm__map { min-height: 620px; margin: 0 4px 4px; }
   .hm__legend { justify-content: flex-start; flex-wrap: wrap; }
 }
 /* 아주 넓은 화면: 지수 글자를 한 단계 키워 제목·탭과 무게를 맞춘다 */
 @media (min-width: 1600px) {
-  .hm__title { font-size: 22px; }
-  .hm-idx { padding: 0 30px; }
-  .hm-idx:first-child { padding-left: 32px; }
+  .hm__title { font-size: 20px; }
+  .hm-idx { padding: 0 22px; }
+  .hm-idx:first-child { padding-left: 2px; }
   .hm-idx__k { font-size: 12.5px; }
   .hm-idx__v { font-size: 20px; }
   .hm-idx__p { font-size: 14px; }

@@ -255,6 +255,64 @@
     return sectors;
   }
 
+  /* 글자 폭 추정(em 단위): 한글·한자 1.0, 영문 대문자·숫자 0.62, 소문자 0.54, 기호·공백 0.34 */
+  function emWidth(str) {
+    let w = 0;
+    for (const ch of String(str || "")) {
+      if (/[ㄱ-힝一-鿿]/.test(ch)) w += 1.0;
+      else if (/[A-Z0-9%]/.test(ch)) w += 0.64;
+      else if (/[a-z]/.test(ch)) w += 0.55;
+      else w += 0.36;
+    }
+    return w * 1.02; // 굵은 글씨 여유
+  }
+  /* 이름을 자르지 않는다: 한 줄에 맞게 글자 크기를 줄이고, 안 되면 두 줄로 나누고,
+     그래도 최소 크기(9px)로 안 들어가면 이름을 비운다(마우스를 올리면 툴팁에 전부 나온다). */
+  function splitTwo(name) {
+    const s = String(name);
+    const sp = s.indexOf(" ");
+    if (sp > 0) {
+      let best = sp;
+      let idx = sp;
+      while ((idx = s.indexOf(" ", idx + 1)) > 0) if (Math.abs(idx - s.length / 2) < Math.abs(best - s.length / 2)) best = idx;
+      return [s.slice(0, best), s.slice(best + 1)];
+    }
+    const chars = [...s];
+    let cut = Math.ceil(chars.length / 2);
+    // 영문+숫자 섞인 이름은 글자 경계보다 폭 기준으로 반을 가른다
+    let acc = 0;
+    const total = emWidth(s);
+    for (let i = 0; i < chars.length; i++) {
+      acc += emWidth(chars[i]);
+      if (acc >= total / 2) {
+        cut = i + 1;
+        break;
+      }
+    }
+    return [chars.slice(0, cut).join(""), chars.slice(cut).join("")];
+  }
+  function fitLabel(name, pct, tw, th) {
+    const area = Math.max(10, Math.min(28, Math.sqrt(tw * th) / 6.3));
+    const pad = 8;
+    const MIN = 9;
+    const pctEm = emWidth(pct) * 0.8;
+    const tryLines = (lines) => {
+      const em = Math.max(...lines.map(emWidth));
+      let fs = Math.min(area, (tw - pad) / em, (th - 4) / (lines.length * 1.18));
+      if (fs < MIN) return null;
+      const needPct = fs * (lines.length * 1.18 + 1.05) + 4;
+      const pctFits = th >= needPct && (tw - pad) >= pctEm * fs;
+      return { fs, lines, pct: pctFits };
+    };
+    const one = tryLines([name]);
+    if (one && (one.fs >= area * 0.72 || [...String(name)].length < 4)) return one;
+    const two = [...String(name)].length >= 4 ? tryLines(splitTwo(name)) : null;
+    if (two && (!one || two.fs > one.fs * 1.15)) return two;
+    if (one) return one;
+    if (two) return two;
+    return { fs: MIN, lines: [], pct: false };
+  }
+
   function render() {
     const box = $("hm-map");
     const layer = $("hm-layer");
@@ -280,24 +338,50 @@
       const y = r.y + G / 2;
       const w = Math.max(0, r.w - G);
       const h = Math.max(0, r.h - G);
-      const roomy = w >= 150 && h >= 90;
-      const hh = roomy && s.surge ? 38 : 20;
+      // 섹터 머리글: 글자를 자르지 않고 폭에 맞춰 줄이거나(최소 9px) 두 줄로 나눈다
+      const inner = w - 14;
+      const pT = pctText(s.pct);
+      const lineEm = emWidth(s.name) + 0.3 + emWidth(pT);
+      const head = [];
+      let hfs = Math.min(12.5, inner / lineEm);
+      if (hfs >= 9.5) {
+        head.push(`<div class="hm-sec__row" style="font-size:${hfs.toFixed(1)}px"><b>${esc(s.name)}</b> <span class="${pctCls(s.pct)}">${esc(pT)}</span></div>`);
+      } else {
+        hfs = Math.min(12.5, inner / Math.max(emWidth(s.name), emWidth(pT)));
+        if (hfs >= 8.5) {
+          head.push(`<div class="hm-sec__row" style="font-size:${hfs.toFixed(1)}px"><b>${esc(s.name)}</b></div>`);
+          head.push(`<div class="hm-sec__row" style="font-size:${hfs.toFixed(1)}px"><span class="${pctCls(s.pct)}">${esc(pT)}</span></div>`);
+        }
+      }
+      if (s.surge && h >= 90) {
+        const sT = `급등${s.surge.n} 평균 `;
+        const sP = pctText(s.surge.avg);
+        const sfs = Math.min(11.5, inner / (emWidth(sT) + emWidth(sP)));
+        if (sfs >= 8.5) head.push(`<div class="hm-sec__surge" style="font-size:${sfs.toFixed(1)}px">${esc(sT)}<span class="${pctCls(s.surge.avg)}">${esc(sP)}</span></div>`);
+      }
+      const hh = head.length ? 6 + head.length * 16 : 4;
       html += `<div class="hm-sec" style="left:${x}px;top:${y}px;width:${w}px;height:${h}px">`;
-      html += `<div class="hm-sec__head" style="height:${hh}px"><div class="hm-sec__row"><b>${esc(s.name)}</b> <span class="${pctCls(s.pct)}">${esc(pctText(s.pct))}</span></div>`;
-      if (hh > 20) html += `<div class="hm-sec__surge">급등${s.surge.n === 10 ? "10" : s.surge.n} 평균 <span class="${pctCls(s.surge.avg)}">${esc(pctText(s.surge.avg))}</span></div>`;
-      html += `</div>`;
-      const trs = squarify(s.tiles.map((t) => t.cap), 0, hh, w, Math.max(0, h - hh));
-      s.tiles.forEach((t, ti) => {
+      html += `<div class="hm-sec__head" style="height:${hh}px">${head.join("")}</div>`;
+      // 이름이 들어가지 않는 칸은 빼고 다시 배치한다(이름 없는 조각을 남기지 않음) — 최대 4번
+      let tiles = s.tiles.slice();
+      let trs = [];
+      let labs = [];
+      for (let pass = 0; pass < 4; pass++) {
+        trs = squarify(tiles.map((t) => t.cap), 0, hh, w, Math.max(0, h - hh));
+        labs = tiles.map((t, ti) => fitLabel(t.label, pctText(t.pct), Math.max(0, trs[ti].w - 2), Math.max(0, trs[ti].h - 2)));
+        const keep = tiles.filter((t, ti) => ti === 0 || labs[ti].lines.length);
+        if (keep.length === tiles.length) break;
+        tiles = keep;
+      }
+      tiles.forEach((t, ti) => {
         const q = trs[ti];
         const tw = Math.max(0, q.w - 2);
         const th = Math.max(0, q.h - 2);
         if (tw < 3 || th < 3) return;
-        const fs = Math.max(10, Math.min(28, Math.sqrt(tw * th) / 6.5));
-        const showName = tw >= 34 && th >= 18;
-        const showPct = showName && th >= fs * 2.5;
-        html += `<a class="hm-tile" href="${esc(t.link)}" data-i="${esc(t.id)}" style="left:${q.x + 1}px;top:${q.y + 1}px;width:${tw}px;height:${th}px;background:${tileColor(t.pct)};font-size:${fs.toFixed(1)}px">`;
-        if (showName) html += `<span class="hm-tile__n">${esc(t.label)}</span>`;
-        if (showPct) html += `<span class="hm-tile__p">${esc(pctText(t.pct))}</span>`;
+        const lab = labs[ti];
+        html += `<a class="hm-tile" href="${esc(t.link)}" data-i="${esc(t.id)}" style="left:${q.x + 1}px;top:${q.y + 1}px;width:${tw}px;height:${th}px;background:${tileColor(t.pct)};font-size:${lab.fs.toFixed(1)}px">`;
+        lab.lines.forEach((ln) => (html += `<span class="hm-tile__n">${esc(ln)}</span>`));
+        if (lab.pct) html += `<span class="hm-tile__p">${esc(pctText(t.pct))}</span>`;
         html += `</a>`;
       });
       html += `</div>`;

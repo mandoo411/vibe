@@ -86,9 +86,10 @@
   line-height: 16px;
   white-space: nowrap;
 }
+.hm-sec__row { line-height: 16px; white-space: nowrap; }
 .hm-sec__row b { font-weight: 700; }
 .hm-sec__row span, .hm-sec__surge span { font-weight: 700; }
-.hm-sec__surge { font-size: 11.5px; color: #f5c451; }
+.hm-sec__surge { font-size: 11.5px; line-height: 16px; color: #f5c451; white-space: nowrap; }
 .hm-sec .is-up, .hm-tip .is-up { color: #ff6b6b; }
 .hm-sec .is-down, .hm-tip .is-down { color: #6ea8ff; }
 .hm-tile {
@@ -113,7 +114,6 @@
   max-width: 100%;
   font-weight: 700;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
@@ -165,30 +165,14 @@
 
 /* 홈 히어로 배치: 히트맵이 주인공 — 넓은 화면에서 왼쪽을 크게 */
 body.page-tm-v2 .home-hero--heatmap { align-items: stretch; }
-/* 오른쪽 실시간 AI 분석 목록은 위에서부터 차곡차곡(히트맵 높이만큼 늘어나도 칸 사이가 벌어지지 않게) */
-body.page-tm-v2 .home-hero--heatmap .home-hero__ai-live-list { justify-content: flex-start !important; align-content: flex-start !important; flex: 0 0 auto !important; }
+/* 2026-09-25: 오른쪽 실시간 AI 분석 칸을 없애고 히트맵이 전체 폭을 쓴다 */
+body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr) !important; }
 @media (min-width: 1100px) {
-  body.page-tm-v2 .home-hero--heatmap {
-    grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.85fr);
-  }
-  body.page-tm-v2 .home-hero--heatmap .hm__map { min-height: 560px; }
-}
-@media (max-width: 1099px) {
-  body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr); }
+  body.page-tm-v2 .home-hero--heatmap .hm__map { min-height: 640px; }
 }
 @media (max-width: 700px) {
   .hm__tabs { margin-left: 0; width: 100%; }
   .hm__tab { flex: 1 1 0; padding: 7px 4px; }
   .hm__map { min-height: 620px; }
   .hm__legend { justify-content: flex-start; flex-wrap: wrap; }
-}
-/* 히트맵 옆 AI 분석: 요약을 두 줄까지 보여 세로 공간을 채운다 */
-body.page-tm-v2 .home-hero--heatmap .home-hero__ai-item { align-items: flex-start; padding: 11px 0; }
-body.page-tm-v2 .home-hero--heatmap .home-hero__ai-desc {
-  white-space: normal !important;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.5;
 }

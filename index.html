@@ -121,15 +121,6 @@
             <span>크기 = 시가총액 · 누르면 종목 화면으로</span>
           </div>
         </div>
-        <!-- 2026-07-10: 기존 지수/국내주식/암호화폐/미국주식 4박스는 위 티커바와 아래 실시간시세·
-             미국시장·암호화폐 표에 이미 나오는 정보와 중복이라 제거하고, 그 자리에 실제 사용자
-             AI 종목분석 결과(public_ai_feed)를 보여주는 실시간 피드를 넣었다. -->
-        <div class="home-hero__ai-live" id="home-hero-ai-live">
-          <div class="home-hero__panel-title"><i class="ti ti-bolt" aria-hidden="true"></i><span>실시간 AI 분석</span></div>
-          <ul class="home-hero__ai-live-list" id="home-hero-ai-feed">
-            <li class="home-hero__ai-empty">불러오는 중…</li>
-          </ul>
-        </div>
       </section>
 
       <!-- 2026-09-02 신설: 유료 가치(매일 발행되는 AI 리포트)를 첫 화면에서 바로 증명하는 구역.
@@ -181,24 +172,6 @@
       </section>
 
       <div class="home-m-body home-m-only" hidden>
-        <section class="home-m-ai-live" aria-labelledby="home-m-ai-live-title">
-          <div class="home-m-ai-live__head">
-            <h2 class="home-m-ai-live__title" id="home-m-ai-live-title">
-              <span class="home-m-section-bar" aria-hidden="true"></span>실시간 AI 분석
-            </h2>
-            <div class="home-m-ai-live__status">
-              <span class="home-m-ai-live__status-dot" aria-hidden="true"></span>
-              <span>업데이트 중</span>
-            </div>
-          </div>
-          <!-- 2026-07-10: 예전엔 아래 3개가 고정된 더미(항상 09:01/08:58/08:45, 6월 언급 등)였음.
-               실제 사용자가 AI 종목분석을 돌릴 때마다 Supabase public_ai_feed에 결과가 쌓이고,
-               이 목록은 home.js의 loadAiLiveFeed()가 그 최신 3건을 그대로 불러와 채운다. -->
-          <ul class="home-m-insights" id="home-m-insights">
-            <li class="home-m-insight home-m-insight--empty">불러오는 중…</li>
-          </ul>
-        </section>
-
         <section class="home-m-claude tm-claude-card tm-claude-card--compact" aria-label="Anthropic Claude 표기">
           <p class="tm-claude-card__line">
             일부 분석은 <span class="tm-claude-card__mark">Anthropic Claude</span>로 생성됩니다

@@ -4961,8 +4961,9 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const seedKey = process.env.INTERNAL_SEED_KEY;
-  const isInternalSeed = !!seedKey && req.headers["x-internal-seed-key"] === seedKey;
+  // 2026-09-25 시우: 매일 AI 분석을 자동으로 돌리던 내부 시드 경로(x-internal-seed-key)를 폐기 — 토큰 절약.
+  // 이제 AI 종목분석은 로그인한 회원이 직접 요청할 때만 돈다.
+  const isInternalSeed = false;
 
   if (supabaseConfigured() && !isInternalSeed) {
     const token = bearerToken(req);

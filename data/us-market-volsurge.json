@@ -1,0 +1,36 @@
+{
+  "updatedAt": "2026-09-25T08:20:54.693Z",
+  "source": "kis+yahoo",
+  "action": "trade-growth",
+  "count": 2,
+  "stocks": [
+    {
+      "rank": 1,
+      "ticker": "TLT",
+      "name": "ISHARES 20+Y TREASURY BOND",
+      "price": 79.64,
+      "changePct": 0.28,
+      "changePoints": 0.22,
+      "volume": 872095,
+      "marketCap": 8736508000,
+      "tradingValue": 69453646,
+      "volSurgePct": -98.45,
+      "baseVolume": 56331474,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 2,
+      "ticker": "GLND",
+      "name": "그린란드 에너지",
+      "price": 6.51,
+      "changePct": 21.68,
+      "changePoints": 1.16,
+      "volume": 1115212,
+      "marketCap": 233956528,
+      "tradingValue": 7260030,
+      "volSurgePct": -98.85,
+      "baseVolume": 97225918,
+      "exchange": "NAS"
+    }
+  ]
+}

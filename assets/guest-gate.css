@@ -1,0 +1,106 @@
+/* 2026-09-25 로그인 전 안내 레이아웃 공용 스타일 — 매매시그널(trade-signal.html)의
+   ts-hero / ts-gate 모양을 그대로 옮겨 종가시그널·AI 종목분석이 같이 쓴다.
+   색은 theme.css 변수만 쓴다(하드코딩 금지). */
+.gg {
+  --gg-r: 16px;
+  --gg-accent: var(--accent, #0f8387);
+  --gg-soft: color-mix(in srgb, var(--gg-accent) 12%, transparent);
+  --gg-soft-2: color-mix(in srgb, var(--gg-accent) 7%, transparent);
+  --gg-line: color-mix(in srgb, var(--gg-accent) 32%, transparent);
+  --gg-shadow: 0 1px 2px rgba(10, 20, 40, 0.04), 0 18px 40px -26px rgba(10, 20, 40, 0.3);
+  --gg-surface: var(--card-bg, var(--bg-secondary));
+  --gg-inset: var(--bg-tertiary);
+}
+[data-theme="dark"] .gg { --gg-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 18px 44px -26px rgba(0, 0, 0, 0.9); }
+
+.gg-hero {
+  position: relative; overflow: hidden; margin: 0 0 18px; padding: 24px 26px 22px;
+  border-radius: var(--gg-r); border: 1px solid var(--gg-line);
+  background:
+    radial-gradient(140% 180% at 0% 0%, var(--gg-soft) 0%, transparent 58%),
+    radial-gradient(120% 150% at 100% 10%, var(--gg-soft-2) 0%, transparent 55%),
+    linear-gradient(140deg, var(--gg-surface) 0%, var(--bg-primary) 100%);
+  box-shadow: var(--gg-shadow);
+}
+.gg-hero::after {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: linear-gradient(90deg, var(--gg-accent) 0%, color-mix(in srgb, var(--gg-accent) 18%, transparent) 72%, transparent 100%);
+}
+[data-theme="dark"] .gg-hero { background: var(--gg-surface); }
+.gg-hero__kicker {
+  display: inline-flex; align-items: center; gap: 7px; margin: 0 0 10px; padding: 4px 11px 4px 8px;
+  border-radius: 999px; border: 1px solid var(--gg-line); background: var(--gg-soft); color: var(--gg-accent);
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
+}
+.gg-hero__kicker i { font-size: 14px; }
+.gg-hero__title {
+  margin: 0 0 10px; font-size: 23px; font-weight: 800; line-height: 1.42; letter-spacing: -0.025em;
+  color: var(--text-title, var(--text-primary)); word-break: keep-all;
+}
+.gg-hero__title em { font-style: normal; color: var(--gg-accent); }
+.gg-hero__desc { margin: 0; max-width: 640px; font-size: 14px; line-height: 1.8; color: var(--text-secondary); word-break: keep-all; }
+.gg-hero__steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+.gg-hero__step {
+  display: flex; align-items: flex-start; gap: 11px; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border-color); background: color-mix(in srgb, var(--bg-primary) 55%, transparent);
+}
+.gg-hero__no {
+  flex: 0 0 auto; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--gg-soft); color: var(--gg-accent); font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 700;
+}
+.gg-hero__txt { min-width: 0; }
+.gg-hero__name { display: block; font-size: 13.5px; font-weight: 700; color: var(--text-title, var(--text-primary)); letter-spacing: -0.01em; }
+.gg-hero__sub { display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.55; color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all; }
+
+.gg-gate {
+  position: relative; margin-bottom: 16px; text-align: center; padding: 38px 24px 32px;
+  border-radius: var(--gg-r); border: 1px solid var(--gg-line); box-shadow: var(--gg-shadow);
+  background: radial-gradient(120% 150% at 50% 0%, var(--gg-soft) 0%, transparent 60%), var(--gg-surface);
+}
+[data-theme="dark"] .gg-gate { background: var(--gg-surface); }
+.gg-gate::before {
+  content: ""; position: absolute; inset: -1px -1px auto -1px; height: 3px; border-radius: var(--gg-r) var(--gg-r) 0 0;
+  background: linear-gradient(90deg, var(--gg-accent) 0%, color-mix(in srgb, var(--gg-accent) 20%, transparent) 78%, transparent 100%);
+}
+.gg-gate__title { font-size: 21px; font-weight: 800; letter-spacing: -0.02em; color: var(--text-title, var(--text-primary)); margin: 0 0 10px; word-break: keep-all; }
+.gg-gate__text { font-size: 14px; color: var(--text-secondary); margin: 0 auto 20px; max-width: 720px; line-height: 1.75; word-break: keep-all; }
+.gg-gate__btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.gg-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 22px; border-radius: 10px;
+  background: var(--gg-accent); color: var(--btn-on-accent, #ffffff); font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  border: 1px solid transparent; cursor: pointer; text-decoration: none; font-family: inherit;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+[data-theme="dark"] .gg-btn { --btn-on-accent: #17130a; }
+.gg-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--gg-accent) 70%, transparent); }
+.gg-btn--ghost { background: transparent; border-color: var(--gg-line); color: var(--gg-accent); }
+.gg-btn--ghost:hover { background: var(--gg-soft); box-shadow: none; }
+.gg-gate__demo {
+  max-width: 620px; margin: 26px auto 0; padding: 18px 20px 19px; border-radius: 14px;
+  border: 1px solid var(--border-color); background: var(--gg-inset); text-align: left;
+}
+.gg-gate__demo-title { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: var(--gg-accent); }
+.gg-gate__list { margin: 0 0 14px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.gg-gate__list li {
+  position: relative; padding: 9px 12px 9px 26px; border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-primary) 65%, transparent); border: 1px solid var(--border-color);
+  font-size: 13px; line-height: 1.65; color: var(--text-title, var(--text-primary)); word-break: keep-all;
+}
+.gg-gate__list li::before { content: ""; position: absolute; left: 12px; top: 16px; width: 5px; height: 5px; border-radius: 50%; background: var(--gg-accent); }
+.gg-gate__list li b { font-weight: 800; color: var(--gg-accent); }
+.gg-gate__note { margin: 0; font-size: 11.5px; line-height: 1.75; color: var(--text-muted-ui, var(--text-secondary)); word-break: keep-all; }
+
+@media (max-width: 560px) {
+  .gg-hero { padding: 20px 18px 18px; }
+  .gg-hero__title { font-size: 19.5px; }
+  .gg-hero__desc { font-size: 13.5px; }
+  .gg-hero__steps { gap: 6px; }
+  .gg-hero__step { padding: 8px 6px; flex-direction: column; align-items: center; text-align: center; gap: 3px; }
+  .gg-hero__no { width: 20px; height: 20px; font-size: 9.5px; }
+  .gg-hero__name { font-size: 12px; }
+  .gg-hero__sub { display: none; }
+  .gg-gate { padding: 30px 16px 26px; }
+  .gg-gate__title { font-size: 18.5px; }
+  .gg-gate__demo { padding: 15px 15px 16px; }
+  .gg-gate__btns .gg-btn { flex: 1 1 auto; }
+}

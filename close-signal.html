@@ -414,6 +414,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./assets/guest-gate.css?v=1" />
 </head>
   <body class="page-tm-v2 page-close-betting">
     <div class="tm-wrap">
@@ -484,7 +485,9 @@
               <div class="cb-record" id="cbRecord" aria-label="누적 성적"></div>
             </section>
 
-            <div class="cb-sec">
+            <!-- 2026-09-25 시우: 로그인 전에는 오늘의 시그널(순위)을 통째로 숨기고, 직전 선정 결과 아래에
+                 매매시그널과 같은 가입 안내 카드를 보여준다. 로그인 여부가 확인되기 전까지는 둘 다 숨긴다. -->
+            <div class="cb-sec" id="cbTodaySec" style="display:none">
               <span class="cb-sec__icon"><i class="ti ti-list-numbers" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">오늘의 시그널</h2>
@@ -493,7 +496,7 @@
               <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
             </div>
 
-            <div class="cb-card">
+            <div class="cb-card" id="cbTodayCard" style="display:none">
               <div class="cb-list" id="cbList">
                 <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
               </div>
@@ -510,6 +513,27 @@
 
             <div class="cb-card" id="cbYesterday">
               <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+            </div>
+
+            <div class="gg" id="cbGuest" style="display:none">
+              <div class="gg-gate">
+                <p class="gg-gate__title">오늘의 선정 종목은 회원에게 공개됩니다</p>
+                <p class="gg-gate__text">매 거래일 장 마감 직전, 매매기법 10종이 동시에 포착한 종목을 골라 선정 근거와 함께 보여드립니다. 무료 회원가입 후 바로 확인할 수 있습니다.</p>
+                <div class="gg-gate__btns">
+                  <a class="gg-btn" href="./signup.html?next=/close-signal.html">무료 회원가입</a>
+                  <a class="gg-btn gg-btn--ghost" href="./login.html?next=/close-signal.html">로그인</a>
+                </div>
+                <div class="gg-gate__demo">
+                  <p class="gg-gate__demo-title"><i class="ti ti-target-arrow" aria-hidden="true"></i>종가시그널에서 보는 것</p>
+                  <ul class="gg-gate__list">
+                    <li><b>오늘의 선정 종목</b> — 15:20 시세로 거래대금 상위 400종목을 훑어, 여러 기법이 겹쳐 잡은 상위 종목</li>
+                    <li><b>선정 근거</b> — 어떤 기법에 어떤 값으로 걸렸는지 항목별 점수로 공개</li>
+                    <li><b>다음 날 결과</b> — 시가 매도·종가 매도 결과를 매 거래일 자동으로 기록</li>
+                    <li><b>성과 달력</b> — 지난 기록은 가입 없이도 아래에서 전부 확인할 수 있습니다</li>
+                  </ul>
+                  <p class="gg-gate__note">투자 참고용 정보이며 매수·매도를 권유하지 않습니다. 과거 기록이 미래 수익을 보장하지 않습니다.</p>
+                </div>
+              </div>
             </div>
 
             <div class="cb-sec">
@@ -1048,9 +1072,26 @@
           }
         }
 
+        /* 로그인 전: 오늘의 시그널 숨김 + 가입 안내 카드. 로그인 여부가 확인된 뒤에만 바꾼다. */
+        var todaySecEl = document.getElementById("cbTodaySec");
+        var todayCardEl = document.getElementById("cbTodayCard");
+        var guestEl = document.getElementById("cbGuest");
+        function applyAuthView(force) {
+          var st = window.TM_AUTH_STATE || {};
+          if (!st.loaded && !force) return;
+          var guest = !st.isLoggedIn;
+          todaySecEl.style.display = guest ? "none" : "";
+          todayCardEl.style.display = guest ? "none" : "";
+          guestEl.style.display = guest ? "" : "none";
+        }
+        applyAuthView();
+        // 인증 스크립트가 끝내 응답하지 않으면 로그인 전으로 본다(순위를 보여주는 쪽으로 새지 않게).
+        setTimeout(function () { if (!(window.TM_AUTH_STATE || {}).loaded) applyAuthView(true); }, 5000);
+        document.addEventListener("tm-auth-ready", function () { applyAuthView(); loadToday(); });
+
         loadToday();
         loadHistory();
-        window.addEventListener("tm-auth-change", loadToday);
+        window.addEventListener("tm-auth-change", function () { applyAuthView(); loadToday(); });
       })();
     </script>
   </body>

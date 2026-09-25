@@ -371,7 +371,10 @@ body.owner-ok .gate{display:none}
     }).catch(function () {});
   }
   function loadSignal() {
-    fetch("/api/analyze?feature=close-betting").then(function (r) { return r.json(); }).then(function (d) {
+    // 2026-09-25: 로그인 전엔 서버가 오늘 순위를 가리므로 토큰을 붙여 보낸다.
+    Promise.resolve(window.TMAuth && window.TMAuth.getAccessToken ? window.TMAuth.getAccessToken().catch(function () { return null; }) : null)
+    .then(function (t) { return fetch("/api/analyze?feature=close-betting", { headers: t ? { Authorization: "Bearer " + t } : {} }); })
+    .then(function (r) { return r.json(); }).then(function (d) {
       var ranked = (d.ranked || []).slice(0, 5);
       if (!ranked.length) { $("#cbsub").textContent = "오늘 선정 전입니다 (거래일 15:20 선정)"; return; }
       $("#cbsub").textContent = d.asOfDate + " 15:20 선정 · 무료 상위 " + d.freeLimit + "종목 공개";

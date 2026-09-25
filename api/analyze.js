@@ -4832,9 +4832,11 @@ async function handleCloseBetting(req, res) {
     }
 
     let isPro = false;
+    let loggedIn = false;
     if (supabaseConfigured()) {
       const user = await getUserFromToken(bearerToken(req));
       if (user) {
+        loggedIn = true;
         const sub = await getSubscription(user.id);
         isPro = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
       }
@@ -4849,11 +4851,12 @@ async function handleCloseBetting(req, res) {
 
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
-      return json(res, 200, { ready: false, isPro, ranked: [], total: 0, strategies, yesterday, record, market, pending });
+      return json(res, 200, { ready: false, isPro, loggedIn, ranked: [], total: 0, strategies, yesterday, record, market, pending });
     }
 
     const total = latest.ranked.length;
-    const visible = isPro ? total : Math.min(CB_FREE_LIMIT, total);
+    // 2026-09-25 시우: 로그인 전에는 오늘 순위를 1위부터 전부 가린다(이름·코드 없이 순위·점수만).
+    const visible = isPro ? total : loggedIn ? Math.min(CB_FREE_LIMIT, total) : 0;
     // 공개 응답에 원 단위 종가(close)는 싣지 않는다(화면에서도 쓰지 않음).
     const ranked = latest.ranked.map((r, i) => {
       if (i >= visible) return cbMaskRow(r);
@@ -4865,6 +4868,7 @@ async function handleCloseBetting(req, res) {
     return json(res, 200, {
       ready: true,
       isPro,
+      loggedIn,
       asOfDate: latest.asOfDate,
       scannedAt: latest.scannedAt,
       flowAsOfDate: latest.flowAsOfDate,

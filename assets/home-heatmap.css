@@ -239,15 +239,21 @@ body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr) !imp
   .hm-idx:nth-child(4n + 1) { border-left: 0; padding-left: 2px; }
 }
 @media (max-width: 700px) {
-  .hm__idx { grid-template-columns: 1fr 1fr; gap: 10px 0; }
-  .hm-idx, .hm-idx:first-child { padding: 0 12px; border-left: 0; }
-  .hm-idx:nth-child(odd) { padding-left: 2px; }
-  .hm-idx:nth-child(even) { border-left: 1px solid var(--border-color, rgba(255,255,255,0.1)); }
-  .hm-idx__v { font-size: 16px; }
+  /* 모바일: 코스피·코스닥·나스닥선물 3개만 한 줄 (나머지는 위 티커바에 있다) */
+  .hm__idx { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; min-height: 0; }
+  .hm-idx:nth-child(n + 4) { display: none; }
+  .hm-idx { padding: 0 8px; border-left: 1px solid var(--border-color, rgba(255,255,255,0.1)); }
+  .hm-idx:first-child { padding-left: 2px; border-left: 0; }
+  .hm-idx__k { font-size: 11px; }
+  .hm-idx__row { gap: 4px; }
+  .hm-idx__v { font-size: 14.5px; }
+  .hm-idx__p { font-size: 11px; }
+  .hm { gap: 10px; }
   .hm__bar { padding: 12px 12px 10px; }
   .hm__tabs { margin-left: 0; width: 100%; }
   .hm__tab { flex: 1 1 0; padding: 7px 4px; }
-  .hm__map { min-height: 620px; margin: 0 4px 4px; }
+  /* 높이는 home-heatmap.js fitMobile()이 첫 화면 남은 높이에 맞춘다 — 이 값은 JS 전 임시값 */
+  .hm__map { min-height: 0; height: calc(100svh - 300px); margin: 0 4px 4px; }
   .hm__legend { justify-content: flex-start; flex-wrap: wrap; }
 }
 /* 아주 넓은 화면: 지수 글자를 한 단계 키워 제목·탭과 무게를 맞춘다 */

@@ -484,9 +484,30 @@
     }
   }
 
+  /* 모바일(700px 이하): 스크롤 없이 첫 화면에 히트맵이 다 들어오게 지도 높이를 남은 화면 높이로 맞춘다 */
+  let fitW = 0;
+  function fitMobile(force) {
+    const map = $("hm-map");
+    if (!map) return;
+    const w = window.innerWidth;
+    if (!force && w === fitW) return; // 주소창이 접히며 높이만 바뀌는 경우는 무시(화면 흔들림 방지)
+    fitW = w;
+    if (w > 700) {
+      map.style.height = "";
+      return;
+    }
+    const top = map.getBoundingClientRect().top + window.scrollY;
+    const leg = document.querySelector("#home-heatmap .hm__legend");
+    const below = (leg ? leg.offsetHeight + 10 : 0) + 4 + 8; // 범례 + 박스 아래 여백
+    map.style.height = Math.max(340, Math.floor(window.innerHeight - top - below)) + "px";
+  }
+
   function init() {
     const root = $("home-heatmap");
     if (!root) return;
+    fitMobile(true);
+    window.addEventListener("resize", () => fitMobile(false));
+    window.addEventListener("load", () => fitMobile(true));
     const tabs = $("hm-tabs");
     if (tabs) {
       tabs.innerHTML = TABS.map(
@@ -505,7 +526,7 @@
     });
     state.ro.observe($("hm-map"));
     show("KOSPI");
-    loadIdx();
+    loadIdx().then(() => fitMobile(true));
     setInterval(() => {
       if (document.visibilityState === "visible") loadIdx();
     }, 60000);

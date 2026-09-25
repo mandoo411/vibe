@@ -1,0 +1,287 @@
+/* ════════════════════════════════════════════════════════════════════════
+   2026-09-25 전체 너비(1200px 제한 해제) 이후 넓은 화면 레이아웃 정리 — 전 페이지 공용.
+   모든 페이지의 가장 마지막 스타일시트다(premium.css 다음). 넓은 화면 규칙은 여기에만 둔다.
+   원칙: ① 좌우 여백은 --tm-gutter 하나로 통일 ② 칸 수를 고정한 격자는 카드 수에 맞춰 늘어나게
+         ③ 한 줄짜리 긴 목록은 넓은 화면에서 여러 칸으로 ④ 모바일(≤768px)은 건드리지 않는다
+   ════════════════════════════════════════════════════════════════════════ */
+:root { --tm-gutter: 24px; }
+@media (min-width: 1600px) { :root { --tm-gutter: 32px; } }
+
+@media (min-width: 769px) {
+  /* ── 공통 좌우 여백: 사이트 셸 변수(좌 24 / 우 32로 달랐다)를 하나로 ── */
+  html[lang] body {
+    --shell-pad-inline: var(--tm-gutter);
+    --shell-pad-inline-end: var(--tm-gutter);
+  }
+  /* 여백 없이 화면 끝에 붙어 있던 페이지들 */
+  html[lang] body .crypto-wrap,
+  html[lang] body.page-tm-v2 main.schedule-page,
+
+  html[lang] body .page > #world-summary-strip,
+  html[lang] body .page > .world-panel {
+    padding-left: var(--tm-gutter) !important;
+    padding-right: var(--tm-gutter) !important;
+  }
+  html[lang] body .page > #world-summary-strip { margin-left: var(--tm-gutter); margin-right: var(--tm-gutter); padding-left: 14px !important; padding-right: 14px !important; }
+  html[lang] body .page > .world-panel { padding: 0 !important; margin-left: var(--tm-gutter); margin-right: var(--tm-gutter); border-radius: 14px; overflow: hidden; }
+  html[lang] body #bfx-deck.bfx-deck { padding-left: var(--tm-gutter) !important; padding-right: var(--tm-gutter) !important; }
+
+  /* ── 상단 메뉴: 넓은 화면에서 11개가 한 줄에 들어가게 폭을 다듬는다 ── */
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links { gap: 2px !important; }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links > .home-nav__link {
+    font-size: 15.5px !important;
+    padding: 8px 10px !important;
+    gap: 5px !important;
+  }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links .home-nav__ico { font-size: 16px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__ai-badge { font-size: 10px !important; padding: 1px 5px !important; }
+}
+/* 1700px 미만에선 메뉴 아이콘을 빼서 한 개라도 더 펼친다 */
+@media (min-width: 769px) and (max-width: 1699px) {
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links .home-nav__ico { display: none !important; }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links > .home-nav__link { padding: 8px 9px !important; }
+}
+
+/* ════════ 시장지표 (market.html) ════════ */
+@media (min-width: 960px) {
+  /* 카드 수에 맞춰 칸 수를 정한다 — 5칸 격자에 3장이면 한 칸이 비던 것 */
+  html[lang] body .market-grid:has(> :nth-child(2):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  html[lang] body .market-grid:has(> :nth-child(3):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  html[lang] body .market-grid:has(> :nth-child(5):last-child) { grid-template-columns: repeat(6, minmax(0, 1fr)) !important; }
+  /* 투자심리 두 구역(주식·암호화폐)은 한 줄에 나란히 */
+  html[lang] body #market-root { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; }
+  html[lang] body #market-root > * { grid-column: 1 / -1; }
+  html[lang] body #market-root > .market-section:has(.market-sentiment-grid) { grid-column: auto; }
+  html[lang] body .market-gauge-card { min-height: 150px !important; }
+  html[lang] body .market-gauge { width: 132px !important; height: 72px !important; max-width: 132px !important; }
+  html[lang] body .market-gauge--donut { width: 84px !important; height: 84px !important; max-width: 84px !important; }
+  html[lang] body .market-gauge__value { font-size: 30px !important; }
+  html[lang] body .market-gauge__label { font-size: 13.5px !important; }
+}
+
+/* ════════ 오전브리핑 (briefing.html) ════════ */
+@media (min-width: 769px) {
+  /* auto-fill은 카드가 적을 때 빈 칸을 남긴다 → auto-fit으로 남는 폭을 카드가 나눠 갖게 */
+  html[lang] body .bfx-cards { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; }
+}
+
+/* ════════ 일정 (weekly-market.html) ════════ */
+@media (min-width: 1280px) {
+  /* 한 줄짜리 일정 행이 오른쪽 배지까지 너무 멀었다 — 두 칸으로 */
+  html[lang] body .wk-days .wk-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 36px; }
+  html[lang] body .wk-days .wk-list > .wk-ev:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
+}
+
+/* 시장지표 VIX 구간 막대 (모든 화면) */
+html[lang] body .market-vix__meter { position: relative; height: 8px; margin: 14px 4px 4px; border-radius: 999px; overflow: visible; }
+html[lang] body .market-vix__zones { position: absolute; inset: 0; border-radius: 999px;
+  background: linear-gradient(90deg, #16a34a 0 50%, #eab308 50% 75%, #e24b4a 75% 100%); opacity: .55; }
+html[lang] body .market-vix__meter i { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%;
+  transform: translate(-50%, -50%); background: var(--text-primary, #fff); box-shadow: 0 0 0 3px var(--bg-secondary, #151515); }
+html[lang] body .market-vix__ticks { position: relative; height: 16px; margin: 0 4px; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+html[lang] body .market-vix__ticks span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+html[lang] body .market-vix__ticks span:first-child { transform: none; }
+html[lang] body .market-vix__ticks span:last-child { transform: translateX(-100%); }
+
+/* ════════ 마감시황 (daily-market) — '향후 전략'만 이름 없는 div에 싸여 있어 위 블록과 간격 없이 붙었다 ════════ */
+html[lang] body .dm-analysis.dmx-on > div > .dmx-block:first-child { margin-top: 0; }
+html[lang] body .dm-analysis.dmx-on > div:not([class]) { display: flex; flex-direction: column; gap: 18px; }
+
+/* ════════ 소개 배너 공통 (매매시그널 ts-hero · 종가시그널 cb-hero · 로그인 전 gg-hero) ════════
+   넓은 화면에서 설명글이 왼쪽 절반만 쓰고 오른쪽이 통째로 비었다 → 설명은 왼쪽, 단계·성적 카드는 오른쪽 */
+@media (min-width: 1280px) {
+  html[lang] body .ts-hero,
+  html[lang] body .cb-hero,
+  html[lang] body .gg-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    grid-auto-rows: auto;
+    column-gap: 44px;
+    align-items: center;
+  }
+  html[lang] body :is(.ts-hero, .cb-hero, .gg-hero) > * { grid-column: 1; }
+  html[lang] body :is(.ts-hero__kicker, .cb-hero__kicker, .gg-hero__kicker) { justify-self: start; }
+  html[lang] body :is(.ts-hero__desc, .cb-hero__desc, .gg-hero__desc) { max-width: none !important; }
+  html[lang] body :is(.ts-hero__steps, .cb-record, .gg-hero__steps) {
+    grid-column: 2 !important;
+    grid-row: 1 / span 3;
+    margin: 0 !important;
+    align-self: center;
+  }
+}
+
+/* ════════ 매매시그널 (trade-signal.html) ════════ */
+@media (min-width: 1280px) {
+  /* 기법 카드 2×2가 목록 높이에 맞춰 늘어나 속이 텅 비었다 → 한 줄에 4개, 내용 높이만큼 */
+  html[lang] body .ts-tech__detail .ts-presets {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    grid-auto-rows: auto !important;
+    align-content: start !important;
+  }
+  html[lang] body .ts-tech__detail .ts-preset { min-height: 0 !important; height: auto !important; }
+}
+
+/* ════════ 종가시그널 (close-signal.html) — 넓은 화면은 두 칸 대시보드 ════════
+   왼쪽: 오늘의 시그널 / 오른쪽: 직전 선정 결과. 나머지(소개·달력·기법)는 전체 폭 */
+@media (min-width: 1280px) {
+  html[lang] body .cb-body:not(.cb-body--guest) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 20px;
+    align-items: start;
+  }
+  html[lang] body .cb-body:not(.cb-body--guest) > * { grid-column: 1 / -1; }
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbTodaySec { grid-column: 1; grid-row: 2; }
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbTodayCard { grid-column: 1; grid-row: 3; }
+  html[lang] body .cb-body:not(.cb-body--guest) > .cb-sec:has(+ #cbYesterday) { grid-column: 2; grid-row: 2; }
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday { grid-column: 2; grid-row: 3; }
+  /* 반쪽 폭이 된 결과표: 하루 고·저 열은 좁은 폭에서 줄바꿈되므로 모바일형 목록으로 */
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-scroll.cb-has-m { display: none; }
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-mlist { display: block; }
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-mhead,
+  html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-mrow { grid-template-columns: minmax(0, 1fr) 96px 96px; }
+  /* 성과 달력: 비어 있는 주말 칸은 좁게, 평일 칸을 넓게 */
+  html[lang] body .cb-cal { grid-template-columns: 0.45fr repeat(5, minmax(0, 1fr)) 0.45fr !important; }
+}
+
+/* ════════ AI 종목분석 (stock-analysis.html) ════════ */
+@media (min-width: 1100px) {
+  /* 내가 본 리포트: 한 줄씩 길게 늘어진 목록 → 카드 격자 */
+  html[lang] body .airp__list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 10px !important; }
+  html[lang] body .airp__list > * { margin: 0 !important; }
+  /* 리포트 8번 차트 흐름 분석의 소제목 상자들: 한 줄에 두 개 */
+  html[lang] body .ai-chart-text { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px !important; }
+  html[lang] body .ai-chart-text > * { margin: 0 !important; }
+  html[lang] body .ai-chart-text > .ai-chart-box:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+/* ════════ 2차 보정 ════════ */
+@media (min-width: 1280px) {
+  /* 매매시그널: 계열 목록을 왼쪽 세로 대신 위쪽 한 줄(8칸)로 — 오른쪽 기법 칸이 목록 높이만큼 늘어나 비던 것 */
+  html[lang] body .ts-tech { grid-template-columns: minmax(0, 1fr) !important; }
+  html[lang] body .ts-tech__list { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px !important; }
+  html[lang] body .ts-tech__list .ts-tech__btn { height: 100%; }
+  /* 종가시그널 기법 소개 10개: 5개씩 두 줄로 고르게 */
+  html[lang] body .cb-strats { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+}
+@media (min-width: 769px) {
+  /* 국내·미국주식: 위 요약 띠와 큰 패널도 같은 좌우 여백 */
+  html[lang] body .page--rt-split .rt-wrap { padding-left: var(--tm-gutter) !important; padding-right: var(--tm-gutter) !important; }
+  /* AI 리포트 차트: 차트만 한 톤 어두운 상자에 들어가 있던 것 → 카드와 같은 바탕 */
+  html[lang] body .ai-lw-chart-wrap { background: transparent !important; }
+}
+@media (min-width: 1100px) {
+  /* 분할 화면에선 차트가 항상 펼쳐져 있으므로 '차트 닫기' 버튼은 필요 없다 */
+  html[lang] body .page--rt-split tr.rt-detail-row :is(.rt-chart-toggle, .us-chart-toggle) { display: none !important; }
+  html[lang] body .page--rt-split tr.rt-detail-row .rt-acc-btn--ai { flex: 1 1 100% !important; }
+}
+@media (min-width: 1280px) {
+  /* 가로 한 줄 계열 버튼: 아이콘 + 이름만(설명·개수·화살표는 좁은 칸에서 글자를 세로로 쪼갰다) */
+  html[lang] body .ts-tech__list .ts-tech__btn {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px 10px !important;
+    min-height: 0 !important;
+  }
+  html[lang] body .ts-tech__list .ts-tech__txt { flex: 0 1 auto !important; min-width: 0; }
+  html[lang] body .ts-tech__list .ts-tech__name { white-space: nowrap; font-size: 14px !important; }
+  html[lang] body .ts-tech__list :is(.ts-tech__cap, .ts-tech__count, .ts-tech__chev) { display: none !important; }
+  html[lang] body .ts-tech__list .ts-tech__icon { flex: 0 0 auto; }
+}
+@media (min-width: 769px) {
+  /* 브리핑 '핵심 이슈' 5개가 4+1로 끊기던 것 */
+  html[lang] body .bfx-numlist:not(.bfx-numlist--single) { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important; }
+}
+
+/* ════════ 암호화폐 (crypto.html) — 국내·미국주식과 같은 왼쪽 목록 / 오른쪽 상세 ════════
+   목록은 페이지와 함께 스크롤되고, 오른쪽 상세(차트)는 화면에 붙어 따라온다(sticky). */
+@media (min-width: 1100px) {
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(520px, 0.82fr) minmax(0, 1.18fr);
+    grid-template-rows: auto 1fr;
+    column-gap: 18px;
+    align-items: start;
+  }
+  html[lang] body #crypto-ranking-panel > .crypto-scroll { grid-column: 1; grid-row: 1; }
+  html[lang] body #crypto-ranking-panel > #crypto-pagination { grid-column: 1; grid-row: 2; }
+  html[lang] body #crypto-ranking-panel > #crypto-detail-pane {
+    grid-column: 2; grid-row: 1 / span 2;
+    position: sticky; top: 84px;
+    border: 1px solid var(--border-color); border-radius: 14px;
+    background: var(--bg-panel, var(--bg-secondary)); overflow: hidden;
+  }
+  /* 왼쪽 목록은 핵심 열만: 순위·코인·가격·24H·시총 */
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) :is(.crypto-col-volume, .crypto-col-fdv, .crypto-col-spark) { display: none !important; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table { width: 100% !important; min-width: 0 !important; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) tbody tr[data-symbol] { cursor: pointer; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) tbody tr[data-symbol]:has(.crypto-name-btn[aria-expanded="true"]) > td {
+    background: color-mix(in srgb, var(--accent, #10b981) 13%, transparent) !important;
+  }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) tbody tr[data-symbol]:has(.crypto-name-btn[aria-expanded="true"]) > td:first-child {
+    box-shadow: inset 3px 0 0 var(--accent, #10b981);
+  }
+}
+/* 상세 칸 구성 */
+html[lang] body .crypto-dp__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border-color); }
+html[lang] body .crypto-dp__id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+html[lang] body .crypto-dp__logo img, html[lang] body .crypto-dp__logo > * { width: 32px !important; height: 32px !important; }
+html[lang] body .crypto-dp__name { font-size: 19px; font-weight: 800; color: var(--text-title, var(--text-primary)); }
+html[lang] body .crypto-dp__sym, html[lang] body .crypto-dp__rank { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--bg-tertiary); color: var(--text-secondary); }
+html[lang] body .crypto-dp__quote { display: flex; flex-direction: column; align-items: flex-end; }
+html[lang] body .crypto-dp__price { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-title, var(--text-primary)); }
+html[lang] body .crypto-dp__chg { font-size: 13.5px; font-weight: 700; }
+html[lang] body .crypto-dp__grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; background: var(--border-color); border-bottom: 1px solid var(--border-color); }
+html[lang] body .crypto-dp__cell { display: flex; flex-direction: column; gap: 3px; padding: 9px 12px; background: var(--bg-panel, var(--bg-secondary)); }
+html[lang] body .crypto-dp__k { font-size: 11.5px; color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap; }
+html[lang] body .crypto-dp__v { font-size: 14.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html[lang] body #crypto-detail-pane .crypto-chart-box { margin: 0 !important; padding: 10px 12px 12px !important; border: 0 !important; background: transparent !important; }
+@media (min-width: 1100px) {
+  /* 상세 칸이 화면에 붙어 따라오려면(sticky) 바깥 상자가 overflow:hidden이면 안 된다 */
+  html[lang] body .crypto-panel:has(#crypto-detail-pane:not([hidden])) { overflow: visible !important; }
+  html[lang] body .crypto-panel:has(#crypto-detail-pane:not([hidden])) .crypto-scroll { border-radius: 14px; overflow: hidden; }
+}
+
+/* ── 마이페이지(≥1100): 계정 카드 + 회원 승인 관리 2열, 가운데 정렬 ── */
+@media (min-width: 1100px) {
+  body.page-mypage .tm-auth-main:has(#owner-members:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 480px) minmax(0, 1fr);
+    gap: 24px;
+    max-width: 1320px;
+    margin-inline: auto;
+    align-items: start;
+  }
+  body.page-mypage #owner-members {
+    margin: 0 !important;
+    max-width: none;
+    background: var(--panel-surface, var(--card-bg));
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px 26px;
+    gap: 6px;
+  }
+  body.page-mypage #owner-members .tm-auth-card__title { margin-top: 0; }
+}
+/* 회원 상태 배지 색 — 승인(초록)·대기(주황)·차단(빨강) */
+body.page-mypage .tm-mem-st--approved { background: rgba(16,185,129,.14); color: #10b981; }
+body.page-mypage .tm-mem-st--pending  { background: rgba(245,158,11,.16); color: #f59e0b; }
+body.page-mypage .tm-mem-st--blocked  { background: rgba(239,68,68,.14); color: #ef4444; }
+
+/* ── 매매시그널 검색 결과(≥1280): 2열 카드, 펼친 종목은 한 줄 전체 ── */
+@media (min-width: 1280px) {
+  body.page-trade-signal #ts-result-list,
+  #ts-result-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(620px, 1fr));
+    gap: 10px;
+    align-items: start;
+  }
+  #ts-result-list > .ts-result-item { margin: 0 !important; min-width: 0; }
+  #ts-result-list > .ts-result-item:has(> .ts-detail:not(.ts-hidden)) { grid-column: 1 / -1; }
+  #ts-results .ts-alert-toggle { max-width: 560px; }
+  #ts-result-list { grid-auto-flow: row dense; }
+  .ts-detail__chart-host { height: 460px; }
+}

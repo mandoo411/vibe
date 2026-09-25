@@ -42,6 +42,27 @@ function chartCacheControl(period, isCrypto) {
   return CHART_CACHE[p] || CHART_CACHE.D;
 }
 
+/* 2026-09-25: 차트 창(window)을 동시에 여러 개 요청하면 KIS 초당 호출 제한에 일부가 조용히 실패해
+   "중간이 빈 차트"(예: 2025-02 → 2026-01로 건너뜀, 최근 3개월 누락)가 만들어지고, 그 결과가 CDN에
+   몇 시간씩 캐시됐다. 실패한 창만 잠깐 쉬었다가 순서대로 다시 받고, 그래도 빠진 창이 있으면
+   캐시를 아주 짧게 둔다(다음 요청에서 다시 채워지도록). */
+const CHART_PARTIAL_CACHE = "public, max-age=0, s-maxage=20";
+async function retryFailedWindows(results, failed, fetchAt) {
+  for (const i of failed.slice()) {
+    for (let t = 0; t < 2; t++) {
+      await new Promise((r) => setTimeout(r, 300 + t * 500));
+      try {
+        results[i] = await fetchAt(i);
+        failed.splice(failed.indexOf(i), 1);
+        break;
+      } catch {
+        /* 다음 시도 */
+      }
+    }
+  }
+  return failed.length === 0;
+}
+
 function sanitizeStr(v) {
   return v == null ? "" : String(v).trim();
 }
@@ -226,14 +247,19 @@ async function fetchChartCandles(code6, periodDiv) {
   }
 
   let firstError = null;
+  const failed = [];
   const results = await Promise.all(
-    windows.map((w) =>
+    windows.map((w, i) =>
       fetchDomesticChartWindow(code6, period, w.d1, w.d2).catch((e) => {
         // 창 하나가 실패해도 나머지로 그린다(기존 동작과 동일한 원칙).
         if (!firstError) firstError = e;
+        failed.push(i);
         return [];
       })
     )
+  );
+  const complete = await retryFailedWindows(results, failed, (i) =>
+    fetchDomesticChartWindow(code6, period, windows[i].d1, windows[i].d2)
   );
 
   const byTime = new Map();
@@ -263,7 +289,9 @@ async function fetchChartCandles(code6, periodDiv) {
   // 전부 실패했다면 원래 KIS 오류를 그대로 올려 원인을 알 수 있게 한다.
   if (!byTime.size && firstError) throw firstError;
 
-  return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
+  const out = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
+  out.partial = !complete;
+  return out;
 }
 
 function computeMaSeries(closes, period, smart) {
@@ -330,7 +358,7 @@ async function handleChartRequest(res, code6, period) {
   if (!candles.length) {
     return json(res, 502, { error: "차트 데이터가 없습니다." });
   }
-  return json(res, 200, enrichChart(candles), chartCacheControl(period, false));
+  return json(res, 200, enrichChart(candles), candles.partial ? CHART_PARTIAL_CACHE : chartCacheControl(period, false));
 }
 
 function marketLabelFromRow(row) {
@@ -646,14 +674,21 @@ async function fetchUsChartCandles(ticker, exchange, period) {
   }
 
   let firstError = null;
+  const failed = [];
   const results = await Promise.all(
-    cursors.map((bymd) =>
+    cursors.map((bymd, i) =>
       fetchUsChartWindow(ticker, exchange, gubn, bymd).catch((e) => {
         if (!firstError) firstError = e;
+        failed.push(i);
         return [];
       })
     )
   );
+  // 전부 실패 = 티커/거래소가 틀렸을 가능성이 커서 재시도 없이 다음 거래소로 넘긴다.
+  const complete =
+    failed.length === cursors.length
+      ? false
+      : await retryFailedWindows(results, failed, (i) => fetchUsChartWindow(ticker, exchange, gubn, cursors[i]));
 
   const byTime = new Map();
   for (const rows of results) for (const b of rows) byTime.set(b.time, b);
@@ -662,7 +697,9 @@ async function fetchUsChartCandles(ticker, exchange, period) {
   // 빈 배열을 그대로 돌려준다(기존 동작 유지).
   if (!byTime.size && firstError) throw firstError;
 
-  return [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
+  const out = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0)).slice(-target);
+  out.partial = !complete;
+  return out;
 }
 
 async function handleUsChartRequest(res, ticker, period, exchangeHint) {
@@ -673,7 +710,8 @@ async function handleUsChartRequest(res, ticker, period, exchangeHint) {
   for (const exc of exchanges) {
     try {
       const candles = await fetchUsChartCandles(ticker, exc, period);
-      if (candles.length) return json(res, 200, enrichChart(candles, "US"), chartCacheControl(period, false));
+      if (candles.length)
+        return json(res, 200, enrichChart(candles, "US"), candles.partial ? CHART_PARTIAL_CACHE : chartCacheControl(period, false));
     } catch (e) {
       lastErr = e;
     }

@@ -482,7 +482,10 @@
   }
 
   function resolveInitialYmd() {
-    return state.todayYmd || seoulYmd();
+    const today = state.todayYmd || seoulYmd();
+    // 휴장일(주말·공휴일)엔 빈 "휴장" 화면 대신 가장 최근 마감시황을 연다
+    if (marketClosedReason(today)) return state.defaultYmd || today;
+    return today;
   }
 
   function syncHash(ymd) {
@@ -594,6 +597,12 @@
   }
 
   function marketClosedReason(ymd) {
+    // 2026-09-25: 추석·설날처럼 해마다 날짜가 바뀌는 휴장일은 고정 목록에 없어서, 추석 당일에
+    // "오늘 마감시황 준비 중"이 떠 있었다. 사이트 공용 KRX 휴장일 달력(lib/krx-calendar.js)을 먼저 본다.
+    if (window.KRX_CAL && typeof window.KRX_CAL.closedReason === "function") {
+      const r = window.KRX_CAL.closedReason(ymd);
+      if (r) return r;
+    }
     const day = ymdWeekday(ymd);
     if (day === 0) return "주말(일요일)";
     if (day === 6) return "주말(토요일)";

@@ -1515,7 +1515,9 @@
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
-  </head>
+      <link rel="stylesheet" href="./assets/wide.css?v=2" />
+    <script src="./assets/tm-chart-style.js?v=2"></script>
+</head>
   <body class="page-tm-v2">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -2431,9 +2433,9 @@
             const chartColors = tsLwChartColors();
             const chart = LC.createChart(host, {
               width: host.clientWidth || 300,
-              height: 280,
+              height: host.clientHeight || 280, // 2026-09-25: 높이는 CSS(.ts-detail__chart-host)가 결정 — 넓은 화면은 wide.css에서 키움
               layout: { background: { color: "transparent" }, textColor: chartColors.text },
-              grid: { vertLines: { visible: false }, horzLines: { color: chartColors.grid } },
+              grid: { vertLines: { visible: false }, horzLines: { visible: false } },
               rightPriceScale: { borderVisible: false },
               timeScale: { borderVisible: false },
             });
@@ -2447,6 +2449,7 @@
             });
             candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
             candleSeries.setData(candles);
+            if (window.TMChartStyle) window.TMChartStyle.fit(chart, candles, "KR"); // 2026-09-25 공용 차트 규칙
 
             const volumeSeries = chart.addHistogramSeries({
               priceFormat: { type: "volume" },
@@ -2482,9 +2485,11 @@
               if (points.length) lineSeries.setData(points);
             }
 
-            chart.timeScale().fitContent();
+            // 2026-09-25: 최근 구간만 보여주기(공용 규칙 assets/tm-chart-style.js)
+            if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chart);
+            else chart.timeScale().fitContent();
             const resizeObs = new ResizeObserver(() => {
-              if (host.clientWidth > 0) chart.applyOptions({ width: host.clientWidth });
+              if (host.clientWidth > 0) chart.applyOptions({ width: host.clientWidth, height: host.clientHeight || 280 });
             });
             resizeObs.observe(host);
 

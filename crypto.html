@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
     <script src="./assets/data-url.js"></script>
-    <script src="./assets/lw-candle-chart.js?v=4"></script>
+    <script src="./assets/lw-candle-chart.js?v=5"></script>
     <link rel="stylesheet" href="./typography.css?v=1" />
     <style>
       .crypto-wrap,
@@ -805,6 +805,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./assets/wide.css?v=2" />
+    <script src="./assets/tm-chart-style.js?v=2"></script>
 </head>
   <body class="page-tm-v2" data-tm-tab="crypto">
     <div class="tm-wrap">
@@ -904,6 +906,8 @@
                 </table>
               </div>
               <div id="crypto-pagination" class="crypto-pagination" aria-label="순위 구간"></div>
+              <!-- 2026-09-25: 넓은 화면(1100px+)에선 국내·미국주식처럼 왼쪽 목록 / 오른쪽 상세 -->
+              <aside id="crypto-detail-pane" class="crypto-detail-pane" hidden aria-live="polite"></aside>
             </div>
             <div id="crypto-news-panel" class="crypto-news-list" aria-live="polite" hidden></div>
           </div>
@@ -1424,11 +1428,69 @@
         // hide_volume) 모두 실패해서(두 번째 시도는 거래량이 아예 사라짐) AI 종목분석에서 이미
         // 검증된 자체 캔들+거래량+이평선 차트(assets/lw-candle-chart.js)로 교체했다. 거래량은
         // 캔들과 같은 데이터에서 직접 색을 계산해서 그리므로 어긋날 수 없다.
+        /* 2026-09-25 넓은 화면 분할 보기 */
+        const cryptoSplitMq = window.matchMedia("(min-width: 1100px)");
+        function isCryptoSplit() {
+          return cryptoSplitMq.matches;
+        }
+
+        function detailPaneHtml(c) {
+          const price = moneyValue(c, "price");
+          const cell = (k, v, cls) => `<div class="crypto-dp__cell"><span class="crypto-dp__k">${escapeHtml(k)}</span><span class="crypto-dp__v ${cls || ""}">${v}</span></div>`;
+          return `<header class="crypto-dp__head">
+              <div class="crypto-dp__id">
+                <span class="crypto-dp__logo">${coinLogoHtml(c)}</span>
+                <span class="crypto-dp__name">${escapeHtml(c.name || c.symbol)}</span>
+                <span class="crypto-dp__sym">${escapeHtml(c.symbol)}</span>
+                <span class="crypto-dp__rank">#${escapeHtml(Number(c.rank) || "-")}</span>
+              </div>
+              <div class="crypto-dp__quote">
+                <span class="crypto-dp__price">${escapeHtml(fmtPrice(price))}</span>
+                <span class="crypto-dp__chg ${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span>
+              </div>
+            </header>
+            <div class="crypto-dp__grid">
+              ${cell("1시간", escapeHtml(fmtPct(c.change1h)), deltaClass(c.change1h))}
+              ${cell("24시간", escapeHtml(fmtPct(c.change24h)), deltaClass(c.change24h))}
+              ${cell("7일", escapeHtml(fmtPct(c.change7d)), deltaClass(c.change7d))}
+              ${cell("24시간 거래대금", escapeHtml(fmtVolumeCell(c)))}
+              ${cell("시가총액", escapeHtml(fmtMcapCell(c)))}
+              ${cell("완전희석 시총(FDV)", escapeHtml(fmtFdvCell(c)))}
+            </div>
+            ${chartBoxHtml(c, false)}`;
+        }
+
+        function renderDetailPane(pageCoins) {
+          const pane = $("crypto-detail-pane");
+          if (!pane) return;
+          if (!isCryptoSplit()) {
+            pane.hidden = true;
+            pane.innerHTML = "";
+            return;
+          }
+          let coin = pageCoins.find((c) => c.symbol === state.openSymbol);
+          if (!coin && pageCoins.length) {
+            coin = pageCoins[0];
+            state.openSymbol = coin.symbol;
+          }
+          if (!coin) {
+            pane.hidden = true;
+            return;
+          }
+          pane.hidden = false;
+          pane.innerHTML = detailPaneHtml(coin);
+        }
+
         function chartRowHtml(c) {
           return `<tr class="crypto-chart-row">
-            <td colspan="8">
+            <td colspan="8">${chartBoxHtml(c, true)}</td>
+          </tr>`;
+        }
+
+        function chartBoxHtml(c, withTitle) {
+          return `
               <div class="crypto-chart-box">
-                <p class="crypto-chart-title">${escapeHtml(c.name)} (${escapeHtml(c.symbol)})</p>
+                ${withTitle ? `<p class="crypto-chart-title">${escapeHtml(c.name)} (${escapeHtml(c.symbol)})</p>` : ""}
                 <div class="tm-tv-chart-shell">
                   <div class="tm-tv-chart-toolbar">
                     <div class="tm-lw-period-group" role="toolbar" aria-label="캔들 주기">
@@ -1446,9 +1508,7 @@
                   </div>
                   <div class="tm-lw-chart-host" data-lw-symbol="${escapeHtml(c.symbol)}" role="region" aria-label="캔들 차트"></div>
                 </div>
-              </div>
-            </td>
-          </tr>`;
+              </div>`;
         }
 
         /** market=CRYPTO 자체 캔들 차트 데이터 조회 (AI 종목분석과 동일 엔드포인트, Binance 공개
@@ -1470,7 +1530,7 @@
           try {
             const chartData = await fetchCryptoLwChart(state.openSymbol, state.chartPeriod);
             if (state.chartHandle && window.tmDisposeCandleChart) window.tmDisposeCandleChart(state.chartHandle);
-            state.chartHandle = await window.tmMountCandleChart(host, chartData, { market: "CRYPTO" });
+            state.chartHandle = await window.tmMountCandleChart(host, chartData, { market: "CRYPTO", height: isCryptoSplit() ? 560 : undefined });
           } catch (err) {
             console.warn("[크립토] 차트 로드 실패", state.openSymbol, err && err.message);
             host.innerHTML = `<p class="tm-lw-chart-error">차트를 불러오지 못했습니다.</p>`;
@@ -1522,12 +1582,21 @@
           if (!body) return;
           const pageCoins = getPageCoins();
           const parts = [];
+          const split = isCryptoSplit();
+          if (split && !pageCoins.some((c) => c.symbol === state.openSymbol) && pageCoins.length) {
+            state.openSymbol = pageCoins[0].symbol;
+          }
           for (const c of pageCoins) {
             parts.push(coinRowHtml(c));
-            if (state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
+            if (!split && state.openSymbol === c.symbol) parts.push(chartRowHtml(c));
           }
           body.innerHTML = parts.join("") || '<tr><td colspan="8"><p class="home-empty">데이터 없음</p></td></tr>';
+          renderDetailPane(pageCoins);
           if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(body);
+          if (split) {
+            const pane = $("crypto-detail-pane");
+            if (pane && window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(pane);
+          }
           if (state.openSymbol) {
             wireOpenCryptoChartPeriodButtons();
             void mountOpenCryptoChart();
@@ -1600,12 +1669,24 @@
             const symbol = row.getAttribute("data-symbol");
             if (!symbol) return;
             const opening = state.openSymbol !== symbol;
+            if (!opening && isCryptoSplit()) return; // 분할 화면에선 오른쪽 상세가 늘 떠 있다
             if (state.chartHandle && window.tmDisposeCandleChart) {
               window.tmDisposeCandleChart(state.chartHandle);
               state.chartHandle = null;
             }
             state.openSymbol = opening ? symbol : null;
             state.chartPeriod = "D";
+            renderTable();
+          });
+        }
+
+        // 분할 ↔ 목록형 전환(창 크기 변경) 시 다시 그린다
+        if (typeof cryptoSplitMq.addEventListener === "function") {
+          cryptoSplitMq.addEventListener("change", () => {
+            if (state.chartHandle && window.tmDisposeCandleChart) {
+              window.tmDisposeCandleChart(state.chartHandle);
+              state.chartHandle = null;
+            }
             renderTable();
           });
         }

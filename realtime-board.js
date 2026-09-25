@@ -1151,7 +1151,8 @@
   function syncLwDualChartAxes(chartCandle, chartVol) {
     if (chartCandle && chartCandle === chartVol) {
       try {
-        chartCandle.timeScale().fitContent();
+        if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chartCandle);
+        else chartCandle.timeScale().fitContent();
       } catch (e) {
         /* noop */
       }
@@ -1168,8 +1169,10 @@
       const mw = Math.max(wA, wB, 76);
       chartCandle.priceScale("right").applyOptions({ minimumWidth: mw });
       chartVol.priceScale("right").applyOptions({ minimumWidth: mw });
-      chartCandle.timeScale().fitContent();
       chartVol.timeScale().fitContent();
+      // 2026-09-25: 최근 구간만(공용 규칙) — 거래량 차트는 아래에서 같은 범위로 맞춘다
+      if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chartCandle);
+      else chartCandle.timeScale().fitContent();
       const r = chartCandle.timeScale().getVisibleLogicalRange();
       if (r) chartVol.timeScale().setVisibleLogicalRange(r);
     } catch (e) {
@@ -1301,6 +1304,9 @@
         series.setData(buildMaLineData(candles, maData[spec.key], lim));
       });
     }
+    // 2026-09-25 공용 차트 규칙(격자선 제거·콤마 눈금·거래량 구역 음수 눈금 제거) — assets/tm-chart-style.js
+    // fit()이 봉 수를 기록해야 아래 sync에서 "최근 구간만" 보기가 적용되므로 먼저 부른다.
+    if (window.TMChartStyle) window.TMChartStyle.fit(bundle.chartCandle, sliced, "KR");
     syncLwDualChartAxes(bundle.chartCandle, bundle.chartVol);
     return sliced;
   }

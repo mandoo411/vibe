@@ -1797,6 +1797,7 @@ async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
   }
 
   let firstError = null;
+  const failed = [];
   const results = await Promise.all(
     windows.map(async (w, i) => {
       if (i > 0 && CANDLE_PARALLEL_STAGGER_MS) await sleep(i * CANDLE_PARALLEL_STAGGER_MS);
@@ -1805,10 +1806,25 @@ async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
       } catch (e) {
         // 창 하나가 실패해도 나머지로 그린다(기존 동작과 동일한 원칙).
         if (!firstError) firstError = e;
+        failed.push(i);
         return [];
       }
     })
   );
+  /* 2026-09-25: 동시 요청 중 KIS 호출 제한으로 실패한 창은 잠깐 쉬고 순서대로 다시 받는다 —
+     예전엔 그대로 비워 둬서 "중간이 빈 차트"가 되고, 그게 엣지 캐시에 오래 남았다. */
+  for (const i of failed.slice()) {
+    for (let t = 0; t < 2; t++) {
+      await sleep(300 + t * 500);
+      try {
+        results[i] = await fetchCandleWindow(code6, fidPeriod, windows[i].d1, windows[i].d2);
+        failed.splice(failed.indexOf(i), 1);
+        break;
+      } catch {
+        /* 다음 시도 */
+      }
+    }
+  }
 
   const byTime = new Map();
   for (const rows of results) for (const b of rows) byTime.set(b.time, b);
@@ -1841,7 +1857,9 @@ async function fetchDailyItemchartCandlesFromKis(code6, periodDiv = "D") {
   if (!byTime.size && firstError) throw firstError;
 
   const bars = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
-  return bars.slice(-target);
+  const out = bars.slice(-target);
+  out.partial = failed.length > 0; // 빠진 구간이 있으면 캐시를 짧게(호출부)
+  return out;
 }
 
 /* 2026-09-09: 캔들 전용 엣지 캐시.
@@ -2165,8 +2183,10 @@ module.exports = async function handler(req, res) {
         return;
       }
       const bars = await fetchDailyItemchartCandlesFromKis(code6, periodKey);
-      candleMemoryCache.set(cacheKey, { bars, expiresAt: now + ttl, period: periodKey });
-      json(res, 200, { code: code6, period: periodKey, ...withMaSeries(bars), cached: false }, { cacheControl: candleEdgeCacheControl() });
+      if (!bars.partial) candleMemoryCache.set(cacheKey, { bars, expiresAt: now + ttl, period: periodKey });
+      json(res, 200, { code: code6, period: periodKey, ...withMaSeries(bars), cached: false }, {
+        cacheControl: bars.partial ? "public, max-age=0, s-maxage=20" : candleEdgeCacheControl(),
+      });
       return;
     }
 

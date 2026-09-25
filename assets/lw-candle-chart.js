@@ -205,6 +205,7 @@
     }
     candleSeries.setData(chartData.candles);
     candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
+    if (window.TMChartStyle) window.TMChartStyle.fit(chart, chartData.candles, market); // 2026-09-25 공용 차트 규칙
 
     // 거래량 히스토그램 — 캔들과 동일한 상승/하락 색을 그대로 써서 절대 어긋나지 않는다
     // (TradingView 위젯처럼 별도 색상 오버라이드에 의존하지 않음).
@@ -270,13 +271,13 @@
       maSeries.push(line);
     }
     wireOhlcTooltip(hostEl, chart, chartData.candles, priceFormatterFor(market));
-    chart.timeScale().fitContent();
+    if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chart); else chart.timeScale().fitContent();
 
     const ro = new ResizeObserver(() => {
       const nw = hostEl.clientWidth;
       if (nw > 0) {
         chart.applyOptions({ width: nw, height: options.height || defaultHeight() });
-        chart.timeScale().fitContent();
+        if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chart); else chart.timeScale().fitContent();
       }
     });
     ro.observe(hostEl);

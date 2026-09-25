@@ -1173,7 +1173,7 @@
       width: w,
       height: h,
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       localization: {
@@ -1202,6 +1202,8 @@
     }
     candleSeries.setData(chartData.candles);
     candleSeries.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.28 } });
+    // 2026-09-25 공용 차트 규칙(격자선 제거·가격 눈금 콤마·거래량 구역의 음수 눈금 제거) — assets/tm-chart-style.js
+    if (window.TMChartStyle) window.TMChartStyle.fit(chart, chartData.candles, market === "US" || market === "CRYPTO" ? market : market ? "KR" : undefined);
 
     // 2026-07-11: 캔들 밑에 거래량 바 추가. 색상은 일봉 캔들과 동일하게 상승/하락 색을 맞춘다.
     // priceScaleId를 별도(overlay)로 두고 scaleMargins로 하단 20%만 차지하게 해서 가격 차트와
@@ -1258,13 +1260,13 @@
       line.setData(lineData);
     }
     wireAiOhlcTooltip(hostEl, chart, chartData.candles, lwChartPriceFormatterFor(market));
-    chart.timeScale().fitContent();
+    if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chart); else chart.timeScale().fitContent();
 
     const ro = new ResizeObserver(() => {
       const nw = hostEl.clientWidth;
       if (nw > 0) {
         chart.applyOptions({ width: nw, height: getAiChartHeight() });
-        chart.timeScale().fitContent();
+        if (window.TMChartStyle && window.TMChartStyle.recent) window.TMChartStyle.recent(chart); else chart.timeScale().fitContent();
       }
     });
     ro.observe(hostEl);
@@ -1276,7 +1278,7 @@
     const t = getLwTheme();
     aiChartBundle.chart.applyOptions({
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
     });
   }
 

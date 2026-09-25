@@ -463,7 +463,8 @@
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
-  </head>
+      <link rel="stylesheet" href="./assets/wide.css?v=2" />
+</head>
   <body class="page-tm-v2">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -719,6 +720,9 @@
           span.textContent = img.dataset.flag || "\u{1F310}";
           img.replaceWith(span);
         }
+        // 2026-09-25: 인라인 onerror가 부르는데 함수가 즉시실행 함수 안에 갇혀 있어 "정의되지 않음" 오류가 나고
+        // 깨진 로고가 그대로 남았다(예: 중국 종목 688825.SS). 전역에 걸어 둔다.
+        window.worldLogoFail = worldLogoFail;
         function logoCell(row) {
           const flag = row.flag || "\u{1F310}";
           /* 우리 저장소에 받아 둔 로고가 있으면 그걸 먼저 쓴다(남의 CDN 의존을 줄인다).

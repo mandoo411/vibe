@@ -354,6 +354,7 @@
       .then((data) => {
         const items = filterWebTickerItems(data.items);
         if (!items.length) {
+          if (el.querySelector(".home-ticker__track")) return; // 빈 응답이면 이전 값 유지
           el.innerHTML = '<span class="home-empty">시장 지표 로딩 중…</span>';
           return;
         }
@@ -368,6 +369,8 @@
         el.innerHTML = `<div class="home-ticker__track">${itemsHtml}${itemsHtml}</div>`;
       })
       .catch(() => {
+        // 2026-09-25: 주기 갱신이 한 번 실패했다고 흐르던 지표 띠를 오류 문구로 바꾸지 않는다(이전 값 유지).
+        if (el.querySelector(".home-ticker__track")) return;
         el.innerHTML = '<span class="home-empty">시장 지표를 불러오지 못했습니다</span>';
       });
   }

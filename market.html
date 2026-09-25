@@ -32,7 +32,8 @@
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
-  </head>
+      <link rel="stylesheet" href="./assets/wide.css?v=2" />
+</head>
   <body class="page-tm-v2 page-market">
     <div class="tm-wrap">
       <header class="home-nav" aria-label="주요 메뉴">
@@ -393,6 +394,14 @@
               <div class="market-vix__value ${vm.cls}">${fmtValue(item)}</div>
               <div class="market-gauge__label ${vm.cls}">${vm.label}</div>
             </div>
+            ${(() => {
+              // 2026-09-25: 숫자만 덩그러니 있던 VIX 카드에 구간 막대(0~40: 안정<20·주의<30·위험)를 붙인다
+              const n = Number(item.value);
+              if (!Number.isFinite(n)) return "";
+              const pos = Math.max(0, Math.min(100, (n / 40) * 100));
+              return `<div class="market-vix__meter" aria-hidden="true"><span class="market-vix__zones"></span><i style="left:${pos.toFixed(1)}%"></i></div>
+                <div class="market-vix__ticks" aria-hidden="true"><span>0</span><span style="left:50%">20</span><span style="left:75%">30</span><span style="left:100%">40+</span></div>`;
+            })()}
           </article>`;
         }
 

@@ -79,6 +79,9 @@
   };
 
   const KIS_QUOTE_API = "/api/kis-stock-quote";
+  // 2026-09-25 시우: 목록 20종목씩 페이지로(국내주식과 동일). TOP50 → 3페이지
+  const US_PAGE_SIZE = 20;
+  let usPage = 1;
   const TABLE_COLSPAN = 8;
 
   const state = {
@@ -573,9 +576,14 @@
       closeBtn,
       `    </div>`,
       `  </header>`,
-      `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${metricsGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${volumeGrid}</div>`,
+      // 2026-09-25 PC 분할 화면: 정보표 6칸×2줄로 촘촘하게 — 남는 높이는 차트가 쓴다
+      ...(isSplitLayout()
+        ? [`  <div class="rt-acc-grid rt-acc-grid--s6">${basicGrid}${metricsGrid}${volumeGrid}</div>`]
+        : [
+            `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
+            `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${metricsGrid}</div>`,
+            `  <div class="rt-acc-grid rt-acc-grid--4 rt-acc-grid--section">${volumeGrid}</div>`,
+          ]),
       `  <footer class="rt-acc-footer">`,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
       `    <button type="button" class="rt-acc-btn rt-acc-btn--chart us-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
@@ -621,7 +629,14 @@
           activeUsChartHandles.delete(chartHandle);
           if (window.tmDisposeCandleChart) window.tmDisposeCandleChart(chartHandle);
         }
-        chartHandle = await window.tmMountCandleChart(lwHost, chartData, { market: "US" });
+        // 2026-09-25 PC 분할 화면: 오른쪽 상세 박스 바닥까지 차트를 늘린다
+        let splitH;
+        const box = isSplitLayout() && lwHost.closest("tr.rt-detail-row");
+        if (box) {
+          splitH = Math.max(320, Math.floor(box.getBoundingClientRect().bottom - lwHost.getBoundingClientRect().top - 28));
+          lwHost.style.height = splitH + "px";
+        }
+        chartHandle = await window.tmMountCandleChart(lwHost, chartData, { market: "US", height: splitH });
         if (chartHandle) {
           activeUsChartHandles.add(chartHandle);
           wireUsChartThemeToggle();
@@ -873,7 +888,14 @@
     renderSummaryStrip();
     const body = $("us-rank-tbody");
     if (!body) return;
-    const rows = state.rowsByTab[state.activeTab] || [];
+    const allRows = state.rowsByTab[state.activeTab] || [];
+    const pageCount = Math.max(1, Math.ceil(allRows.length / US_PAGE_SIZE));
+    if (usPage > pageCount) usPage = 1;
+    const rows = allRows.slice((usPage - 1) * US_PAGE_SIZE, usPage * US_PAGE_SIZE);
+    renderUsPager(pageCount);
+    if (state.openTicker && !rows.some((r) => r.ticker === state.openTicker) && isSplitLayout()) {
+      state.openTicker = null;
+    }
     if (!rows.length) {
       if (body.dataset.rtLoading === "1") {
         body.innerHTML = skeletonRowsHtml(10);
@@ -894,6 +916,35 @@
       state.openTicker = rows[0].ticker;
       renderRankTable();
     }
+  }
+
+  function renderUsPager(pageCount) {
+    const el = $("us-table-pager");
+    if (!el) return;
+    el.hidden = pageCount <= 1;
+    if (el.dataset.count !== String(pageCount)) {
+      el.dataset.count = String(pageCount);
+      el.innerHTML = Array.from({ length: pageCount }, (_, i) =>
+        `<button type="button" class="page-btn" data-us-page="${i + 1}">${i + 1}</button>`
+      ).join("");
+    }
+    if (!el.dataset.wired) {
+      el.dataset.wired = "1";
+      el.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-us-page]");
+        if (!b) return;
+        const n = Number(b.getAttribute("data-us-page")) || 1;
+        if (n === usPage) return;
+        usPage = n;
+        state.openTicker = null;
+        renderRankTable();
+      });
+    }
+    el.querySelectorAll("[data-us-page]").forEach((b) => {
+      const on = Number(b.getAttribute("data-us-page")) === usPage;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-current", on ? "page" : "false");
+    });
   }
 
   function setTabs() {
@@ -1265,6 +1316,7 @@
         if (!TAB_CONFIG[tab] || tab === state.activeTab) return;
         state.activeTab = tab;
         state.openTicker = null;
+        usPage = 1;
         $("us-stock-result-panel").hidden = true;
         setTabs();
         const errEl = $("us-error");

@@ -357,3 +357,35 @@ html[lang] body .tm-main .masthead { display: none !important; }
   }
   html[lang] body.page-home-v2 .home-tr--rt { min-height: 49px; box-sizing: border-box; }
 }
+
+/* ── 2026-09-25 시우: 상단 메뉴 — 로고·메뉴 글자 키우고, 메뉴 묶음을 가운데 정렬(왼쪽 쏠림·오른쪽 빈칸 해소) ── */
+@media (min-width: 769px) {
+  html[lang] body .home-nav { min-height: 68px !important; }
+  html[lang] body .home-nav .home-nav__brand-name { font-size: 24px !important; letter-spacing: -0.5px !important; }
+  html[lang] body .home-nav .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo-box svg { width: 36px !important; height: 36px !important; }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    gap: 6px !important;
+  }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links > .home-nav__link {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+    gap: 6px !important;
+  }
+  html[lang] body.page-tm-v2 .home-nav #home-nav-links .home-nav__ico { font-size: 17px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__auth-link { font-size: 15px !important; }
+}
+@media (min-width: 769px) {
+  /* 로고 글자가 커지면서 두 줄로 꺾이던 것 — 로고 칸 폭 제한 해제 */
+  html[lang] body .home-nav .home-nav__logo,
+  html[lang] body .home-nav .home-nav__brand {
+    max-width: none !important;
+    width: auto !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+  html[lang] body .home-nav .home-nav__brand-name { white-space: nowrap !important; }
+}

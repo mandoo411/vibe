@@ -74,6 +74,10 @@
     "61": "NXT 종료",
   };
 
+  // 2026-09-25 시우: 한 페이지 20종목 × 5페이지(TOP100) — PC 분할 화면에서 목록 세로 스크롤 없이
+  const RANK_PAGE_SIZE = 20;
+  const RANK_PAGE_COUNT = 5;
+
   const state = {
     tab: "cap",
     capRows: [],
@@ -250,7 +254,7 @@
     });
 
     const action = apiActionForTab(tab);
-    const page1P = fetchJson(action, Math.min(FETCH_TIMEOUT_MS, 8000), { page: 1, pageSize: 25 })
+    const page1P = fetchJson(action, Math.min(FETCH_TIMEOUT_MS, 8000), { page: 1, pageSize: RANK_PAGE_SIZE })
       .then((pack) => ({
         ...pack,
         stocks: normalizeStockRows(tab, pack.stocks),
@@ -1039,7 +1043,21 @@
   const LW_CANDLE_H = 210;
   const LW_VOL_H = 90;
 
-  function lwChartHeights() {
+  /* 2026-09-25 PC 분할 화면: 오른쪽 상세 박스 바닥까지 차트를 늘린다(빈 공간 없이). */
+  function splitChartHeight(panes) {
+    if (!panes || !isSplitLayout()) return 0;
+    const box = panes.closest("tr.rt-detail-row") || panes.closest("#stock-result-panel");
+    if (!box) return 0;
+    const avail = box.getBoundingClientRect().bottom - panes.getBoundingClientRect().top - 34; // 아래 날짜 눈금이 잘리지 않게 여유
+    const h = Math.max(320, Math.floor(avail));
+    panes.style.height = panes.style.minHeight = panes.style.maxHeight = h + "px";
+    panes.style.flex = `0 0 ${h}px`;
+    return h;
+  }
+
+  function lwChartHeights(panes) {
+    const sh = splitChartHeight(panes);
+    if (sh) return { candle: sh, vol: sh };
     // 2026-08-06: 모바일 거래량 패널이 너무 커서 캔들이 상대적으로 작아 보인다는 피드백 —
     // 거래량 높이를 기존의 80%(70 -> 56)로 줄이고, 줄어든 만큼(14px)을 캔들 패널에 더해
     // 전체 차트 높이는 그대로 유지하면서 캔들 영역만 키운다.
@@ -1121,7 +1139,7 @@
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: t.gridColor },
+        horzLines: { visible: false }, // 2026-09-25 시우: 차트 가로줄 제거
       },
       leftPriceScale: { visible: false },
       rightPriceScale: { ...LW_RIGHT_SCALE_BASE },
@@ -1248,7 +1266,7 @@
        캔들(위 72%) + 거래량(아래 22%, 눈금 숨김)을 겹쳐 그린다. chartVol은 같은 차트를
        가리키게 해서 기존 호출부(리사이즈·테마·정리)가 그대로 동작한다. */
     const { width, localization } = opts;
-    const { candle: ch } = lwChartHeights();
+    const { candle: ch } = lwChartHeights(mounts.candleHost.closest(".rt-chart-panes"));
     mounts.candleHost.innerHTML = "";
     mounts.volHost.innerHTML = "";
     const chart = LC.createChart(mounts.candleHost, lwChartLayoutOptions(width, ch, true, localization));
@@ -1297,7 +1315,7 @@
       },
       grid: {
         vertLines: { visible: false },
-        horzLines: { color: t.gridColor },
+        horzLines: { visible: false }, // 2026-09-25 시우: 차트 가로줄 제거
       },
     };
     bundle.chartCandle.applyOptions(opts);
@@ -1510,7 +1528,6 @@
     return Object.prototype.hasOwnProperty.call(RT_TAB_PREFIX, tab);
   }
 
-  const RANK_PAGE_SIZE = 25;
 
   function top100KeyForTab(tab) {
     return tp(tab) + "Top100";
@@ -1548,7 +1565,7 @@
   }
 
   function sliceTop100Page(stocks, page) {
-    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     const start = (pg - 1) * RANK_PAGE_SIZE;
     return (stocks || []).slice(start, start + RANK_PAGE_SIZE);
   }
@@ -1557,7 +1574,7 @@
     const cache = pageCacheForTab(tab);
     const all = stocks || getTop100ForTab(tab) || [];
     const loadedAt = Date.now();
-    for (let p = 1; p <= 4; p++) {
+    for (let p = 1; p <= RANK_PAGE_COUNT; p++) {
       const slice = sliceTop100Page(all, p);
       if (slice.length) cache[p] = { stocks: slice, loadedAt };
     }
@@ -1574,7 +1591,7 @@
   function applyTop100Page(tab, page) {
     const all = getTop100ForTab(tab);
     if (!all || !all.length) return false;
-    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
     applyStocksArrayToTab(tab, sliceTop100Page(all, pg));
     return true;
@@ -1619,7 +1636,7 @@
   function updatePaginationUI(page) {
     const tab = state.tab;
     if (!isRankListTab(tab)) return;
-    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
     const el = $("rt-table-pager");
     if (!el) return;
@@ -1682,7 +1699,7 @@
   async function ensureTabPageLoaded(tab, page, opts) {
     const force = !!(opts && opts.force);
     const prevPage = currentPageForTab(tab);
-    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
     if (pg !== prevPage) state.openChartCode = null;
 
@@ -1756,7 +1773,7 @@
   }
 
   async function fetchStocksFromStaticForTab(tab) {
-    const ps = 25;
+    const ps = RANK_PAGE_SIZE;
     const p = currentPageForTab(tab);
     const all = await loadKrTabAll(tab);
     setDataUpdatedAt(all.updatedAt);
@@ -1795,7 +1812,7 @@
 
     if (!el.querySelector("[data-rt-table-page]")) {
       const btns = [];
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= RANK_PAGE_COUNT; i++) {
         btns.push(
           `<button type="button" class="page-btn" data-rt-table-page="${i}" aria-current="false">${i}</button>`
         );
@@ -1808,7 +1825,7 @@
   async function loadTablePage(page) {
     const tab = state.tab;
     if (!isRankListTab(tab)) return;
-    const pg = Math.max(1, Math.min(4, Number(page) || 1));
+    const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     const prevPage = currentPageForTab(tab);
 
     updatePaginationUI(pg);
@@ -2890,13 +2907,25 @@
       closeBtn,
       `    </div>`,
       `  </header>`,
-      `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${supplyGrid}</div>`,
-      `  <div class="rt-acc-section-bar">`,
-      `    <span class="rt-acc-section-bar__title">실적</span>`,
-      `    <span class="rt-acc-section-bar__date">${pfDateFmt}</span>`,
-      `  </div>`,
-      `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--profit">${profitGrid}</div>`,
+      // 2026-09-25 PC 분할 화면: 정보표를 8칸×2줄 + (수급 3 + 실적 3)6칸×1줄로 촘촘하게 — 남는 높이는 차트가 쓴다
+      ...(isSplitLayout()
+        ? [
+            `  <div class="rt-acc-grid rt-acc-grid--s8">${basicGrid}</div>`,
+            `  <div class="rt-acc-grid rt-acc-grid--s6">${supplyGrid}${[
+              accGridCell(`매출${pfDateFmt && pfDateFmt !== "—" ? " · " + String(pfDateFmt).replace(/<[^>]*>/g, "") : ""}`, pfRev),
+              accGridCell("영업이익", pfOp),
+              accGridCell("당기순이익", pfNet),
+            ].join("")}</div>`,
+          ]
+        : [
+            `  <div class="rt-acc-grid rt-acc-grid--4">${basicGrid}</div>`,
+            `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--section">${supplyGrid}</div>`,
+            `  <div class="rt-acc-section-bar">`,
+            `    <span class="rt-acc-section-bar__title">실적</span>`,
+            `    <span class="rt-acc-section-bar__date">${pfDateFmt}</span>`,
+            `  </div>`,
+            `  <div class="rt-acc-grid rt-acc-grid--3 rt-acc-grid--profit">${profitGrid}</div>`,
+          ]),
       `  <footer class="rt-acc-footer">`,
       dismissFooterBtn,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
@@ -2918,7 +2947,7 @@
     if (panes.dataset.mountedKey === mountKey && panelLwCharts.has(panelEl)) {
       const w = Math.max(panes.clientWidth, 200);
       const s = panelLwCharts.get(panelEl);
-      const { candle: ch, vol: vh } = lwChartHeights();
+      const { candle: ch, vol: vh } = lwChartHeights(panes);
       if (s && w > 0) {
         s.chartCandle.applyOptions({ width: w, height: ch });
         s.chartVol.applyOptions({ width: w, height: vh });
@@ -2956,14 +2985,15 @@
         () => bundle.fullCandles
       );
 
-      const { candle: ch, vol: vh } = lwChartHeights();
+      const { candle: ch, vol: vh } = lwChartHeights(panes);
       const resizeObs = new ResizeObserver(() => {
         const s = panelLwCharts.get(panelEl);
         if (!s || !panes.isConnected) return;
         const w = panes.clientWidth;
         if (w <= 0) return;
-        s.chartCandle.applyOptions({ width: w, height: ch });
-        s.chartVol.applyOptions({ width: w, height: vh });
+        const hNow = splitChartHeight(panes) || ch;
+        s.chartCandle.applyOptions({ width: w, height: hNow });
+        s.chartVol.applyOptions({ width: w, height: hNow });
         syncLwDualChartAxes(s.chartCandle, s.chartVol);
       });
       resizeObs.observe(panes);

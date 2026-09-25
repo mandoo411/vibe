@@ -46,8 +46,9 @@ function rankPageCacheSet(key, payload) {
 }
 
 function rankRangeForPage(page, pageSize) {
-  const pg = Math.max(1, Math.min(4, Number(page) || 1));
   const ps = Math.max(1, Math.min(25, Number(pageSize) || 25));
+  // 2026-09-25: 화면이 20건×5페이지로 바뀌어 페이지 상한을 pageSize에 맞춰 계산(25건이면 4, 20건이면 5)
+  const pg = Math.max(1, Math.min(Math.ceil(100 / ps), Number(page) || 1));
   const startRank = (pg - 1) * ps + 1;
   const endRank = Math.min(pg * ps, 100);
   return { page: pg, pageSize: ps, startRank, endRank, total: 100 };

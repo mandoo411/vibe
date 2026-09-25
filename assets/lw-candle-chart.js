@@ -177,7 +177,7 @@
       width,
       height,
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } }, // 2026-09-25 가로줄 제거
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       localization: { priceFormatter: priceFormatterFor(market) },
@@ -303,7 +303,7 @@
     const t = getLwTheme();
     handle.chart.applyOptions({
       layout: { background: { type: "solid", color: t.bg }, textColor: t.text },
-      grid: { vertLines: { visible: false }, horzLines: { color: t.grid } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } }, // 2026-09-25 가로줄 제거
     });
     // 2026-07-11: 배경/그리드만 갱신하고 200일 이평선 색은 그대로 남아있던 버그 — 다크모드에서는
     // 검정 200일선이 어두운 배경에 묻혀 안 보였다. 다크/라이트 전환 때마다 흰색↔검정으로 다시 칠한다.

@@ -812,7 +812,7 @@
     if (!cfg || cfg.SETUP_PENDING || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
     try {
       const base = cfg.SUPABASE_URL.replace(/\/+$/, "");
-      const url = `${base}/rest/v1/public_ai_feed?select=stock_name,direction,confidence,summary,created_at&order=created_at.desc&limit=6`;
+      const url = `${base}/rest/v1/public_ai_feed?select=stock_name,direction,confidence,summary,created_at&order=created_at.desc&limit=10`;
       const res = await fetch(url, {
         headers: { apikey: cfg.SUPABASE_ANON_KEY, Authorization: `Bearer ${cfg.SUPABASE_ANON_KEY}` },
         cache: "no-store",

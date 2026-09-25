@@ -28,6 +28,8 @@
     <script src="./assets/auth-config.js"></script>
     <script src="./assets/auth.js"></script>
     <script src="./home.js" defer></script>
+    <link rel="stylesheet" href="./assets/home-heatmap.css?v=1" />
+    <script src="./assets/home-heatmap.js?v=1" defer></script>
       <link rel="stylesheet" href="./typography.css?v=1" />
     <!-- Pretendard — 국내 금융앱 표준 서체. Noto Sans KR은 본문에서 자간이 넓고
          굵기 대비가 약해 "웹페이지" 인상을 준다(2026-09-13 디자인 리프레시). -->
@@ -104,30 +106,19 @@
       </div>
 
       <!-- 3. HERO -->
-      <section class="home-hero">
-        <div class="home-hero__left">
-          <!-- 2026-09-02: 기존 히어로는 "실시간 시장을 AI로 분석하세요"라는 공허한 카피와
-               하드코딩된 가짜 지표(분석 종목수 2,847개 / 오늘 분석 1,203건 / 평균 정확도 73.2%)
-               를 보여주고 있었다. 근거 없는 수치는 프로젝트 원칙 위반이자 투자정보 서비스로서
-               위험 요소라 전부 제거하고, 그 자리를 실데이터(오늘 시황 한 줄 + 지수 마감)로 채운다. -->
-          <div class="hx-today">
-            <div class="hx-today__meta">
-              <span class="hx-today__date" id="hx-date">TODAY</span>
-              <span class="hx-today__phase" id="hx-phase" hidden></span>
-            </div>
-            <div class="hx-lead" id="hx-lead"></div>
-            <div class="hx-say" id="hx-say" hidden>
-              <p class="hx-say__label" id="hx-say-label"></p>
-              <p class="hx-say__text" id="hx-say-text"></p>
-            </div>
+      <section class="home-hero home-hero--heatmap">
+        <!-- 2026-09-25 시우: 지수·시황 요약은 위 티커바·아래 리포트 카드와 겹쳐서 빼고,
+             그 자리에 섹터 히트맵(코스피/코스닥/미국/암호화폐)을 둔다 — assets/home-heatmap.js -->
+        <div class="home-hero__left hm" id="home-heatmap">
+          <div class="hm__head">
+            <h2 class="hm__title">섹터 히트맵</h2>
+            <span class="hm__meta" id="hm-meta"></span>
+            <div class="hm__tabs" id="hm-tabs" role="tablist" aria-label="시장 선택"></div>
           </div>
-          <div class="home-hero__btns">
-            <a class="home-hero__btn home-hero__btn--primary" href="./stock-analysis.html"
-              ><i class="ti ti-sparkles" aria-hidden="true"></i><span>AI 종목분석</span></a
-            >
-            <a class="home-hero__btn home-hero__btn--secondary" href="./daily-market.html"
-              ><i class="ti ti-report-analytics" aria-hidden="true"></i><span>오늘의 리포트</span></a
-            >
+          <div class="hm__map" id="hm-map" aria-label="섹터 히트맵"><div id="hm-layer"><p class="hm__empty">불러오는 중…</p></div><div class="hm-tip" id="hm-tip" hidden></div></div>
+          <div class="hm__legend">
+            <span class="hm__scale"><i style="background:rgb(37,99,235)">-3%</i><i style="background:rgb(53,88,165)">-1%</i><i style="background:rgb(70,76,90)">0%</i><i style="background:rgb(145,57,64)">+1%</i><i style="background:rgb(214,40,40)">+3%</i></span>
+            <span>크기 = 시가총액 · 누르면 종목 화면으로</span>
           </div>
         </div>
         <!-- 2026-07-10: 기존 지수/국내주식/암호화폐/미국주식 4박스는 위 티커바와 아래 실시간시세·

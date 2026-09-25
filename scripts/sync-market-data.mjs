@@ -197,5 +197,12 @@ if (ONLY !== "us") await syncKr();
 // 2026-09-25: 국내 전 종목 시세(kr-all.json)는 공개 저장소에 두지 않는다.
 // 개인 도구 전용으로 Supabase Edge Function personal-kr-collector가 1분마다 수집해
 // public.personal_snapshots(운영자만 읽기)에 넣는다. syncKrAll()은 참고용으로만 남겨 둔다.
+// 2026-09-25: 홈 섹터 히트맵용 종목→섹터(WICS) 매핑 — 7일 넘게 묵었을 때만 새로 받는다.
+try {
+  const { ensureFreshSectorMap } = await import("./build-sector-map.mjs");
+  if (await ensureFreshSectorMap(7)) console.log("rebuilt kr-sector-map.json");
+} catch (e) {
+  console.error(`sector map refresh failed: ${e.message}`);
+}
 console.log(`sync-market-data done (files written: ${wrote})`);
 if (wrote === 0) process.exit(1);

@@ -3704,6 +3704,17 @@
       deferPrefetch(() => prefetchOtherRankTabs());
       // 상대 시간("N분 전") 1분마다 갱신
       setInterval(() => setDataUpdatedAt(), 60000);
+      // 2026-09-25: 홈 히트맵에서 종목을 누르면 ?q=코드 로 들어온다 → 그 종목을 바로 조회
+      try {
+        const q0 = new URLSearchParams(window.location.search).get("q");
+        const si = $("stock-search-input");
+        if (q0 && si) {
+          si.value = q0;
+          searchStock();
+        }
+      } catch (_) {
+        /* noop */
+      }
       await tryConnectWs();
     }
   }

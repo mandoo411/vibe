@@ -1,0 +1,194 @@
+/* 2026-09-25 홈 섹터 히트맵 (assets/home-heatmap.js) */
+.hm {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  gap: 12px;
+}
+.hm__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hm__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary, #fff);
+}
+.hm__meta {
+  font-size: 12.5px;
+  color: var(--text-muted-ui, var(--text-secondary, #9aa3b2));
+}
+.hm__tabs {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+.hm__tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary, #aab2c0);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.hm__tab:hover { color: var(--text-primary, #fff); }
+.hm__tab.is-active {
+  background: var(--accent, #10b981);
+  color: #04120c;
+}
+.hm__map {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0d1117;
+}
+.hm__empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: #9aa3b2;
+  font-size: 14px;
+}
+.hm-sec {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #161b24;
+}
+.hm-sec__head {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 3px 8px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  color: #e6e9ef;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.hm-sec__row b { font-weight: 700; }
+.hm-sec__row span, .hm-sec__surge span { font-weight: 700; }
+.hm-sec__surge { font-size: 11.5px; color: #f5c451; }
+.hm-sec .is-up, .hm-tip .is-up { color: #ff6b6b; }
+.hm-sec .is-down, .hm-tip .is-down { color: #6ea8ff; }
+.hm-tile {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  color: #fff;
+  text-decoration: none;
+  overflow: hidden;
+  text-align: center;
+  line-height: 1.15;
+  transition: filter 0.12s ease;
+}
+.hm-tile:hover { filter: brightness(1.18); z-index: 1; outline: 1px solid rgba(255, 255, 255, 0.55); }
+.hm-tile__n {
+  max-width: 100%;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.hm-tile__p {
+  font-size: 0.78em;
+  font-weight: 600;
+  opacity: 0.95;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.hm-tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 5;
+  min-width: 170px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(15, 18, 25, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e6e9ef;
+  font-size: 12.5px;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.hm-tip b { font-weight: 700; }
+.hm-tip__id { color: #9aa3b2; font-size: 11.5px; }
+.hm-tip__sec { color: #9aa3b2; font-size: 11.5px; margin: 2px 0 6px; }
+.hm-tip__row { display: flex; justify-content: space-between; gap: 16px; margin-top: 2px; }
+.hm__legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--text-muted-ui, #9aa3b2);
+}
+.hm__scale { display: inline-flex; gap: 2px; }
+.hm__scale i {
+  display: inline-block;
+  min-width: 38px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: #fff;
+  font-style: normal;
+  font-size: 10.5px;
+  text-align: center;
+}
+
+/* 홈 히어로 배치: 히트맵이 주인공 — 넓은 화면에서 왼쪽을 크게 */
+body.page-tm-v2 .home-hero--heatmap { align-items: stretch; }
+/* 오른쪽 실시간 AI 분석 목록은 위에서부터 차곡차곡(히트맵 높이만큼 늘어나도 칸 사이가 벌어지지 않게) */
+body.page-tm-v2 .home-hero--heatmap .home-hero__ai-live-list { justify-content: flex-start !important; align-content: flex-start !important; flex: 0 0 auto !important; }
+@media (min-width: 1100px) {
+  body.page-tm-v2 .home-hero--heatmap {
+    grid-template-columns: minmax(0, 1.75fr) minmax(360px, 0.85fr);
+  }
+  body.page-tm-v2 .home-hero--heatmap .hm__map { min-height: 560px; }
+}
+@media (max-width: 1099px) {
+  body.page-tm-v2 .home-hero--heatmap { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .hm__tabs { margin-left: 0; width: 100%; }
+  .hm__tab { flex: 1 1 0; padding: 7px 4px; }
+  .hm__map { min-height: 620px; }
+  .hm__legend { justify-content: flex-start; flex-wrap: wrap; }
+}
+/* 히트맵 옆 AI 분석: 요약을 두 줄까지 보여 세로 공간을 채운다 */
+body.page-tm-v2 .home-hero--heatmap .home-hero__ai-item { align-items: flex-start; padding: 11px 0; }
+body.page-tm-v2 .home-hero--heatmap .home-hero__ai-desc {
+  white-space: normal !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}

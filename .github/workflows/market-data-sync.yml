@@ -50,7 +50,7 @@ jobs:
           # 새 탭 파일은 첫 동기화 전엔 없을 수 있다 — 있는 파일만 add(없는 파일 때문에 전체 커밋이 막히지 않게)
           for f in data/us-market-cap.json data/us-market-gainers.json data/us-market-volume.json \
                    data/us-market-losers.json data/us-market-tradevol.json data/us-market-volsurge.json \
-                   data/kr-realtime.json; do
+                   data/kr-realtime.json data/kr-sector-map.json; do
             if [ -f "$f" ]; then git add "$f"; fi
           done
           if git diff --staged --quiet; then

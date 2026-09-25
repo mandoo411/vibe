@@ -1457,6 +1457,17 @@
     syncUsPriceColumnAlign();
     startPolling();
     setInterval(() => setDataUpdatedAt(), 60000);
+    // 2026-09-25: 홈 히트맵에서 종목을 누르면 ?q=티커 로 들어온다 → 그 종목을 바로 조회
+    try {
+      const q0 = new URLSearchParams(window.location.search).get("q");
+      const si = $("us-stock-search-input");
+      if (q0 && si) {
+        si.value = q0;
+        searchUsStock();
+      }
+    } catch (_) {
+      /* noop */
+    }
   }
 
   if (document.readyState === "loading") {

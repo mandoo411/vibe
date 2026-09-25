@@ -1917,6 +1917,49 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    /* 2026-09-25 홈 섹터 히트맵: 코스피/코스닥 시총 상위 약 600개(보통주만)의 시총·등락률.
+       섹터 분류는 정적 파일 data/kr-sector-map.json(WICS)을 프런트가 붙인다 — 여기선 시세만. */
+    if (action === "heatmap") {
+      const mkt = sanitizeStr(req.query && req.query.market).toUpperCase() === "KOSDAQ" ? "KOSDAQ" : "KOSPI";
+      const cacheKey = `heatmap:${mkt}`;
+      let payload = rankPageCacheGet(cacheKey);
+      if (!payload) {
+        const pages = await Promise.all(
+          [1, 2, 3, 4, 5, 6].map((pg) => fetchNaverMarketCapPageJson(pg, mkt).catch(() => []))
+        );
+        const seen = new Set();
+        const rows = [];
+        let tradedAt = "";
+        let status = "";
+        for (const s of pages.flat()) {
+          if (!isCommonStockRow(s)) continue;
+          const codeRaw = String(s.itemCode || s.reutersCode || "").trim().toUpperCase();
+          const code = /^[0-9A-Z]{6}$/.test(codeRaw) ? codeRaw : codeRaw.replace(/\D/g, "").padStart(6, "0").slice(-6);
+          if (!code || seen.has(code)) continue;
+          const mcapEok = toNum(s.marketValue);
+          const pct = toNum(s.fluctuationsRatio);
+          if (mcapEok == null || mcapEok <= 0 || pct == null) continue;
+          seen.add(code);
+          rows.push([code, sanitizeStr(s.stockName), Math.round(mcapEok), Math.round(pct * 100) / 100]);
+          if (!tradedAt && s.localTradedAt) tradedAt = s.localTradedAt;
+          if (!status && s.marketStatus) status = s.marketStatus;
+        }
+        if (rows.length < 50) {
+          json(res, 502, { error: "히트맵 시세를 불러오지 못했습니다." });
+          return;
+        }
+        payload = { market: mkt, tradedAt, status, fields: ["code", "name", "mcapEok", "pct"], rows };
+        rankPageCacheSet(cacheKey, payload);
+      }
+      const open = sessionLabelFromKst().key === "open";
+      json(res, 200, payload, {
+        cacheControl: open
+          ? "public, max-age=30, s-maxage=60, stale-while-revalidate=300"
+          : "public, max-age=120, s-maxage=600, stale-while-revalidate=3600",
+      });
+      return;
+    }
+
     if (action === "mcap-lookup") {
       try {
         const raw = sanitizeStr(req.query && req.query.codes);

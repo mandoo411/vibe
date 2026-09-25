@@ -1,7 +1,12 @@
 (function () {
   const COIN_SYMBOLS = ["BTC", "ETH", "XRP"];
   const COIN_CMC_IDS = { BTC: 1, ETH: 1027, XRP: 52 };
-  const COIN_NAMES_KO = { BTC: "비트코인", ETH: "이더리움", XRP: "리플" };
+  const COIN_NAMES_KO = {
+    BTC: "비트코인", ETH: "이더리움", XRP: "리플", USDT: "테더", BNB: "BNB", USDC: "USD코인",
+    SOL: "솔라나", TRX: "트론", DOGE: "도지코인", ADA: "에이다", HYPE: "하이퍼리퀴드", ZEC: "지캐시",
+    XMR: "모네로", LINK: "체인링크", XLM: "스텔라루멘", BCH: "비트코인캐시", SUI: "수이", AVAX: "아발란체",
+    LTC: "라이트코인", HBAR: "헤데라", TON: "톤코인", DOT: "폴카닷", SHIB: "시바이누", UNI: "유니스왑",
+  };
 
   function $(id) {
     return document.getElementById(id);
@@ -430,7 +435,7 @@
       if (tab === "tv") return (toNum(b?.tradingValue) ?? 0) - (toNum(a?.tradingValue) ?? 0);
       return (toNum(b?.marketCap) ?? 0) - (toNum(a?.marketCap) ?? 0);
     });
-    const rows = sorted.slice(0, 5);
+    const rows = sorted.slice(0, 10); // 2026-09-25 홈 3칸 배치: 국내·미국·코인 모두 10위까지
 
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
@@ -467,15 +472,24 @@
     return "—";
   }
 
+  /* 2026-09-25 홈 3칸 배치: 코인도 시가총액·상승률·거래대금 탭 + 10위까지 */
+  let homeCryptoTab = "cap";
+  let homeCryptoCoins = [];
   function renderCryptoTable(coins) {
     const el = $("home-crypto-body");
     if (!el) return;
-    const bySym = new Map((coins || []).map((c) => [String(c.symbol || "").toUpperCase(), c]));
-    const rows = COIN_SYMBOLS.map((sym) => {
-      const live = bySym.get(sym);
-      if (!live) return null;
-      return { ...live, symbol: sym };
-    }).filter(Boolean);
+    if (Array.isArray(coins)) homeCryptoCoins = coins;
+    const metricH = $("home-crypto-metric-h");
+    if (metricH) metricH.textContent = homeCryptoTab === "tv" ? "거래대금" : "시가총액";
+    const list = homeCryptoCoins.filter((c) => c && c.symbol).slice();
+    list.sort((a, b) => {
+      if (homeCryptoTab === "gainers") return (toNum(b.change24h) ?? -1e9) - (toNum(a.change24h) ?? -1e9);
+      if (homeCryptoTab === "tv") return (toNum(b.volume24hUsd) ?? 0) - (toNum(a.volume24hUsd) ?? 0);
+      return (toNum(a.rank) ?? 1e9) - (toNum(b.rank) ?? 1e9);
+    });
+    // 상승률은 시총 100위 안에서만(소형 코인의 급등 착시 방지)
+    const pool = homeCryptoTab === "gainers" ? list.filter((c) => (toNum(c.rank) ?? 1e9) <= 100) : list;
+    const rows = pool.slice(0, 10);
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">데이터를 불러오는 중…</p>';
       return;
@@ -491,7 +505,10 @@
           price = pv >= 1 ? `$${pv.toLocaleString("en-US", { maximumFractionDigits: pv >= 100 ? 0 : 2 })}` : `$${pv.toFixed(4)}`;
         }
         const name = COIN_NAMES_KO[sym] || c.name || sym;
-        const mcap = formatCryptoMarketCap(c);
+        const mcap =
+          homeCryptoTab === "tv"
+            ? (toNum(c.volume24hUsd) ? fmtUsdCompact(toNum(c.volume24hUsd)) : "—")
+            : formatCryptoMarketCap(c);
         return `<a class="home-tr home-tr--logo home-tr--coin" href="./crypto.html">${identityCell(name, sym, coinLogoHtml(c), idx + 1)}<div class="home-tr__price">${escapeHtml(price)}</div><div class="home-tr__chg ${chgCls}">${escapeHtml(fmtPct(pct) || "0.00%")}</div><div class="home-tr__metric">${escapeHtml(mcap)}</div></a>`;
       })
       .join("");
@@ -625,6 +642,22 @@
       if (!usStocks.length && briefing.topStocks) usStocks = briefing.topStocks;
     } catch (_) {}
     renderUsTable(usStocks);
+  }
+
+  function bindHomeCryptoTabs() {
+    document.querySelectorAll("[data-home-crypto-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-home-crypto-tab");
+        if (!tab || tab === homeCryptoTab) return;
+        homeCryptoTab = tab;
+        document.querySelectorAll("[data-home-crypto-tab]").forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        renderCryptoTable();
+      });
+    });
   }
 
   function bindHomeUsTabs() {
@@ -1159,6 +1192,7 @@
     bindMobileHomeUi();
     bindHomeRtTabs();
     bindHomeUsTabs();
+    bindHomeCryptoTabs();
     syncHomeRtChrome();
     await Promise.all([
       loadTickerAndHero(),

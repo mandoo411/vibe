@@ -315,3 +315,30 @@ html[lang] body.page-home-premium .page,
 html[lang] body .bfx-deck {
   max-width: none !important;
 }
+
+/* ── 2026-09-25 홈 시세 3칸: 국내주식 | 미국주식 | 암호화폐 (각 10위) + 오른쪽 경제지표·특징주 ── */
+@media (min-width: 769px) {
+  html[lang] body.page-home-v2 .home-main {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 300px !important;
+    grid-template-rows: auto !important;
+  }
+  html[lang] body.page-home-v2 .home-section--realtime { grid-column: 1 !important; grid-row: 1 !important; }
+  html[lang] body.page-home-v2 .home-section--us { grid-column: 2 !important; grid-row: 1 !important; }
+  html[lang] body.page-home-v2 .home-section--crypto { grid-column: 3 !important; grid-row: 1 !important; }
+  html[lang] body.page-home-v2 .home-side { grid-column: 4 !important; grid-row: 1 !important; }
+}
+/* 화면이 좁으면(1500px 미만) 경제지표·특징주는 시세 3칸 아래로 내려 두 칸으로 나란히 */
+@media (min-width: 769px) and (max-width: 1499px) {
+  html[lang] body.page-home-v2 .home-main { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  html[lang] body.page-home-v2 .home-side {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+}
+/* 세 칸 탭 글자 크기 통일(국내 칸만 작게 보이던 것) */
+@media (min-width: 769px) {
+  html[lang] body.page-home-v2 .home-main .home-rt-tab { font-size: 13.5px !important; }
+}

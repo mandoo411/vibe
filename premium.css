@@ -298,3 +298,20 @@ html[data-theme="light"][lang] body.page-tm-v2 :is(.tm-auth-submit, .tm-btn--pri
   background: #059669 !important;
   color: #ffffff !important;
 }
+
+/* ── 2026-09-25 시우: 전 페이지 브라우저 너비 꽉 채우기 ─────────────────────
+   예전엔 .tm-wrap/.home-wrap이 1200px로 묶여 넓은 모니터에서 좌우가 크게 비었다.
+   네이버페이 증권처럼 화면을 다 쓰고, 좌우에는 최소 여백만 남긴다(각 구역의 기존 padding).
+   되돌리려면 이 블록만 지우면 된다. */
+html[lang] body .tm-wrap,
+html[lang] body .home-wrap,
+html[lang] body.page-tm-v2 .tm-wrap,
+html[lang] body.page-tm-v2 .home-wrap {
+  max-width: none !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+html[lang] body.page-home-premium .page,
+html[lang] body .bfx-deck {
+  max-width: none !important;
+}

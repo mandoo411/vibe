@@ -1,0 +1,123 @@
+/* ════════════════════════════════════════════════════════════════════════
+   2026-09-26 읽는 페이지 넓은 화면 배치 — 오전브리핑 · 마감시황 · 일정
+   전체 너비(9/25) 이후 본문 한 줄이 1,800px까지 늘어나 읽기 힘들었다(시우 지적).
+   → 1200px 이상에서: 전체 폭을 --rd-max로 묶어 가운데 두고,
+     왼쪽 = 숫자판(지수·환율·시장 온도, 스크롤해도 따라옴) / 오른쪽 = 본문(줄 길이 약 900px 이하).
+   섹션 나누기는 assets/read-layout.js가 한다. 일정 페이지는 원래 있던 옆 칸(달력·요약)을 왼쪽으로 옮긴다.
+   1200px 미만·모바일은 건드리지 않는다. wide.css 다음에 읽는다.
+   ════════════════════════════════════════════════════════════════════════ */
+:root { --rd-max: 1320px; --rd-rail: 340px; --rd-col-gap: 24px; }
+
+@media (min-width: 1200px) {
+  /* ── 폭 묶기: 머리줄(날짜·탭)과 본문이 같은 가장자리에 서게 ── */
+  html[lang] body .briefing-meta-bar,
+  html[lang] body #bfx-deck.bfx-deck,
+  html[lang] body #dm-main.dm-wrap,
+  html[lang] body .schedule-page .schedule-layout {
+    max-width: var(--rd-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+  /* 마감시황 페이지 틀의 overflow-x:hidden이 스크롤 상자를 만들어 왼쪽 칸 고정(sticky)이 안 먹었다 → clip은 상자를 안 만든다 */
+  html[lang] body .page.page--daily-market { overflow-x: clip !important; overflow-y: visible !important; }
+  html[lang] body #bfx-deck.bfx-deck.rd-host,
+  html[lang] body #dm-ai-content.rd-host { display: block !important; }
+
+  /* ── 두 칸 ── */
+  html[lang] body .rd-grid {
+    display: grid;
+    grid-template-columns: var(--rd-rail) minmax(0, 1fr);
+    column-gap: var(--rd-col-gap);
+    align-items: start;
+  }
+  html[lang] body .rd-grid.rd-norail { grid-template-columns: minmax(0, 1fr); }
+  html[lang] body .rd-grid.rd-norail > .rd-rail { display: none; }
+  html[lang] body .rd-main { min-width: 0; display: flex; flex-direction: column; gap: 18px; }
+  html[lang] body #dm-ai-content .rd-main { gap: 0; }
+  
+  html[lang] body .rd-rail {
+    position: sticky;
+    top: var(--rd-top, 120px);
+    max-height: calc(100vh - var(--rd-top, 120px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  html[lang] body .rd-rail > section { margin: 0 !important; }
+
+  /* ── 왼쪽 숫자판: 지수 카드를 한 줄씩(이름·값 / 설명·등락) ── */
+  html[lang] body .rd-rail .bfx-block,
+  html[lang] body .rd-rail .dmx-block { padding: 14px 14px 12px !important; }
+  html[lang] body .rd-rail .bfx-idx-grid,
+  html[lang] body .rd-rail .dmx-idx-grid { display: flex !important; flex-direction: column; gap: 0 !important; }
+  html[lang] body .rd-rail .bfx-idx,
+  html[lang] body .rd-rail .dmx-idx {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "l v d" "n n n";
+    align-items: baseline;
+    column-gap: 8px;
+    row-gap: 1px;
+    min-height: 0 !important;
+    padding: 8px 2px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html[lang] body .rd-rail .bfx-idx:first-child,
+  html[lang] body .rd-rail .dmx-idx:first-child { border-top: 0 !important; padding-top: 2px !important; }
+  html[lang] body .rd-rail .bfx-idx__label,
+  html[lang] body .rd-rail .dmx-idx__label { grid-area: l; font-size: 13.5px !important; margin: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html[lang] body .rd-rail .bfx-idx__label .bfx-idx__live { display: none !important; }
+  html[lang] body .rd-rail .bfx-idx__value,
+  html[lang] body .rd-rail .dmx-idx__value { grid-area: v; justify-self: end; font-size: 16px !important; line-height: 1.25 !important; margin: 0 !important; white-space: nowrap; }
+  /* 등락: 좁은 칸이라 포인트는 빼고 %만 */
+  html[lang] body .rd-rail .bfx-idx__delta,
+  html[lang] body .rd-rail .dmx-idx__delta { grid-area: d; justify-self: end; min-width: 52px; text-align: right; font-size: 0 !important; margin: 0 !important; white-space: nowrap; }
+  html[lang] body .rd-rail .bfx-idx__delta em,
+  html[lang] body .rd-rail .dmx-idx__delta em { font-size: 12.5px !important; margin: 0 !important; }
+  html[lang] body .rd-rail .bfx-idx__note,
+  html[lang] body .rd-rail .dmx-idx__note {
+    grid-area: n; margin: 0 !important; font-size: 11.5px !important; line-height: 1.45 !important;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  html[lang] body .rd-rail .bfx-idx__track { display: none !important; }
+  /* 마감시황 지수: 장중 범위 막대는 한 줄 아래 전체 폭으로 */
+  html[lang] body .rd-rail .dmx-idx { grid-template-areas: "l v d" "n n n" "r r r"; }
+  html[lang] body .rd-rail .dmx-idx .dmx-range { grid-area: r; margin: 4px 0 2px !important; }
+  html[lang] body .rd-rail .dmx-idx.is-fx .dmx-idx__note { white-space: normal; }
+  html[lang] body .rd-rail .bfx-block__title,
+  html[lang] body .rd-rail .dmx-block__title { font-size: 15px !important; }
+
+  /* 시장 온도: 두 칸 */
+  html[lang] body .rd-rail .bfx-score,
+  html[lang] body .rd-rail .dmx-score { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important; }
+  html[lang] body .rd-rail .bfx-score__item,
+  html[lang] body .rd-rail .dmx-score__item { padding: 8px 10px !important; min-height: 0 !important; }
+  html[lang] body .rd-rail .bfx-score__v,
+  html[lang] body .rd-rail .dmx-score__v { font-size: 14.5px !important; }
+  html[lang] body .rd-rail .dmx-note { font-size: 11.5px !important; }
+
+  /* ── 오른쪽 본문: 좁아진 폭에 맞춘 칸 수 ── */
+  html[lang] body .rd-main .bfx-numlist { grid-template-columns: minmax(0, 1fr) !important; }
+  html[lang] body .rd-main .bfx-cards { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important; }
+
+  /* ── 일정: 옆 칸(달력·다음 지표·요약)을 왼쪽으로 ── */
+  html[lang] body .schedule-page .schedule-layout {
+    grid-template-columns: 300px minmax(0, 1fr) !important;
+    column-gap: var(--rd-col-gap) !important;
+  }
+  html[lang] body .schedule-page .schedule-aside {
+    order: -1;
+    position: sticky;
+    top: var(--rd-top, 120px);
+  }
+}

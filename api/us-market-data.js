@@ -29,6 +29,11 @@ const UPDOWN_RATE_TR_ID = "HHDFS76290000";
 const TRADE_PBMN_PATH = "/uapi/overseas-stock/v1/ranking/trade-pbmn";
 const TRADE_PBMN_TR_ID = "HHDFS76320010";
 const US_RANKING_CURRENCY = "0";
+// 2026-09-25 6탭: 거래량순위·거래증가율순위 (KIS 공식 예제 open-trading-api/examples_llm/overseas_stock)
+const TRADE_VOL_PATH = "/uapi/overseas-stock/v1/ranking/trade-vol";
+const TRADE_VOL_TR_ID = "HHDFS76310010";
+const TRADE_GROWTH_PATH = "/uapi/overseas-stock/v1/ranking/trade-growth";
+const TRADE_GROWTH_TR_ID = "HHDFS76330000";
 
 const US_INDICES = [
   { id: "nasdaq", name: "나스닥", symbol: "NDX", yahoo: "^NDX", cnbcSymbol: ".NDX", source: "cnbc" },
@@ -451,6 +456,9 @@ function mapRankRow(row, rank) {
     volume: volume != null ? Math.round(volume) : null,
     marketCap: marketCap != null ? Math.round(marketCap) : null,
     tradingValue: tradingValue != null ? Math.round(tradingValue) : null,
+    // 거래증가율순위(trade-growth)에만 있는 값: n_rate(증가율 %), n_tvol(기준 평균거래량)
+    volSurgePct: toNum(pickFirst(row, ["n_rate", "N_RATE"])),
+    baseVolume: toNum(pickFirst(row, ["n_tvol", "N_TVOL"])),
   };
 }
 
@@ -1038,8 +1046,9 @@ async function fetchMergedRanking(
   trId,
   params,
   sortKey,
-  { enrich = true, resort = false, pickCount = 50 } = {}
+  { enrich = true, resort = false, pickCount = 50, asc = false, keep = null, keepAfter = null } = {}
 ) {
+  const dir = asc ? -1 : 1;
   return cached(cacheKey, async () => {
     const batches = await Promise.all(
       EXCHANGES.map(async (exchange) => {
@@ -1053,16 +1062,18 @@ async function fetchMergedRanking(
     const all = batches.flat();
     let ranked = all
       .filter((row) => row.ticker && row.price != null && row[sortKey] != null && !isExcludedUsTicker(row.ticker))
-      .sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0))
+      .filter((row) => (keep ? keep(row) : true))
+      .sort((a, b) => dir * ((b[sortKey] || 0) - (a[sortKey] || 0)))
       .slice(0, pickCount);
     if (enrich) ranked = await enrichRankListRows(ranked);
     if (resort) {
-      ranked = ranked.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0)).slice(0, 50);
-    } else if (ranked.length > 50) {
+      ranked = ranked.sort((a, b) => dir * ((b[sortKey] || 0) - (a[sortKey] || 0))).slice(0, keepAfter ? pickCount : 50);
+    } else if (ranked.length > 50 && !keepAfter) {
       ranked = ranked.slice(0, 50);
     }
     // 시총 보정(SPCX 하드코딩 등) — 정렬 키(changePct/tradingValue)엔 영향 없음, marketCap 값만 보정
     ranked = await applyYahooMarketCap(ranked);
+    if (keepAfter) ranked = ranked.filter(keepAfter).slice(0, 50);
     return ranked.map((row, i) => ({ ...row, rank: i + 1 }));
   });
 }
@@ -1114,6 +1125,65 @@ function fetchTradeValueTop50() {
     }),
     "tradingValue",
     { enrich: true, resort: true, pickCount: 60 }
+  );
+}
+
+/* 2026-09-25 새 탭 공통 품질 조건 — 워런트·유닛(시총 없음)과 1달러 미만 초저가주를 뺀다. */
+function isPricedUsRow(r) {
+  return (r.price || 0) >= 1;
+}
+function hasUsMarketCap(r) {
+  return (r.marketCap || 0) >= 1e8;
+}
+
+/* 2026-09-25 하락률 TOP50 — 상승률과 같은 API, GUBN=0(하락) */
+function fetchLosersTop50() {
+  return fetchMergedRanking(
+    "ranking:losers:v1",
+    UPDOWN_RATE_PATH,
+    UPDOWN_RATE_TR_ID,
+    (exchange) => ({
+      AUTH: "",
+      CURR_GB: US_RANKING_CURRENCY,
+      EXCD: exchange,
+      GUBN: "0",
+      KEYB: "",
+      NDAY: "0",
+      VOL_RANG: "0",
+    }),
+    "changePct",
+    { enrich: true, asc: true, pickCount: 90, keep: isPricedUsRow, keepAfter: hasUsMarketCap }
+  );
+}
+
+/* 2026-09-25 거래량 TOP50 */
+function fetchTradeVolTop50() {
+  return fetchMergedRanking(
+    "ranking:trade-vol:v1",
+    TRADE_VOL_PATH,
+    TRADE_VOL_TR_ID,
+    (exchange) => ({ AUTH: "", EXCD: exchange, KEYB: "", NDAY: "0", PRC1: "", PRC2: "", VOL_RANG: "0" }),
+    "volume",
+    { enrich: true, resort: true, pickCount: 90, keep: isPricedUsRow, keepAfter: hasUsMarketCap }
+  );
+}
+
+/* 2026-09-25 거래급증 TOP50 — 거래증가율순위. NDAY=1: 직전 거래일 거래량 대비.
+   VOL_RANG=4(10만주 이상)로 거래가 거의 없던 종목의 착시 급증을 거른다. */
+function fetchTradeGrowthTop50() {
+  return fetchMergedRanking(
+    "ranking:trade-growth:v1",
+    TRADE_GROWTH_PATH,
+    TRADE_GROWTH_TR_ID,
+    (exchange) => ({ AUTH: "", EXCD: exchange, KEYB: "", NDAY: "1", VOL_RANG: "4" }),
+    "volSurgePct",
+    // 기준 거래량이 너무 작으면(수천 주) 증가율이 9999%로 튀어 의미가 없다 — 기준 10만주·오늘 50만주 이상만.
+    {
+      enrich: true,
+      pickCount: 90,
+      keep: (r) => isPricedUsRow(r) && (r.baseVolume || 0) >= 100000 && (r.volume || 0) >= 500000,
+      keepAfter: hasUsMarketCap,
+    }
   );
 }
 
@@ -1419,6 +1489,21 @@ module.exports = async function handler(req, res) {
     }
     if (action === "volume") {
       const payload = await cachedPayload("volume:v9", async () => ({ stocks: await fetchTradeValueTop50() }));
+      json(res, 200, payload);
+      return;
+    }
+    if (action === "losers") {
+      const payload = await cachedPayload("losers:v1", async () => ({ stocks: await fetchLosersTop50() }));
+      json(res, 200, payload);
+      return;
+    }
+    if (action === "trade-vol") {
+      const payload = await cachedPayload("trade-vol:v1", async () => ({ stocks: await fetchTradeVolTop50() }));
+      json(res, 200, payload);
+      return;
+    }
+    if (action === "trade-growth") {
+      const payload = await cachedPayload("trade-growth:v1", async () => ({ stocks: await fetchTradeGrowthTop50() }));
       json(res, 200, payload);
       return;
     }

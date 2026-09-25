@@ -180,6 +180,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./assets/rt-split.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
   </head>
   <body class="page-tm-v2" data-tm-tab="us">
@@ -241,7 +242,7 @@
       </div>
 
       <main class="tm-main">
-        <div class="page page--realtime">
+        <div class="page page--realtime page--rt-split">
           <header class="masthead masthead--title-only">
             <div class="masthead__copy">
               <p class="masthead__kicker">US MARKETS</p>
@@ -254,15 +255,25 @@
             <div id="us-summary-strip" class="tms" hidden aria-label="미국시장 요약"></div>
             <div class="rt-panel" role="tabpanel">
               <div class="rt-tabs" role="tablist" aria-label="미국주식 보기">
-                <div class="rt-tabs-row-tabs">
+                <!-- 2026-09-25 6탭 2줄: 시가총액·상승률·하락률 / 거래대금·거래량·거래급증 -->
+                <div class="rt-tabs-row-tabs rt-tabs-6">
                   <button type="button" class="rt-tab" role="tab" data-us-tab="market-cap" aria-selected="true" id="us-tab-cap" aria-label="시가총액 TOP 50">
-                    <span class="rt-tab-label--full">시가총액 TOP 50</span><span class="rt-tab-label--short">시가총액</span>
+                    <span class="rt-tab-label--short">시가총액</span>
                   </button>
                   <button type="button" class="rt-tab" role="tab" data-us-tab="gainers" aria-selected="false" id="us-tab-gainers" aria-label="상승률 TOP 50">
-                    <span class="rt-tab-label--full"><span data-us-tab-measure-end>상승</span>률 TOP 50</span><span class="rt-tab-label--short">상승률</span>
+                    <span class="rt-tab-label--short">상승률</span>
+                  </button>
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="losers" aria-selected="false" id="us-tab-losers" aria-label="하락률 TOP 50">
+                    <span class="rt-tab-label--short">하락률</span>
                   </button>
                   <button type="button" class="rt-tab" role="tab" data-us-tab="volume" aria-selected="false" id="us-tab-tv" aria-label="거래대금 TOP 50">
-                    <span class="rt-tab-label--full">거래대금 TOP 50</span><span class="rt-tab-label--short">거래대금</span>
+                    <span class="rt-tab-label--short">거래대금</span>
+                  </button>
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="trade-vol" aria-selected="false" id="us-tab-vol" aria-label="거래량 TOP 50">
+                    <span class="rt-tab-label--short">거래량</span>
+                  </button>
+                  <button type="button" class="rt-tab" role="tab" data-us-tab="trade-growth" aria-selected="false" id="us-tab-surge" aria-label="거래량 급증 TOP 50 (직전 거래일 대비)">
+                    <span class="rt-tab-label--short">거래급증</span>
                   </button>
                 </div>
                 <div class="rt-tab-search">
@@ -351,6 +362,6 @@
 
     <script src="./assets/lw-candle-chart.js?v=3"></script>
     <script src="./assets/market-strip.js?v=1"></script>
-    <script src="./us-market.js?v=20260923a"></script>
+    <script src="./us-market.js?v=20260925a"></script>
   </body>
 </html>

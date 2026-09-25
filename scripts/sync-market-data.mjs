@@ -50,6 +50,10 @@ const US_TABS = [
   ["market-cap", "us-market-cap.json"],
   ["gainers", "us-market-gainers.json"],
   ["volume", "us-market-volume.json"],
+  // 2026-09-25 6탭
+  ["losers", "us-market-losers.json"],
+  ["trade-vol", "us-market-tradevol.json"],
+  ["trade-growth", "us-market-volsurge.json"],
 ];
 
 // kis-realtime-data 액션 → kr-realtime.json 의 탭 키

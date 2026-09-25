@@ -51,6 +51,31 @@
       valueLabel: "시가총액",
       valueFormat: fmtUsdCompact,
     },
+    // 2026-09-25 6탭: 하락률 · 거래량 · 거래급증(직전 거래일 대비)
+    losers: {
+      rtTab: "losers",
+      action: "losers",
+      jsonFile: "us-market-losers.json",
+      valueKey: "marketCap",
+      valueLabel: "시가총액",
+      valueFormat: fmtUsdCompact,
+    },
+    "trade-vol": {
+      rtTab: "vol",
+      action: "trade-vol",
+      jsonFile: "us-market-tradevol.json",
+      valueKey: "volume",
+      valueLabel: "거래량",
+      valueFormat: fmtUsdCompact,
+    },
+    "trade-growth": {
+      rtTab: "surge",
+      action: "trade-growth",
+      jsonFile: "us-market-volsurge.json",
+      valueKey: "volSurgePct",
+      valueLabel: "전일비",
+      valueFormat: fmtUsdCompact,
+    },
   };
 
   const KIS_QUOTE_API = "/api/kis-stock-quote";
@@ -534,7 +559,7 @@
       `<div class="rt-acc">`,
       `  <header class="rt-acc-header">`,
       `    <div class="rt-acc-header__left">`,
-      `      <span class="rt-acc-name">${name}</span>`,
+      `      ${usLogo(data.stockCode || "", data.stockName || "")}<span class="rt-acc-name">${name}</span>`,
       `      <span class="rt-acc-badges">`,
       `        <span class="rt-acc-badge">${ticker}</span>`,
       `        <span class="rt-acc-badge">${market}</span>`,
@@ -614,6 +639,8 @@
       chartHost.hidden = !chartOpen;
     };
     setToggle(false);
+    // 2026-09-25 PC 분할 화면: 차트까지 펼친 상태로 연다
+    if (isSplitLayout()) setTimeout(() => { if (!chartOpen) toggle.click(); }, 0);
 
     chartHost.querySelectorAll(".tm-lw-period-btn").forEach((btn) => {
       btn.addEventListener("click", async () => {
@@ -763,14 +790,33 @@
   }
 
   function mobileLastColumnLabel() {
-    return state.activeTab === "volume" ? "거래대금" : "시가총액";
+    if (state.activeTab === "volume") return "거래대금";
+    if (state.activeTab === "trade-vol") return "거래량";
+    if (state.activeTab === "trade-growth") return "전일비";
+    return "시가총액";
   }
 
   function mobileLastColumnValue(row) {
     if (state.activeTab === "volume") {
       return escapeHtml(fmtUsdCompact(rowTradingValue(row)));
     }
+    if (state.activeTab === "trade-vol") return escapeHtml(fmtVolumeUs(row.volume));
+    if (state.activeTab === "trade-growth") {
+      const v = Number(row.volSurgePct);
+      if (!Number.isFinite(v)) return "—";
+      const txt = (v >= 0 ? "+" : "") + (Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("ko-KR") : v.toFixed(1)) + "%";
+      return `<span class="delta ${deltaClass(v)}">${escapeHtml(txt)}</span>`;
+    }
     return escapeHtml(fmtUsdCompact(row.marketCap));
+  }
+
+  /* 2026-09-25 PC(1100px 이상)는 왼쪽 좁은 목록 + 오른쪽 상세 */
+  function isSplitLayout() {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(min-width: 1100px)").matches
+    );
   }
 
   function syncMobileHeaderRow() {
@@ -786,7 +832,7 @@
        assets/stock-logo.js가 아직 안 실려도 화면이 깨지지 않게 빈 문자열로 넘어간다. */
     const nameBtn = `<button type="button" class="rt-name-chart-btn" data-ticker="${escapeHtml(row.ticker)}" aria-expanded="${open ? "true" : "false"}">${usLogo(row.ticker, row.name)}<span class="rt-name-text">${escapeHtml(row.name || row.ticker)}</span></button>`;
 
-    if (isMobileLayout()) {
+    if (isMobileLayout() || isSplitLayout()) {
       const rank = row.rank != null ? escapeHtml(String(row.rank)) : "—";
       const price = escapeHtml(fmtUsdPrice(row.price));
       const lastVal = mobileLastColumnValue(row);
@@ -843,6 +889,11 @@
     syncNameChartButtonsAria(body);
     syncUsPriceColumnAlign();
     void mountUsDetailAccordion();
+    // PC 분할 화면: 아무 종목도 안 열려 있으면 첫 종목을 오른쪽에 띄운다
+    if (isSplitLayout() && !state.openTicker && rows.length) {
+      state.openTicker = rows[0].ticker;
+      renderRankTable();
+    }
   }
 
   function setTabs() {
@@ -978,7 +1029,7 @@
       state.rowsByTab = {};
       state.tabLoadedAt = {};
     }
-    const tabs = ["market-cap", "gainers", "volume"];
+    const tabs = Object.keys(TAB_CONFIG);
     const currentTab = state.activeTab;
     if (!state.rowsByTab[currentTab]) showTableLoading();
 
@@ -1253,6 +1304,8 @@
       if (!stockRow || !body.contains(stockRow)) return;
       const ticker = stockRow.getAttribute("data-ticker");
       if (!ticker) return;
+      // PC 분할 화면에선 같은 행을 다시 눌러도 닫지 않는다(오른쪽 상세가 항상 떠 있게)
+      if (isSplitLayout() && state.openTicker === ticker) return;
       state.openTicker = state.openTicker === ticker ? null : ticker;
       $("us-stock-result-panel").hidden = true;
       renderRankTable();
@@ -1320,12 +1373,12 @@
   function wireLayoutSync() {
     if (window.__usLayoutSyncWired) return;
     window.__usLayoutSyncWired = true;
-    let wasMobile = isMobileLayout();
+    let wasMobile = isMobileLayout() ? "m" : isSplitLayout() ? "s" : "d";
     window.addEventListener("resize", () => {
       const table = $("us-rank-table");
       if (table) table.style.removeProperty("--us-name-w");
       syncUsPriceColumnAlign();
-      const mobile = isMobileLayout();
+      const mobile = isMobileLayout() ? "m" : isSplitLayout() ? "s" : "d";
       if (mobile !== wasMobile) {
         wasMobile = mobile;
         renderRankTable();

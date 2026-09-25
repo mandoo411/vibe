@@ -321,6 +321,13 @@
       .cb-res.cb-up { background: color-mix(in srgb, var(--cb-up) 12%, transparent); }
       .cb-res.cb-down { background: color-mix(in srgb, var(--cb-down) 12%, transparent); }
       .cb-res.cb-flat { background: var(--cb-inset); }
+      /* 2026-09-25 로그인 전 화면 — 소개 배너와 가입 카드만. 카드 안 전일 성과는 좁은 목록형으로. */
+      .cb-body--guest > *:not(.cb-hero):not(#cbGuest) { display: none !important; }
+      #cbGuest .gg-gate__demo { max-width: 680px; }
+      #cbGuest .cb-scroll.cb-has-m { display: none; }
+      #cbGuest .cb-mlist { display: block; }
+      #cbGuest .cb-verdict { margin-bottom: 10px; }
+      .cb-guest-stamp { margin-left: auto; font-size: 11px; font-weight: 600; letter-spacing: 0; color: var(--text-muted-ui, var(--text-secondary)); }
       .cb-mflow { grid-column: 1 / -1; font-size: 11.5px; line-height: 1.55; color: var(--text-muted-ui, var(--text-secondary)); font-variant-numeric: tabular-nums; }
       .cb-mflow > span { white-space: nowrap; }
       .cb-mflow b { font-weight: 600; color: var(--text-primary); }
@@ -523,14 +530,9 @@
                   <a class="gg-btn" href="./signup.html?next=/close-signal.html">무료 회원가입</a>
                   <a class="gg-btn gg-btn--ghost" href="./login.html?next=/close-signal.html">로그인</a>
                 </div>
-                <div class="gg-gate__demo">
-                  <p class="gg-gate__demo-title"><i class="ti ti-target-arrow" aria-hidden="true"></i>종가시그널에서 보는 것</p>
-                  <ul class="gg-gate__list">
-                    <li><b>오늘의 선정 종목</b> — 15:20 시세로 거래대금 상위 400종목을 훑어, 여러 기법이 겹쳐 잡은 상위 종목</li>
-                    <li><b>선정 근거</b> — 어떤 기법에 어떤 값으로 걸렸는지 항목별 점수로 공개</li>
-                    <li><b>다음 날 결과</b> — 시가 매도·종가 매도 결과를 매 거래일 자동으로 기록</li>
-                    <li><b>성과 달력</b> — 지난 기록은 가입 없이도 아래에서 전부 확인할 수 있습니다</li>
-                  </ul>
+                <div class="gg-gate__demo" id="cbGuestDemo">
+                  <p class="gg-gate__demo-title"><i class="ti ti-report-analytics" aria-hidden="true"></i>전일 선정 종목 성과<span class="cb-guest-stamp" id="cbGuestStamp"></span></p>
+                  <div id="cbGuestYd"><div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div></div>
                   <p class="gg-gate__note">투자 참고용 정보이며 매수·매도를 권유하지 않습니다. 과거 기록이 미래 수익을 보장하지 않습니다.</p>
                 </div>
               </div>
@@ -921,6 +923,7 @@
         }
         function renderYesterday(day, pending) {
           if (!day) {
+            document.getElementById("cbGuestDemo").style.display = "none";
             ydStampEl.textContent = "기록 준비 중";
             ydEl.innerHTML =
               '<div class="cb-empty"><i class="ti ti-history" aria-hidden="true"></i>' +
@@ -929,6 +932,9 @@
           }
           ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과";
           ydEl.innerHTML = pendingHtml(pending) + verdictHtml(day) + resultTableHtml(day);
+          // 로그인 전 가입 카드 안에도 같은 전일 성과를 보여준다(순위·가격 없이 수익/손실만).
+          document.getElementById("cbGuestStamp").textContent = dLabel(day.asOfDate) + " 선정 → " + dLabel(day.reviewDate) + " 결과";
+          document.getElementById("cbGuestYd").innerHTML = verdictHtml(day) + resultTableHtml(day);
         }
 
         /* ── 성과 달력 ─────────────────────────────────────────────────────── */
@@ -1083,6 +1089,8 @@
           todaySecEl.style.display = guest ? "none" : "";
           todayCardEl.style.display = guest ? "none" : "";
           guestEl.style.display = guest ? "" : "none";
+          // 로그인 전: 소개 배너 + 가입 카드(안에 전일 성과)만 남기고 바로 푸터로 이어지게 한다.
+          document.querySelector(".cb-body").classList.toggle("cb-body--guest", guest);
         }
         applyAuthView();
         // 인증 스크립트가 끝내 응답하지 않으면 로그인 전으로 본다(순위를 보여주는 쪽으로 새지 않게).

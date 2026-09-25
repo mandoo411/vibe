@@ -84,6 +84,13 @@
     return window.TM_AUTH_STATE || { loaded: false, isLoggedIn: false, hasProAccess: false, setupPending: true };
   }
 
+  /* 2026-09-25 시우: 로그인 전에도 AI 종목분석 메뉴는 팝업 대신 페이지로 이동시킨다.
+     페이지에서 소개 배너 + 가입 안내 카드를 보여준다. 팝업은 서비스 준비 중(setupPending)일 때만. */
+  function shouldGateAnalysisNav() {
+    const st = authState();
+    return ANALYSIS_PAGE_LOCKED && !!st.loaded && !!st.setupPending;
+  }
+
   function hasAnalysisBetaAccess() {
     const st = authState();
     if (st.setupPending) return false;
@@ -234,7 +241,7 @@
     if (!el || el.dataset.analysisGateBound === "1") return;
     el.dataset.analysisGateBound = "1";
     el.addEventListener("click", (e) => {
-      if (ANALYSIS_PAGE_LOCKED && !hasAnalysisBetaAccess()) {
+      if (shouldGateAnalysisNav()) {
         e.preventDefault();
         openAnalysisGate();
         return;
@@ -266,7 +273,7 @@
 
   function applyAnalysisNavLock() {
     if (!ANALYSIS_PAGE_LOCKED) return;
-    const locked = !hasAnalysisBetaAccess();
+    const locked = shouldGateAnalysisNav();
     if (locked) document.querySelectorAll(".home-nav__soon-badge").forEach((el) => el.remove());
     document.querySelectorAll('a[href*="stock-analysis.html"]').forEach((el) => {
       if (el.closest(".ai-access-gate")) return;
@@ -735,7 +742,7 @@
     ensureNavSheet();
     document.addEventListener("click", (e) => {
       if (e.target.closest("[data-analysis-locked]")) {
-        if (ANALYSIS_PAGE_LOCKED && !hasAnalysisBetaAccess()) {
+        if (shouldGateAnalysisNav()) {
           e.preventDefault();
           openAnalysisGate();
         }

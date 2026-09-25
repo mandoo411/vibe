@@ -4732,6 +4732,46 @@ function cbTrimDay(row) {
   };
 }
 
+/* 2026-09-25 시세 라이선스 재편(시우 결정 B안): 공개 응답에는 원 단위 가격과 종목별 수익률(%)을
+ * 싣지 않는다. 종목별로는 수익/손실 여부와 수익 순위만, %는 하루·누적 평균만 공개한다.
+ * 누적 통계(cbBuildRecord)는 가격이 붙은 원본으로 먼저 계산한 뒤 이 함수로 공개용으로 바꾼다. */
+function cbResultMark(v) {
+  return v == null ? null : v > 0 ? "up" : v < 0 ? "down" : "flat";
+}
+function cbPublicDay(day) {
+  if (!day) return null;
+  const picks = day.picks || [];
+  const hasClose = picks.some((p) => p.closeReturnPct != null);
+  const key = hasClose ? "closeReturnPct" : "openReturnPct";
+  const retRank = {};
+  picks
+    .filter((p) => p[key] != null)
+    .slice()
+    .sort((a, b) => b[key] - a[key])
+    .forEach((p, i) => {
+      retRank[p.code] = i + 1;
+    });
+  const s = day.summary || {};
+  const summary = Object.assign({}, s);
+  if (s.best) summary.best = { code: s.best.code, name: s.best.name, result: cbResultMark(s.best.returnPct) };
+  if (s.worst) summary.worst = { code: s.worst.code, name: s.worst.name, result: cbResultMark(s.worst.returnPct) };
+  return Object.assign({}, day, {
+    summary,
+    retRankBy: hasClose ? "close" : "open",
+    picks: picks.map((p) => ({
+      rank: p.rank,
+      code: p.code,
+      name: p.name,
+      score: p.score,
+      consensus: p.consensus,
+      strategies: p.strategies,
+      openResult: cbResultMark(p.openReturnPct),
+      closeResult: cbResultMark(p.closeReturnPct),
+      retRank: retRank[p.code] || null,
+    })),
+  });
+}
+
 async function cbLoadResults(limit) {
   const n = Math.min(Number(limit) || CB_HISTORY_MAX_DAYS, CB_HISTORY_MAX_DAYS);
   const res = await serviceRequest(
@@ -4788,7 +4828,7 @@ async function handleCloseBetting(req, res) {
     // 달력·누적 통계 전용 응답. 로그인 여부와 무관하게 전부 공개한다.
     if (view === "history") {
       const days = await cbLoadResults(req.query && req.query.days);
-      return json(res, 200, { days, record: cbBuildRecord(days) });
+      return json(res, 200, { days: days.map(cbPublicDay), record: cbBuildRecord(days) });
     }
 
     let isPro = false;
@@ -4803,9 +4843,9 @@ async function handleCloseBetting(req, res) {
     const [latest, recent] = await Promise.all([cbLoadLatest(), cbLoadResults(30)]);
     const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
     const record = cbBuildRecord(recent);
-    const yesterday = recent.length ? recent[0] : null;
     const market = cbMarketInfo();
-    const pending = cbPending(latest, yesterday, market);
+    const pending = cbPending(latest, recent.length ? recent[0] : null, market);
+    const yesterday = recent.length ? cbPublicDay(recent[0]) : null;
 
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
@@ -4814,7 +4854,13 @@ async function handleCloseBetting(req, res) {
 
     const total = latest.ranked.length;
     const visible = isPro ? total : Math.min(CB_FREE_LIMIT, total);
-    const ranked = latest.ranked.map((r, i) => (i < visible ? Object.assign({ locked: false }, r) : cbMaskRow(r)));
+    // 공개 응답에 원 단위 종가(close)는 싣지 않는다(화면에서도 쓰지 않음).
+    const ranked = latest.ranked.map((r, i) => {
+      if (i >= visible) return cbMaskRow(r);
+      const row = Object.assign({ locked: false }, r);
+      delete row.close;
+      return row;
+    });
 
     return json(res, 200, {
       ready: true,

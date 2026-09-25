@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash, createHmac } from "node:crypto";
 /**
  * 운영 점검봇 (매시 5분) — 이상이 있을 때만 운영자 텔레그램 DM으로 알린다.
  *
@@ -50,13 +51,22 @@ const NOW = kstNow();
 const at = (h, m = 0) => NOW.hm >= h * 60 + m;
 
 /* ───────── 공통 도구 ───────── */
+/* 2026-09-25 사이트 비공개(회원 승인제): middleware.js가 막지 않도록 기계용 통과 키를 붙인다(lib/site-pass.js와 같은 규칙) */
+function machineHeader() {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!secret) return {};
+  const key = createHash("sha256").update("tm-site-pass-v1:" + secret).digest();
+  const tok = createHmac("sha256", key).update("tm-machine-v1").digest("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return { "x-tm-machine": tok };
+}
+
 async function fetchJson(pathname) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(`${SITE_URL}${pathname}`, {
       signal: controller.signal,
-      headers: { "user-agent": "Mozilla/5.0 (compatible; TotalMoneyHealthCheck/2.0)" },
+      headers: { "user-agent": "Mozilla/5.0 (compatible; TotalMoneyHealthCheck/2.0)", ...machineHeader() },
     });
     const text = await res.text();
     let json = null;

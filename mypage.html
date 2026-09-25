@@ -116,6 +116,13 @@
           </div>
         </div>
 
+        <!-- 2026-09-25 회원 승인제: 운영자만 보이는 승인 관리 -->
+        <div class="tm-account-card" id="owner-members" hidden style="margin-top:16px">
+          <h2 class="tm-auth-card__title" style="font-size:18px;margin-bottom:4px">회원 승인 관리</h2>
+          <p class="tm-consent__note" style="margin:0 0 10px">승인된 회원만 사이트를 볼 수 있습니다. 새로 가입한 사람은 '대기'로 들어옵니다.</p>
+          <div id="owner-members-list">불러오는 중…</div>
+        </div>
+
         <div class="tm-auth-card" id="guest-card" hidden>
           <h1 class="tm-auth-card__title">로그인이 필요합니다</h1>
           <p class="tm-auth-card__desc">마이페이지를 보려면 먼저 로그인해주세요.</p>
@@ -258,6 +265,52 @@
           await window.TMAuth.signOut();
           window.location.href = "./index.html";
         });
+      })();
+    </script>
+    <script>
+      (function () {
+        var LABEL = { approved: "승인", pending: "대기", blocked: "차단" };
+        function esc(v) {
+          return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+          });
+        }
+        async function load() {
+          var c = window.TMAuth && window.TMAuth.getClient && window.TMAuth.getClient();
+          if (!c) return;
+          var own = await c.rpc("is_owner");
+          if (!own || own.data !== true) return;
+          var box = document.getElementById("owner-members");
+          box.hidden = false;
+          var list = document.getElementById("owner-members-list");
+          var r = await c.from("site_members").select("user_id,email,status,created_at,decided_at").order("status", { ascending: false }).order("created_at", { ascending: false });
+          if (r.error) { list.textContent = "불러오지 못했습니다: " + r.error.message; return; }
+          var rows = r.data || [];
+          list.innerHTML = rows.length ? rows.map(function (m) {
+            var btn = function (st, txt) {
+              return m.status === st ? "" : '<button type="button" class="tm-btn tm-btn--ghost" style="padding:4px 10px;font-size:12px" data-uid="' + esc(m.user_id) + '" data-st="' + st + '">' + txt + "</button>";
+            };
+            return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 0;border-top:1px solid var(--border-color)">' +
+              '<span style="flex:1 1 220px;min-width:0;word-break:break-all">' + esc(m.email || m.user_id) + "</span>" +
+              '<span class="tm-plan-badge">' + esc(LABEL[m.status] || m.status) + "</span>" +
+              '<span style="font-size:12px;color:var(--text-muted-ui,var(--text-secondary))">' + esc(String(m.created_at || "").slice(0, 10)) + " 가입</span>" +
+              btn("approved", "승인") + btn("pending", "대기") + btn("blocked", "차단") + "</div>";
+          }).join("") : "회원이 없습니다.";
+          list.querySelectorAll("button[data-uid]").forEach(function (b) {
+            b.addEventListener("click", async function () {
+              b.disabled = true;
+              var u = await c.from("site_members").update({ status: b.getAttribute("data-st"), decided_at: new Date().toISOString() }).eq("user_id", b.getAttribute("data-uid"));
+              if (u.error) alertBox(u.error.message);
+              load();
+            });
+          });
+        }
+        function alertBox(msg) {
+          var list = document.getElementById("owner-members-list");
+          list.insertAdjacentHTML("afterbegin", '<p class="tm-consent__note" style="color:#e24b4a">' + esc(msg) + "</p>");
+        }
+        if ((window.TM_AUTH_STATE || {}).loaded) load();
+        else document.addEventListener("tm-auth-ready", function once() { document.removeEventListener("tm-auth-ready", once); load(); });
       })();
     </script>
   </body>

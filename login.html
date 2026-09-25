@@ -74,6 +74,7 @@
       <main class="tm-main tm-auth-main">
         <div class="tm-auth-card">
           <h1 class="tm-auth-card__title">로그인</h1>
+          <p class="tm-auth-card__sub" style="margin:6px 0 14px;font-size:13px;color:var(--text-muted-ui,var(--text-secondary))">TotalMoney AI는 현재 승인된 회원만 이용할 수 있습니다.</p>
           <p class="tm-auth-card__desc">TotalMoney AI 계정으로 로그인하세요.</p>
 
           <form id="login-form" autocomplete="on" novalidate>
@@ -143,6 +144,18 @@
           window.location.href = nextParam;
         }
 
+        // 2026-09-25 회원 승인제: 승인 대기 계정은 여기서 안내만 하고 넘기지 않는다(사이트가 막혀 있어 되돌아온다)
+        const PENDING_MSG = "가입은 완료됐지만 아직 운영자 승인 전입니다. 승인되면 바로 이용할 수 있어요.";
+        if (params.get("pending") === "1") showMsg(PENDING_MSG, true);
+        // 이미 로그인된 상태로 문지기에 막혀 온 경우: 출입증을 받고 원래 가려던 곳으로 바로 보낸다
+        function autoForward(st) {
+          if (!st || !st.isLoggedIn) return;
+          if (st.sitePass === "ok") { window.location.replace(nextParam); return; }
+          showMsg(st.sitePass === "blocked" ? "이용이 제한된 계정입니다." : PENDING_MSG, true);
+        }
+        if ((window.TM_AUTH_STATE || {}).loaded) autoForward(window.TM_AUTH_STATE);
+        else document.addEventListener("tm-auth-ready", function once(e) { document.removeEventListener("tm-auth-ready", once); autoForward(e.detail || window.TM_AUTH_STATE); });
+
         // 이메일 인증 완료 후 돌아온 경우 안내
         if (window.location.hash.indexOf("type=signup") !== -1) {
           showMsg("이메일 인증이 완료되었습니다. 로그인해주세요.", false);
@@ -171,6 +184,11 @@
           btn.textContent = "로그인 중…";
           try {
             await window.TMAuth.signIn({ email, password });
+            const sp = (window.TM_AUTH_STATE || {}).sitePass;
+            if (sp !== "ok") {
+              showMsg(sp === "blocked" ? "이용이 제한된 계정입니다." : sp === "error" ? "잠시 후 다시 시도해주세요." : PENDING_MSG, true);
+              return;
+            }
             showMsg("로그인 성공! 이동합니다…", false);
             setTimeout(redirectAfterLogin, 400);
           } catch (err) {

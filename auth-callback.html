@@ -156,6 +156,11 @@
             window.location.replace("./consent.html?next=" + encodeURIComponent(next));
             return;
           }
+          // 2026-09-25 회원 승인제: 승인 전 계정은 로그인 화면에서 안내
+          if (st.sitePass !== "ok") {
+            window.location.replace("./login.html?pending=1");
+            return;
+          }
           window.location.replace("." + next);
         }
 

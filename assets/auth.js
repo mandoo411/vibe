@@ -131,6 +131,44 @@
     }
   }
 
+  /* 2026-09-25 사이트 비공개(회원 승인제): 로그인 세션이 있으면 서버에서 출입증 쿠키(tm_pass)를 받는다.
+     승인 회원만 받을 수 있고, 없으면 middleware.js가 페이지·데이터를 막는다.
+     결과: "ok" | "pending"(승인 대기) | "blocked" | "none" | "error" */
+  let sitePassInflight = null;
+  function readPassExp() {
+    const m = document.cookie.match(/(?:^|;\s*)tm_pass_exp=(\d+)/);
+    return m ? Number(m[1]) : 0;
+  }
+  async function ensureSitePass(accessToken, force) {
+    if (!accessToken) return "none";
+    const exp = readPassExp();
+    if (!force && exp && exp - Date.now() / 1000 > 2 * 24 * 3600) return "ok";
+    if (sitePassInflight) return sitePassInflight;
+    sitePassInflight = (async () => {
+      try {
+        const res = await fetch("/api/analyze?feature=site-pass", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + accessToken },
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+        if (res.ok) return "ok";
+        const j = await res.json().catch(() => ({}));
+        return (j && j.status) || "error";
+      } catch (e) {
+        return "error";
+      } finally {
+        setTimeout(() => { sitePassInflight = null; }, 0);
+      }
+    })();
+    return sitePassInflight;
+  }
+  async function clearSitePass() {
+    try {
+      await fetch("/api/analyze?feature=site-pass", { method: "DELETE", credentials: "same-origin" });
+    } catch (e) {}
+  }
+
   async function refreshState() {
     const c = getClient();
     if (!c) {
@@ -159,7 +197,11 @@
     }
     const meta = (session.user && session.user.user_metadata) || {};
     const appMeta = (session.user && session.user.app_metadata) || {};
-    const sub = await fetchSubscription(session.user.id, session.access_token);
+    const [sub, sitePass] = await Promise.all([
+      fetchSubscription(session.user.id, session.access_token),
+      ensureSitePass(session.access_token),
+    ]);
+    window.TM_AUTH_STATE.sitePass = sitePass;
     const active = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
     const premium = sub.status === "active" && sub.plan === "premium";
     Object.assign(window.TM_AUTH_STATE, {
@@ -228,6 +270,7 @@
   async function signOut() {
     const c = getClient();
     if (!c) return;
+    await clearSitePass();
     await c.auth.signOut();
     await refreshState();
   }
@@ -568,6 +611,7 @@
     signIn,
     signOut,
     getAccessToken,
+    ensureSitePass,
     onAuthChange,
     isSetupPending: function () {
       return SETUP_PENDING;

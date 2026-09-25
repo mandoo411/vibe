@@ -4886,7 +4886,48 @@ async function handleCloseBetting(req, res) {
   }
 }
 
+/* ── 2026-09-25 사이트 비공개(회원 승인제): 출입증 쿠키 발급/회수 ─────────────────────
+ * POST  (Authorization: Bearer <supabase access token>) → 승인 회원이면 tm_pass 쿠키 발급
+ * DELETE → 쿠키 삭제(로그아웃)
+ * 새 api 파일을 만들지 않는 이유: Vercel Hobby 서버 함수 12개 한도. */
+const SITE_PASS = require("../lib/site-pass");
+async function handleSitePass(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method === "DELETE") {
+    res.setHeader("Set-Cookie", SITE_PASS.clearPassCookies());
+    return json(res, 200, { ok: true });
+  }
+  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
+  const user = await getUserFromToken(bearerToken(req));
+  if (!user) return json(res, 401, { status: "none" });
+  let status = "none";
+  try {
+    const [m, o] = await Promise.all([
+      serviceRequest(`site_members?user_id=eq.${encodeURIComponent(user.id)}&select=status`, { method: "GET" }),
+      serviceRequest(`owner_accounts?user_id=eq.${encodeURIComponent(user.id)}&select=user_id`, { method: "GET" }),
+    ]);
+    const mr = m.ok ? await m.json() : [];
+    const or = o.ok ? await o.json() : [];
+    if (Array.isArray(or) && or.length) status = "approved";
+    else if (Array.isArray(mr) && mr[0]) status = mr[0].status;
+  } catch (e) {
+    console.error("[site-pass] 회원 조회 실패", e && e.message);
+    return json(res, 503, { status: "error" });
+  }
+  if (status !== "approved") {
+    res.setHeader("Set-Cookie", SITE_PASS.clearPassCookies());
+    return json(res, 403, { status });
+  }
+  const pass = SITE_PASS.signPass(user.id);
+  if (!pass) return json(res, 503, { status: "error" });
+  res.setHeader("Set-Cookie", SITE_PASS.passCookies(pass));
+  return json(res, 200, { ok: true, status, exp: pass.exp });
+}
+
 module.exports = async function handler(req, res) {
+  if (req.query && req.query.feature === "site-pass") {
+    return await handleSitePass(req, res);
+  }
   if (req.query && req.query.feature === "trade-signal") {
     return await handleTradeSignal(req, res);
   }

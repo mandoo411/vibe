@@ -57,6 +57,10 @@ const KR_TABS = [
   ["market-cap", "cap"],
   ["gainers", "gainers"],
   ["trading-value", "tv"],
+  // 2026-09-25 6탭: 하락률·거래량·거래량 급증(전일 대비)
+  ["losers", "losers"],
+  ["volume", "vol"],
+  ["volume-surge", "surge"],
 ];
 
 async function syncUs() {
@@ -102,7 +106,7 @@ async function syncKr() {
       tabs[key] = tabs[key] || [];
     }
   }
-  const total = (tabs.cap || []).length + (tabs.gainers || []).length + (tabs.tv || []).length;
+  const total = Object.values(tabs).reduce((n, v) => n + (Array.isArray(v) ? v.length : 0), 0);
   if (!total) {
     console.error("KR sync produced no rows — skip writing kr-realtime.json");
     return;
@@ -110,7 +114,7 @@ async function syncKr() {
   await writeJson("kr-realtime.json", {
     updatedAt: new Date().toISOString(),
     source: "naver+kis",
-    counts: { cap: (tabs.cap || []).length, gainers: (tabs.gainers || []).length, tv: (tabs.tv || []).length },
+    counts: Object.fromEntries(Object.entries(tabs).map(([k, v]) => [k, (v || []).length])),
     tabs,
   });
 }

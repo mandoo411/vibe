@@ -1,0 +1,166 @@
+/* 2026-09-25 실시간시세·미국주식 — 탭 6개(3×2) + PC 분할 화면(왼쪽 목록 / 오른쪽 상세).
+   refresh.css·premium.css보다 뒤에 싣는다. 범위는 .page--rt-split 안으로만. */
+
+/* ── 탭 6개 2줄 (모든 화면) ─────────────────────────────────────────── */
+html body.page-tm-v2 .page--rt-split .rt-tabs .rt-tabs-6 {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-width: 0;
+}
+html body.page-tm-v2 .page--rt-split .rt-tabs .rt-tabs-6 .rt-tab {
+  flex: none !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0 6px !important;
+  border-radius: 10px !important;
+  font-size: 13.5px !important;
+  justify-content: center;
+  white-space: nowrap;
+}
+html body.page-tm-v2 .page--rt-split .rt-tabs .rt-tabs-6 .rt-tab-label--short { display: inline !important; }
+
+/* ── PC 분할 화면 ─────────────────────────────────────────────────────── */
+@media (min-width: 1100px) {
+  html body.page-tm-v2 .page--rt-split {
+    --rts-list-w: 400px;
+    --rts-gap: 18px;
+    --rts-pad: 14px;
+    --rts-h: 980px;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-panel {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: var(--rts-list-w) minmax(0, 1fr);
+    column-gap: var(--rts-gap);
+    align-content: start;
+    padding: var(--rts-pad) !important;
+    min-height: var(--rts-h);
+    box-sizing: border-box;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-panel > * { grid-column: 1; min-width: 0; }
+
+  /* 탭 → 검색 → 목록을 세로로 */
+  html body.page-tm-v2 .page--rt-split .rt-tabs {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 0 0 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-tab-search,
+  html body.page-tm-v2 .page--rt-split .rt-tab-search-wrap { width: 100% !important; margin: 0 !important; max-width: none !important; }
+  html body.page-tm-v2 .page--rt-split .rt-tab-search-wrap input { flex: 1 1 auto; min-width: 0; }
+  html body.page-tm-v2 .page--rt-split .rt-data-freshness { text-align: right; padding: 0 2px 6px; }
+
+  /* 목록: 모바일과 같은 4열 요약형, 자체 스크롤 */
+  html body.page-tm-v2 .page--rt-split .table-box { margin: 0 !important; }
+  html body.page-tm-v2 .page--rt-split .rt-scroll {
+    max-height: calc(var(--rts-h) - 190px);
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-gutter: stable;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-header-row,
+  html body.page-tm-v2 .page--rt-split .rt-mobile-row {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) 76px 64px 72px !important;
+    column-gap: 6px !important;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-header-row {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 7px 4px !important;
+    font-size: 11.5px !important;
+    color: var(--text-muted-ui, var(--text-secondary)) !important;
+    background: var(--bg-panel, var(--bg-secondary)) !important;
+    border-bottom: 1px solid var(--border-color);
+  }
+  html body.page-tm-v2 .page--rt-split .rt-mobile-row {
+    padding: 8px 4px !important;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13.5px;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-header-row > span:not(.rt-col-name),
+  html body.page-tm-v2 .page--rt-split .rt-mobile-row > span:not(.rt-col-name) {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-header-row .rt-col-rank,
+  html body.page-tm-v2 .page--rt-split .rt-mobile-row .rt-col-rank { text-align: center !important; color: var(--text-muted-ui, var(--text-secondary)); font-size: 12px; }
+  html body.page-tm-v2 .page--rt-split .rt-mobile-row .rt-col-name { min-width: 0; overflow: hidden; }
+  html body.page-tm-v2 .page--rt-split .rt-table .rt-name-chart-btn {
+    display: flex !important;
+    align-items: center;
+    gap: 7px !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-table .rt-name-chart-btn .rt-name-text { overflow: hidden; text-overflow: ellipsis; }
+  html body.page-tm-v2 .page--rt-split .rt-table .tm-logo { width: 22px; height: 22px; flex: 0 0 22px; }
+  html body.page-tm-v2 .page--rt-split .rt-table { width: 100% !important; min-width: 0 !important; }
+  html body.page-tm-v2 .page--rt-split .rt-table colgroup,
+  html body.page-tm-v2 .page--rt-split .rt-table thead { display: none !important; }
+  html body.page-tm-v2 .page--rt-split .rt-table tbody { display: block; width: 100%; }
+  html body.page-tm-v2 .page--rt-split .rt-table tbody tr.rt-stock-row,
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-table-loading,
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-skel-row { display: block; width: 100%; cursor: pointer; }
+  html body.page-tm-v2 .page--rt-split .rt-table tbody tr.rt-stock-row > td,
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-table-loading > td,
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-skel-row > td {
+    display: block; width: 100%; padding: 0 !important; border: 0 !important; box-sizing: border-box;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-table tbody tr.rt-stock-row:hover .rt-mobile-row { background: color-mix(in srgb, var(--accent, #10b981) 6%, transparent); }
+  html body.page-tm-v2 .page--rt-split .rt-table tbody tr.rt-stock-row:has(.rt-name-chart-btn[aria-expanded="true"]) .rt-mobile-row {
+    background: color-mix(in srgb, var(--accent, #10b981) 13%, transparent);
+    box-shadow: inset 3px 0 0 var(--accent, #10b981);
+  }
+
+  /* 오른쪽 상세: 표 안의 상세 행을 목록 오른쪽으로 꺼내 붙인다 */
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-detail-row {
+    position: absolute !important;
+    top: var(--rts-pad);
+    left: calc(var(--rts-pad) + var(--rts-list-w) + var(--rts-gap));
+    right: var(--rts-pad);
+    display: block !important;
+    max-height: calc(100% - var(--rts-pad) * 2);
+    overflow-y: auto;
+    z-index: 2;
+  }
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-detail-row > td { display: block !important; width: 100% !important; padding: 0 !important; border: 0 !important; }
+  /* 검색 결과 패널도 오른쪽에 */
+  html body.page-tm-v2 .page--rt-split #stock-result-panel:not([hidden]) {
+    position: absolute;
+    top: var(--rts-pad);
+    left: calc(var(--rts-pad) + var(--rts-list-w) + var(--rts-gap));
+    right: var(--rts-pad);
+    max-height: calc(100% - var(--rts-pad) * 2);
+    overflow-y: auto;
+    z-index: 4;
+    background: var(--bg-panel, var(--bg-secondary));
+  }
+  html body.page-tm-v2 .page--rt-split #rt-table-pager,
+  html body.page-tm-v2 .page--rt-split .pagination { max-width: calc(var(--rts-list-w) + var(--rts-pad) * 2); }
+  /* 상세 헤더 로고 */
+  html body.page-tm-v2 .page--rt-split .rt-acc-header__left .tm-logo { width: 30px; height: 30px; flex: 0 0 30px; margin-right: 8px; }
+}
+/* 상세 헤더의 로고는 모든 화면에서 이름 앞에 붙는다 */
+html body.page-tm-v2 .page--rt-split .rt-acc-header__left { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+/* PC 분할 화면에선 오른쪽 상세가 항상 떠 있으므로 닫기 버튼은 숨긴다 */
+@media (min-width: 1100px) {
+  html body.page-tm-v2 .page--rt-split .rt-table tr.rt-detail-row .rt-acc-close { display: none !important; }
+}

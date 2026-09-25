@@ -121,6 +121,33 @@
     tvTop100: null,
   };
 
+  /* 2026-09-25 6탭: 시가총액·상승률·하락률 / 거래대금·거래량·거래급증(전일 대비).
+     탭 키 → state 필드 접두어. 예전 3탭은 필드 이름(gainerRows 등)을 그대로 둔다. */
+  const RT_TAB_PREFIX = { cap: "cap", gainers: "gainer", losers: "losers", tv: "tv", vol: "vol", surge: "surge" };
+  const RT_TAB_KEYS = Object.keys(RT_TAB_PREFIX);
+  const RT_TAB_ACTION = {
+    cap: "market-cap",
+    gainers: "gainers",
+    losers: "losers",
+    tv: "trading-value",
+    vol: "volume",
+    surge: "volume-surge",
+  };
+  function tabKey(t) {
+    return Object.prototype.hasOwnProperty.call(RT_TAB_PREFIX, t) ? t : "cap";
+  }
+  function tp(t) {
+    return RT_TAB_PREFIX[tabKey(t)];
+  }
+  ["losers", "vol", "surge"].forEach((k) => {
+    state[k + "Rows"] = [];
+    state[k + "Page"] = 1;
+    state[k + "PageSize"] = 25;
+    state[k + "Total"] = 100;
+    state[k + "PageCache"] = {};
+    state[k + "Top100"] = null;
+  });
+
   const KR_JSON_FILE = "kr-realtime.json";
   const KR_STATIC_TTL_MS = 30 * 1000;
   // 단일 kr-realtime.json({ tabs: { cap, gainers, tv } }) 메모리 캐시
@@ -196,7 +223,7 @@
   }
 
   function apiActionForTab(tab) {
-    return tab === "cap" ? "market-cap" : tab === "tv" ? "trading-value" : "gainers";
+    return RT_TAB_ACTION[tabKey(tab)];
   }
 
   async function fetchStaticTabPack(tab) {
@@ -652,7 +679,7 @@
   /** 폴링 시 행 순서·순위 유지, 시세 필드만 병합 (정적 JSON ↔ API 순서 섞임 방지) */
   function mergeStocksInPlaceForTab(tab, incoming) {
     const list =
-      tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
+      state[tp(tab) + "Rows"];
     const inc = (incoming || [])
       .map((r) => ({ ...r, code: rowStockCode(r) }))
       .filter((r) => /^\d{6}$/.test(r.code));
@@ -1461,42 +1488,32 @@
   }
 
   function rowsLoadedForTab(tab) {
-    const cache =
-      tab === "gainers" ? state.gainerPageCache : tab === "tv" ? state.tvPageCache : state.capPageCache;
-    const page =
-      tab === "gainers" ? state.gainerPage : tab === "tv" ? state.tvPage : state.capPage;
+    const cache = state[tp(tab) + "PageCache"];
+    const page = state[tp(tab) + "Page"];
     const hit = cache[page];
     return !!(hit && hit.stocks && hit.stocks.length >= 10);
   }
 
   function pageCacheForTab(tab) {
-    if (tab === "gainers") return state.gainerPageCache;
-    if (tab === "tv") return state.tvPageCache;
-    return state.capPageCache;
+    return state[tp(tab) + "PageCache"];
   }
 
   function currentPageForTab(tab) {
-    if (tab === "gainers") return state.gainerPage;
-    if (tab === "tv") return state.tvPage;
-    return state.capPage;
+    return state[tp(tab) + "Page"];
   }
 
   function setCurrentPageForTab(tab, page) {
-    if (tab === "gainers") state.gainerPage = page;
-    else if (tab === "tv") state.tvPage = page;
-    else state.capPage = page;
+    state[tp(tab) + "Page"] = page;
   }
 
   function isRankListTab(tab) {
-    return tab === "cap" || tab === "gainers" || tab === "tv";
+    return Object.prototype.hasOwnProperty.call(RT_TAB_PREFIX, tab);
   }
 
   const RANK_PAGE_SIZE = 25;
 
   function top100KeyForTab(tab) {
-    if (tab === "gainers") return "gainerTop100";
-    if (tab === "tv") return "tvTop100";
-    return "capTop100";
+    return tp(tab) + "Top100";
   }
 
   function normalizeStockRows(tab, stocks) {
@@ -1697,15 +1714,13 @@
       } else if (force && rowsLoadedForTab(tab)) {
         mergeStocksInPlaceForTab(tab, stocks);
         const merged =
-          tab === "gainers" ? state.gainerRows : tab === "tv" ? state.tvRows : state.capRows;
+          state[tp(tab) + "Rows"];
         cache[pg] = { stocks: merged, loadedAt: Date.now() };
       } else {
         cache[pg] = { stocks, loadedAt: Date.now() };
         applyStocksArrayToTab(tab, stocks);
       }
-      if (tab === "cap") state.capTotal = Number(pack.total || 100) || 100;
-      else if (tab === "gainers") state.gainerTotal = Number(pack.total || 100) || 100;
-      else state.tvTotal = Number(pack.total || 100) || 100;
+      state[tp(tab) + "Total"] = Number(pack.total || 100) || 100;
       state.tabLoadedAt[tab] = Date.now();
       return { fromCache: false, cached: !!pack.cached };
     } finally {
@@ -1723,9 +1738,7 @@
         return { ...r, code, tab: r.tab || tab };
       })
       .filter(Boolean);
-    if (tab === "cap") state.capRows = rows;
-    else if (tab === "gainers") state.gainerRows = rows;
-    else if (tab === "tv") state.tvRows = rows;
+    state[tp(tab) + "Rows"] = rows;
   }
 
   async function fetchStocksAllFromApiForTab(tab) {
@@ -1875,7 +1888,7 @@
 
   function prefetchOtherRankTabs() {
     const cur = state.tab;
-    for (const tab of ["cap", "gainers", "tv"]) {
+    for (const tab of RT_TAB_KEYS) {
       if (tab === cur) continue;
       void prefetchRankTabAll(tab);
     }
@@ -1890,9 +1903,7 @@
         /* 스트립은 보조 UI — 실패해도 표 렌더를 막지 않는다 */
       }
     }, 0);
-    if (tab === "gainers") state.gainerTotal = Number(stockPack.total || 100) || 100;
-    else if (tab === "tv") state.tvTotal = Number(stockPack.total || 100) || 100;
-    else state.capTotal = Number(stockPack.total || 100) || 100;
+    state[tp(tab) + "Total"] = Number(stockPack.total || 100) || 100;
     const stocks = stockPack.stocks || [];
     if (stocks.length) {
       setTop100ForTab(tab, stocks);
@@ -2042,10 +2053,7 @@
   }
 
   function getCurrentRows() {
-    if (state.tab === "cap") return state.capRows;
-    if (state.tab === "gainers") return state.gainerRows;
-    if (state.tab === "tv") return state.tvRows;
-    return state.capRows;
+    return state[tp(state.tab) + "Rows"] || [];
   }
 
   function ccnlTrIdForTab() {
@@ -2085,12 +2093,22 @@
   function mobileLastColumnLabel(tab) {
     const t = tab || state.tab || "cap";
     if (t === "tv") return "거래대금";
+    if (t === "vol") return "거래량";
+    if (t === "surge") return "전일비";
     return "시가총액";
   }
 
   function mobileLastColumnValue(r, tab) {
     const t = tab || state.tab || "cap";
     if (t === "tv") return escapeHtml(formatRowTradeVal(r));
+    if (t === "vol") return escapeHtml(formatVolumeMan(r && r.volume));
+    if (t === "surge") {
+      // 전일 거래량 대비 증가율(%) — 네이버 quantDiffRate
+      const v = Number(r && r.volSurgePct);
+      if (!Number.isFinite(v)) return "—";
+      const txt = (v >= 0 ? "+" : "") + (Math.abs(v) >= 1000 ? Math.round(v).toLocaleString("ko-KR") : v.toFixed(1)) + "%";
+      return `<span class="delta ${deltaClass(v)}">${escapeHtml(txt)}</span>`;
+    }
     return escapeHtml(formatStckAvls(readStckAvlsRaw(r)));
   }
 
@@ -2106,6 +2124,19 @@
     syncTableLayoutAttr();
     tr.innerHTML = tableHeadHtmlForTab(state.tab || "cap");
     syncMobileHeaderRow();
+  }
+
+  /* 2026-09-25 PC(1100px 이상)는 왼쪽 좁은 목록 + 오른쪽 상세 — 목록 행은 모바일과 같은 4열 요약형. */
+  function isSplitLayout() {
+    return (
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(min-width: 1100px)").matches
+    );
+  }
+
+  function isCompactList() {
+    return isMobileLayout() || isSplitLayout();
   }
 
   function isMobileLayout() {
@@ -2233,7 +2264,7 @@
   }
 
   function stockRowHtml(r) {
-    if (isMobileLayout()) {
+    if (isCompactList()) {
       const nm = escapeHtml(r.name);
       const ch = r.changePct;
       const cls = deltaClass(ch);
@@ -2410,6 +2441,18 @@
     if (preserved.detailTr) preserved.stockTr.after(preserved.detailTr);
   }
 
+  /* PC 분할 화면: 아무 종목도 안 열려 있으면 목록 첫 종목을 오른쪽에 자동으로 띄운다. */
+  let splitAutoOpenTimer = null;
+  function scheduleSplitAutoOpen() {
+    if (!isSplitLayout() || state.openChartCode) return;
+    clearTimeout(splitAutoOpenTimer);
+    splitAutoOpenTimer = setTimeout(() => {
+      if (!isSplitLayout() || state.openChartCode) return;
+      const first = document.querySelector("#rt-tbody tr.rt-stock-row");
+      if (first) first.click();
+    }, 60);
+  }
+
   function renderTable() {
     const body = $("rt-tbody");
     const title = $("rt-table-title");
@@ -2418,7 +2461,8 @@
     if (body.dataset.rtSkeleton === "1" || body.dataset.rtLoading === "1") return;
     renderThead();
     const rows = getCurrentRows();
-    if (isMobileLayout()) {
+    scheduleSplitAutoOpen();
+    if (isCompactList()) {
       if (!state.openChartCode) {
         body.innerHTML = rows.map((r) => stockRowHtml(r)).join("");
       } else {
@@ -2611,6 +2655,8 @@
     }
 
     setToggle(false);
+    // 2026-09-25 PC 분할 화면: 오른쪽 상세는 차트까지 펼친 상태로 연다.
+    if (isSplitLayout()) setTimeout(() => { if (!chartOpen) toggleBtn.click(); }, 0);
     toggleBtn.addEventListener("click", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -2833,7 +2879,7 @@
       `<div class="rt-acc">`,
       `  <header class="rt-acc-header">`,
       `    <div class="rt-acc-header__left">`,
-      `      <span class="rt-acc-name">${name}</span>`,
+      `      ${tmLogo(data.stockCode, data.stockName)}<span class="rt-acc-name">${name}</span>`,
       badges ? `<span class="rt-acc-badges">${badges}</span>` : "",
       `    </div>`,
       `    <div class="rt-acc-header__right">`,
@@ -3105,8 +3151,7 @@
     }
     if (trId === "H0UNCNT0" || trId === "H0STCNT0") {
       const row = rowFromCcnl(cells, trId);
-      mergeStockRow(state.capRows, row);
-      mergeStockRow(state.gainerRows, row);
+      RT_TAB_KEYS.forEach((k) => mergeStockRow(state[tp(k) + "Rows"], row));
       if (isRankListTab(state.tab) && !isSearchPanelOpen()) scheduleTableRender();
       return;
     }
@@ -3199,7 +3244,7 @@
       if (isRankListTab(tab)) {
         try {
           const pack = await fetchStocksAllFromApiForTab(tab);
-          if (tab === "gainers") {
+          if (tab === "gainers" || tab === "losers" || tab === "vol" || tab === "surge") {
             if ((pack.stocks || []).length) {
               setTop100ForTab(tab, pack.stocks);
               applyTop100Page(tab, currentPageForTab(tab));
@@ -3276,9 +3321,7 @@
 
   async function switchToTab(tk) {
     state.tablePageReqId += 1;
-    if (tk === "gainers") state.tab = "gainers";
-    else if (tk === "tv") state.tab = "tv";
-    else state.tab = "cap";
+    state.tab = tabKey(tk);
     state.openChartCode = null;
     state.candlePeriod = "D";
 
@@ -3293,9 +3336,7 @@
     const stockPanel = $("stock-result-panel");
     if (stockPanel) clearStockResultPanel();
 
-    if (state.tab === "cap") state.capPage = 1;
-    else if (state.tab === "gainers") state.gainerPage = 1;
-    else state.tvPage = 1;
+    state[tp(state.tab) + "Page"] = 1;
 
     document.querySelectorAll("[data-rt-tab]").forEach((b) => {
       b.setAttribute("aria-selected", b.getAttribute("data-rt-tab") === tk ? "true" : "false");
@@ -3408,7 +3449,7 @@
       btn.addEventListener("click", () => {
         const t = btn.getAttribute("data-rt-tab");
         if (!t) return;
-        const tk = t === "gainers" ? "gainers" : t === "tv" ? "tv" : "cap";
+        const tk = tabKey(t);
         if (tk === state.tab) return;
         void switchToTab(tk);
       });
@@ -3455,6 +3496,8 @@
       const code = code6Maybe(row.getAttribute("data-code") || "");
       if (!isValidStockCode(code)) return;
       if (code6Maybe(state.openChartCode) === code) {
+        // PC 분할 화면에선 오른쪽 상세가 항상 떠 있어야 하므로 같은 행을 다시 눌러도 닫지 않는다.
+        if (isSplitLayout()) return;
         abortDetailFetch();
         state.openChartCode = null;
         renderTable();
@@ -3481,7 +3524,7 @@
   function tabFromUrl() {
     try {
       const t = new URLSearchParams(window.location.search).get("tab");
-      if (t === "gainers" || t === "tv" || t === "cap") return t;
+      if (Object.prototype.hasOwnProperty.call(RT_TAB_PREFIX, t)) return t;
     } catch (_) {
       /* noop */
     }

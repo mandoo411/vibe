@@ -1180,6 +1180,62 @@ async function fetchLosersPage(page, pageSize = 25) {
   return enrichRowsWithNaverMcap(priced);
 }
 
+/* 2026-09-25 실시간시세 6탭(하락률·거래량·거래량 급증) — 네이버 증권 PC 랭킹 공용 API.
+ * 한 번에 100종목, 전일 거래량(prevQuant)·급증률(quantDiffRate)·시총(marketSum, 원)까지 준다.
+ * orderType: down(하락률) · quantTop(거래량) · upperQuantTop(거래량 급증, 전일 대비) */
+async function fetchNaverRankList(orderType) {
+  const cacheKey = `naver-rank-default:${orderType}`;
+  const cached = rankPageCacheGet(cacheKey);
+  if (cached) return cached;
+  const url =
+    "https://stock.naver.com/api/domestic/market/stock/default?tradeType=KRX&marketType=ALL" +
+    `&orderType=${encodeURIComponent(orderType)}&startIdx=0&pageSize=100`;
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+    },
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !Array.isArray(json)) {
+    throw new Error(`NAVER rank ${orderType} HTTP ${res.status}`);
+  }
+  const num = (v) => {
+    const n = Number(String(v == null ? "" : v).replace(/,/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  const rows = json
+    .filter((s) => s && s.type === "ST" && s.tradeStopYn !== "Y")
+    .map((s) => {
+      const code = String(s.itemcode || "").trim().toUpperCase().padStart(6, "0");
+      const changePct = num(s.prevChangeRate);
+      const mcap = num(s.marketSum);
+      const mcapWon = mcap && mcap > 0 ? String(Math.round(mcap)) : "";
+      const tv = num(s.tradeAmount);
+      return {
+        code,
+        name: sanitizeStr(s.itemname),
+        price: sanitizeStr(s.nowPrice),
+        changePct,
+        changeAmt: num(s.prevChangePrice),
+        volume: sanitizeStr(s.tradeVolume),
+        tradingValue: tv && tv > 0 ? String(Math.round(tv)) : "",
+        mcapEok: mcapWon,
+        stck_avls: mcapWon,
+        tvBoard: String(s.sosok) === "1" ? "KOSDAQ" : "KOSPI",
+        prevVolume: sanitizeStr(s.prevQuant),
+        volSurgePct: num(s.quantDiffRate),
+      };
+    })
+    // 가격제한폭(±30%)을 넘는 값은 액면병합·재상장 등 비교 불가 종목이라 뺀다.
+    // 화면은 숫자 6자리 코드만 다룬다(영문 섞인 신규 코드 0010F0 등은 제외 후 순위를 다시 매긴다).
+    .filter((r) => /^\d{6}$/.test(r.code) && r.changePct != null && Math.abs(r.changePct) <= 30.5)
+    .map((r, i) => ({ ...r, rank: i + 1 }));
+  rankPageCacheSet(cacheKey, rows);
+  return rows;
+}
+
 function naverStockTradingValueRaw(s) {
   const raw = Number(s && s.accumulatedTradingValueRaw);
   if (Number.isFinite(raw) && raw > 0) return raw;
@@ -1950,7 +2006,35 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    if (action === "losers") {
+    // 2026-09-25: 하락률·거래량·거래량 급증 — 네이버 증권 랭킹(100종목) 한 번에. page=all 또는 25건 페이지.
+    const NAVER_RANK_ACTIONS = { losers: "down", volume: "quantTop", "volume-surge": "upperQuantTop" };
+    if (NAVER_RANK_ACTIONS[action]) {
+      try {
+        const all = await fetchNaverRankList(NAVER_RANK_ACTIONS[action]);
+        const pageRaw = req.query && req.query.page;
+        if (isRankPageAll(pageRaw)) {
+          json(res, 200, { total: all.length, page: "all", pageSize: 100, rankStart: 1, rankEnd: all.length, stocks: all, cached: false });
+          return;
+        }
+        const range = rankRangeForPage(pageRaw, req.query && req.query.pageSize);
+        const stocks = all.filter((r) => r.rank >= range.startRank && r.rank <= range.endRank);
+        json(res, 200, {
+          total: all.length,
+          page: range.page,
+          pageSize: range.pageSize,
+          rankStart: range.startRank,
+          rankEnd: range.endRank,
+          stocks,
+          cached: false,
+        });
+      } catch (e) {
+        console.error(`[kis-realtime-data] action=${action}`, e && e.message, e);
+        json(res, 200, { total: 0, page: 1, pageSize: 25, rankStart: 1, rankEnd: 25, stocks: [], cached: false });
+      }
+      return;
+    }
+
+    if (action === "losers-legacy") {
       try {
         const range = rankRangeForPage(req.query && req.query.page, req.query && req.query.pageSize);
         const cacheKey = `losers:nxt-v3:${range.page}:${range.pageSize}`;

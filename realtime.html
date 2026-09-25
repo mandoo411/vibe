@@ -34,13 +34,14 @@
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./daily-market.css" />
     <link rel="preload" href="/api/repo-data?path=data/kr-realtime.json" as="fetch" crossorigin />
-    <link rel="stylesheet" href="./realtime-board.css?v=8" />
+    <link rel="stylesheet" href="./realtime-board.css?v=9" />
     <link rel="stylesheet" href="./assets/market-strip.css?v=1" />
       <link rel="stylesheet" href="./typography.css?v=1" />
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./assets/rt-split.css?v=1" />
     <script src="./assets/stock-logo.js" defer></script>
   </head>
   <body class="page-tm-v2" data-tm-tab="realtime">
@@ -102,7 +103,7 @@
       </div>
 
       <main class="tm-main">
-<div class="page page--realtime">
+<div class="page page--realtime page--rt-split">
       <header class="masthead masthead--title-only">
         <div class="masthead__copy">
           <p class="masthead__kicker">REALTIME BOARD</p>
@@ -115,15 +116,25 @@
         <div id="rt-summary-strip" class="tms" hidden aria-label="시장 요약"></div>
         <div class="rt-panel" role="tabpanel">
           <div class="rt-tabs" role="tablist" aria-label="보기 전환">
-            <div class="rt-tabs-row-tabs">
+            <!-- 2026-09-25 6탭 2줄: 시가총액·상승률·하락률 / 거래대금·거래량·거래급증(전일 대비) -->
+            <div class="rt-tabs-row-tabs rt-tabs-6">
               <button type="button" class="rt-tab" role="tab" data-rt-tab="cap" aria-selected="true" id="tab-cap" aria-label="시가총액 TOP 100">
-                <span class="rt-tab-label--full">시가총액 TOP 100</span><span class="rt-tab-label--short">시가총액</span>
+                <span class="rt-tab-label--short">시가총액</span>
               </button>
               <button type="button" class="rt-tab" role="tab" data-rt-tab="gainers" aria-selected="false" id="tab-gainers" aria-label="상승률 TOP 100">
-                <span class="rt-tab-label--full">상승률 TOP 100</span><span class="rt-tab-label--short">상승률</span>
+                <span class="rt-tab-label--short">상승률</span>
+              </button>
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="losers" aria-selected="false" id="tab-losers" aria-label="하락률 TOP 100">
+                <span class="rt-tab-label--short">하락률</span>
               </button>
               <button type="button" class="rt-tab" role="tab" data-rt-tab="tv" aria-selected="false" id="tab-tv" aria-label="거래대금 TOP 100">
-                <span class="rt-tab-label--full">거래대금 TOP 100</span><span class="rt-tab-label--short">거래대금</span>
+                <span class="rt-tab-label--short">거래대금</span>
+              </button>
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="vol" aria-selected="false" id="tab-vol" aria-label="거래량 TOP 100">
+                <span class="rt-tab-label--short">거래량</span>
+              </button>
+              <button type="button" class="rt-tab" role="tab" data-rt-tab="surge" aria-selected="false" id="tab-surge" aria-label="거래량 급증 TOP 100 (전일 대비)">
+                <span class="rt-tab-label--short">거래급증</span>
               </button>
             </div>
             <div class="rt-tab-search">
@@ -301,6 +312,6 @@
       })();
     </script>
     <script src="./assets/market-strip.js?v=1"></script>
-    <script src="./realtime-board.js?v=20260923b"></script>
+    <script src="./realtime-board.js?v=20260925a"></script>
   </body>
 </html>

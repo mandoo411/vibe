@@ -10,6 +10,9 @@ on:
     # 매일 08:00 KST ≈ 전날 23:00 UTC (KST = UTC+9)
     - cron: "0 23 * * *"
   workflow_dispatch:
+  # 2026-09-25: 세션에서 토큰을 즉시 다시 받아야 할 때(POST /repos/.../dispatches, event_type=refresh-kis-token)
+  repository_dispatch:
+    types: [refresh-kis-token]
 
 concurrency:
   group: refresh-kis-token

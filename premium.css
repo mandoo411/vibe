@@ -397,3 +397,30 @@ html.tm-guest .home-nav__home-btn,
 html.tm-guest .home-ticker,
 html.tm-guest .tm-bottom-nav,
 html.tm-guest .home-nav__toggle { display: none !important; }
+
+/* 2026-09-26 홈: AI 종목분석 카드 자리에 '일정' 카드(경제지표) — 리포트 줄 세 번째 칸 */
+html[lang] body.page-tm-v2 .hx-report--sched { --hx-c: #0ea5e9; }
+html[lang] body.page-tm-v2 .hx-sched { margin-bottom: 12px; }
+html[lang] body.page-tm-v2 .hx-sched__row {
+  gap: 10px;
+  padding: 7px 0 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid var(--border, rgba(127,127,127,.15)) !important;
+}
+html[lang] body.page-tm-v2 .hx-sched__row:last-child { border-bottom: 0 !important; }
+html[lang] body.page-tm-v2 .hx-sched__when {
+  flex: 0 0 auto;
+  min-width: 78px;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  opacity: .7;
+}
+html[lang] body.page-tm-v2 .hx-sched__when.is-today { opacity: 1; font-weight: 700; color: var(--hx-c); }
+html[lang] body.page-tm-v2 .hx-sched__row .home-mini-row__name { font-size: 13px; color: inherit; }
+html[lang] body.page-tm-v2 .hx-sched__row .home-mini-row__name small { opacity: .6; font-size: 11px; margin-left: 2px; }
+/* 사이드엔 특징주 카드 하나만 남음 — 좁은 화면(시세 3칸 아래로 내려갈 때)은 한 줄 전체를 쓰고 특징주를 두 줄로 */
+@media (min-width: 769px) and (max-width: 1499px) {
+  html[lang] body.page-home-v2 .home-side { grid-template-columns: 1fr !important; }
+  html[lang] body.page-home-v2 #hx-featured { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  html[lang] body.page-home-v2 #hx-featured .hx-feat + .hx-feat { margin-top: 0; }
+}

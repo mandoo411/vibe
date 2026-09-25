@@ -27,7 +27,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./assets/auth-config.js"></script>
     <script src="./assets/auth.js"></script>
-    <script src="./home.js" defer></script>
+    <script src="./home.js?v=20260926" defer></script>
     <link rel="stylesheet" href="./assets/home-heatmap.css?v=4" />
     <script src="./assets/home-heatmap.js?v=4" defer></script>
       <link rel="stylesheet" href="./typography.css?v=1" />
@@ -39,7 +39,7 @@
     />
     <!-- 디자인 리프레시 레이어 — 항상 마지막에 온다(덮어쓰기 레이어). 이 줄을 지우면 원래 디자인. -->
     <link rel="stylesheet" href="./refresh.css?v=1" />
-    <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./premium.css?v=20260926" />
       <script src="./assets/stock-logo.js" defer></script>
       <link rel="stylesheet" href="./assets/wide.css?v=2" />
 </head>
@@ -160,20 +160,17 @@
           <a class="hx-report__cta" href="./daily-market.html">마감시황 전체 보기 →</a>
         </article>
 
-        <article class="hx-report hx-report--ai">
+        <!-- 2026-09-26: AI 종목분석 입력 카드를 걷어내고(상단 메뉴 AI 종목분석으로 충분) 사이드의 경제지표를 이 자리로 올림 -->
+        <article class="hx-report hx-report--sched">
           <header class="hx-report__head">
-            <span class="hx-report__icon" aria-hidden="true"><i class="ti ti-sparkles"></i></span>
+            <span class="hx-report__icon" aria-hidden="true"><i class="ti ti-calendar-event"></i></span>
             <div class="hx-report__titles">
-              <p class="hx-report__kicker">무료 월 3회 · Pro 무제한</p>
-              <h3 class="hx-report__title">AI 종목분석</h3>
+              <p class="hx-report__kicker">한국·미국 주요 경제지표</p>
+              <h3 class="hx-report__title">일정</h3>
             </div>
           </header>
-          <p class="hx-report__line">종목 하나를 넣으면 추세·수급·재료·시나리오·리스크까지 카드 리포트로 정리해 드립니다. 국내주식·미국주식·암호화폐 전 종목을 지원합니다.</p>
-          <form class="hx-report__form" id="home-ai-form">
-            <input class="hx-report__input" id="home-ai-input" type="text" placeholder="종목명 또는 코드 (예: 삼성전자, AAPL, 비트코인)" autocomplete="off" data-m-placeholder="종목명 또는 코드 입력" />
-            <button class="hx-report__btn" type="submit">AI 분석 시작</button>
-            <p class="hx-report__note">투자 참고용 정보이며 투자 판단의 책임은 본인에게 있습니다.</p>
-          </form>
+          <div class="hx-sched" id="home-schedule-body"><p class="home-empty">불러오는 중…</p></div>
+          <a class="hx-report__cta" href="./weekly-market.html">전체 일정 보기 →</a>
         </article>
       </section>
 
@@ -262,10 +259,6 @@
         </div>
 
         <aside class="home-side">
-          <div class="home-mini-card">
-            <h3 class="home-mini-card__title">오늘 경제지표</h3>
-            <div id="home-schedule-body"><p class="home-empty">로딩 중…</p></div>
-          </div>
           <!-- 2026-09-02: 이 자리엔 'AI 장 브리핑' 요약(keyIssues 3개)이 있었는데,
                위에 새로 만든 오늘의 AI 리포트 스트립의 브리핑 카드와 같은 데이터라 중복이었다.
                중복을 걷어내고 마감시황 특징주(선정 이유 포함)로 교체한다. -->

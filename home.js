@@ -530,30 +530,41 @@
       const c = String(r?.country || "").toUpperCase();
       return c === "US" || c === "KR" || c === "미국" || c === "한국" || c === "대한민국";
     };
-    const list = (rows || []).filter((r) => isUsKr(r) && String(r.date || "").slice(0, 10) === today).slice(0, 4);
+    // 2026-09-26: 리포트 줄의 '일정' 카드로 옮기면서 오늘 것만이 아니라 다가오는 일정까지 5개 채운다
+    const list = (rows || [])
+      .filter((r) => isUsKr(r) && String(r.date || "").slice(0, 10) >= today)
+      .sort((a, b) => `${a.date || ""} ${a.time || ""}`.localeCompare(`${b.date || ""} ${b.time || ""}`))
+      .slice(0, 5);
     if (!list.length) {
-      el.innerHTML = '<p class="home-empty">오늘 예정된 지표가 없습니다.</p>';
+      el.innerHTML = '<p class="home-empty">예정된 지표가 없습니다.</p>';
       return;
     }
     const trCountry =
       typeof window.tmTranslateCountry === "function"
         ? (name) => window.tmTranslateCountry(name)
         : (name) => String(name || "");
+    const DOW = ["일", "월", "화", "수", "목", "금", "토"];
+    const dayLabel = (ymd) => {
+      if (ymd === today) return "오늘";
+      const [y, m, d] = ymd.split("-").map(Number);
+      if (!y || !m || !d) return "";
+      return `${m}/${d}(${DOW[new Date(y, m - 1, d).getDay()]})`;
+    };
 
-    el.innerHTML =
-      list
-        .map((r) => {
-          const eventKo =
-            typeof window.tmEventLabelText === "function"
-              ? window.tmEventLabelText(r)
-              : typeof window.tmTranslateIndicator === "function"
-                ? window.tmTranslateIndicator(r.event)
-                : String(r.event || "");
-          const countryKo = trCountry(r.country);
-          const label = `${escapeHtml(r.time || "")} ${escapeHtml(eventKo)} ${escapeHtml(countryKo)}`.trim();
-          return `<div class="home-mini-row"><span class="home-mini-row__name">${label}</span>${impBadge(r)}</div>`;
-        })
-        .join("") + '<div style="margin-top:8px"><a class="home-section__more" href="./weekly-market.html">전체 일정 보기 →</a></div>';
+    el.innerHTML = list
+      .map((r) => {
+        const eventKo =
+          typeof window.tmEventLabelText === "function"
+            ? window.tmEventLabelText(r)
+            : typeof window.tmTranslateIndicator === "function"
+              ? window.tmTranslateIndicator(r.event)
+              : String(r.event || "");
+        const ymd = String(r.date || "").slice(0, 10);
+        const when = `${dayLabel(ymd)} ${r.time || ""}`.trim();
+        const countryKo = trCountry(r.country);
+        return `<div class="home-mini-row hx-sched__row"><span class="hx-sched__when${ymd === today ? " is-today" : ""}">${escapeHtml(when)}</span><span class="home-mini-row__name">${escapeHtml(eventKo)} <small>${escapeHtml(countryKo)}</small></span>${impBadge(r)}</div>`;
+      })
+      .join("");
   }
 
   function renderBriefing(data) {
@@ -1110,13 +1121,13 @@
     }
   }
 
-  /** 사이드바: 마감시황 특징주 상위 3 — 위 브리핑 카드와 내용이 겹치지 않는다 */
+  /** 사이드바: 마감시황 특징주 상위 8 (2026-09-26: 3→8, 경제지표가 위로 올라가며 생긴 여백 채움) */
   function hxRenderFeatured() {
     const el = $("hx-featured");
     if (!el) return;
     const rows = (HX.close && Array.isArray(HX.close.featured_stocks) ? HX.close.featured_stocks : [])
       .filter((r) => r && r.name)
-      .slice(0, 3);
+      .slice(0, 8);
     if (!rows.length) {
       el.innerHTML = '<p class="home-empty">특징주가 아직 정리되지 않았습니다.</p>';
       return;

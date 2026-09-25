@@ -1,7 +1,7 @@
 /**
  * 2026-09-25 홈 섹터 히트맵 — 코스피 / 코스닥 / 미국주식 / 암호화폐
  *
- * - 네모 크기 = 시가총액, 색 = 등락률(국내 관례: 상승 빨강, 하락 파랑)
+ * - 네모 크기 = 시가총액 순(SEC_POW·TILE_POW로 완만하게 — 큰 섹터 쏠림 방지), 색 = 등락률(국내 관례: 상승 빨강, 하락 파랑)
  * - 섹터: 국내 = WICS(data/kr-sector-map.json, 주 1회 자동 갱신), 미국 = GICS(data/us-sector-map.json),
  *   암호화폐 = 아래 COIN_GROUP(스테이블코인·래핑 토큰은 제외)
  * - 섹터 머리글: 섹터 등락률(시총 가중 평균) + "급등10 평균"(섹터 안에서 가장 많이 오른 10개의 평균)
@@ -214,6 +214,9 @@
   }
 
   /* ───────── 그리기 ───────── */
+  const SEC_POW = 0.5; // 섹터 면적 = 시총^0.5 (1이면 시총 비례)
+  const TILE_POW = 0.75; // 섹터 안 종목 칸 면적 = 시총^0.75 — 1등 종목이 섹터를 다 덮지 않게
+  const tileSize = (t) => Math.pow(Math.max(t.cap, 0), TILE_POW);
   function buildModel(items, maxTiles, boxArea) {
     // 섹터 통계는 받은 종목 전체로, 화면에 그리는 네모는 시총 상위 위주로
     const bySec = new Map();
@@ -239,19 +242,24 @@
     });
     // 글자가 안 들어갈 만큼 작은 칸(약 34×34px 미만)은 그리지 않는다 — 이름 없는 조각만 늘어나 지저분해진다.
     // 섹터 통계(등락률·급등10 평균)는 위에서 전체 종목으로 이미 계산했으므로 영향 없음.
+    // 섹터 크기는 시총을 그대로 쓰지 않고 완만하게(SEC_POW 제곱) 줄인다 — 코스피 IT(삼성전자·SK하이닉스)가
+    // 시총 그대로면 지도의 60% 넘게 차지해 다른 섹터가 안 보인다. 크기 순서는 그대로 유지된다.
+    sectors.forEach((sec) => (sec.area = Math.pow(sec.weight, SEC_POW)));
     if (boxArea > 0) {
-      const tot0 = sectors.reduce((s, x) => s + x.weight, 0) || 1;
-      const k = boxArea / tot0;
+      const totA = sectors.reduce((s, x) => s + x.area, 0) || 1;
       sectors.forEach((sec) => {
-        sec.tiles = sec.tiles.filter((t, i) => i === 0 || t.cap * k >= 1600);
+        const px = (boxArea * sec.area) / totA;
+        const sz = sec.tiles.reduce((s, t) => s + tileSize(t), 0) || 1;
+        sec.tiles = sec.tiles.filter((t, i) => i === 0 || (px * tileSize(t)) / sz >= 1600);
         sec.weight = sec.tiles.reduce((s, x) => s + x.cap, 0);
+        sec.area = Math.pow(sec.weight, SEC_POW);
       });
     }
-    sectors.sort((a, b) => b.weight - a.weight);
+    sectors.sort((a, b) => b.area - a.area);
     // 너무 작은 섹터도 머리글이 들어가도록 최소 면적 보장
-    const tot = sectors.reduce((s, x) => s + x.weight, 0);
+    const tot = sectors.reduce((s, x) => s + x.area, 0);
     const minShare = boxArea > 0 && boxArea < 330000 ? 0.06 : 0.035; // 좁은(모바일) 화면은 작은 섹터를 조금 더 크게
-    sectors.forEach((s) => (s.area = Math.max(s.weight, tot * minShare)));
+    sectors.forEach((s) => (s.area = Math.max(s.area, tot * minShare)));
     return sectors;
   }
 
@@ -367,7 +375,7 @@
       let trs = [];
       let labs = [];
       for (let pass = 0; pass < 4; pass++) {
-        trs = squarify(tiles.map((t) => t.cap), 0, hh, w, Math.max(0, h - hh));
+        trs = squarify(tiles.map(tileSize), 0, hh, w, Math.max(0, h - hh));
         labs = tiles.map((t, ti) => fitLabel(t.label, pctText(t.pct), Math.max(0, trs[ti].w - 2), Math.max(0, trs[ti].h - 2)));
         const keep = tiles.filter((t, ti) => ti === 0 || labs[ti].lines.length);
         if (keep.length === tiles.length) break;

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -183,10 +184,26 @@ function truncateToTelegramLimit(text) {
   return cut + notice;
 }
 
+function isPublicPublishPaused() {
+  try {
+    const url = new URL("../config/public-publish-paused.json", import.meta.url);
+    const j = JSON.parse(readFileSync(url, "utf8"));
+    return !!(j && j.paused);
+  } catch (_) {
+    return false;
+  }
+}
+
 export async function sendTelegramMessage(text, { parseMode = "Markdown", chatId: chatIdOverride } = {}) {
   const token = requireEnv("TELEGRAM_TOKEN");
   // 2026-08-07: 헬스체크 등 "운영자 개인 DM"으로만 보내야 하는 발송을 위해 chatId를
   // 옵션으로 덮어쓸 수 있게 함. 기본값은 기존과 동일하게 공개 채널(TELEGRAM_CHANNEL_ID).
+  // 2026-09-25 시우: 사이트 비공개 기간엔 공개 채널 발송을 멈춘다(config/public-publish-paused.json).
+  // chatId를 직접 지정한 운영자 DM은 그대로 보낸다.
+  if (!chatIdOverride && isPublicPublishPaused()) {
+    console.log("[telegram] 공개 채널 발송 일시중지(config/public-publish-paused.json) — 건너뜀");
+    return null;
+  }
   const chatId = chatIdOverride || requireEnv("TELEGRAM_CHANNEL_ID");
   const safeText = truncateToTelegramLimit(String(text || ""));
   if (safeText.length !== String(text || "").length) {

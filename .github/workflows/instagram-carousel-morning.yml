@@ -33,6 +33,7 @@ env:
 
 jobs:
   build-render-publish:
+    if: ${{ false }} # 2026-09-25 시우: 사이트 비공개 기간 인스타 발행 중지 — 재개하려면 이 줄 삭제
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

@@ -342,3 +342,18 @@ html[lang] body .bfx-deck {
 @media (min-width: 769px) {
   html[lang] body.page-home-v2 .home-main .home-rt-tab { font-size: 13.5px !important; }
 }
+
+/* ── 2026-09-25 시우: 페이지 제목 배너(REALTIME BOARD / 실시간시세 등) 전 페이지에서 숨김 —
+   상단 메뉴에 현재 페이지가 표시돼 중복이다. 되돌리려면 이 블록만 지운다. */
+html[lang] body .tm-main .masthead { display: none !important; }
+/* 2026-09-25 홈 국내주식 칸만 로고가 26px(미국·코인 32px)이라 행이 낮아 아래가 비던 것 — 32px로 통일 */
+@media (min-width: 769px) {
+  html[lang] body.page-home-v2 .home-tr--rt .home-tr__logo-wrap,
+  html[lang] body.page-home-v2 .home-tr--rt .home-tr__logo-wrap > .tm-logo,
+  html[lang] body.page-home-v2 .home-tr--rt .home-tr__logo-wrap > img {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px;
+  }
+  html[lang] body.page-home-v2 .home-tr--rt { min-height: 49px; box-sizing: border-box; }
+}

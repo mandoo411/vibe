@@ -1046,7 +1046,7 @@
       label = closeLabel();
     } else if (briefLead) {
       line = briefLead;
-      label = "오늘의 장전 브리핑";
+      label = "오늘의 오전 브리핑";
     } else if (closeLead) {
       line = closeLead;
       label = closeLabel();

@@ -48,7 +48,7 @@
   const BOTTOM_NAV_LABELS = {
     home: "홈",
     market: "지표",
-    realtime: "시세",
+    realtime: "국내주식",
     us: "미국주식",
     crypto: "암호화폐",
     schedule: "일정",
@@ -99,7 +99,7 @@
 
   const TM_ALL_PAGES = [
     { id: "home", href: "./index.html", label: "홈", icon: "ti-home" },
-    { id: "realtime", href: "./realtime.html", label: "실시간시세", icon: "ti-activity" },
+    { id: "realtime", href: "./realtime.html", label: "국내주식", icon: "ti-activity" },
     // 2026-07-18: "매매시그널"(PRO 유료 기능)이 이 목록에 아예 빠져 있어 모바일
     // "전체보기" 시트에서 접근할 방법이 없었다 — 데스크톱 GNB에는 있는데 모바일에는
     // 없는 상태였음. 수익화 핵심 기능이라 AI 종목분석과 나란히 상단에 노출한다.
@@ -108,7 +108,7 @@
     { id: "closebet", href: "./close-signal.html", label: "종가시그널", icon: "ti-chart-candle" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
-    { id: "briefing", href: "./briefing.html", label: "브리핑", icon: "ti-file-description" },
+    { id: "briefing", href: "./briefing.html", label: "오전브리핑", icon: "ti-file-description" },
     { id: "daily", href: "./daily-market.html", label: "마감시황", icon: "ti-chart-bar" },
     { id: "market", href: "./market.html", label: "시장지표", icon: "ti-chart-line" },
     { id: "us", href: "./us-market.html", label: "미국주식", icon: "ti-building-skyscraper" },
@@ -134,12 +134,12 @@
 
   const NAV_SHEET_LABELS = {
     home: "홈",
-    realtime: "시세",
+    realtime: "국내주식",
     signal: "매매시그널",
     closebet: "종가시그널",
     analysis: "AI분석",
     schedule: "일정",
-    briefing: "브리핑",
+    briefing: "오전브리핑",
     daily: "마감시황",
     market: "시장지표",
     us: "미국주식",
@@ -411,6 +411,7 @@
   // 2026-09-24 시우 결정 — GNB 재구성: [시장▾] 실시간시세 미국주식 암호화폐 매매시그널PRO 종가시그널PRO AI종목분석PRO.
   // "시장"은 드롭다운 그룹(시장지표·장전브리핑·마감시황·일정·글로벌 랭킹)이라 이 풀 밖(#home-nav-market)에 있고
   // 항상 보인다. 좁을 때는 정보성(암호화폐→미국주식→실시간시세)부터 "더보기"로 접고, PRO 3종은 끝까지 남긴다.
+  // 2026-09-25: 메뉴 11개를 모두 펼친다(시장 드롭다운 폐지). 좁은 화면에선 숫자가 큰 것부터 "더보기"로 접힌다.
   const NAV_PRIORITY = {
     "./trade-signal.html": 1,
     "./close-signal.html": 2,
@@ -418,6 +419,11 @@
     "./realtime.html": 4,
     "./us-market.html": 5,
     "./crypto.html": 6,
+    "./daily-market.html": 7,
+    "./briefing.html": 8,
+    "./market.html": 9,
+    "./weekly-market.html": 10,
+    "./world-market.html": 11,
   };
 
   // 2026-09-24: 상단 "시장" 드롭다운. 클릭으로 열고 닫는다(데스크톱은 마우스를 올려도 열림).

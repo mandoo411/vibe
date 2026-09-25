@@ -389,3 +389,11 @@ html[lang] body .tm-main .masthead { display: none !important; }
   }
   html[lang] body .home-nav .home-nav__brand-name { white-space: nowrap !important; }
 }
+
+/* 2026-09-25 회원 승인제: 로그인 전·승인 대기 화면에선 메뉴·지표 띠·하단바를 숨기고 로고만 남긴다(auth.js가 html.tm-guest를 붙인다) */
+html.tm-guest #home-nav-links,
+html.tm-guest #home-nav-more,
+html.tm-guest .home-nav__home-btn,
+html.tm-guest .home-ticker,
+html.tm-guest .tm-bottom-nav,
+html.tm-guest .home-nav__toggle { display: none !important; }

@@ -163,6 +163,13 @@
     })();
     return sitePassInflight;
   }
+  /* 2026-09-25: 승인 회원이 아니면(로그인 전·승인 대기) 상단 메뉴·지표 띠·하단바를 숨긴다(html.tm-guest, premium.css).
+     출입증 쿠키가 없으면 첫 화면부터 숨겨 깜빡임을 막고, 로그인 상태가 확인되면 다시 맞춘다. */
+  function setGuestChrome(isGuest) {
+    try { document.documentElement.classList.toggle("tm-guest", !!isGuest); } catch (e) {}
+  }
+  setGuestChrome(!readPassExp());
+
   async function clearSitePass() {
     try {
       await fetch("/api/analyze?feature=site-pass", { method: "DELETE", credentials: "same-origin" });
@@ -179,6 +186,7 @@
     const { data } = await c.auth.getSession();
     const session = data && data.session;
     if (!session) {
+      setGuestChrome(true);
       Object.assign(window.TM_AUTH_STATE, {
         loaded: true,
         isLoggedIn: false,
@@ -202,6 +210,7 @@
       ensureSitePass(session.access_token),
     ]);
     window.TM_AUTH_STATE.sitePass = sitePass;
+    setGuestChrome(sitePass !== "ok");
     const active = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
     const premium = sub.status === "active" && sub.plan === "premium";
     Object.assign(window.TM_AUTH_STATE, {

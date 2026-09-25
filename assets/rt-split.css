@@ -231,3 +231,17 @@ html body.page-tm-v2 .page--rt-split .rt-acc-header__left { display: flex; align
   html body.page-tm-v2 .page--rt-split .rt-acc-grid--s6 + .rt-acc-footer,
   html body.page-tm-v2 .page--rt-split .rt-acc-grid--s8 + .rt-acc-footer { border-top: 1px solid var(--border-color); }
 }
+
+/* 2026-09-25 차트 아래 날짜 눈금 잘림의 진짜 원인 — 사이트의 표 스타일(.rt-table td 위아래 여백 4px)이
+   차트 라이브러리 내부 <table>에까지 먹어 차트가 16px 커지고 맨 아래 날짜 줄이 칸 밖으로 밀려났다. */
+html body .rt-table .tv-lightweight-charts table,
+html body .rt-table .tv-lightweight-charts tr,
+html body .rt-table .tv-lightweight-charts td,
+html body .rt-table .tv-lightweight-charts th {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  line-height: normal !important;
+  background: transparent !important;
+  height: auto;
+}

@@ -2997,6 +2997,12 @@
         syncLwDualChartAxes(s.chartCandle, s.chartVol);
       });
       resizeObs.observe(panes);
+      // 2026-09-25: 분할 화면에선 차트 위 정보표(실적 등)가 늦게 채워지며 차트 칸이 줄어든다 —
+      // 그걸 감지하려고 상세 박스의 아래 영역도 지켜본다(차트 높이가 칸보다 크면 날짜 눈금이 잘린다).
+      const footerForObs = panes.closest(".rt-acc-footer");
+      if (footerForObs) resizeObs.observe(footerForObs);
+      const accForObs = panes.closest(".rt-acc");
+      if (accForObs) accForObs.querySelectorAll(".rt-acc-grid").forEach((g) => resizeObs.observe(g));
       bundle.resizeObs = resizeObs;
 
       const barsLimit = lwChartBarsLimit();

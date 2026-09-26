@@ -1,6 +1,25 @@
 {
-  "updatedAt": null,
-  "note": "초기값 — 학습 전(전부 1.0). scripts/close-signal-learn.mjs가 매주 갱신",
+  "updatedAt": "2026-09-26T04:27:19.254Z",
+  "window": {
+    "since": "2026-06-30",
+    "days": 7,
+    "samples": 232
+  },
+  "objective": "익일 (시가 매도 + 종가 매도) / 2",
+  "rules": {
+    "MIN_N": 30,
+    "MIN_DAYS": 20,
+    "SHRINK_K": 30,
+    "STEP": 0.2,
+    "W_MIN": 0.5,
+    "W_MAX": 1.5,
+    "LIFT_TO_WEIGHT": 0.5
+  },
+  "baseline": {
+    "avg": 0.58,
+    "open": 0.56,
+    "close": 0.6
+  },
   "weights": {
     "institution": 1,
     "bothFlow": 1,
@@ -12,5 +31,107 @@
     "longTrend": 1,
     "liquidity": 1,
     "catalyst": 1
-  }
+  },
+  "detail": [
+    {
+      "key": "institution",
+      "n": 113,
+      "avg": 0.65,
+      "open": 0.85,
+      "close": 0.45,
+      "openWin": 65.49,
+      "closeWin": 46.02,
+      "weight": 1
+    },
+    {
+      "key": "bothFlow",
+      "n": 36,
+      "avg": 1.03,
+      "open": 0.92,
+      "close": 1.15,
+      "openWin": 63.89,
+      "closeWin": 50,
+      "weight": 1
+    },
+    {
+      "key": "gapHold",
+      "n": 130,
+      "avg": 0.84,
+      "open": 0.85,
+      "close": 0.83,
+      "openWin": 56.92,
+      "closeWin": 43.85,
+      "weight": 1
+    },
+    {
+      "key": "gapModerate",
+      "n": 81,
+      "avg": 1.05,
+      "open": 1.06,
+      "close": 1.04,
+      "openWin": 70.37,
+      "closeWin": 44.44,
+      "weight": 1
+    },
+    {
+      "key": "smallTurnover",
+      "n": 38,
+      "avg": 0.55,
+      "open": 0.28,
+      "close": 0.81,
+      "openWin": 31.58,
+      "closeWin": 39.47,
+      "weight": 1
+    },
+    {
+      "key": "momentum",
+      "n": 75,
+      "avg": 1.08,
+      "open": 0.57,
+      "close": 1.6,
+      "openWin": 45.33,
+      "closeWin": 53.33,
+      "weight": 1
+    },
+    {
+      "key": "kosdaqLead",
+      "n": 105,
+      "avg": 1.48,
+      "open": 1.09,
+      "close": 1.86,
+      "openWin": 60.95,
+      "closeWin": 49.52,
+      "weight": 1
+    },
+    {
+      "key": "longTrend",
+      "n": 111,
+      "avg": 1.14,
+      "open": 0.95,
+      "close": 1.33,
+      "openWin": 60.36,
+      "closeWin": 47.75,
+      "weight": 1
+    },
+    {
+      "key": "liquidity",
+      "n": 58,
+      "avg": 0.72,
+      "open": 0.13,
+      "close": 1.31,
+      "openWin": 39.66,
+      "closeWin": 53.45,
+      "weight": 1
+    },
+    {
+      "key": "catalyst",
+      "n": 1,
+      "avg": -0.62,
+      "open": 0.28,
+      "close": -1.52,
+      "openWin": 100,
+      "closeWin": 0,
+      "weight": 1
+    }
+  ]
 }

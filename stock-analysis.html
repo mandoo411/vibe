@@ -36,7 +36,7 @@
     />
     <link rel="stylesheet" href="./weekly-market.css" />
     <link rel="stylesheet" href="./hub.css" />
-    <link rel="stylesheet" href="./stock-analysis.css?v=24" />
+    <link rel="stylesheet" href="./stock-analysis.css?v=25" />
       <link rel="stylesheet" href="./typography.css?v=1" />
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
@@ -245,6 +245,8 @@
           </div>
           <div id="ai-reports-list" class="airp__list"></div>
         </section>
+        <!-- 2026-09-26: AI 분석 성적표 — scripts/ai-report-grade.mjs가 매일 채점한 결과 -->
+        <section id="ai-track" class="airp aitr" hidden aria-label="AI 분석 성적표"></section>
       </section>
     </div>
       </main>
@@ -283,6 +285,6 @@
       </nav>
     </div>
 
-    <script src="./stock-analysis.js?v=24"></script>
+    <script src="./stock-analysis.js?v=25"></script>
   </body>
 </html>

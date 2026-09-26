@@ -143,7 +143,7 @@ async function buildSeriesForStock(stockCode) {
   const adx = computeADX(highs, lows, closes);
   const market = await fetchMarketSnapshot(stockCode);
   const investorFlow = await fetchInvestorFlow(stockCode);
-  const periodReturns = computePeriodReturns(closes);
+  const periodReturns = computePeriodReturns(closes, candles.map((c) => c.time));
   return {
     closes, highs, lows, volumes, ma, rsiSeries, divergence, candles, macd, bollinger, stochastic, adx,
     marketCapEok: market.marketCapEok,

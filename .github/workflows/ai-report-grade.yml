@@ -1,0 +1,43 @@
+name: AI Report Grade
+
+# AI 종목분석 예측 자동 채점(2026-09-26) — 저장된 국내 리포트의 기준 계획(진입·목표·손절)을
+# 실제 일봉으로 따라가 목표 도달/손절/진행 중을 적는다. 규칙: lib/ai-report-grade.js
+# 하루 한 번이면 충분하다(일봉 기준). 정시성이 필요 없어 GHA schedule만 쓴다.
+
+on:
+  schedule:
+    - cron: "40 8 * * 1-5" # 평일 17:40 KST
+  workflow_dispatch:
+  repository_dispatch:
+    types: [trigger-ai-report-grade]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-report-grade
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Grade AI reports
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          GRADE_DRY_RUN: ${{ github.event.client_payload.dry_run || '' }}
+        run: node scripts/ai-report-grade.mjs

@@ -416,13 +416,49 @@
         .cb-detail { padding: 2px 13px 14px; }
         .cb-record { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
+
+      /* ══ 2026-09-26 시우: "직전 선정 결과"를 "오늘의 시그널"과 같은 카드 체계로 ══
+         예전엔 오른쪽만 표·배지·큰 모래시계 안내로 그려져 다른 사이트를 붙인 것처럼 보였다.
+         같은 .cb-row 카드 · 같은 순위 칩(.cb-rank) · 같은 이름/코드/메타 글씨를 쓰고,
+         오른쪽 점수 자리에 "시가 매도 / 종가 매도" 두 숫자를 같은 크기 체계로 둔다. */
+      .cb-sec__txt { flex-basis: calc(100% - 48px); }
+      .cb-sec > .cb-stamp { margin-left: 48px; }
+      .cb-ynote {
+        display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 10px 14px;
+        border-radius: 12px; border: 1px dashed var(--cb-line); background: var(--cb-soft-2);
+        font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); word-break: keep-all;
+      }
+      .cb-ynote i { flex: 0 0 auto; font-size: 16px; color: var(--cb-accent); }
+      .cb-ynote b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+      .cb-ysum { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin: 0 0 12px; }
+      .cb-ysum .cb-rec { background: var(--cb-inset); }
+      .cb-ysum .cb-rec__v { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .cb-ysum .cb-rec__v small { font-family: inherit; font-size: 12px; font-weight: 600; margin-right: 4px; color: var(--text-title, var(--text-primary)); }
+      .cb-ymain { cursor: default; grid-template-columns: 34px minmax(0, 1fr) 196px; }
+      .cb-ylink { color: inherit; text-decoration: none; }
+      .cb-ylink:hover { color: var(--cb-accent); text-decoration: underline; }
+      .cb-yflow { margin-top: 6px; display: block; font-size: 12px; color: var(--text-muted-ui, var(--text-secondary)); font-family: var(--cb-mono); font-variant-numeric: tabular-nums; }
+      .cb-yflow b { font-weight: 700; }
+      .cb-meta .cb-rr { font-family: inherit; }
+      .cb-yres { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      .cb-ycell { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding: 9px 10px; border-radius: 10px; background: var(--cb-inset); }
+      .cb-ycell__k { font-size: 11px; font-weight: 600; color: var(--text-muted-ui, var(--text-secondary)); white-space: nowrap; }
+      .cb-ycell__v { font-family: var(--cb-mono); font-size: 19px; font-weight: 700; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .cb-yhead { display: grid; grid-template-columns: 34px minmax(0, 1fr) 196px; gap: 16px; padding: 0 17px 8px; font-size: 11px; font-weight: 700; color: var(--text-muted-ui, var(--text-secondary)); }
+      @media (max-width: 560px) {
+        .cb-ymain { grid-template-columns: 30px minmax(0, 1fr); }
+        .cb-yres { grid-column: 1 / -1; }
+        .cb-ycell { flex-direction: row; justify-content: space-between; align-items: center; }
+        .cb-sec > .cb-stamp { margin-left: 0; }
+        .cb-sec__txt { flex-basis: auto; }
+      }
     </style>
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
     <link rel="stylesheet" href="./assets/guest-gate.css?v=1" />
-    <link rel="stylesheet" href="./assets/wide.css?v=2" />
+    <link rel="stylesheet" href="./assets/wide.css?v=3" />
     <link rel="stylesheet" href="./assets/read-layout.css?v=3" />
     <script src="./assets/read-layout.js?v=2" defer></script>
 </head>
@@ -512,7 +548,7 @@
               <span class="cb-sec__icon"><i class="ti ti-report-analytics" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">직전 선정 결과</h2>
-                <p class="cb-sec__cap">선정일 종가에 샀다면, 다음 거래일 시초가와 종가에 팔았을 때 각각 몇 % 수익·손실이었는지입니다.</p>
+                <p class="cb-sec__cap">선정일 종가에 샀다면 다음 거래일 시초가·종가에 팔았을 때 얼마였는지 봅니다.</p>
               </span>
               <span class="cb-stamp" id="cbYdStamp">—</span>
             </div>
@@ -930,6 +966,68 @@
             "<b>" + esc(p.asOfDate) + "</b> 선정 " + esc(p.pickCount) + "종목의 결과는 " +
             "<b>" + esc(p.resultLabel) + "</b> 09:10 시초가부터 기록됩니다.<br />아래는 그 이전 선정분의 결과입니다.</div>";
         }
+        /* 2026-09-26: 직전 선정 결과 — 왼쪽 "오늘의 시그널"과 같은 카드(.cb-row)로 그린다. */
+        function ydNoteHtml(p) {
+          if (!p) return "";
+          return '<p class="cb-ynote"><i class="ti ti-hourglass" aria-hidden="true"></i><span>' +
+            "<b>" + esc(dLabel(p.asOfDate)) + "</b> 선정 " + esc(p.pickCount) + "종목은 <b>" + esc(p.resultLabel) +
+            "</b> 09:10 시초가부터 기록됩니다. 아래는 그 전 선정분입니다.</span></p>";
+        }
+        function ydSummaryHtml(day) {
+          var s = day.summary || {};
+          function cell(k, v, cls, sub) {
+            return '<div class="cb-rec"><span class="cb-rec__k">' + esc(k) + "</span>" +
+              '<span class="cb-rec__v ' + (cls || "") + '">' + v + "</span>" +
+              (sub ? '<span class="cb-rec__s">' + esc(sub) + "</span>" : "") + "</div>";
+          }
+          var html = cell("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct),
+            s.openWins != null ? s.measured + "종목 중 " + s.openWins + "종목 수익" : "");
+          if (s.avgCloseReturnPct != null) {
+            html += cell("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct),
+              s.closeWins != null ? s.picks + "종목 중 " + s.closeWins + "종목 수익" : "");
+          }
+          if (s.best) html += cell("가장 좋았던 종목", sign(s.best.returnPct), tone(s.best.returnPct), s.best.name);
+          if (s.worst && (!s.best || s.worst.code !== s.best.code)) {
+            html += cell("가장 나빴던 종목", sign(s.worst.returnPct), tone(s.worst.returnPct), s.worst.name);
+          }
+          return '<div class="cb-ysum">' + html + "</div>";
+        }
+        function ydCardsHtml(day) {
+          var picks = day.picks || [];
+          if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
+          var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
+          var rlabel = day.retRankBy === "close" ? "종가" : "시가";
+          function retBadge(p) {
+            var rr = p.retRank;
+            if (!rr) return "";
+            var diff = (p.rank || 0) - rr;
+            var cls = diff > 0 ? "cb-rr cb-rr--flip" : diff < 0 ? "cb-rr cb-rr--drop" : rr === 1 ? "cb-rr cb-rr--top" : "cb-rr";
+            var mark = '<span class="cb-rr__mk">' + (diff > 0 ? "▲" + diff : diff < 0 ? "▼" + (-diff) : "–") + "</span>";
+            return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">수익 ' + rr + "위" + mark + "</span>";
+          }
+          var rows = picks.map(function (p) {
+            var href = "./stock-analysis.html?code=" + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "");
+            var meta =
+              (p.score != null ? "<em>" + esc(p.score) + "점</em>" : "") +
+              (p.consensus != null ? '<span class="cb-dot">·</span><em>기법 ' + esc(p.consensus) + "개</em>" : "") +
+              retBadge(p);
+            var flow = p.highReturnPct != null
+              ? '<span class="cb-yflow">하루 고 <b class="' + tone(p.highReturnPct) + '">' + sign(p.highReturnPct) + "</b>" +
+                ' · 저 <b class="' + tone(p.lowReturnPct) + '">' + sign(p.lowReturnPct) + "</b></span>"
+              : "";
+            return '<div class="cb-row"><div class="cb-main cb-ymain">' +
+              '<span class="cb-rank">' + esc(p.rank) + "</span>" +
+              '<span class="cb-idn"><span><a class="cb-name cb-ylink" href="' + href + '">' + esc(p.name) + "</a>" +
+              '<span class="cb-code">' + esc(p.code) + "</span></span>" +
+              '<span class="cb-meta">' + meta + "</span>" + flow + "</span>" +
+              '<span class="cb-yres">' +
+              '<span class="cb-ycell"><span class="cb-ycell__k">시가 매도</span><span class="cb-ycell__v ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</span></span>" +
+              '<span class="cb-ycell"><span class="cb-ycell__k">종가 매도</span><span class="cb-ycell__v ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</span></span>" +
+              "</span></div></div>";
+          }).join("");
+          return '<div class="cb-list">' + rows + "</div>";
+        }
+
         function renderYesterday(day, pending) {
           if (!day) {
             document.getElementById("cbGuestDemo").style.display = "none";
@@ -939,8 +1037,9 @@
               "아직 기록된 결과가 없습니다.<br />선정 다음 거래일 09:10부터 채워집니다.</div>";
             return;
           }
-          ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과";
-          ydEl.innerHTML = pendingHtml(pending) + verdictHtml(day) + resultTableHtml(day);
+          var ydTag = day.source === "backfill" ? "사후 검증" : day.phase === "open" ? "시초가만 확정" : "확정";
+          ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과 · " + esc(ydTag);
+          ydEl.innerHTML = ydNoteHtml(pending) + ydSummaryHtml(day) + ydCardsHtml(day);
           // 로그인 전 가입 카드 안에도 같은 전일 성과를 보여준다(순위·가격 없이 수익/손실만).
           document.getElementById("cbGuestStamp").textContent = dLabel(day.asOfDate) + " 선정 → " + dLabel(day.reviewDate) + " 결과";
           document.getElementById("cbGuestYd").innerHTML = verdictHtml(day) + resultTableHtml(day);

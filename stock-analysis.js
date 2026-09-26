@@ -1770,7 +1770,29 @@
     return `<div class="ai-probbar"><div class="ai-probbar__title">시나리오 확률</div><div class="ai-probbar__track">${segs}</div><div class="ai-probbar__legend">${legend}</div></div>`;
   }
 
-  function renderScenarioCard(s, assetType) {
+  /* 2026-09-26: 과거 유사 국면 통계 — 서버(lib/pattern-stats.js)가 이 종목 실제 일봉으로 센 값.
+     시나리오 확률 막대 바로 위에 두어 "이 확률이 어디서 나왔나"를 먼저 보여준다. */
+  function renderPatternStats(ps) {
+    if (!ps || !ps.stateText) return "";
+    const pct = (v) => (v == null ? "—" : `${v > 0 ? "+" : ""}${v}%`);
+    const cls = (v) => (v == null ? "" : v > 0 ? " is-up" : v < 0 ? " is-down" : "");
+    const head = `<div class="ai-pattern__head"><span class="ai-pattern__title">과거 비슷한 국면</span><span class="ai-pattern__src">최근 약 ${escapeHtml(String(ps.years))}년 일봉 · 코드 집계</span></div>
+      <p class="ai-pattern__cond">${escapeHtml(ps.stateText)}</p>`;
+    if (ps.thin) {
+      return `<div class="ai-pattern">${head}<p class="ai-pattern__thin">같은 조건이 ${escapeHtml(String(ps.sample))}번뿐이라 통계로 삼기엔 표본이 적습니다. 아래 확률은 추세·수급·재료로 판단한 값입니다.</p></div>`;
+    }
+    const cell = (k, up, n, upPct, med) =>
+      `<div class="ai-pattern__cell"><span class="ai-pattern__k">${k}</span><span class="ai-pattern__v">${escapeHtml(String(n))}번 중 <b>${escapeHtml(String(up))}번 상승</b> <span class="ai-pattern__pct">(${escapeHtml(String(upPct))}%)</span></span><span class="ai-pattern__sub">중앙값 <b class="${cls(med)}">${escapeHtml(pct(med))}</b></span></div>`;
+    return `<div class="ai-pattern">${head}
+      <div class="ai-pattern__grid">
+        ${cell("5거래일 뒤", ps.d5.up, ps.sample, ps.d5.upPct, ps.d5.median)}
+        ${cell("20거래일 뒤", ps.d20.up, ps.sample, ps.d20.upPct, ps.d20.median)}
+      </div>
+      <p class="ai-pattern__foot">20거래일 뒤 수익률은 절반이 <b>${escapeHtml(pct(ps.d20.p25))} ~ ${escapeHtml(pct(ps.d20.p75))}</b> 사이였습니다. 겹치는 날은 한 번으로 셌고, 수급은 과거 이력이 없어 조건에서 뺐습니다.</p>
+    </div>`;
+  }
+
+  function renderScenarioCard(s, assetType, planLabel) {
     const label = escapeHtml(s.label || "?");
     const type = escapeHtml(s.type || "");
     const cls = scenarioCardClass(s.label, s.type);
@@ -1815,10 +1837,11 @@
       )
       .join("");
     const rrBadge = rrText ? `<span class="ai-scenario__rr">${escapeHtml(rrText)}</span>` : "";
-    return `<article class="ai-scenario ${cls}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span><span class="ai-scenario__prob">${probText}</span>${rrBadge}</header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
+    const planBadge = planLabel && String(s.label) === String(planLabel) ? `<span class="ai-scenario__plan">기준 계획</span>` : "";
+    return `<article class="ai-scenario ${cls}${planBadge ? " is-plan" : ""}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span>${planBadge}<span class="ai-scenario__prob">${probText}</span>${rrBadge}</header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
-  function renderOpinion(op, currentPrice, assetType) {
+  function renderOpinion(op, currentPrice, assetType, patternStats) {
     const o = op && typeof op === "object" ? op : {};
     const prices = resolveOpinionPrices(o, currentPrice);
     const outlooks = [
@@ -1868,9 +1891,13 @@
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
     // 2026-09-03: A/B/C 확률을 숫자 세 개로만 흩어 놓으면 어느 쪽에 무게가 실렸는지 한눈에
     // 안 들어온다. 카드 위에 100% 스택 막대 하나로 먼저 보여주고, 상세는 아래 카드가 맡는다.
-    const scenarioBar = renderScenarioProbBar(scenarios);
+    const scenarioBar = renderPatternStats(patternStats) + renderScenarioProbBar(scenarios);
+    const plan = o.planScenario && o.planScenario.label ? o.planScenario : null;
+    const planLine = plan
+      ? `<p class="ai-opinion-plan">확률이 가장 높은 <b>${escapeHtml(plan.label)}안(${escapeHtml(plan.type || "")}${plan.probability != null ? ` ${Math.round(plan.probability)}%` : ""})</b>의 진입·목표·손절입니다.</p>`
+      : "";
     const scenarioHtml = scenarios.length
-      ? scenarios.map((s) => renderScenarioCard(s, assetType)).join("")
+      ? scenarios.map((s) => renderScenarioCard(s, assetType, plan && plan.label)).join("")
       : '<p class="ai-scenario-empty">시나리오 정보가 없습니다.</p>';
     const comment = o.comment
       ? `<div class="ai-opinion-comment"><span class="ai-opinion-comment__label">종합 의견</span>${formatProseText(o.comment)}</div>`
@@ -1879,7 +1906,7 @@
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
-      `<div class="ai-opinion-prices">${priceRows}</div>${rrLine}` +
+      `${planLine}<div class="ai-opinion-prices">${priceRows}</div>${rrLine}` +
       `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioBar}${scenarioHtml}</div>` +
@@ -2014,9 +2041,18 @@
         </div>`;
       }).join("");
       if (tiles) {
+        // 2026-09-26: 순이익이 영업이익보다 크면 읽는 사람이 "숫자 오류"로 오해한다(실제 SK하이닉스 2026 상반기).
+        // 공시 숫자에서 바로 나오는 사실만 덧붙인다 — 원인(어떤 투자이익인지)은 데이터에 없으니 단정하지 않는다.
+        const qOp = q.current ? q.current.operatingProfit : null;
+        const qNet = q.current ? q.current.netProfit : null;
+        const netNote =
+          qOp != null && qNet != null && qOp > 0 && qNet > qOp
+            ? `<p class="fin__why">순이익이 영업이익보다 ${escapeHtml(finFmtEok(qNet - qOp))} 많습니다. 본업 밖에서 난 이익(보유 지분·투자자산 평가, 금융 손익 등)이 세금을 빼고도 컸다는 뜻입니다.</p>`
+            : "";
         quarterHtml = `<section class="fin-group">
           <h4 class="fin-group__title">최근 실적 <span class="fin-group__cap">${escapeHtml(q.label)} · ${escapeHtml(q.prevLabel)} 대비</span></h4>
           <div class="fin-q__grid">${tiles}</div>
+          ${netNote}
         </section>`;
       }
     }
@@ -2133,7 +2169,7 @@
       {
         cls: "ai-card--opinion",
         title: "AI 주관적 판단",
-        body: `<div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType)}</div>`,
+        body: `<div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType, data.patternStats)}</div>`,
       },
     ].filter(Boolean);
     const cardsHtml = `<div class="ai-analysis-cards">${cardDefs
@@ -2411,6 +2447,160 @@
         scrollToReportTop();
       });
     });
+  }
+
+  /* ═══ 2026-09-26: AI 분석 성적표 — 저장된 국내 리포트의 기준 계획을 서버 배치가 매일 채점한 결과 ═══
+     규칙은 lib/ai-report-grade.js와 같다(아래 "채점 규칙" 문구도 그 규칙 그대로). */
+  const TRACK_OUTCOME = {
+    target: { label: "목표 도달", cls: "win" },
+    stop: { label: "손절", cls: "loss" },
+    expired: { label: "기간 종료", cls: "flat" },
+    open: { label: "진행 중", cls: "live" },
+    wait: { label: "진입 대기", cls: "wait" },
+    no_entry: { label: "미진입", cls: "wait" },
+    pending: { label: "채점 전", cls: "wait" },
+    invalid: { label: "계획 없음", cls: "wait" },
+  };
+  const trackState = { data: null, month: null, day: null };
+
+  function trackPct(v) {
+    if (v == null || !Number.isFinite(Number(v))) return "";
+    const n = Number(v);
+    return `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
+  }
+
+  function renderTrack() {
+    const section = document.getElementById("ai-track");
+    if (!section) return;
+    const d = trackState.data;
+    const items = d && Array.isArray(d.items) ? d.items : [];
+    if (!items.length) {
+      section.hidden = true;
+      return;
+    }
+    const sm = d.summary || {};
+    const months = [...new Set(items.map((it) => it.date.slice(0, 7)))].sort();
+    if (!trackState.month || !months.includes(trackState.month)) trackState.month = months[months.length - 1];
+    const ym = trackState.month;
+    const monthItems = items.filter((it) => it.date.startsWith(ym));
+    const days = [...new Set(monthItems.map((it) => it.date))].sort();
+    if (!trackState.day || !trackState.day.startsWith(ym) || !days.includes(trackState.day)) trackState.day = days[days.length - 1];
+
+    const tile = (k, v, sub, cls) =>
+      `<div class="aitr-stat"><span class="aitr-stat__k">${escapeHtml(k)}</span><span class="aitr-stat__v${cls ? ` ${cls}` : ""}">${escapeHtml(v)}</span><span class="aitr-stat__sub">${escapeHtml(sub)}</span></div>`;
+    const live = (sm.open || 0) + (sm.wait || 0) + (sm.pending || 0);
+    const avgCls = sm.avgClosedReturn == null ? "" : sm.avgClosedReturn > 0 ? "is-up" : sm.avgClosedReturn < 0 ? "is-down" : "";
+    const stats =
+      tile("목표 도달률", sm.hitRate == null ? "—" : `${sm.hitRate}%`, `목표 ${sm.target || 0} · 손절 ${sm.stop || 0}`) +
+      tile("끝난 계획 평균", sm.avgClosedReturn == null ? "—" : trackPct(sm.avgClosedReturn), `${sm.closedCount || 0}건 (기간 종료 포함)`, avgCls) +
+      tile("5거래일 뒤 상승", sm.up5Rate == null ? "—" : `${sm.up5Rate}%`, `리포트 시점 가격 대비 · ${sm.up5Count || 0}건`) +
+      tile("진행 중", `${live}건`, `채점 대상 전체 ${sm.total || 0}건`);
+
+    // 달력(일~토)
+    const [yy, mm] = ym.split("-").map(Number);
+    const first = new Date(Date.UTC(yy, mm - 1, 1));
+    const lastDay = new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+    const lead = first.getUTCDay();
+    const byDate = new Map();
+    for (const it of monthItems) {
+      if (!byDate.has(it.date)) byDate.set(it.date, []);
+      byDate.get(it.date).push(it);
+    }
+    const cells = [];
+    for (let i = 0; i < lead; i++) cells.push(`<div class="aitr-cal__cell is-empty"></div>`);
+    for (let dd = 1; dd <= lastDay; dd++) {
+      const date = `${ym}-${String(dd).padStart(2, "0")}`;
+      const list = byDate.get(date) || [];
+      const dots = list
+        .slice(0, 4)
+        .map((it) => `<i class="aitr-dot aitr-dot--${(TRACK_OUTCOME[it.outcome] || TRACK_OUTCOME.pending).cls}"></i>`)
+        .join("");
+      const more = list.length > 4 ? `<em>+${list.length - 4}</em>` : "";
+      const wk = (lead + dd - 1) % 7;
+      cells.push(
+        list.length
+          ? `<button type="button" class="aitr-cal__cell has-items${date === trackState.day ? " is-sel" : ""}${wk === 0 || wk === 6 ? " is-weekend" : ""}" data-day="${date}"><span class="aitr-cal__d">${dd}</span><span class="aitr-cal__n">${list.length}건</span><span class="aitr-cal__dots">${dots}${more}</span></button>`
+          : `<div class="aitr-cal__cell${wk === 0 || wk === 6 ? " is-weekend" : ""}"><span class="aitr-cal__d">${dd}</span></div>`
+      );
+    }
+    const idx = months.indexOf(ym);
+    const nav = `<div class="aitr-cal__nav">
+        <button type="button" data-mon="${escapeHtml(months[idx - 1] || "")}" ${idx > 0 ? "" : "disabled"} aria-label="이전 달"><i class="ti ti-chevron-left"></i></button>
+        <strong>${yy}.${String(mm).padStart(2, "0")}</strong>
+        <button type="button" data-mon="${escapeHtml(months[idx + 1] || "")}" ${idx < months.length - 1 ? "" : "disabled"} aria-label="다음 달"><i class="ti ti-chevron-right"></i></button>
+      </div>`;
+    const wh = ["일", "월", "화", "수", "목", "금", "토"].map((w) => `<span>${w}</span>`).join("");
+
+    // 선택한 날의 리포트
+    const fmtWon = (v) => (v == null ? "—" : `${Math.round(v).toLocaleString("ko-KR")}원`);
+    const dayRows = (byDate.get(trackState.day) || [])
+      .map((it) => {
+        const o = TRACK_OUTCOME[it.outcome] || TRACK_OUTCOME.pending;
+        const ret = it.returnPct != null ? `<b class="${it.returnPct > 0 ? "is-up" : it.returnPct < 0 ? "is-down" : ""}">${escapeHtml(trackPct(it.returnPct))}</b>` : "";
+        const when = it.outcomeDate ? `<span class="aitr-row__when">${escapeHtml(it.outcomeDate.slice(5).replace("-", "/"))}</span>` : "";
+        return `<div class="aitr-row">
+          <span class="aitr-row__name">${escapeHtml(it.name || it.code)}</span>
+          ${it.signal ? `<span class="aitr-row__sig">${escapeHtml(it.signal)}</span>` : ""}
+          <span class="aitr-row__plan">진입 ${escapeHtml(fmtWon(it.entry))} · 목표 ${escapeHtml(fmtWon(it.target))} · 손절 ${escapeHtml(fmtWon(it.stop))}</span>
+          <span class="aitr-row__res"><span class="aitr-badge aitr-badge--${o.cls}">${escapeHtml(o.label)}</span>${ret}${when}</span>
+        </div>`;
+      })
+      .join("");
+    const dayLabel = trackState.day ? `${Number(trackState.day.slice(5, 7))}월 ${Number(trackState.day.slice(8, 10))}일 리포트` : "";
+
+    section.innerHTML = `<div class="airp__head">
+        <h2 class="airp__title">AI 분석 성적표</h2>
+        <span class="airp__cap">회원들이 받은 국내 종목 리포트의 매매 계획을 실제 주가로 매일 채점합니다</span>
+      </div>
+      <div class="aitr-stats">${stats}</div>
+      <div class="aitr-body">
+        <div class="aitr-cal">
+          ${nav}
+          <div class="aitr-cal__wk">${wh}</div>
+          <div class="aitr-cal__grid">${cells.join("")}</div>
+          <div class="aitr-legend">
+            <span><i class="aitr-dot aitr-dot--win"></i>목표 도달</span><span><i class="aitr-dot aitr-dot--loss"></i>손절</span>
+            <span><i class="aitr-dot aitr-dot--flat"></i>기간 종료</span><span><i class="aitr-dot aitr-dot--live"></i>진행 중</span><span><i class="aitr-dot aitr-dot--wait"></i>진입 대기·미진입</span>
+          </div>
+        </div>
+        <div class="aitr-day">
+          <p class="aitr-day__title">${escapeHtml(dayLabel)}</p>
+          <div class="aitr-day__list">${dayRows || '<p class="aitr-day__empty">이 날 리포트가 없습니다.</p>'}</div>
+        </div>
+      </div>
+      <details class="aitr-rule">
+        <summary>채점 규칙</summary>
+        <p>리포트의 매매 계획(진입가·목표가·손절가)을 리포트 다음 거래일부터 최대 20거래일 동안 실제 일봉으로 따라갑니다. 진입가가 리포트 당시 가격과 1% 안이면 다음 거래일 시가에 산 것으로 보고, 더 낮으면 그 가격까지 내려온 날, 더 높으면 그 가격을 돌파한 날 진입한 것으로 봅니다. 진입한 뒤 목표가에 먼저 닿으면 <b>목표 도달</b>, 손절가에 먼저 닿으면 <b>손절</b>이고, 하루에 둘 다 닿았으면 손절로 셉니다. 20거래일 동안 둘 다 안 닿으면 20번째 날 종가로 <b>기간 종료</b>, 진입가에 한 번도 안 오면 <b>미진입</b>입니다. 같은 날 같은 종목을 여러 번 분석했으면 마지막 리포트 하나만 셉니다. 과거 성과가 미래 수익을 보장하지 않습니다.</p>
+      </details>`;
+    section.hidden = false;
+    section.querySelectorAll("[data-day]").forEach((b) =>
+      b.addEventListener("click", () => {
+        trackState.day = b.getAttribute("data-day");
+        renderTrack();
+      })
+    );
+    section.querySelectorAll("[data-mon]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const m = b.getAttribute("data-mon");
+        if (!m) return;
+        trackState.month = m;
+        trackState.day = null;
+        renderTrack();
+      })
+    );
+  }
+
+  async function loadReportTrack() {
+    try {
+      const auth = await tmAuthHeader();
+      if (!auth) return;
+      const res = await fetch("/api/analyze?feature=report-track", { headers: auth, cache: "no-store" });
+      if (!res.ok) return;
+      trackState.data = await res.json().catch(() => null);
+      renderTrack();
+    } catch (err) {
+      console.warn("[성적표] 실패", err && err.message);
+    }
   }
 
   async function loadReports() {
@@ -2798,6 +2988,7 @@
     // 2026-09-03(로드맵 E): 로그인 사용자면 지난 리포트 목록을 불러온다.
     // 저장분이 없으면 renderReports가 섹션을 숨긴 채로 두므로 빈 껍데기가 보이지 않는다.
     void loadReports();
+    void loadReportTrack();
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();

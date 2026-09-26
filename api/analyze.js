@@ -30,6 +30,7 @@ const { fetchAllCryptoNews, filterNewsByRelevance } = require("../lib/crypto-new
 // 2026-09-03(로드맵 D): DART 전자공시 기반 실적 추이. 새 api/*.js를 만들면 Vercel Hobby
 // 함수 12개 한도를 넘기므로 lib 모듈로 두고 이 파일에서 직접 호출한다.
 const { fetchFinancialTrend, financialTrendPromptBlock } = require("../lib/dart-financials");
+const { computeSimilarPatternStats, patternStatsPromptBlock } = require("../lib/pattern-stats");
 
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
 
@@ -333,6 +334,39 @@ function dartEventsToLegacyEvents(list, todayISO) {
     }))
     .filter((e) => e.content && e.date)
     .filter((e) => !isPastEventDate(e.date, todayISO));
+}
+
+/**
+ * 2026-09-26: "다가오는 실적 발표"를 이벤트 칸에 넣는다. 본문은 "10월 말 실적이 핵심"이라고 하는데
+ * 이벤트 칸은 "예정 이벤트 없음"으로 나와 리포트가 앞뒤가 안 맞았다(SK하이닉스 9/26).
+ * 정확한 발표일은 회사가 IR 일정을 공시해야 알 수 있으므로 **지어내지 않는다** — 대신 법으로 정해진
+ * 정기보고서 제출 기한(분기 종료 후 45일, 사업보고서는 90일)을 날짜로 쓰고 문구에 그 뜻을 밝힌다.
+ * DART 공시 기반 실적(financials)이 있는 종목에만 붙이고, 이미 IR/잠정실적 공시가 이벤트에 있으면 생략.
+ * 이미 그 분기 보고서가 나왔으면(financials.quarter.label로 판정) 다음 분기로 넘긴다.
+ */
+function earningsSeasonEvent(todayISO, financials, existingEvents) {
+  if (!financials || !(financials.quarter || (financials.annual && financials.annual.length))) return null;
+  const has = (existingEvents || []).some((e) => /실적|IR|기업설명회|잠정/.test(String(e && e.content)));
+  if (has) return null;
+  const y = Number(String(todayISO).slice(0, 4));
+  if (!y) return null;
+  const qLabel = String((financials.quarter && financials.quarter.label) || "");
+  const annualYears = (financials.annual || []).map((a) => Number(a.year || a.label)).filter(Boolean);
+  const slots = [];
+  for (const yy of [y - 1, y]) {
+    slots.push({ name: "1분기", year: yy, deadline: `${yy}-05-15`, report: "1분기보고서", filed: qLabel.startsWith(`${yy}년 1분기`) });
+    slots.push({ name: "2분기", year: yy, deadline: `${yy}-08-14`, report: "반기보고서", filed: qLabel.startsWith(`${yy}년 상반기`) });
+    slots.push({ name: "3분기", year: yy, deadline: `${yy}-11-14`, report: "3분기보고서", filed: qLabel.startsWith(`${yy}년 3분기`) });
+    slots.push({ name: "4분기·연간", year: yy, deadline: `${yy + 1}-03-31`, report: "사업보고서", filed: annualYears.includes(yy) });
+  }
+  const next = slots.find((sl) => sl.deadline >= todayISO && !sl.filed);
+  if (!next) return null;
+  const [, mm, dd] = next.deadline.split("-").map(Number);
+  return {
+    type: "neutral",
+    content: `${next.year}년 ${next.name} 실적 발표 — 회사가 발표일을 공시하기 전이며, ${next.report} 법정 제출 기한이 ${mm}월 ${dd}일입니다.`,
+    date: next.deadline,
+  };
 }
 
 /* ───────────────── 시장·업종 대비 상대위치 (2026-09-03 신설, 전부 코드 계산) ─────────────────
@@ -640,7 +674,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - materialAnalysis(재료 분석)에는 주가에 유리한 재료만 나열하지 않는다. web_search로 확인되는 재료 중 리스크·부정적 재료(예: 경쟁사의 신제품·증설로 인한 경쟁 심화, 규제·정책 리스크, 실적 눈높이 부담, 공급 축소·원가 상승 등)가 하나라도 확인되면 반드시 최소 1개는 materials 배열에 포함한다 — 지금까지의 강세 스토리와 배치되는 내용이라도 숨기지 않는다. 여러 관점을 균형 있게 짚어야 돈값을 하는 유료 리포트가 된다.
 - 다가오는 이벤트는 이 종목 자체에 고유한 일정만 포함한다 — 자기 실적발표일, 배당락일·배당기준일, 자사주 매입·소각 일정, 주주총회, 신제품·신규 설비 가동, 이 회사에 직접 해당하는 규제·승인 절차 등. 미국 금리 결정(FOMC)·CPI 같은 시장 전체 매크로 일정이나 경쟁사 실적 발표는 이 종목 고유 일정이 아니므로 절대 포함하지 않는다 — 그런 내용은 종합시황·브리핑 등 별도 코너에서 다루는 것이지 개별 종목 분석에 넣을 내용이 아니다.
 - 이벤트 content는 "다음 정기 실적발표는 아직 도래하지 않은 미래 일정으로 확인됩니다" 같은 공허한 메타 서술로 끝내지 않는다. 문장 안에 실제 시점(예: 10월 말, 다음 달 초)과 그 일정에서 구체적으로 무엇을 지켜봐야 하는지(예: 컨센서스 대비 실적 서프라이즈 여부, 취득 완료 후 소각 여부, 가이던스 방향)를 최소 한 가지 명시한다.
-- entryPrice(진입가)가 현재가와 차이가 나면(예: 눌림목 매수를 노리는 경우) 그 이유를 opinion 총평(comment)에 반드시 한 문장으로 설명한다. entryPrice가 시나리오 B(중립)의 entry와 다르면 왜 다른지도 명시한다 — 숫자만 던지지 말고 왜 그 가격을 골랐는지 반드시 설명한다.
+- [진입가는 하나만] entryPrice/stopLoss/target은 확률이 가장 높은 시나리오의 entry/stopLoss/target과 **같은 숫자**로 쓴다(약세 시나리오가 가장 높으면 예외). 화면 상단 매매 계획은 서버가 그 시나리오 숫자로 통일하므로, 총평(comment)에서도 진입가를 말할 때는 그 숫자 하나만 쓴다 — "종합 진입가"와 "시나리오 진입가"를 따로 제시하지 않는다. 진입가가 현재가와 차이가 나면(예: 눌림목 매수) 그 이유를 총평에 한 문장으로 설명한다.
 - 재료 분석의 reflectionPct(반영도)는 "이 재료가 완전히 현실화됐을 때 기대되는 주가 임팩트 대비, 현재 주가에 이미 선반영된 비율"로 정의한다. 각 재료의 judgment(한줄 판단)에는 그 비율을 매긴 근거를 최소 하나 구체적으로 언급한다 — 예: 정보가 공개된 지 얼마나 됐는지, 공개 이후 주가가 이미 얼마나 움직였는지, 증권가 컨센서스·목표주가에 이미 얼마나 반영됐는지. 근거 없이 숫자만 제시하지 않는다. 이 비율은 통계로 계산되는 값이 아니라 애널리스트의 정성적 어림값이므로, 62%처럼 세밀한 숫자로 제시하지 말고 10% 단위(10/20/.../90)로만 어림잡아 제시한다 — 어차피 서버에서 10% 단위로 반올림되니, 처음부터 그 단위로 판단하면 근거와 숫자가 더 자연스럽게 맞는다.
 - 분석 대상이 벤처캐피탈(VC)·사모펀드(PE)·지주회사처럼 지분투자가 핵심 사업인 회사라면, 재료 분석에서 "벤처투자 회수 기대" 같은 뭉뚱그린 표현으로 끝내지 않는다. 반드시 web_search로 "[종목명] 대표 포트폴리오" "[종목명] 투자 기업"을 검색해서, 특히 최근 기업가치가 급등했거나 IPO(상장)를 준비 중인 대표 피투자기업이 있으면 그 기업명과 투자 회수 규모·멀티플을 구체적으로 명시한다. 이런 대표 피투자기업이야말로 재료의 핵심이므로 일반론으로 대체하지 않는다.
 - 각 섹션(스토리, 수급, 재료, 차트, 총평)은 따로따로 나열된 사실이 아니라 하나의 기승전결 있는 이야기로 이어지게 쓴다. 앞 섹션에서 나온 근거(예: 밸류에이션 부담, 수급 엇갈림, 미반영 재료)를 뒤 섹션(차트 해석, 총평)에서 다시 연결해서 언급하고, 총평은 앞의 모든 근거를 하나의 결론으로 묶어낸다.
@@ -649,7 +683,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - [자사주 매입/소각과 수급(외국인·기관 순매수)을 절대 혼동하지 않는다] 자사주 매입·소각은 회사 자기자금 집행이지 외국인/기관의 시장 매매 수급이 아니다. 3번 수급 분석(supplyDemand)에는 절대 자사주 매입/소각을 근거로 넣지 않는다 — 그 내용은 반드시 5번 재료 분석(materials)에 별도 항목으로 넣는다. 자사주 매입/소각 재료를 다룰 때는 web_search로 그 목적이 "임직원 성과보상용(주식 그대로 유지되어 잠재 물량으로 남음)"인지 "소각을 통한 주주환원용(발행주식 수가 실제로 줄어듦)"인지 반드시 구분해서 명시한다 — 이 둘은 주주가치에 미치는 영향이 전혀 다르므로 뭉뚱그려 "자사주 매입 = 주가 하방 지지"처럼 단순화하지 않는다. 목적이 확인 안 되면 "목적은 아직 확정 발표되지 않았다"고 있는 그대로 서술한다(이는 얼버무리는 헤지가 아니라 그 자체가 사실이므로 괜찮다).
 - [재료의 확정성 구분] materials 각 항목에는 certainty를 반드시 "확정"(이미 집행·완료된 사실) / "진행중"(공시·발표되어 절차가 진행 중) / "예상"(아직 실현되지 않은 기대) / "루머"(비공식 보도) / "AI추정"(구체적 근거 없이 정황상 추정) 중 하나로 명확히 분류한다. 이미 결정되고 실행 중인 사실(예: 이사회 의결·공시된 자사주 취득 신탁계약 체결)을 "예상"으로 두루뭉술하게 표현하지 않는다.
 - [반영도(reflectionPct)의 근거 명시] 각 재료의 reflectionBasis 필드에는 그 비율을 매긴 구체적 정량 근거를 최소 하나 숫자로 명시한다 — 예: "정보 공개 후 8거래일 경과, 그 사이 주가 +6.2% 상승", "증권사 평균 목표주가 대비 현재가 괴리율 3%로 이미 근접". 숫자만 던지고 근거를 생략하지 않는다.
-- [상승확률/시나리오 확률의 근거] 상단 요약과 시나리오 A/B/C의 probability는 과거 패턴 통계나 백테스트 결과가 아니라, 애널리스트가 여러 근거를 종합한 정성적 판단 수치라는 것을 스스로 인지한다. 실제로 없는 "표본 O건", "적중률 O%" 같은 통계를 지어내지 않는다. 대신 시나리오별 basis 필드에 그 확률을 매긴 구체적 근거(추세/이동평균 위치, RSI 수준, 수급 방향, 재료 반영도, 밸류에이션 부담 중 최소 2개 이상)를 조합해서 명시해, 숫자가 근거 없이 던져진 것처럼 보이지 않게 한다.
+- [상승확률/시나리오 확률의 근거] 아래에 [과거 유사 국면 통계 — 코드 계산] 블록이 주어지면 그 숫자만 통계로 인용할 수 있다(그 블록의 지시를 따른다). 블록이 없거나 표본 부족이면 probability는 애널리스트가 여러 근거를 종합한 정성적 판단 수치다. 어느 경우든 블록에 없는 "표본 O건", "적중률 O%" 같은 통계를 지어내지 않는다. 대신 시나리오별 basis 필드에 그 확률을 매긴 구체적 근거(추세/이동평균 위치, RSI 수준, 수급 방향, 재료 반영도, 밸류에이션 부담 중 최소 2개 이상)를 조합해서 명시해, 숫자가 근거 없이 던져진 것처럼 보이지 않게 한다.
 - [밸류에이션은 트레일링 PER 하나로 단정하지 않는다] 반도체·조선·화학·해운처럼 이익 사이클이 큰 업종은 현재 이익 기준 PER이 사이클 저점(이익 급감 구간)에서 오히려 높게 나타나는 착시가 흔하다. PER·PBR 숫자만으로 "고평가/저평가"를 단정하지 말고, 그 업종이 지금 업황 사이클의 어느 국면(개선/피크/둔화)에 있는지 또는 최근 실적 추세(이익이 늘고 있는지 줄고 있는지)를 함께 한 문장으로 짚어준 뒤에 밸류에이션 부담 여부를 판단한다.
 - [진입가는 반드시 구체적 앵커에 근거] entryPrice(및 시나리오별 entry)가 현재가와 다른 숫자라면, 그 값을 고른 구체적 기술적 근거(예: 20일선, 최근 지지선, 전일 종가 대비 되돌림 비율 등 실제로 제공된 수치)를 총평(comment)에 명시한다. 데이터에 없는 임의의 "적당해 보이는 숫자"를 만들지 않는다.
 - 어조는 확신에 찬 전문가 톤이되, 실제 근거 없는 과신은 금지한다 (근거는 web_search로 확보하고, 표현은 확정적으로).
@@ -1432,6 +1466,50 @@ function detectStructureEvent(candles, swing, lookbackBars) {
     }
   }
   return event;
+}
+
+/** 2026-09-26: 과거 유사 국면 통계용 일봉 약 4년치. KIS 일봉 조회는 1회 100개까지라
+ * 140일(≈95거래일) 창으로 나눠 4개씩 병렬로 받는다(초당 호출 한도 여유). 실패하면 null. */
+async function fetchKisDailyHistory(code6, years) {
+  try {
+    const endAll = ymdKst(new Date());
+    const totalDays = Math.round((years || 4) * 365);
+    const windows = [];
+    for (let back = 0; back < totalDays; back += 140) {
+      const d2 = subtractCalendarDaysFromYmd(endAll, back);
+      const d1 = subtractCalendarDaysFromYmd(endAll, Math.min(back + 139, totalDays));
+      windows.push([d1, d2]);
+    }
+    const byTime = new Map();
+    for (let i = 0; i < windows.length; i += 4) {
+      const chunk = windows.slice(i, i + 4);
+      const results = await Promise.all(
+        chunk.map(([d1, d2]) =>
+          kisGetJson("/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice", "FHKST03010100", {
+            FID_COND_MRKT_DIV_CODE: "J",
+            FID_INPUT_ISCD: code6,
+            FID_INPUT_DATE_1: d1,
+            FID_INPUT_DATE_2: d2,
+            FID_PERIOD_DIV_CODE: "D",
+            FID_ORG_ADJ_PRC: "0",
+          }).catch(() => null)
+        )
+      );
+      for (const j of results) {
+        let raw = j && j.output2;
+        if (raw && !Array.isArray(raw)) raw = [raw];
+        for (const row of Array.isArray(raw) ? raw : []) {
+          const b = mapWmRow(row);
+          if (b) byTime.set(b.time, b);
+        }
+      }
+    }
+    const rows = [...byTime.values()].sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    return rows.length >= 200 ? rows : null;
+  } catch (e) {
+    console.warn("[analyze] 일봉 이력 실패", code6, e && e.message);
+    return null;
+  }
 }
 
 /** 종목 고유의 실제 주봉/월봉 데이터를 KIS에서 가져와 이동평균·스윙 고점/저점을 계산한다.
@@ -2386,6 +2464,33 @@ function deriveFinalSignal(aiSignal, scoreCard, scenarios) {
   return "관망";
 }
 
+/** 원화 가격이 문장에 쓰이는 흔한 모양 3가지: "1,835,000원" / "183만5000원" / "183.5만원" */
+function wonTextVariants(v) {
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 10000) return [];
+  const man = Math.floor(n / 10000);
+  const rest = n % 10000;
+  const out = [`${n.toLocaleString("ko-KR")}원`, rest ? `${man}만${rest}원` : `${man}만원`, rest ? `${man}만 ${rest}원` : null];
+  if (rest && rest % 1000 === 0) out.push(`${(n / 10000).toFixed(1)}만원`);
+  return out.filter(Boolean);
+}
+
+/** 2026-09-26: 진입가 단일화 뒤 AI 문장에 남은 옛 숫자를 같은 모양의 새 숫자로 바꾼다. */
+function swapPlanPricesInText(text, from, to) {
+  if (!text || !from || !to) return text;
+  let out = text;
+  for (const k of ["entry", "stop", "target"]) {
+    if (!from[k] || !to[k] || Math.round(from[k]) === Math.round(to[k])) continue;
+    const oldV = wonTextVariants(from[k]);
+    const newV = wonTextVariants(to[k]);
+    oldV.forEach((ov, i) => {
+      const nv = newV[i] || newV[0];
+      if (ov && nv) out = out.split(ov).join(nv);
+    });
+  }
+  return out;
+}
+
 async function normalizeAnalysis(raw, quote, wm, indicators) {
   const price = toNum(quote && quote.currentPrice) || 0;
   if (!raw || typeof raw !== "object") {
@@ -2458,6 +2563,8 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     } catch {
       events = [];
     }
+    const earn = earningsSeasonEvent(todayISO, quote && quote.financials, events);
+    if (earn) events.push(earn);
   }
 
   const materialsRaw = raw.materials && typeof raw.materials === "object" ? raw.materials : {};
@@ -2552,6 +2659,26 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     });
   }
 
+  // ── 2026-09-26: 진입가 단일화 ──
+  // 예전엔 상단 "진입가/목표가/손절가"(AI의 entryPrice)와 시나리오 B 진입가가 따로 나와
+  // 한 리포트에 진입가가 2~3개(183.5만/185.5만…) 보였다. 상단 매매 계획은 **확률이 가장 높은
+  // 시나리오의 숫자 그대로** 쓴다. 약세(C)가 가장 높으면 신규 진입 계획이 아니므로 AI 값을 둔다.
+  let planScenario = null;
+  for (const sc of scenarios) {
+    const p = toNum(sc.probability);
+    if (p == null) continue;
+    if (!planScenario || p > toNum(planScenario.probability)) planScenario = sc;
+  }
+  const planIsBear = planScenario && (planScenario.label === "C" || String(planScenario.type).includes("약"));
+  const aiPlanPrices = { entry: prices.entry, stop: prices.stop, target: prices.target };
+  if (planScenario && !planIsBear && planScenario.entry > 0 && planScenario.stop > 0 && planScenario.target > 0) {
+    prices.entry = planScenario.entry;
+    prices.stop = planScenario.stop;
+    prices.target = planScenario.target;
+  } else {
+    planScenario = null;
+  }
+
   // ── 2026-07-09: 상단 "상승확률" ↔ 시나리오 A(강세) 확률 정합성 보정 ──
   // 기존엔 summary.probability(상단 배지 숫자)를 AI가 시나리오와 무관하게 별도로 생성해서,
   // 같은 리포트 안에서 "상승 확률 74%" vs "A안(강세) 40%"처럼 숫자가 서로 어긋나는
@@ -2609,7 +2736,10 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         return (t2 - t1) / t1 >= 0.15;
       })(),
       rr: computeRR(prices.entry, prices.stop, prices.target),
-      comment: stripCitations(sanitizeStr(opinion.comment)),
+      // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
+      planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
+      // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
+      comment: swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.
@@ -2761,6 +2891,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     wmBlock,
     marketPositionPromptBlock(quote && quote.marketPosition),
     financialTrendPromptBlock(quote && quote.financials),
+    patternStatsPromptBlock(quote && quote.patternStats),
     formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
@@ -4423,6 +4554,7 @@ function rpExtractPayload(body) {
     entry_price: num(opinion.entry ?? opinion.entryPrice),
     target_price: num(opinion.target ?? opinion.targetPrice),
     stop_loss: num(opinion.stop ?? opinion.stopLoss),
+    plan_label: (opinion.planScenario && sanitizeStr(opinion.planScenario.label)) || null,
     summary: sanitizeStr(summary.description) || null,
     materials: materials.slice(0, 5).map((m) => ({
       name: sanitizeStr(m && m.name),
@@ -4624,6 +4756,80 @@ async function handleReports(req, res) {
     return tsJson(res, 405, { error: "Method not allowed" });
   } catch (error) {
     console.error("[reports] 실패", error && error.message);
+    return tsJson(res, error.statusCode || 500, { error: error.message || "요청 처리에 실패했습니다." });
+  }
+}
+/* ── 2026-09-26: AI 분석 성적표 ──
+ * scripts/ai-report-grade.mjs가 매일 채점한 결과(outcome)를 회원 전체 기준으로 모아 달력으로 보여준다.
+ * 같은 날 같은 종목을 여러 번 돌린 건 마지막 리포트 하나로 센다(표본 부풀리기 방지).
+ * 개인 정보(누가 돌렸는지)는 내보내지 않는다. 국내 종목만 채점한다. */
+const RT_DAYS = 120;
+async function handleReportTrack(req, res) {
+  if (req.method === "OPTIONS") return tsJson(res, 204, {});
+  try {
+    await rpRequireUser(req);
+    const since = new Date(Date.now() - RT_DAYS * 86400000).toISOString();
+    const r = await serviceRequest(
+      `analysis_reports?created_at=gte.${encodeURIComponent(since)}&market=in.(KR,KOSPI,KOSDAQ)` +
+        `&order=created_at.desc&limit=2000&select=created_at,stock_code,stock_name,signal,plan_label,` +
+        `price_at_report,entry_price,target_price,stop_loss,outcome,outcome_date,outcome_return_pct,ret5_pct,ret20_pct,bars_after`,
+      { method: "GET" }
+    );
+    if (!r.ok) throw new Error(`성적표 조회 실패 (HTTP ${r.status})`);
+    const rows = await r.json().catch(() => []);
+    const seen = new Set();
+    const items = [];
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const date = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date(row.created_at));
+      const key = `${row.stock_code}|${date}`;
+      if (seen.has(key)) continue; // 최신순이라 처음 본 것이 그날 마지막 리포트
+      seen.add(key);
+      const n = (v) => (v == null || v === "" ? null : Number(v));
+      items.push({
+        date,
+        code: row.stock_code,
+        name: row.stock_name && row.stock_name !== row.stock_code ? row.stock_name : row.stock_code,
+        signal: row.signal || null,
+        price: n(row.price_at_report),
+        entry: n(row.entry_price),
+        target: n(row.target_price),
+        stop: n(row.stop_loss),
+        outcome: row.outcome || "pending",
+        outcomeDate: row.outcome_date || null,
+        returnPct: n(row.outcome_return_pct),
+        ret5: n(row.ret5_pct),
+        ret20: n(row.ret20_pct),
+        barsAfter: n(row.bars_after),
+      });
+    }
+    const cnt = (o) => items.filter((it) => it.outcome === o).length;
+    const target = cnt("target");
+    const stop = cnt("stop");
+    const expired = cnt("expired");
+    const closed = items.filter((it) => ["target", "stop", "expired"].includes(it.outcome) && it.returnPct != null);
+    const avg = closed.length ? Math.round((closed.reduce((a, b) => a + b.returnPct, 0) / closed.length) * 100) / 100 : null;
+    const d5 = items.filter((it) => it.ret5 != null);
+    return tsJson(res, 200, {
+      since: new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(new Date(since)),
+      summary: {
+        total: items.length,
+        target,
+        stop,
+        expired,
+        open: cnt("open"),
+        wait: cnt("wait"),
+        noEntry: cnt("no_entry"),
+        pending: cnt("pending"),
+        hitRate: target + stop ? Math.round((target / (target + stop)) * 100) : null,
+        avgClosedReturn: avg,
+        closedCount: closed.length,
+        up5Rate: d5.length ? Math.round((d5.filter((it) => it.ret5 > 0).length / d5.length) * 100) : null,
+        up5Count: d5.length,
+      },
+      items,
+    });
+  } catch (error) {
+    console.error("[report-track] 실패", error && error.message);
     return tsJson(res, error.statusCode || 500, { error: error.message || "요청 처리에 실패했습니다." });
   }
 }
@@ -4936,6 +5142,10 @@ module.exports = async function handler(req, res) {
   if (req.query && req.query.feature === "reports") {
     return await handleReports(req, res);
   }
+  // 2026-09-26: AI 종목분석 성적표(예측 자동 채점 결과 달력)
+  if (req.query && req.query.feature === "report-track") {
+    return await handleReportTrack(req, res);
+  }
   // 2026-09-11: 종가베팅 랭킹. 같은 이유(함수 12개 한도)로 쿼리 파라미터로 얹는다.
   if (req.query && req.query.feature === "close-betting") {
     return await handleCloseBetting(req, res);
@@ -5028,6 +5238,12 @@ module.exports = async function handler(req, res) {
       const wmPromise = fetchKisWeeklyMonthly(code6);
       quote = await fetchKisQuote(code6);
       wm = await wmPromise;
+      // 2026-09-26: 과거 유사 국면 통계(확률 근거) — 실패해도 분석은 그대로 진행
+      try {
+        quote.patternStats = computeSimilarPatternStats(await fetchKisDailyHistory(code6, 4));
+      } catch (e) {
+        quote.patternStats = null;
+      }
       // 2026-09-03: 비교군 대비 위치(백분위)는 전종목 지표 캐시에서 코드가 직접 집계한다.
       // 실패해도 null만 돌아오고 분석 자체는 그대로 진행된다(카드만 안 그려짐).
       quote.marketPosition = computeMarketPosition(code6);
@@ -5105,6 +5321,7 @@ module.exports = async function handler(req, res) {
     sector: quote.sector || undefined,
     marketPosition: quote.marketPosition || undefined,
     financials: quote.financials || undefined,
+    patternStats: quote.patternStats || undefined,
     // 2026-09-03: 차트 카드 상단의 이평 이격·RSI 도표를 그리려면 클라이언트가 보낸 지표를
     // 그대로 되돌려 받아야 한다(응답만 다시 렌더하는 경우에도 도표가 살아 있게).
     indicators: {

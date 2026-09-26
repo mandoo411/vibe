@@ -83,7 +83,7 @@ async function buildOne(stock) {
       const market = await fetchMarketSnapshot(stock.code);
       // 2026-08-26: 매매시그널 HTS급 확장 — 외국인/기관 순매수는 별도 엔드포인트 호출 필요.
       const investorFlow = await fetchInvestorFlow(stock.code);
-      const periodReturns = computePeriodReturns(closes);
+      const periodReturns = computePeriodReturns(closes, candles.map((c) => c.time));
       const snapshot = buildSnapshotFromSeries({
         closes,
         highs,

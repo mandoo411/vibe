@@ -1458,6 +1458,13 @@
   color: var(--text-title, #f3f4f6);
 }
 
+/* 2026-09-26: 시나리오 기준 확률(코드 계산) */
+.ai-probbar__base { margin: 10px 0 0; font-size: 12px; line-height: 1.55; color: var(--color-text-secondary); word-break: keep-all; }
+.ai-probbar__base b { font-weight: 700; margin-right: 6px; color: var(--text-primary, #131722); font-family: inherit; }
+[data-theme="dark"] .ai-probbar__base b { color: var(--text-title, #f3f4f6); }
+.ai-probbar__base span { display: block; margin-top: 2px; font-size: 11.5px; }
+.ai-probbar__def { margin: 6px 0 0; font-size: 11px; line-height: 1.55; color: var(--text-muted-ui, var(--color-text-secondary)); word-break: keep-all; }
+
 /* 2026-09-26: 채점 기준 한 줄 */
 .ai-opinion-grade {
   margin: -6px 0 16px;

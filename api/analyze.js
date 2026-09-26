@@ -577,7 +577,15 @@ function mpHeadline(items, peerLabel, rawByKey) {
     else if (tone) lead = `${pick.label} ${pick.valueText}로 ${peerLabel}에서 ${tone} 축입니다.`;
     else lead = `${pick.label} ${pick.valueText}로 ${peerLabel} 중간 수준입니다.`;
     const ratioSent = ratio && ratio !== "중앙값과 비슷" ? ` ${pick.label}은 ${ratio}입니다.` : "";
-    out.push(lead + ratioSent);
+    // 2026-09-26 GPT 리뷰: 이익이 급증한 종목은 ROE가 높아 PBR이 높게 나온다 — PBR만으로 비싸다고 읽지 않게 ROE를 같이 준다.
+    const perV = raw.per && raw.per.mine;
+    const pbrV = raw.pbr && raw.pbr.mine;
+    const roe = perV > 0 && pbrV > 0 ? Math.round((pbrV / perV) * 100) : null;
+    const roeSent =
+      roe != null && roe >= 15 && pbr && pbr.percentileTop <= 30
+        ? ` 다만 PBR÷PER로 본 자기자본이익률(ROE)이 약 ${roe}%로 높아, PBR이 높은 건 이익이 크게 늘어난 영향이 큽니다 — 가격 부담은 PER 쪽으로 보는 게 정확합니다.`
+        : "";
+    out.push(lead + ratioSent + roeSent);
   }
 
   // ② 수익률 흐름 — 1개월·3개월·1년의 방향이 같은지 엇갈리는지가 핵심 정보다.
@@ -701,6 +709,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - 답변 텍스트 안에 URL, 도메인명, "(사이트명)", "([출처](링크))" 같은 출처 표기를 절대 포함하지 않는다. 고객은 링크를 클릭해서 스스로 확인하지 않는다 — 애널리스트가 이미 확인한 사실을 자연스러운 문장으로 결론만 전달한다.
 - 수급(외국인/기관 순매수) 서술 시 반드시 기준 시점을 명시한다 (예: "당일 기준", "최근 5거래일 누적"). 주가가 높은 종목은 주식 수만 나열하면 체감이 안 되므로, 순매수/순매도 수량과 함께 대략적인 금액(수량×현재가 환산, 예: "약 1,830억원")도 함께 언급한다.
 - 입력 데이터에 종목 고유의 foreignNetBuy/institutionNetBuy 값이 없다고 해서 코스피 전체·업종 전체 같은 시장 전반 수급으로 뭉뚱그려 대체하지 않는다. 반드시 web_search로 "[종목명] 외국인 기관 순매수 [날짜]"를 검색해 그 종목 고유의 실제 수량을 찾아 서술한다. 시장 전체 흐름은 배경 설명으로 한 문장 덧붙이는 것은 괜찮지만, 종목 고유 수급 데이터를 대신할 수는 없다.
+- [밸류에이션 해석] 메모리·조선·화학처럼 이익이 크게 출렁이는 업종은 PBR만으로 비싸다/싸다를 판단하지 않는다. 이익이 급증한 국면에서는 자기자본이익률(ROE = PBR÷PER)이 높아져 PBR이 높게 나오는 게 자연스럽다. 이 경우 부담은 PER(이익 대비 가격)과 앞으로 이익이 더 늘 수 있는지로 판단하고, PBR은 보조로만 언급한다.
 - PER·PBR이 업종 평균이나 그 종목의 역사적 평균 대비 뚜렷하게 높거나 낮으면(예: PBR 5배 이상, PER 30배 이상, 혹은 반대로 지나치게 낮은 경우) 숫자만 나열하지 말고 밸류에이션 부담(또는 저평가) 여부와 그 배수가 왜 형성됐는지(주가 급등, 이익 급감 등)를 한두 문장으로 짚어준다.
 - 밸류에이션을 언급할 때 web_search로 "[종목명] 목표주가" 또는 "[종목명] 증권사 컨센서스"를 검색해서, 확인되는 증권사 평균(또는 최근 발표) 목표주가가 있으면 현재가 대비 괴리율(%)과 함께 반드시 짚어준다. 목표주가와 현재가가 이미 비슷하면(선반영) 그 사실 자체가 중요한 정보이므로 그렇게 서술한다. 검색해도 확인이 안 되면 억지로 지어내지 말고 그 문장 자체를 생략한다.
 - materialAnalysis(재료 분석)에는 주가에 유리한 재료만 나열하지 않는다. web_search로 확인되는 재료 중 리스크·부정적 재료(예: 경쟁사의 신제품·증설로 인한 경쟁 심화, 규제·정책 리스크, 실적 눈높이 부담, 공급 축소·원가 상승 등)가 하나라도 확인되면 반드시 최소 1개는 materials 배열에 포함한다 — 지금까지의 강세 스토리와 배치되는 내용이라도 숨기지 않는다. 여러 관점을 균형 있게 짚어야 돈값을 하는 유료 리포트가 된다.
@@ -2690,6 +2699,28 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         running += p;
       }
     });
+  }
+
+  // ── 2026-09-26 GPT 리뷰("확률이 재현 불가능"): 코드가 계산한 기준 확률(lib/pattern-stats base)에서
+  // 시나리오당 ±20%p 넘게 벗어나지 못하게 묶는다. 넘친 만큼은 여유가 있는 시나리오로 옮겨 합 100을 유지.
+  const probBase = quote && quote.patternStats && quote.patternStats.base;
+  if (probBase && scenarios.length === 3 && scenarios.every((s) => probBase[s.label] != null && toNum(s.probability) != null)) {
+    const LIM = 20;
+    const lo = (s) => Math.max(0, probBase[s.label] - LIM);
+    const hi = (s) => Math.min(100, probBase[s.label] + LIM);
+    scenarios.forEach((s) => {
+      s.probability = Math.max(lo(s), Math.min(hi(s), Math.round(toNum(s.probability))));
+    });
+    let diff = 100 - scenarios.reduce((a, s) => a + s.probability, 0);
+    for (let guard = 0; diff !== 0 && guard < 300; guard++) {
+      const step = diff > 0 ? 1 : -1;
+      const cand = scenarios
+        .filter((s) => (step > 0 ? s.probability < hi(s) : s.probability > lo(s)))
+        .sort((a, b) => (step > 0 ? b.probability - a.probability : a.probability - b.probability))[0];
+      if (!cand) break;
+      cand.probability += step;
+      diff -= step;
+    }
   }
 
   // ── 2026-09-26: 진입가 단일화 ──
@@ -5367,6 +5398,7 @@ module.exports = async function handler(req, res) {
     marketPosition: quote.marketPosition || undefined,
     financials: quote.financials || undefined,
     patternStats: quote.patternStats || undefined,
+    techExtras: quote.techExtras || undefined,
     // 2026-09-03: 차트 카드 상단의 이평 이격·RSI 도표를 그리려면 클라이언트가 보낸 지표를
     // 그대로 되돌려 받아야 한다(응답만 다시 렌더하는 경우에도 도표가 살아 있게).
     indicators: {

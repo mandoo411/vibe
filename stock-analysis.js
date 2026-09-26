@@ -1748,7 +1748,7 @@
   }
 
   /** A/B/C 시나리오 확률을 100% 스택 막대 하나로. 합이 100이 아니면 정규화해서 그린다. */
-  function renderScenarioProbBar(scenarios) {
+  function renderScenarioProbBar(scenarios, base) {
     const list = (Array.isArray(scenarios) ? scenarios : [])
       .map((s) => ({ label: String(s.label || "").trim(), type: String(s.type || "").trim(), prob: toNum(s.probability) }))
       .filter((s) => s.label && s.prob != null && s.prob > 0);
@@ -1768,7 +1768,13 @@
         return `<span class="ai-probbar__leg"><i class="ai-probbar__chip ai-probbar__chip--${cls}"></i>${escapeHtml(s.label)}안 ${escapeHtml(s.type || "")}</span>`;
       })
       .join("");
-    return `<div class="ai-probbar"><div class="ai-probbar__title">시나리오 확률</div><div class="ai-probbar__track">${segs}</div><div class="ai-probbar__legend">${legend}</div></div>`;
+    // 2026-09-26 GPT 리뷰("40/38/22의 계산법이 없다"): 코드가 정의로 계산한 기준 확률을 나란히 보여준다.
+    const b = base && base.A != null ? base : null;
+    const baseHtml = b
+      ? `<p class="ai-probbar__base"><b>과거 통계 기준</b> A ${b.A}% · B ${b.B}% · C ${b.C}% <span>→ 위 막대는 여기에 수급·재료·밸류에이션을 반영한 최종 확률(시나리오당 ±20%p 이내)</span></p>` +
+        `<p class="ai-probbar__def">기준 확률 정의: 20거래일 뒤 +${b.band}% 이상이면 강세(A), -${b.band}% 이하면 약세(C), 그 사이는 중립(B). 아래 '과거 비슷한 국면' 표본 ${b.weightPct}% · 이 종목 전체 기간 ${100 - b.weightPct}% 비중으로 섞었습니다(표본이 적을수록 전체 기간 쪽으로 당김).</p>`
+      : "";
+    return `<div class="ai-probbar"><div class="ai-probbar__title">시나리오 확률</div><div class="ai-probbar__track">${segs}</div><div class="ai-probbar__legend">${legend}</div>${baseHtml}</div>`;
   }
 
   /* 2026-09-26: 과거 유사 국면 통계 — 서버(lib/pattern-stats.js)가 이 종목 실제 일봉으로 센 값.
@@ -1790,6 +1796,7 @@
         ${cell("20거래일 뒤", ps.d20.up, ps.sample, ps.d20.upPct, ps.d20.median)}
       </div>
       <p class="ai-pattern__foot">20거래일 뒤 수익률은 절반이 <b>${escapeHtml(pct(ps.d20.p25))} ~ ${escapeHtml(pct(ps.d20.p75))}</b> 사이였습니다. 겹치는 날은 한 번으로 셌고, 수급은 과거 이력이 없어 조건에서 뺐습니다.</p>
+      <p class="ai-pattern__foot">조건은 추세(20일선 위·아래)·중기 배열(20일선과 60일선)·RSI 구간 세 가지뿐입니다 — 조건을 늘리면 표본이 너무 줄어듭니다. 표본 ${escapeHtml(String(ps.sample))}번은 ${ps.sample < 30 ? "많지 않아 참고용이며" : "적당한 편이지만"}, 업황·금리 환경이 과거와 다르면 같은 결과가 반복된다는 보장은 없습니다.</p>
     </div>`;
   }
 
@@ -1842,7 +1849,7 @@
     return `<article class="ai-scenario ${cls}${planBadge ? " is-plan" : ""}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span>${planBadge}<span class="ai-scenario__prob">${probText}</span>${rrBadge}</header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
-  function renderOpinion(op, currentPrice, assetType, patternStats) {
+  function renderOpinion(op, currentPrice, assetType, patternStats, techExtras) {
     const o = op && typeof op === "object" ? op : {};
     const prices = resolveOpinionPrices(o, currentPrice);
     const outlooks = [
@@ -1895,10 +1902,16 @@
       assetType !== "US" && assetType !== "CRYPTO" && gE > 0 && gT > gE && gS > 0 && gS < gE
         ? `<p class="ai-opinion-grade"><b>채점 기준</b> 다음 거래일부터 20거래일 동안 진입가 ${escapeHtml(fmtPrice(gE, assetType))}에 닿으면 진입으로 보고, 그 뒤 목표가 ${escapeHtml(fmtPrice(gT, assetType))}에 먼저 닿으면 <span class="up">목표 도달</span>, 손절가 ${escapeHtml(fmtPrice(gS, assetType))}에 먼저 닿으면 <span class="down">손절</span>로 채점합니다. 둘 다 닿지 않으면 20거래일째 종가로 평가합니다. <a href="#ai-track">성적표 보기</a></p>`
         : "";
+    // 2026-09-26 GPT 리뷰("목표가 산식이 없다"): 목표·손절 거리를 하루 평균 변동폭(ATR)의 몇 배인지로 코드가 잰다.
+    const atr = techExtras && techExtras.atr && toNum(techExtras.atr.value);
+    const atrLine =
+      atr > 0 && gE > 0 && gT > gE && gS > 0 && gS < gE
+        ? `<p class="ai-opinion-rr">목표가 거리 <b>+${(((gT - gE) / gE) * 100).toFixed(1)}%</b>(하루 평균 변동폭 ATR의 ${((gT - gE) / atr).toFixed(1)}배) · 손절가 거리 <b>-${(((gE - gS) / gE) * 100).toFixed(1)}%</b>(${((gE - gS) / atr).toFixed(1)}배)</p>`
+        : "";
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
     // 2026-09-03: A/B/C 확률을 숫자 세 개로만 흩어 놓으면 어느 쪽에 무게가 실렸는지 한눈에
     // 안 들어온다. 카드 위에 100% 스택 막대 하나로 먼저 보여주고, 상세는 아래 카드가 맡는다.
-    const scenarioBar = renderPatternStats(patternStats) + renderScenarioProbBar(scenarios);
+    const scenarioBar = renderPatternStats(patternStats) + renderScenarioProbBar(scenarios, patternStats && patternStats.base);
     const plan = o.planScenario && o.planScenario.label ? o.planScenario : null;
     const planLine = plan
       ? `<p class="ai-opinion-plan">확률이 가장 높은 <b>${escapeHtml(plan.label)}안(${escapeHtml(plan.type || "")}${plan.probability != null ? ` ${Math.round(plan.probability)}%` : ""})</b>의 진입·목표·손절입니다.</p>`
@@ -1913,7 +1926,7 @@
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
-      `${planLine}<div class="ai-opinion-prices">${priceRows}</div>${rrLine}${gradeLine}` +
+      `${planLine}<div class="ai-opinion-prices">${priceRows}</div>${rrLine}${atrLine}${gradeLine}` +
       `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioBar}${scenarioHtml}</div>` +
@@ -2176,7 +2189,7 @@
       {
         cls: "ai-card--opinion",
         title: "AI 주관적 판단",
-        body: `<div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType, data.patternStats)}</div>`,
+        body: `<div class="ai-card__body">${renderOpinion(analysis.opinion, data.currentPrice, data.assetType, data.patternStats, data.techExtras)}</div>`,
       },
     ].filter(Boolean);
     const cardsHtml = `<div class="ai-analysis-cards">${cardDefs

@@ -16,6 +16,7 @@ const {
   getUserFromToken,
   getSubscription,
   tryIncrementFreeUsage,
+  refundFreeUsage,
   currentMonthKeySeoul,
   isConfigured: supabaseConfigured,
   serviceRequest,
@@ -5579,6 +5580,7 @@ module.exports = async function handler(req, res) {
   // 이제 AI 종목분석은 로그인한 회원이 직접 요청할 때만 돈다.
   const isInternalSeed = false;
 
+  let chargedUsage = null; // 무료 사용횟수를 올렸으면 기록 — 분석 실패 시 되돌린다
   if (supabaseConfigured() && !isInternalSeed) {
     const token = bearerToken(req);
     const user = await getUserFromToken(token);
@@ -5589,7 +5591,9 @@ module.exports = async function handler(req, res) {
     const sub = await getSubscription(user.id);
     const isPro = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
     if (!isPro) {
-      const allowed = await tryIncrementFreeUsage(user.id, currentMonthKeySeoul(), FREE_MONTHLY_LIMIT);
+      const usageMonth = currentMonthKeySeoul();
+      const allowed = await tryIncrementFreeUsage(user.id, usageMonth, FREE_MONTHLY_LIMIT);
+      if (allowed) chargedUsage = { userId: user.id, month: usageMonth };
       if (!allowed) {
         json(res, 403, {
           error: `\uBB34\uB8CC \uD50C\uB79C\uC740 \uC774\uBC88 \uB2EC AI \uC885\uBAA9\uBD84\uC11D \uCCB4\uD5D8 ${FREE_MONTHLY_LIMIT}\uD68C\uB97C \uBAA8\uB450 \uC0AC\uC6A9\uD588\uC2B5\uB2C8\uB2E4. Pro\uB85C \uC5C5\uADF8\uB808\uC774\uB4DC\uD558\uBA74 \uBB34\uC81C\uD55C \uC774\uC6A9\uD558\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`,
@@ -5713,6 +5717,10 @@ module.exports = async function handler(req, res) {
       e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";
     analysisError = openaiErrMsg;
     console.error("[analyze] OpenAI 실패", openaiErrMsg);
+    if (chargedUsage) {
+      const ok = await refundFreeUsage(chargedUsage.userId, chargedUsage.month);
+      console.warn("[analyze] 실패 건 무료 사용횟수 환원", ok ? "성공" : "실패");
+    }
     analysis = await normalizeAnalysis(null, quote, wm, indicators);
     if (analysisError === ANALYSIS_PARSE_ERROR_MSG && analysis.summary) {
       analysis.summary.description = ANALYSIS_PARSE_ERROR_MSG;

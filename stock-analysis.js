@@ -2197,7 +2197,7 @@
     const probText = prob == null ? "—" : `${prob}%`;
     const errBanner =
       analysis._error && data.analysisError
-        ? `<div class="ai-analysis-error" style="margin-bottom:12px">${escapeHtml(data.analysisError)}</div>`
+        ? `<div class="ai-analysis-error" style="margin-bottom:12px">이 리포트는 생성 중 문제가 있어 일부 내용이 비어 있습니다.</div>`
         : "";
 
     // 2026-08-26 UI 리디자인: 카드1(한눈에 요약)을 grid 기반 3분할(좌 신호카드 /
@@ -2747,6 +2747,12 @@
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     if (data.error) throw new Error(data.error);
     if (!data.analysis) throw new Error("분석 데이터가 없습니다");
+    // 2026-09-26: AI 생성이 실패하면 빈 리포트(관망 50%)를 그리지도, 저장하지도 않는다.
+    // 내부 오류 문구(OpenAI returned non-JSON 등)는 고객에게 보이지 않게 콘솔에만 남긴다.
+    if (data.analysisError || (data.analysis && data.analysis._error)) {
+      console.warn("[AI분석] 생성 실패(내부)", data.analysisError);
+      throw new Error("AI 리포트를 만드는 중 일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요. (이번 시도는 이용 횟수에 포함되지 않습니다)");
+    }
     return data;
   }
 

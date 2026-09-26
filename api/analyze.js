@@ -115,6 +115,9 @@ function normalizeQuick(q, curPrice) {
       if (cp > 0 && w.price > cp * 1.003 && /지키|유지|깨지|내주|무너/.test(w.text)) {
         w.text = "이 가격을 넘고 거래가 늘면 → 상승 흐름이 이어지는지 확인";
       }
+      if (cp > 0 && w.price < cp * 0.997 && /회복|넘|돌파/.test(w.text)) {
+        w.text = "이 가격이 깨지면 → 조정이 깊어지는지 확인";
+      }
       return w;
     })
     .slice(0, 3)
@@ -2666,6 +2669,20 @@ function wonTextVariants(v) {
 }
 
 /** 2026-09-26: 진입가 단일화 뒤 AI 문장에 남은 옛 숫자를 같은 모양의 새 숫자로 바꾼다. */
+/** 2026-09-26: AI가 종합 의견을 자기 매매가(opinion.entry/stop/target) 기준으로 쓴 뒤 코드가 계획을 A안 숫자로 바꾸면,
+ * 숫자만 바꿔 끼우면 "205만8000원은 되돌림을 받아낼 자리"처럼 뜻이 뒤틀린다. 옛 가격이 든 문장은 통째로 뺀다. */
+function dropStalePlanSentences(text, from, to) {
+  if (!text || !from || !to) return text;
+  const stale = [];
+  for (const k of ["entry", "stop", "target"]) {
+    if (!from[k] || !to[k] || Math.round(from[k]) === Math.round(to[k])) continue;
+    wonTextVariants(from[k]).forEach((v) => v && stale.push(v));
+  }
+  if (!stale.length) return text;
+  const kept = text.split(/(?<=[.!?])\s+/).filter((sent) => !stale.some((v) => sent.includes(v)));
+  return kept.join(" ").trim();
+}
+
 function swapPlanPricesInText(text, from, to) {
   if (!text || !from || !to) return text;
   let out = text;
@@ -3025,7 +3042,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
       planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
       // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
-      comment: planLeadSentence(planScenario, price, quote, scenarios) + stripAiPlanClaims(swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
+      comment: planLeadSentence(planScenario, price, quote, scenarios) + stripAiPlanClaims(dropStalePlanSentences(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.

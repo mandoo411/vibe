@@ -1,28 +1,67 @@
 /* ════════════════════════════════════════════════════════════════════════
-   2026-09-26 읽는 페이지 넓은 화면 배치 — 오전브리핑 · 마감시황 · 일정
+   2026-09-26 읽는 페이지 넓은 화면 배치 — 오전브리핑 · 마감시황 · 일정 (+ 매매시그널·종가시그널·AI종목분석은 폭·배율만)
    전체 너비(9/25) 이후 본문 한 줄이 1,800px까지 늘어나 읽기 힘들었다(시우 지적).
-   → 1200px 이상에서: 전체 폭을 --rd-max로 묶어 가운데 두고,
+   → 1200px 이상에서: 전체 폭을 --rd-max(1640px)로 묶어 가운데 두고, 배율(--rd-z)로 글씨·카드를 키우고,
      왼쪽 = 숫자판(지수·환율·시장 온도, 스크롤해도 따라옴) / 오른쪽 = 본문(줄 길이 약 900px 이하).
    섹션 나누기는 assets/read-layout.js가 한다. 일정 페이지는 원래 있던 옆 칸(달력·요약)을 왼쪽으로 옮긴다.
    1200px 미만·모바일은 건드리지 않는다. wide.css 다음에 읽는다.
    ════════════════════════════════════════════════════════════════════════ */
-:root { --rd-max: 1320px; --rd-rail: 340px; --rd-col-gap: 24px; }
+:root { --rd-max: 1640px; --rd-rail: 340px; --rd-col-gap: 24px; --rd-z: 1; }
+/* 확대 배율: 글씨가 12~13px라 작다는 지적(9/26) — 본문 영역 전체를 같은 비율로 키운다(카드·여백·글씨 함께).
+   메뉴·시세띠·모바일은 그대로. zoom 안의 길이는 배율만큼 커지므로 폭·고정 위치는 배율로 나눠 준다. */
+@media (min-width: 1200px) { :root { --rd-z: 1.08; } }
+@media (min-width: 1500px) { :root { --rd-z: 1.14; } }
 
 @media (min-width: 1200px) {
-  /* ── 폭 묶기: 머리줄(날짜·탭)과 본문이 같은 가장자리에 서게 ── */
-  html[lang] body .briefing-meta-bar,
-  html[lang] body #bfx-deck.bfx-deck,
-  html[lang] body #dm-main.dm-wrap,
-  html[lang] body .schedule-page .schedule-layout {
+  /* ── 대상 페이지: 오전브리핑 · 마감시황 · 일정 · 매매시그널 · 종가시그널 · AI 종목분석 ── */
+  html[lang] body .tm-main > .page:has(> #bfx-deck),
+  html[lang] body .tm-main > .page.page--daily-market,
+  html[lang] body .tm-main > .page:has(> .schedule-page),
+  html[lang] body .tm-main > .page:has(> .cb-body) {
+    zoom: var(--rd-z);
+    max-width: calc(var(--rd-max) / var(--rd-z)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+  /* 매매시그널·AI 종목분석은 캔들 차트가 있어 zoom을 쓰지 않는다 — zoom 안에서는 차트 십자선이 마우스와
+     배율만큼 어긋났다(9/26 실측). 폭만 같게 묶고, 작은 글씨는 아래 목록에서 하나씩 키운다. */
+  html[lang] body .tm-main > .page:has(> .ts-body),
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) {
     max-width: var(--rd-max) !important;
     margin-left: auto !important;
     margin-right: auto !important;
     box-sizing: border-box;
   }
+  /* 안쪽 폭 제한은 풀어 둔다(바깥 .page가 묶는다) */
+  html[lang] body .briefing-meta-bar,
+  html[lang] body #bfx-deck.bfx-deck,
+  html[lang] body #dm-main.dm-wrap,
+  html[lang] body .schedule-page .schedule-layout { max-width: none !important; }
   /* 마감시황 페이지 틀의 overflow-x:hidden이 스크롤 상자를 만들어 왼쪽 칸 고정(sticky)이 안 먹었다 → clip은 상자를 안 만든다 */
   html[lang] body .page.page--daily-market { overflow-x: clip !important; overflow-y: visible !important; }
   html[lang] body #bfx-deck.bfx-deck.rd-host,
   html[lang] body #dm-ai-content.rd-host { display: block !important; }
+
+  /* ── 마감시황 탭 줄: 날짜를 맨 앞(왼쪽)으로 — 오른쪽 끝에 떨어져 있어 탭과 따로 놀았다 ── */
+  html[lang] body .page--daily-market #dm-tab-bar { margin-top: 18px !important; margin-bottom: 4px !important; }
+  html[lang] body .page--daily-market #dm-tabs-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  html[lang] body .page--daily-market #dm-tabs-row[hidden] { display: none; }
+  html[lang] body .page--daily-market .dm-tab-date {
+    order: -1;
+    margin-left: 0 !important;
+    margin-right: 10px;
+    position: relative;
+  }
+  html[lang] body .page--daily-market .dm-tab-date::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: var(--border-color, rgba(255, 255, 255, 0.14));
+  }
 
   /* ── 두 칸 ── */
   html[lang] body .rd-grid {
@@ -38,8 +77,8 @@
   
   html[lang] body .rd-rail {
     position: sticky;
-    top: var(--rd-top, 120px);
-    max-height: calc(100vh - var(--rd-top, 120px) - 16px);
+    top: calc(var(--rd-top, 120px) / var(--rd-z));
+    max-height: calc((100vh - var(--rd-top, 120px) - 16px) / var(--rd-z));
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
@@ -118,6 +157,128 @@
   html[lang] body .schedule-page .schedule-aside {
     order: -1;
     position: sticky;
-    top: var(--rd-top, 120px);
+    top: calc(var(--rd-top, 120px) / var(--rd-z));
   }
+
+  /* ── 작은 글씨 키우기(차트 있는 페이지) — 2026-09-26 실측으로 뽑은 목록: 11px 이하 +2px, 그 위 +1.5px ── */
+  /* 매매시그널 — 작은 글씨만 키운다(차트가 있어 배율 확대는 안 씀) */
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-detail__label,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-preset__tag { font-size: 12.5px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-freshness,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-hero__kicker,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-hero__step-no,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-hero__step-sub,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-presets__note,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-result-row__meta,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-sub__cap,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-why__chip,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-why__val { font-size: 13px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-preset__cta,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-result-row__change,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-save-mini,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-sub-toggle__cap { font-size: 13.5px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-label,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-results__count,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-sec__cap { font-size: 14px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-btn,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-empty,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-pill,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-preset__desc,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-tag { font-size: 14.5px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-detail__value,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-hero__step-name { font-size: 15px !important; }
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-hero__desc,
+  html[lang] body .tm-main > .page:has(> .ts-body) .ts-tech__name { font-size: 15.5px !important; }
+
+  /* AI 종목분석 — 작은 글씨만 키운다(차트가 있어 배율 확대는 안 씀) */
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airg__no,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__cap,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__rsi-scale { font-size: 12.5px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__asof,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__note,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__rerun,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__tag,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-certainty,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-probbar__leg,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-card__badge,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-supply-fact__cell > small,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-supply-fact__warn,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airg__note,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__act,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__asof,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__date,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__mat,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__pending,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__sig,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp__cap,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-a__yr,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-group__cap,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-q__prev,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-yoy,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin__note,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin__src,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .k,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos-group__cap,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos-tile__foot,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos-tile__rank,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos__asof,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos__note,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .rt-chart-interval-btn,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .sum2-footnote,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .sum2-prob__note,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__k,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__rsi-num > em,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__v { font-size: 13px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-chart-legend__item,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-disclaimer,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-reflect__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-strength,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-summary__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-unreflected__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-opinion-comment__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-opinion-price__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-outlook-card__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-probbar__seg,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-probbar__title,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-scenario-row__k,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-scenario__rr,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-card__hint,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-popular__title,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-scope__item,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-stock-header__market,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-stock-meta__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airg__cap,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airg__item > span,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-a__name,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-a__num,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-group__title,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin-q__name,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos-group__title,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos-tile__name,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .sum2-prob__label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__d,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .techsnap__title { font-size: 13.5px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__prices,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__since,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-card__basis,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-card__basis-label,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-opinion-rr,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-supply-fact__cell,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__price,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .sum2-total { font-size: 14px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-archive__date,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-card__num,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-chart-box__title,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-popular__chip,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-stock-header__code,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-supply-fact__label { font-size: 14.5px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-search-card__sub,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .fin__basis,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos__peer { font-size: 15px !important; }
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-mat-card__judgment,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .ai-scenario-row__v,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airg__item > strong,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__name,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .airp-item__ret,
+  html[lang] body .tm-main > .page:has(> #ai-stock-analysis) .mpos__headline { font-size: 15.5px !important; }
 }

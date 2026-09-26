@@ -37,6 +37,8 @@ const HONEST_TONE_RULE = [
   "",
   "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
   "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
+  "[재료·업황의 근거] 미반영 핵심 재료·AI 재료 종합 판단·종합 의견에서 새 주장을 할 때는 materials 목록에 있거나 web_search로 날짜·금액이 확인된 사실만 쓴다. 예: '자사주 매입 종료로 수급 공백'은 종료 날짜와 규모가 확인될 때만 쓰고, 자사주 매입·소각 같은 주주환원 재료가 확인되면 materials에 반드시 넣는다. HBM·ASP(평균 판매단가)·출하량 같은 업황 근거를 쓸 때는 web_search로 확인한 숫자(가격 변화율·출하량·점유율 등)를 최소 하나 붙이고, 숫자가 없으면 그 재료를 핵심 근거로 쓰지 않는다.",
+  "[단정 금지] 확률·전망은 추정치다. '~가 맞습니다', '확실합니다', '반드시 오릅니다' 같은 단정형을 쓰지 않고 '~로 봅니다', '~가능성이 큽니다'로 쓴다.",
 ].join("\n");
 /* 2026-09-26 초보자 리뷰: "전문가 분석을 초보자에게 그대로 보여주는 형태" → 맨 위에 한눈에 보기(quick), 용어엔 쉬운 풀이. */
 const BEGINNER_RULE = [
@@ -653,9 +655,14 @@ function mpHeadline(items, peerLabel, rawByKey) {
     const perV = raw.per && raw.per.mine;
     const pbrV = raw.pbr && raw.pbr.mine;
     const roe = perV > 0 && pbrV > 0 ? Math.round((pbrV / perV) * 100) : null;
-    const roeSent =
-      roe != null && roe >= 15 && pbr && pbr.percentileTop <= 30
-        ? ` 다만 PBR÷PER로 본 자기자본이익률(ROE)이 약 ${roe}%로 높아, PBR이 높은 건 이익이 크게 늘어난 영향이 큽니다 — 가격 부담은 PER 쪽으로 보는 게 정확합니다.`
+    // PER이 최근 4개 분기 기준이면 PBR(과거 자본 기준)과 섞어 ROE를 만들면 숫자가 틀어진다 → ROE 대신 사실만.
+    const perTtm = raw.per && raw.per.ttm;
+    const roeSent = perTtm
+      ? pbr && pbr.percentileTop <= 30 && per && per.percentileTop >= 50
+        ? ` 다만 최근 4개 분기 순이익 기준 PER은 ${per.valueText}로 종목 중앙값(${per.medianText})보다 낮습니다 — PBR이 높은 건 이익이 짧은 기간에 크게 늘어난 영향이 큽니다.`
+        : ""
+      : roe != null && roe >= 15 && pbr && pbr.percentileTop <= 30
+        ? ` 다만 PBR÷PER로 본 자기자본이익률(ROE)이 약 ${roe}%로 높아, PBR이 높은 건 이익이 크게 늘어난 영향이 큽니다.`
         : "";
     out.push(lead + ratioSent + roeSent);
   }
@@ -696,7 +703,8 @@ function mpHeadline(items, peerLabel, rawByKey) {
  * 실패(캐시 없음/종목 미수록/표본 부족)하면 null을 반환하고, 화면은 카드를 통째로 감춘다
  * ("데이터 미확인" 같은 내부 사정 문구를 고객에게 노출하지 않는다).
  */
-function computeMarketPosition(code6) {
+function computeMarketPosition(code6, opts) {
+  const perOverride = opts && toNum(opts.perOverride) > 0 ? toNum(opts.perOverride) : null;
   try {
     const cache = tsLoadScreenerCache();
     const stocks = (cache && cache.stocks) || [];
@@ -708,7 +716,8 @@ function computeMarketPosition(code6) {
     const items = [];
     const rawByKey = {};
     for (const metric of MP_METRICS) {
-      const mine = mpValueOf(target, metric.key);
+      const ttmUsed = metric.key === "per" && perOverride != null;
+      const mine = ttmUsed ? perOverride : mpValueOf(target, metric.key);
       if (!mpValueUsable(metric.key, mine)) continue;
       const values = [];
       for (const row of peer.rows) {
@@ -720,10 +729,11 @@ function computeMarketPosition(code6) {
       const percentileTop = Math.max(1, Math.min(100, Math.round(((above + 1) / values.length) * 100)));
       const sorted = values.slice().sort((a, b) => a - b);
       const median = mpMedian(sorted);
-      rawByKey[metric.key] = { mine, median };
+      rawByKey[metric.key] = { mine, median, ttm: ttmUsed, annual: ttmUsed ? mpValueOf(target, "per") : null };
       items.push({
         key: metric.key,
         label: metric.label,
+        note: ttmUsed ? "최근 4개 분기 실적 기준" : null,
         group: metric.group,
         valueText: mpFmtValue(metric, mine),
         medianText: mpFmtValue(metric, median),
@@ -2279,6 +2289,9 @@ function computeScoreCard(quote, indicators) {
   if (price != null && mas.length) {
     const aboveRatio = mas.filter((m) => price > m).length / mas.length;
     trend = Math.round(aboveRatio * 4) - 2; // 0/4→-2, 1/4→-1(반올림 보정), ... 4/4→+2
+    // 2026-09-26 Opus 리뷰: 20일선이 60일선 아래(중기 역배열)인데 만점(+2)은 과하다 → +1까지만.
+    const m20 = toNum(ind.ma20), m60 = toNum(ind.ma60);
+    if (trend > 1 && m20 != null && m60 != null && m20 < m60) trend = 1;
   }
 
   let momentum = null;
@@ -2777,7 +2790,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
   // 시나리오당 ±20%p 넘게 벗어나지 못하게 묶는다. 넘친 만큼은 여유가 있는 시나리오로 옮겨 합 100을 유지.
   const probBase = quote && quote.patternStats && quote.patternStats.base;
   if (probBase && scenarios.length === 3 && scenarios.every((s) => probBase[s.label] != null && toNum(s.probability) != null)) {
-    const LIM = 20;
+    const LIM = 10; // 2026-09-26 Opus 리뷰: 같은 입력에 A 40→61% — 재현성을 위해 ±10%p로 좁힘
     const lo = (s) => Math.max(0, probBase[s.label] - LIM);
     const hi = (s) => Math.min(100, probBase[s.label] + LIM);
     scenarios.forEach((s) => {
@@ -2802,6 +2815,15 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     scenarios.forEach((sc) => {
       const bear = sc.label === "C" || String(sc.type).includes("약");
       let adjusted = false;
+      // 2026-09-26 Opus 리뷰: 손절폭이 하루 평균 변동폭(ATR)보다 좁으면 평범한 하루 흔들림에도 손절된다 → ATR 1배까지 넓힌다.
+      if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.entry - sc.stop < atrV) {
+        const ns = sc.entry - atrV;
+        let r = roundToTick(Math.floor(ns), quote.assetType) ?? Math.floor(ns);
+        if (r > ns) r = roundToTick(Math.floor(ns * 0.998), quote.assetType) ?? r;
+        sc.stop = r;
+        const note = `손절 근거: 하루 평균 변동폭(ATR)보다 좁으면 평범한 흔들림에도 걸려, 진입가에서 ATR 1배 아래로 잡았습니다.`;
+        sc.basis = `${sc.basis ? sc.basis + " " : ""}${note}`;
+      }
       if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.target > 0) {
         const minT = sc.entry + Math.max(1.5 * atrV, 1.5 * (sc.entry - sc.stop));
         if (sc.target < minT) {
@@ -5431,7 +5453,6 @@ module.exports = async function handler(req, res) {
       }
       // 2026-09-03: 비교군 대비 위치(백분위)는 전종목 지표 캐시에서 코드가 직접 집계한다.
       // 실패해도 null만 돌아오고 분석 자체는 그대로 진행된다(카드만 안 그려짐).
-      quote.marketPosition = computeMarketPosition(code6);
       // 2026-09-03(로드맵 D): 분기·연간 실적은 AI가 web_search로 추측하던 구간이었다.
       // DART 원본 공시 숫자로 교체한다. 실패하면 null이라 카드만 안 그려진다.
       quote.financials = await fetchFinancialTrend(code6);
@@ -5446,6 +5467,9 @@ module.exports = async function handler(req, res) {
           quote.financials.ttm = ttm;
         }
       } catch (e) {}
+      // 2026-09-26 Opus 리뷰(PER 31.6배 vs 실제 약 8.4배): 시장 대비 위치의 PER도 최근 4개 분기 기준으로 바꾼다.
+      const ttmPer = quote.financials && quote.financials.ttm ? toNum(quote.financials.ttm.per) : null;
+      quote.marketPosition = computeMarketPosition(code6, { perOverride: ttmPer > 0 ? ttmPer : null });
     } else if (market === "US") {
       quote = await fetchUsQuote(usSymbol);
       wm = await fetchUsWeeklyMonthly(quote.stockCode, quote.exchange);

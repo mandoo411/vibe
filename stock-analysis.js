@@ -1811,7 +1811,7 @@
     // 2026-09-26 GPT 리뷰("40/38/22의 계산법이 없다"): 코드가 정의로 계산한 기준 확률을 나란히 보여준다.
     const b = base && base.A != null ? base : null;
     const baseHtml = b
-      ? `<p class="ai-probbar__base"><b>과거 통계 기준</b> A ${b.A}% · B ${b.B}% · C ${b.C}% <span>→ 위 막대는 여기에 수급·재료·밸류에이션을 반영한 최종 확률(시나리오당 ±20%p 이내)</span></p>` +
+      ? `<p class="ai-probbar__base"><b>과거 통계 기준</b> A ${b.A}% · B ${b.B}% · C ${b.C}% <span>→ 위 막대는 여기에 수급·재료·밸류에이션을 반영한 최종 확률(시나리오당 ±10%p 이내). 모두 AI 추정치이며 결과를 보장하지 않습니다</span></p>` +
         `<p class="ai-probbar__def">기준 확률 정의: 20거래일 뒤 +${b.band}% 이상이면 강세(A), -${b.band}% 이하면 약세(C), 그 사이는 중립(B). 아래 '과거 비슷한 국면' 표본 ${b.weightPct}% · 이 종목 전체 기간 ${100 - b.weightPct}% 비중으로 섞었습니다(표본이 적을수록 전체 기간 쪽으로 당김).</p>`
       : "";
     return `<div class="ai-probbar"><div class="ai-probbar__title">시나리오 확률</div><div class="ai-probbar__track">${segs}</div><div class="ai-probbar__legend">${legend}</div>${baseHtml}</div>`;
@@ -2026,7 +2026,7 @@
           <span class="mpos-tile__mid"></span>
           <span class="mpos-tile__dot" style="left:${pos}%"></span>
         </div>
-        <div class="mpos-tile__foot"><span>종목 중앙값 ${escapeHtml(it.medianText)}</span></div>
+        <div class="mpos-tile__foot"><span>종목 중앙값 ${escapeHtml(it.medianText)}</span>${it.note ? `<span class="mpos-tile__basis">${escapeHtml(it.note)}</span>` : ""}</div>
       </div>`;
     };
 
@@ -2207,7 +2207,7 @@
     const stance = stanceFromScenarios(analysis.opinion && analysis.opinion.scenarios);
     const stanceHtml = stance
       ? `<div class="sum2-prob"><span class="sum2-prob__label">현재 판단</span><span class="sum2-prob__value sum2-prob__value--stance sum2-stance--${stance.cls}">${escapeHtml(stance.text)}</span></div><p class="sum2-prob__note">시나리오별 가능성은 아래 'AI 주관적 판단' 카드에서 볼 수 있습니다</p>`
-      : `<div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p>`;
+      : `<div class="sum2-prob"><span class="sum2-prob__label">강세 시나리오 추정</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">AI 모델 추정치 · 결과를 보장하지 않습니다</p>`;
     const scoreParts = buildScoreCardParts(analysis.scoreCard);
 
     // 2026-09-03: "시장 대비 위치" 카드가 국내 종목에만 붙기 때문에 카드 번호를 하드코딩할
@@ -2266,7 +2266,7 @@
       renderArchiveBanner(archive) +
       renderStockHeader(data) +
       cardsHtml +
-      `<p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한 참고 자료이며 투자 권유가 아닙니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
+      `<p class="ai-disclaimer"><strong>투자 유의사항.</strong> 본 분석은 AI가 공개된 시세·뉴스 데이터를 바탕으로 생성한, 누구에게나 같은 내용으로 제공되는 참고 자료이며 투자 권유가 아닙니다. 개인별 투자 상담·자문은 제공하지 않습니다. 확률·과거 통계·성적표는 미래 수익을 보장하지 않습니다. 진입가·목표가·손절가를 포함한 모든 수치는 확정적 예측이 아니므로, 실제 투자 판단과 그 결과에 대한 책임은 투자자 본인에게 있습니다.</p>`;
 
     if (chartData) {
       wireAiChart(data.stockCode, chartData, chartPeriod || "D", data.assetType);

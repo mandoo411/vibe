@@ -38,6 +38,7 @@ const HONEST_TONE_RULE = [
   "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
   "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
   "[재료·업황의 근거] 미반영 핵심 재료·AI 재료 종합 판단·종합 의견에서 새 주장을 할 때는 materials 목록에 있거나 web_search로 날짜·금액이 확인된 사실만 쓴다. 예: '자사주 매입 종료로 수급 공백'은 종료 날짜와 규모가 확인될 때만 쓰고, 자사주 매입·소각 같은 주주환원 재료가 확인되면 materials에 반드시 넣는다. HBM·ASP(평균 판매단가)·출하량 같은 업황 근거를 쓸 때는 web_search로 확인한 숫자(가격 변화율·출하량·점유율 등)를 최소 하나 붙이고, 숫자가 없으면 그 재료를 핵심 근거로 쓰지 않는다.",
+  "[시나리오 구분] B(중립)안의 진입가는 A(강세)안과 달라야 한다 — A가 돌파 진입이면 B는 현재가 부근 또는 눌림 진입으로 잡는다. 세 시나리오의 진입·목표·손절이 서로 같으면 안 된다.",
   "[가격 표현의 정합성] 목표주가 괴리율을 쓸 때는 숫자와 표현이 맞아야 한다(괴리율이 30% 이상이면 '목표주가에 가깝다', '괴리가 좁혀졌다'고 쓰지 않는다). 현재가보다 위에 있는 돌파 진입가는 저항이지 지지선이 아니다 — '190만원 부근을 지키는지'처럼 현재가 위 가격을 지지로 쓰지 않는다. 시가총액·주가 같은 숫자는 입력 데이터 값만 쓰고 기사 속 옛 숫자를 옮기지 않는다.",
   "[단정 금지] 확률·전망은 추정치다. '~가 맞습니다', '확실합니다', '반드시 오릅니다' 같은 단정형을 쓰지 않고 '~로 봅니다', '~가능성이 큽니다'로 쓴다.",
 ].join("\n");
@@ -98,7 +99,7 @@ function stripAiPlanClaims(text, plan) {
 }
 
 /** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
-function normalizeQuick(q) {
+function normalizeQuick(q, curPrice) {
   if (!q || typeof q !== "object") return null;
   const clip = (t, n) => {
     const s = sanitizeStr(t).replace(/\s+/g, " ").trim();
@@ -108,6 +109,14 @@ function normalizeQuick(q) {
   const watch = (Array.isArray(q.watch) ? q.watch : [])
     .map((w) => (w && typeof w === "object" ? { price: toNum(w.price), text: clip(w.text, 70) } : null))
     .filter((w) => w && w.text)
+    // 2026-09-26: 현재가보다 위 가격에 '지키면'을 쓰는 오류(아직 닿지 않은 가격을 지지로 읽음) → 문구를 돌파형으로 교정.
+    .map((w) => {
+      const cp = toNum(curPrice);
+      if (cp > 0 && w.price > cp * 1.003 && /지키|유지|깨지|내주|무너/.test(w.text)) {
+        w.text = "이 가격을 넘고 거래가 늘면 → 상승 흐름이 이어지는지 확인";
+      }
+      return w;
+    })
     .slice(0, 3)
     .sort((a, b) => (b.price || 0) - (a.price || 0));
   const out = { pros: list(q.pros), cons: list(q.cons), watch };
@@ -2862,6 +2871,21 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     }
   }
 
+  // ── 2026-09-26: B(중립)가 A(강세)와 진입·목표·손절이 똑같이 나오는 경우 → B는 현재가 부근 진입으로 다시 잡는다(손절·목표는 아래 ATR 규칙이 채움).
+  {
+    const sa = scenarios.find((s) => s.label === "A");
+    const sb = scenarios.find((s) => s.label === "B");
+    if (sa && sb && sa.entry > 0 && sb.entry > 0 && sa.entry === sb.entry && price > 0 && toNum(quote && quote.techExtras && quote.techExtras.atr && quote.techExtras.atr.value) > 0) {
+      const e = roundToTick(price, quote.assetType) ?? price;
+      if (e !== sa.entry) {
+        sb.entry = e;
+        sb.stop = Math.min(sb.stop || e, e - 1);
+        sb.target = Math.max(sb.target || 0, e + 1);
+        sb.basis = `${sb.basis ? sb.basis + " " : ""}진입 근거: 돌파를 기다리는 A안과 달리 현재가 부근에서 버티는지 보고 들어가는 계획입니다.`;
+      }
+    }
+  }
+
   // ── 2026-09-26 Opus 리뷰(확률 근거가 순환논리·20일 계획에 5일 통계 인용): A안 근거에 20거래일 통계와 정의 차이를 코드가 붙인다.
   const psx = quote && quote.patternStats;
   if (psx && !psx.thin && psx.d20 && psx.base && psx.sample > 0) {
@@ -2968,7 +2992,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       probability: finalProbability,
       description: sanitizeOneLineText(summary.description) || "요약 정보가 없습니다.",
     },
-    quick: normalizeQuick(raw.quick),
+    quick: normalizeQuick(raw.quick, price),
     story: stripCitations(sanitizeStr(raw.story)),
     supply: stripCitations(sanitizeStr(raw.supply)),
     events,

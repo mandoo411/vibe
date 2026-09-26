@@ -2070,11 +2070,58 @@ function safeParseJSON(raw) {
     const end = text.lastIndexOf("}");
     if (start === -1 || end === -1) throw new Error("No JSON found");
     text = text.slice(start, end + 1);
-    return JSON.parse(text);
+    try {
+      return JSON.parse(text);
+    } catch (e1) {
+      // 2026-09-26: "OpenAI returned non-JSON" 재발(2회) — 원인은 문자열 안의 따옴표·줄바꿈 미이스케이프.
+      // 한 번 고쳐서 다시 파싱해 보고, 그래도 안 되면 원래대로 실패 처리한다.
+      const fixed = repairJsonText(text);
+      const out = JSON.parse(fixed);
+      console.warn("[analyze] JSON 자동 복구 성공:", e1.message);
+      return out;
+    }
   } catch (e) {
-    console.error("JSON parse error:", e.message, String(raw || "").slice(0, 500));
+    const pm = /position (\d+)/.exec(String(e.message || ""));
+    const at = pm ? Number(pm[1]) : 0;
+    console.error("JSON parse error:", e.message, String(raw || "").slice(0, 300), at ? ` …근처: ${String(raw || "").slice(Math.max(0, at - 150), at + 150)}` : "");
     return null;
   }
+}
+
+/** 문자열 안의 이스케이프 안 된 " 와 줄바꿈을 고친다. 닫는 따옴표는 뒤에 , : } ] 가 오는 경우로 판정. */
+function repairJsonText(src) {
+  let out = "";
+  let inStr = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (!inStr) {
+      out += c;
+      if (c === '"') inStr = true;
+      continue;
+    }
+    if (c === "\\") {
+      out += c + (src[i + 1] || "");
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      let j = i + 1;
+      while (j < src.length && /\s/.test(src[j])) j++;
+      const nx = src[j];
+      if (nx === undefined || nx === "," || nx === ":" || nx === "}" || nx === "]") {
+        out += c;
+        inStr = false;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    if (c === "\n") { out += "\\n"; continue; }
+    if (c === "\r") continue;
+    if (c === "\t") { out += " "; continue; }
+    out += c;
+  }
+  return out;
 }
 
 function parseRequestBodyJson(text) {

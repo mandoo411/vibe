@@ -57,7 +57,7 @@ const BEGINNER_RULE = [
 
 /** 2026-09-26 Gemini 리뷰(종합의견이 기준 계획과 다른 행동을 권함): 종합 의견 첫머리에 기준 계획을 코드가 한 문장으로 못박는다.
  * AI가 이미 첫 문장에서 같은 안(A안 등)을 밝혔으면 붙이지 않는다. */
-function planLeadSentence(plan, currentPrice, quote) {
+function planLeadSentence(plan, currentPrice, quote, scenarios) {
   if (!plan || !(plan.entry > 0)) return "";
   const cur = toNum(currentPrice);
   const e = plan.entry;
@@ -69,7 +69,18 @@ function planLeadSentence(plan, currentPrice, quote) {
       : d > 0
         ? `${won(e)} 돌파를 확인한 뒤 들어갑니다`
         : `${won(e)}까지 내려올 때를 기다려 들어갑니다`;
-  return `기준 계획은 ${plan.label}안(${plan.type})입니다 — ${how}. `;
+  // 반대 방식의 강세·중립 시나리오가 있으면 대안으로 한 문장 — "돌파하면 A, 그 전엔 B 가격까지 기다림"이 한 계획으로 읽히게.
+  const alt = (Array.isArray(scenarios) ? scenarios : []).find((sc) => {
+    if (!sc || sc === plan || !(sc.entry > 0) || sc.label === "C" || String(sc.type).includes("약")) return false;
+    const dd = cur > 0 ? (sc.entry - cur) / cur : 0;
+    return d > 0.01 ? dd < d - 0.005 : d < -0.01 ? dd > d + 0.005 : Math.abs(dd) > 0.01;
+  });
+  const altTxt = alt
+    ? d > 0.01
+      ? ` 돌파 전에는 추격하지 않고, ${alt.label}안처럼 ${won(alt.entry)} 부근에서 버티는지 확인될 때만 대안으로 봅니다.`
+      : ` 그 전에 ${won(alt.entry)}${(alt.entry - cur) / cur > 0.01 ? "을 먼저 돌파하면" : " 부근에서 먼저 버티면"} ${alt.label}안으로 바꿉니다.`
+    : "";
+  return `기준 계획은 ${plan.label}안(${plan.type})입니다 — ${how}.${altTxt} `;
 }
 
 /** AI가 종합 의견 안에서 "기준 계획은 ○안입니다" / "가장 높은 확률은 ○○입니다"를 따로 선언하면
@@ -2898,7 +2909,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
       planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
       // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
-      comment: planLeadSentence(planScenario, price, quote) + stripAiPlanClaims(swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
+      comment: planLeadSentence(planScenario, price, quote, scenarios) + stripAiPlanClaims(swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.

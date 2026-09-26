@@ -1889,6 +1889,17 @@
     return `<article class="ai-scenario ${cls}${planBadge ? " is-plan" : ""}"><header class="ai-scenario__head"><span class="ai-scenario__label">${label}안 (${type})</span>${planBadge}<span class="ai-scenario__prob">${probText}</span>${rrBadge}</header><div class="ai-scenario__body">${lines || "<p>—</p>"}</div></article>`;
   }
 
+  /* 2026-09-26 Gemini 리뷰: 기준 계획이 돌파형인지 눌림형인지 한 줄로 밝힌다(채점 규칙과 같은 ±1% 기준). */
+  function planModeText(entry, cur, assetType) {
+    const e = toNum(entry), c = toNum(cur);
+    if (!(e > 0 && c > 0)) return "";
+    const d = (e - c) / c;
+    if (Math.abs(d) <= 0.01) return " 현재가 부근에서 바로 들어가는 계획입니다.";
+    return d > 0
+      ? ` 현재가보다 높은 ${escapeHtml(fmtPrice(e, assetType))}을 <b>돌파하는 걸 확인한 뒤</b> 들어가는 계획입니다(돌파형).`
+      : ` 현재가보다 낮은 ${escapeHtml(fmtPrice(e, assetType))}까지 <b>내려올 때를 기다려</b> 들어가는 계획입니다(눌림형).`;
+  }
+
   function renderOpinion(op, currentPrice, assetType, patternStats, techExtras) {
     const o = op && typeof op === "object" ? op : {};
     const prices = resolveOpinionPrices(o, currentPrice);
@@ -1954,7 +1965,7 @@
     const scenarioBar = renderPatternStats(patternStats) + renderScenarioProbBar(scenarios, patternStats && patternStats.base);
     const plan = o.planScenario && o.planScenario.label ? o.planScenario : null;
     const planLine = plan
-      ? `<p class="ai-opinion-plan">확률이 가장 높은 <b>${escapeHtml(plan.label)}안(${escapeHtml(plan.type || "")}${plan.probability != null ? ` ${Math.round(plan.probability)}%` : ""})</b>의 진입·목표·손절입니다.</p>`
+      ? `<p class="ai-opinion-plan">확률이 가장 높은 <b>${escapeHtml(plan.label)}안(${escapeHtml(plan.type || "")}${plan.probability != null ? ` ${Math.round(plan.probability)}%` : ""})</b>의 진입·목표·손절입니다.${planModeText(prices.entry, currentPrice, assetType)}</p>`
       : "";
     const scenarioHtml = scenarios.length
       ? scenarios.map((s) => renderScenarioCard(s, assetType, plan && plan.label)).join("")

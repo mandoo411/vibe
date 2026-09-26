@@ -160,6 +160,9 @@
     top: calc(var(--rd-top, 120px) / var(--rd-z));
   }
 
+  /* ── 종가시그널: "오늘의 시그널"·"직전 선정 결과" 머리글 높이가 좌우로 어긋나던 것(한쪽만 날짜 줄이 줄바꿈) ── */
+  html[lang] body .tm-main > .page:has(> .cb-body) .cb-body > .cb-sec { align-self: start !important; align-items: flex-start !important; margin-top: 0 !important; }
+
   /* ── 작은 글씨 키우기(차트 있는 페이지) — 2026-09-26 실측으로 뽑은 목록: 11px 이하 +2px, 그 위 +1.5px ── */
   /* 매매시그널 — 작은 글씨만 키운다(차트가 있어 배율 확대는 안 씀) */
   html[lang] body .tm-main > .page:has(> .ts-body) .ts-detail__label,

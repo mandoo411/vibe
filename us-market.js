@@ -893,9 +893,9 @@
     if (usPage > pageCount) usPage = 1;
     const rows = allRows.slice((usPage - 1) * US_PAGE_SIZE, usPage * US_PAGE_SIZE);
     renderUsPager(pageCount);
-    if (state.openTicker && !rows.some((r) => r.ticker === state.openTicker) && isSplitLayout()) {
-      state.openTicker = null;
-    }
+    // 2026-09-26: PC 분할 화면은 목록 페이지를 넘겨도 오른쪽 상세를 유지한다(다른 종목을 누를 때까지) — 시우 요청.
+    // 상세 행은 오른쪽에 절대 위치로 그려지므로 목록 맨 끝에 붙여 둔다.
+    const keepOffPage = !!(state.openTicker && isSplitLayout() && !rows.some((r) => r.ticker === state.openTicker));
     if (!rows.length) {
       if (body.dataset.rtLoading === "1") {
         body.innerHTML = skeletonRowsHtml(10);
@@ -907,6 +907,7 @@
       parts.push(rankRowHtml(row));
       if (state.openTicker === row.ticker) parts.push(detailRowHtml(row.ticker));
     }
+    if (keepOffPage) parts.push(detailRowHtml(state.openTicker));
     body.innerHTML = parts.join("");
     syncNameChartButtonsAria(body);
     syncUsPriceColumnAlign();
@@ -936,7 +937,7 @@
         const n = Number(b.getAttribute("data-us-page")) || 1;
         if (n === usPage) return;
         usPage = n;
-        state.openTicker = null;
+        if (!isSplitLayout()) state.openTicker = null;
         renderRankTable();
       });
     }

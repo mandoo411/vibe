@@ -13,10 +13,10 @@
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
 
-function json(res, status, body) {
+function json(res, status, body, cacheControl) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
-  res.setHeader("cache-control", "no-store");
+  res.setHeader("cache-control", cacheControl || "no-store");
   res.end(JSON.stringify(body));
 }
 
@@ -1444,6 +1444,9 @@ module.exports = async function handler(req, res) {
     high52w: quote.high52w,
     low52w: quote.low52w,
     ...(quoteOnly ? {} : { analysis }),
-  });
+  },
+  // 2026-09-26: 시세만(quoteOnly) 응답은 사용자와 무관 → CDN에 10초 보관(+20초 동안은 옛값을 주며 뒤에서 갱신).
+  // 국내주식 첫 화면에서 모두가 여는 삼성전자 상세가 1~4초 → 즉시로. AI 분석(quoteOnly 아님)은 그대로 no-store.
+  quoteOnly ? "public, max-age=0, s-maxage=10, stale-while-revalidate=20" : undefined);
 };
 

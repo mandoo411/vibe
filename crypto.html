@@ -1468,7 +1468,10 @@
             pane.innerHTML = "";
             return;
           }
-          let coin = pageCoins.find((c) => c.symbol === state.openSymbol);
+          // 2026-09-26: 페이지를 넘겨도 열려 있던 코인은 그대로(다른 코인을 누를 때까지) — 전체 목록에서 찾는다
+          let coin =
+            pageCoins.find((c) => c.symbol === state.openSymbol) ||
+            (state.openSymbol ? state.coins.find((c) => c.symbol === state.openSymbol) : null);
           if (!coin && pageCoins.length) {
             coin = pageCoins[0];
             state.openSymbol = coin.symbol;
@@ -1583,7 +1586,8 @@
           const pageCoins = getPageCoins();
           const parts = [];
           const split = isCryptoSplit();
-          if (split && !pageCoins.some((c) => c.symbol === state.openSymbol) && pageCoins.length) {
+          // PC 분할 화면: 열린 코인이 없을 때만 첫 코인을 띄운다(페이지를 넘겨도 선택 유지)
+          if (split && !state.coins.some((c) => c.symbol === state.openSymbol) && pageCoins.length) {
             state.openSymbol = pageCoins[0].symbol;
           }
           for (const c of pageCoins) {
@@ -1620,7 +1624,7 @@
           const page = Number(p);
           if (!Number.isFinite(page) || page < 1 || page > 4) return;
           state.currentPage = page;
-          state.openSymbol = null;
+          if (!isCryptoSplit()) state.openSymbol = null;
           renderTable();
           renderPagination();
           document.querySelector(".crypto-panel")?.scrollIntoView({ behavior: "smooth" });
@@ -1735,7 +1739,8 @@
             state.coins = listingsPack.coins || [];
             sortCoinsByRank();
             state.fearGreed = fearGreedPack || {};
-            state.currentPage = 1;
+            // 2026-09-26: 예전엔 폴링 때마다 1페이지로 되돌아갔다 — 첫 로딩 때만 1페이지로
+            if (!state.currentPage) state.currentPage = 1;
             setUpdatedLabel(listingsPack.updatedAt || globalPack.updatedAt || new Date().toISOString());
             renderGlobal();
             updateSortIcons();

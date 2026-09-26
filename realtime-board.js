@@ -512,18 +512,30 @@
     return panel;
   }
 
+  /* 2026-09-26 첫 로딩 속도: 상세 시세(/api/stock-analysis quoteOnly)는 1~4초 걸린다.
+     ① 같은 종목 요청은 20초 동안 한 번만 보낸다(겹친 요청·연속 클릭 합치기)
+     ② 첫 화면에서 자동으로 열릴 종목(시가총액 탭이면 삼성전자)은 목록을 받는 동안 미리 요청해 둔다(init 참고)
+     서버는 이 응답을 CDN에 10초 보관한다(api/stock-analysis.js). */
+  const quoteRawCache = new Map();
+  function fetchQuoteRaw(code6) {
+    const hit = quoteRawCache.get(code6);
+    if (hit && Date.now() - hit.at < 20000) return hit.p;
+    const p = fetch(`/api/stock-analysis?q=${encodeURIComponent(code6)}&quoteOnly=1`).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
+      if (data && data.error) throw new Error(data.error);
+      return data;
+    });
+    p.catch(() => quoteRawCache.delete(code6));
+    quoteRawCache.set(code6, { p, at: Date.now() });
+    return p;
+  }
+
   async function fetchStockQuoteDetail(q, opts) {
     const code6 = normalizeCode6ForQuote(q);
     if (!isValidStockCode(code6)) throw new Error("종목을 찾을 수 없습니다.");
-    const fetchOpts = { cache: "no-store" };
-    if (opts && opts.signal) fetchOpts.signal = opts.signal;
-    const res = await fetch(
-      `/api/stock-analysis?q=${encodeURIComponent(code6)}&quoteOnly=1`,
-      fetchOpts
-    );
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error((data && data.error) || `HTTP ${res.status}`);
-    if (data && data.error) throw new Error(data.error);
+    const data = await fetchQuoteRaw(code6);
+    if (opts && opts.signal && opts.signal.aborted) throw new DOMException("aborted", "AbortError");
     try {
       if (typeof window !== "undefined" && /(?:\?|&)rtDebug=1\b/.test(window.location.search || "")) {
         console.log("[realtime-board] /api/stock-analysis quoteOnly", {
@@ -1707,7 +1719,8 @@
     const prevPage = currentPageForTab(tab);
     const pg = Math.max(1, Math.min(RANK_PAGE_COUNT, Number(page) || 1));
     setCurrentPageForTab(tab, pg);
-    if (pg !== prevPage) state.openChartCode = null;
+    // 2026-09-26: PC 분할 화면은 페이지를 넘겨도 오른쪽 상세를 그대로 둔다(다른 종목을 누를 때까지) — 시우 요청
+    if (pg !== prevPage && !isSplitLayout()) state.openChartCode = null;
 
     if (!force && hasTop100ForTab(tab)) {
       applyTop100Page(tab, pg);
@@ -1835,7 +1848,8 @@
     const prevPage = currentPageForTab(tab);
 
     updatePaginationUI(pg);
-    if (pg !== prevPage) state.openChartCode = null;
+    // 2026-09-26: PC 분할 화면은 페이지를 넘겨도 오른쪽 상세를 그대로 둔다(다른 종목을 누를 때까지) — 시우 요청
+    if (pg !== prevPage && !isSplitLayout()) state.openChartCode = null;
 
     if (hasTop100ForTab(tab)) {
       applyTop100Page(tab, pg);
@@ -2384,6 +2398,24 @@
       return;
     }
     const anchor = body.querySelector(`tr.rt-stock-row[data-code="${code}"]`);
+    if (!anchor && isSplitLayout()) {
+      // PC 분할 화면: 목록 페이지를 넘겨 열린 종목이 안 보여도 오른쪽 상세는 유지(상세 행은 절대 위치라 자리 무관)
+      body.querySelectorAll("tr.rt-detail-row").forEach((tr) => {
+        if (tr.getAttribute("data-detail-for") !== code) tr.remove();
+      });
+      let orphan = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
+      if (!orphan) {
+        body.insertAdjacentHTML("beforeend", detailRowHtml(code));
+        orphan = body.querySelector(`tr.rt-detail-row[data-detail-for="${code}"]`);
+      } else if (orphan !== body.lastElementChild) {
+        body.appendChild(orphan);
+      }
+      syncNameChartButtonsAria(body);
+      const h = orphan && orphan.querySelector(".rt-detail-acc");
+      if (!h || h.dataset.loadedFor !== code || !h.querySelector(".rt-acc")) void mountTableDetailAccordion(body);
+      else wireDetailAccordionClose(h);
+      return;
+    }
     if (!anchor) {
       const onPage = (rows || []).some((r) => rowStockCode(r) === code);
       if (!onPage) {
@@ -2506,6 +2538,12 @@
           const openCodeNorm = code6Maybe(state.openChartCode || "");
           const stillOnPage = rows.some((r) => rowStockCode(r) === openCodeNorm);
           const preserved = stillOnPage ? detachOpenRowForPreserve(body, openCodeNorm) : null;
+          // PC 분할 화면: 열린 종목이 이 페이지에 없어도 오른쪽 상세(차트 포함 실제 DOM)는 떼어 두었다가 다시 붙인다
+          const orphanDetail =
+            !stillOnPage && isSplitLayout()
+              ? body.querySelector(`tr.rt-detail-row[data-detail-for="${openCodeNorm}"]`)
+              : null;
+          if (orphanDetail) orphanDetail.remove();
           disposePanelChartsInRoot(body); // 남아있을 수 있는 다른 차트만 정리(보존 대상은 이미 떼어냄)
           const parts = [];
           for (const r of rows) {
@@ -2521,6 +2559,7 @@
           if (preserved) {
             reattachPreservedOpenRow(body, preserved, openCodeNorm, rows.find((r) => rowStockCode(r) === openCodeNorm));
           }
+          if (orphanDetail) body.appendChild(orphanDetail);
         }
       }
       syncNameChartButtonsAria(body);
@@ -3584,6 +3623,13 @@
 
   async function init() {
     applyTabFromUrl();
+    // PC 분할 화면 첫 로딩: 자동으로 열릴 첫 종목(시가총액 1위) 상세를 목록과 동시에 미리 받아 둔다
+    try {
+      const hasQ = new URLSearchParams(window.location.search).get("q");
+      if (isSplitLayout() && state.tab === "cap" && !hasQ) void fetchQuoteRaw("005930").catch(() => {});
+    } catch (_) {
+      /* noop */
+    }
     setupTabs();
     wireLwChartThemeRefresh();
     wireTableChartAccordion();

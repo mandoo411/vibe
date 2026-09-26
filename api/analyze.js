@@ -344,7 +344,22 @@ function dartEventsToLegacyEvents(list, todayISO) {
  * DART 공시 기반 실적(financials)이 있는 종목에만 붙이고, 이미 IR/잠정실적 공시가 이벤트에 있으면 생략.
  * 이미 그 분기 보고서가 나왔으면(financials.quarter.label로 판정) 다음 분기로 넘긴다.
  */
-function earningsSeasonEvent(todayISO, financials, existingEvents) {
+function expectedKrEarningsDate(code, todayISO, deadline) {
+  if (!code) return null;
+  const dates = [];
+  try {
+    const manual = require("../data/kr-earnings-manual.json");
+    for (const e of (manual && manual.entries) || []) if (String(e.code) === String(code) && e.date) dates.push(String(e.date));
+  } catch {}
+  try {
+    const cal = require("../data/earnings-calendar.json");
+    for (const e of (cal && cal.kr) || []) if (String(e.code || e.symbol) === String(code) && e.date) dates.push(String(e.date).slice(0, 10));
+  } catch {}
+  const ok = dates.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= todayISO && d <= deadline).sort();
+  return ok[0] || null;
+}
+
+function earningsSeasonEvent(todayISO, financials, existingEvents, code) {
   if (!financials || !(financials.quarter || (financials.annual && financials.annual.length))) return null;
   const has = (existingEvents || []).some((e) => /실적|IR|기업설명회|잠정/.test(String(e && e.content)));
   if (has) return null;
@@ -361,6 +376,16 @@ function earningsSeasonEvent(todayISO, financials, existingEvents) {
   }
   const next = slots.find((sl) => sl.deadline >= todayISO && !sl.filed);
   if (!next) return null;
+  // 보도·과거 패턴으로 모은 예상 발표일(data/kr-earnings-manual.json, data/earnings-calendar.json)이 있으면 그 날짜를 쓴다
+  const expected = expectedKrEarningsDate(code, todayISO, next.deadline);
+  if (expected) {
+    const [, em, ed] = expected.split("-").map(Number);
+    return {
+      type: "neutral",
+      content: `${next.year}년 ${next.name} 잠정 실적 발표 예상일(${em}월 ${ed}일) — 회사 공식 공시 전이라 날짜가 바뀔 수 있습니다.`,
+      date: expected,
+    };
+  }
   const [, mm, dd] = next.deadline.split("-").map(Number);
   return {
     type: "neutral",
@@ -2563,7 +2588,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     } catch {
       events = [];
     }
-    const earn = earningsSeasonEvent(todayISO, quote && quote.financials, events);
+    const earn = earningsSeasonEvent(todayISO, quote && quote.financials, events, sanitizeStr(quote && quote.stockCode));
     if (earn) events.push(earn);
   }
 
@@ -3140,6 +3165,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       rsi14: toNum(ind.rsi14),
       ...wmJsonFields(wm),
     }),
+    patternStatsPromptBlock(quote && quote.patternStats),
   ].join("\n");
 
   const hasSearchEvidence = (d) => {
@@ -3315,6 +3341,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         rsi14: toNum(ind.rsi14),
         ...wmJsonFields(wm),
       }),
+      patternStatsPromptBlock(quote && quote.patternStats),
     ].join("\n");
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {

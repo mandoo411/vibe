@@ -120,6 +120,8 @@ function normalizeQuick(q, curPrice) {
       }
       return w;
     })
+    // 거의 같은 가격(0.5% 이내) 두 줄은 하나만 남긴다(실측: 1,900,000원·1,899,000원).
+    .filter((w, i, arr) => !(w.price > 0 && arr.slice(0, i).some((x) => x.price > 0 && Math.abs(x.price - w.price) / w.price < 0.005)))
     .slice(0, 3)
     .sort((a, b) => (b.price || 0) - (a.price || 0));
   const out = { pros: list(q.pros), cons: list(q.cons), watch };
@@ -2671,6 +2673,20 @@ function wonTextVariants(v) {
 /** 2026-09-26: 진입가 단일화 뒤 AI 문장에 남은 옛 숫자를 같은 모양의 새 숫자로 바꾼다. */
 /** 2026-09-26: AI가 종합 의견을 자기 매매가(opinion.entry/stop/target) 기준으로 쓴 뒤 코드가 계획을 A안 숫자로 바꾸면,
  * 숫자만 바꿔 끼우면 "205만8000원은 되돌림을 받아낼 자리"처럼 뜻이 뒤틀린다. 옛 가격이 든 문장은 통째로 뺀다. */
+/** 2026-09-26 실측: "현재가가 1,900,000원이라"(실제 186.3만) — '현재가' 바로 뒤 숫자가 실제와 다르면 실제 값으로 고친다. */
+function fixCurrentPriceMentions(text, cur) {
+  const c = Math.round(Number(cur));
+  if (!text || !(c > 0)) return text;
+  const curTxt = `${c.toLocaleString("ko-KR")}원`;
+  return String(text).replace(/(현재가(?:가|는|인)?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)원|\d+만(?:\s?\d+)?원)/g, (m, pre, num) => {
+    let v = null;
+    const mm = /^(\d+)만\s?(\d+)?원$/.exec(num);
+    if (mm) v = Number(mm[1]) * 10000 + (mm[2] ? Number(mm[2]) : 0);
+    else v = Number(num.replace(/[^\d]/g, ""));
+    return v && Math.abs(v - c) / c > 0.003 ? pre + curTxt : m;
+  });
+}
+
 function dropStalePlanSentences(text, from, to) {
   if (!text || !from || !to) return text;
   const stale = [];
@@ -3042,7 +3058,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
       planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
       // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
-      comment: planLeadSentence(planScenario, price, quote, scenarios) + stripAiPlanClaims(dropStalePlanSentences(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
+      comment: planLeadSentence(planScenario, price, quote, scenarios) + stripAiPlanClaims(fixCurrentPriceMentions(dropStalePlanSentences(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), price), planScenario),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.

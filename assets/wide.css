@@ -135,6 +135,8 @@ html[lang] body .dm-analysis.dmx-on > div:not([class]) { display: flex; flex-dir
   html[lang] body .cb-body:not(.cb-body--guest) > #cbTodayCard { grid-column: 1; grid-row: 3; }
   html[lang] body .cb-body:not(.cb-body--guest) > .cb-sec:has(+ #cbYesterday) { grid-column: 2; grid-row: 2; }
   html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday { grid-column: 2; grid-row: 3; }
+  /* 2026-09-26 시우: 두 카드 하단 라인을 같은 높이로 */
+  html[lang] body .cb-body:not(.cb-body--guest) > :is(#cbTodayCard, #cbYesterday) { align-self: stretch; }
   /* 반쪽 폭이 된 결과표: 하루 고·저 열은 좁은 폭에서 줄바꿈되므로 모바일형 목록으로 */
   html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-scroll.cb-has-m { display: none; }
   html[lang] body .cb-body:not(.cb-body--guest) > #cbYesterday .cb-mlist { display: block; }

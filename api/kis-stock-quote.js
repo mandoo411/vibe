@@ -36,6 +36,9 @@ const CHART_CACHE = {
   CRYPTO_D: "public, max-age=30, s-maxage=120, stale-while-revalidate=600",
 };
 
+// 현재가 응답(국내·미국): 10초 보관 + 20초 동안 옛값을 주며 뒤에서 갱신 → 최대 약 30초 지연
+const QUOTE_CACHE = "public, max-age=0, s-maxage=10, stale-while-revalidate=20";
+
 function chartCacheControl(period, isCrypto) {
   const p = normalizePeriod(period);
   if (isCrypto) return p === "D" ? CHART_CACHE.CRYPTO_D : CHART_CACHE.W;
@@ -588,7 +591,8 @@ async function fetchUsStockQuote(ticker, nameHint) {
 
 async function handleUsQuoteRequest(res, ticker, nameHint) {
   const quote = await fetchUsStockQuote(ticker, nameHint);
-  return json(res, 200, quote);
+  // 2026-09-26: 시세 응답도 사용자와 무관 → CDN 10초(+20초 SWR). 미국주식 첫 화면 상세 대기 줄이기
+  return json(res, 200, quote, QUOTE_CACHE);
 }
 
 /**
@@ -895,7 +899,7 @@ module.exports = async (req, res) => {
       },
       raw1: o1,
       raw2: o2,
-    });
+    }, QUOTE_CACHE);
   } catch (e) {
     const status = (e && e.statusCode) || 500;
     return json(res, status, { error: e && e.message ? e.message : String(e) });

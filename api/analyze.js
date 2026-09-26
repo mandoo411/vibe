@@ -2087,17 +2087,90 @@ function safeParseJSON(raw) {
     try {
       return JSON.parse(text);
     } catch (e1) {
-      // 2026-09-26: "OpenAI returned non-JSON" 재발(2회) — 원인은 문자열 안의 따옴표·줄바꿈 미이스케이프.
-      // 한 번 고쳐서 다시 파싱해 보고, 그래도 안 되면 원래대로 실패 처리한다.
-      const fixed = repairJsonText(text);
-      const out = JSON.parse(fixed);
-      console.warn("[analyze] JSON 자동 복구 성공:", e1.message);
-      return out;
+      // 2026-09-26: "OpenAI returned non-JSON" 재발 — 원인 두 가지.
+      // (1) 문자열 안의 따옴표·줄바꿈 미이스케이프 → repairJsonText
+      // (2) 끝에 닫는 괄호 '}'가 하나 더 붙음("Unexpected non-whitespace character after JSON")
+      //     → extractBalancedJson으로 괄호 짝이 맞는 첫 객체만 잘라낸다.
+      const tries = [
+        ["괄호짝", () => extractBalancedJson(text)],
+        ["따옴표", () => repairJsonText(text)],
+        ["따옴표+괄호짝", () => extractBalancedJson(repairJsonText(text))],
+      ];
+      for (const [label, fn] of tries) {
+        try {
+          const cand = fn();
+          if (!cand) continue;
+          const out = JSON.parse(cand);
+          console.warn(`[analyze] JSON 자동 복구 성공(${label}):`, e1.message);
+          return out;
+        } catch (_) { /* 다음 방법 */ }
+      }
+      throw e1;
     }
   } catch (e) {
     const pm = /position (\d+)/.exec(String(e.message || ""));
     const at = pm ? Number(pm[1]) : 0;
     console.error("JSON parse error:", e.message, String(raw || "").slice(0, 300), at ? ` …근처: ${String(raw || "").slice(Math.max(0, at - 150), at + 150)}` : "");
+    return null;
+  }
+}
+
+/** 첫 '{'부터 문자열을 존중하며 괄호 짝을 세어, 짝이 맞는 첫 JSON 객체까지만 돌려준다.
+ * 모델이 끝에 '}'를 하나 더 붙였을 때 뒤쪽 찌꺼기를 버린다. 짝이 끝까지 안 맞으면 null. */
+function extractBalancedJson(src) {
+  const start = src.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  for (let i = start; i < src.length; i++) {
+    const c = src[i];
+    if (inStr) {
+      if (c === "\\") { i++; continue; }
+      if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') { inStr = true; continue; }
+    if (c === "{" || c === "[") depth++;
+    else if (c === "}" || c === "]") {
+      depth--;
+      if (depth === 0) return src.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/** 로컬 복구가 모두 실패했을 때 마지막 수단 — 깨진 JSON을 OpenAI JSON 모드로 문법만 교정.
+ * 내용은 바꾸지 말라고 지시한다. 실패하면 null. (실패할 때만 호출되므로 평소 비용 0) */
+async function repairJsonViaOpenAI(brokenText, apiKey, model) {
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You fix malformed JSON. Return ONLY the corrected JSON object. Do not change, add, remove, translate or summarize any keys or values — fix syntax only (quotes, escapes, commas, colons, brackets).",
+          },
+          { role: "user", content: String(brokenText || "") },
+        ],
+      }),
+      signal: AbortSignal.timeout(40000),
+    });
+    if (!res.ok) {
+      console.warn("[analyze] JSON 교정 호출 실패 HTTP", res.status);
+      return null;
+    }
+    const data = await res.json();
+    const t = (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+    const out = safeParseJSON(t);
+    if (out) console.warn("[analyze] JSON 교정 호출로 복구 성공");
+    return out;
+  } catch (e) {
+    console.warn("[analyze] JSON 교정 호출 예외", e && e.message);
     return null;
   }
 }
@@ -3676,7 +3749,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
       (data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
   }
 
-  const parsed = safeParseJSON(text);
+  let parsed = safeParseJSON(text);
+  if (parsed == null && text) parsed = await repairJsonViaOpenAI(text, apiKey, model);
   if (parsed == null) throw new Error("OpenAI returned non-JSON");
   const normalized = await normalizeAnalysis(parsed, quote, wm, indicators);
   if (normalized._error) throw new Error("OpenAI JSON parse failed");

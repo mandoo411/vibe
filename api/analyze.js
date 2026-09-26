@@ -2678,7 +2678,7 @@ function fixCurrentPriceMentions(text, cur) {
   const c = Math.round(Number(cur));
   if (!text || !(c > 0)) return text;
   const curTxt = `${c.toLocaleString("ko-KR")}원`;
-  return String(text).replace(/(현재가(?:가|는|인)?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)원|\d+만(?:\s?\d+)?원)/g, (m, pre, num) => {
+  return String(text).replace(/(현재가(?:가|는|인)?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)원|\d+만(?:\s?\d+)?원)(?=\s*(?:이라|이며|입니다|이고|으로|에서|인데|,|\.|$))/g, (m, pre, num) => {
     let v = null;
     const mm = /^(\d+)만\s?(\d+)?원$/.exec(num);
     if (mm) v = Number(mm[1]) * 10000 + (mm[2] ? Number(mm[2]) : 0);

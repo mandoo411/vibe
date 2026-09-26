@@ -38,6 +38,32 @@ const HONEST_TONE_RULE = [
   "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
   "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
 ].join("\n");
+/* 2026-09-26 초보자 리뷰: "전문가 분석을 초보자에게 그대로 보여주는 형태" → 맨 위에 한눈에 보기(quick), 용어엔 쉬운 풀이. */
+const BEGINNER_RULE = [
+  "",
+  "[초보자용 한눈에 보기 — 응답 JSON 최상위에 quick 필드를 반드시 추가] 형식: \"quick\": {\"pros\": [\"…\"], \"cons\": [\"…\"], \"watch\": [{\"price\": 1900000, \"text\": \"…\"}]}",
+  "- pros(좋은 점)·cons(주의할 점): 각 2~4개. 한 항목은 25자 이내의 짧은 명사형 구절(예: 'AI 메모리 업황 강세', '외국인 20일 순매도', '주가 수준이 이익 대비 높은 편'). MACD·볼린저·%B·역배열·이격·ADR·패시브·PER·PBR 같은 전문용어는 쓰지 않고 초보자가 바로 아는 말로 쓴다. 좋은 점과 주의할 점의 무게를 같게 다룬다.",
+  "- watch(앞으로 이것만 보세요): 정확히 3개, 높은 가격부터 낮은 가격 순. price는 이 리포트에 나온 실제 가격(시나리오 조건·저항·지지·이동평균) 중 하나를 숫자로, text는 '무슨 일이 생기면 → 무엇을 확인'을 45자 이내로(예: '190만원 돌파 + 거래량 증가 → 상승 추세가 강해지는지 확인'). 시나리오 A/B/C 조건과 같은 가격을 쓴다. 확률 숫자는 쓰지 않는다.",
+  "[용어 풀이 — 초보자도 읽히게] 본문에서 MACD, 볼린저밴드, %B, 밴드폭, RSI, PER, PBR, ROE, ADR, 패시브 자금, 정배열·역배열, 이격, ATR 같은 전문용어를 처음 쓸 때 바로 뒤 괄호에 12자 안팎의 쉬운 뜻을 붙인다(예: 'MACD(추세의 힘을 재는 지표)', 'ADR(미국에 상장된 주식 증서)'). 같은 용어는 두 번째부터 풀이하지 않는다.",
+  "지표 이야기는 결론을 먼저 쉬운 말로 쓰고 숫자는 하나만 붙인다. 금지 예: 'MACD는 상방 추세를 지지하지만, 볼린저밴드 %B 82와 밴드폭 20% 축소는 단기 변동성 확대를 예고합니다.' 정답 예: '추세의 힘은 아직 위쪽입니다. 다만 주가가 최근 움직임 범위의 윗부분(볼린저밴드(가격 변동 범위) 상단 근처)에 있어 한 번 쉬어 갈 수 있습니다.'",
+].join("\n");
+
+/** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
+function normalizeQuick(q) {
+  if (!q || typeof q !== "object") return null;
+  const clip = (t, n) => {
+    const s = sanitizeStr(t).replace(/\s+/g, " ").trim();
+    return s.length > n ? s.slice(0, n - 1) + "…" : s;
+  };
+  const list = (a) => (Array.isArray(a) ? a.map((t) => clip(t, 40)).filter(Boolean).slice(0, 4) : []);
+  const watch = (Array.isArray(q.watch) ? q.watch : [])
+    .map((w) => (w && typeof w === "object" ? { price: toNum(w.price), text: clip(w.text, 70) } : null))
+    .filter((w) => w && w.text)
+    .slice(0, 3)
+    .sort((a, b) => (b.price || 0) - (a.price || 0));
+  const out = { pros: list(q.pros), cons: list(q.cons), watch };
+  return out.pros.length || out.cons.length || out.watch.length ? out : null;
+}
 
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
 
@@ -2771,6 +2797,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       probability: finalProbability,
       description: sanitizeOneLineText(summary.description) || "요약 정보가 없습니다.",
     },
+    quick: normalizeQuick(raw.quick),
     story: stripCitations(sanitizeStr(raw.story)),
     supply: stripCitations(sanitizeStr(raw.supply)),
     events,
@@ -2958,6 +2985,7 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     patternStatsPromptBlock(quote && quote.patternStats),
     techExtrasPromptBlock(quote && quote.techExtras),
     HONEST_TONE_RULE,
+    BEGINNER_RULE,
     formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
@@ -3209,6 +3237,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
     patternStatsPromptBlock(quote && quote.patternStats),
     techExtrasPromptBlock(quote && quote.techExtras),
     HONEST_TONE_RULE,
+    BEGINNER_RULE,
   ].join("\n");
 
   const hasSearchEvidence = (d) => {
@@ -3387,6 +3416,7 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
       patternStatsPromptBlock(quote && quote.patternStats),
       techExtrasPromptBlock(quote && quote.techExtras),
       HONEST_TONE_RULE,
+      BEGINNER_RULE,
     ].join("\n");
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {

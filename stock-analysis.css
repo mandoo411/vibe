@@ -555,6 +555,29 @@
   opacity: 0.8;
 }
 
+.sum2-prob__value--stance { font-family: inherit; font-size: 22px; letter-spacing: -0.02em; }
+.sum2-stance--up { color: var(--color-up) !important; }
+.sum2-stance--down { color: var(--color-down, #3b82f6) !important; }
+.sum2-stance--mid-up { color: #f59e0b !important; }
+.sum2-stance--mid-down { color: #60a5fa !important; }
+.sum2-stance--mid { color: #eab308 !important; }
+
+/* 2026-09-26 초보자용 한눈에 보기 */
+.aq { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 12px; margin-top: 18px; }
+.aq-col { padding: 14px 16px; border-radius: 12px; background: var(--color-background-secondary); border-top: 3px solid var(--color-text-muted); min-width: 0; }
+.aq-col--pro { border-top-color: var(--color-up); }
+.aq-col--con { border-top-color: var(--color-down, #3b82f6); }
+.aq-col--watch { border-top-color: #eab308; }
+.aq-col__title { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text-primary, #131722); }
+[data-theme="dark"] .aq-col__title { color: var(--text-title, #f3f4f6); }
+.aq-list { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.5; color: var(--color-text-secondary); word-break: keep-all; }
+.aq-watch { margin: 0; padding: 0; list-style: none; counter-reset: aq; display: flex; flex-direction: column; gap: 8px; }
+.aq-watch li { counter-increment: aq; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 8px; row-gap: 1px; font-size: 13px; line-height: 1.5; color: var(--color-text-secondary); word-break: keep-all; }
+.aq-watch li::before { content: counter(aq); grid-row: 1 / span 2; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: rgba(234,179,8,.18); color: #eab308; }
+.aq-watch b { font-family: var(--font-mono); font-weight: 700; color: var(--text-primary, #131722); }
+[data-theme="dark"] .aq-watch b { color: var(--text-title, #f3f4f6); }
+@media (max-width: 900px) { .aq { grid-template-columns: 1fr; } }
+
 .sum2-desc {
   height: 100%;
   display: flex;

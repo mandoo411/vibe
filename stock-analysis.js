@@ -1748,6 +1748,46 @@
   }
 
   /** A/B/C 시나리오 확률을 100% 스택 막대 하나로. 합이 100이 아니면 정규화해서 그린다. */
+  /* 2026-09-26 초보자 리뷰: "상승 확률 40%"를 크게 보여주면 초보자는 '오를 확률 40%'로 읽는다.
+     맨 위에는 시나리오 확률에서 코드가 뽑은 한 마디 판단만 두고, 숫자는 9번 카드에서 본다. */
+  function stanceFromScenarios(scenarios) {
+    const p = { A: null, B: null, C: null };
+    (Array.isArray(scenarios) ? scenarios : []).forEach((s) => {
+      const k = String(s.label || "").trim();
+      if (k in p) p[k] = toNum(s.probability);
+    });
+    if (p.A == null || p.B == null || p.C == null) return null;
+    const top = p.A >= p.B && p.A >= p.C ? "A" : p.B >= p.C ? "B" : "C";
+    if (top === "A") return p.A - p.B >= 10 ? { text: "강세 우위", cls: "up" } : { text: "중립~강세", cls: "mid-up" };
+    if (top === "C") return p.C - p.B >= 10 ? { text: "약세 우위", cls: "down" } : { text: "중립~약세", cls: "mid-down" };
+    if (p.A - p.C >= 10) return { text: "중립~강세", cls: "mid-up" };
+    if (p.C - p.A >= 10) return { text: "중립~약세", cls: "mid-down" };
+    return { text: "중립", cls: "mid" };
+  }
+
+  function renderQuickView(q, assetType) {
+    if (!q) return "";
+    const li = (arr) => arr.map((t) => `<li>${escapeHtml(t)}</li>`).join("");
+    const col = (cls, title, inner) => `<div class="aq-col aq-col--${cls}"><p class="aq-col__title">${title}</p>${inner}</div>`;
+    const cols = [];
+    if (q.pros && q.pros.length) cols.push(col("pro", "좋은 점", `<ul class="aq-list">${li(q.pros)}</ul>`));
+    if (q.cons && q.cons.length) cols.push(col("con", "주의할 점", `<ul class="aq-list">${li(q.cons)}</ul>`));
+    if (q.watch && q.watch.length)
+      cols.push(
+        col(
+          "watch",
+          "앞으로 이것만 보세요",
+          `<ol class="aq-watch">${q.watch
+            .map(
+              (w) =>
+                `<li>${w.price ? `<b>${escapeHtml(fmtPrice(w.price, assetType))}</b>` : ""}<span>${escapeHtml(w.text)}</span></li>`
+            )
+            .join("")}</ol>`
+        )
+      );
+    return cols.length ? `<div class="aq">${cols.join("")}</div>` : "";
+  }
+
   function renderScenarioProbBar(scenarios, base) {
     const list = (Array.isArray(scenarios) ? scenarios : [])
       .map((s) => ({ label: String(s.label || "").trim(), type: String(s.type || "").trim(), prob: toNum(s.probability) }))
@@ -2147,6 +2187,10 @@
     // 중앙 본문 / 우 2x2 지표 필) + 하단 종합점수 풋터로 재구성. buildScoreCardParts가
     // pillsHtml(grid 안)과 footerHtml(카드 전체 폭, grid 밖)을 분리해서 반환한다.
     const signalCls = signalBadgeClass(signal);
+    const stance = stanceFromScenarios(analysis.opinion && analysis.opinion.scenarios);
+    const stanceHtml = stance
+      ? `<div class="sum2-prob"><span class="sum2-prob__label">현재 판단</span><span class="sum2-prob__value sum2-prob__value--stance sum2-stance--${stance.cls}">${escapeHtml(stance.text)}</span></div><p class="sum2-prob__note">시나리오별 가능성은 아래 'AI 주관적 판단' 카드에서 볼 수 있습니다</p>`
+      : `<div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p>`;
     const scoreParts = buildScoreCardParts(analysis.scoreCard);
 
     // 2026-09-03: "시장 대비 위치" 카드가 국내 종목에만 붙기 때문에 카드 번호를 하드코딩할
@@ -2157,7 +2201,7 @@
       {
         cls: "ai-card--summary",
         title: "한눈에 요약",
-        body: `<div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span><div class="sum2-prob"><span class="sum2-prob__label">상승 확률</span><span class="sum2-prob__value">${escapeHtml(probText)}</span></div><p class="sum2-prob__note">강세(A) 시나리오 실현 확률 기준</p></div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${scoreParts.footerHtml}</div>`,
+        body: `<div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span>${stanceHtml}</div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${renderQuickView(analysis.quick, data.assetType)}${scoreParts.footerHtml}</div>`,
       },
       marketPositionHtml
         ? { cls: "ai-card--mpos", title: "시장 대비 위치", body: `<div class="ai-card__body">${marketPositionHtml}</div>` }

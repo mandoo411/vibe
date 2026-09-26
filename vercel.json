@@ -214,10 +214,6 @@
       "dest": "/api/crypto.js?kind=data"
     },
     {
-      "src": "/api/crypto-news",
-      "dest": "/api/crypto.js?kind=news"
-    },
-    {
       "src": "/(.*)",
       "dest": "/index.html"
     }

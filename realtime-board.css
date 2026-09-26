@@ -2397,3 +2397,17 @@
       .rt-chart-panes .rt-chart-pane--vol {
         display: none !important;
       }
+
+      /* 2026-09-26: 모바일 차트 칸 — 위쪽 모바일 규칙(230)이 뒤에 오는 기본값(300)에 덮여 차트 아래가 70px 비었다.
+         파일 맨 끝에 두어 확실히 이기게 한다. realtime-board.js LW_CHART_MOBILE_H와 같게. */
+      @media (max-width: 768px) {
+        .rt-chart-panes {
+          height: 280px;
+          min-height: 280px;
+          max-height: 280px;
+          flex: 0 0 280px;
+        }
+        .rt-chart-body {
+          min-height: 280px;
+        }
+      }

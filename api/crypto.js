@@ -1,9 +1,8 @@
 /**
  * 암호화폐 통합 엔드포인트 (Vercel Hobby 플랜 서버리스 함수 12개 제한 대응)
  * - kind=data (기본): CoinMarketCap + Alternative.me Fear & Greed (구 api/crypto-data.js)
- * - kind=news        : RSS 크립토 뉴스 (구 api/crypto-news.js)
- * vercel.json 라우팅에서 /api/crypto-data -> /api/crypto.js?kind=data,
- *                        /api/crypto-news -> /api/crypto.js?kind=news 로 매핑됨.
+ * - (2026-09-26 크립토 뉴스 kind=news 폐지)
+ * vercel.json 라우팅에서 /api/crypto-data -> /api/crypto.js?kind=data 로 매핑됨.
  */
 
 // ===================== data (구 crypto-data.js) =====================
@@ -190,7 +189,7 @@ async function fetchCoinGeckoSparklineMap() {
 }
 
 async function fetchListings(includeSparks = true) {
-  const cacheKey = `listings:v3:${includeSparks ? "sparks" : "fast"}`;
+  const cacheKey = `listings:v4:${includeSparks ? "sparks" : "fast"}`;
   return cached(cacheKey, async () => {
     const params = {
       limit: 400,
@@ -249,6 +248,14 @@ async function fetchListings(includeSparks = true) {
           fdvKrw,
           fdvUsd,
           maxSupply,
+          // 2026-09-26: 오른쪽 상세 칸(공급량·거래대금 변화·점유율·30/90일 등락)
+          circulatingSupply: toNum(coin.circulating_supply),
+          totalSupply: toNum(coin.total_supply),
+          infiniteSupply: coin.infinite_supply === true,
+          change30d: round2(toNum(usd.percent_change_30d ?? krw.percent_change_30d)),
+          change90d: round2(toNum(usd.percent_change_90d ?? krw.percent_change_90d)),
+          volumeChange24h: round2(toNum(usd.volume_change_24h ?? krw.volume_change_24h)),
+          dominance: round2(toNum(usd.market_cap_dominance ?? krw.market_cap_dominance)),
           volume24h: volume24hKrw,
           volume24hKrw,
           volume24hUsd: Math.round(toNum(usd.volume_24h) || 0) || null,
@@ -315,6 +322,40 @@ async function fetchCryptoResolve(symbolRaw) {
   );
 }
 
+/**
+ * 2026-09-26: 오른쪽 상세 칸의 웹사이트·백서·소셜 링크. CMC /v2/cryptocurrency/info (100개당 1크레딧).
+ * 링크는 거의 안 바뀌므로 하루 캐시 + CDN 하루 캐시.
+ */
+async function fetchCryptoInfo(idRaw) {
+  const id = Math.floor(Number(idRaw));
+  if (!Number.isFinite(id) || id <= 0) throw new Error("invalid id");
+  return cached(
+    `info:${id}`,
+    async () => {
+      const j = await cmcFetch("/v2/cryptocurrency/info", { id, aux: "urls,date_launched" });
+      const d = j && j.data ? j.data[String(id)] : null;
+      const u = (d && d.urls) || {};
+      const first = (arr) => {
+        const list = Array.isArray(arr) ? arr : [];
+        const hit = list.map((x) => sanitizeStr(x)).find((x) => /^https?:\/\//i.test(x));
+        return hit || null;
+      };
+      return {
+        id,
+        website: first(u.website),
+        whitepaper: first(u.technical_doc),
+        twitter: first(u.twitter),
+        reddit: first(u.reddit),
+        github: first(u.source_code),
+        telegram: first((u.chat || []).filter((x) => /t\.me\//i.test(String(x)))),
+        explorer: first(u.explorer),
+        dateLaunched: sanitizeStr(d && (d.date_launched || d.date_added)) || null,
+      };
+    },
+    24 * 60 * 60 * 1000
+  );
+}
+
 async function handleData(req, res) {
   const action = sanitizeStr(req.query && req.query.action) || "global";
   try {
@@ -331,43 +372,23 @@ async function handleData(req, res) {
       json(res, 200, await fetchFearGreed());
       return;
     }
+    if (action === "info") {
+      const info = await fetchCryptoInfo(req.query && req.query.id);
+      res.statusCode = 200;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.setHeader("cache-control", "public, s-maxage=86400, stale-while-revalidate=86400");
+      res.end(JSON.stringify(info));
+      return;
+    }
     if (action === "resolve") {
       const symbol = sanitizeStr(req.query && req.query.symbol);
       json(res, 200, await fetchCryptoResolve(symbol));
       return;
     }
-    json(res, 400, { error: "Unknown action. Use global, listings, fear-greed, or resolve." });
+    json(res, 400, { error: "Unknown action. Use global, listings, fear-greed, info, or resolve." });
   } catch (e) {
     console.error("[crypto] data", action, e && e.message, e);
     json(res, 502, { error: e.message || String(e) });
-  }
-}
-
-// ===================== news (구 crypto-news.js) =====================
-// 2026-07-11: RSS 피드 로직을 lib/crypto-news.js로 추출해서 api/analyze.js(AI 종목분석)와
-// 공유한다 — 동작은 기존과 100% 동일, 코드 위치만 이동.
-const { fetchAllCryptoNews } = require("../lib/crypto-news");
-
-async function handleNews(req, res) {
-  try {
-    const news = await fetchAllCryptoNews();
-    if (!news.length) {
-      throw new Error("No crypto news available from RSS feeds");
-    }
-
-    res.statusCode = 200;
-    res.setHeader("content-type", "application/json; charset=utf-8");
-    res.setHeader("Cache-Control", "s-maxage=300");
-    res.end(
-      JSON.stringify({
-        news,
-        updatedAt: new Date().toISOString(),
-      })
-    );
-  } catch (e) {
-    res.statusCode = 500;
-    res.setHeader("content-type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ error: e.message || String(e) }));
   }
 }
 
@@ -384,10 +405,6 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const kind = sanitizeStr(req.query && req.query.kind) || "data";
-  if (kind === "news") {
-    await handleNews(req, res);
-    return;
-  }
+  // 2026-09-26: 크립토 뉴스 페이지 폐지(시우 요청) — 데이터만 남긴다. RSS 로직(lib/crypto-news.js)은 AI 종목분석이 계속 쓴다.
   await handleData(req, res);
 };

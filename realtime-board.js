@@ -1052,6 +1052,8 @@
     };
   }
   const LW_CHART_TOTAL_H = 300;
+  /* 2026-09-26: 모바일 차트 높이 — 예전엔 CSS 기본(300)이 모바일 규칙(230)을 덮어써 차트 아래 70px가 비었다. realtime-board.css 맨 끝과 같게. */
+  const LW_CHART_MOBILE_H = 280;
   const LW_CANDLE_H = 210;
   const LW_VOL_H = 90;
 
@@ -1076,7 +1078,7 @@
     /* 2026-09-23: 캔들·거래량을 한 차트(한 패널)에 그린다 — 매매시그널 차트와 동일.
        vol 값은 옛 호출부(chartVol.applyOptions)가 같은 차트에 높이를 덮어쓰지 않도록 같게 둔다.
        .rt-chart-panes 높이(데스크톱 300 / 모바일 230)와 반드시 일치시킬 것. */
-    const h = isMobileLayout() ? 230 : LW_CHART_TOTAL_H;
+    const h = isMobileLayout() ? LW_CHART_MOBILE_H : LW_CHART_TOTAL_H;
     return { candle: h, vol: h };
   }
 

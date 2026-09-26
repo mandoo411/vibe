@@ -522,6 +522,13 @@
         font-size: 13px;
         border-radius: var(--radius);
       }
+      /* 2026-09-26: 크립토 뉴스 탭 폐지 — 순위 제목만 남긴다 */
+      .crypto-rank-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-title, var(--text-primary));
+      }
       .crypto-tab-row {
         display: flex;
         gap: 4px;
@@ -548,24 +555,6 @@
         border: none;
         font-weight: 700;
         box-shadow: 0 2px 8px rgba(29, 78, 216, 0.3);
-      }
-      .crypto-news-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 18px;
-        height: 18px;
-        background: #e24b4a;
-        color: white;
-        font-size: 10px;
-        font-weight: 700;
-        border-radius: 9px;
-        padding: 0 4px;
-        margin-left: 5px;
-        vertical-align: middle;
-      }
-      .crypto-news-badge:empty {
-        display: none;
       }
       [data-theme="dark"] .crypto-section-head--tools {
         background: transparent;
@@ -606,116 +595,6 @@
       }
       [data-theme="dark"] .crypto-currency-btn[aria-pressed="true"] {
         color: var(--accent-bright);
-      }
-      #crypto-news-panel {
-        display: none;
-        padding: 0;
-        background: var(--bg-panel);
-      }
-      #crypto-news-panel.is-open {
-        display: block;
-      }
-      .crypto-news-list {
-        display: flex;
-        flex-direction: column;
-      }
-      .crypto-news-card {
-        margin: 0;
-        border: none;
-        border-bottom: 1px solid var(--border);
-        border-radius: 0;
-        background: transparent;
-        padding: 11px 14px;
-        transition: background 0.15s ease;
-      }
-      .crypto-news-card:last-child {
-        border-bottom: none;
-      }
-      .crypto-news-card:hover,
-      .crypto-news-card[open] {
-        background: color-mix(in srgb, var(--bg-secondary, #f0f3fa) 55%, transparent);
-      }
-      .crypto-news-card summary {
-        cursor: pointer;
-        list-style: none;
-        color: var(--text-primary, var(--text));
-        font-weight: 600;
-        line-height: 1.4;
-      }
-      .crypto-news-card summary::-webkit-details-marker {
-        display: none;
-      }
-      .crypto-news-card__title {
-        display: block;
-        margin-top: 3px;
-        font-size: 13px;
-        font-weight: 500;
-        line-height: 1.45;
-        color: var(--text-primary, var(--text));
-      }
-      .crypto-news-card__meta {
-        display: block;
-        font-family: "Noto Sans KR", -apple-system, sans-serif;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        color: var(--text-secondary, var(--text-dim));
-      }
-      .crypto-news-card__body {
-        margin: 8px 0 0;
-        color: var(--text-secondary, var(--text-muted));
-        font-size: 12px;
-        line-height: 1.55;
-      }
-      .crypto-news-card__read {
-        display: inline-flex;
-        align-items: center;
-        margin-top: 8px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--accent-brand, #0f8387);
-        text-decoration: none;
-      }
-      .crypto-news-card__read:hover {
-        text-decoration: underline;
-      }
-      .crypto-news-empty {
-        margin: 0;
-        padding: 28px 16px;
-        text-align: center;
-        font-size: 13px;
-        color: var(--text-secondary, var(--text-muted));
-      }
-      [data-theme="light"] .crypto-news-card {
-        border-bottom-color: rgba(15, 131, 135, 0.12);
-      }
-      [data-theme="light"] .crypto-news-card:hover,
-      [data-theme="light"] .crypto-news-card[open] {
-        background: rgba(239, 246, 255, 0.72);
-      }
-      [data-theme="light"] .crypto-news-card__meta {
-        color: #0f8387;
-      }
-      [data-theme="dark"] .crypto-news-card {
-        border-bottom-color: var(--border-color);
-      }
-      [data-theme="dark"] .crypto-news-card:hover,
-      [data-theme="dark"] .crypto-news-card[open] {
-        background: var(--surface-hover, #152238);
-      }
-      [data-theme="dark"] .crypto-news-card__meta {
-        color: var(--accent-gold, #d4af37);
-      }
-      [data-theme="dark"] .crypto-news-card__read {
-        color: #e8c96a;
-      }
-      @media (min-width: 769px) {
-        .crypto-news-card {
-          padding: 10px 16px;
-        }
-        .crypto-news-card__title {
-          font-size: 13px;
-        }
       }
       @media (max-width: 768px) {
         .crypto-global-grid {
@@ -805,7 +684,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
-    <link rel="stylesheet" href="./assets/wide.css?v=2" />
+    <link rel="stylesheet" href="./assets/wide.css?v=3" />
     <script src="./assets/tm-chart-style.js?v=2"></script>
 </head>
   <body class="page-tm-v2" data-tm-tab="crypto">
@@ -870,15 +749,7 @@
 
         <section class="crypto-section crypto-section--rank" aria-label="시총 TOP 400">
           <div class="crypto-section-head crypto-section-head--tools">
-            <div class="crypto-tab-row" role="tablist" aria-label="암호화폐 패널">
-              <button type="button" class="crypto-tab active" data-tab="ranking" role="tab" aria-selected="true">
-                암호화폐 순위
-              </button>
-              <button type="button" class="crypto-tab" data-tab="news" role="tab" aria-selected="false">
-                크립토 뉴스
-                <span id="crypto-news-count" class="crypto-news-badge" aria-hidden="true"></span>
-              </button>
-            </div>
+            <h2 class="crypto-rank-title">암호화폐 순위</h2>
             <div class="crypto-currency-toggle" role="group" aria-label="표시 통화">
               <button type="button" class="crypto-currency-btn" data-crypto-currency="KRW" aria-pressed="false">원</button>
               <button type="button" class="crypto-currency-btn" data-crypto-currency="USD" aria-pressed="true">달러</button>
@@ -909,7 +780,6 @@
               <!-- 2026-09-25: 넓은 화면(1100px+)에선 국내·미국주식처럼 왼쪽 목록 / 오른쪽 상세 -->
               <aside id="crypto-detail-pane" class="crypto-detail-pane" hidden aria-live="polite"></aside>
             </div>
-            <div id="crypto-news-panel" class="crypto-news-list" aria-live="polite" hidden></div>
           </div>
         </section>
 
@@ -1224,79 +1094,6 @@
           })}`;
         }
 
-        function fmtNewsTime(value) {
-          const d = new Date(value);
-          if (Number.isNaN(d.getTime())) return "";
-          return d.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-        }
-
-        async function refreshCryptoNews() {
-          const panel = $("crypto-news-panel");
-          const badge = $("crypto-news-count");
-          if (!panel) return;
-          try {
-            const res = await fetch("/api/crypto-news", { cache: "no-store" });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-            const rows = Array.isArray(data.news) ? data.news : [];
-
-            if (badge) badge.textContent = rows.length ? String(rows.length) : "";
-
-            panel.innerHTML = rows.length
-              ? rows
-                  .map((n) => {
-                    const summaryHtml = n.summary
-                      ? `<p class="crypto-news-card__body">${escapeHtml(String(n.summary).slice(0, 200))}…</p>`
-                      : "";
-                    const url = String(n.url || "").trim();
-                    const readLink = url
-                      ? `<a class="crypto-news-card__read" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">원문 보기 →</a>`
-                      : "";
-                    return `<details class="crypto-news-card">
-        <summary>
-          <span class="crypto-news-card__meta">${escapeHtml(n.source || "Crypto News")} · ${escapeHtml(fmtNewsTime(n.publishedAt))}</span>
-          <span class="crypto-news-card__title">${escapeHtml(n.title || "")}</span>
-        </summary>
-        ${summaryHtml}
-        ${readLink}
-      </details>`;
-                  })
-                  .join("")
-              : '<p class="crypto-news-empty">최근 뉴스가 없습니다.</p>';
-          } catch {
-            if (badge) badge.textContent = "";
-            panel.innerHTML = '<p class="crypto-news-empty">뉴스를 불러오지 못했습니다.</p>';
-          }
-        }
-
-        function wireCryptoTabs() {
-          const rankingPanel = $("crypto-ranking-panel");
-          const newsPanel = $("crypto-news-panel");
-          document.querySelectorAll(".crypto-tab").forEach((tab) => {
-            if (tab.dataset.cryptoTabWire === "1") return;
-            tab.dataset.cryptoTabWire = "1";
-            tab.addEventListener("click", () => {
-              document.querySelectorAll(".crypto-tab").forEach((t) => {
-                t.classList.remove("active");
-                t.setAttribute("aria-selected", "false");
-              });
-              tab.classList.add("active");
-              tab.setAttribute("aria-selected", "true");
-              const target = tab.dataset.tab;
-              if (rankingPanel) rankingPanel.style.display = target === "ranking" ? "block" : "none";
-              if (newsPanel) {
-                if (target === "news") {
-                  newsPanel.hidden = false;
-                  newsPanel.classList.add("is-open");
-                } else {
-                  newsPanel.hidden = true;
-                  newsPanel.classList.remove("is-open");
-                }
-              }
-            });
-          });
-        }
-
         async function fetchJson(action, params = {}) {
           const ctrl = new AbortController();
           const tid = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
@@ -1434,9 +1231,98 @@
           return cryptoSplitMq.matches;
         }
 
+        /* 2026-09-26: 오른쪽 상세 칸 — 시총·거래대금·공급량·링크(코인마켓캡 상세와 같은 항목) */
+        const cryptoInfoCache = new Map(); // id -> info | Promise
+
+        function fmtSupply(n, sym) {
+          if (n == null || !Number.isFinite(n) || n <= 0) return null;
+          let t;
+          if (n >= 1e12) t = `${(n / 1e12).toFixed(2)}조`;
+          else if (n >= 1e8) t = `${(n / 1e8).toFixed(2)}억`;
+          else if (n >= 1e4) t = `${(n / 1e4).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}만`;
+          else t = n.toLocaleString("ko-KR", { maximumFractionDigits: 2 });
+          return `${t} ${sym || ""}`.trim();
+        }
+
+        function detailStatsHtml(c) {
+          const cell = (k, v, cls, sub) =>
+            `<div class="crypto-dp__cell"><span class="crypto-dp__k">${escapeHtml(k)}</span><span class="crypto-dp__v ${cls || ""}">${v}</span>${sub || ""}</div>`;
+          const sym = c.symbol;
+          const mcap = moneyValue(c, "marketCap");
+          const vol = moneyValue(c, "volume24h");
+          const volMcap = mcap && vol ? `${((vol / mcap) * 100).toFixed(2)}%` : "-";
+          const volChg =
+            c.volumeChange24h != null && Number.isFinite(c.volumeChange24h)
+              ? `<span class="crypto-dp__sub ${deltaClass(c.volumeChange24h)}">${escapeHtml(fmtPct(c.volumeChange24h))}</span>`
+              : "";
+          const circ = fmtSupply(c.circulatingSupply, sym);
+          const total = fmtSupply(c.totalSupply, sym);
+          const max = fmtSupply(c.maxSupply, sym) || (c.infiniteSupply ? "무제한" : null);
+          let circBar = "";
+          if (c.circulatingSupply > 0 && c.maxSupply > 0) {
+            const pct = Math.min(100, (c.circulatingSupply / c.maxSupply) * 100);
+            circBar = `<span class="crypto-dp__barrow" title="최대 발행량 대비 ${pct.toFixed(1)}%"><span class="crypto-dp__bar"><i style="width:${pct.toFixed(1)}%"></i></span><span class="crypto-dp__sub">${pct.toFixed(1)}%</span></span>`;
+          }
+          const dom = c.dominance != null && Number.isFinite(c.dominance) ? `${c.dominance.toFixed(2)}%` : "-";
+          const pctCell = (k, v) => cell(k, escapeHtml(fmtPct(v)), deltaClass(v));
+          return `<div class="crypto-dp__grid crypto-dp__grid--4">
+              ${cell("시가총액", escapeHtml(fmtMcapCell(c)))}
+              ${cell("24시간 거래대금", escapeHtml(fmtVolumeCell(c)), "", volChg)}
+              ${cell("거래대금 / 시총", escapeHtml(volMcap))}
+              ${cell("완전희석 시총(FDV)", escapeHtml(fmtFdvCell(c)))}
+              ${cell("유통량", escapeHtml(circ || "-"), "", circBar)}
+              ${cell("총 발행량", escapeHtml(total || "-"))}
+              ${cell("최대 발행량", escapeHtml(max || "-"))}
+              ${cell("시총 점유율", escapeHtml(dom))}
+            </div>
+            <div class="crypto-dp__grid crypto-dp__grid--5">
+              ${pctCell("1시간", c.change1h)}
+              ${pctCell("24시간", c.change24h)}
+              ${pctCell("7일", c.change7d)}
+              ${pctCell("30일", c.change30d)}
+              ${pctCell("90일", c.change90d)}
+            </div>
+            <div class="crypto-dp__links" data-dp-links="${escapeHtml(Number(c.id) || "")}">${linksHtml(cryptoInfoCache.get(Number(c.id)))}</div>`;
+        }
+
+        function linksHtml(info) {
+          if (!info || typeof info.then === "function") return "";
+          const btn = (href, icon, label) =>
+            href
+              ? `<a class="crypto-dp__link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"><i class="ti ${icon}" aria-hidden="true"></i>${label ? `<span>${escapeHtml(label)}</span>` : ""}</a>`
+              : "";
+          const main = [btn(info.website, "ti-world", "웹사이트"), btn(info.whitepaper, "ti-file-text", "백서"), btn(info.explorer, "ti-search", "탐색기")].join("");
+          const social = [
+            info.twitter ? `<a class="crypto-dp__icon" href="${escapeHtml(info.twitter)}" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="ti ti-brand-x"></i></a>` : "",
+            info.reddit ? `<a class="crypto-dp__icon" href="${escapeHtml(info.reddit)}" target="_blank" rel="noopener noreferrer" aria-label="Reddit"><i class="ti ti-brand-reddit"></i></a>` : "",
+            info.telegram ? `<a class="crypto-dp__icon" href="${escapeHtml(info.telegram)}" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><i class="ti ti-brand-telegram"></i></a>` : "",
+            info.github ? `<a class="crypto-dp__icon" href="${escapeHtml(info.github)}" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="ti ti-brand-github"></i></a>` : "",
+          ].join("");
+          if (!main && !social) return "";
+          return `<div class="crypto-dp__link-group">${main}</div>${social ? `<div class="crypto-dp__link-group crypto-dp__link-group--social"><span class="crypto-dp__k">소셜</span>${social}</div>` : ""}`;
+        }
+
+        function loadCryptoInfo(id) {
+          const key = Number(id);
+          if (!Number.isFinite(key) || key <= 0) return;
+          const hit = cryptoInfoCache.get(key);
+          if (hit && typeof hit.then !== "function") return;
+          if (hit) return;
+          const qs = new URLSearchParams({ action: "info", id: String(key) });
+          const p = fetch(`${API}?${qs.toString()}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((info) => {
+              if (info && info.id) cryptoInfoCache.set(key, info);
+              else cryptoInfoCache.delete(key);
+              const box = document.querySelector(`[data-dp-links="${key}"]`);
+              if (box && info) box.innerHTML = linksHtml(info);
+            })
+            .catch(() => cryptoInfoCache.delete(key));
+          cryptoInfoCache.set(key, p);
+        }
+
         function detailPaneHtml(c) {
           const price = moneyValue(c, "price");
-          const cell = (k, v, cls) => `<div class="crypto-dp__cell"><span class="crypto-dp__k">${escapeHtml(k)}</span><span class="crypto-dp__v ${cls || ""}">${v}</span></div>`;
           return `<header class="crypto-dp__head">
               <div class="crypto-dp__id">
                 <span class="crypto-dp__logo">${coinLogoHtml(c)}</span>
@@ -1446,17 +1332,10 @@
               </div>
               <div class="crypto-dp__quote">
                 <span class="crypto-dp__price">${escapeHtml(fmtPrice(price))}</span>
-                <span class="crypto-dp__chg ${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span>
+                <span class="crypto-dp__chg ${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))} <small>24시간</small></span>
               </div>
             </header>
-            <div class="crypto-dp__grid">
-              ${cell("1시간", escapeHtml(fmtPct(c.change1h)), deltaClass(c.change1h))}
-              ${cell("24시간", escapeHtml(fmtPct(c.change24h)), deltaClass(c.change24h))}
-              ${cell("7일", escapeHtml(fmtPct(c.change7d)), deltaClass(c.change7d))}
-              ${cell("24시간 거래대금", escapeHtml(fmtVolumeCell(c)))}
-              ${cell("시가총액", escapeHtml(fmtMcapCell(c)))}
-              ${cell("완전희석 시총(FDV)", escapeHtml(fmtFdvCell(c)))}
-            </div>
+            ${detailStatsHtml(c)}
             ${chartBoxHtml(c, false)}`;
         }
 
@@ -1482,6 +1361,7 @@
           }
           pane.hidden = false;
           pane.innerHTML = detailPaneHtml(coin);
+          loadCryptoInfo(coin.id);
         }
 
         function chartRowHtml(c) {
@@ -1514,6 +1394,15 @@
               </div>`;
         }
 
+        /* 2026-09-26: 오른쪽 상세는 화면에 붙어 따라오므로(sticky 84px) 차트를 화면 바닥까지만 늘린다 */
+        function splitChartHeight(host) {
+          const pane = $("crypto-detail-pane");
+          if (!pane || !host) return 520;
+          const offset = host.getBoundingClientRect().top - pane.getBoundingClientRect().top;
+          const avail = window.innerHeight - 84 - offset - 20;
+          return Math.max(340, Math.min(640, Math.floor(avail)));
+        }
+
         /** market=CRYPTO 자체 캔들 차트 데이터 조회 (AI 종목분석과 동일 엔드포인트, Binance 공개
          * klines 기반). 스테이블코인처럼 자기 자신과의 USDT 페어가 없는 극소수 코인은 실패할 수
          * 있음 — 그 경우 에러 메시지만 보여준다(전체 페이지에는 영향 없음). */
@@ -1533,7 +1422,7 @@
           try {
             const chartData = await fetchCryptoLwChart(state.openSymbol, state.chartPeriod);
             if (state.chartHandle && window.tmDisposeCandleChart) window.tmDisposeCandleChart(state.chartHandle);
-            state.chartHandle = await window.tmMountCandleChart(host, chartData, { market: "CRYPTO", height: isCryptoSplit() ? 560 : undefined });
+            state.chartHandle = await window.tmMountCandleChart(host, chartData, { market: "CRYPTO", height: isCryptoSplit() ? splitChartHeight(host) : undefined });
           } catch (err) {
             console.warn("[크립토] 차트 로드 실패", state.openSymbol, err && err.message);
             host.innerHTML = `<p class="tm-lw-chart-error">차트를 불러오지 못했습니다.</p>`;
@@ -1791,7 +1680,6 @@
         }
 
         async function init() {
-          wireCryptoTabs();
           wireTable();
           wireCurrencyToggle();
           wireSortHeaders();
@@ -1801,9 +1689,7 @@
           startPolling();
           deferIdle(() => {
             loadListingsSparks().catch((e) => console.warn("[crypto] sparks", e));
-            refreshCryptoNews().catch((e) => console.warn("[crypto] news", e));
           });
-          setInterval(refreshCryptoNews, 30 * 60 * 1000);
         }
 
         if (document.readyState === "loading") {

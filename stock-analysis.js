@@ -810,6 +810,7 @@
     },
     { key: "weekly", title: "주봉 흐름", color: "teal", re: /주봉/ },
     { key: "monthly", title: "월봉 흐름", color: "orange", re: /월봉/ },
+    { key: "aux", title: "보조지표 교차 확인", color: "indigo", re: /보조지표|MACD|볼린저/i },
     { key: "rsi", title: "RSI", color: "blue", re: /RSI/i },
     {
       key: "ict",
@@ -1888,6 +1889,12 @@
       rrVal != null
         ? `<p class="ai-opinion-rr">손절까지의 위험 <b>1</b> 대비 1차 목표까지의 기대수익 <b>${escapeHtml(String(rrVal))}</b></p>`
         : "";
+    // 2026-09-26 리뷰: 리포트 끝에 "어떻게 채점되는지"를 코드로 박는다(lib/ai-report-grade.js 규칙 그대로, 국내만 채점).
+    const gE = toNum(prices.entry), gT = toNum(prices.target), gS = toNum(prices.stop);
+    const gradeLine =
+      assetType !== "US" && assetType !== "CRYPTO" && gE > 0 && gT > gE && gS > 0 && gS < gE
+        ? `<p class="ai-opinion-grade"><b>채점 기준</b> 다음 거래일부터 20거래일 동안 진입가 ${escapeHtml(fmtPrice(gE, assetType))}에 닿으면 진입으로 보고, 그 뒤 목표가 ${escapeHtml(fmtPrice(gT, assetType))}에 먼저 닿으면 <span class="up">목표 도달</span>, 손절가 ${escapeHtml(fmtPrice(gS, assetType))}에 먼저 닿으면 <span class="down">손절</span>로 채점합니다. 둘 다 닿지 않으면 20거래일째 종가로 평가합니다. <a href="#ai-track">성적표 보기</a></p>`
+        : "";
     const scenarios = Array.isArray(o.scenarios) && o.scenarios.length ? o.scenarios : [];
     // 2026-09-03: A/B/C 확률을 숫자 세 개로만 흩어 놓으면 어느 쪽에 무게가 실렸는지 한눈에
     // 안 들어온다. 카드 위에 100% 스택 막대 하나로 먼저 보여주고, 상세는 아래 카드가 맡는다.
@@ -1906,7 +1913,7 @@
       `<div class="ai-opinion-layout">` +
       `<div class="ai-opinion-col ai-opinion-col--left">` +
       `<div class="ai-outlook-stack">${outlooks || "<p class=\"ai-outlook-empty\">전망 정보가 없습니다.</p>"}</div>` +
-      `${planLine}<div class="ai-opinion-prices">${priceRows}</div>${rrLine}` +
+      `${planLine}<div class="ai-opinion-prices">${priceRows}</div>${rrLine}${gradeLine}` +
       `${comment}` +
       `</div>` +
       `<div class="ai-opinion-col ai-opinion-col--right">${scenarioBar}${scenarioHtml}</div>` +

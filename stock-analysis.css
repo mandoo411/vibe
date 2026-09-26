@@ -1458,6 +1458,23 @@
   color: var(--text-title, #f3f4f6);
 }
 
+/* 2026-09-26: 채점 기준 한 줄 */
+.ai-opinion-grade {
+  margin: -6px 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-color, rgba(128,128,128,.3));
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  word-break: keep-all;
+}
+.ai-opinion-grade b { font-weight: 700; margin-right: 6px; color: var(--text-primary, #131722); }
+[data-theme="dark"] .ai-opinion-grade b { color: var(--text-title, #f3f4f6); }
+.ai-opinion-grade .up { color: var(--up-color, #ef4444); font-weight: 600; }
+.ai-opinion-grade .down { color: var(--down-color, #3b82f6); font-weight: 600; }
+.ai-opinion-grade a { margin-left: 4px; color: inherit; text-decoration: underline; white-space: nowrap; }
+
 .ai-opinion-price {
   position: relative;
   padding: 15px 10px 13px;

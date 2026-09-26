@@ -31,6 +31,13 @@ const { fetchAllCryptoNews, filterNewsByRelevance } = require("../lib/crypto-new
 // 함수 12개 한도를 넘기므로 lib 모듈로 두고 이 파일에서 직접 호출한다.
 const { fetchFinancialTrend, financialTrendPromptBlock } = require("../lib/dart-financials");
 const { computeSimilarPatternStats, patternStatsPromptBlock } = require("../lib/pattern-stats");
+const { computeTechExtras, techExtrasPromptBlock } = require("../lib/tech-extras");
+/* 2026-09-26 리뷰 지적(해석의 긍정 왜곡): 불리한 사실 뒤에 위안 문장을 붙이지 않게 한다. 세 경로 공통. */
+const HONEST_TONE_RULE = [
+  "",
+  "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
+  "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
+].join("\n");
 
 const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
 
@@ -1404,7 +1411,8 @@ function mapWmRow(row) {
   const high = toNum(row.stck_hgpr || row.STCK_HGPR);
   const low = toNum(row.stck_lwpr || row.STCK_LWPR);
   if (close == null || high == null || low == null) return null;
-  return { time, high: Math.round(high), low: Math.round(low), close: Math.round(close) };
+  const vol = toNum(row.acml_vol || row.ACML_VOL);
+  return { time, high: Math.round(high), low: Math.round(low), close: Math.round(close), volume: vol == null ? 0 : Math.round(vol) };
 }
 
 function maLast(closes, period) {
@@ -2917,6 +2925,8 @@ function buildUserPrompt(quote, stockName, today, indicators, wm, cryptoNews) {
     marketPositionPromptBlock(quote && quote.marketPosition),
     financialTrendPromptBlock(quote && quote.financials),
     patternStatsPromptBlock(quote && quote.patternStats),
+    techExtrasPromptBlock(quote && quote.techExtras),
+    HONEST_TONE_RULE,
     formatCryptoNewsBlock(cryptoNews),
     "",
     "입력 데이터:",
@@ -3166,6 +3176,8 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
       ...wmJsonFields(wm),
     }),
     patternStatsPromptBlock(quote && quote.patternStats),
+    techExtrasPromptBlock(quote && quote.techExtras),
+    HONEST_TONE_RULE,
   ].join("\n");
 
   const hasSearchEvidence = (d) => {
@@ -3342,6 +3354,8 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm) {
         ...wmJsonFields(wm),
       }),
       patternStatsPromptBlock(quote && quote.patternStats),
+      techExtrasPromptBlock(quote && quote.techExtras),
+      HONEST_TONE_RULE,
     ].join("\n");
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -5267,9 +5281,13 @@ module.exports = async function handler(req, res) {
       wm = await wmPromise;
       // 2026-09-26: 과거 유사 국면 통계(확률 근거) — 실패해도 분석은 그대로 진행
       try {
-        quote.patternStats = computeSimilarPatternStats(await fetchKisDailyHistory(code6, 4));
+        const hist = await fetchKisDailyHistory(code6, 4);
+        quote.patternStats = computeSimilarPatternStats(hist);
+        // 2026-09-26: 같은 일봉으로 MACD·볼린저·거래량 보조지표(프롬프트 전용, 화면 저장 없음)
+        try { quote.techExtras = computeTechExtras(hist); } catch (e2) { quote.techExtras = null; }
       } catch (e) {
         quote.patternStats = null;
+        quote.techExtras = null;
       }
       // 2026-09-03: 비교군 대비 위치(백분위)는 전종목 지표 캐시에서 코드가 직접 집계한다.
       // 실패해도 null만 돌아오고 분석 자체는 그대로 진행된다(카드만 안 그려짐).

@@ -1586,7 +1586,7 @@
       pillsHtml: `<div class="sum2-pills">${pills}</div>`,
       footerHtml:
         `<div class="sum2-footer">` +
-        `<span class="sum2-total">종합 ${totalV != null ? `${totalSign}${totalV}/${maxAbs}` : "—"}</span>` +
+        `<span class="sum2-total">종합 ${totalV != null ? `${totalSign}${totalV} (범위 −${maxAbs}~+${maxAbs})` : "—"}</span>` +
         `<p class="sum2-footnote">${escapeHtml(scoreCard.note || "")}</p>` +
         `</div>`,
     };
@@ -1863,7 +1863,7 @@
     // 구분하고, 서술형 행(조건·대응전략·확률 근거)은 라벨을 위로 올린 블록 레이아웃으로 나눈다.
     const rows = [
       ["조건", s.condition, "cond"],
-      ["진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null, "entry"],
+      [isBear ? "재진입 검토가" : "진입가", s.entry != null ? fmtPrice(s.entry, assetType) : null, "entry"],
       [
         isBear ? "반등 목표가" : "목표가",
         s.target != null ? fmtPrice(s.target, assetType) : null,
@@ -2120,10 +2120,16 @@
           qOp != null && qNet != null && qOp > 0 && qNet > qOp
             ? `<p class="fin__why">순이익이 영업이익보다 ${escapeHtml(finFmtEok(qNet - qOp))} 많습니다. 본업 밖에서 난 이익(보유 지분·투자자산 평가, 금융 손익 등)이 세금을 빼고도 컸다는 뜻입니다.</p>`
             : "";
+        // 2026-09-26 리뷰: 시세 PER(직전 연간 실적 기준)과 최근 4개 분기 기준 PER을 나란히 — 실적 급변기엔 차이가 크다.
+        const t = fin.ttm;
+        const ttmNote =
+          t && t.per != null
+            ? `<p class="fin__why">최근 4개 분기 순이익 기준 PER은 <b>${escapeHtml(String(t.per))}배</b>${t.perOp != null ? `(영업이익 기준 ${escapeHtml(String(t.perOp))}배)` : ""}입니다.${t.quotePer != null ? ` 시세 화면의 PER ${escapeHtml(String(t.quotePer))}배는 직전 연간 실적 기준이라, 이익이 빠르게 늘어난 지금은 실제보다 비싸 보이게 나옵니다.` : ""}</p>`
+            : "";
         quarterHtml = `<section class="fin-group">
           <h4 class="fin-group__title">최근 실적 <span class="fin-group__cap">${escapeHtml(q.label)} · ${escapeHtml(q.prevLabel)} 대비</span></h4>
           <div class="fin-q__grid">${tiles}</div>
-          ${netNote}
+          ${netNote}${ttmNote}
         </section>`;
       }
     }
@@ -2212,7 +2218,7 @@
       {
         cls: "ai-card--summary",
         title: "한눈에 요약",
-        body: `<div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal)}</span>${stanceHtml}</div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${renderQuickView(analysis.quick, data.assetType)}${scoreParts.footerHtml}</div>`,
+        body: `<div class="ai-card__body"><div class="sum2-grid"><div class="sum2-left sum2-left--${signalCls}"><span class="sum2-signal sum2-signal--${signalCls}">${escapeHtml(signal === "매수" ? "매수 관점" : signal === "회피" ? "회피 관점" : signal)}</span>${stanceHtml}</div><p class="sum2-desc">${escapeHtml(sanitizeOneLineText(summary.description || ""))}</p>${scoreParts.pillsHtml}</div>${renderQuickView(analysis.quick, data.assetType)}${scoreParts.footerHtml}</div>`,
       },
       marketPositionHtml
         ? { cls: "ai-card--mpos", title: "시장 대비 위치", body: `<div class="ai-card__body">${marketPositionHtml}</div>` }

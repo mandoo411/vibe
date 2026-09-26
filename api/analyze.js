@@ -29,7 +29,7 @@ const STOCK_LIST = require("../assets/stock-list.json"); // 매매 시그널 종
 const { fetchAllCryptoNews, filterNewsByRelevance } = require("../lib/crypto-news");
 // 2026-09-03(로드맵 D): DART 전자공시 기반 실적 추이. 새 api/*.js를 만들면 Vercel Hobby
 // 함수 12개 한도를 넘기므로 lib 모듈로 두고 이 파일에서 직접 호출한다.
-const { fetchFinancialTrend, financialTrendPromptBlock } = require("../lib/dart-financials");
+const { fetchFinancialTrend, financialTrendPromptBlock, computeTtm } = require("../lib/dart-financials");
 const { computeSimilarPatternStats, patternStatsPromptBlock } = require("../lib/pattern-stats");
 const { computeTechExtras, techExtrasPromptBlock } = require("../lib/tech-extras");
 /* 2026-09-26 리뷰 지적(해석의 긍정 왜곡): 불리한 사실 뒤에 위안 문장을 붙이지 않게 한다. 세 경로 공통. */
@@ -48,9 +48,28 @@ const BEGINNER_RULE = [
   "지표 이야기는 결론을 먼저 쉬운 말로 쓰고 숫자는 하나만 붙인다. 금지 예: 'MACD는 상방 추세를 지지하지만, 볼린저밴드 %B 82와 밴드폭 20% 축소는 단기 변동성 확대를 예고합니다.' 정답 예: '추세의 힘은 아직 위쪽입니다. 다만 주가가 최근 움직임 범위의 윗부분(볼린저밴드(가격 변동 범위) 상단 근처)에 있어 한 번 쉬어 갈 수 있습니다.'",
   // 2026-09-26 Gemini 리뷰 반영
   "[종합 의견과 기준 계획 일치 — 반드시 준수] 화면 상단 매매 계획은 확률이 가장 높은 시나리오의 진입가를 그대로 쓴다. 그래서 종합 의견(aiComment)과 단기 전망이 권하는 행동은 그 시나리오의 진입 방식과 같아야 한다: 그 진입가가 현재가보다 높으면(돌파형) '돌파를 확인한 뒤 진입', 낮으면(눌림형) '내려올 때를 기다려 진입'으로 쓴다. '추격보다 눌림 대기'를 권하고 싶다면 눌림형 시나리오(보통 중립 B)에 가장 높은 확률을 주고, 돌파형 시나리오를 최고 확률로 두면서 눌림 대기를 권하지 않는다.",
+  "종합 의견(aiComment)은 화면에서 코드가 '기준 계획은 ○안입니다 — …'라는 첫 문장을 붙인 뒤에 이어진다. 그러니 그 계획과 다른 진입 방식을 '가장 확률 높은 길'처럼 쓰지 않는다. 다른 시나리오는 '다만 ○○이면 B안으로 바꿉니다'처럼 대안으로만 쓴다.",
   "[재료 강도는 회사 규모 대비로 — 반드시 준수] 계약·수주·투자 금액이 있는 재료는 시가총액 대비 비율로 강도를 매긴다: 시가총액의 0.1% 미만이면 '하', 1% 미만이면 최대 '중'. 협력사가 받은 수주처럼 이 회사 매출이 아닌 건은 '하'로 둔다.",
+  "[표현 반복 금지] '숨고르기', '눌림', '부담' 같은 같은 표현은 리포트 전체에서 두 번까지만 쓴다.",
   "[같은 사실 반복 금지] 외국인·기관 수급 방향(예: 20일 동반 순매도)은 수급 카드에서 자세히, 종합 의견에서 한 번만 언급한다. 요약·스토리·재료·차트 카드에서 같은 문장을 되풀이하지 않는다.",
 ].join("\n");
+
+/** 2026-09-26 Gemini 리뷰(종합의견이 기준 계획과 다른 행동을 권함): 종합 의견 첫머리에 기준 계획을 코드가 한 문장으로 못박는다.
+ * AI가 이미 첫 문장에서 같은 안(A안 등)을 밝혔으면 붙이지 않는다. */
+function planLeadSentence(plan, currentPrice, quote) {
+  if (!plan || !(plan.entry > 0)) return "";
+  const cur = toNum(currentPrice);
+  const e = plan.entry;
+  const won = (n) => fmtCurrencyAmount(quote, n);
+  const d = cur > 0 ? (e - cur) / cur : 0;
+  const how =
+    Math.abs(d) <= 0.01
+      ? `현재가 부근 ${won(e)}에서 들어갑니다`
+      : d > 0
+        ? `${won(e)} 돌파를 확인한 뒤 들어갑니다`
+        : `${won(e)}까지 내려올 때를 기다려 들어갑니다`;
+  return `기준 계획은 ${plan.label}안(${plan.type})입니다 — ${how}. `;
+}
 
 /** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
 function normalizeQuick(q) {
@@ -2753,6 +2772,39 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     }
   }
 
+  // ── 2026-09-26 리뷰(목표가 산식·손익비): 목표가가 진입가에 너무 붙으면(손익비 0.4 같은) 코드가 밀어 올린다.
+  // 강세·중립 시나리오 목표 = max(AI 목표, 진입 + max(ATR×1.5, 손절 거리×1.5)). AI가 적은 "ATR 약 N배"도 실제 값으로 고친다.
+  const atrV = toNum(quote && quote.techExtras && quote.techExtras.atr && quote.techExtras.atr.value);
+  if (atrV > 0) {
+    scenarios.forEach((sc) => {
+      const bear = sc.label === "C" || String(sc.type).includes("약");
+      let adjusted = false;
+      if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.target > 0) {
+        const minT = sc.entry + Math.max(1.5 * atrV, 1.5 * (sc.entry - sc.stop));
+        if (sc.target < minT) {
+          sc.target = roundToTick(Math.ceil(minT), quote.assetType) ?? Math.ceil(minT);
+          if (sc.target < minT) sc.target = roundToTick(Math.ceil(minT * 1.002), quote.assetType) ?? sc.target;
+          adjusted = true;
+        }
+      }
+      if (sc.entry > 0 && sc.target > 0) {
+        const mult = (Math.abs(sc.target - sc.entry) / atrV).toFixed(1);
+        const fix = (t) =>
+          !t
+            ? t
+            : adjusted
+              ? t.replace(/목표 근거\s*:[^.]*(\.|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`)
+              : t.replace(/ATR\s*(?:의)?\s*약?\s*[\d.]+\s*배/g, `ATR 약 ${mult}배`);
+        sc.basis = fix(sc.basis);
+        sc.condition = fix(sc.condition);
+        if (adjusted && !/목표 근거/.test(sc.basis || "")) {
+          sc.basis = `${sc.basis ? sc.basis + " " : ""}목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`;
+        }
+      }
+      sc.rr = computeRR(sc.entry, sc.stop, sc.target);
+    });
+  }
+
   // ── 2026-09-26: 진입가 단일화 ──
   // 예전엔 상단 "진입가/목표가/손절가"(AI의 entryPrice)와 시나리오 B 진입가가 따로 나와
   // 한 리포트에 진입가가 2~3개(183.5만/185.5만…) 보였다. 상단 매매 계획은 **확률이 가장 높은
@@ -2834,7 +2886,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
       planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
       // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
-      comment: swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices),
+      comment: planLeadSentence(planScenario, price, quote) + swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.
@@ -5360,6 +5412,17 @@ module.exports = async function handler(req, res) {
       // 2026-09-03(로드맵 D): 분기·연간 실적은 AI가 web_search로 추측하던 구간이었다.
       // DART 원본 공시 숫자로 교체한다. 실패하면 null이라 카드만 안 그려진다.
       quote.financials = await fetchFinancialTrend(code6);
+      // 2026-09-26: 최근 4개 분기(TTM) 기준 PER — 시세 PER(직전 연간 실적 기준)이 실적 급변기엔 크게 어긋난다.
+      try {
+        const ttm = computeTtm(quote.financials);
+        const capEok = toNum(String(quote.marketCapRaw || "").replace(/,/g, ""));
+        if (ttm && capEok > 0 && quote.financials) {
+          ttm.per = ttm.netProfit > 0 ? Math.round((capEok / ttm.netProfit) * 10) / 10 : null;
+          ttm.perOp = ttm.operatingProfit > 0 ? Math.round((capEok / ttm.operatingProfit) * 10) / 10 : null;
+          ttm.quotePer = toNum(quote.per);
+          quote.financials.ttm = ttm;
+        }
+      } catch (e) {}
     } else if (market === "US") {
       quote = await fetchUsQuote(usSymbol);
       wm = await fetchUsWeeklyMonthly(quote.stockCode, quote.exchange);

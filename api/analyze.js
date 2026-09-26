@@ -48,6 +48,7 @@ const BEGINNER_RULE = [
   "지표 이야기는 결론을 먼저 쉬운 말로 쓰고 숫자는 하나만 붙인다. 금지 예: 'MACD는 상방 추세를 지지하지만, 볼린저밴드 %B 82와 밴드폭 20% 축소는 단기 변동성 확대를 예고합니다.' 정답 예: '추세의 힘은 아직 위쪽입니다. 다만 주가가 최근 움직임 범위의 윗부분(볼린저밴드(가격 변동 범위) 상단 근처)에 있어 한 번 쉬어 갈 수 있습니다.'",
   // 2026-09-26 Gemini 리뷰 반영
   "[종합 의견과 기준 계획 일치 — 반드시 준수] 화면 상단 매매 계획은 확률이 가장 높은 시나리오의 진입가를 그대로 쓴다. 그래서 종합 의견(aiComment)과 단기 전망이 권하는 행동은 그 시나리오의 진입 방식과 같아야 한다: 그 진입가가 현재가보다 높으면(돌파형) '돌파를 확인한 뒤 진입', 낮으면(눌림형) '내려올 때를 기다려 진입'으로 쓴다. '추격보다 눌림 대기'를 권하고 싶다면 눌림형 시나리오(보통 중립 B)에 가장 높은 확률을 주고, 돌파형 시나리오를 최고 확률로 두면서 눌림 대기를 권하지 않는다.",
+  "종합 의견에서는 '기준 계획은', '가장 높은 확률은'이라는 말을 직접 쓰지 않는다(코드가 붙인다). 기준 계획과 다른 시나리오를 주 전략처럼 쓰지 않는다.",
   "종합 의견(aiComment)은 화면에서 코드가 '기준 계획은 ○안입니다 — …'라는 첫 문장을 붙인 뒤에 이어진다. 그러니 그 계획과 다른 진입 방식을 '가장 확률 높은 길'처럼 쓰지 않는다. 다른 시나리오는 '다만 ○○이면 B안으로 바꿉니다'처럼 대안으로만 쓴다.",
   "[재료 강도는 회사 규모 대비로 — 반드시 준수] 계약·수주·투자 금액이 있는 재료는 시가총액 대비 비율로 강도를 매긴다: 시가총액의 0.1% 미만이면 '하', 1% 미만이면 최대 '중'. 협력사가 받은 수주처럼 이 회사 매출이 아닌 건은 '하'로 둔다.",
   "[표현 반복 금지] '숨고르기', '눌림', '부담' 같은 같은 표현은 리포트 전체에서 두 번까지만 쓴다.",
@@ -69,6 +70,17 @@ function planLeadSentence(plan, currentPrice, quote) {
         ? `${won(e)} 돌파를 확인한 뒤 들어갑니다`
         : `${won(e)}까지 내려올 때를 기다려 들어갑니다`;
   return `기준 계획은 ${plan.label}안(${plan.type})입니다 — ${how}. `;
+}
+
+/** AI가 종합 의견 안에서 "기준 계획은 ○안입니다" / "가장 높은 확률은 ○○입니다"를 따로 선언하면
+ * 코드가 붙인 첫 문장과 충돌한다(2026-09-26 실측: "기준 계획은 중립 안입니다"). 그런 문장은 뺀다. */
+function stripAiPlanClaims(text, plan) {
+  if (!text || !plan) return text;
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .filter((sent) => !/기준\s*계획은|가장\s*(높은|큰)\s*확률은/.test(sent))
+    .join(" ")
+    .trim();
 }
 
 /** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
@@ -2793,7 +2805,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
           !t
             ? t
             : adjusted
-              ? t.replace(/목표 근거\s*:[^.]*(\.|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`)
+              ? t.replace(/목표 근거\s*:[\s\S]*?(?:[다요]\.(?=\s|$)|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`)
               : t.replace(/ATR\s*(?:의)?\s*약?\s*[\d.]+\s*배/g, `ATR 약 ${mult}배`);
         sc.basis = fix(sc.basis);
         sc.condition = fix(sc.condition);
@@ -2886,7 +2898,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       // 2026-09-26: 상단 매매 계획이 어느 시나리오 숫자인지(프론트 라벨용). null이면 AI 종합값.
       planScenario: planScenario ? { label: planScenario.label, type: planScenario.type, probability: toNum(planScenario.probability) } : null,
       // 종합 의견 문장 속 옛 진입가·손절가·목표가도 통일된 숫자로 바꾼다(숫자가 두 개 보이지 않게)
-      comment: planLeadSentence(planScenario, price, quote) + swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices),
+      comment: planLeadSentence(planScenario, price, quote) + stripAiPlanClaims(swapPlanPricesInText(stripCitations(sanitizeStr(opinion.comment)), aiPlanPrices, prices), planScenario),
       scenarios,
     },
     // 2026-08-26: AI 확률과는 별개로, 실제 지표 숫자만으로 계산되는 기계적 참고 점수.

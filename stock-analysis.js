@@ -2751,7 +2751,10 @@
     // 내부 오류 문구(OpenAI returned non-JSON 등)는 고객에게 보이지 않게 콘솔에만 남긴다.
     if (data.analysisError || (data.analysis && data.analysis._error)) {
       console.warn("[AI분석] 생성 실패(내부)", data.analysisError);
-      throw new Error("AI 리포트를 만드는 중 일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요. (이번 시도는 이용 횟수에 포함되지 않습니다)");
+      throw new Error(
+        "AI 리포트를 만드는 중 일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요." +
+          (freePlanRemaining !== null ? " (이번 시도는 이용 횟수에 포함되지 않습니다)" : "")
+      );
     }
     return data;
   }

@@ -332,7 +332,7 @@ async function fetchCryptoInfo(idRaw) {
   return cached(
     `info:${id}`,
     async () => {
-      const j = await cmcFetch("/v2/cryptocurrency/info", { id, aux: "urls,date_launched" });
+      const j = await cmcFetch("/v2/cryptocurrency/info", { id, aux: "urls,date_added" });
       const d = j && j.data ? j.data[String(id)] : null;
       const u = (d && d.urls) || {};
       const first = (arr) => {

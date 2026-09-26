@@ -38,6 +38,7 @@ const HONEST_TONE_RULE = [
   "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
   "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
   "[재료·업황의 근거] 미반영 핵심 재료·AI 재료 종합 판단·종합 의견에서 새 주장을 할 때는 materials 목록에 있거나 web_search로 날짜·금액이 확인된 사실만 쓴다. 예: '자사주 매입 종료로 수급 공백'은 종료 날짜와 규모가 확인될 때만 쓰고, 자사주 매입·소각 같은 주주환원 재료가 확인되면 materials에 반드시 넣는다. HBM·ASP(평균 판매단가)·출하량 같은 업황 근거를 쓸 때는 web_search로 확인한 숫자(가격 변화율·출하량·점유율 등)를 최소 하나 붙이고, 숫자가 없으면 그 재료를 핵심 근거로 쓰지 않는다.",
+  "[가격 표현의 정합성] 목표주가 괴리율을 쓸 때는 숫자와 표현이 맞아야 한다(괴리율이 30% 이상이면 '목표주가에 가깝다', '괴리가 좁혀졌다'고 쓰지 않는다). 현재가보다 위에 있는 돌파 진입가는 저항이지 지지선이 아니다 — '190만원 부근을 지키는지'처럼 현재가 위 가격을 지지로 쓰지 않는다. 시가총액·주가 같은 숫자는 입력 데이터 값만 쓰고 기사 속 옛 숫자를 옮기지 않는다.",
   "[단정 금지] 확률·전망은 추정치다. '~가 맞습니다', '확실합니다', '반드시 오릅니다' 같은 단정형을 쓰지 않고 '~로 봅니다', '~가능성이 큽니다'로 쓴다.",
 ].join("\n");
 /* 2026-09-26 초보자 리뷰: "전문가 분석을 초보자에게 그대로 보여주는 형태" → 맨 위에 한눈에 보기(quick), 용어엔 쉬운 풀이. */
@@ -769,8 +770,14 @@ function marketPositionPromptBlock(mp) {
   if (!mp || !Array.isArray(mp.items) || !mp.items.length) return "";
   const lines = mp.items.map(
     (it) =>
-      `- ${it.key.startsWith("ret") ? `${it.label} 수익률` : it.label}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (종목 중앙값 ${it.medianText})`
+      `- ${it.key.startsWith("ret") ? `${it.label} 수익률` : it.label}${it.note ? `(${it.note})` : ""}: ${it.valueText} · ${mp.peerLabel} ${it.sample}개 중 ${it.rankText} (종목 중앙값 ${it.medianText})`
   );
+  const perIt = mp.items.find((it) => it.key === "per" && it.note);
+  if (perIt) {
+    lines.push(
+      `※ PER은 최근 4개 분기 순이익 기준(${perIt.valueText})이다. 시세 화면의 PER은 직전 연간 실적 기준이라 이익이 급증한 지금은 훨씬 높게 나온다 — 이익 대비 가격을 말할 때는 반드시 이 PER을 쓰고, 이 PER이 중앙값보다 낮으면 '이익 대비 주가가 비싸다'고 쓰지 않는다(PBR이 높다는 사실은 따로 쓸 수 있다).`
+    );
+  }
   return [
     "",
     `[비교군 대비 위치 — 코드가 전종목 지표 캐시(${mp.asOfDate || "최근 영업일"} 기준)에서 직접 집계한 실측값이다. 추정이 아니므로 그대로 인용해도 된다]`,
@@ -2807,6 +2814,22 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       diff -= step;
     }
   }
+
+  // ── 2026-09-26 Opus 리뷰(확률 근거가 순환논리·20일 계획에 5일 통계 인용): A안 근거에 20거래일 통계와 정의 차이를 코드가 붙인다.
+  const psx = quote && quote.patternStats;
+  if (psx && !psx.thin && psx.d20 && psx.base && psx.sample > 0) {
+    const scA = scenarios.find((s) => s.label === "A");
+    if (scA) {
+      const statSent =
+        `과거 비슷한 국면 ${psx.sample}회 중 20거래일 뒤 ${psx.d20.up}회(${psx.d20.upPct}%) 올랐지만, 강세(A)는 +${psx.base.band}% 이상 오른 경우만 세므로 그보다 낮게 잡힙니다` +
+        (psx.sample < 30 ? ` — 표본이 ${psx.sample}회로 적어 참고용입니다.` : ".");
+      scA.basis = `${statSent} ${String(scA.basis || "").replace(/과거 비슷한 국면[^.]*?\d+\s*회[^.]*\.\s*/g, " ")}`.replace(/\s{2,}/g, " ").trim();
+    }
+  }
+  // 근거 문장에서 기준 확률로 자기 자신을 설명하는 문장은 지운다(프롬프트 금지의 안전망).
+  scenarios.forEach((s) => {
+    if (s.basis) s.basis = s.basis.replace(/[^.]*기준\s*\d+\s*%[^.]*(?:벗어나지 않|맞습니다|자연스럽)[^.]*\.\s*/g, " ").replace(/\s{2,}/g, " ").trim();
+  });
 
   // ── 2026-09-26 리뷰(목표가 산식·손익비): 목표가가 진입가에 너무 붙으면(손익비 0.4 같은) 코드가 밀어 올린다.
   // 강세·중립 시나리오 목표 = max(AI 목표, 진입 + max(ATR×1.5, 손절 거리×1.5)). AI가 적은 "ATR 약 N배"도 실제 값으로 고친다.

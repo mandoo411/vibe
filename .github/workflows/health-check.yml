@@ -12,6 +12,9 @@ on:
         description: "테스트 알림 강제 발송 (텔레그램 연결 확인용)"
         type: boolean
         default: false
+  # 세션에서 즉시 점검을 돌릴 때용(PAT로 workflow_dispatch는 403) — POST /dispatches {"event_type":"trigger-health-check"}
+  repository_dispatch:
+    types: [trigger-health-check]
 
 permissions:
   contents: write

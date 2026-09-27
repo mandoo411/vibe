@@ -1906,7 +1906,7 @@ async function fetchUsWeeklyMonthly(symbol, exchange) {
         SYMB: symbol,
         GUBN: "1",
         BYMD: "",
-        MODP: "0",
+        MODP: "1",
       }),
       kisGetJson(OVERSEAS_DAILY_PATH, OVERSEAS_DAILY_TR_ID, {
         AUTH: "",
@@ -1914,7 +1914,7 @@ async function fetchUsWeeklyMonthly(symbol, exchange) {
         SYMB: symbol,
         GUBN: "2",
         BYMD: "",
-        MODP: "0",
+        MODP: "1",
       }),
     ]);
     const toRows = (j) => {

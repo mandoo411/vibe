@@ -654,7 +654,8 @@ async function fetchUsChartWindow(ticker, exchange, gubn, bymd) {
     SYMB: ticker,
     GUBN: gubn,
     BYMD: bymd,
-    MODP: "0",
+    // 2026-09-27: 0=원주가였다 — NVDA·AVGO 액면분할이 월봉에 -90% 급락으로 찍혔다. 1=수정주가.
+    MODP: "1",
   });
   let raw = j && j.output2;
   if (raw && !Array.isArray(raw)) raw = [raw];

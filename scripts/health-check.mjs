@@ -24,7 +24,7 @@ import { createHash, createHmac } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
-import { sendTelegramMessage } from "./telegram-utils.mjs";
+import { sendTelegramMessage, htmlText } from "./telegram-utils.mjs";
 
 const require = createRequire(import.meta.url);
 const krx = require("../lib/krx-calendar.js");
@@ -262,7 +262,7 @@ async function main() {
     console.log("[health-check] 이상 없음");
     if (state.lastSignature) {
       try {
-        await sendTelegramMessage(`✅ *TotalMoney 점검 정상화*\n이전에 감지된 문제가 해소됐어요. (${NOW.label} KST)`, { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID });
+        await sendTelegramMessage(`✅ <b>TotalMoney 점검 정상화</b>\n이전에 감지된 문제가 해소됐어요. (${htmlText(NOW.label)} KST)`, { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID, parseMode: "HTML" });
       } catch (e) { console.warn("[health-check] 정상화 알림 실패:", e.message); }
     }
     saveState({ lastSignature: null, lastAlertAt: null });
@@ -276,10 +276,11 @@ async function main() {
     console.log("[health-check] 같은 문제 지속 — 리마인더 주기 전이라 알림 생략");
     return;
   }
-  const lines = issues.map((i) => `• [${i.area}] ${i.message}`).join("\n");
-  const text = `🚨 *TotalMoney 점검 알림* (${NOW.label} KST${closed ? ` · 휴장일: ${closed}` : ""})\n\n${lines}`;
+  // 2026-09-27: 예전 Markdown 모드는 메시지 속 밑줄(members_only 등)을 서식으로 읽어 발송 자체가 실패했다 → HTML 모드 + 이스케이프
+  const lines = issues.map((i) => `• [${htmlText(i.area)}] ${htmlText(i.message)}`).join("\n");
+  const text = `🚨 <b>TotalMoney 점검 알림</b> (${htmlText(NOW.label)} KST${closed ? ` · 휴장일: ${htmlText(closed)}` : ""})\n\n${lines}`;
   try {
-    await sendTelegramMessage(text, { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID });
+    await sendTelegramMessage(text, { chatId: process.env.TELEGRAM_ADMIN_CHAT_ID, parseMode: "HTML" });
     saveState({ lastSignature: signature, lastAlertAt: nowIso });
   } catch (e) {
     console.error("[health-check] 텔레그램 발송 실패:", e.message);

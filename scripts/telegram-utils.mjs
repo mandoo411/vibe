@@ -184,6 +184,14 @@ function truncateToTelegramLimit(text) {
   return cut + notice;
 }
 
+// 2026-09-27: 채널을 비공개로 바꾸면서 공개 주소(@totalmoney_ai)가 사라져 "chat not found"로 발송이 실패한다.
+// 채널 고유번호는 공개/비공개 전환에도 변하지 않으므로, 비밀값에 옛 주소가 들어 있어도 번호로 바꿔 보낸다.
+const CHANNEL_ID_BY_USERNAME = { "@mandoo411": "-1002980447079", "@totalmoney_ai": "-1002980447079" };
+export function resolveChannelId(raw) {
+  const s = String(raw || "").trim();
+  return CHANNEL_ID_BY_USERNAME[s.toLowerCase()] || s;
+}
+
 function isPublicPublishPaused() {
   try {
     const url = new URL("../config/public-publish-paused.json", import.meta.url);
@@ -204,7 +212,7 @@ export async function sendTelegramMessage(text, { parseMode = "Markdown", chatId
     console.log("[telegram] 공개 채널 발송 일시중지(config/public-publish-paused.json) — 건너뜀");
     return null;
   }
-  const chatId = chatIdOverride || requireEnv("TELEGRAM_CHANNEL_ID");
+  const chatId = chatIdOverride || resolveChannelId(requireEnv("TELEGRAM_CHANNEL_ID"));
   const safeText = truncateToTelegramLimit(String(text || ""));
   if (safeText.length !== String(text || "").length) {
     console.warn(

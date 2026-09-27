@@ -18,6 +18,7 @@ import path from "node:path";
 import process from "node:process";
 import Anthropic from "@anthropic-ai/sdk";
 import { isClaudeUnavailableError } from "./claude-utils.mjs";
+import { resolveChannelId } from "./telegram-utils.mjs";
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -290,7 +291,7 @@ async function readJsonIfExists(filePath) {
 async function main() {
   const token = requireEnv("TELEGRAM_TOKEN");
   const apiKey = requireEnv("ANTHROPIC_API_KEY");
-  const channelId = requireEnv("TELEGRAM_CHANNEL_ID");
+  const channelId = resolveChannelId(requireEnv("TELEGRAM_CHANNEL_ID"));
 
   const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
   const outputPath = path.resolve(process.env.OUTPUT_PATH || path.join("data", "weekly-schedule.json"));

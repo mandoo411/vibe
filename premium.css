@@ -424,3 +424,69 @@ html[lang] body.page-tm-v2 .hx-sched__row .home-mini-row__name small { opacity: 
   html[lang] body.page-home-v2 #hx-featured { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   html[lang] body.page-home-v2 #hx-featured .hx-feat + .hx-feat { margin-top: 0; }
 }
+
+/* ── 2026-09-28 시우: 모바일 상단 로고 키우기 + 전체 메뉴 계정 버튼 통일 ──────────────
+   로고 마크(28px)가 글자에 비해 작고, SVG 안쪽 여백 때문에 마크-글자 사이가 벌어져 보였다.
+   마크 34px·글자 22px, 간격은 6px로 줄인다(SVG 자체 여백이 약 4px라 눈에 보이는 간격은 ≈10px).
+   399px 이하 폭(아이폰 미니·SE 등)에서는 자리가 모자라 글자가 두 줄로 꺾였다 → 조금 작게 +
+   장식용 LIVE 표시를 숨겨 한 줄을 지킨다. */
+@media (max-width: 768px) {
+  html[lang] body .home-nav .home-nav__logo { gap: 6px !important; white-space: nowrap !important; }
+  html[lang] body .home-nav .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo-box svg { width: 34px !important; height: 34px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__brand-name,
+  html[lang] body.page-home-v2 .home-nav .home-nav__brand-name,
+  html[lang] body .home-nav .home-nav__brand-name { font-size: 22px !important; white-space: nowrap !important; }
+}
+@media (max-width: 399px) {
+  html[lang] body .home-nav .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo-box svg { width: 30px !important; height: 30px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__brand-name,
+  html[lang] body.page-home-v2 .home-nav .home-nav__brand-name,
+  html[lang] body .home-nav .home-nav__brand-name { font-size: 20px !important; }
+  html[lang] body .home-nav .home-nav__m-meta .home-nav__live { display: none !important; }
+}
+
+/* 전체 메뉴 시트: 마이페이지·로그아웃 버튼 — 크기·모양은 똑같이, 색으로만 구분.
+   마이페이지 = 브랜드 초록(채움), 로그아웃 = 회색 테두리(비움). 다크 테마 규칙이 로그아웃까지
+   초록으로 칠하던 것을 여기서 되돌린다. 두 버튼 사이 간격도 없어서 붙어 보였다. */
+html[lang] body #tm-nav-sheet-account-slot { display: inline-flex; align-items: center; gap: 8px; }
+html[lang] body .tm-nav-sheet .tm-nav-sheet__account-btn {
+  box-sizing: border-box !important;
+  height: 36px !important;
+  width: 112px !important;
+  padding: 0 10px !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  background: #059669 !important;
+  color: #fff !important;
+}
+html[lang] body .tm-nav-sheet .tm-nav-sheet__account-btn i { font-size: 16px !important; }
+html[lang] body .tm-nav-sheet .tm-nav-sheet__account-btn--logout {
+  background: transparent !important;
+  color: #4e525e !important;
+  border-color: rgba(0, 0, 0, 0.18) !important;
+  cursor: pointer;
+}
+html[lang][data-theme="dark"] body .tm-nav-sheet .tm-nav-sheet__account-btn:not(.tm-nav-sheet__account-btn--logout) {
+  background: #10b981 !important;
+  color: #04120c !important;
+}
+html[lang][data-theme="dark"] body .tm-nav-sheet .tm-nav-sheet__account-btn--logout {
+  background: transparent !important;
+  color: #c4c7ce !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+/* 닫기(X)도 같은 높이로 맞춘다 */
+html[lang] body .tm-nav-sheet .tm-nav-sheet__close { width: 36px !important; height: 36px !important; border-radius: 10px !important; }
+@media (max-width: 399px) {
+  html[lang] body .tm-nav-sheet .tm-nav-sheet__account-btn { width: 98px !important; padding: 0 6px !important; gap: 5px !important; }
+}

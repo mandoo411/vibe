@@ -1047,6 +1047,14 @@
     const afterClose = !phase.open && phase.label !== "장 시작 전";
     let line = "";
     let label = "";
+    // 2026-09-27: 주말·휴장일에 지난 브리핑을 "오늘의 오전 브리핑"으로 부르던 문제 — 발행일로 판단
+    const briefLabel = () => {
+      const u = HX.brief && HX.brief.updatedAt ? new Date(HX.brief.updatedAt) : null;
+      if (!u || isNaN(u)) return "오전 브리핑";
+      const ymd = new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Seoul" }).format(u);
+      if (ymd === p.ymd) return "오늘의 오전 브리핑";
+      return `${Number(ymd.split("-")[1])}월 ${Number(ymd.split("-")[2])}일 오전 브리핑`;
+    };
     const closeLabel = () => {
       if (!HX.closeYmd || !/^\d{4}-\d{2}-\d{2}$/.test(HX.closeYmd)) return "마감시황";
       if (HX.closeYmd === p.ymd) return "오늘의 마감시황";
@@ -1057,7 +1065,7 @@
       label = closeLabel();
     } else if (briefLead) {
       line = briefLead;
-      label = "오늘의 오전 브리핑";
+      label = briefLabel();
     } else if (closeLead) {
       line = closeLead;
       label = closeLabel();

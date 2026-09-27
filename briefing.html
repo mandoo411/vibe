@@ -1868,7 +1868,7 @@
                 <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
               </div>
               <div class="bf-date-picker__grid" id="bf-cal-grid" role="grid" aria-label="브리핑 날짜"></div>
-              <button type="button" class="bf-date-picker__today" id="bf-cal-today-btn" hidden>오늘 브리핑으로 이동</button>
+              <button type="button" class="bf-date-picker__today" id="bf-cal-today-btn" hidden>최신 브리핑으로 이동</button>
             </div>
           </div>
           <button type="button" class="bf-day-nav-btn" id="bf-day-next" aria-label="다음 브리핑">
@@ -2731,7 +2731,7 @@
 
       // ---- 브리핑 날짜 캘린더(과거 브리핑 조회) ----
       const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
-      const bf = { index: [], todayYmd: null, selectedYmd: null, calMonthYmd: null, open: false };
+      const bf = { index: [], todayYmd: null, liveToday: true, selectedYmd: null, calMonthYmd: null, open: false };
 
       function seoulYmdNow() {
         return new Intl.DateTimeFormat("sv-SE", {
@@ -2968,7 +2968,7 @@
         const badge = $("bf-archive-badge");
         if (ymd === bf.todayYmd) {
           if (badge) badge.hidden = true;
-          await loadBriefing();
+          await loadLatest();
         } else {
           if (badge) badge.hidden = false;
           await loadArchiveDate(ymd);
@@ -3031,16 +3031,32 @@
         else if (typeof mq.addListener === "function") mq.addListener(handler);
       })();
 
+      // 2026-09-27: 주말·휴장일에 지난 브리핑(9/25)이 "오늘(9/27) 장전 브리핑"으로 표시되던 문제.
+      // 기준일을 달력상 오늘이 아니라 "발행된 가장 최근 브리핑 날짜"로 잡는다.
+      // 오늘자가 아직 발행 전이면 가장 최근 발행분을 그 날짜 그대로(아카이브 파일로) 보여준다.
+      async function loadLatest() {
+        if (bf.liveToday) return loadBriefing();
+        await loadArchiveDate(bf.todayYmd);
+        const el = $("bfx-deck");
+        if (el && !el.querySelector(".bfx-block")) await loadBriefing();
+      }
+
       async function initBriefingPage() {
-        bf.todayYmd = seoulYmdNow();
+        const nowYmd = seoulYmdNow();
+        bf.todayYmd = nowYmd;
         bindDatePickerEvents();
         await loadBfIndex();
+        const published = bf.index.filter((d) => d <= nowYmd);
+        if (published.length && !published.includes(nowYmd)) {
+          bf.todayYmd = published[published.length - 1];
+          bf.liveToday = false;
+        }
         const hash = (location.hash || "").replace("#", "");
         const initial = YMD_RE.test(hash) && isBfSelectable(hash) ? hash : bf.todayYmd;
         bf.selectedYmd = initial;
         renderDateBadge(initial);
         if (initial === bf.todayYmd) {
-          await loadBriefing();
+          await loadLatest();
         } else {
           const badge = $("bf-archive-badge");
           if (badge) badge.hidden = false;

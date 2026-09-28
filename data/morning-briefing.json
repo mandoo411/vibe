@@ -1,114 +1,114 @@
 {
-  "updatedAt": "2026-09-28T06:00:00+09:00",
+  "updatedAt": "2026-09-29T06:00:00+09:00",
   "usMarket": {
     "indices": [
       {
         "id": "nasdaq",
         "name": "나스닥",
         "symbol": "^NDX",
-        "close": 30608.14,
-        "previousClose": 30478.86,
-        "changePct": 0.42,
-        "changePoints": 129.28
+        "close": 30276.81,
+        "previousClose": 30608.13,
+        "changePct": -1.08,
+        "changePoints": -331.32
       },
       {
         "id": "sp500",
         "name": "S&P 500",
         "symbol": "^GSPC",
-        "close": 7743.41,
-        "previousClose": 7704.13,
-        "changePct": 0.51,
-        "changePoints": 39.28
+        "close": 7683.69,
+        "previousClose": 7743.41,
+        "changePct": -0.77,
+        "changePoints": -59.72
       },
       {
         "id": "dow",
         "name": "다우지수",
         "symbol": "^DJI",
-        "close": 51828.62,
-        "previousClose": 51349.98,
-        "changePct": 0.93,
-        "changePoints": 478.64
+        "close": 51481.51,
+        "previousClose": 51828.62,
+        "changePct": -0.67,
+        "changePoints": -347.11
       },
       {
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 30790.5,
+        "close": 30600.75,
         "previousClose": 30889.25,
-        "changePct": -0.32,
-        "changePoints": -98.75
+        "changePct": -0.93,
+        "changePoints": -288.5
       },
       {
         "id": "korea-etf",
         "name": "한국 ETF(EWY)",
         "symbol": "EWY",
-        "close": 187.18,
-        "previousClose": 182.53,
-        "changePct": 2.55,
-        "changePoints": 4.65
+        "close": 183.58,
+        "previousClose": 187.18,
+        "changePct": -1.92,
+        "changePoints": -3.6
       }
     ]
   },
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 341.07,
-      "changePct": 1.53,
-      "changePoints": 5.15
+      "price": 338.7,
+      "changePct": -0.69,
+      "changePoints": 2.37
     },
     {
       "symbol": "MSFT",
-      "price": 516.17,
-      "changePct": 3.66,
-      "changePoints": 18.24
+      "price": 509.36,
+      "changePct": -1.32,
+      "changePoints": 6.81
     },
     {
       "symbol": "NVDA",
-      "price": 225.07,
-      "changePct": 0.22,
-      "changePoints": 0.49
+      "price": 229.34,
+      "changePct": 1.9,
+      "changePoints": 4.27
     },
     {
       "symbol": "AMZN",
-      "price": 249.67,
-      "changePct": 0.12,
-      "changePoints": 0.29
+      "price": 246.4,
+      "changePct": -1.31,
+      "changePoints": 3.27
     },
     {
       "symbol": "META",
-      "price": 751.66,
-      "changePct": -3.33,
-      "changePoints": 25.93
+      "price": 718.5,
+      "changePct": -4.41,
+      "changePoints": 33.16
     },
     {
       "symbol": "TSLA",
-      "price": 372.11,
-      "changePct": -1.54,
-      "changePoints": 5.83
+      "price": 358.32,
+      "changePct": -3.71,
+      "changePoints": 13.79
     },
     {
       "symbol": "GOOGL",
-      "price": 343.92,
-      "changePct": 0.46,
-      "changePoints": 1.56
+      "price": 342.45,
+      "changePct": -0.43,
+      "changePoints": 1.47
     },
     {
       "symbol": "AMD",
-      "price": 630.63,
-      "changePct": 0.22,
-      "changePoints": 1.37
+      "price": 611.35,
+      "changePct": -3.06,
+      "changePoints": 19.28
     },
     {
       "symbol": "PLTR",
-      "price": 189.67,
-      "changePct": -1.52,
-      "changePoints": 2.92
+      "price": 187.95,
+      "changePct": -0.91,
+      "changePoints": 1.72
     },
     {
       "symbol": "COIN",
-      "price": 195.11,
-      "changePct": -2.06,
-      "changePoints": 4.1
+      "price": 192.3,
+      "changePct": -1.44,
+      "changePoints": 2.81
     }
   ],
   "sectors": [
@@ -116,122 +116,122 @@
       "symbol": "XLK",
       "sector": "기술",
       "name": "기술 (XLK)",
-      "price": 196.27,
-      "changePct": 0.8
+      "price": 194.53,
+      "changePct": -0.89
     },
     {
       "symbol": "XLF",
       "sector": "금융",
       "name": "금융 (XLF)",
-      "price": 54.84,
-      "changePct": 0.57
+      "price": 54.19,
+      "changePct": -1.19
     },
     {
       "symbol": "XLE",
       "sector": "에너지",
       "name": "에너지 (XLE)",
-      "price": 62.04,
-      "changePct": -0.89
+      "price": 62.1,
+      "changePct": 0.1
     },
     {
       "symbol": "XLV",
       "sector": "헬스케어",
       "name": "헬스케어 (XLV)",
-      "price": 170.7,
-      "changePct": 0.49
+      "price": 171.26,
+      "changePct": 0.33
     },
     {
       "symbol": "XLI",
       "sector": "산업",
       "name": "산업 (XLI)",
-      "price": 170.43,
-      "changePct": 0.95
+      "price": 168.78,
+      "changePct": -0.97
     },
     {
       "symbol": "XLY",
       "sector": "소비재",
       "name": "소비재 (XLY)",
-      "price": 110.56,
-      "changePct": 0.22
+      "price": 109,
+      "changePct": -1.41
     },
     {
       "symbol": "XLP",
       "sector": "필수소비",
       "name": "필수소비 (XLP)",
-      "price": 82.06,
-      "changePct": 0.44
+      "price": 82.28,
+      "changePct": 0.27
     },
     {
       "symbol": "XLU",
       "sector": "유틸리티",
       "name": "유틸리티 (XLU)",
-      "price": 39.51,
-      "changePct": 0.38
+      "price": 39.25,
+      "changePct": -0.66
     },
     {
       "symbol": "XLB",
       "sector": "소재",
       "name": "소재 (XLB)",
-      "price": 49.8,
-      "changePct": 0.24
+      "price": 49.47,
+      "changePct": -0.66
     },
     {
       "symbol": "XLRE",
       "sector": "부동산",
       "name": "부동산 (XLRE)",
-      "price": 41.56,
-      "changePct": -0.22
+      "price": 41.35,
+      "changePct": -0.51
     }
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1357.05,
-      "USD/JPY": 157.45,
-      "USD/CNY": 6.73,
+      "USD/KRW": 1356.04,
+      "USD/JPY": 157.49,
+      "USD/CNY": 6.72,
       "EUR/USD": 1.14
     },
     "base": "USD",
-    "updatedAt": "Sun, 27 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Mon, 28 Sep 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 93.52,
-        "changePct": 1.2,
-        "changePoints": 1.11
+        "price": 93.34,
+        "changePct": 1.01,
+        "changePoints": 0.93
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4293.8,
-        "changePct": -0.63,
-        "changePoints": -27.4
+        "price": 4154.1,
+        "changePct": -3.87,
+        "changePoints": -167.1
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 64.15,
-        "changePct": -0.16,
-        "changePoints": -0.1
+        "price": 61.13,
+        "changePct": -4.86,
+        "changePoints": -3.12
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.74,
-        "changePct": 0.6,
-        "changePoints": 0.04
+        "price": 6.62,
+        "changePct": -1.19,
+        "changePoints": -0.08
       },
       {
         "id": "sox",
         "name": "필라델피아반도체",
         "symbol": "^SOX",
-        "price": 12668.93,
-        "changePct": 1.41,
-        "changePoints": 176.39
+        "price": 12465.24,
+        "changePct": -1.61,
+        "changePoints": -203.69
       }
     ]
   },
@@ -240,420 +240,194 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 84246,
-        "changePct24h": -0.07,
-        "marketCapUsd": 1692564878148.45
+        "priceUsd": 83499,
+        "changePct24h": -0.8,
+        "marketCapUsd": 1677538739576.06
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2678.82,
-        "changePct24h": -0.46,
-        "marketCapUsd": 327004223212.43
+        "priceUsd": 2689.59,
+        "changePct24h": 0.54,
+        "marketCapUsd": 328364686619.23
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 121.64,
-        "changePct24h": 0.18,
-        "marketCapUsd": 71502234146.74
+        "priceUsd": 118.68,
+        "changePct24h": -2.29,
+        "marketCapUsd": 69764466049.86
       }
     ]
   },
   "news": [
     {
-      "title": "“부장님이 웬일로 법카를 주네요”…반도체 호황에 기업 결제액 사상 최대",
-      "url": "https://www.mk.co.kr/news/economy/12162185",
+      "title": "또 국채금리 쇼크...힘못쓴 기술주, 美 증시 급락 [월가월부]",
+      "url": "https://www.mk.co.kr/news/economy/12163292",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T20:57:12.000Z",
-      "summary": "법인 신용카드 이용액 분석 2분기 10% 늘며 60조 첫 돌파 실적개선에 기업 지갑 열려K반도체발 경기 호황에 법인 신용카드 이용 금액이 사상 최대치를 기록한 것으로 나타났다. 반.."
+      "publishedAt": "2026-09-28T20:36:03.000Z",
+      "summary": "10년물 5.2%, 30년물 5.5% 상회 국채 투매에 20여년만에 최고치 엔비디아 자사주 매입에 반등국제유가 변동성에 따른 인플레이션 우려 확산으로 미 국채금리가 연일 급등하.."
     },
     {
-      "title": "K증시에 지친 투자자들 … 대피처로 꼽히는 이곳은?",
-      "url": "https://www.mk.co.kr/news/stock/12162043",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T19:30:00.000Z",
-      "summary": "MMF·고배당·커버드콜로 머니무브미국의 재정적자 확대와 AI(인공지능) 수익성 우려 등으로 최근 글롭러 금리가 5%대까지 올라갔습니다. 금리 불안으로 올 상반기까지 치솟았던 국내외.."
-    },
-    {
-      "title": "AI 투자에 쏟아지는 회사채…美 국채 장기금리 새 변수로[주末머니]",
-      "url": "https://view.asiae.co.kr/article/2026091808582773566",
-      "source": "아시아경제 증권",
-      "publishedAt": "2026-09-27T10:32:00.000Z",
-      "summary": "인공지능(AI) 투자 열풍이 미국 장기채 시장에도 새로운 변수가 되고 있다. 데이터센터 건설 등에 필요한 자금을 마련하려는 빅테크들이 만기가 긴 회사채를 대거 발행하면서다. 재정적자를 메우기 위한 미국 정부의 국채 발행에 민간의 자금 조달까지 겹치면서 장기금리에 상승 압력을 더할 수 있다는 분석이 나온다. 이영주 하나증권 연구원은 국채에서 민간으로 확산하는 채권 장기물 공급이 늘어나는 점을 주목했다. 이미 주요 빅테크·AI 관련 기업의 회사채 발행액은 2023~2024년 연평균 약 530억달러에서 지난해 1580억달러로 늘었다. 올"
-    },
-    {
-      "title": "금연·걷기 등 건강 챙기면 보험료 할인·우대금리 제공",
-      "url": "https://www.mk.co.kr/news/economy/12162007",
+      "title": "미국채 금리발작은 인과응보 … 그래도 증시 낙관론 외치는 이유",
+      "url": "https://www.mk.co.kr/news/society/12162878",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T07:50:02.000Z",
-      "summary": "NH농협금융지주가 정부의 예방 중심 건강정책 기조에 발맞춰 '건강증진형 상품' 5종 세트를 선보였다. 27일 금융권에 따르면 농협금융은 올해 들어 주요 계열사가 동참해 금연·걷기·.."
+      "publishedAt": "2026-09-28T20:00:00.000Z",
+      "summary": "스티브 잉글랜더 스탠다드차타드 북미 거시전략 헤드 인터뷰전 세계적인 인플레이션 확산 속에 미 연방준비제도(Fed)가 3년 2개월 만에 기준금리를 인상했다. 트럼프 대통령이 발탁한 .."
     },
     {
-      "title": "[표] 외국환율고시표",
-      "url": "https://www.mk.co.kr/news/economy/12162005",
+      "title": "“미국이 예전 같지 않다” … 美 국채금리 5% 돌파가 보내는 섬뜩한 신호",
+      "url": "https://www.mk.co.kr/news/economy/12162927",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T07:50:01.000Z",
-      "summary": ""
+      "publishedAt": "2026-09-28T20:00:00.000Z",
+      "summary": "미국 고금리 시대 개막의 의미미국 국채금리가 잇달아 연 5%를 넘고 있다. 미국채 30년물은 지난 7월 5%를 넘어 현재 5.5%까지 올랐다. 장기 기준금리 역할을 하는 10년물 .."
     },
     {
-      "title": "반도체 호황에 … 법인카드 사용액 역대 최대",
-      "url": "https://www.mk.co.kr/news/economy/12162006",
+      "title": "“美금리가 중국보다 3%P 높은데 왜?” … 거꾸로 치솟는 위안화의 비밀",
+      "url": "https://www.mk.co.kr/news/world/12162877",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T19:30:00.000Z",
+      "summary": "위안화 강세 이유최근 중국 위안화 강세가 뚜렷해지고 있다. 2025년초 달러당 7.3수준이던 위안화는 최근 6.7위안 안팎까지 내려왔다. 달러당 위안화 환율의 하락은 위안화 가치의.."
+    },
+    {
+      "title": "이 기업이 24년간 밀어줬다고 메달이 무려 10개…아시안게임서 빛난 펜싱",
+      "url": "https://www.mk.co.kr/news/it/12163217",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T13:55:45.000Z",
+      "summary": "펜싱에 360억 쏟아부은 SK텔레콤 AI로 전력 분석해 훈련·작전 지원2026 아이치·나고야 아시안게임에서 세계인의 이목을 끌었던 경기는 단연 펜싱이었다. 특히 한국 펜싱 대표팀은.."
+    },
+    {
+      "title": "카카오, CA협의체 공동의장 체제로…김도영 카카오X 대표 내정자 선임",
+      "url": "https://www.mk.co.kr/news/business/12163110",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T11:37:07.000Z",
+      "summary": "카카오가 김도영 카카오X 대표이사 내정자를 그룹의 컨트롤타워인 CA협의체 공동의장으로 선임했다. 김 내정자는 정신아 카카오 대표이사와 주요 의사결정을 함께하며 기업 분할 준비와 내.."
+    },
+    {
+      "title": "[단독] 서민금융 받고 또 빚…‘대출 4건 이상’ 차주 1년여 만에 2배 급증",
+      "url": "https://www.mk.co.kr/news/economy/12163012",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T07:50:01.000Z",
-      "summary": "K반도체발 경기 호황에 법인 신용카드 이용 금액이 사상 최대치를 기록한 것으로 나타났다. 반도체 기업의 실적이 가파르게 개선되면서 영업 활동을 위한 중간 소비 지출이 늘어난 영향으.."
+      "publishedAt": "2026-09-28T09:06:05.000Z",
+      "summary": "추가대출 4건 이상 2.9만명 햇살론유스 절반 넘게 또 빚저소득·저신용자의 자금난을 덜기 위해 정책서민금융을 공급하고 있지만, 지원을 받은 뒤에도 추가로 여러 건의 대출을 보유하는.."
     },
     {
-      "title": "[단독] “평생 농사 접으라면서 월 31만원 준다니”…고령농 은퇴정책의 현실",
-      "url": "https://www.mk.co.kr/news/economy/12162184",
+      "title": "\"국민연금에 반도체 초과세수 활용을 … 초기 투입땐 복리효과 극대화\"",
+      "url": "https://www.mk.co.kr/news/economy/12162976",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T20:48:21.000Z",
-      "summary": "힘 못쓰는 고령농 은퇴지원 직불금으로 생계 유지도 못해 농지연금은 예산 소진돼 대기 고령농 은퇴 이끌 유인책 부족 청년농 육성 사실상 중단 상태 전문가 “국가농업 존폐의 문제 노후.."
+      "publishedAt": "2026-09-28T08:46:58.000Z",
+      "summary": "올해 50조원이 넘을 것으로 예상되는 반도체 초과세수를 국민연금과 기초연금 재정 지원에 활용해야 한다는 제안이 나왔다. 사전에 국고를 투입해 수익을 늘린다면 기금 고갈 없이 미래 .."
     },
     {
-      "title": "“지방 의대 문 넓어졌다” … 의치한약수 지역인재 모집 5년 새 2배",
-      "url": "https://www.mk.co.kr/news/society/12161937",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T20:30:00.000Z",
-      "summary": "지방인재 지방 의치대 수시 쏠림 심화 의미지방권 의대와 치대, 한의대, 약대, 수의대(의치한약수)에서는 지역에서 중고등학교를 졸업한 학생들만 수시, 정시에서 특별 선발하는 전형을 .."
-    },
-    {
-      "title": "“리테일만 고집할 필요 없다” … 상가를 호텔·임대주택으로 바꾸는 이유 [리테일 상권 대모 2편]",
-      "url": "https://www.mk.co.kr/news/realestate/12161935",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T19:00:00.000Z",
-      "summary": "신지혜 STS개발 상무의 리테일 상권 전망‘리테일 상권 대모’ 상권 투자·개발에 관여하는 부동산 개발사와 건설사, 금융투자자, 유통업계 관계자들이 중요한 결정을 할때마다 만나서 확.."
-    },
-    {
-      "title": "청와대, 우크라 북한 포로 국내송환 공개 해명·사과 요구",
-      "url": "https://www.mk.co.kr/news/politics/12162171",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T15:09:26.000Z",
-      "summary": "성기홍 청와대 홍보 수석 입장문 발표청와대가 우크라이나 정부의 북한군 전쟁 포로 국내 송환 공개와 관련해 강력한 유감을 표시하며 공식적인 해명과 사과를 요구했다. 27일 성기홍 청.."
-    },
-    {
-      "title": "[속보] 靑 “우크라 ‘포로송환 비공개 합의 없었다’는 허위공보…강력유감”",
-      "url": "https://www.mk.co.kr/news/politics/12162168",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T14:31:55.000Z",
-      "summary": ""
-    },
-    {
-      "title": "트럼프, 정부 비판한 CNN에 “내 비행기 타지마”…전용기 탑승서 배제",
-      "url": "https://www.mk.co.kr/news/world/12162167",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T14:14:27.000Z",
-      "summary": "도널드 트럼프 미국 대통령이 CNN 등 자신에게 비판적인 언론사들의 백악관 출입을 금지했다가 법원의 제동이 걸린 가운데 CNN을 대통령 전용기인 에어포스원 취재에서도 또다시 배제했.."
-    },
-    {
-      "title": "구독자 1240만명 유튜버의 묵직한 비법…“1만개 올리면 하나는 터지죠”",
-      "url": "https://www.mk.co.kr/news/it/12162166",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T14:13:55.000Z",
-      "summary": "8살에 시작해 1240만명 구독자 모았다…‘제니 호요스’ 단독 인터뷰유튜브가 인공지능(AI)으로 창작의 문턱을 낮추겠다고 선언한 날, 긴 무명 시절을 꾸준함으로 버텨낸 한 크리에이.."
-    },
-    {
-      "title": "李와 12월 골프약속한 트럼프 와일스에 \"스케줄 잡아보라\"",
-      "url": "https://www.mk.co.kr/news/politics/12162156",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T14:00:00.000Z",
-      "summary": "이재명 대통령이 5박7일간의 미국·멕시코 순방을 마치고 27일 귀국했다. 도널드 트럼프 미국 대통령을 만나서는 안보 협상 물꼬를 텄으며 멕시코와는 투자보장협정 개정에 뜻을 모았다..."
-    },
-    {
-      "title": "70대 이상 농가 40% 달하는데…‘고령화 농지’ 매년 0.08%만 세대교체",
-      "url": "https://www.mk.co.kr/news/economy/12162163",
+      "title": "금융권 첫 5G 특화망 스마트오피스…SKT·하나금융·삼성전자 맞손",
+      "url": "https://www.mk.co.kr/news/economy/12162916",
       "source": "매일경제 증권",
-      "publishedAt": "2026-09-27T13:56:16.000Z",
-      "summary": "농지이양 은퇴직불제로 1197㏊ 이양 전체 농지 150만㏊와 비교하면 미미 39세 이하 농가인구는 10년 새 반토막 80세 이상 농가인구도 14.3%로 껑충정부가 사상 처음 농지 .."
+      "publishedAt": "2026-09-28T08:35:24.000Z",
+      "summary": "청라 헤드쿼터 16개층에 특화망 적용 10개 관계사·임직원 3000여명 대상 전용 주파수 활용해 외부망과 분리 노트북·태블릿으로 사내망 접속 가능SK텔레콤과 하나금융그룹, 삼성전자.."
     },
     {
-      "title": "“가을옷 미리 준비하세요”…롯데온, 패션상품 최대 93% 할인",
-      "url": "https://www.mk.co.kr/news/business/12162162",
+      "title": "“아빠 속도 좀 줄여요” … 안전사고 책 읽고 일어난 변화",
+      "url": "https://www.mk.co.kr/news/culture/12162851",
       "source": "매일경제",
-      "publishedAt": "2026-09-27T13:54:36.000Z",
-      "summary": "롯데쇼핑의 e커머스 플랫폼 롯데온이 가을 패션 수요 잡기에 나선다. 롯데온은 오는 28일부터 다음달 11일까지 ‘9월 패세라’를 열고 가을 신상품과 간절기 아우터, 가을·겨울(FW.."
+      "publishedAt": "2026-09-28T20:30:00.000Z",
+      "summary": "⑫ ‘교통안전’을 주제로 한 독후활동아이들이 학교에 들어갈 때쯤 되면 엄마 옆에 딱 붙어 있던 아이들도 제법 행동반경이 넓어진다. 그럴 때 가장 걱정되는 것이 안전사고다. 놀이터에.."
     },
     {
-      "title": "이재명 대통령 “댓글·좋아요도 개혁 위한 실천…국민 참여 필요”",
-      "url": "https://www.mk.co.kr/news/politics/12162161",
+      "title": "“편집 못해도 유튜버 됩니다, 찐팬 1000명만 모으세요” … 유튜브 ‘AI 대변신’",
+      "url": "https://www.mk.co.kr/news/it/12162838",
       "source": "매일경제",
-      "publishedAt": "2026-09-27T13:50:45.000Z",
-      "summary": "이재명 대통령은 27일 “반칙과 특권 없는 사람 사는 세상, 억강부약하는 대동 세상은 그것을 진심으로 원하는 사람들이 행동하고 실천할 때 비로소 가능하다”고 강조했다. 이 대통령은.."
+      "publishedAt": "2026-09-28T19:00:00.000Z",
+      "summary": "‘Made On YouTube’ 뉴욕 현장 1편지난 23일(현지시간) 미국 뉴욕 피어57에서 열린 유튜브의 연례 행사 ‘메이드 온 유튜브 2026’ 현장에 매경플러스 기자가 직접 .."
     },
     {
-      "title": "“흔한 집 자랑과는 다르네”...동두천 구옥서 자취생활 보여준 김민",
-      "url": "https://www.mk.co.kr/news/culture/12162157",
-      "source": "매일경제",
-      "publishedAt": "2026-09-27T13:34:43.000Z",
-      "summary": "배우 김민이 동두천 구옥에서 생활하는 일상을 공개한다. 지난 25일 방송된 MBC 예능 프로그램 ‘나 혼자 산다’ 말미에는 다음 주 방송에 등장하는 김민의 일상이 담긴 예고편이 공.."
+      "title": "北 김선경 “핵보유국 되돌릴 수없어”...비핵화 협상 일축",
+      "url": "https://www.mk.co.kr/news/economy/12163252",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-09-28T17:32:19.000Z",
+      "summary": "김선경 외무성 부상 유엔 연설 작년에 이어 핵보유국 강조김선경 북한 외무성 부상이 28일(현지시간) 유엔 연설에서 “북한이 보유한 핵억제력은 외부 침략으로부터 주권과 안전, 평화.."
     },
     {
-      "title": "“가성비는 무조건 2만원 밑으로”…쌀쌀한 4분기, 만원대 편의점 와인 몰려온다",
-      "url": "https://www.mk.co.kr/news/business/12162153",
+      "title": "국힘 \"한심한 늑장 발표\"… \"장병 희생은 뒷전\" 軍 비판",
+      "url": "https://www.mk.co.kr/news/politics/12163229",
       "source": "매일경제",
-      "publishedAt": "2026-09-27T13:23:22.000Z",
-      "summary": "편의점 잇따라 신상품 선보여 GS25 1.6만원 상품으로 승부 CU는 신제품 3천원 할인행사날씨가 차가워질수록 와인 판매가 늘어나는 추세를 보이면서 편의점들이 1만원대 가성비 와인.."
+      "publishedAt": "2026-09-28T14:30:01.000Z",
+      "summary": "국민의힘이 28일 합동참모본부가 비무장지대(DMZ) 지뢰 폭발 사고 발생 일주일 만에 폭발물을 '북한 지뢰로 추정한다'고 밝힌 데 대해 \"한심한 늑장 대응\"이라고 비판했다. 박성훈.."
     },
     {
-      "title": "“흉기들고 카페 문 쾅쾅쾅”...한강공원서 행인들 위협한 40대 검거",
-      "url": "https://www.mk.co.kr/news/society/12162148",
+      "title": "이 대통령 “SNS 인용한다고 작성자 모든 과거 주장 동조 아냐”",
+      "url": "https://www.mk.co.kr/news/politics/12163211",
       "source": "매일경제",
-      "publishedAt": "2026-09-27T12:53:38.000Z",
-      "summary": "추석 연휴 마지막 날인 27일 서울 양화한강공원 인근에서 흉기를 들고 행인들을 위협한 40대 남성이 경찰에 붙잡혔다. 당시 공원에 있던 시민들은 인근 카페로 몸을 피했고, 남성은 .."
+      "publishedAt": "2026-09-28T13:28:01.000Z",
+      "summary": "이재명 대통령이 사회관계망서비스(SNS)에서 타인의 글을 인용하는 것에 대해 “작성자의 모든 주장에 동조하거나 모든 행적과 발언에 동의하는 게 아니다”라는 글을 남겼다. 이 대통령.."
+    },
+    {
+      "title": "‘경찰의 별’ 경무관도 고향 못간다…48명에 향피제 적용 전보인사",
+      "url": "https://www.mk.co.kr/news/society/12163203",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T13:11:57.000Z",
+      "summary": "연고지 배제원칙 전면 적용경찰이 경무관 48명에 대한 전보 인사를 28일 단행했다. 군인으로 치면 장군급에 해당해 ‘경찰의 별’이라 불리는 경무관은 치안총감·치안정감·치안감에 이은.."
+    },
+    {
+      "title": "“치료해도 회복 어렵다면 중단 검토”…日, 생명유지치료 새 지침",
+      "url": "https://www.mk.co.kr/news/world/12163187",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T12:57:43.000Z",
+      "summary": "2014년 이후 12년 만에 지침 개정일본에서 응급 이송된 중증 환자를 치료하더라도 회복 가능성이 낮다고 판단될 경우 환자의 평소 의사 등을 토대로 생명유지치료 중단을 검토할 수 .."
+    },
+    {
+      "title": "[속보] 손흥민, A매치 한국인 최다 58호골…차범근과 어깨 나란히",
+      "url": "https://www.mk.co.kr/news/society/12163175",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T12:48:23.000Z",
+      "summary": "손흥민(34·LAFC)이 A매치 58호 골을 터뜨렸다. 28일 손흥민은 서울 마포구 서울월드컵경기장에서 열린 우루과이와의 축구 국가대표팀 친선경기에서 0-4로 끌려가던 후반 35분.."
+    },
+    {
+      "title": "대통령 호언장담한 이 무역협정…가입만 하면 8조원 경제효과라는데",
+      "url": "https://www.mk.co.kr/news/economy/12163145",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-09-28T12:15:35.000Z",
+      "summary": "정부, 경제효과 잠정치 분석 향후 10년 GDP 0.38%P 상승 농림수산업은 年 8천억 타격 12개국 참여…세계 GDP 14% 美교두보 멕시코와 FTA효과 中 먼저 가입땐 조건 .."
+    },
+    {
+      "title": "“수습만 말고 예방도 잘하자” 이 여성 한마디에…통신사 사장들 집합",
+      "url": "https://www.mk.co.kr/news/business/12163136",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T12:08:16.000Z",
+      "summary": "SKT “정보보호 7000억 투자” KT “IT 인프라 2.2조 투입” LGU+ “개인정보 보호는 책임경영” 통신3사 CEO 보안 강화 한목소리송경희 개인정보보호위원회 위원장이 이.."
+    },
+    {
+      "title": "“‘하마스 공격 온다’ 이집트가 세 번 경고했다”…마지막엔 네타냐후에 직접 전화",
+      "url": "https://www.mk.co.kr/news/world/12163125",
+      "source": "매일경제",
+      "publishedAt": "2026-09-28T12:01:54.000Z",
+      "summary": "WSJ “2023년 6월·9월·10월 세 차례 경고” 정보수장 직접 이스라엘 찾아가고 전화까지 네타냐후 측 “그런 통화 없었다” 부인팔레스타인 무장 정파 하마스가 2023년 10월.."
     }
   ],
   "aiAnalysis": {
-    "keyIssues": [
-      "다우 +0.93%·S&P500 +0.51%·나스닥100 +0.42% 상승 마감, 마이크로소프트 +3.66% 강세가 지수 견인",
-      "필라델피아반도체지수(SOX) +1.41%, 한국 ETF(EWY) +2.55% 급등 — HBM 메모리 슈퍼사이클 기대 지속",
-      "메타 -3.33% 급락, 나스닥 선물은 야간 -0.32% 되돌림 — 단기 과열 부담 신호",
-      "WTI +1.2%(93.52달러) 상승 속 금은 -0.63% 하락, 안전자산 선호 다소 약화",
-      "빅테크 AI 투자 자금조달용 회사채 발행 급증, 미 장기금리 상단 압박 변수로 부상"
-    ],
-    "domesticImpact": "미국 3대 지수가 동반 상승하고 필라델피아반도체지수와 한국 관련 ETF(EWY)가 나란히 강세를 보이면서 오늘 코스피·코스닥도 반도체·HBM 관련주 중심의 상승 출발이 예상된다. 다만 나스닥 선물이 야간장에서 소폭 밀리고 메타가 급락한 점은 차익실현 경계 심리를 자극할 수 있어 개장 초반 변동성에 유의할 필요가 있다. 원/달러 환율은 1,357원대로 저항선 부근에서 등락하고 있어 외국인 수급 방향을 가늠하는 변수가 될 전망이다.",
-    "watchSectors": [
-      "반도체/HBM",
-      "AI인프라·데이터센터",
-      "금융",
-      "산업재",
-      "에너지(약세 반전 주의)"
-    ],
+    "keyIssues": [],
+    "domesticImpact": "",
+    "watchSectors": [],
     "marketComments": {},
-    "summary": "지난 금요일 뉴욕증시는 다우가 478포인트(+0.93%) 오르며 3대 지수가 모두 상승 마감했고, 마이크로소프트가 실적 기대감에 3%대 강세를 보이며 지수를 이끌었다. 필라델피아반도체지수(SOX)가 1.41% 오르고 한국물 ETF(EWY)가 2.55% 급등하는 등 HBM·메모리 수요 확대 기대가 이어지는 모습이다. 다만 메타가 3%대 급락했고 나스닥 선물이 야간 -0.32% 되돌림을 보이는 등 일부 과열 부담도 감지된다. 국제유가는 배럴당 93달러 선까지 오른 반면 금은 하락 전환해 안전자산 선호가 다소 완화된 흐름이다. 오늘 코스피는 반도체 강세 모멘텀을 이어받아 상승 출발할 가능성이 높지만, 선물 되돌림과 환율 부담을 감안한 눌림목 매수 전략이 유효해 보인다.",
-    "globalMarketTable": [
-      {
-        "label": "나스닥100",
-        "level": "30,608.14 (+0.42%)",
-        "comment": "마이크로소프트 강세가 지수 상승 견인"
-      },
-      {
-        "label": "S&P500",
-        "level": "7,743.41 (+0.51%)",
-        "comment": "산업재·금융 업종 고른 강세"
-      },
-      {
-        "label": "다우존스",
-        "level": "51,828.62 (+0.93%)",
-        "comment": "경기민감주 중심 최대 상승폭"
-      },
-      {
-        "label": "나스닥 선물",
-        "level": "30,790.50 (-0.32%)",
-        "comment": "야간장 소폭 되돌림, 개장 전 눈치보기 장세"
-      },
-      {
-        "label": "필라델피아반도체(SOX)",
-        "level": "12,668.93 (+1.41%)",
-        "comment": "HBM·메모리 수요 기대 지속 반영"
-      },
-      {
-        "label": "한국 ETF(EWY)",
-        "level": "187.18달러 (+2.55%)",
-        "comment": "외국인의 한국 반도체 밸류업 기대 반영"
-      }
-    ],
-    "usMarketPositives": [
-      "다우 +0.93%, 3대 지수 동반 상승 마감",
-      "마이크로소프트 +3.66% 급등, 대형 기술주 실적 기대 반영",
-      "필라델피아반도체지수 +1.41%, AI·메모리 수요 기대 지속",
-      "WTI +1.2% 상승, 경기 회복 기대 반영"
-    ],
-    "usMarketNegatives": [
-      "메타 -3.33% 급락, 빅테크 내 종목별 온도차 확대",
-      "나스닥 선물 야간 -0.32% 되돌림, 단기 차익실현 압력",
-      "테슬라 -1.54%, 코인베이스 -2.06% 등 일부 성장주 약세",
-      "빅테크발 회사채 발행 급증으로 미 장기금리 상단 압박 우려"
-    ],
-    "domesticCheckTable": [
-      {
-        "item": "미국 증시 마감",
-        "status": "3대 지수 동반 상승 (다우 +0.93%)",
-        "impact": "코스피 상승 출발 요인"
-      },
-      {
-        "item": "반도체 업종 신호",
-        "status": "SOX +1.41%, 한국 ETF +2.55%",
-        "impact": "삼성전자·SK하이닉스 강세 기대"
-      },
-      {
-        "item": "원/달러 환율",
-        "status": "1,357.05원",
-        "impact": "외국인 수급 방향 주시 필요"
-      },
-      {
-        "item": "나스닥 선물",
-        "status": "야간 -0.32% 되돌림",
-        "impact": "개장 초반 변동성 확대 가능"
-      }
-    ],
-    "forexCommodityTable": [
-      {
-        "asset": "원/달러",
-        "trend": "1,357.05원",
-        "interpretation": "저항선 부근 박스권 등락 지속",
-        "domesticImpact": "수출주 환차익 효과는 제한적"
-      },
-      {
-        "asset": "WTI",
-        "trend": "93.52달러 (+1.2%)",
-        "interpretation": "경기 회복 기대에 완만한 상승",
-        "domesticImpact": "정유·화학주에는 원가 부담 요인"
-      },
-      {
-        "asset": "금",
-        "trend": "4,293.8달러 (-0.63%)",
-        "interpretation": "위험선호 강화로 안전자산 매력 약화",
-        "domesticImpact": "금 관련주 단기 조정 가능성"
-      },
-      {
-        "asset": "필라델피아반도체(SOX)",
-        "trend": "12,668.93 (+1.41%)",
-        "interpretation": "메모리·HBM 수요 기대 지속",
-        "domesticImpact": "삼성전자·SK하이닉스 강세 모멘텀"
-      }
-    ],
-    "usNewsTable": [
-      {
-        "news": "마이크로소프트 강세 주도",
-        "content": "MSFT +3.66% 급등하며 대형 기술주 실적 기대감이 지수 상승을 견인",
-        "impact": "국내 클라우드·AI 관련주 투자심리에 긍정적"
-      },
-      {
-        "news": "빅테크 AI 투자용 회사채 발행 급증",
-        "content": "데이터센터 투자 자금 조달을 위한 빅테크의 장기 회사채 발행이 늘며 미 장기금리 상승 압력 변수로 부상",
-        "impact": "글로벌 금리 부담 확대 시 성장주 밸류에이션 압박 우려"
-      },
-      {
-        "news": "메타 급락",
-        "content": "META -3.33%로 빅테크 내 종목별 차별화 확대",
-        "impact": "국내 관련 밸류체인 종목엔 영향 제한적"
-      }
-    ],
-    "krNewsTable": [
-      {
-        "news": "반도체 호황에 법인카드 사용액 사상 최대",
-        "content": "2분기 법인 신용카드 이용액이 전년 대비 10% 늘며 60조원을 첫 돌파, 반도체 실적 개선이 기업 소비 확대로 이어짐",
-        "impact": "내수 소비 심리 개선 신호, 반도체 밸류체인 전반에 긍정적"
-      },
-      {
-        "news": "K증시 이탈 자금의 대피처 부각",
-        "content": "글로벌 금리 불안 속 투자자들이 MMF·고배당·커버드콜 상품으로 자금을 옮기는 머니무브 현상 나타나",
-        "impact": "지수 상승에도 개인 수급은 방어적으로 움직일 가능성"
-      },
-      {
-        "news": "HBM 경쟁 구도 지속",
-        "content": "SK하이닉스가 HBM 시장 점유율 50%대를 유지하는 가운데 삼성전자가 추격하며 메모리 슈퍼사이클 기대가 이어짐",
-        "impact": "반도체 대형주 중심 순환매 지속 기대"
-      }
-    ],
+    "summary": "",
+    "globalMarketTable": [],
+    "usMarketPositives": [],
+    "usMarketNegatives": [],
+    "domesticCheckTable": [],
+    "forexCommodityTable": [],
+    "usNewsTable": [],
+    "krNewsTable": [],
     "todayOutlook": {
-      "scenario": "미국 증시 강세와 반도체 업황 기대를 등에 업고 코스피는 상승 출발할 가능성이 높으나, 나스닥 선물 되돌림과 최근 개인 자금의 안전자산 이동 흐름을 감안하면 장중 상단이 제한되는 눌림목 장세가 예상된다.",
-      "checkpoints": [
-        "삼성전자·SK하이닉스 등 반도체 대형주 수급 동향",
-        "원/달러 환율 1,360원 저항선 돌파 여부",
-        "나스닥 선물 낙폭 확대 여부",
-        "외국인·기관 수급 전환 시점"
-      ]
+      "scenario": "",
+      "checkpoints": []
     },
+    "sectorStrategyTable": [],
     "todayStrategy": {
-      "indexStrategy": "반도체·AI인프라 중심의 상승 모멘텀에 올라타되, 지수 상단에서는 분할 대응하며 눌림목에서 비중을 확대하는 전략이 유효하다.",
-      "tradingPrinciples": [
-        "단기 급등 종목은 추격매수보다 분할 진입",
-        "환율·금리 변수 확인 후 대응",
-        "실적 기대가 뚜렷한 반도체·AI 밸류체인 중심 압축 대응",
-        "손절 기준을 미리 정해 변동성 확대에 대비"
-      ]
+      "indexStrategy": "",
+      "tradingPrinciples": []
     },
-    "sectorStrategyTable": [
-      {
-        "sector": "반도체/HBM",
-        "view": "SOX·EWY 동반 강세로 모멘텀 지속",
-        "strategy": "삼성전자·SK하이닉스 등 대형주 중심 비중 확대"
-      },
-      {
-        "sector": "금융",
-        "view": "XLF +0.57%로 완만한 강세",
-        "strategy": "실적 시즌 앞두고 저가 매수 관점 접근"
-      },
-      {
-        "sector": "에너지",
-        "view": "XLE -0.89%로 유가 상승에도 약세",
-        "strategy": "단기 트레이딩 관점, 추격매수는 자제"
-      },
-      {
-        "sector": "부동산",
-        "view": "XLRE -0.22%로 약보합",
-        "strategy": "금리 방향성 확인 전까지 관망"
-      }
-    ],
-    "portfolioTable": [
-      {
-        "category": "반도체/AI인프라",
-        "weight": "40%",
-        "note": "현재 시장 주도 테마, 분할 매수 원칙 준수 (일반 시장정보, 개인별 투자자문 아님)"
-      },
-      {
-        "category": "현금/단기자금(MMF 등)",
-        "weight": "20%",
-        "note": "변동성 확대에 대비한 대기자금"
-      },
-      {
-        "category": "배당/가치주",
-        "weight": "20%",
-        "note": "금리 불확실성 국면의 방어적 대안"
-      },
-      {
-        "category": "기타 성장주",
-        "weight": "20%",
-        "note": "종목별 차별화 장세를 고려한 압축 대응"
-      }
-    ],
-    "watchlist": [
-      {
-        "tier": "1군",
-        "theme": "HBM/메모리 슈퍼사이클",
-        "names": [
-          "삼성전자",
-          "SK하이닉스"
-        ],
-        "strategy": "반도체 업황 지표 확인하며 눌림목 분할 매수"
-      },
-      {
-        "tier": "2군",
-        "theme": "HBM 장비/후공정",
-        "names": [
-          "한미반도체"
-        ],
-        "strategy": "실적 발표 전후 변동성을 활용한 단기 대응"
-      },
-      {
-        "tier": "3군",
-        "theme": "미국 증시 연동 대형 기술주",
-        "names": [
-          "네이버",
-          "카카오"
-        ],
-        "strategy": "나스닥 선물 흐름과 연동해 방향성 확인 후 진입"
-      }
-    ],
-    "riskTable": [
-      {
-        "risk": "미 장기금리 상승 압력",
-        "content": "빅테크의 대규모 회사채 발행으로 장기 국채금리 상단이 자극될 가능성",
-        "response": "금리 민감 성장주 비중 조절, 분산 투자로 대응"
-      },
-      {
-        "risk": "선물 시장 되돌림",
-        "content": "나스닥 선물이 야간 -0.32% 밀리며 단기 과열 부담 시사",
-        "response": "개장 초반 급등 종목 추격매수 자제"
-      },
-      {
-        "risk": "환율 변동성",
-        "content": "원/달러 환율이 1,357원대에서 저항선을 테스트 중",
-        "response": "환율 1,360원 상단 돌파 시 외국인 수급 이탈 가능성 점검"
-      }
-    ],
-    "conclusion": "미국 증시의 견조한 상승과 반도체 업황 기대감이 오늘 코스피 상승 출발의 동력이 될 전망이나, 나스닥 선물 되돌림과 환율 부담은 상단을 제한하는 변수로 작용할 수 있다. 반도체·AI인프라 중심의 순환매 흐름을 주시하며 분할 대응하는 전략이 유효해 보이며, 본 브리핑은 일반적인 시장 정보 제공 목적으로 특정 종목에 대한 투자 권유가 아니다."
+    "portfolioTable": [],
+    "watchlist": [],
+    "riskTable": [],
+    "conclusion": ""
   },
   "errors": []
 }

@@ -383,6 +383,13 @@
       .cb-daydetail__h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; }
       .cb-daydetail__h h3 { margin: 0; font-size: 14px; font-weight: 800; color: var(--text-title, var(--text-primary)); }
       .cb-daydetail__h span { font-size: 12px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-daydetail__h { align-items: center; }
+      .cb-daydetail__h .cb-seg--sort { margin-left: auto; }
+      .cb-seg button:disabled { opacity: .4; cursor: default; }
+      @media (max-width: 560px) {
+        .cb-daydetail__h .cb-seg--sort { margin-left: 0; width: 100%; }
+        .cb-daydetail__h .cb-seg--sort button { flex: 1 1 0; padding: 7px 8px; }
+      }
 
       /* ── 기법 카탈로그 ──────────────────────────────────────────────────── */
       .cb-strats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
@@ -701,6 +708,7 @@
         var HISTORY = { days: [], byDate: {}, months: [], record: null };
         var calMonth = null;      // "YYYY-MM"
         var calMode = "open";     // open | close
+        var detailSort = "pick";  // 달력 상세 표 정렬: pick | open | close (날짜를 바꿔도 유지)
         var calSelected = null;
 
         function esc(v) {
@@ -884,18 +892,38 @@
         }
 
         /* ── 결과 표 (전일 성적표 / 달력 상세 공용) ─────────────────────────── */
-        function resultTableHtml(day) {
+        /* 2026-09-28 시우: 달력 상세 표 정렬 탭 — 선정 순위 / 시가 매도 / 종가 매도.
+           시가·종가 탭은 그 매도 수익률 높은 순으로 줄을 다시 세우고, 수익 순위 배지도 그 기준으로 다시 매긴다
+           (▲▼는 선정 순위 대비). 같은 수익률이면 선정 순위가 앞선 종목을 위로. 선정 순위 탭은 기존 그대로(서버 계산 순위). */
+        function sortedPicks(picks, mode) {
+          var key = mode === "open" ? "openReturnPct" : mode === "close" ? "closeReturnPct" : null;
+          if (!key) return { list: picks.slice().sort(function (a, b) { return (a.rank || 99) - (b.rank || 99); }), rr: null };
+          var list = picks.slice().sort(function (a, b) {
+            var va = a[key], vb = b[key];
+            var na = va == null || !isFinite(va), nb = vb == null || !isFinite(vb);
+            if (na !== nb) return na ? 1 : -1;
+            if (!na && vb !== va) return vb - va;
+            return (a.rank || 99) - (b.rank || 99);
+          });
+          var rr = {};
+          list.forEach(function (p, i) { if (p[key] != null && isFinite(p[key])) rr[p.code] = i + 1; });
+          return { list: list, rr: rr };
+        }
+        function resultTableHtml(day, sortMode) {
           var picks = day.picks || [];
           if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
           var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
-          // 수익 순위 — 서버가 계산해 준다(종가 매도가 있으면 종가 기준, 없으면 시가 기준)
-          var rlabel = day.retRankBy === "close" ? "종가" : "시가";
+          if (sortMode === "close" && !hasClose) sortMode = "pick";
+          var sorted = sortedPicks(picks, sortMode);
+          picks = sorted.list;
+          // 수익 순위 — 선정 순위 탭은 서버 계산(종가 매도가 있으면 종가 기준, 없으면 시가 기준), 시가·종가 탭은 그 기준으로 다시 매긴다
+          var rlabel = sorted.rr ? (sortMode === "close" ? "종가" : "시가") : day.retRankBy === "close" ? "종가" : "시가";
           function pickBadge(p) {
             return '<span class="cb-pk">선정 <b>' + esc(p.rank) + "위</b>" +
               (p.score != null ? "<i>·</i><b>" + esc(p.score) + "점</b>" : "") + "</span>";
           }
           function retBadge(p) {
-            var rr = p.retRank;
+            var rr = sorted.rr ? sorted.rr[p.code] : p.retRank;
             if (!rr) return "";
             var diff = (p.rank || 0) - rr; // +면 선정 순위보다 수익 순위가 높다(역전)
             // 2026-09-24 시우: 오르면 빨강, 내리면 파랑, 그대로면 '–'(1위 그대로는 초록). 기호 칸을 항상 둬서 배지 폭을 맞춘다.
@@ -1119,11 +1147,30 @@
           renderCalendar();
           if (!key || !HISTORY.byDate[key]) { dayDetailEl.hidden = true; dayDetailEl.innerHTML = ""; return; }
           var day = HISTORY.byDate[key];
+          var dayHasClose = (day.picks || []).some(function (p) { return p.closeReturnPct != null; });
+          var mode = detailSort === "close" && !dayHasClose ? "pick" : detailSort;
+          function segBtn(m, label, disabled) {
+            return '<button type="button" data-sort="' + m + '" aria-pressed="' + (mode === m ? "true" : "false") + '"' +
+              (disabled ? ' disabled title="종가는 15:45에 반영됩니다"' : "") + ">" + label + "</button>";
+          }
           dayDetailEl.hidden = false;
           dayDetailEl.innerHTML =
             '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + " 선정 " + (day.pickCount || 0) + "종목</h3>" +
-            "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span></div>" +
-            verdictHtml(day) + resultTableHtml(day);
+            "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span>" +
+            '<div class="cb-seg cb-seg--sort" role="group" aria-label="표 정렬 기준">' +
+            segBtn("pick", "선정 순위") + segBtn("open", "시가 매도") + segBtn("close", "종가 매도", !dayHasClose) +
+            "</div></div>" +
+            verdictHtml(day) + '<div class="cb-daytable">' + resultTableHtml(day, mode) + "</div>";
+          dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              if (btn.disabled) return;
+              detailSort = btn.dataset.sort;
+              dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (b) {
+                b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+              });
+              dayDetailEl.querySelector(".cb-daytable").innerHTML = resultTableHtml(day, detailSort);
+            });
+          });
           dayDetailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
         function buildMonths() {

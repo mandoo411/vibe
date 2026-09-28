@@ -490,3 +490,32 @@ html[lang] body .tm-nav-sheet .tm-nav-sheet__close { width: 36px !important; hei
 @media (max-width: 399px) {
   html[lang] body .tm-nav-sheet .tm-nav-sheet__account-btn { width: 98px !important; padding: 0 6px !important; gap: 5px !important; }
 }
+
+/* ── 2026-09-28 시우(2차): 모바일 로고 한 단계 더 키우고, 로고·LIVE를 오른쪽 버튼들과 상하 중심 맞추기 ──
+   아이폰은 글꼴 목록 첫 번째인 Apple SD Gothic Neo로 그리는데, 이 글꼴은 글자가 줄 상자 안에서 위로 붙어
+   그려져서 박스는 가운데여도 눈에 보이는 글자는 위로 쏠렸다. 워드마크와 LIVE만 사이트가 직접 불러오는
+   Pretendard로 고정해 기기마다 같은 위치에 그려지게 한다(버튼은 배경 상자가 기준이라 그대로 둔다). */
+@media (max-width: 768px) {
+  html[lang] body .home-nav .home-nav__brand-name,
+  html[lang] body .home-nav .home-nav__live-text {
+    font-family: "Pretendard Variable", Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif !important;
+  }
+  html[lang] body .home-nav .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo-box svg { width: 38px !important; height: 38px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__brand-name,
+  html[lang] body.page-home-v2 .home-nav .home-nav__brand-name,
+  html[lang] body .home-nav .home-nav__brand-name { font-size: 24px !important; }
+}
+@media (max-width: 399px) {
+  html[lang] body .home-nav .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo .home-nav__logo-box,
+  html[lang] body .home-nav .home-nav__logo-box svg { width: 33px !important; height: 33px !important; }
+  html[lang] body.page-tm-v2 .home-nav .home-nav__brand-name,
+  html[lang] body.page-home-v2 .home-nav .home-nav__brand-name,
+  html[lang] body .home-nav .home-nav__brand-name { font-size: 21px !important; }
+}
+/* 400~419px 폭에서는 커진 로고 + '마이페이지' 버튼 사이에 LIVE까지 들어갈 자리가 없다 → LIVE 숨김 */
+@media (max-width: 419px) {
+  html[lang] body .home-nav .home-nav__m-meta .home-nav__live { display: none !important; }
+}

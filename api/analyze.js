@@ -5538,10 +5538,26 @@ async function handleCloseBetting(req, res) {
     const { SWING_STRATEGIES } = require("../lib/swing-signal.js");
     const swingBlock = (() => {
       const sw = latest && latest.swing;
-      const ranked = sw && Array.isArray(sw.ranked) ? sw.ranked : [];
+      let ranked = sw && Array.isArray(sw.ranked) ? sw.ranked : [];
+      let fallback = false;
+      // 스캔 payload에 스윙 랭킹이 없는 날(기능 신설 전 · 사후 검증으로만 채운 날)은 기록 테이블의 선정분으로 보여준다
+      if (!ranked.length && latest && swRows.length && swRows[0].as_of_date === latest.asOfDate) {
+        fallback = true;
+        ranked = (swRows[0].picks || []).map((p) => ({
+          rank: p.rank,
+          code: p.code,
+          name: p.name,
+          market: p.market || null,
+          close: p.buyPrice,
+          score: p.score,
+          consensus: p.consensus,
+          strategies: (p.strategies || []).map((x) => ({ label: typeof x === "string" ? x : x.label })),
+        }));
+      }
       const vis = visibleFor(ranked.length);
       return {
         ready: ranked.length > 0,
+        fallback,
         asOfDate: latest ? latest.asOfDate : null,
         stats: sw ? sw.stats || null : null,
         total: ranked.length,

@@ -1365,7 +1365,9 @@
             lockedCta(swListEl, 0);
           } else {
             var st = sw.stats || {};
-            swStampEl.innerHTML = "<b>" + esc(sw.asOfDate) + "</b> 15:20 기준 · 조건 통과 " + esc(st.passed || "-") + " → 기법 2개+ " + esc(st.withStrategy || "-");
+            swStampEl.innerHTML = sw.fallback
+              ? "<b>" + esc(sw.asOfDate) + "</b> 선정 · 저장된 스캔으로 사후 채점(실시간 선정은 다음 15:20부터)"
+              : "<b>" + esc(sw.asOfDate) + "</b> 15:20 기준 · 조건 통과 " + esc(st.passed || "-") + " → 기법 2개+ " + esc(st.withStrategy || "-");
             swListEl.innerHTML = sw.ranked.map(function (r) { return rowHtml(r, "swing"); }).join("");
             lockedCta(swListEl, sw.total > sw.visible ? sw.total - sw.visible : 0);
             bindRows(swListEl);

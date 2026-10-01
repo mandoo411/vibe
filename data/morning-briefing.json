@@ -33,10 +33,10 @@
         "id": "nasdaq-futures",
         "name": "나스닥 선물",
         "symbol": "NQ=F",
-        "close": 30765,
+        "close": 30833.75,
         "previousClose": 30613.25,
-        "changePct": 0.5,
-        "changePoints": 151.75
+        "changePct": 0.72,
+        "changePoints": 220.5
       },
       {
         "id": "korea-etf",
@@ -52,63 +52,63 @@
   "topStocks": [
     {
       "symbol": "AAPL",
-      "price": 333.74,
-      "changePct": 1.32,
-      "changePoints": 4.34
+      "price": 333.02,
+      "changePct": 1.1,
+      "changePoints": 3.62
     },
     {
       "symbol": "MSFT",
-      "price": 513.7,
-      "changePct": 0.93,
-      "changePoints": 4.74
+      "price": 512.9,
+      "changePct": 0.77,
+      "changePoints": 3.94
     },
     {
       "symbol": "NVDA",
-      "price": 229.57,
-      "changePct": 1.04,
-      "changePoints": 2.36
+      "price": 228.38,
+      "changePct": 0.51,
+      "changePoints": 1.17
     },
     {
       "symbol": "AMZN",
-      "price": 249.47,
-      "changePct": 1.14,
-      "changePoints": 2.8
+      "price": 249.15,
+      "changePct": 1.01,
+      "changePoints": 2.48
     },
     {
       "symbol": "META",
-      "price": 726.93,
-      "changePct": -1.61,
-      "changePoints": 11.86
+      "price": 725.18,
+      "changePct": -1.84,
+      "changePoints": 13.61
     },
     {
       "symbol": "TSLA",
-      "price": 354.53,
-      "changePct": 0.48,
-      "changePoints": 1.69
+      "price": 354.81,
+      "changePct": 0.56,
+      "changePoints": 1.97
     },
     {
       "symbol": "GOOGL",
-      "price": 348.5,
-      "changePct": 2.22,
-      "changePoints": 7.58
+      "price": 344.08,
+      "changePct": 0.93,
+      "changePoints": 3.16
     },
     {
       "symbol": "AMD",
-      "price": 612.2,
-      "changePct": 0.76,
-      "changePoints": 4.63
+      "price": 611.76,
+      "changePct": 0.69,
+      "changePoints": 4.19
     },
     {
       "symbol": "PLTR",
-      "price": 186.64,
-      "changePct": -0.18,
-      "changePoints": 0.33
+      "price": 187.05,
+      "changePct": 0.04,
+      "changePoints": 0.08
     },
     {
       "symbol": "COIN",
-      "price": 186.62,
-      "changePct": -1.79,
-      "changePoints": 3.4
+      "price": 186.41,
+      "changePct": -1.9,
+      "changePoints": 3.61
     }
   ],
   "sectors": [
@@ -185,45 +185,45 @@
   ],
   "forex": {
     "rates": {
-      "USD/KRW": 1353.68,
-      "USD/JPY": 157.39,
+      "USD/KRW": 1355.84,
+      "USD/JPY": 157.3,
       "USD/CNY": 6.72,
       "EUR/USD": 1.13
     },
     "base": "USD",
-    "updatedAt": "Wed, 30 Sep 2026 00:02:31 +0000",
+    "updatedAt": "Thu, 01 Oct 2026 00:02:31 +0000",
     "commodities": [
       {
         "id": "wti",
         "name": "WTI유가",
         "symbol": "CL=F",
-        "price": 90.17,
-        "changePct": 0.88,
-        "changePoints": 0.79
+        "price": 90,
+        "changePct": 0.69,
+        "changePoints": 0.62
       },
       {
         "id": "gold",
         "name": "금",
         "symbol": "GC=F",
-        "price": 4183.4,
-        "changePct": 0.09,
-        "changePoints": 3.7
+        "price": 4191.4,
+        "changePct": 0.28,
+        "changePoints": 11.7
       },
       {
         "id": "silver",
         "name": "은",
         "symbol": "SI=F",
-        "price": 60.64,
-        "changePct": -0.05,
-        "changePoints": -0.03
+        "price": 60.99,
+        "changePct": 0.53,
+        "changePoints": 0.32
       },
       {
         "id": "copper",
         "name": "구리",
         "symbol": "HG=F",
-        "price": 6.63,
-        "changePct": 1.38,
-        "changePoints": 0.09
+        "price": 6.62,
+        "changePct": 1.22,
+        "changePoints": 0.08
       },
       {
         "id": "sox",
@@ -240,27 +240,34 @@
       {
         "id": "bitcoin",
         "symbol": "BTC",
-        "priceUsd": 83671,
-        "changePct24h": -0.11,
-        "marketCapUsd": 1681051582258.47
+        "priceUsd": 83462,
+        "changePct24h": 0.16,
+        "marketCapUsd": 1676934905939.21
       },
       {
         "id": "ethereum",
         "symbol": "ETH",
-        "priceUsd": 2687.8,
-        "changePct24h": 0.17,
-        "marketCapUsd": 328140943132.03
+        "priceUsd": 2687.12,
+        "changePct24h": 0.71,
+        "marketCapUsd": 328077955730.45
       },
       {
         "id": "solana",
         "symbol": "SOL",
-        "priceUsd": 118.23,
-        "changePct24h": -1,
-        "marketCapUsd": 69511330268.37
+        "priceUsd": 117.99,
+        "changePct24h": -0.94,
+        "marketCapUsd": 69381354596.25
       }
     ]
   },
   "news": [
+    {
+      "title": "“연구비 대준대서 반겼는데”…알고보니 중국 위장 정보기관이었다",
+      "url": "https://www.mk.co.kr/news/world/12165746",
+      "source": "매일경제",
+      "publishedAt": "2026-10-01T01:21:47.000Z",
+      "summary": "영국 정보기관 MI5, 첫 첩보경보 발령 “중국통용기술연구원은 위장정보기관 AI·비밀통신 연구성과 빼내 본국 전달” 안보장관 “관계 끊어라” 대학에 서한 중국대사관 “순전히 날조”.."
+    },
     {
       "title": "주담대 금리 “나라 망한다”던 레고사태 수준…넉달째 올라 4.66%",
       "url": "https://www.mk.co.kr/news/economy/12165495",
@@ -276,46 +283,11 @@
       "summary": "도널드 트럼프 미국 대통령은 30일(현지시간) 백악관 집무실에서 텍사스 가스발전소 건설, 대형 원자력발전소 8기 건설, 알래스카 액화천연가스(LNG) 개발 등 한국의 대미투자 프로.."
     },
     {
-      "title": "증시 호황? 나랑 뭔 상관인데 … 미국인 ‘경제비관’ 최악 찍었다",
-      "url": "https://www.mk.co.kr/news/world/12164990",
-      "source": "매일경제",
-      "publishedAt": "2026-09-30T19:30:00.000Z",
-      "summary": "이란 전쟁 7개월 - 기름값이 갈라놓은 미국 민심미국 미시간주 디트로이트 외곽에 사는 트럭 운전기사 데이브 콜린스(52) 씨는 요즘 주유소에 갈 때마다 계산기부터 두드립니다. 하루.."
-    },
-    {
-      "title": "“미·중 반도체 전쟁 잠시 숨 고르기” … 지금 ‘삼전닉스’ 봐야 하는 이유",
-      "url": "https://www.mk.co.kr/news/world/12164869",
-      "source": "매일경제",
-      "publishedAt": "2026-09-30T19:10:00.000Z",
-      "summary": "중국의 엔비디아칩 수입 허용 영향9월 23~25일 백악관에서 열린 미·중 정상회담은 ‘빅딜’ 없이 충돌을 관리하는 선에서 막을 내렸다. 무역 휴전을 내년 1월 10일까지 2개월 연.."
-    },
-    {
-      "title": "AI속도조절론 거리두는 트럼프…“규제 만드는 대신 기업에 맡길것”",
-      "url": "https://www.mk.co.kr/news/it/12165416",
-      "source": "매일경제",
-      "publishedAt": "2026-09-30T14:39:23.000Z",
-      "summary": "업계 자율로 ‘AI 통제’ 강화 내부통제 등 4단계 시스템 서약 ‘슈퍼지능’ 사용 행정명령도 서명인공지능(AI)을 둘러싼 ‘속도조절론’이 거세게 제기되는 가운데 도널드 트럼프 미국.."
-    },
-    {
       "title": "“이란전쟁 소풍 끝나면 유가 정상화”…금리발작 못본체하는 트럼프",
       "url": "https://www.mk.co.kr/news/economy/12165415",
       "source": "매일경제 증권",
       "publishedAt": "2026-09-30T14:35:54.000Z",
       "summary": "10년물도 2007년 이후 최고 전쟁 장기화 우려 국채 투매 트럼프 “곧 종전해 유가 급락”국제유가 변동성에 따른 물가 상승 압력에 미국 국채 금리가 연일 급등하고 있다. 연방준.."
-    },
-    {
-      "title": "“자동차 램프사업 완전 넘깁니다”…현대모비스의 선택, 주주들은 웃었다",
-      "url": "https://www.mk.co.kr/news/business/12165413",
-      "source": "매일경제",
-      "publishedAt": "2026-09-30T14:20:33.000Z",
-      "summary": "2027년 4월 물적분할 OP모빌리티와 SPA 체결 핵심사업에 역량 집중 기업·주주가치 제고 추진현대모비스가 램프사업을 프랑스 자동차 부품기업 OP모빌리티에 매각하기 위한 본계약을.."
-    },
-    {
-      "title": "[속보] 뉴욕 증시, 경제 지표 호조 속 일제히 상승 출발",
-      "url": "https://www.mk.co.kr/news/world/12165399",
-      "source": "매일경제",
-      "publishedAt": "2026-09-30T13:49:00.000Z",
-      "summary": ""
     },
     {
       "title": "금융권 최초 ‘무선 오피스’…하나금융 청라 신사옥 가보니",
@@ -381,13 +353,6 @@
       "summary": "LG에너지솔루션이 미국 제너럴모터스(GM)와 손잡고 세계 최초로 차세대 리튬망간리치(LMR) 각형 배터리 대량 생산에 나선다. LG에너지솔루션과 GM 배터리 합작법인 얼티엄셀즈는 .."
     },
     {
-      "title": "車파업에 휴가 겹쳐 … 생산·소비·투자 석달만에 '트리플 감소'",
-      "url": "https://www.mk.co.kr/news/economy/12165139",
-      "source": "매일경제 증권",
-      "publishedAt": "2026-09-30T08:32:14.000Z",
-      "summary": "지난 8월 생산·소비·투자가 일제히 줄며 5월 이후 3개월 만에 '트리플 감소'를 기록했다. 8월 휴가철로 인한 조업일수 감소와 파업 등의 영향으로 생산과 판매가 급감한 것으로 나.."
-    },
-    {
       "title": "발전공기업 5곳 통합준비위 첫발",
       "url": "https://www.mk.co.kr/news/economy/12165140",
       "source": "매일경제 증권",
@@ -395,11 +360,46 @@
       "summary": "정부가 '발전공기업 통합준비위원회'를 발족하고 발전 5사 통합에 본격적으로 시동을 걸었다. 30일 기후에너지환경부는 발전 5사 협력본부에서 이호현 제2차관을 위원장으로 하는 발전공.."
     },
     {
+      "title": "車파업에 휴가 겹쳐 … 생산·소비·투자 석달만에 '트리플 감소'",
+      "url": "https://www.mk.co.kr/news/economy/12165139",
+      "source": "매일경제 증권",
+      "publishedAt": "2026-09-30T08:32:14.000Z",
+      "summary": "지난 8월 생산·소비·투자가 일제히 줄며 5월 이후 3개월 만에 '트리플 감소'를 기록했다. 8월 휴가철로 인한 조업일수 감소와 파업 등의 영향으로 생산과 판매가 급감한 것으로 나.."
+    },
+    {
       "title": "외환당국, 2분기 환율 방어에 96억달러 투입",
       "url": "https://view.asiae.co.kr/article/2026093016572191881",
       "source": "아시아경제 증권",
       "publishedAt": "2026-09-30T07:57:22.000Z",
       "summary": "외환당국이 올해 2분기 1500원대까지 오른 원·달러 환율 방어를 위해 96억달러 가량을 사용한 것으로 나타났다. 한국은행이 30일 공개한 '시장안정조치 내역'에 따르면 외환당국은 올 2분기 외환시장 안정을 위해 96억1200만달러를 순매도했다. 2분기 평균 원·달러 환율인 1502원으로 환산하면 14조4370억원 규모다. 분기 기준으로는 역대 다섯 번째로 순매도 규모가 컸다. 2024년 4분기 이후 7개 분기 연속 순매도다. 외환당국은 지난해 하반기부터 환율이 치솟자 대규모 달러 순매도에 나서고 있다. 순매도액은 지난해 4분기"
+    },
+    {
+      "title": "한울반도체, 주주배정 유상증자 철회…\"핵심 MLCC·성장사업 지속 추진\"",
+      "url": "https://view.asiae.co.kr/article/2026093016162454702",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-30T07:16:24.000Z",
+      "summary": "한울반도체가 주주배정 후 실권주 일반공모 방식으로 추진해온 유상증자를 철회한다. 증권신고서 심사와 정정 절차가 장기화되는 과정에서 자금조달 일정과 사업 추진 시기, 자금운용 여건, 시장환경 등이 달라진 만큼 기존 계획을 재검토할 필요성이 커졌다는 판단에서다. 한울반도체는 30일 이 같은 내용의 유상증자 철회 결정을 밝혔다. 회사는 지난 4월 15일 증권신고서를 제출한 이후 금융감독원의 정정 요구 등에 대응하며 신고서 주요 내용을 지속적으로 보완해왔다. 그러나 신고서 심사와 정정 절차가 장기간 이어지면서 최초 유상증자 결정 당시와"
+    },
+    {
+      "title": "아리바이오홀딩스, 성수현 부회장 5억 장내매수…\"책임경영·기업가치 제고\"",
+      "url": "https://view.asiae.co.kr/article/2026093016113539522",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-30T07:11:35.000Z",
+      "summary": "아리바이오홀딩스 성수현 부회장이 약 5억원 규모의 자사주를 장내에서 매수했다. 아리바이오와의 합병계약을 해제한 가운데 직접 지분을 늘리며 책임경영과 기업가치 제고 의지를 나타냈다는 설명이다. 아리바이오홀딩스는 성 부회장이 회사 주식 15만5567주를 장내매수했다고 30일 밝혔다. 앞서 아리바이오홀딩스와 아리바이오는 전날 합병계약 해제 결정을 공시했다. 합병 추진 이후 달라진 사업 및 재무 환경을 고려해 양사가 독립적으로 기업가치를 높이는 동시에 그룹 차원의 공동 성장을 이어가기 위한 결정이다. 합병이 철회됐지만 아리바이오홀딩스의"
+    },
+    {
+      "title": "원·달러 환율, 3.9원 내린 1352.8원 (오후 3시30분)",
+      "url": "https://view.asiae.co.kr/article/2026093015594666636",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-30T06:59:46.000Z",
+      "summary": "30일 오후 3시30분 서울 외환시장에서 원·달러 환율은 전 거래일 주간 종가 대비 3.9원 내린 1352.8원을 기록했다."
+    },
+    {
+      "title": "코스피, 6800선 약보합 마감…코스닥은 소폭 상승",
+      "url": "https://view.asiae.co.kr/article/2026093015532194041",
+      "source": "아시아경제 증권",
+      "publishedAt": "2026-09-30T06:53:22.000Z",
+      "summary": "코스피가 30일 초반 상승 폭을 반납하고 약보합으로 마감했다. 코스닥은 소폭 상승한 채 거래를 마쳤다. 이날 코스피는 전장 대비 0.48% 내린 6838.04에 거래를 마쳤다. 앞서 전장 대비 1.06% 오른 6943.47로 장을 시작했지만, 장중 분위기가 반전됐다. 개인이 1조1667억원 순매수했지만 외국인과 기관 매도세에 장 초반 상승분을 반납했다. 외국인은 이날 코스피를 2조520억원, 기관은 7680억원 순매도했다. 하락 업종은 보험 -3.27%, 금융 -1.40%, 오락·문화 -1.28%, 음식료·담배 -1.05%, 통신"
     }
   ],
   "aiAnalysis": {

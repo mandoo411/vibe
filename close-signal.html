@@ -1510,7 +1510,9 @@
         }
         function selectLatest() {
           var ds = H().days;
-          var latest = ds.length ? ds[0].asOfDate : null; // 서버가 최신순으로 준다
+          // 서버가 최신순으로 준다. 아직 숫자가 하나도 없는 날(오늘 선정분)은 건너뛰고 결과가 있는 가장 최근 날을 연다.
+          var withVal = ds.filter(function (d) { return valueOf(d) != null; });
+          var latest = withVal.length ? withVal[0].asOfDate : ds.length ? ds[0].asOfDate : null;
           if (latest) calMonth = monthKey(latest);
           // 넓은 화면은 오른쪽 칸이 비지 않게 가장 최근 날짜를 펼쳐 둔다. 좁은 화면은 스크롤이 길어지므로 안 펼친다.
           if (latest && window.matchMedia("(min-width: 1100px)").matches) selectDay(latest, false);

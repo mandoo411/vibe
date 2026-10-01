@@ -1,0 +1,45 @@
+name: Swing Signal Lab
+
+# 1주 스윙 시그널 백테스트(저장·커밋 없음, 로그만). 채점 모델을 고칠 때 수동으로 돌린다.
+# repository_dispatch: {"event_type":"trigger-swing-lab","client_payload":{"from":"2026-09-14"}}
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "시작 선정일(YYYY-MM-DD)"
+        required: false
+        default: "2026-09-14"
+  repository_dispatch:
+    types: [trigger-swing-lab]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swing-signal-lab
+  cancel-in-progress: true
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Run swing lab
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          LAB_FROM: ${{ github.event.inputs.from || github.event.client_payload.from || '2026-09-14' }}
+        run: node scripts/swing-signal-lab.mjs

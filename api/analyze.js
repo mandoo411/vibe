@@ -5303,6 +5303,7 @@ async function cbLoadLatest() {
     flowAsOfDate: (row.payload && row.payload.flowAsOfDate) || null,
     ranked: cb.ranked,
     stats: cb.stats || null,
+    swing: (row.payload && row.payload.swing) || null,
   };
 }
 
@@ -5349,7 +5350,7 @@ function cbTrimDay(row) {
 function cbResultMark(v) {
   return v == null ? null : v > 0 ? "up" : v < 0 ? "down" : "flat";
 }
-function cbPublicDay(day) {
+function cbPublicDay(day, withPrice) {
   if (!day) return null;
   const picks = day.picks || [];
   const hasClose = picks.some((p) => p.closeReturnPct != null);
@@ -5376,8 +5377,69 @@ function cbPublicDay(day) {
       highReturnPct: p.highReturnPct,
       lowReturnPct: p.lowReturnPct,
       retRank: retRank[p.code] || null,
+      // 2026-10-02 시우: 승인 회원·초대코드 출입자에게는 선정가·결과가(원)도 보여준다.
+      ...(withPrice
+        ? { buyPrice: p.buyPrice, open: p.open, high: p.high, low: p.low, close: p.close }
+        : {}),
     })),
   });
+}
+
+/* ── 1주 스윙 시그널 (2026-10-02 신설) ─────────────────────────────────────
+ * scripts/swing-signal-review.mjs가 swing_signal_results에 선정일별 한 행을 쌓는다(5거래일 추적).
+ * 화면은 계산하지 않고 기록을 그대로 그린다. 가격(원)은 출입증이 있을 때만 싣는다. */
+const SW_HISTORY_MAX = 120;
+async function swLoadResults(limit) {
+  const n = Math.min(Number(limit) || SW_HISTORY_MAX, SW_HISTORY_MAX);
+  const res = await serviceRequest(
+    `swing_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,target_date,status,source,pick_count,picks,summary`,
+    { method: "GET" }
+  );
+  if (!res.ok) return [];
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows : [];
+}
+function swPublicRow(row, withPrice) {
+  if (!row) return null;
+  return {
+    asOfDate: row.as_of_date,
+    targetDate: row.target_date,
+    status: row.status,
+    source: row.source,
+    pickCount: row.pick_count,
+    summary: row.summary || {},
+    picks: (Array.isArray(row.picks) ? row.picks : []).map((p) => ({
+      rank: p.rank,
+      code: p.code,
+      name: p.name,
+      score: p.score,
+      consensus: p.consensus,
+      strategies: Array.isArray(p.strategies) ? p.strategies.slice(0, 8) : [],
+      lastReturnPct: p.lastReturnPct,
+      finalReturnPct: p.finalReturnPct,
+      maxHighPct: p.maxHighPct,
+      minLowPct: p.minLowPct,
+      track: (p.track || []).map((t) => (withPrice ? { date: t.date, close: t.close, returnPct: t.returnPct } : { date: t.date, returnPct: t.returnPct })),
+      ...(withPrice ? { buyPrice: p.buyPrice, lastClose: p.lastClose, finalClose: p.finalClose } : {}),
+    })),
+  };
+}
+function swBuildRecord(rows) {
+  const done = rows.filter((r) => r.status === "done");
+  const picks = done.flatMap((r) => r.picks || []).filter((p) => p.finalReturnPct != null);
+  const vals = picks.map((p) => p.finalReturnPct);
+  const dayAvg = done.map((r) => (r.summary || {}).avgReturnPct).filter((v) => v != null);
+  const mean = (a) => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 100) / 100 : null);
+  return {
+    weeks: done.length,
+    picks: picks.length,
+    avgReturnPct: mean(vals),
+    winRatePct: vals.length ? Math.round((vals.filter((v) => v > 0).length / vals.length) * 1000) / 10 : null,
+    plusDays: dayAvg.filter((v) => v > 0).length,
+    measuredDays: dayAvg.length,
+    avgMaxHighPct: mean(picks.filter((p) => p.maxHighPct != null).map((p) => p.maxHighPct)),
+    tracking: rows.filter((r) => r.status === "tracking").length,
+  };
 }
 
 async function cbLoadResults(limit) {
@@ -5433,10 +5495,19 @@ async function handleCloseBetting(req, res) {
   try {
     const view = String((req.query && req.query.view) || "").trim();
 
+    // 2026-10-02: 출입증(승인 회원 또는 초대코드)이 있으면 원 단위 가격을 같이 싣는다.
+    const passUid = SITE_PASS.readPassUid(req);
+    const withPrice = !!passUid;
+    const invite = passUid === SITE_PASS.INVITE_UID;
+
     // 달력·누적 통계 전용 응답. 로그인 여부와 무관하게 전부 공개한다.
     if (view === "history") {
       const days = await cbLoadResults(req.query && req.query.days);
-      return json(res, 200, { days: days.map(cbPublicDay), record: cbBuildRecord(days) });
+      return json(res, 200, { days: days.map((d) => cbPublicDay(d, withPrice)), record: cbBuildRecord(days), withPrice });
+    }
+    if (view === "swing-history") {
+      const rows = await swLoadResults(req.query && req.query.days);
+      return json(res, 200, { days: rows.map((r) => swPublicRow(r, withPrice)), record: swBuildRecord(rows), withPrice });
     }
 
     let isPro = false;
@@ -5450,26 +5521,60 @@ async function handleCloseBetting(req, res) {
       }
     }
 
-    const [latest, recent] = await Promise.all([cbLoadLatest(), cbLoadResults(30)]);
+    // 초대코드 출입자는 회원 로그인이 없지만 운영자가 고른 사람이라 전체를 보여준다.
+    if (invite) {
+      isPro = true;
+      loggedIn = true;
+    }
+    const viewer = invite ? "invite" : loggedIn ? "member" : "guest";
+
+    const [latest, recent, swRows] = await Promise.all([cbLoadLatest(), cbLoadResults(30), swLoadResults(40)]);
     const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
     const record = cbBuildRecord(recent);
     const market = cbMarketInfo();
     const pending = cbPending(latest, recent.length ? recent[0] : null, market);
-    const yesterday = recent.length ? cbPublicDay(recent[0]) : null;
+    const yesterday = recent.length ? cbPublicDay(recent[0], withPrice) : null;
+    const visibleFor = (total) => (isPro ? total : loggedIn ? Math.min(CB_FREE_LIMIT, total) : 0);
+    const { SWING_STRATEGIES } = require("../lib/swing-signal.js");
+    const swingBlock = (() => {
+      const sw = latest && latest.swing;
+      const ranked = sw && Array.isArray(sw.ranked) ? sw.ranked : [];
+      const vis = visibleFor(ranked.length);
+      return {
+        ready: ranked.length > 0,
+        asOfDate: latest ? latest.asOfDate : null,
+        stats: sw ? sw.stats || null : null,
+        total: ranked.length,
+        visible: vis,
+        ranked: ranked.map((r, i) => {
+          if (i >= vis) return cbMaskRow(r);
+          const row = Object.assign({ locked: false }, r);
+          if (!withPrice) delete row.close;
+          return row;
+        }),
+        tracking: swRows.filter((r) => r.status === "tracking").map((r) => swPublicRow(r, withPrice)),
+        last: (() => {
+          const d = swRows.find((r) => r.status === "done");
+          return d ? swPublicRow(d, withPrice) : null;
+        })(),
+        record: swBuildRecord(swRows),
+        strategies: SWING_STRATEGIES.map((x) => ({ key: x.key, label: x.label, desc: x.desc })),
+      };
+    })();
 
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
-      return json(res, 200, { ready: false, isPro, loggedIn, ranked: [], total: 0, strategies, yesterday, record, market, pending });
+      return json(res, 200, { ready: false, isPro, loggedIn, viewer, withPrice, ranked: [], total: 0, strategies, yesterday, record, market, pending, swing: swingBlock });
     }
 
     const total = latest.ranked.length;
     // 2026-09-25 시우: 로그인 전에는 오늘 순위를 1위부터 전부 가린다(이름·코드 없이 순위·점수만).
-    const visible = isPro ? total : loggedIn ? Math.min(CB_FREE_LIMIT, total) : 0;
-    // 공개 응답에 원 단위 종가(close)는 싣지 않는다(화면에서도 쓰지 않음).
+    const visible = visibleFor(total);
+    // 원 단위 선정가(close)는 출입증이 있을 때만 싣는다(2026-10-02 시우).
     const ranked = latest.ranked.map((r, i) => {
       if (i >= visible) return cbMaskRow(r);
       const row = Object.assign({ locked: false }, r);
-      delete row.close;
+      if (!withPrice) delete row.close;
       return row;
     });
 
@@ -5490,6 +5595,9 @@ async function handleCloseBetting(req, res) {
       record,
       market,
       pending,
+      viewer,
+      withPrice,
+      swing: swingBlock,
     });
   } catch (error) {
     console.error("[close-betting] 실패", error && error.message);

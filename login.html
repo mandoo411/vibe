@@ -97,6 +97,17 @@
           <div class="tm-social" id="login-social"></div>
 
           <p class="tm-auth-switch">아직 계정이 없으신가요? <a href="./signup.html">회원가입</a></p>
+
+          <!-- 2026-10-02 시우: 초대코드를 아는 사람은 가입 없이 입장 -->
+          <details class="tm-invite" id="invite-box" style="margin-top:18px;border-top:1px solid var(--border-color);padding-top:14px">
+            <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--text-secondary)">초대코드로 입장하기</summary>
+            <form id="invite-form" autocomplete="off" novalidate style="display:flex;gap:8px;margin-top:10px">
+              <input type="password" id="invite-code" maxlength="64" placeholder="초대코드" aria-label="초대코드"
+                style="flex:1 1 auto;min-width:0;padding:11px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font:inherit" />
+              <button type="submit" class="tm-auth-submit" style="width:auto;margin:0;padding:0 18px">입장</button>
+            </form>
+            <div class="tm-auth-msg" id="invite-msg"></div>
+          </details>
         </div>
       </main>
 
@@ -128,6 +139,33 @@
       <nav class="tm-bottom-nav" aria-label="모바일 빠른 이동"></nav>
     </div>
 
+    <script>
+      (function () {
+        var invForm = document.getElementById("invite-form");
+        if (!invForm) return;
+        invForm.addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var msg = document.getElementById("invite-msg");
+          var code = document.getElementById("invite-code").value;
+          msg.className = "tm-auth-msg is-visible";
+          msg.textContent = "확인 중…";
+          try {
+            var ok = window.TMAuth && window.TMAuth.enterInvite ? await window.TMAuth.enterInvite(code) : false;
+            if (ok) {
+              var next = new URLSearchParams(location.search).get("next") || "/close-signal.html";
+              if (!/^\/(?!\/)/.test(next)) next = "/close-signal.html";
+              location.replace(next);
+              return;
+            }
+            msg.className = "tm-auth-msg is-visible tm-auth-msg--error";
+            msg.textContent = "초대코드가 맞지 않습니다.";
+          } catch (err) {
+            msg.className = "tm-auth-msg is-visible tm-auth-msg--error";
+            msg.textContent = "잠시 후 다시 시도해 주세요.";
+          }
+        });
+      })();
+    </script>
     <script>
       (function () {
         function showMsg(text, isError) {

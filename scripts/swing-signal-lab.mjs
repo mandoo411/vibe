@@ -20,7 +20,7 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const FROM = process.env.LAB_FROM || "2026-09-14";
 const HOLD = 5;
-const POS = new Set(["boxBreakout", "high52Trend", "macdTurn", "goldenCross", "reversalCandle", "oversoldBounce", "accumulation"]);
+const POS = new Set(["boxBreakout", "high52Trend", "macdTurn", "goldenCross", "reversalCandle", "oversoldBounce", "momentumRun", "foreignAccum"]);
 const posCount = (r) => r.strategies.filter((h) => POS.has(h.key)).length;
 globalThis.__SWING_VARIANTS = [
   { name: "현행 점수", fn: (f, r) => r.score },

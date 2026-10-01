@@ -170,6 +170,18 @@
   }
   setGuestChrome(!readPassExp());
 
+  /* 2026-10-02: 초대코드 입장 — 성공하면 30일 출입증 쿠키가 생긴다. */
+  async function enterInvite(code) {
+    const res = await fetch("/api/analyze?feature=site-pass", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({ invite: String(code || "").trim() }),
+    });
+    return res.ok;
+  }
+
   async function clearSitePass() {
     try {
       await fetch("/api/analyze?feature=site-pass", { method: "DELETE", credentials: "same-origin" });
@@ -186,9 +198,12 @@
     const { data } = await c.auth.getSession();
     const session = data && data.session;
     if (!session) {
-      setGuestChrome(true);
+      // 2026-10-02: 초대코드로 받은 출입증(로그인 없음)이 살아 있으면 메뉴·지표 띠는 보여준다.
+      const inviteGuest = readPassExp() > Date.now() / 1000;
+      setGuestChrome(!inviteGuest);
       Object.assign(window.TM_AUTH_STATE, {
         loaded: true,
+        inviteGuest,
         isLoggedIn: false,
         email: "",
         userId: "",
@@ -621,6 +636,8 @@
     signOut,
     getAccessToken,
     ensureSitePass,
+    enterInvite,
+    clearSitePass,
     onAuthChange,
     isSetupPending: function () {
       return SETUP_PENDING;

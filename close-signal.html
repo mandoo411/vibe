@@ -1049,6 +1049,8 @@
               (r.marketCapEok != null || (r.facts && r.facts.marketCapEok != null)
                 ? '<span class="cb-dot">·</span><em>시총 ' + eok(r.marketCapEok != null ? r.marketCapEok : r.facts.marketCapEok) + "</em>" : "") +
               (r.sector ? '<span class="sector">' + esc(r.sector) + "</span>" : "");
+          // 등락률이 없는 행(사후 채점 표시)은 맨 앞 구분점이 홀로 남지 않게 정리
+          if (!locked && !chg) meta = meta.replace(/^<span class="(?:up|cb-down)"[^>]*><\/span><span class="cb-dot">·<\/span>/, "");
           var chips = "";
           if (locked) {
             chips = '<span class="cb-chip">기법 0000</span><span class="cb-chip">기법 000000</span>';

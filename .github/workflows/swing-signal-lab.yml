@@ -10,6 +10,10 @@ on:
         description: "시작 선정일(YYYY-MM-DD)"
         required: false
         default: "2026-09-14"
+      mode:
+        description: "lab = 백테스트 로그만 / review = 스윙 추적 스크립트를 지금 한 번 실행(저장함)"
+        required: false
+        default: "lab"
   repository_dispatch:
     types: [trigger-swing-lab]
 
@@ -42,4 +46,12 @@ jobs:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           LAB_FROM: ${{ github.event.inputs.from || github.event.client_payload.from || '2026-09-14' }}
-        run: node scripts/swing-signal-lab.mjs
+          SWING_FROM: ${{ github.event.inputs.from || github.event.client_payload.from || '2026-09-14' }}
+          REVIEW_PHASE: close
+          LAB_MODE: ${{ github.event.inputs.mode || github.event.client_payload.mode || 'lab' }}
+        run: |
+          if [ "$LAB_MODE" = "review" ]; then
+            node scripts/swing-signal-review.mjs
+          else
+            node scripts/swing-signal-lab.mjs
+          fi

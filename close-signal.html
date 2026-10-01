@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <title>TotalMoney AI · 종가시그널</title>
-    <meta name="description" content="9가지 매매기법이 동시에 포착한 조건검색 결과 상위 5종목. 다음 거래일 시가·종가 결과를 매일 기록해 달력으로 보여줍니다." />
+    <meta name="description" content="매일 15:20 매매기법 합의로 고른 종가시그널(익일 매도)·1주 스윙(5거래일 보유) 각 5종목과, 선정가·결과가·등락률을 빠짐없이 남긴 성과 달력." />
     <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=8">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=8">
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=8">
@@ -462,6 +462,114 @@
         .cb-sec > .cb-stamp { margin-left: 0; }
         .cb-sec__txt { flex-basis: auto; }
       }
+
+      /* ══ 2026-10-02 개편 — 메인급으로: 바로가기 · 가격 표시 · 1주 스윙 · 달력 좌우 배치 ══ */
+      .cb-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 18px; }
+      .cb-jump a {
+        display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px;
+        border: 1px solid var(--border-color); background: var(--cb-surface); color: var(--text-secondary);
+        font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap;
+      }
+      .cb-jump a:hover { border-color: var(--cb-accent); color: var(--cb-accent); }
+      .cb-jump a i { font-size: 15px; color: var(--cb-accent); }
+      .cb-sec__tag {
+        display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; vertical-align: 2px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0; border: 1px solid var(--cb-line); color: var(--cb-accent); background: var(--cb-soft);
+      }
+      .cb-rec__grp { grid-column: 1 / -1; margin: 4px 0 -2px; font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--text-muted-ui, var(--text-secondary)); }
+
+      /* 가격 → 결과 흐름 한 줄 */
+      .cb-pflow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 7px;
+        font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-pflow b { font-weight: 700; color: var(--text-title, var(--text-primary)); }
+      .cb-pflow .arr { opacity: .55; }
+      .cb-pflow .k { font-family: inherit; font-size: 11px; }
+      .cb-ycell__p { font-family: var(--cb-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+      .cb-ycell__p b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+      .cb-table td .cb-pp { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; color: var(--text-secondary); font-family: var(--cb-mono); }
+      .cb-table td.cb-buy { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-weight: 700; color: var(--text-title, var(--text-primary)); }
+
+      /* 두 칸 묶음(스윙 오늘 | 추적) — 좁은 화면은 위아래 */
+      .cb-pair { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 20px; }
+      .cb-col { min-width: 0; display: flex; flex-direction: column; }
+      .cb-col > .cb-card--fill { flex: 1 1 auto; }
+      @media (min-width: 1280px) {
+        .cb-pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        .cb-pair .cb-sec { min-height: 76px; align-items: flex-start; margin-top: 0; }
+      }
+
+      /* 스윙 추적 블록 */
+      .sw-block { border: 1px solid var(--border-color); border-radius: 13px; background: var(--bg-primary); padding: 12px 14px; margin-bottom: 10px; }
+      .sw-block:last-child { margin-bottom: 0; }
+      .sw-block__h { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-bottom: 10px; }
+      .sw-block__t { font-size: 13.5px; font-weight: 800; color: var(--text-title, var(--text-primary)); }
+      .sw-block__s { font-size: 11.5px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .sw-block__avg { margin-left: auto; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 800; }
+      .sw-prog { display: inline-flex; gap: 3px; vertical-align: middle; }
+      .sw-prog i { width: 14px; height: 6px; border-radius: 3px; background: var(--cb-track); }
+      .sw-prog i.on { background: var(--cb-accent); }
+      .sw-trow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 9px 0; border-top: 1px solid var(--border-color); }
+      .sw-trow:first-of-type { border-top: 0; }
+      .sw-tname { min-width: 0; font-weight: 700; font-size: 13.5px; color: var(--text-title, var(--text-primary)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sw-tname a { color: inherit; text-decoration: none; }
+      .sw-tname a:hover { color: var(--cb-accent); }
+      .sw-tname small { margin-left: 6px; font-weight: 500; font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .sw-tret { text-align: right; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 800; }
+      .sw-tsub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .sw-tsub b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+      .sw-days { display: inline-flex; gap: 3px; }
+      .sw-day { min-width: 50px; padding: 2px 5px; border-radius: 6px; text-align: center; font-size: 10.5px; background: var(--cb-inset); }
+      .sw-day small { display: block; font-size: 9.5px; opacity: .7; }
+      .sw-day--none { opacity: .45; }
+
+      /* 스윙 결과표 일자 칸 */
+      .cb-table .sw-dcell { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 12px; }
+      .cb-table th small { display: block; font-weight: 500; opacity: .75; }
+
+      /* 달력: 월 요약 + 좌(달력)·우(상세) */
+      .cb-seg--kind { margin-left: auto; }
+      .cb-monthsum { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: -4px 0 12px; font-size: 12px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-monthsum b { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-weight: 700; }
+      .cb-calwrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+      .cb-cell--track { border-style: dashed; border-color: var(--cb-line); }
+      .cb-cell__t { font-size: 9.5px; font-weight: 700; color: var(--cb-accent); white-space: nowrap; }
+      .cb-legend-swing { display: none !important; }
+      .cb-calwrap[data-kind="swing"] .cb-legend-swing { display: inline-flex !important; }
+      .cb-empty--slim { padding: 26px 16px; font-size: 12.5px; }
+      .cb-daydetail { margin-top: 0; padding-top: 16px; border-top: 1px solid var(--border-color); }
+      @media (min-width: 1100px) {
+        .cb-calwrap { grid-template-columns: minmax(400px, 0.9fr) minmax(0, 1.25fr); gap: 22px; align-items: start; }
+        .cb-calwrap .cb-daydetail {
+          padding: 0 0 0 22px; border-top: 0; border-left: 1px solid var(--border-color);
+          max-height: 760px; overflow: auto;
+        }
+        .cb-calwrap .cb-cell { min-height: 56px; }
+        /* 상세 칸이 반쪽이라 표 대신 카드형 목록 */
+        .cb-calwrap .cb-daydetail .cb-scroll.cb-has-m { display: none; }
+        .cb-calwrap .cb-daydetail .cb-mlist { display: block; }
+      }
+      .cb-strats__h { margin: 0 0 10px; font-size: 13px; font-weight: 800; color: var(--text-title, var(--text-primary)); }
+      .cb-strats__h small { margin-left: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted-ui, var(--text-secondary)); }
+
+      /* 모바일 목록 줄에 가격 흐름 */
+      .cb-mprice { grid-column: 1 / -1; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-mprice b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+      .cb-mhead--3, .cb-mrow--3 { grid-template-columns: minmax(0, 1fr) 76px 76px; }
+
+      /* 넓은 화면 두 칸 대시보드(wide.css)에 바로가기 줄이 끼어들 자리 — 특이성을 한 단계 올려 덮는다 */
+      @media (min-width: 1280px) {
+        html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > .cb-jump { grid-row: 2; grid-column: 1 / -1; }
+        html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > #cbTodaySec { grid-row: 3; }
+        html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > #cbTodayCard { grid-row: 4; }
+        html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > .cb-sec:has(+ #cbYesterday) { grid-row: 3; }
+        html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > #cbYesterday { grid-row: 4; }
+      }
+      @media (max-width: 560px) {
+        .cb-jump { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+        .cb-seg--kind { margin-left: 0; width: 100%; }
+        .cb-seg--kind button { flex: 1 1 0; }
+        .sw-day { min-width: 44px; }
+      }
     </style>
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
@@ -527,22 +635,29 @@
 
           <div class="cb-body">
             <section class="cb-hero" aria-label="종가시그널 소개">
-              <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>선정 기준</p>
-              <h2 class="cb-hero__title">10가지 매매기법이 <em>동시에 포착한</em> 종목만 5개</h2>
+              <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>매일 15:20 · 고르고 · 결과를 전부 남깁니다</p>
+              <h2 class="cb-hero__title">내일 파는 <em>종가시그널</em>, 일주일 들고 가는 <em>1주 스윙</em></h2>
               <p class="cb-hero__desc">
-                장 마감 직전(15:20) 시세로 거래대금 상위 400종목을 훑어, 성격이 다른 매매기법 10종을
-                각각 돌립니다. <b>여러 기법이 겹쳐서 잡아낸 종목</b>일수록 점수가 높아지고, 그중 상위
-                5종목만 남깁니다. 선정된 종목은 다음 거래일 시가·종가 결과를 <b>매일 기록</b>합니다.
+                장 마감 직전(15:20) 시세로 거래대금 상위 400종목을 훑어 두 가지 기간으로 따로 채점합니다.
+                <b>종가시그널</b>은 다음 거래일 시가·종가에 판 결과를, <b>1주 스윙</b>은 5거래일 뒤 종가에 판 결과를
+                선정가·결과가와 함께 <b>빠짐없이 기록</b>합니다.
               </p>
               <div class="cb-record" id="cbRecord" aria-label="누적 성적"></div>
             </section>
 
-            <!-- 2026-09-25 시우: 로그인 전에는 오늘의 시그널(순위)을 통째로 숨기고, 직전 선정 결과 아래에
-                 매매시그널과 같은 가입 안내 카드를 보여준다. 로그인 여부가 확인되기 전까지는 둘 다 숨긴다. -->
+            <nav class="cb-jump" aria-label="이 페이지 바로가기">
+              <a href="#cbTodaySec"><i class="ti ti-bolt" aria-hidden="true"></i>오늘의 종가시그널</a>
+              <a href="#swSec"><i class="ti ti-trending-up" aria-hidden="true"></i>1주 스윙</a>
+              <a href="#swTrackSec"><i class="ti ti-route" aria-hidden="true"></i>스윙 추적</a>
+              <a href="#cbCalSec"><i class="ti ti-calendar-stats" aria-hidden="true"></i>성과 달력</a>
+              <a href="#cbStratSec"><i class="ti ti-checklist" aria-hidden="true"></i>매매기법</a>
+            </nav>
+
+            <!-- 로그인 전에는 오늘의 시그널(순위)을 통째로 숨기고 가입 안내 카드를 보여준다. -->
             <div class="cb-sec" id="cbTodaySec" style="display:none">
-              <span class="cb-sec__icon"><i class="ti ti-list-numbers" aria-hidden="true"></i></span>
+              <span class="cb-sec__icon"><i class="ti ti-bolt" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
-                <h2 class="cb-sec__title">오늘의 시그널</h2>
+                <h2 class="cb-sec__title">오늘의 종가시그널 <span class="cb-sec__tag">다음 거래일 매도</span></h2>
                 <p class="cb-sec__cap">종목을 누르면 어떤 기법에 어떤 값으로 걸렸는지 볼 수 있습니다.</p>
               </span>
               <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
@@ -557,8 +672,8 @@
             <div class="cb-sec">
               <span class="cb-sec__icon"><i class="ti ti-report-analytics" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
-                <h2 class="cb-sec__title">직전 선정 결과</h2>
-                <p class="cb-sec__cap">선정일 종가에 샀다면 다음 거래일 시초가·종가에 팔았을 때 얼마였는지 봅니다.</p>
+                <h2 class="cb-sec__title">직전 종가시그널 결과</h2>
+                <p class="cb-sec__cap">선정가에 샀다면 다음 거래일 시초가·종가에 팔았을 때 얼마였는지 봅니다.</p>
               </span>
               <span class="cb-stamp" id="cbYdStamp">—</span>
             </div>
@@ -570,7 +685,7 @@
             <div class="gg" id="cbGuest" style="display:none">
               <div class="gg-gate">
                 <p class="gg-gate__title">오늘의 선정 종목은 회원에게 공개됩니다</p>
-                <p class="gg-gate__text">매 거래일 장 마감 직전, 매매기법 10종이 동시에 포착한 종목을 골라 선정 근거와 함께 보여드립니다. 무료 회원가입 후 바로 확인할 수 있습니다.</p>
+                <p class="gg-gate__text">매 거래일 장 마감 직전, 여러 매매기법이 동시에 포착한 종목을 골라 선정 근거와 함께 보여드립니다. 무료 회원가입 후 바로 확인할 수 있습니다.</p>
                 <div class="gg-gate__btns">
                   <a class="gg-btn" href="./signup.html?next=/close-signal.html">무료 회원가입</a>
                   <a class="gg-btn gg-btn--ghost" href="./login.html?next=/close-signal.html">로그인</a>
@@ -583,37 +698,93 @@
               </div>
             </div>
 
-            <div class="cb-sec">
+            <!-- ══ 1주 스윙 (2026-10-02 신설) ══ -->
+            <div class="cb-pair" id="swPair">
+              <div class="cb-col">
+                <div class="cb-sec" id="swSec">
+                  <span class="cb-sec__icon"><i class="ti ti-trending-up" aria-hidden="true"></i></span>
+                  <span class="cb-sec__txt">
+                    <h2 class="cb-sec__title">오늘의 1주 스윙 <span class="cb-sec__tag">5거래일 보유</span></h2>
+                    <p class="cb-sec__cap">스윙 매매기법 10종으로 따로 채점한 상위 5종목입니다. 선정가에 사서 5거래일 뒤 종가에 판다고 가정합니다.</p>
+                  </span>
+                  <span class="cb-stamp" id="swStamp">불러오는 중…</span>
+                </div>
+                <div class="cb-card cb-card--fill" id="swTodayCard">
+                  <div class="cb-list" id="swList">
+                    <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+                  </div>
+                </div>
+              </div>
+              <div class="cb-col">
+                <div class="cb-sec" id="swTrackSec">
+                  <span class="cb-sec__icon"><i class="ti ti-route" aria-hidden="true"></i></span>
+                  <span class="cb-sec__txt">
+                    <h2 class="cb-sec__title">추적 중인 스윙</h2>
+                    <p class="cb-sec__cap">결과일(5거래일 뒤 종가) 전까지 매일 종가로 지금 몇 %인지 갱신합니다.</p>
+                  </span>
+                  <span class="cb-stamp" id="swTrackStamp">—</span>
+                </div>
+                <div class="cb-card cb-card--fill" id="swTrack">
+                  <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="cb-sec" id="swDoneSec">
+              <span class="cb-sec__icon"><i class="ti ti-flag-check" aria-hidden="true"></i></span>
+              <span class="cb-sec__txt">
+                <h2 class="cb-sec__title">1주 스윙 결과표</h2>
+                <p class="cb-sec__cap">선정 후 5거래일이 지나 결과가 확정된 가장 최근 선정분입니다. 매 거래일 15:45에 하루치씩 새로 확정됩니다.</p>
+              </span>
+              <span class="cb-stamp" id="swDoneStamp">—</span>
+            </div>
+            <div class="cb-card" id="swDone">
+              <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+            </div>
+
+            <div class="cb-sec" id="cbCalSec">
               <span class="cb-sec__icon"><i class="ti ti-calendar-stats" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">성과 달력</h2>
-                <p class="cb-sec__cap">거래일마다 그날 선정 5종목의 평균 수익률입니다. 날짜를 누르면 종목별로 펼쳐집니다.</p>
+                <p class="cb-sec__cap">선정일마다 그날 5종목의 평균 수익률입니다. 날짜를 누르면 선정가·결과가와 함께 종목별로 펼쳐집니다.</p>
               </span>
+              <div class="cb-seg cb-seg--kind" role="tablist" aria-label="달력 종류">
+                <button type="button" id="calKindClose" role="tab" aria-pressed="true">종가시그널</button>
+                <button type="button" id="calKindSwing" role="tab" aria-pressed="false">1주 스윙</button>
+              </div>
             </div>
 
             <div class="cb-card" id="cbCalendarCard">
-              <div class="cb-calhead">
-                <div class="cb-calnav">
-                  <button type="button" id="cbPrev" aria-label="이전 달"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
-                  <strong id="cbMonth">—</strong>
-                  <button type="button" id="cbNext" aria-label="다음 달"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+              <div class="cb-calwrap">
+                <div class="cb-calpane">
+                  <div class="cb-calhead">
+                    <div class="cb-calnav">
+                      <button type="button" id="cbPrev" aria-label="이전 달"><i class="ti ti-chevron-left" aria-hidden="true"></i></button>
+                      <strong id="cbMonth">—</strong>
+                      <button type="button" id="cbNext" aria-label="다음 달"><i class="ti ti-chevron-right" aria-hidden="true"></i></button>
+                    </div>
+                    <div class="cb-seg" role="group" aria-label="매도 기준" id="cbModeSeg">
+                      <button type="button" id="cbModeOpen" aria-pressed="false">시가 매도</button>
+                      <button type="button" id="cbModeClose" aria-pressed="true">종가 매도</button>
+                    </div>
+                  </div>
+                  <div class="cb-monthsum" id="cbMonthSum"></div>
+                  <div class="cb-cal" id="cbCal"></div>
+                  <p class="cb-callegend" id="cbCalLegend">
+                    <span><i style="background:var(--cb-up)"></i>수익</span>
+                    <span><i style="background:var(--cb-down)"></i>손실</span>
+                    <span><i style="background:var(--cb-inset);border:1px dashed var(--border-color)"></i>기록 없음</span>
+                    <span><i style="background:var(--text-muted-ui,var(--text-secondary));opacity:.45;border-radius:50%"></i>저장된 스캔으로 사후 검증한 날</span>
+                    <span class="cb-legend-swing"><i style="background:transparent;border:1px dashed var(--cb-accent)"></i>추적 중(결과 전)</span>
+                  </p>
                 </div>
-                <div class="cb-seg" role="group" aria-label="매도 기준">
-                  <button type="button" id="cbModeOpen" aria-pressed="true">시가 매도</button>
-                  <button type="button" id="cbModeClose" aria-pressed="false">종가 매도</button>
+                <div class="cb-daydetail" id="cbDayDetail">
+                  <div class="cb-empty cb-empty--slim"><i class="ti ti-hand-click" aria-hidden="true"></i>달력에서 날짜를 누르면 그날 선정 종목이 여기에 펼쳐집니다.</div>
                 </div>
               </div>
-              <div class="cb-cal" id="cbCal"></div>
-              <p class="cb-callegend">
-                <span><i style="background:var(--cb-up)"></i>수익</span>
-                <span><i style="background:var(--cb-down)"></i>손실</span>
-                <span><i style="background:var(--cb-inset);border:1px dashed var(--border-color)"></i>기록 없음</span>
-                <span><i style="background:var(--text-muted-ui,var(--text-secondary));opacity:.45;border-radius:50%"></i>과거 스캔으로 사후 검증한 날</span>
-              </p>
-              <div class="cb-daydetail" id="cbDayDetail" hidden></div>
             </div>
 
-            <div class="cb-sec">
+            <div class="cb-sec" id="cbStratSec">
               <span class="cb-sec__icon"><i class="ti ti-checklist" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">사용하는 매매기법</h2>
@@ -622,24 +793,27 @@
             </div>
 
             <div class="cb-card">
+              <h3 class="cb-strats__h">종가시그널 <small>다음 거래일 매도</small></h3>
               <div class="cb-strats" id="cbStrats"></div>
+              <h3 class="cb-strats__h" style="margin-top:18px">1주 스윙 <small>5거래일 보유</small></h3>
+              <div class="cb-strats" id="swStrats"></div>
             </div>
 
             <div class="cb-card cb-foot">
               <div>
                 <h3>계산·갱신 시각</h3>
                 <dl class="cb-sched">
-                  <dt>15:20</dt><dd>거래대금 상위 400종목을 당일 시세·수급으로 갱신하고 채점 → 이 화면 갱신</dd>
-                  <dt>익일 09:10</dt><dd>전일 선정 종목의 <b>시초가</b> 결과 기록</dd>
-                  <dt>익일 15:45</dt><dd>장 마감 후 <b>시가·고가·저가·종가</b>까지 확정해 달력에 기록</dd>
+                  <dt>15:20</dt><dd>거래대금 상위 400종목을 당일 시세·수급으로 갱신해 종가시그널·1주 스윙을 각각 채점 → 이 화면 갱신</dd>
+                  <dt>익일 09:10</dt><dd>전일 종가시그널의 <b>시초가</b> 결과 기록</dd>
+                  <dt>매일 15:45</dt><dd>종가시그널 <b>시가·고가·저가·종가</b> 확정, 1주 스윙 <b>추적 종가 갱신</b> · 5거래일째면 결과 확정</dd>
                 </dl>
               </div>
               <div>
                 <h3>알아두실 점</h3>
                 <p>
-                  수익률은 <b>선정일 종가에 매수</b>한 것으로 가정해 계산합니다. 세금·수수료·슬리피지는
-                  반영하지 않았고, 실제 체결가는 다를 수 있습니다. 달력에 회색 점이 찍힌 날은 그날 실제로
-                  화면에 나갔던 선정이 아니라, 저장된 스캔 기록으로 <b>사후에 검증한 결과</b>입니다.
+                  수익률은 <b>선정가(선정일 15:20 가격)에 매수</b>한 것으로 가정해 계산합니다. 세금·수수료·슬리피지는
+                  반영하지 않았고, 실제 체결가는 다를 수 있습니다. 회색 점이 찍힌 날은 그날 실제로 화면에 나갔던 선정이
+                  아니라, 저장된 스캔 기록으로 <b>사후에 검증한 결과</b>입니다.
                 </p>
                 <p>
                   이 페이지는 공개된 시세·수급·공시 데이터를 정해진 조건식으로 계산한 결과이며, 특정 종목의
@@ -686,30 +860,32 @@
     <script>
       (function () {
         /* ────────────────────────────────────────────────────────────────────
-           화면은 계산하지 않는다. 수익률·비율은 전부 서버(close_signal_results)가
-           기록해 둔 값을 그대로 그린다 — 화면에서 다시 계산하면 기록과 표시가
-           언젠가 어긋나고, 어느 쪽이 맞는지 알 수 없게 된다.
-           값이 없는 칸은 지어내지 않고 "—"로 둔다.
+           화면은 계산하지 않는다. 수익률·비율·가격은 전부 서버 기록(close_signal_results ·
+           swing_signal_results)을 그대로 그린다. 값이 없는 칸은 지어내지 않고 "—"로 둔다.
+           2026-10-02 개편: 선정가·결과가(원)는 출입증(승인 회원·초대코드)이 있을 때만 서버가 내려준다.
            ──────────────────────────────────────────────────────────────────── */
-        var listEl = document.getElementById("cbList");
-        var stampEl = document.getElementById("cbStamp");
-        var recordEl = document.getElementById("cbRecord");
-        var stratsEl = document.getElementById("cbStrats");
-        var ydEl = document.getElementById("cbYesterday");
-        var ydStampEl = document.getElementById("cbYdStamp");
-        var calEl = document.getElementById("cbCal");
-        var monthEl = document.getElementById("cbMonth");
-        var prevBtn = document.getElementById("cbPrev");
-        var nextBtn = document.getElementById("cbNext");
-        var modeOpenBtn = document.getElementById("cbModeOpen");
-        var modeCloseBtn = document.getElementById("cbModeClose");
-        var dayDetailEl = document.getElementById("cbDayDetail");
+        var $ = function (id) { return document.getElementById(id); };
+        var listEl = $("cbList"), stampEl = $("cbStamp"), recordEl = $("cbRecord");
+        var stratsEl = $("cbStrats"), swStratsEl = $("swStrats");
+        var ydEl = $("cbYesterday"), ydStampEl = $("cbYdStamp");
+        var swListEl = $("swList"), swStampEl = $("swStamp"), swTrackEl = $("swTrack"), swTrackStampEl = $("swTrackStamp");
+        var swDoneEl = $("swDone"), swDoneStampEl = $("swDoneStamp");
+        var calEl = $("cbCal"), monthEl = $("cbMonth"), prevBtn = $("cbPrev"), nextBtn = $("cbNext");
+        var modeOpenBtn = $("cbModeOpen"), modeCloseBtn = $("cbModeClose"), modeSeg = $("cbModeSeg");
+        var dayDetailEl = $("cbDayDetail"), monthSumEl = $("cbMonthSum");
+        var kindCloseBtn = $("calKindClose"), kindSwingBtn = $("calKindSwing");
+        var calWrap = document.querySelector(".cb-calwrap");
 
-        var HISTORY = { days: [], byDate: {}, months: [], record: null };
-        var calMonth = null;      // "YYYY-MM"
-        var calMode = "open";     // open | close
-        var detailSort = "pick";  // 달력 상세 표 정렬: pick | open | close (날짜를 바꿔도 유지)
+        var HIST = {
+          close: { days: [], byDate: {}, loaded: false },
+          swing: { days: [], byDate: {}, loaded: false },
+        };
+        var calKind = "close";   // close | swing
+        var calMonth = null;     // "YYYY-MM"
+        var calMode = "close";   // 종가시그널: open | close
+        var detailSort = "pick";
         var calSelected = null;
+        var LAST = { close: null, swing: null }; // 마지막 응답(누적 성적 갱신용)
 
         function esc(v) {
           return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
@@ -723,55 +899,63 @@
         }
         function won(v) { return v == null ? "—" : Math.round(v).toLocaleString("ko-KR"); }
         function pctWidth(v, max) { return !max ? 0 : Math.max(0, Math.min(100, (v / max) * 100)); }
-        function sign(v) { return v == null ? "—" : (v > 0 ? "+" : "") + v.toFixed(2) + "%"; }
-        /* 달력 칸은 폭이 46px 남짓이라 소수점 둘째 자리까지 넣으면 잘린다. 한 자리면 충분하다. */
-        function signShort(v) { return v == null ? "—" : (v > 0 ? "+" : "") + v.toFixed(1) + "%"; }
+        function sign(v) { return v == null ? "—" : (v > 0 ? "+" : "") + Number(v).toFixed(2) + "%"; }
+        function signShort(v) { return v == null ? "—" : (v > 0 ? "+" : "") + Number(v).toFixed(1) + "%"; }
         function tone(v) { return v == null ? "cb-flat" : v > 0 ? "cb-up" : v < 0 ? "cb-down" : "cb-flat"; }
-        /* 2026-09-25 B안: 종목별로는 수익/손실만 보여준다(가격·종목별 %는 서버가 내려주지 않는다). */
-        function resTxt(m) { return m === "up" ? "수익" : m === "down" ? "손실" : m === "flat" ? "보합" : "—"; }
-        function resTone(m) { return m === "up" ? "cb-up" : m === "down" ? "cb-down" : "cb-flat"; }
+        function hasPrice(p) { return p && p.buyPrice != null; }
+        function dLabel(s) {
+          if (!s) return "—";
+          var p = String(s).split("-");
+          return p.length === 3 ? Number(p[1]) + "/" + Number(p[2]) : s;
+        }
+        function dowLabel(s) {
+          if (!s) return "";
+          return ["일", "월", "화", "수", "목", "금", "토"][new Date(Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10))).getUTCDay()];
+        }
+        function stockHref(p) { return "./stock-analysis.html?code=" + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || ""); }
         async function token() {
           try {
             if (window.TMAuth && window.TMAuth.getAccessToken) return await window.TMAuth.getAccessToken();
           } catch (e) {}
           return null;
         }
-        function dLabel(s) {
-          if (!s) return "—";
-          var p = String(s).split("-");
-          return p.length === 3 ? p[1] + "/" + p[2] : s;
-        }
 
-        /* ── 누적 성적 ─────────────────────────────────────────────────────── */
-        function renderRecord(rec) {
-          if (!rec || !rec.tradedDaysOpen) { recordEl.innerHTML = ""; return; }
-          function cell(k, v, cls, s) {
-            return '<div class="cb-rec"><span class="cb-rec__k">' + esc(k) + "</span>" +
-              '<span class="cb-rec__v ' + (cls || "") + '">' + v + "</span>" +
-              (s ? '<span class="cb-rec__s">' + esc(s) + "</span>" : "") + "</div>";
+        /* ── 누적 성적(히어로) — 종가시그널 + 1주 스윙 ─────────────────────── */
+        function recCell(k, v, cls, s) {
+          return '<div class="cb-rec"><span class="cb-rec__k">' + esc(k) + "</span>" +
+            '<span class="cb-rec__v ' + (cls || "") + '">' + v + "</span>" +
+            (s ? '<span class="cb-rec__s">' + esc(s) + "</span>" : "") + "</div>";
+        }
+        function renderRecord() {
+          var rec = LAST.close, sw = LAST.swing;
+          var html = "";
+          if (rec && rec.tradedDaysOpen) {
+            html += '<p class="cb-rec__grp">종가시그널 · 최근 ' + rec.tradedDaysOpen + "거래일</p>";
+            html += recCell("시가 매도 평균", sign(rec.avgOpenReturnPct), tone(rec.avgOpenReturnPct),
+              rec.openWinRatePct == null ? "" : "수익 종목 비율 " + rec.openWinRatePct + "%");
+            if (rec.tradedDaysClose) {
+              html += recCell("종가 매도 평균", sign(rec.avgCloseReturnPct), tone(rec.avgCloseReturnPct),
+                rec.closeWinRatePct == null ? "" : "수익 종목 비율 " + rec.closeWinRatePct + "%");
+            }
           }
-          var html = cell("기록된 거래일", rec.tradedDaysOpen + "일", "", "선정 " + rec.picks + "종목");
-          html += cell("시가 매도 평균", sign(rec.avgOpenReturnPct), tone(rec.avgOpenReturnPct),
-            rec.openWinRatePct == null ? "" : "수익 종목 비율 " + rec.openWinRatePct + "%");
-          if (rec.tradedDaysClose) {
-            html += cell("종가 매도 평균", sign(rec.avgCloseReturnPct), tone(rec.avgCloseReturnPct),
-              rec.closeWinRatePct == null ? "" : "수익 종목 비율 " + rec.closeWinRatePct + "%");
-            html += cell("플러스로 끝난 날", rec.plusDaysClose + " / " + rec.tradedDaysClose, "", "종가 매도 기준");
-          } else {
-            html += cell("플러스로 끝난 날", rec.plusDaysOpen + " / " + rec.tradedDaysOpen, "", "시가 매도 기준");
+          if (sw && sw.picks) {
+            html += '<p class="cb-rec__grp">1주 스윙 · 결과 확정 ' + sw.weeks + "회</p>";
+            html += recCell("5거래일 보유 평균", sign(sw.avgReturnPct), tone(sw.avgReturnPct),
+              sw.winRatePct == null ? "" : "수익 종목 비율 " + sw.winRatePct + "%");
+            html += recCell("평균이 플러스였던 회차", sw.plusDays + " / " + sw.measuredDays, "", sw.tracking ? "추적 중 " + sw.tracking + "회" : "");
           }
           recordEl.innerHTML = html;
         }
 
         /* ── 기법 카탈로그 ─────────────────────────────────────────────────── */
-        function renderStrats(list) {
-          if (!list || !list.length) { stratsEl.innerHTML = ""; return; }
-          stratsEl.innerHTML = list.map(function (s) {
+        function renderStrats(el, list) {
+          if (!list || !list.length) { el.innerHTML = ""; return; }
+          el.innerHTML = list.map(function (s) {
             return '<div class="cb-strat"><b>' + esc(s.label) + "</b><span>" + esc(s.desc || "") + "</span></div>";
           }).join("");
         }
 
-        /* ── 오늘의 시그널 ─────────────────────────────────────────────────── */
+        /* ── 오늘의 종가시그널 ─────────────────────────────────────────────── */
         function factorHtml(f) {
           return (
             '<div class="cb-f">' +
@@ -782,21 +966,24 @@
             (f.note ? '<span class="cb-f__note">' + esc(f.note) + "</span>" : "") + "</div></div>"
           );
         }
-        function detailHtml(r) {
-          var html =
-            '<a class="cb-ai-link" href="./stock-analysis.html?code=' + encodeURIComponent(r.code) + '&name=' + encodeURIComponent(r.name || '') + '">' +
+        function aiLink(r) {
+          return '<a class="cb-ai-link" href="' + stockHref(r) + '">' +
             '<i class="ti ti-chart-candle" aria-hidden="true"></i>' +
             "AI종목분석으로 " + esc(r.name) + "의 현재 위치 확인하기" +
             '<i class="ti ti-chevron-right" aria-hidden="true"></i></a>';
-          if (r.strategies && r.strategies.length) {
-            html += '<div class="cb-group" style="margin-bottom:8px"><div class="cb-group__head">' +
-              '<span class="cb-group__name">포착된 매매기법</span>' +
-              '<span class="cb-group__pts">' + r.strategies.length + "개</span></div>" +
-              r.strategies.map(function (s) {
-                return '<div class="cb-f"><div class="cb-f__top"><span class="cb-f__name">' + esc(s.label) +
-                  "</span></div>" + '<div class="cb-f__val">' + esc(s.why || "") + "</div></div>";
-              }).join("") + "</div>";
-          }
+        }
+        function stratGroupHtml(list) {
+          if (!list || !list.length) return "";
+          return '<div class="cb-group" style="margin-bottom:8px"><div class="cb-group__head">' +
+            '<span class="cb-group__name">포착된 매매기법</span>' +
+            '<span class="cb-group__pts">' + list.length + "개</span></div>" +
+            list.map(function (s) {
+              return '<div class="cb-f"><div class="cb-f__top"><span class="cb-f__name">' + esc(s.label) +
+                "</span></div>" + '<div class="cb-f__val">' + esc(s.why || "") + "</div></div>";
+            }).join("") + "</div>";
+        }
+        function detailHtml(r) {
+          var html = aiLink(r) + stratGroupHtml(r.strategies);
           var groups = {};
           (r.factors || []).forEach(function (f) { (groups[f.group] = groups[f.group] || []).push(f); });
           html += '<div class="cb-groups">';
@@ -813,28 +1000,61 @@
           html += "</div>";
           if (r.penalties && r.penalties.length) {
             html += '<p class="cb-pen">감점 · ' +
-              r.penalties.map(function (p) { return esc(p.label) + " −" + p.points; }).join(" · ") + "</p>";
+              r.penalties.map(function (p) { return esc(p.label) + " −" + (p.points != null ? p.points : p.pts); }).join(" · ") + "</p>";
           }
           if (r.missing && r.missing.length) {
             html += '<p class="cb-missing">미반영(데이터 없음, 만점 계산에서도 제외) · ' + r.missing.map(esc).join(" · ") + "</p>";
           }
           return '<div class="cb-detail">' + html + "</div>";
         }
-        function rowHtml(r) {
+        /* 스윙 상세: 기법 근거 + 4개 축 점수 + 참고 수치 */
+        function swDetailHtml(r) {
+          var html = aiLink(r) + stratGroupHtml(r.strategies);
+          var P = r.parts || {};
+          var axes = [["consensus", "기법 합의", 40], ["momentum", "모멘텀 자리", 25], ["size", "체급·시장", 20], ["flow", "수급", 15]];
+          html += '<div class="cb-groups"><div class="cb-group"><div class="cb-group__head"><span class="cb-group__name">점수 구성</span>' +
+            '<span class="cb-group__pts">' + esc(r.score) + " / 100</span></div>" +
+            axes.map(function (a) {
+              var v = P[a[0]];
+              if (v == null) return "";
+              return factorHtml({ label: a[1], score: v, max: a[2] });
+            }).join("") + "</div>";
+          var F = r.facts || {};
+          var facts = [];
+          if (F.r5 != null) facts.push("최근 5일 " + sign(F.r5));
+          if (F.r21 != null) facts.push("1개월 " + sign(F.r21));
+          if (F.dist20 != null) facts.push("20일선 대비 " + sign(F.dist20));
+          if (F.rsi != null) facts.push("RSI(전일) " + F.rsi);
+          if (F.foreignStreak) facts.push("외국인 " + F.foreignStreak + "일 연속 순매수");
+          if (F.institutionStreak) facts.push("기관 " + F.institutionStreak + "일 연속 순매수");
+          if (facts.length) {
+            html += '<div class="cb-group"><div class="cb-group__head"><span class="cb-group__name">참고 수치</span></div>' +
+              facts.map(function (t) { return '<div class="cb-f__val" style="margin-bottom:6px">' + esc(t) + "</div>"; }).join("") + "</div>";
+          }
+          html += "</div>";
+          if (r.penalties && r.penalties.length) {
+            html += '<p class="cb-pen">감점 · ' + r.penalties.map(function (p) { return esc(p.label) + " −" + (p.pts != null ? p.pts : p.points); }).join(" · ") + "</p>";
+          }
+          return '<div class="cb-detail">' + html + "</div>";
+        }
+        function rowHtml(r, kind) {
           var locked = !!r.locked;
           var tag = locked ? "div" : "button";
+          var chg = r.changePct != null ? (r.changePct > 0 ? "+" : "") + Number(r.changePct).toFixed(2) + "%" : "";
           var meta = locked
             ? '<span class="up">+0.00%</span><span class="cb-dot">·</span><em>000억</em>'
-            : '<span class="up">+' + esc(r.changePct) + "%</span>" +
-              '<span class="cb-dot">·</span><em>' + eok(r.tradingValueEok) + "</em>" +
-              '<span class="cb-dot">·</span><em>시총 ' + eok(r.marketCapEok) + "</em>" +
+            : '<span class="' + (r.changePct < 0 ? "cb-down" : "up") + '" style="font-weight:700;font-family:var(--cb-mono)">' + esc(chg) + "</span>" +
+              (r.close != null ? '<span class="cb-dot">·</span><em>선정가 <b>' + won(r.close) + "</b>원</em>" : "") +
+              (r.tradingValueEok != null ? '<span class="cb-dot">·</span><em>' + eok(r.tradingValueEok) + "</em>" : "") +
+              (r.marketCapEok != null || (r.facts && r.facts.marketCapEok != null)
+                ? '<span class="cb-dot">·</span><em>시총 ' + eok(r.marketCapEok != null ? r.marketCapEok : r.facts.marketCapEok) + "</em>" : "") +
               (r.sector ? '<span class="sector">' + esc(r.sector) + "</span>" : "");
           var chips = "";
           if (locked) {
             chips = '<span class="cb-chip">기법 0000</span><span class="cb-chip">기법 000000</span>';
           } else if (r.strategies && r.strategies.length) {
             chips = r.strategies.slice(0, 4).map(function (s) {
-              return '<span class="cb-chip">' + esc(s.label) + "</span>";
+              return '<span class="cb-chip">' + esc(s.label || s) + "</span>";
             }).join("");
             if (r.strategies.length > 4) chips += '<span class="cb-chip cb-chip--count">+' + (r.strategies.length - 4) + "</span>";
           }
@@ -849,12 +1069,28 @@
             (chips ? '<span class="cb-chips">' + chips + "</span>" : "") + "</span>" +
             '<span class="cb-scorebox"><span class="cb-score">' + r.score + "<span>점</span></span>" +
             '<span class="cb-bar"><i style="width:' + pctWidth(r.score, 100) + '%"></i></span></span>' +
-            "</" + tag + ">" + (locked ? "" : detailHtml(r)) + "</div>"
+            "</" + tag + ">" + (locked ? "" : kind === "swing" ? swDetailHtml(r) : detailHtml(r)) + "</div>"
           );
         }
-        function renderRanking(d) {
-          var old = document.querySelector(".cb-cta");
+        function bindRows(el) {
+          el.querySelectorAll("button.cb-main").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var row = btn.closest(".cb-row");
+              row.dataset.open = row.dataset.open === "true" ? "false" : "true";
+            });
+          });
+        }
+        function lockedCta(el, hidden) {
+          var old = el.parentNode.querySelector(".cb-cta");
           if (old) old.remove();
+          if (!hidden) return;
+          var cta = document.createElement("div");
+          cta.className = "cb-cta";
+          cta.innerHTML = "<span><b>" + hidden + "개 종목</b>의 이름과 근거는 Pro에서 볼 수 있습니다. 지난 성과 기록은 모두 공개입니다.</span>" +
+            '<a href="./pricing.html">플랜 보기</a>';
+          el.parentNode.appendChild(cta);
+        }
+        function renderRanking(d) {
           var mk = d.market || {};
           if (!d.ready) {
             stampEl.textContent = mk.closedReason ? "휴장일" : "오늘 집계 전";
@@ -863,38 +1099,22 @@
               (mk.closedReason
                 ? "오늘은 " + esc(mk.closedReason) + "로 증시가 쉽니다.<br />다음 시그널은 " + esc(mk.nextLabel) + " 15:20에 나옵니다."
                 : "아직 오늘 집계가 없습니다.<br />평일 15:20 이후에 갱신됩니다.") + "</div>";
+            lockedCta(listEl, 0);
             return;
           }
           var st = d.stats || {};
-          // 2026-09-24: 오늘 것이 아니면(휴장일·장 시작 전) 그 사실을 먼저 밝힌다
           var notToday = mk.today && d.asOfDate !== mk.today;
           stampEl.innerHTML =
             (notToday ? (mk.closedReason ? "오늘 휴장 · " : "") + "직전 거래일 " : "") +
             "<b>" + esc(d.asOfDate) + "</b> 15:20 기준 · 후보 " + esc(st.total || "-") +
             " → 조건 통과 " + esc(st.passed || "-") +
             (st.withStrategy != null ? " → 기법 포착 " + esc(st.withStrategy) : "");
-          listEl.innerHTML = d.ranked.map(rowHtml).join("");
-
-          if (!d.isPro && d.total > d.visible) {
-            var cta = document.createElement("div");
-            cta.className = "cb-cta";
-            cta.innerHTML =
-              "<span><b>" + (d.total - d.visible) + "개 종목</b>의 이름과 근거는 Pro에서 볼 수 있습니다. 지난 성과 기록은 모두 공개입니다.</span>" +
-              '<a href="./pricing.html">플랜 보기</a>';
-            listEl.parentNode.appendChild(cta);
-          }
-          listEl.querySelectorAll("button.cb-main").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              var row = btn.closest(".cb-row");
-              row.dataset.open = row.dataset.open === "true" ? "false" : "true";
-            });
-          });
+          listEl.innerHTML = d.ranked.map(function (r) { return rowHtml(r, "close"); }).join("");
+          lockedCta(listEl, !d.isPro && d.total > d.visible ? d.total - d.visible : 0);
+          bindRows(listEl);
         }
 
-        /* ── 결과 표 (전일 성적표 / 달력 상세 공용) ─────────────────────────── */
-        /* 2026-09-28 시우: 달력 상세 표 정렬 탭 — 선정 순위 / 시가 매도 / 종가 매도.
-           시가·종가 탭은 그 매도 수익률 높은 순으로 줄을 다시 세우고, 수익 순위 배지도 그 기준으로 다시 매긴다
-           (▲▼는 선정 순위 대비). 같은 수익률이면 선정 순위가 앞선 종목을 위로. 선정 순위 탭은 기존 그대로(서버 계산 순위). */
+        /* ── 종가시그널 결과(직전 결과 카드 · 달력 상세 공용) ─────────────── */
         function sortedPicks(picks, mode) {
           var key = mode === "open" ? "openReturnPct" : mode === "close" ? "closeReturnPct" : null;
           if (!key) return { list: picks.slice().sort(function (a, b) { return (a.rank || 99) - (b.rank || 99); }), rr: null };
@@ -909,57 +1129,59 @@
           list.forEach(function (p, i) { if (p[key] != null && isFinite(p[key])) rr[p.code] = i + 1; });
           return { list: list, rr: rr };
         }
+        function retBadgeOf(p, rrMap, rlabel) {
+          var rr = rrMap ? rrMap[p.code] : p.retRank;
+          if (!rr) return "";
+          var diff = (p.rank || 0) - rr;
+          var cls = diff > 0 ? "cb-rr cb-rr--flip" : diff < 0 ? "cb-rr cb-rr--drop" : rr === 1 ? "cb-rr cb-rr--top" : "cb-rr";
+          var mark = '<span class="cb-rr__mk">' + (diff > 0 ? "▲" + diff : diff < 0 ? "▼" + (-diff) : "–") + "</span>";
+          return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' + rlabel + " " + rr + "위" + mark + "</span>";
+        }
+        function priceCell(price, ret) {
+          return '<td class="cb-ret ' + tone(ret) + '">' + sign(ret) +
+            (price != null ? '<span class="cb-pp">' + won(price) + "원</span>" : "") + "</td>";
+        }
         function resultTableHtml(day, sortMode) {
           var picks = day.picks || [];
           if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
           var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
+          var withP = picks.some(hasPrice);
           if (sortMode === "close" && !hasClose) sortMode = "pick";
           var sorted = sortedPicks(picks, sortMode);
           picks = sorted.list;
-          // 수익 순위 — 선정 순위 탭은 서버 계산(종가 매도가 있으면 종가 기준, 없으면 시가 기준), 시가·종가 탭은 그 기준으로 다시 매긴다
           var rlabel = sorted.rr ? (sortMode === "close" ? "종가" : "시가") : day.retRankBy === "close" ? "종가" : "시가";
-          function pickBadge(p) {
-            return '<span class="cb-pk">선정 <b>' + esc(p.rank) + "위</b>" +
-              (p.score != null ? "<i>·</i><b>" + esc(p.score) + "점</b>" : "") + "</span>";
-          }
-          function retBadge(p) {
-            var rr = sorted.rr ? sorted.rr[p.code] : p.retRank;
-            if (!rr) return "";
-            var diff = (p.rank || 0) - rr; // +면 선정 순위보다 수익 순위가 높다(역전)
-            // 2026-09-24 시우: 오르면 빨강, 내리면 파랑, 그대로면 '–'(1위 그대로는 초록). 기호 칸을 항상 둬서 배지 폭을 맞춘다.
-            var cls = diff > 0 ? "cb-rr cb-rr--flip" : diff < 0 ? "cb-rr cb-rr--drop" : rr === 1 ? "cb-rr cb-rr--top" : "cb-rr";
-            var mark = '<span class="cb-rr__mk">' + (diff > 0 ? "▲" + diff : diff < 0 ? "▼" + (-diff) : "–") + "</span>";
-            return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">' +
-              rlabel + " " + rr + "위" + mark + "</span>";
-          }
-          // 2026-09-25 시우 A안: 원 단위 가격 열만 뺀다. 수익률(%)은 종목별로 그대로 보여준다.
           var head =
-            "<tr><th class=\"cb-t-fit\">선정</th><th class=\"cb-t-fit\">종목</th><th class=\"cb-t-fit\">수익 순위</th>" +
+            '<tr><th class="cb-t-fit">선정</th><th class="cb-t-fit">종목</th><th class="cb-t-fit">수익 순위</th>' +
+            (withP ? "<th>선정가<br><small>선정일 15:20</small></th>" : "") +
             "<th>시가 매도<br><small>다음날 시초가</small></th>" +
             (hasClose ? "<th>종가 매도<br><small>다음날 종가</small></th><th>하루 고·저</th>" : "") + "</tr>";
           var body = picks.map(function (p) {
             return "<tr>" +
               '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '" title="선정 순위">' + esc(p.rank) + "</span></td>" +
-              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + '&name=' + encodeURIComponent(p.name || '') + '">' +
+              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' +
               esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
               "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
-              '<td class="cb-t-fit cb-rrcell">' + (retBadge(p) || "—") + "</td>" +
-              '<td class="cb-ret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</td>" +
+              '<td class="cb-t-fit cb-rrcell">' + (retBadgeOf(p, sorted.rr, rlabel) || "—") + "</td>" +
+              (withP ? '<td class="cb-buy">' + won(p.buyPrice) + "</td>" : "") +
+              priceCell(withP ? p.open : null, p.openReturnPct) +
               (hasClose
-                ? '<td class="cb-ret ' + tone(p.closeReturnPct) + '">' + sign(p.closeReturnPct) + "</td>" +
+                ? priceCell(withP ? p.close : null, p.closeReturnPct) +
                   '<td class="cb-num"><span class="' + tone(p.highReturnPct) + '">' + sign(p.highReturnPct) + "</span>" +
                   ' <span class="cb-flat">/</span> <span class="' + tone(p.lowReturnPct) + '">' + sign(p.lowReturnPct) + "</span></td>"
                 : "") +
               "</tr>";
           }).join("");
-          // 모바일(≤560px)은 표 대신 아래 목록을 보여준다(CSS로 전환).
           var mrows = picks.map(function (p) {
             return '<div class="cb-mrow">' +
-              '<div class="cb-mname"><a href="./stock-analysis.html?code=' + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "") + '">' +
-              esc(p.name) + "</a></div>" +
+              '<div class="cb-mname"><a href="' + stockHref(p) + '">' + esc(p.name) + "</a></div>" +
               '<div class="cb-mret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</div>" +
               '<div class="cb-mret ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</div>" +
-              '<div class="cb-mtags">' + pickBadge(p) + retBadge(p) + "</div>" +
+              '<div class="cb-mtags"><span class="cb-pk">선정 <b>' + esc(p.rank) + "위</b>" +
+              (p.score != null ? "<i>·</i><b>" + esc(p.score) + "점</b>" : "") + "</span>" + retBadgeOf(p, sorted.rr, rlabel) + "</div>" +
+              (hasPrice(p)
+                ? '<div class="cb-mprice">선정가 <b>' + won(p.buyPrice) + "</b> → 시가 <b>" + won(p.open) + "</b>" +
+                  (p.close != null ? " · 종가 <b>" + won(p.close) + "</b>" : "") + "</div>"
+                : "") +
               (p.highReturnPct != null
                 ? '<div class="cb-mflow"><span>하루 고 <i class="' + tone(p.highReturnPct) + '" style="font-style:normal">' + sign(p.highReturnPct) + "</i>" +
                   ' · 저 <i class="' + tone(p.lowReturnPct) + '" style="font-style:normal">' + sign(p.lowReturnPct) + "</i></span></div>"
@@ -976,28 +1198,16 @@
             return '<div class="cb-verdict__item"><span class="cb-verdict__k">' + esc(k) + "</span>" +
               '<span class="cb-verdict__v ' + (cls || "") + '">' + v + (sub ? ' <span class="cb-verdict__k">' + esc(sub) + "</span>" : "") + "</span></div>";
           }
-          items += item("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct),
-            s.openWins != null ? s.openWins + "/" + s.measured + " 수익" : "");
+          items += item("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct), s.openWins != null ? s.openWins + "/" + s.measured + " 수익" : "");
           if (s.avgCloseReturnPct != null) {
-            items += item("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct),
-              s.closeWins != null ? s.closeWins + "/" + s.picks + " 수익" : "");
+            items += item("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct), s.closeWins != null ? s.closeWins + "/" + s.picks + " 수익" : "");
           }
           if (s.best) items += item("가장 좋았던 종목", esc(s.best.name) + " " + sign(s.best.returnPct), tone(s.best.returnPct));
-          if (s.worst && (!s.best || s.worst.code !== s.best.code)) {
-            items += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));
-          }
+          if (s.worst && (!s.best || s.worst.code !== s.best.code)) items += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));
           var tag = day.source === "backfill" ? "사후 검증 기록" : day.phase === "open" ? "시초가만 확정 · 15:45에 마감 반영" : "확정";
           items += '<span class="cb-verdict__tag">' + esc(tag) + "</span>";
           return '<div class="cb-verdict">' + items + "</div>";
         }
-        function pendingHtml(p) {
-          if (!p) return "";
-          return '<div class="cb-empty" style="padding:18px 16px;margin-bottom:12px">' +
-            '<i class="ti ti-hourglass" aria-hidden="true"></i>' +
-            "<b>" + esc(p.asOfDate) + "</b> 선정 " + esc(p.pickCount) + "종목의 결과는 " +
-            "<b>" + esc(p.resultLabel) + "</b> 09:10 시초가부터 기록됩니다.<br />아래는 그 이전 선정분의 결과입니다.</div>";
-        }
-        /* 2026-09-26: 직전 선정 결과 — 왼쪽 "오늘의 시그널"과 같은 카드(.cb-row)로 그린다. */
         function ydNoteHtml(p) {
           if (!p) return "";
           return '<p class="cb-ynote"><i class="ti ti-hourglass" aria-hidden="true"></i><span>' +
@@ -1006,189 +1216,316 @@
         }
         function ydSummaryHtml(day) {
           var s = day.summary || {};
-          function cell(k, v, cls, sub) {
-            return '<div class="cb-rec"><span class="cb-rec__k">' + esc(k) + "</span>" +
-              '<span class="cb-rec__v ' + (cls || "") + '">' + v + "</span>" +
-              (sub ? '<span class="cb-rec__s">' + esc(sub) + "</span>" : "") + "</div>";
-          }
-          var html = cell("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct),
-            s.openWins != null ? s.measured + "종목 중 " + s.openWins + "종목 수익" : "");
-          if (s.avgCloseReturnPct != null) {
-            html += cell("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct),
-              s.closeWins != null ? s.picks + "종목 중 " + s.closeWins + "종목 수익" : "");
-          }
-          if (s.best) html += cell("가장 좋았던 종목", sign(s.best.returnPct), tone(s.best.returnPct), s.best.name);
-          if (s.worst && (!s.best || s.worst.code !== s.best.code)) {
-            html += cell("가장 나빴던 종목", sign(s.worst.returnPct), tone(s.worst.returnPct), s.worst.name);
-          }
+          var html = recCell("시가 매도 평균", sign(s.avgOpenReturnPct), tone(s.avgOpenReturnPct), s.openWins != null ? s.measured + "종목 중 " + s.openWins + "종목 수익" : "");
+          if (s.avgCloseReturnPct != null) html += recCell("종가 매도 평균", sign(s.avgCloseReturnPct), tone(s.avgCloseReturnPct), s.closeWins != null ? s.picks + "종목 중 " + s.closeWins + "종목 수익" : "");
+          if (s.best) html += recCell("가장 좋았던 종목", sign(s.best.returnPct), tone(s.best.returnPct), s.best.name);
+          if (s.worst && (!s.best || s.worst.code !== s.best.code)) html += recCell("가장 나빴던 종목", sign(s.worst.returnPct), tone(s.worst.returnPct), s.worst.name);
           return '<div class="cb-ysum">' + html + "</div>";
+        }
+        function ycell(k, ret, price) {
+          return '<span class="cb-ycell"><span class="cb-ycell__k">' + k + "</span>" +
+            '<span class="cb-ycell__v ' + tone(ret) + '">' + sign(ret) + "</span>" +
+            (price != null ? '<span class="cb-ycell__p"><b>' + won(price) + "</b>원</span>" : "") + "</span>";
         }
         function ydCardsHtml(day) {
           var picks = day.picks || [];
           if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
           var hasClose = picks.some(function (p) { return p.closeReturnPct != null; });
           var rlabel = day.retRankBy === "close" ? "종가" : "시가";
-          function retBadge(p) {
-            var rr = p.retRank;
-            if (!rr) return "";
-            var diff = (p.rank || 0) - rr;
-            var cls = diff > 0 ? "cb-rr cb-rr--flip" : diff < 0 ? "cb-rr cb-rr--drop" : rr === 1 ? "cb-rr cb-rr--top" : "cb-rr";
-            var mark = '<span class="cb-rr__mk">' + (diff > 0 ? "▲" + diff : diff < 0 ? "▼" + (-diff) : "–") + "</span>";
-            return '<span class="' + cls + '" title="' + rlabel + ' 매도 수익률 기준 순위">수익 ' + rr + "위" + mark + "</span>";
-          }
-          var rows = picks.map(function (p) {
-            var href = "./stock-analysis.html?code=" + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || "");
+          return '<div class="cb-list">' + picks.map(function (p) {
             var meta =
               (p.score != null ? "<em>" + esc(p.score) + "점</em>" : "") +
               (p.consensus != null ? '<span class="cb-dot">·</span><em>기법 ' + esc(p.consensus) + "개</em>" : "") +
-              retBadge(p);
-            var flow = p.highReturnPct != null
+              retBadgeOf(p, null, rlabel);
+            var flow = hasPrice(p)
+              ? '<span class="cb-pflow"><span class="k">선정가</span><b>' + won(p.buyPrice) + '</b><span class="arr">→</span>' +
+                '<span class="k">시가</span><b class="' + tone(p.openReturnPct) + '">' + won(p.open) + "</b>" +
+                (p.close != null ? '<span class="k">· 종가</span><b class="' + tone(p.closeReturnPct) + '">' + won(p.close) + "</b>" : "") + "</span>"
+              : "";
+            var hl = p.highReturnPct != null
               ? '<span class="cb-yflow">하루 고 <b class="' + tone(p.highReturnPct) + '">' + sign(p.highReturnPct) + "</b>" +
                 ' · 저 <b class="' + tone(p.lowReturnPct) + '">' + sign(p.lowReturnPct) + "</b></span>"
               : "";
             return '<div class="cb-row"><div class="cb-main cb-ymain">' +
               '<span class="cb-rank">' + esc(p.rank) + "</span>" +
-              '<span class="cb-idn"><span><a class="cb-name cb-ylink" href="' + href + '">' + esc(p.name) + "</a>" +
+              '<span class="cb-idn"><span><a class="cb-name cb-ylink" href="' + stockHref(p) + '">' + esc(p.name) + "</a>" +
               '<span class="cb-code">' + esc(p.code) + "</span></span>" +
-              '<span class="cb-meta">' + meta + "</span>" + flow + "</span>" +
-              '<span class="cb-yres">' +
-              '<span class="cb-ycell"><span class="cb-ycell__k">시가 매도</span><span class="cb-ycell__v ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</span></span>" +
-              '<span class="cb-ycell"><span class="cb-ycell__k">종가 매도</span><span class="cb-ycell__v ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</span></span>" +
+              '<span class="cb-meta">' + meta + "</span>" + flow + hl + "</span>" +
+              '<span class="cb-yres">' + ycell("시가 매도", p.openReturnPct, hasPrice(p) ? p.open : null) +
+              ycell("종가 매도", hasClose ? p.closeReturnPct : null, hasPrice(p) && hasClose ? p.close : null) +
               "</span></div></div>";
-          }).join("");
-          return '<div class="cb-list">' + rows + "</div>";
+          }).join("") + "</div>";
         }
-
         function renderYesterday(day, pending) {
           if (!day) {
-            document.getElementById("cbGuestDemo").style.display = "none";
+            $("cbGuestDemo").style.display = "none";
             ydStampEl.textContent = "기록 준비 중";
-            ydEl.innerHTML =
-              '<div class="cb-empty"><i class="ti ti-history" aria-hidden="true"></i>' +
-              "아직 기록된 결과가 없습니다.<br />선정 다음 거래일 09:10부터 채워집니다.</div>";
+            ydEl.innerHTML = '<div class="cb-empty"><i class="ti ti-history" aria-hidden="true"></i>아직 기록된 결과가 없습니다.<br />선정 다음 거래일 09:10부터 채워집니다.</div>';
             return;
           }
           var ydTag = day.source === "backfill" ? "사후 검증" : day.phase === "open" ? "시초가만 확정" : "확정";
           ydStampEl.innerHTML = "<b>" + esc(day.asOfDate) + "</b> 선정 → " + esc(day.reviewDate) + " 결과 · " + esc(ydTag);
           ydEl.innerHTML = ydNoteHtml(pending) + ydSummaryHtml(day) + ydCardsHtml(day);
-          // 로그인 전 가입 카드 안에도 같은 전일 성과를 보여준다(순위·가격 없이 수익/손실만).
-          document.getElementById("cbGuestStamp").textContent = dLabel(day.asOfDate) + " 선정 → " + dLabel(day.reviewDate) + " 결과";
-          document.getElementById("cbGuestYd").innerHTML = verdictHtml(day) + resultTableHtml(day);
+          $("cbGuestStamp").textContent = dLabel(day.asOfDate) + " 선정 → " + dLabel(day.reviewDate) + " 결과";
+          $("cbGuestYd").innerHTML = verdictHtml(day) + resultTableHtml(day);
         }
 
-        /* ── 성과 달력 ─────────────────────────────────────────────────────── */
-        function monthKey(dateStr) { return String(dateStr).slice(0, 7); }
+        /* ── 1주 스윙 ──────────────────────────────────────────────────────── */
+        function swDaysOf(row) {
+          // 선정 다음 날부터 결과일까지 5거래일 — track에 기록된 날짜 + 아직 안 온 칸
+          var p0 = (row.picks || [])[0] || {};
+          var dates = (p0.track || []).map(function (t) { return t.date; });
+          return dates;
+        }
+        function progHtml(n) {
+          var h = '<span class="sw-prog" aria-label="' + n + '/5거래일">';
+          for (var i = 0; i < 5; i++) h += "<i" + (i < n ? ' class="on"' : "") + "></i>";
+          return h + "</span>";
+        }
+        function swPickRowHtml(p, done) {
+          var ret = done ? p.finalReturnPct : p.lastReturnPct;
+          var cur = done ? p.finalClose : p.lastClose;
+          var days = (p.track || []).map(function (t, i) {
+            return '<span class="sw-day ' + tone(t.returnPct) + '"><small>D' + (i + 1) + " " + esc(dLabel(t.date)) + "</small>" + signShort(t.returnPct) + "</span>";
+          });
+          for (var i = days.length; i < 5; i++) days.push('<span class="sw-day sw-day--none"><small>D' + (i + 1) + "</small>—</span>");
+          return '<div class="sw-trow">' +
+            '<div class="sw-tname"><a href="' + stockHref(p) + '">' + esc(p.rank) + ". " + esc(p.name) + "</a><small>" + esc(p.code) +
+            (p.score != null ? " · " + esc(p.score) + "점" : "") + "</small></div>" +
+            '<div class="sw-tret ' + tone(ret) + '">' + sign(ret) + "</div>" +
+            '<div class="sw-tsub">' +
+            (hasPrice(p) ? "<span>선정가 <b>" + won(p.buyPrice) + "</b> → " + (done ? "결과가" : "최근 종가") + " <b class=\"" + tone(ret) + "\">" + won(cur) + "</b></span>" : "") +
+            (p.maxHighPct != null ? '<span>기간 최고 <b class="' + tone(p.maxHighPct) + '">' + sign(p.maxHighPct) + '</b> · 최저 <b class="' + tone(p.minLowPct) + '">' + sign(p.minLowPct) + "</b></span>" : "") +
+            '<span class="sw-days">' + days.join("") + "</span>" +
+            "</div></div>";
+        }
+        function swBlockHtml(row) {
+          var done = row.status === "done";
+          var s = row.summary || {};
+          var n = done ? 5 : s.daysElapsed || 0;
+          return '<div class="sw-block">' +
+            '<div class="sw-block__h"><span class="sw-block__t">' + esc(dLabel(row.asOfDate)) + "(" + esc(dowLabel(row.asOfDate)) + ") 선정</span>" +
+            '<span class="sw-block__s">결과일 ' + esc(dLabel(row.targetDate)) + "(" + esc(dowLabel(row.targetDate)) + ") 종가 · " +
+            (done ? "확정" : n + "/5거래일 경과") + (row.source === "backfill" ? " · 사후 검증" : "") + "</span>" + progHtml(n) +
+            '<span class="sw-block__avg ' + tone(s.avgReturnPct) + '" title="5종목 평균">' + (s.avgReturnPct != null ? "평균 " + sign(s.avgReturnPct) : "—") + "</span></div>" +
+            (row.picks || []).map(function (p) { return swPickRowHtml(p, done); }).join("") + "</div>";
+        }
+        function swTableHtml(row) {
+          var picks = row.picks || [];
+          if (!picks.length) return '<div class="cb-empty">기록된 종목이 없습니다.</div>';
+          var done = row.status === "done";
+          var withP = picks.some(hasPrice);
+          var dates = swDaysOf(row);
+          var dh = "";
+          for (var i = 0; i < 5; i++) dh += "<th>D" + (i + 1) + (dates[i] ? "<small>" + esc(dLabel(dates[i])) + "</small>" : "") + "</th>";
+          var head = '<tr><th class="cb-t-fit">선정</th><th class="cb-t-fit">종목</th>' + (withP ? "<th>선정가</th>" : "") + dh +
+            "<th>" + (done ? "결과(5일째 종가)" : "현재(최근 종가)") + "</th><th>기간 최고·최저</th></tr>";
+          var body = picks.map(function (p) {
+            var ret = done ? p.finalReturnPct : p.lastReturnPct;
+            var cur = done ? p.finalClose : p.lastClose;
+            var cells = "";
+            for (var i = 0; i < 5; i++) {
+              var t = (p.track || [])[i];
+              cells += '<td class="sw-dcell ' + (t ? tone(t.returnPct) : "cb-flat") + '">' + (t ? signShort(t.returnPct) : "—") + "</td>";
+            }
+            return "<tr>" +
+              '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '">' + esc(p.rank) + "</span></td>" +
+              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
+              "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
+              (withP ? '<td class="cb-buy">' + won(p.buyPrice) + "</td>" : "") + cells +
+              priceCell(withP ? cur : null, ret) +
+              '<td class="cb-num"><span class="' + tone(p.maxHighPct) + '">' + sign(p.maxHighPct) + '</span> <span class="cb-flat">/</span> <span class="' + tone(p.minLowPct) + '">' + sign(p.minLowPct) + "</span></td>" +
+              "</tr>";
+          }).join("");
+          var mrows = picks.map(function (p) { return swPickRowHtml(p, done); }).join("");
+          return '<div class="cb-scroll cb-has-m"><table class="cb-table" style="min-width:760px"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" +
+            '<div class="cb-mlist">' + mrows + "</div>";
+        }
+        function swVerdictHtml(row) {
+          var s = row.summary || {};
+          var done = row.status === "done";
+          function item(k, v, cls, sub) {
+            return '<div class="cb-verdict__item"><span class="cb-verdict__k">' + esc(k) + "</span>" +
+              '<span class="cb-verdict__v ' + (cls || "") + '">' + v + (sub ? ' <span class="cb-verdict__k">' + esc(sub) + "</span>" : "") + "</span></div>";
+          }
+          var html = item(done ? "5거래일 보유 평균" : "현재 평균", sign(s.avgReturnPct), tone(s.avgReturnPct), s.wins != null ? s.wins + "/" + s.measured + " 수익" : "");
+          if (s.avgMaxHighPct != null) html += item("기간 최고 평균", sign(s.avgMaxHighPct), tone(s.avgMaxHighPct));
+          if (s.best) html += item("가장 좋았던 종목", esc(s.best.name) + " " + sign(s.best.returnPct), tone(s.best.returnPct));
+          if (s.worst && (!s.best || s.worst.code !== s.best.code)) html += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));
+          html += '<span class="cb-verdict__tag">' + (row.source === "backfill" ? "사후 검증 기록" : done ? "확정" : "추적 중 " + (s.daysElapsed || 0) + "/5") + "</span>";
+          return '<div class="cb-verdict">' + html + "</div>";
+        }
+        function renderSwing(sw) {
+          sw = sw || {};
+          renderStrats(swStratsEl, sw.strategies);
+          // 오늘의 스윙
+          if (!sw.ready) {
+            swStampEl.textContent = "오늘 집계 전";
+            swListEl.innerHTML = '<div class="cb-empty"><i class="ti ti-clock-hour-4" aria-hidden="true"></i>평일 15:20에 종가시그널과 함께 선정됩니다.</div>';
+            lockedCta(swListEl, 0);
+          } else {
+            var st = sw.stats || {};
+            swStampEl.innerHTML = "<b>" + esc(sw.asOfDate) + "</b> 15:20 기준 · 조건 통과 " + esc(st.passed || "-") + " → 기법 2개+ " + esc(st.withStrategy || "-");
+            swListEl.innerHTML = sw.ranked.map(function (r) { return rowHtml(r, "swing"); }).join("");
+            lockedCta(swListEl, sw.total > sw.visible ? sw.total - sw.visible : 0);
+            bindRows(swListEl);
+          }
+          // 추적 중
+          var tr = (sw.tracking || []).slice().sort(function (a, b) { return a.asOfDate < b.asOfDate ? 1 : -1; });
+          var trShow = tr.filter(function (r) { return (r.summary || {}).daysElapsed > 0; });
+          swTrackStampEl.innerHTML = trShow.length ? "<b>" + trShow.length + "회차</b> 추적 중 · 매일 15:45 갱신" : "—";
+          swTrackEl.innerHTML = trShow.length
+            ? trShow.map(swBlockHtml).join("")
+            : '<div class="cb-empty"><i class="ti ti-route" aria-hidden="true"></i>추적 중인 스윙이 없습니다.<br />선정 다음 거래일 15:45부터 매일 종가가 쌓입니다.</div>';
+          // 최근 확정
+          var last = sw.last;
+          if (last) {
+            swDoneStampEl.innerHTML = "<b>" + esc(last.asOfDate) + "</b>(" + esc(dowLabel(last.asOfDate)) + ") 선정 → " + esc(last.targetDate) + "(" + esc(dowLabel(last.targetDate)) + ") 종가";
+            swDoneEl.innerHTML = swVerdictHtml(last) + swTableHtml(last);
+          } else {
+            swDoneStampEl.textContent = "첫 결과 대기";
+            swDoneEl.innerHTML = '<div class="cb-empty"><i class="ti ti-hourglass" aria-hidden="true"></i>선정 후 5거래일이 지나면 여기에 결과표가 뜹니다.</div>';
+          }
+        }
+
+        /* ── 성과 달력 (종가시그널 / 1주 스윙 공용) ──────────────────────── */
+        function monthKey(s) { return String(s).slice(0, 7); }
+        function H() { return HIST[calKind]; }
         function valueOf(day) {
           var s = day.summary || {};
-          return calMode === "close" ? s.avgCloseReturnPct : s.avgOpenReturnPct;
+          if (calKind === "swing") return s.avgReturnPct;
+          return calMode === "close" ? (s.avgCloseReturnPct != null ? s.avgCloseReturnPct : null) : s.avgOpenReturnPct;
         }
         function winOf(day) {
           var s = day.summary || {};
+          if (calKind === "swing") return s.wins != null ? s.wins + "/" + s.measured : null;
           return calMode === "close"
-            ? (s.closeWins != null ? s.closeWins + "/" + s.picks : null)
+            ? (s.closeWins != null && s.avgCloseReturnPct != null ? s.closeWins + "/" + s.picks : null)
             : (s.openWins != null ? s.openWins + "/" + s.measured : null);
         }
         function cellTint(v) {
           if (v == null) return "";
-          var pctv = Math.min(30, 7 + Math.abs(v) * 4);
+          var pctv = Math.min(30, 7 + Math.abs(v) * (calKind === "swing" ? 2 : 4));
           var c = v > 0 ? "var(--cb-up)" : v < 0 ? "var(--cb-down)" : "transparent";
           return "background:color-mix(in srgb, " + c + " " + pctv + "%, var(--bg-primary));";
         }
+        function months() {
+          var set = {};
+          H().days.forEach(function (d) { set[monthKey(d.asOfDate)] = 1; });
+          var now = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 7);
+          set[now] = 1;
+          return Object.keys(set).sort();
+        }
+        function renderMonthSum() {
+          var ds = H().days.filter(function (d) { return monthKey(d.asOfDate) === calMonth; });
+          var vals = ds.map(valueOf).filter(function (v) { return v != null; });
+          if (!vals.length) { monthSumEl.innerHTML = ""; return; }
+          var avg = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length;
+          var plus = vals.filter(function (v) { return v > 0; }).length;
+          var label = calKind === "swing" ? (ds.some(function (d) { return d.status !== "done"; }) ? "(추적 중 포함)" : "") : calMode === "close" ? "종가 매도" : "시가 매도";
+          monthSumEl.innerHTML = "<span>이 달 " + vals.length + "회 평균 <b class=\"" + tone(avg) + "\">" + sign(Math.round(avg * 100) / 100) + "</b> " + esc(label) + "</span>" +
+            "<span>플러스 <b>" + plus + "</b> / " + vals.length + "</span>";
+        }
         function renderCalendar() {
-          if (!calMonth) { calEl.innerHTML = ""; return; }
-          var y = Number(calMonth.slice(0, 4));
-          var m = Number(calMonth.slice(5, 7));
+          var ms = months();
+          if (!calMonth || ms.indexOf(calMonth) < 0) calMonth = ms[ms.length - 1];
+          var y = Number(calMonth.slice(0, 4)), m = Number(calMonth.slice(5, 7));
           monthEl.textContent = y + "년 " + m + "월";
-          var idx = HISTORY.months.indexOf(calMonth);
+          var idx = ms.indexOf(calMonth);
           prevBtn.disabled = idx <= 0;
-          nextBtn.disabled = idx < 0 || idx >= HISTORY.months.length - 1;
+          nextBtn.disabled = idx < 0 || idx >= ms.length - 1;
+          modeSeg.style.display = calKind === "swing" ? "none" : "";
+          calWrap.dataset.kind = calKind;
+          renderMonthSum();
 
-          var nowKst = new Date(Date.now() + 9 * 3600 * 1000);
-          var todayKey = nowKst.toISOString().slice(0, 10);
-          var first = new Date(Date.UTC(y, m - 1, 1));
-          var lead = first.getUTCDay();
+          var todayKey = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+          var lead = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
           var dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
-          var html = ["일", "월", "화", "수", "목", "금", "토"]
-            .map(function (d) { return '<div class="cb-cal__dow">' + d + "</div>"; }).join("");
+          var html = ["일", "월", "화", "수", "목", "금", "토"].map(function (d) { return '<div class="cb-cal__dow">' + d + "</div>"; }).join("");
           for (var i = 0; i < lead; i++) html += '<div class="cb-cell cb-cell--pad"></div>';
           for (var d = 1; d <= dim; d++) {
             var key = y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-            var day = HISTORY.byDate[key];
+            var day = H().byDate[key];
             var dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
             if (!day) {
-              /* 주말과 "아직 오지 않은 날"은 빈칸으로 둔다. 오늘 선정분의 결과는 다음 거래일에
-                 나오므로, 오늘 칸에 '기록 없음'을 찍으면 고장난 것처럼 보인다. */
-              var weekend = dow === 0 || dow === 6;
-              var future = key >= todayKey;
-              html += '<div class="cb-cell ' + (weekend || future ? "cb-cell--pad" : "cb-cell--none") + '">' +
-                (weekend || future ? "" : '<span class="cb-cell__d">' + d + "</span>") + "</div>";
+              var empty = dow === 0 || dow === 6 || key >= todayKey;
+              html += '<div class="cb-cell ' + (empty ? "cb-cell--pad" : "cb-cell--none") + '">' + (empty ? "" : '<span class="cb-cell__d">' + d + "</span>") + "</div>";
               continue;
             }
-            var v = valueOf(day);
-            var wtxt = winOf(day);
+            var v = valueOf(day), wtxt = winOf(day);
+            var tracking = calKind === "swing" && day.status !== "done";
             html +=
-              '<button type="button" class="cb-cell cb-cell--data" data-date="' + key + '"' +
-              ' aria-pressed="' + (calSelected === key ? "true" : "false") + '" style="' + cellTint(v) + '">' +
+              '<button type="button" class="cb-cell cb-cell--data' + (tracking ? " cb-cell--track" : "") + '" data-date="' + key + '"' +
+              ' aria-pressed="' + (calSelected === key ? "true" : "false") + '" style="' + (tracking ? "" : cellTint(v)) + '">' +
               (day.source === "backfill" ? '<span class="cb-cell__flag" title="사후 검증 기록"></span>' : "") +
               '<span class="cb-cell__d">' + d + "</span>" +
               '<span class="cb-cell__v ' + tone(v) + '">' + signShort(v) + "</span>" +
-              (wtxt ? '<span class="cb-cell__w">' + wtxt + "<em> 수익</em></span>" : "") +
+              (tracking ? '<span class="cb-cell__t">추적 ' + ((day.summary || {}).daysElapsed || 0) + "/5</span>"
+                : wtxt ? '<span class="cb-cell__w">' + wtxt + "<em> 수익</em></span>" : "") +
               "</button>";
           }
           calEl.innerHTML = html;
           calEl.querySelectorAll("button.cb-cell").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              selectDay(btn.dataset.date === calSelected ? null : btn.dataset.date);
-            });
+            btn.addEventListener("click", function () { selectDay(btn.dataset.date, true); });
           });
         }
-        function selectDay(key) {
+        function selectDay(key, scroll) {
           calSelected = key;
           renderCalendar();
-          if (!key || !HISTORY.byDate[key]) { dayDetailEl.hidden = true; dayDetailEl.innerHTML = ""; return; }
-          var day = HISTORY.byDate[key];
-          var dayHasClose = (day.picks || []).some(function (p) { return p.closeReturnPct != null; });
-          var mode = detailSort === "close" && !dayHasClose ? "pick" : detailSort;
-          function segBtn(m, label, disabled) {
-            return '<button type="button" data-sort="' + m + '" aria-pressed="' + (mode === m ? "true" : "false") + '"' +
-              (disabled ? ' disabled title="종가는 15:45에 반영됩니다"' : "") + ">" + label + "</button>";
+          var day = key ? H().byDate[key] : null;
+          if (!day) {
+            dayDetailEl.innerHTML = '<div class="cb-empty cb-empty--slim"><i class="ti ti-hand-click" aria-hidden="true"></i>달력에서 날짜를 누르면 그날 선정 종목이 여기에 펼쳐집니다.</div>';
+            return;
           }
-          dayDetailEl.hidden = false;
-          dayDetailEl.innerHTML =
-            '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + " 선정 " + (day.pickCount || 0) + "종목</h3>" +
-            "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span>" +
-            '<div class="cb-seg cb-seg--sort" role="group" aria-label="표 정렬 기준">' +
-            segBtn("pick", "선정 순위") + segBtn("open", "시가 매도") + segBtn("close", "종가 매도", !dayHasClose) +
-            "</div></div>" +
-            verdictHtml(day) + '<div class="cb-daytable">' + resultTableHtml(day, mode) + "</div>";
-          dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              if (btn.disabled) return;
-              detailSort = btn.dataset.sort;
-              dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (b) {
-                b.setAttribute("aria-pressed", b === btn ? "true" : "false");
+          if (calKind === "swing") {
+            dayDetailEl.innerHTML = '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + "(" + esc(dowLabel(day.asOfDate)) + ") 선정 1주 스윙 " + (day.pickCount || 0) + "종목</h3>" +
+              "<span>결과일 " + esc(day.targetDate || "—") + "(" + esc(dowLabel(day.targetDate)) + ") 종가</span></div>" + swVerdictHtml(day) + swTableHtml(day);
+          } else {
+            var dayHasClose = (day.picks || []).some(function (p) { return p.closeReturnPct != null; });
+            var mode = detailSort === "close" && !dayHasClose ? "pick" : detailSort;
+            var segBtn = function (mm, label, disabled) {
+              return '<button type="button" data-sort="' + mm + '" aria-pressed="' + (mode === mm ? "true" : "false") + '"' +
+                (disabled ? ' disabled title="종가는 15:45에 반영됩니다"' : "") + ">" + label + "</button>";
+            };
+            dayDetailEl.innerHTML =
+              '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + " 선정 종가시그널 " + (day.pickCount || 0) + "종목</h3>" +
+              "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span>" +
+              '<div class="cb-seg cb-seg--sort" role="group" aria-label="표 정렬 기준">' +
+              segBtn("pick", "선정 순위") + segBtn("open", "시가 매도") + segBtn("close", "종가 매도", !dayHasClose) + "</div></div>" +
+              verdictHtml(day) + '<div class="cb-daytable">' + resultTableHtml(day, mode) + "</div>";
+            dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                if (btn.disabled) return;
+                detailSort = btn.dataset.sort;
+                dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+                dayDetailEl.querySelector(".cb-daytable").innerHTML = resultTableHtml(day, detailSort);
               });
-              dayDetailEl.querySelector(".cb-daytable").innerHTML = resultTableHtml(day, detailSort);
             });
-          });
-          dayDetailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+          if (scroll && window.matchMedia("(max-width: 1099px)").matches) dayDetailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
-        function buildMonths() {
-          var set = {};
-          HISTORY.days.forEach(function (d) { set[monthKey(d.asOfDate)] = 1; });
-          var now = new Date();
-          var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
-          set[cur] = 1;
-          HISTORY.months = Object.keys(set).sort();
-          if (!calMonth || HISTORY.months.indexOf(calMonth) < 0) calMonth = HISTORY.months[HISTORY.months.length - 1];
+        function selectLatest() {
+          var ds = H().days;
+          var latest = ds.length ? ds[0].asOfDate : null; // 서버가 최신순으로 준다
+          if (latest) calMonth = monthKey(latest);
+          // 넓은 화면은 오른쪽 칸이 비지 않게 가장 최근 날짜를 펼쳐 둔다. 좁은 화면은 스크롤이 길어지므로 안 펼친다.
+          if (latest && window.matchMedia("(min-width: 1100px)").matches) selectDay(latest, false);
+          else { calSelected = null; renderCalendar(); selectDay(null); }
+        }
+        function setKind(kind) {
+          calKind = kind;
+          kindCloseBtn.setAttribute("aria-pressed", kind === "close" ? "true" : "false");
+          kindSwingBtn.setAttribute("aria-pressed", kind === "swing" ? "true" : "false");
+          if (!H().loaded) { loadHistory(kind).then(selectLatest); return; }
+          selectLatest();
         }
         prevBtn.addEventListener("click", function () {
-          var i = HISTORY.months.indexOf(calMonth);
-          if (i > 0) { calMonth = HISTORY.months[i - 1]; renderCalendar(); }
+          var ms = months(), i = ms.indexOf(calMonth);
+          if (i > 0) { calMonth = ms[i - 1]; renderCalendar(); }
         });
         nextBtn.addEventListener("click", function () {
-          var i = HISTORY.months.indexOf(calMonth);
-          if (i >= 0 && i < HISTORY.months.length - 1) { calMonth = HISTORY.months[i + 1]; renderCalendar(); }
+          var ms = months(), i = ms.indexOf(calMonth);
+          if (i >= 0 && i < ms.length - 1) { calMonth = ms[i + 1]; renderCalendar(); }
         });
         function setMode(mode) {
           calMode = mode;
@@ -1198,21 +1535,23 @@
         }
         modeOpenBtn.addEventListener("click", function () { setMode("open"); });
         modeCloseBtn.addEventListener("click", function () { setMode("close"); });
+        kindCloseBtn.addEventListener("click", function () { setKind("close"); });
+        kindSwingBtn.addEventListener("click", function () { setKind("swing"); });
 
         /* ── 로드 ──────────────────────────────────────────────────────────── */
-        async function loadHistory() {
+        async function loadHistory(kind) {
+          var view = kind === "swing" ? "swing-history" : "history";
           try {
-            var res = await fetch("/api/analyze?feature=close-betting&view=history&days=120", { cache: "no-store" });
+            var res = await fetch("/api/analyze?feature=close-betting&view=" + view + "&days=120", { cache: "no-store", credentials: "same-origin" });
             var d = await res.json();
             if (!res.ok) throw new Error(d.error || "요청 실패");
-            HISTORY.days = d.days || [];
-            HISTORY.byDate = {};
-            HISTORY.days.forEach(function (x) { HISTORY.byDate[x.asOfDate] = x; });
-            HISTORY.record = d.record || null;
-            buildMonths();
-            renderCalendar();
+            var h = HIST[kind];
+            h.days = d.days || [];
+            h.byDate = {};
+            h.days.forEach(function (x) { h.byDate[x.asOfDate] = x; });
+            h.loaded = true;
           } catch (e) {
-            calEl.innerHTML = '<div class="cb-empty" style="grid-column:1/-1">기록을 불러오지 못했습니다.</div>';
+            if (kind === calKind) calEl.innerHTML = '<div class="cb-empty" style="grid-column:1/-1">기록을 불러오지 못했습니다.</div>';
           }
         }
         async function loadToday() {
@@ -1220,44 +1559,52 @@
             var t = await token();
             var res = await fetch("/api/analyze?feature=close-betting", {
               cache: "no-store",
+              credentials: "same-origin",
               headers: t ? { Authorization: "Bearer " + t } : {},
             });
             var d = await res.json();
             if (!res.ok) throw new Error(d.error || "요청 실패");
+            VIEWER = d.viewer || VIEWER;
+            applyAuthView();
             renderRanking(d);
-            renderStrats(d.strategies);
-            renderRecord(d.record);
+            renderStrats(stratsEl, d.strategies);
+            LAST.close = d.record || null;
+            LAST.swing = (d.swing && d.swing.record) || null;
+            renderRecord();
             renderYesterday(d.yesterday, d.pending);
+            renderSwing(d.swing);
           } catch (e) {
             stampEl.textContent = "불러오기 실패";
-            listEl.innerHTML =
-              '<div class="cb-empty"><i class="ti ti-alert-triangle" aria-hidden="true"></i>' +
-              "종목을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>";
+            listEl.innerHTML = '<div class="cb-empty"><i class="ti ti-alert-triangle" aria-hidden="true"></i>종목을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>';
           }
         }
 
-        /* 로그인 전: 오늘의 시그널 숨김 + 가입 안내 카드. 로그인 여부가 확인된 뒤에만 바꾼다. */
-        var todaySecEl = document.getElementById("cbTodaySec");
-        var todayCardEl = document.getElementById("cbTodayCard");
-        var guestEl = document.getElementById("cbGuest");
+        /* 로그인 전: 오늘의 시그널 숨김 + 가입 안내 카드. 초대코드 출입자(viewer=invite)는 회원과 같이 본다. */
+        var VIEWER = null;
+        var todaySecEl = $("cbTodaySec"), todayCardEl = $("cbTodayCard"), guestEl = $("cbGuest");
         function applyAuthView(force) {
           var st = window.TM_AUTH_STATE || {};
-          if (!st.loaded && !force) return;
-          var guest = !st.isLoggedIn;
+          if (!st.loaded && !force && !VIEWER) return;
+          var guest = !st.isLoggedIn && !st.inviteGuest && VIEWER !== "invite" && VIEWER !== "member";
           todaySecEl.style.display = guest ? "none" : "";
           todayCardEl.style.display = guest ? "none" : "";
           guestEl.style.display = guest ? "" : "none";
-          // 로그인 전: 소개 배너 + 가입 카드(안에 전일 성과)만 남기고 바로 푸터로 이어지게 한다.
           document.querySelector(".cb-body").classList.toggle("cb-body--guest", guest);
         }
         applyAuthView();
-        // 인증 스크립트가 끝내 응답하지 않으면 로그인 전으로 본다(순위를 보여주는 쪽으로 새지 않게).
         setTimeout(function () { if (!(window.TM_AUTH_STATE || {}).loaded) applyAuthView(true); }, 5000);
         document.addEventListener("tm-auth-ready", function () { applyAuthView(); loadToday(); });
 
         loadToday();
-        loadHistory();
+        loadHistory("close").then(selectLatest);
         window.addEventListener("tm-auth-change", function () { applyAuthView(); loadToday(); });
+        var resizeT = null;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeT);
+          resizeT = setTimeout(function () {
+            if (!calSelected && window.matchMedia("(min-width: 1100px)").matches) selectLatest();
+          }, 250);
+        });
       })();
     </script>
   </body>

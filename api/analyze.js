@@ -5509,6 +5509,21 @@ async function handleSitePass(req, res) {
     return json(res, 200, { ok: true });
   }
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
+  // 2026-10-02 시우: 초대코드 출입(회원 아님). 코드가 맞으면 30일짜리 출입증을 준다.
+  let body = req.body;
+  if (typeof body === "string") {
+    try { body = JSON.parse(body); } catch (e) { body = null; }
+  }
+  if (body && body.invite != null) {
+    if (!SITE_PASS.checkInviteCode(body.invite)) {
+      await new Promise((r) => setTimeout(r, 900)); // 무작위 대입을 느리게
+      return json(res, 403, { status: "invalid_invite" });
+    }
+    const ip = SITE_PASS.signPass(SITE_PASS.INVITE_UID, SITE_PASS.INVITE_TTL_SEC);
+    if (!ip) return json(res, 503, { status: "error" });
+    res.setHeader("Set-Cookie", SITE_PASS.invitePassCookies(ip));
+    return json(res, 200, { ok: true, status: "invite", exp: ip.exp });
+  }
   const user = await getUserFromToken(bearerToken(req));
   if (!user) return json(res, 401, { status: "none" });
   let status = "none";

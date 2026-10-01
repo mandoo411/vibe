@@ -20,6 +20,15 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const FROM = process.env.LAB_FROM || "2026-09-14";
 const HOLD = 5;
+const POS = new Set(["boxBreakout", "high52Trend", "macdTurn", "goldenCross", "reversalCandle", "oversoldBounce", "accumulation"]);
+const posCount = (r) => r.strategies.filter((h) => POS.has(h.key)).length;
+globalThis.__SWING_VARIANTS = [
+  { name: "현행 점수", fn: (f, r) => r.score },
+  { name: "양(+)기법 합의수 → 점수", fn: (f, r) => posCount(r) * 100 + r.score },
+  { name: "양기법 합의(2+) 중 시총 작은 순", fn: (f, r) => (posCount(r) >= 2 ? 1e7 - (f.marketCapEok || 0) : null) },
+  { name: "1개월 수익률 순", fn: (f) => f.r21 },
+  { name: "양기법 합의 + 5일 과열 아님", fn: (f, r) => (f.r5 != null && f.r5 > 15 ? null : posCount(r) * 100 + (f.r21 || 0)) },
+];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const pct = (a, b) => (b ? ((a - b) / b) * 100 : null);
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
@@ -94,6 +103,7 @@ async function main() {
   const byCons = new Map();
   const top = [];
   const daily = [];
+  const recs = []; // {asOf, f, r, ret}
 
   for (const row of rows) {
     const stocks = (row.payload && row.payload.stocks) || [];
@@ -109,6 +119,7 @@ async function main() {
       const o = await outcome(st.code, asOf, r.features.close);
       if (!o) continue;
       all.push(o.ret);
+      recs.push({ asOf, f: r.features, r, ret: o.ret });
       for (const h of r.strategies) byStrat.get(h.key).push(o.ret);
       const c = Math.min(r.consensus, 5);
       if (!byCons.has(c)) byCons.set(c, []);
@@ -139,6 +150,50 @@ async function main() {
   for (const c of [...byCons.keys()].sort()) {
     const a = byCons.get(c);
     console.log(`  ${c}개${c === 5 ? "+" : ""}: n=${a.length} 평균 ${f2(avg(a))}% 수익비율 ${win(a).toFixed(1)}%`);
+  }
+  // ── 팩터 구간별 ──
+  const bucket = (label, fn, cuts) => {
+    console.log(`===== ${label}`);
+    const groups = new Map();
+    for (const x of recs) {
+      const k = fn(x);
+      if (k == null) continue;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(x.ret);
+    }
+    for (const [k, a] of [...groups.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0])))) {
+      console.log(`  ${String(k).padEnd(16)} n=${String(a.length).padStart(4)} 평균 ${f2(avg(a))}% 수익비율 ${win(a).toFixed(1)}%`);
+    }
+  };
+  const cut = (v, edges, names) => { if (v == null) return null; for (let i = 0; i < edges.length; i++) if (v < edges[i]) return names[i]; return names[names.length - 1]; };
+  bucket("시총", (x) => cut(x.f.marketCapEok, [3000, 10000, 50000], ["a<3천억", "b3천억~1조", "c1~5조", "d5조+"]));
+  bucket("시장", (x) => x.f.market);
+  bucket("당일등락", (x) => cut(x.f.changePct, [0, 3, 7], ["a<0", "b0~3", "c3~7", "d7+"]));
+  bucket("1개월수익", (x) => cut(x.f.r21, [0, 10, 25], ["a<0", "b0~10", "c10~25", "d25+"]));
+  bucket("5일수익", (x) => cut(x.f.r5, [0, 5, 15], ["a<0", "b0~5", "c5~15", "d15+"]));
+  bucket("20일선이격", (x) => cut(x.f.dist20, [3, 8, 15], ["a<3", "b3~8", "c8~15", "d15+"]));
+  bucket("거래량비", (x) => cut(x.f.volumeRatio, [80, 150, 300], ["a<80", "b80~150", "c150~300", "d300+"]));
+  bucket("RSI(전일)", (x) => cut(x.f.rsi, [45, 60, 70], ["a<45", "b45~60", "c60~70", "d70+"]));
+  bucket("기관연속", (x) => (x.f.institutionStreak >= 3 ? "3일+" : x.f.institutionStreak >= 1 ? "1~2일" : "0"));
+  bucket("외인연속", (x) => (x.f.foreignStreak >= 3 ? "3일+" : x.f.foreignStreak >= 1 ? "1~2일" : "0"));
+  bucket("양매수", (x) => (x.f.bothNetBuy ? "Y" : "N"));
+  bucket("정배열", (x) => (x.f.aligned ? "Y" : "N"));
+  bucket("점수", (x) => cut(x.r.score, [40, 55, 70, 85], ["a<40", "b40~55", "c55~70", "d70~85", "e85+"]));
+
+  // ── 변형 비교: 날마다 상위 5 평균 ──
+  const variants = (globalThis.__SWING_VARIANTS || []);
+  for (const v of variants) {
+    const days = new Map();
+    for (const x of recs) { if (!days.has(x.asOf)) days.set(x.asOf, []); days.get(x.asOf).push(x); }
+    const picks = [];
+    let plus = 0, nd = 0;
+    for (const [d, xs] of days) {
+      const ranked = xs.map((x) => ({ x, s: v.fn(x.f, x.r) })).filter((y) => y.s != null).sort((a, b) => b.s - a.s).slice(0, 5);
+      const rs = ranked.map((y) => y.x.ret);
+      picks.push(...rs);
+      if (rs.length) { nd++; if (avg(rs) > 0) plus++; }
+    }
+    console.log(`===== 변형 ${v.name}: n=${picks.length} 평균 ${f2(avg(picks))}% 수익비율 ${win(picks)?.toFixed(1)}% 플러스일 ${plus}/${nd}`);
   }
   const tr = top.map((t) => t.ret);
   console.log(`===== 상위 5 종합: n=${tr.length} 평균 ${f2(avg(tr))}% 수익비율 ${win(tr)?.toFixed(1)}% · 평균 최고 ${f2(avg(top.map((t) => t.max)))} 최저 ${f2(avg(top.map((t) => t.min)))}`);

@@ -26,6 +26,7 @@ const require = createRequire(import.meta.url);
 const { fetchMarketSnapshot, fetchInvestorFlow } = require("../lib/kis-indicators.js");
 const { buildIntradaySnapshot } = require("../lib/intraday-snapshot.js");
 const { rankCloseBetting, applyHardFilters } = require("../lib/close-betting-score.js");
+const { rankSwing } = require("../lib/swing-signal.js");
 
 const LIMIT = Number(process.env.INTRADAY_LIMIT || 400);
 /* 2026-09-09: 120 → 80ms. 400종목이면 종목당 sleep이 2회씩 들어가 순수 대기만 96초였다.
@@ -315,6 +316,22 @@ async function main() {
     }
   }
 
+  /* ── 1주 스윙 시그널 (2026-10-02 신설) — 같은 400종목 스냅샷으로 따로 채점. 실패해도 스캔은 저장한다. */
+  let swing = null;
+  if (slot === "1520") {
+    try {
+      const { ranked, stats } = rankSwing(stocks, 5);
+      swing = { ranked, stats, holdDays: 5, scoredAt: new Date().toISOString() };
+      console.log(
+        `[intraday] 1주 스윙 랭킹 — 필터통과 ${stats.passed} → 기법2+ ${stats.withStrategy} → 상위 ${ranked.length}\n` +
+          ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 합의${r.consensus}`).join("\n")
+      );
+    } catch (error) {
+      swing = null;
+      console.log(`::warning::스윙 채점 실패 — 스캔 결과는 그대로 저장합니다: ${error && error.message}`);
+    }
+  }
+
   const payload = {
     as_of_date: asOfDate,
     slot,
@@ -322,7 +339,7 @@ async function main() {
     base_as_of_date: cache.asOfDate || null,
     count: stocks.length,
     elapsed_sec: elapsedSec,
-    payload: { stocks, flowAsOfDate, closeBetting },
+    payload: { stocks, flowAsOfDate, closeBetting, swing },
   };
   console.log(
     `[intraday] 완료 — ${stocks.length}종목 (기준없음 ${skippedNoBase}, 실패 ${failed}) · ${elapsedSec}초 · ` +

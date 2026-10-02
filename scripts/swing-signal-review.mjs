@@ -21,6 +21,7 @@ const require = createRequire(import.meta.url);
 const { fetchChartCandles } = require("../lib/kis-indicators.js");
 const { rankSwing } = require("../lib/swing-signal.js");
 const krx = require("../lib/krx-calendar.js");
+const { extRanks } = require("../lib/rank-ext.js");
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -113,6 +114,33 @@ function summarize(picks, done) {
   };
 }
 
+/** 한 종목의 5거래일 추적 — 공개 5종목·관리자용 6~20위 공용 */
+async function trackPick(p0, days, target, lastBarDay) {
+  const p = { ...p0 };
+  const m = await bars(p.code);
+  const track = [];
+  let hi = null;
+  let lo = null;
+  for (const d of days) {
+    if (d > lastBarDay) break;
+    const b = m.get(d);
+    if (!b) continue;
+    track.push({ date: d, close: b.close, returnPct: pct(b.close, p.buyPrice) });
+    hi = hi == null ? b.high : Math.max(hi, b.high);
+    lo = lo == null ? b.low : Math.min(lo, b.low);
+  }
+  p.track = track;
+  const last = track[track.length - 1];
+  p.lastClose = last ? last.close : null;
+  p.lastReturnPct = last ? last.returnPct : null;
+  p.maxHighPct = hi != null ? pct(hi, p.buyPrice) : null;
+  p.minLowPct = lo != null ? pct(lo, p.buyPrice) : null;
+  const fin = track.find((t) => t.date === target);
+  p.finalClose = fin ? fin.close : null;
+  p.finalReturnPct = fin ? fin.returnPct : null;
+  return p;
+}
+
 async function main() {
   if (!SUPABASE_URL || !SERVICE_KEY) throw new Error("SUPABASE env 없음");
   const phase = String(process.env.REVIEW_PHASE || "auto").toLowerCase();
@@ -125,7 +153,7 @@ async function main() {
   // 오늘 종가를 쓸 수 있는 마지막 날짜
   const lastBarDay = closeConfirmed && krx.isTradingDay(today) ? today : krx.prevTradingDay(today);
 
-  const existing = await (await sb("swing_signal_results?select=as_of_date,status,source,target_date,picks&order=as_of_date.asc")).json();
+  const existing = await (await sb("swing_signal_results?select=as_of_date,status,source,target_date,picks,summary,extra_picks&order=as_of_date.asc")).json();
   const have = new Map(existing.map((r) => [r.as_of_date, r]));
 
   // 1) 새 선정일 행 만들기
@@ -133,8 +161,24 @@ async function main() {
     await sb(`trade_signal_intraday?slot=eq.1520&as_of_date=gte.${FROM}&as_of_date=lte.${today}&order=as_of_date.asc&select=as_of_date,payload`)
   ).json();
   const toWrite = [];
+  // 관리자 전용 6~20위 (2026-10-02): 스캔이 저장한 rankedExt, 없으면 저장된 후보 스냅샷으로 다시 채점
+  const extOf = (payload, ranked) => {
+    const sw = payload.swing || {};
+    if (Array.isArray(sw.rankedExt)) return sw.rankedExt;
+    try {
+      return extRanks(rankSwing(payload.stocks || [], 20).ranked, ranked);
+    } catch (e) {
+      console.log(`::warning::스윙 6~20위 재채점 실패: ${e && e.message}`);
+      return [];
+    }
+  };
   for (const scan of scans) {
     const asOf = scan.as_of_date;
+    const old = have.get(asOf);
+    if (old && !Array.isArray(old.extra_picks) && (old.picks || []).length) {
+      old.extra_picks = extOf(scan.payload || {}, old.picks).map(pickRow);
+      old._extNew = true;
+    }
     if (have.has(asOf) || !krx.isTradingDay(asOf)) continue;
     const payload = scan.payload || {};
     let ranked = payload.swing && Array.isArray(payload.swing.ranked) ? payload.swing.ranked : null;
@@ -146,14 +190,26 @@ async function main() {
     }
     if (!ranked.length) continue;
     const target = tradingDaysAfter(asOf, HOLD)[HOLD - 1];
-    const row = { as_of_date: asOf, target_date: target, status: "tracking", source, pick_count: ranked.length, picks: ranked.map(pickRow), summary: {} };
+    const row = { as_of_date: asOf, target_date: target, status: "tracking", source, pick_count: ranked.length, picks: ranked.map(pickRow), summary: {}, extra_picks: extOf(payload, ranked).map(pickRow) };
     have.set(asOf, row);
     console.log(`[swing] 새 선정 ${asOf} (${source}) → 목표일 ${target}: ${ranked.map((p) => p.name).join(", ")}`);
   }
 
   // 2) 추적 갱신
+  const allFinal = (arr) => Array.isArray(arr) && arr.every((p) => p.finalReturnPct != null);
   for (const [asOf, row] of have) {
-    if (row.status === "done") continue;
+    const extTodo = Array.isArray(row.extra_picks) && row.extra_picks.length && !allFinal(row.extra_picks);
+    if (row.status === "done") {
+      // 공개 5종목은 확정 — 관리자용 6~20위만 아직 덜 채워졌으면 그것만 추적
+      if (!extTodo && !row._extNew) continue;
+      const days = tradingDaysAfter(asOf, HOLD);
+      const target = days[HOLD - 1];
+      const extra = [];
+      for (const p0 of row.extra_picks || []) extra.push(await trackPick(p0, days, target, lastBarDay));
+      toWrite.push({ ...row, extra_picks: extra });
+      console.log(`[swing] ${asOf} 관리자용 6~20위 ${extra.length}종목 갱신`);
+      continue;
+    }
     if (asOf >= lastBarDay && asOf === today) {
       // 오늘 선정분 — 아직 다음 날이 없다. 행만 저장.
       toWrite.push(row);
@@ -162,33 +218,11 @@ async function main() {
     const days = tradingDaysAfter(asOf, HOLD);
     const target = days[HOLD - 1];
     const picks = [];
-    for (const p0 of row.picks || []) {
-      const p = { ...p0 };
-      const m = await bars(p.code);
-      const track = [];
-      let hi = null;
-      let lo = null;
-      for (const d of days) {
-        if (d > lastBarDay) break;
-        const b = m.get(d);
-        if (!b) continue;
-        track.push({ date: d, close: b.close, returnPct: pct(b.close, p.buyPrice) });
-        hi = hi == null ? b.high : Math.max(hi, b.high);
-        lo = lo == null ? b.low : Math.min(lo, b.low);
-      }
-      p.track = track;
-      const last = track[track.length - 1];
-      p.lastClose = last ? last.close : null;
-      p.lastReturnPct = last ? last.returnPct : null;
-      p.maxHighPct = hi != null ? pct(hi, p.buyPrice) : null;
-      p.minLowPct = lo != null ? pct(lo, p.buyPrice) : null;
-      const fin = track.find((t) => t.date === target);
-      p.finalClose = fin ? fin.close : null;
-      p.finalReturnPct = fin ? fin.returnPct : null;
-      picks.push(p);
-    }
+    for (const p0 of row.picks || []) picks.push(await trackPick(p0, days, target, lastBarDay));
+    const extra = [];
+    for (const p0 of row.extra_picks || []) extra.push(await trackPick(p0, days, target, lastBarDay));
     const done = target <= lastBarDay && picks.every((p) => p.finalReturnPct != null);
-    const next = { ...row, target_date: target, picks, status: done ? "done" : "tracking", summary: summarize(picks, done) };
+    const next = { ...row, target_date: target, picks, extra_picks: extra, status: done ? "done" : "tracking", summary: summarize(picks, done) };
     toWrite.push(next);
     const s = next.summary;
     console.log(`[swing] ${asOf} → ${target} ${done ? "확정" : `추적 ${s.daysElapsed}/${HOLD}일`} 평균 ${s.avgReturnPct ?? "-"}% (${s.wins}/${s.measured} 수익)`);
@@ -215,6 +249,7 @@ async function main() {
         pick_count: (r.picks || []).length,
         picks: r.picks,
         summary: r.summary || {},
+        extra_picks: Array.isArray(r.extra_picks) ? r.extra_picks : null,
         updated_at: now,
       }))
     ),

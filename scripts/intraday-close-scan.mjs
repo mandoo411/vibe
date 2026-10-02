@@ -27,6 +27,7 @@ const { fetchMarketSnapshot, fetchInvestorFlow } = require("../lib/kis-indicator
 const { buildIntradaySnapshot } = require("../lib/intraday-snapshot.js");
 const { rankCloseBetting, applyHardFilters } = require("../lib/close-betting-score.js");
 const { rankSwing } = require("../lib/swing-signal.js");
+const { extRanks } = require("../lib/rank-ext.js");
 
 const LIMIT = Number(process.env.INTRADAY_LIMIT || 400);
 /* 2026-09-09: 120 → 80ms. 400종목이면 종목당 sleep이 2회씩 들어가 순수 대기만 96초였다.
@@ -299,8 +300,11 @@ async function main() {
       }
 
       const { ranked, stats } = rankCloseBetting(stocks, 5);
+      // 2026-10-02 관리자 전용 6~20위 — 공개 5종목(ranked)은 그대로 두고 따로 담는다
+      const rankedExt = extRanks(rankCloseBetting(stocks, 20).ranked, ranked);
       closeBetting = {
         ranked,
+        rankedExt,
         stats,
         lateStrengthBase: earlyCloses.size ? "1430" : null,
         scoredAt: new Date().toISOString(),
@@ -321,7 +325,8 @@ async function main() {
   if (slot === "1520") {
     try {
       const { ranked, stats } = rankSwing(stocks, 5);
-      swing = { ranked, stats, holdDays: 5, scoredAt: new Date().toISOString() };
+      const rankedExt = extRanks(rankSwing(stocks, 20).ranked, ranked);
+      swing = { ranked, rankedExt, stats, holdDays: 5, scoredAt: new Date().toISOString() };
       console.log(
         `[intraday] 1주 스윙 랭킹 — 필터통과 ${stats.passed} → 기법2+ ${stats.withStrategy} → 상위 ${ranked.length}\n` +
           ranked.map((r) => `  ${r.rank}. ${r.name}(${r.code}) ${r.score}점 합의${r.consensus}`).join("\n")

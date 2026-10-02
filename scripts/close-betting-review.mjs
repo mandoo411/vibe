@@ -29,6 +29,8 @@ const require = createRequire(import.meta.url);
 const { fetchMarketSnapshot } = require("../lib/kis-indicators.js");
 const { buildPickResult, buildSummary } = require("../lib/close-signal-results.js");
 const krx = require("../lib/krx-calendar.js");
+const { rankCloseBetting } = require("../lib/close-betting-score.js");
+const { extRanks } = require("../lib/rank-ext.js");
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -72,7 +74,19 @@ async function loadRanking(today) {
   const rows = await res.json();
   for (const row of Array.isArray(rows) ? rows : []) {
     const ranked = row && row.payload && row.payload.closeBetting && row.payload.closeBetting.ranked;
-    if (Array.isArray(ranked) && ranked.length) return { asOfDate: row.as_of_date, ranked };
+    if (Array.isArray(ranked) && ranked.length) {
+      // 관리자 전용 6~20위: 스캔이 저장해 둔 것, 없으면(10/2 이전 스캔) 저장된 후보 스냅샷으로 다시 채점
+      let ext = row.payload.closeBetting.rankedExt;
+      if (!Array.isArray(ext)) {
+        try {
+          ext = extRanks(rankCloseBetting(row.payload.stocks || [], 20).ranked, ranked);
+        } catch (e) {
+          console.log(`::warning::6~20위 재채점 실패 — 상위 5종목만 기록: ${e && e.message}`);
+          ext = [];
+        }
+      }
+      return { asOfDate: row.as_of_date, ranked, ext };
+    }
   }
   return null;
 }
@@ -127,6 +141,15 @@ async function main() {
   }
 
   const summary = buildSummary(picks);
+  // 관리자 전용 6~20위 — 공개 통계(summary)에는 넣지 않는다
+  const extraPicks = [];
+  for (const r of target.ext || []) {
+    if (!r.code || r.close == null) continue;
+    const m = await fetchDayBar(r.code);
+    await sleep(150);
+    extraPicks.push(buildPickResult(r, m, phase === "close"));
+  }
+  console.log(`[review] 관리자용 6~20위 ${extraPicks.length}종목 측정`);
   console.log(
     `[review] 시가 평균 ${summary.avgOpenReturnPct ?? "-"}% (승률 ${summary.openWinRatePct ?? "-"}%) · ` +
       `종가 평균 ${summary.avgCloseReturnPct ?? "-"}% (승률 ${summary.closeWinRatePct ?? "-"}%)`
@@ -153,6 +176,7 @@ async function main() {
         pick_count: picks.length,
         picks,
         summary,
+        extra_picks: extraPicks,
         updated_at: new Date().toISOString(),
       },
     ]),

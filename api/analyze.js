@@ -5302,6 +5302,7 @@ async function cbLoadLatest() {
     scannedAt: row.scanned_at || cb.scoredAt || null,
     flowAsOfDate: (row.payload && row.payload.flowAsOfDate) || null,
     ranked: cb.ranked,
+    rankedExt: Array.isArray(cb.rankedExt) ? cb.rankedExt : [],
     stats: cb.stats || null,
     swing: (row.payload && row.payload.swing) || null,
   };
@@ -5442,6 +5443,25 @@ function swBuildRecord(rows) {
   };
 }
 
+/* 2026-10-02 관리자 전용 6~20위 — ADMIN_EMAILS(Vercel 환경변수, 쉼표 구분)에 있는 계정만.
+ * 공개 통계·달력에는 섞지 않고, 관리자 응답에만 ext:true로 덧붙인다. */
+function cbIsAdmin(user) {
+  const list = String(process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
+  const email = String((user && user.email) || "").toLowerCase();
+  return !!email && list.includes(email);
+}
+async function cbLoadExtra(table, asOfDate) {
+  if (!asOfDate) return [];
+  const res = await serviceRequest(`${table}?as_of_date=eq.${asOfDate}&select=extra_picks`, { method: "GET" });
+  if (!res.ok) return [];
+  const rows = await res.json();
+  const x = Array.isArray(rows) && rows[0] ? rows[0].extra_picks : null;
+  return Array.isArray(x) ? x : [];
+}
+
 async function cbLoadResults(limit) {
   const n = Math.min(Number(limit) || CB_HISTORY_MAX_DAYS, CB_HISTORY_MAX_DAYS);
   const res = await serviceRequest(
@@ -5512,10 +5532,12 @@ async function handleCloseBetting(req, res) {
 
     let isPro = false;
     let loggedIn = false;
+    let isAdmin = false;
     if (supabaseConfigured()) {
       const user = await getUserFromToken(bearerToken(req));
       if (user) {
         loggedIn = true;
+        isAdmin = cbIsAdmin(user);
         const sub = await getSubscription(user.id);
         isPro = sub.status === "active" && (sub.plan === "pro" || sub.plan === "premium");
       }
@@ -5526,7 +5548,8 @@ async function handleCloseBetting(req, res) {
       isPro = true;
       loggedIn = true;
     }
-    const viewer = invite ? "invite" : loggedIn ? "member" : "guest";
+    if (isAdmin) isPro = true;
+    const viewer = isAdmin ? "admin" : invite ? "invite" : loggedIn ? "member" : "guest";
 
     const [latest, recent, swRows] = await Promise.all([cbLoadLatest(), cbLoadResults(30), swLoadResults(40)]);
     const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
@@ -5534,11 +5557,19 @@ async function handleCloseBetting(req, res) {
     const market = cbMarketInfo();
     const pending = cbPending(latest, recent.length ? recent[0] : null, market);
     const yesterday = recent.length ? cbPublicDay(recent[0], withPrice) : null;
+    if (isAdmin && yesterday) {
+      const extra = await cbLoadExtra("close_signal_results", yesterday.asOfDate);
+      if (extra.length) {
+        const pub = cbPublicDay(Object.assign({}, recent[0], { picks: extra.map(cbTrimPick) }), withPrice);
+        yesterday.picks = yesterday.picks.concat(pub.picks.map((p) => Object.assign(p, { ext: true, retRank: null })));
+      }
+    }
     const visibleFor = (total) => (isPro ? total : loggedIn ? Math.min(CB_FREE_LIMIT, total) : 0);
     const { SWING_STRATEGIES } = require("../lib/swing-signal.js");
     const swingBlock = (() => {
       const sw = latest && latest.swing;
       let ranked = sw && Array.isArray(sw.ranked) ? sw.ranked : [];
+      if (isAdmin && sw && Array.isArray(sw.rankedExt)) ranked = ranked.concat(sw.rankedExt.map((r) => Object.assign({ ext: true }, r)));
       let fallback = false;
       // 스캔 payload에 스윙 랭킹이 없는 날(기능 신설 전 · 사후 검증으로만 채운 날)은 기록 테이블의 선정분으로 보여준다
       if (!ranked.length && latest && swRows.length && swRows[0].as_of_date === latest.asOfDate) {
@@ -5573,21 +5604,33 @@ async function handleCloseBetting(req, res) {
           const d = swRows.find((r) => r.status === "done");
           return d ? swPublicRow(d, withPrice) : null;
         })(),
+        lastExtDate: isAdmin ? ((swRows.find((r) => r.status === "done") || {}).as_of_date || null) : null,
         record: swBuildRecord(swRows),
         strategies: SWING_STRATEGIES.map((x) => ({ key: x.key, label: x.label, desc: x.desc })),
       };
     })();
+
+    // 관리자: 직전 스윙 결과표에 6~20위 덧붙이기
+    if (isAdmin && swingBlock.last && swingBlock.lastExtDate) {
+      const ex = await cbLoadExtra("swing_signal_results", swingBlock.lastExtDate);
+      if (ex.length) {
+        const pub = swPublicRow({ as_of_date: swingBlock.lastExtDate, picks: ex }, withPrice);
+        swingBlock.last.picks = swingBlock.last.picks.concat(pub.picks.map((p) => Object.assign(p, { ext: true })));
+      }
+    }
+    delete swingBlock.lastExtDate;
 
     if (!latest) {
       // 스캔 전이거나 휴장일. 어제 것을 오늘인 척 보여주지 않고 비어 있다고 말한다.
       return json(res, 200, { ready: false, isPro, loggedIn, viewer, withPrice, ranked: [], total: 0, strategies, yesterday, record, market, pending, swing: swingBlock });
     }
 
-    const total = latest.ranked.length;
+    const allRanked = isAdmin ? latest.ranked.concat(latest.rankedExt.map((r) => Object.assign({ ext: true }, r))) : latest.ranked;
+    const total = allRanked.length;
     // 2026-09-25 시우: 로그인 전에는 오늘 순위를 1위부터 전부 가린다(이름·코드 없이 순위·점수만).
     const visible = visibleFor(total);
     // 원 단위 선정가(close)는 출입증이 있을 때만 싣는다(2026-10-02 시우).
-    const ranked = latest.ranked.map((r, i) => {
+    const ranked = allRanked.map((r, i) => {
       if (i >= visible) return cbMaskRow(r);
       const row = Object.assign({ locked: false }, r);
       if (!withPrice) delete row.close;
@@ -5598,6 +5641,7 @@ async function handleCloseBetting(req, res) {
       ready: true,
       isPro,
       loggedIn,
+      isAdmin,
       asOfDate: latest.asOfDate,
       scannedAt: latest.scannedAt,
       flowAsOfDate: latest.flowAsOfDate,

@@ -527,6 +527,7 @@
       .adm-chip[aria-pressed="true"] .adm-chip__r { background: #f59e0b; color: #fff; }
       .adm-chip__n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
       .adm-chip__s { margin-left: auto; flex: 0 0 auto; font-family: var(--cb-mono); font-size: 11px; color: var(--text-muted-ui, var(--text-secondary)); }
+      .sw-tname .cb-xb, .cb-mname .cb-xb, .cb-t-name .cb-xb { margin-left: 6px; padding: 1px 6px; font-size: 10px; vertical-align: 1px; }
       .adm-chip .cb-xb { margin-left: 0; padding: 1px 6px; font-size: 10px; }
       .adm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
       .adm-btn { padding: 8px 16px; border: 0; border-radius: 9px; background: #f59e0b; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
@@ -1169,6 +1170,21 @@
           return '<span class="cb-xb" title="' + (kind === "swing" ? "종가시그널" : "1주 스윙") + '에도 선정"><i class="ti ti-arrows-cross" aria-hidden="true"></i>' +
             (kind === "swing" ? "종가 " : "스윙 ") + other + "위</span>";
         }
+        /* 달력 상세: 같은 날 반대쪽(종가↔스윙) 20위 안에 든 종목 표시 */
+        var CUR_OVL = null;
+        function dayBadge(p) {
+          var o = CUR_OVL && p && p.code ? CUR_OVL[p.code] : null;
+          return o ? '<span class="cb-xb"><i class="ti ti-arrows-cross" aria-hidden="true"></i>' + o + "</span>" : "";
+        }
+        function dayOverlapMap(kind, key) {
+          var otherKind = kind === "swing" ? "close" : "swing";
+          var other = HIST[otherKind].byDate[key];
+          var m = {};
+          ((other && other.picks) || []).forEach(function (p) {
+            if (p.code && p.rank <= 20) m[p.code] = (otherKind === "swing" ? "스윙 " : "종가 ") + p.rank + "위";
+          });
+          return m;
+        }
         function rowHtml(r, kind) {
           var locked = !!r.locked;
           var tag = locked ? "div" : "button";
@@ -1294,7 +1310,7 @@
             return extSep(picks, i, true) + "<tr>" +
               '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '" title="선정 순위">' + esc(p.rank) + "</span></td>" +
               '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' +
-              esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
+              esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' + dayBadge(p) +
               "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
               '<td class="cb-t-fit cb-rrcell">' + (retBadgeOf(p, sorted.rr, rlabel) || "—") + "</td>" +
               (withP ? '<td class="cb-buy">' + won(p.buyPrice) + "</td>" : "") +
@@ -1308,7 +1324,7 @@
           }).join("");
           var mrows = picks.map(function (p, i) {
             return extSep(picks, i) + '<div class="cb-mrow">' +
-              '<div class="cb-mname"><a href="' + stockHref(p) + '">' + esc(p.name) + "</a></div>" +
+              '<div class="cb-mname"><a href="' + stockHref(p) + '">' + esc(p.name) + "</a>" + dayBadge(p) + "</div>" +
               '<div class="cb-mret ' + tone(p.openReturnPct) + '">' + sign(p.openReturnPct) + "</div>" +
               '<div class="cb-mret ' + tone(p.closeReturnPct) + '">' + (hasClose ? sign(p.closeReturnPct) : "—") + "</div>" +
               '<div class="cb-mtags"><span class="cb-pk">선정 <b>' + esc(p.rank) + "위</b>" +
@@ -1427,7 +1443,7 @@
           for (var i = days.length; i < 5; i++) days.push('<span class="sw-day sw-day--none"><small>D' + (i + 1) + "</small>—</span>");
           return '<div class="sw-trow">' +
             '<div class="sw-tname"><a href="' + stockHref(p) + '">' + esc(p.rank) + ". " + esc(p.name) + "</a><small>" + esc(p.code) +
-            (p.score != null ? " · " + esc(p.score) + "점" : "") + "</small></div>" +
+            (p.score != null ? " · " + esc(p.score) + "점" : "") + "</small>" + dayBadge(p) + "</div>" +
             '<div class="sw-tret ' + tone(ret) + '">' + sign(ret) + "</div>" +
             '<div class="sw-tsub">' +
             (hasPrice(p) ? "<span>선정가 <b>" + won(p.buyPrice) + "</b> → " + (done ? "결과가" : "최근 종가") + " <b class=\"" + tone(ret) + "\">" + won(cur) + "</b></span>" : "") +
@@ -1467,7 +1483,7 @@
             }
             return (sep ? extSep(picks, idx, true) : "") + "<tr>" +
               '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '">' + esc(p.rank) + "</span></td>" +
-              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
+              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' + dayBadge(p) +
               "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +
               (withP ? '<td class="cb-buy">' + won(p.buyPrice) + "</td>" : "") + cells +
               priceCell(withP ? cur : null, ret) +
@@ -1612,6 +1628,12 @@
           calSelected = key;
           renderCalendar();
           var day = key ? H().byDate[key] : null;
+          var otherKind = calKind === "swing" ? "close" : "swing";
+          if (day && !HIST[otherKind].loaded && !HIST[otherKind].loading) {
+            HIST[otherKind].loading = true;
+            loadHistory(otherKind).then(function () { if (calSelected === key) selectDay(key, false); });
+          }
+          CUR_OVL = day ? dayOverlapMap(calKind, key) : null;
           if (!day) {
             dayDetailEl.innerHTML = '<div class="cb-empty cb-empty--slim"><i class="ti ti-hand-click" aria-hidden="true"></i>달력에서 날짜를 누르면 그날 선정 종목이 여기에 펼쳐집니다.</div>';
             return;
@@ -1637,10 +1659,13 @@
                 if (btn.disabled) return;
                 detailSort = btn.dataset.sort;
                 dayDetailEl.querySelectorAll(".cb-seg--sort button").forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+                CUR_OVL = dayOverlapMap(calKind, key);
                 dayDetailEl.querySelector(".cb-daytable").innerHTML = resultTableHtml(day, detailSort);
+                CUR_OVL = null;
               });
             });
           }
+          CUR_OVL = null;
           if (scroll && window.matchMedia("(max-width: 1099px)").matches) dayDetailEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
         function selectLatest() {

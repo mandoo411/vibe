@@ -18,6 +18,8 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { fetchChartCandles } = require("../lib/kis-indicators.js");
+const { rankCloseBetting } = require("../lib/close-betting-score.js");
+const { extRanks } = require("../lib/rank-ext.js");
 const { buildPickResult, buildSummary } = require("../lib/close-signal-results.js");
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
@@ -67,6 +69,41 @@ async function main() {
   const scans = await scanRes.json();
   if (!Array.isArray(scans) || scans.length < 2) {
     console.log("::notice::백필할 스캔이 부족합니다(2거래일 이상 필요).");
+    return;
+  }
+
+  // 2026-10-02 관리자 전용 6~20위 채우기 모드: 기존 기록(공개 5종목)은 건드리지 않고 extra_picks만 채운다.
+  if (process.env.BACKFILL_EXTRA_ONLY === "1") {
+    const rows = await (await sb("close_signal_results?select=as_of_date,review_date,picks,extra_picks&order=as_of_date.asc", { method: "GET" })).json();
+    const scanBy = new Map(scans.map((x) => [x.as_of_date, x]));
+    let n = 0;
+    for (const row of rows) {
+      if (Array.isArray(row.extra_picks) && row.extra_picks.length) continue;
+      const scan = scanBy.get(row.as_of_date);
+      const stocks = scan && scan.payload && scan.payload.stocks;
+      if (!Array.isArray(stocks) || !stocks.length || !row.review_date) {
+        console.log(`[backfill-ext] ${row.as_of_date} — 후보 스냅샷 없음, 건너뜀`);
+        continue;
+      }
+      const top = (row.picks || []).map((p) => ({ code: p.code }));
+      const ext = extRanks(rankCloseBetting(stocks, 20).ranked, top);
+      const extra = [];
+      for (const r of ext) {
+        if (!r.code || r.close == null) continue;
+        const bars = await loadBars(r.code);
+        extra.push(buildPickResult(r, bars.get(row.review_date) || null, true));
+      }
+      console.log(`[backfill-ext] ${row.as_of_date} → ${row.review_date} · 6~20위 ${extra.length}종목`);
+      if (!DRY_RUN && extra.length) {
+        await sb(`close_signal_results?as_of_date=eq.${row.as_of_date}`, {
+          method: "PATCH",
+          headers: { prefer: "return=minimal" },
+          body: JSON.stringify({ extra_picks: extra }),
+        });
+      }
+      n++;
+    }
+    console.log(`[backfill-ext] 완료 — ${n}일${DRY_RUN ? " (DRY_RUN)" : ""}`);
     return;
   }
 

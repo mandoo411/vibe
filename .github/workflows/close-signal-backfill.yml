@@ -52,5 +52,6 @@ jobs:
           KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           BACKFILL_DRY_RUN: ${{ github.event.inputs.dry_run || github.event.client_payload.dry_run || '' }}
+          BACKFILL_EXTRA_ONLY: ${{ github.event.client_payload.extra_only || '' }}
           BACKFILL_LIMIT_DAYS: ${{ github.event.inputs.limit_days || github.event.client_payload.limit_days || '40' }}
         run: node scripts/close-signal-backfill.mjs

@@ -167,7 +167,7 @@
         font-family: var(--cb-mono); font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
         color: var(--text-secondary);
       }
-      .cb-row:nth-child(-n + 3) .cb-rank { border-color: var(--cb-line); background: var(--cb-soft); color: var(--cb-accent); }
+      /* 2026-10-02: 상위 3 강조 제거 — 2년 근사 백테스트에서 번호가 앞선다고 결과가 낫지 않았다(CRASH_BACKTEST.md 7장). */
       .cb-idn { min-width: 0; }
       .cb-name { font-size: 15.5px; font-weight: 700; letter-spacing: -0.015em; color: var(--text-title, var(--text-primary)); }
       .cb-code { margin-left: 7px; font-family: var(--cb-mono); font-size: 11px; font-weight: 500; color: var(--text-muted-ui, var(--text-secondary)); }
@@ -299,7 +299,7 @@
       .cb-tno { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
         background: var(--cb-inset); border: 1px solid var(--border-color);
         font-family: var(--cb-mono); font-size: 12px; font-weight: 700; color: var(--text-secondary); }
-      .cb-tno--top { border-color: var(--cb-line); background: var(--cb-soft); color: var(--cb-accent); }
+      /* .cb-tno--top 강조 제거(2026-10-02) — 상위 3 강조 안 함 */
       .cb-table td.cb-t-name { padding-right: 18px; }
       .cb-table td.cb-t-name .cb-t-link { font-size: 14px; }
       .cb-table td.cb-t-name small b { font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -685,12 +685,13 @@
 
           <div class="cb-body">
             <section class="cb-hero" aria-label="종가시그널 소개">
-              <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>매일 15:20 · 고르고 · 결과를 전부 남깁니다</p>
+              <p class="cb-hero__kicker"><i class="ti ti-target-arrow" aria-hidden="true"></i>매일 15:20 · 오늘 강했던 종목을 조건으로 추리고 · 결과를 전부 남깁니다</p>
               <h2 class="cb-hero__title">내일 파는 <em>종가시그널</em>, 일주일 들고 가는 <em>1주 스윙</em></h2>
               <p class="cb-hero__desc">
                 장 마감 직전(15:20) 시세로 거래대금 상위 400종목을 훑어 두 가지 기간으로 따로 채점합니다.
                 <b>종가시그널</b>은 다음 거래일 시가·종가에 판 결과를, <b>1주 스윙</b>은 5거래일 뒤 종가에 판 결과를
                 선정가·결과가와 함께 <b>빠짐없이 기록</b>합니다.
+                매수 신호가 아니라 <b>살펴볼 종목 목록</b>이며, 번호는 조건 점수 순서일 뿐 수익이 클 순서가 아닙니다.
               </p>
               <div class="cb-record" id="cbRecord" aria-label="누적 성적"></div>
             </section>
@@ -708,7 +709,7 @@
               <span class="cb-sec__icon"><i class="ti ti-bolt" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">오늘의 종가시그널 <span class="cb-sec__tag">다음 거래일 매도</span></h2>
-                <p class="cb-sec__cap">종목을 누르면 어떤 기법에 어떤 값으로 걸렸는지 볼 수 있습니다.</p>
+                <p class="cb-sec__cap">번호는 조건 점수 순서이며 수익 기대 순서가 아닙니다. 종목을 누르면 어떤 기법에 어떤 값으로 걸렸는지 볼 수 있습니다.</p>
               </span>
               <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
             </div>
@@ -891,7 +892,7 @@
                 <h3>알아두실 점</h3>
                 <p>
                   수익률은 <b>선정가(선정일 15:20 가격)에 매수</b>한 것으로 가정해 계산합니다. 세금·수수료·슬리피지는
-                  반영하지 않았고, 실제 체결가는 다를 수 있습니다. 회색 점이 찍힌 날은 그날 실제로 화면에 나갔던 선정이
+                  반영하지 않았고(실제로 사고팔면 증권거래세 0.20%와 수수료로 한 번에 약 0.2~0.3%가 빠집니다), 실제 체결가는 다를 수 있습니다. 회색 점이 찍힌 날은 그날 실제로 화면에 나갔던 선정이
                   아니라, 저장된 스캔 기록으로 <b>사후에 검증한 결과</b>입니다.
                 </p>
                 <p>

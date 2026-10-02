@@ -527,7 +527,7 @@
       .sw-tret { text-align: right; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 800; }
       .sw-tsub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-family: var(--cb-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--text-muted-ui, var(--text-secondary)); }
       .sw-tsub b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
-      .sw-days { display: inline-flex; gap: 3px; }
+      .sw-days { display: flex; flex: 0 0 100%; gap: 3px; } /* 일자별 칸은 항상 자기 줄 — 글이 짧은 종목만 옆에 붙던 것(10/2) */
       .sw-day { min-width: 50px; padding: 2px 5px; border-radius: 6px; text-align: center; font-size: 10.5px; background: var(--cb-inset); }
       .sw-day small { display: block; font-size: 9.5px; opacity: .7; }
       .sw-day--none { opacity: .45; }

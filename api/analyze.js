@@ -5342,6 +5342,7 @@ function cbTrimDay(row) {
     pickCount: row.pick_count,
     summary: row.summary || {},
     picks: Array.isArray(row.picks) ? row.picks.map(cbTrimPick) : [],
+    extraPicks: Array.isArray(row.extra_picks) ? row.extra_picks.map(cbTrimPick) : [],
   };
 }
 
@@ -5364,7 +5365,9 @@ function cbPublicDay(day, withPrice) {
     .forEach((p, i) => {
       retRank[p.code] = i + 1;
     });
-  return Object.assign({}, day, {
+  const out = Object.assign({}, day);
+  delete out.extraPicks;
+  return Object.assign(out, {
     retRankBy: hasClose ? "close" : "open",
     picks: picks.map((p) => ({
       rank: p.rank,
@@ -5390,10 +5393,10 @@ function cbPublicDay(day, withPrice) {
  * scripts/swing-signal-review.mjs가 swing_signal_results에 선정일별 한 행을 쌓는다(5거래일 추적).
  * 화면은 계산하지 않고 기록을 그대로 그린다. 가격(원)은 출입증이 있을 때만 싣는다. */
 const SW_HISTORY_MAX = 120;
-async function swLoadResults(limit) {
+async function swLoadResults(limit, withExtra) {
   const n = Math.min(Number(limit) || SW_HISTORY_MAX, SW_HISTORY_MAX);
   const res = await serviceRequest(
-    `swing_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,target_date,status,source,pick_count,picks,summary`,
+    `swing_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,target_date,status,source,pick_count,picks,summary${withExtra ? ",extra_picks" : ""}`,
     { method: "GET" }
   );
   if (!res.ok) return [];
@@ -5462,10 +5465,89 @@ async function cbLoadExtra(table, asOfDate) {
   return Array.isArray(x) ? x : [];
 }
 
-async function cbLoadResults(limit) {
+/** 관리자: 공개용 하루 기록 뒤에 6~20위(ext:true)를 붙인다 */
+function cbPublicDayAdmin(raw, withPrice) {
+  const pub = cbPublicDay(raw, withPrice);
+  if (pub && raw.extraPicks && raw.extraPicks.length) {
+    const ex = cbPublicDay(Object.assign({}, raw, { picks: raw.extraPicks }), withPrice);
+    pub.picks = pub.picks.concat(ex.picks.map((p) => Object.assign(p, { ext: true, retRank: null })));
+  }
+  return pub;
+}
+function swPublicRowAdmin(raw, withPrice) {
+  const pub = swPublicRow(raw, withPrice);
+  if (pub && Array.isArray(raw.extra_picks) && raw.extra_picks.length) {
+    const ex = swPublicRow({ as_of_date: raw.as_of_date, picks: raw.extra_picks }, withPrice);
+    pub.picks = pub.picks.concat(ex.picks.map((p) => Object.assign(p, { ext: true })));
+  }
+  return pub;
+}
+async function cbRequestIsAdmin(req) {
+  if (!supabaseConfigured() || !bearerToken(req)) return null;
+  const user = await getUserFromToken(bearerToken(req));
+  return user && cbIsAdmin(user) ? user : null;
+}
+
+/* ── 관리자 픽 (2026-10-02) ─────────────────────────────────────────────
+ * 관리자가 20위 안에서 5종목을 골라 따로 추적한다. 선택은 다음 거래일 09:00 전까지만.
+ * 고르지 않은 날은 리뷰 스크립트가 상위 5종목으로 대체해 기록한다(chosen=false). 일반 사용자에겐 보이지 않는다. */
+const ADMIN_PICK_MAX = 5;
+function adminPickDeadline(asOfDate) {
+  const next = KRX_CAL.nextTradingDay(asOfDate);
+  return { date: next, label: KRX_CAL.shortLabel(next), ms: Date.parse(`${next}T09:00:00+09:00`) };
+}
+async function adminPickLoad(limit) {
+  const n = Math.min(Number(limit) || 120, 240);
+  const res = await serviceRequest(
+    `close_admin_picks?order=as_of_date.desc&limit=${n}&select=as_of_date,codes,chosen,review_date,phase,picks,summary`,
+    { method: "GET" }
+  );
+  if (!res.ok) return [];
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows : [];
+}
+function adminPickDay(row, withPrice) {
+  const day = cbPublicDay(
+    {
+      asOfDate: row.as_of_date,
+      reviewDate: row.review_date,
+      phase: row.phase,
+      source: row.chosen ? "admin" : "default",
+      pickCount: (row.picks || []).length,
+      summary: row.summary || {},
+      picks: (row.picks || []).map(cbTrimPick),
+    },
+    withPrice
+  );
+  day.chosen = !!row.chosen;
+  return day;
+}
+async function handleAdminPickSave(req, res) {
+  const user = await cbRequestIsAdmin(req);
+  if (!user) return json(res, 403, { error: "관리자만 저장할 수 있습니다." });
+  const body = (await readBody(req)) || {};
+  const latest = await cbLoadLatest();
+  if (!latest) return json(res, 400, { error: "선정 기록이 없습니다." });
+  if (body.asOfDate !== latest.asOfDate) return json(res, 400, { error: "가장 최근 선정분만 고를 수 있습니다." });
+  const dl = adminPickDeadline(latest.asOfDate);
+  if (Date.now() >= dl.ms) return json(res, 400, { error: `선택 마감(${dl.label} 09:00)이 지났습니다.` });
+  const pool = latest.ranked.concat(latest.rankedExt || []).map((r) => r.code);
+  const codes = Array.from(new Set((Array.isArray(body.codes) ? body.codes : []).map(String))).filter((c) => pool.includes(c));
+  if (codes.length > ADMIN_PICK_MAX) return json(res, 400, { error: `최대 ${ADMIN_PICK_MAX}종목까지 고를 수 있습니다.` });
+  const chosen = codes.length > 0;
+  const saved = await serviceRequest("close_admin_picks?on_conflict=as_of_date", {
+    method: "POST",
+    headers: { prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify([{ as_of_date: latest.asOfDate, codes: chosen ? codes : latest.ranked.map((r) => r.code), chosen, updated_at: new Date().toISOString() }]),
+  });
+  if (!saved.ok) return json(res, 500, { error: "저장하지 못했습니다." });
+  return json(res, 200, { ok: true, asOfDate: latest.asOfDate, codes: chosen ? codes : [], chosen });
+}
+
+async function cbLoadResults(limit, withExtra) {
   const n = Math.min(Number(limit) || CB_HISTORY_MAX_DAYS, CB_HISTORY_MAX_DAYS);
   const res = await serviceRequest(
-    `close_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,review_date,phase,source,pick_count,picks,summary`,
+    `close_signal_results?order=as_of_date.desc&limit=${n}&select=as_of_date,review_date,phase,source,pick_count,picks,summary${withExtra ? ",extra_picks" : ""}`,
     { method: "GET" }
   );
   if (!res.ok) return [];
@@ -5510,6 +5592,14 @@ async function handleCloseBetting(req, res) {
     res.end();
     return;
   }
+  if (req.method === "POST" && req.query && req.query.action === "admin-pick") {
+    try {
+      return await handleAdminPickSave(req, res);
+    } catch (e) {
+      console.error("[admin-pick] 실패", e && e.message);
+      return json(res, 500, { error: "저장하지 못했습니다." });
+    }
+  }
   if (req.method !== "GET") return json(res, 405, { error: "Method not allowed" });
 
   try {
@@ -5522,12 +5612,21 @@ async function handleCloseBetting(req, res) {
 
     // 달력·누적 통계 전용 응답. 로그인 여부와 무관하게 전부 공개한다.
     if (view === "history") {
-      const days = await cbLoadResults(req.query && req.query.days);
-      return json(res, 200, { days: days.map((d) => cbPublicDay(d, withPrice)), record: cbBuildRecord(days), withPrice });
+      const adm = await cbRequestIsAdmin(req);
+      const days = await cbLoadResults(req.query && req.query.days, !!adm);
+      return json(res, 200, { days: days.map((d) => (adm ? cbPublicDayAdmin(d, withPrice) : cbPublicDay(d, withPrice))), record: cbBuildRecord(days), withPrice });
     }
     if (view === "swing-history") {
-      const rows = await swLoadResults(req.query && req.query.days);
-      return json(res, 200, { days: rows.map((r) => swPublicRow(r, withPrice)), record: swBuildRecord(rows), withPrice });
+      const adm = await cbRequestIsAdmin(req);
+      const rows = await swLoadResults(req.query && req.query.days, !!adm);
+      return json(res, 200, { days: rows.map((r) => (adm ? swPublicRowAdmin(r, withPrice) : swPublicRow(r, withPrice))), record: swBuildRecord(rows), withPrice });
+    }
+    if (view === "admin-history") {
+      const adm = await cbRequestIsAdmin(req);
+      if (!adm) return json(res, 403, { error: "관리자 전용" });
+      const rows = (await adminPickLoad(req.query && req.query.days)).filter((r) => Array.isArray(r.picks) && r.picks.length);
+      const days = rows.map((r) => adminPickDay(r, true));
+      return json(res, 200, { days, record: cbBuildRecord(days), withPrice: true });
     }
 
     let isPro = false;
@@ -5551,7 +5650,12 @@ async function handleCloseBetting(req, res) {
     if (isAdmin) isPro = true;
     const viewer = isAdmin ? "admin" : invite ? "invite" : loggedIn ? "member" : "guest";
 
-    const [latest, recent, swRows] = await Promise.all([cbLoadLatest(), cbLoadResults(30), swLoadResults(40)]);
+    const [latest, recent, swRows, adminRows] = await Promise.all([
+      cbLoadLatest(),
+      cbLoadResults(30),
+      swLoadResults(40, isAdmin),
+      isAdmin ? adminPickLoad(10) : Promise.resolve([]),
+    ]);
     const strategies = CB_STRATEGIES.map((s) => ({ key: s.key, label: s.label, desc: s.desc }));
     const record = cbBuildRecord(recent);
     const market = cbMarketInfo();
@@ -5599,7 +5703,7 @@ async function handleCloseBetting(req, res) {
           if (!withPrice) delete row.close;
           return row;
         }),
-        tracking: swRows.filter((r) => r.status === "tracking").map((r) => swPublicRow(r, withPrice)),
+        tracking: swRows.filter((r) => r.status === "tracking").map((r) => (isAdmin ? swPublicRowAdmin(r, withPrice) : swPublicRow(r, withPrice))),
         last: (() => {
           const d = swRows.find((r) => r.status === "done");
           return d ? swPublicRow(d, withPrice) : null;
@@ -5637,11 +5741,28 @@ async function handleCloseBetting(req, res) {
       return row;
     });
 
+    let adminPick = null;
+    if (isAdmin) {
+      const dl = adminPickDeadline(latest.asOfDate);
+      const cur = adminRows.find((r) => r.as_of_date === latest.asOfDate) || null;
+      const lastDone = adminRows.find((r) => r.as_of_date !== latest.asOfDate && Array.isArray(r.picks) && r.picks.length) || null;
+      adminPick = {
+        asOfDate: latest.asOfDate,
+        codes: cur && cur.chosen ? cur.codes : [],
+        chosen: !!(cur && cur.chosen),
+        max: ADMIN_PICK_MAX,
+        deadlineLabel: dl.label + " 09:00",
+        locked: Date.now() >= dl.ms,
+        last: lastDone ? adminPickDay(lastDone, withPrice) : null,
+      };
+    }
+
     return json(res, 200, {
       ready: true,
       isPro,
       loggedIn,
       isAdmin,
+      adminPick,
       asOfDate: latest.asOfDate,
       scannedAt: latest.scannedAt,
       flowAsOfDate: latest.flowAsOfDate,

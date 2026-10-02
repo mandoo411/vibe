@@ -498,6 +498,16 @@
         .cb-pair .cb-sec { min-height: 76px; align-items: flex-start; margin-top: 0; }
       }
 
+      /* 추적 회차 격자 — 회차 수에 맞춰 칸 수를 정해 빈 칸이 안 남게 (2026-10-02) */
+      .sw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 10px; }
+      .sw-grid > .sw-block { margin-bottom: 0; }
+      @media (min-width: 1280px) {
+        .sw-grid[data-n="2"], .sw-grid[data-n="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .sw-grid[data-n="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        /* 반쪽 폭 결과표는 표 대신 목록형 */
+        #swPair #swDone .cb-scroll.cb-has-m { display: none; }
+        #swPair #swDone .cb-mlist { display: block; }
+      }
       /* 스윙 추적 블록 */
       .sw-block { border: 1px solid var(--border-color); border-radius: 13px; background: var(--bg-primary); padding: 12px 14px; margin-bottom: 10px; }
       .sw-block:last-child { margin-bottom: 0; }
@@ -716,29 +726,30 @@
                 </div>
               </div>
               <div class="cb-col">
-                <div class="cb-sec" id="swTrackSec">
-                  <span class="cb-sec__icon"><i class="ti ti-route" aria-hidden="true"></i></span>
+                <div class="cb-sec" id="swDoneSec">
+                  <span class="cb-sec__icon"><i class="ti ti-flag-check" aria-hidden="true"></i></span>
                   <span class="cb-sec__txt">
-                    <h2 class="cb-sec__title">추적 중인 스윙</h2>
-                    <p class="cb-sec__cap">결과일(5거래일 뒤 종가) 전까지 매일 종가로 지금 몇 %인지 갱신합니다.</p>
+                    <h2 class="cb-sec__title">1주 스윙 결과표</h2>
+                    <p class="cb-sec__cap">선정 후 5거래일이 지나 결과가 확정된 가장 최근 선정분입니다. 매 거래일 15:45에 하루치씩 새로 확정됩니다.</p>
                   </span>
-                  <span class="cb-stamp" id="swTrackStamp">—</span>
+                  <span class="cb-stamp" id="swDoneStamp">—</span>
                 </div>
-                <div class="cb-card cb-card--fill" id="swTrack">
+                <div class="cb-card cb-card--fill" id="swDone">
                   <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
                 </div>
               </div>
             </div>
 
-            <div class="cb-sec" id="swDoneSec">
-              <span class="cb-sec__icon"><i class="ti ti-flag-check" aria-hidden="true"></i></span>
+            <!-- 추적 중인 스윙: 전체 폭, 회차 블록을 격자로 (2026-10-02 빈 공간 정리) -->
+            <div class="cb-sec" id="swTrackSec">
+              <span class="cb-sec__icon"><i class="ti ti-route" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
-                <h2 class="cb-sec__title">1주 스윙 결과표</h2>
-                <p class="cb-sec__cap">선정 후 5거래일이 지나 결과가 확정된 가장 최근 선정분입니다. 매 거래일 15:45에 하루치씩 새로 확정됩니다.</p>
+                <h2 class="cb-sec__title">추적 중인 스윙</h2>
+                <p class="cb-sec__cap">결과일(5거래일 뒤 종가) 전까지 매일 종가로 지금 몇 %인지 갱신합니다.</p>
               </span>
-              <span class="cb-stamp" id="swDoneStamp">—</span>
+              <span class="cb-stamp" id="swTrackStamp">—</span>
             </div>
-            <div class="cb-card" id="swDone">
+            <div class="cb-card" id="swTrack">
               <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
             </div>
 
@@ -1379,7 +1390,7 @@
           var trShow = tr.filter(function (r) { return (r.summary || {}).daysElapsed > 0; });
           swTrackStampEl.innerHTML = trShow.length ? "<b>" + trShow.length + "회차</b> 추적 중 · 매일 15:45 갱신" : "—";
           swTrackEl.innerHTML = trShow.length
-            ? trShow.map(swBlockHtml).join("")
+            ? '<div class="sw-grid" data-n="' + trShow.length + '">' + trShow.map(swBlockHtml).join("") + "</div>"
             : '<div class="cb-empty"><i class="ti ti-route" aria-hidden="true"></i>추적 중인 스윙이 없습니다.<br />선정 다음 거래일 15:45부터 매일 종가가 쌓입니다.</div>';
           // 최근 확정
           var last = sw.last;

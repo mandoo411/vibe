@@ -37,6 +37,7 @@ const TO = process.env.BT_TO || "2026-10-01";
 const BARS = 270;
 const CAND = 400;
 const SWING_HOLD = 5;
+const TOPN = Number(process.env.BT_TOPN || 5); // 비용 분석(2026-10-02)용으로 10까지 뽑아 순위별 비교
 
 const rd = (f) => JSON.parse(fs.readFileSync(path.join(DIR, f), "utf8"));
 const ymd = (s) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
@@ -190,13 +191,13 @@ for (const D of testDays) {
     const r = rowFor(code, D, dPrev);
     if (r) rows.push(r);
   }
-  const cb = rankCloseBetting(rows, 5).ranked;
-  const sw = rankSwing(rows, 5).ranked;
+  const cb = rankCloseBetting(rows, TOPN).ranked;
+  const sw = rankSwing(rows, TOPN).ranked;
 
   const closePicks = cb.map((p) => {
     const nb = nextBars(p.code, D, 1)[0];
     return {
-      code: p.code, name: p.name, score: p.score, consensus: p.consensus, buy: p.close,
+      code: p.code, name: p.name, score: p.score, consensus: p.consensus, buy: p.close, chg: p.changePct, tv: p.tradingValueEok, mc: p.marketCapEok,
       openRet: nb && nb.time === dNext ? pct(nb.open, p.close) : null,
       closeRet: nb && nb.time === dNext ? pct(nb.close, p.close) : null,
       lowRet: nb && nb.time === dNext ? pct(nb.low, p.close) : null,

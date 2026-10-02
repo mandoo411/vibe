@@ -1155,15 +1155,15 @@
           if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("cb-extsep")) { e.preventDefault(); toggleExt(e.target); }
         });
 
-        /* 종가·스윙 겹침 표시(2026-10-02): 양쪽 다 10위 안에 든 종목만. 보이는 순위끼리만 비교한다 */
+        /* 종가·스윙 겹침 표시(2026-10-02): 양쪽 다 20위 안에 든 종목(시우 10/2: 20위권 겹침도 성과가 좋아서). 보이는 순위끼리만 비교한다 */
         var OVL = { close: {}, swing: {} };
         function buildOverlap(d) {
           OVL = { close: {}, swing: {} };
-          (d.ranked || []).forEach(function (r) { if (!r.locked && r.code && r.rank <= 10) OVL.close[r.code] = r.rank; });
-          ((d.swing || {}).ranked || []).forEach(function (r) { if (!r.locked && r.code && r.rank <= 10) OVL.swing[r.code] = r.rank; });
+          (d.ranked || []).forEach(function (r) { if (!r.locked && r.code && r.rank <= 20) OVL.close[r.code] = r.rank; });
+          ((d.swing || {}).ranked || []).forEach(function (r) { if (!r.locked && r.code && r.rank <= 20) OVL.swing[r.code] = r.rank; });
         }
         function overlapBadge(r, kind) {
-          if (!r || r.locked || !r.code || r.rank > 10) return "";
+          if (!r || r.locked || !r.code || r.rank > 20) return "";
           var other = kind === "swing" ? OVL.close[r.code] : OVL.swing[r.code];
           if (!other) return "";
           return '<span class="cb-xb" title="' + (kind === "swing" ? "종가시그널" : "1주 스윙") + '에도 선정"><i class="ti ti-arrows-cross" aria-hidden="true"></i>' +

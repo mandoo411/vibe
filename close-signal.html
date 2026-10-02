@@ -783,7 +783,7 @@
                   <span class="cb-sec__icon"><i class="ti ti-trending-up" aria-hidden="true"></i></span>
                   <span class="cb-sec__txt">
                     <h2 class="cb-sec__title">오늘의 1주 스윙 <span class="cb-sec__tag">5거래일 보유</span></h2>
-                    <p class="cb-sec__cap">스윙 매매기법 10종으로 따로 채점한 상위 5종목입니다. 선정가에 사서 5거래일 뒤 종가에 판다고 가정합니다.</p>
+                    <p class="cb-sec__cap">스윙 매매기법 10종으로 따로 채점해 추린 5종목입니다(번호는 조건 점수 순서이며 수익 기대 순서가 아닙니다). 선정가에 사서 5거래일 뒤 종가에 판다고 가정합니다.</p>
                   </span>
                   <span class="cb-stamp" id="swStamp">불러오는 중…</span>
                 </div>
@@ -1093,7 +1093,7 @@
         function swDetailHtml(r) {
           var html = aiLink(r) + stratGroupHtml(r.strategies);
           var P = r.parts || {};
-          var axes = [["consensus", "기법 합의", 40], ["momentum", "모멘텀 자리", 25], ["size", "체급·시장", 20], ["flow", "수급", 15]];
+          var axes = [["consensus", "기법 합의", 40], ["momentum", "자리(과열 전·52주 고점 근접)", 25], ["size", "체급(시총)", 20], ["flow", "수급", 15]];
           html += '<div class="cb-groups"><div class="cb-group"><div class="cb-group__head"><span class="cb-group__name">점수 구성</span>' +
             '<span class="cb-group__pts">' + esc(r.score) + " / 100</span></div>" +
             axes.map(function (a) {

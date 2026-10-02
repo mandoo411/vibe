@@ -1346,7 +1346,8 @@
           for (var i = 0; i < 5; i++) dh += "<th>D" + (i + 1) + (dates[i] ? "<small>" + esc(dLabel(dates[i])) + "</small>" : "") + "</th>";
           var head = '<tr><th class="cb-t-fit">선정</th><th class="cb-t-fit">종목</th>' + (withP ? "<th>선정가</th>" : "") + dh +
             "<th>" + (done ? "결과(5일째 종가)" : "현재(최근 종가)") + "</th><th>기간 최고·최저</th></tr>";
-          var body = picks.map(function (p, i) {
+          var body = picks.map(function (p, idx) {
+            var sep = extSep(picks, idx);
             var ret = done ? p.finalReturnPct : p.lastReturnPct;
             var cur = done ? p.finalClose : p.lastClose;
             var cells = "";
@@ -1354,7 +1355,7 @@
               var t = (p.track || [])[i];
               cells += '<td class="sw-dcell ' + (t ? tone(t.returnPct) : "cb-flat") + '">' + (t ? signShort(t.returnPct) : "—") + "</td>";
             }
-            return extSep(picks, i, true) + "<tr>" +
+            return (sep ? extSep(picks, idx, true) : "") + "<tr>" +
               '<td class="cb-t-fit cb-t-no"><span class="cb-tno' + (p.rank <= 3 ? " cb-tno--top" : "") + '">' + esc(p.rank) + "</span></td>" +
               '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + stockHref(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' +
               "<small>" + esc(p.code) + (p.score != null ? " · <b>" + esc(p.score) + "점</b>" : "") + (p.consensus != null ? " · 기법 " + p.consensus + "개" : "") + "</small></td>" +

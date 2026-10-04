@@ -1,11 +1,25 @@
 {
-  "updatedAt": "2026-10-04T20:16:50.694Z",
+  "updatedAt": "2026-10-04T23:21:52.129Z",
   "source": "kis+yahoo",
   "action": "trade-vol",
   "count": 50,
   "stocks": [
     {
       "rank": 1,
+      "ticker": "AMOD",
+      "name": "알파 모더스",
+      "price": 3.49,
+      "changePct": 198.29,
+      "changePoints": 2.32,
+      "volume": 194457253,
+      "marketCap": 197561312,
+      "tradingValue": 678655813,
+      "volSurgePct": null,
+      "baseVolume": null,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 2,
       "ticker": "NKE",
       "name": "나이키 B",
       "price": 33.87,
@@ -19,7 +33,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 2,
+      "rank": 3,
       "ticker": "NVDA",
       "name": "엔비디아",
       "price": 233.95,
@@ -33,7 +47,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 3,
+      "rank": 4,
       "ticker": "SPCX",
       "name": "스페이스X",
       "price": 158.96,
@@ -47,7 +61,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 4,
+      "rank": 5,
       "ticker": "INTC",
       "name": "인텔",
       "price": 119.33,
@@ -61,7 +75,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 5,
+      "rank": 6,
       "ticker": "CTVA",
       "name": "코르테바",
       "price": 11.92,
@@ -75,7 +89,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 6,
+      "rank": 7,
       "ticker": "NU",
       "name": "누 홀딩스",
       "price": 13.43,
@@ -89,7 +103,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 7,
+      "rank": 8,
       "ticker": "NOK",
       "name": "노키아(ADR)",
       "price": 10.6,
@@ -103,7 +117,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 8,
+      "rank": 9,
       "ticker": "AAL",
       "name": "아메리칸 에어라인스 그룹",
       "price": 12.94,
@@ -117,7 +131,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 9,
+      "rank": 10,
       "ticker": "GRAB",
       "name": "그랩 홀딩스",
       "price": 3.08,
@@ -131,7 +145,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 10,
+      "rank": 11,
       "ticker": "TLT",
       "name": "ISHARES 20+Y TREASURY BOND",
       "price": 77.48,
@@ -145,7 +159,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 11,
+      "rank": 12,
       "ticker": "RIVN",
       "name": "리비안 오토모티브",
       "price": 14.3,
@@ -159,7 +173,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 12,
+      "rank": 13,
       "ticker": "WBD",
       "name": "워너 브로스 디스커버리",
       "price": 30.94,
@@ -173,7 +187,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 13,
+      "rank": 14,
       "ticker": "TSLA",
       "name": "테슬라",
       "price": 370.59,
@@ -187,7 +201,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 14,
+      "rank": 15,
       "ticker": "SOFI",
       "name": "소파이 테크놀로지스",
       "price": 15.77,
@@ -201,7 +215,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 15,
+      "rank": 16,
       "ticker": "F",
       "name": "포드 모터",
       "price": 12.1,
@@ -215,7 +229,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 16,
+      "rank": 17,
       "ticker": "BBD",
       "name": "방쿠 브라데스쿠 우선주(ADR)",
       "price": 3.65,
@@ -229,7 +243,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 17,
+      "rank": 18,
       "ticker": "ITUB",
       "name": "이타우 우니방쿠 홀딩스(ADR)",
       "price": 8.59,
@@ -243,21 +257,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 18,
+      "rank": 19,
       "ticker": "SMCI",
       "name": "슈퍼 마이크로 컴퓨터",
       "price": 43.69,
       "changePct": 4.22,
       "changePoints": 1.77,
       "volume": 44497408,
-      "marketCap": 28702816256,
+      "marketCap": 28261881856,
       "tradingValue": 2009114952,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NAS"
     },
     {
-      "rank": 19,
+      "rank": 20,
       "ticker": "VALE",
       "name": "발레(ADS)",
       "price": 13.76,
@@ -271,21 +285,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 20,
+      "rank": 21,
       "ticker": "STLA",
       "name": "스텔란티스",
       "price": 4.4,
       "changePct": -6.18,
       "changePoints": -0.29,
       "volume": 42882856,
-      "marketCap": 16576225280,
+      "marketCap": 12764141568,
       "tradingValue": 189684526,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NYS"
     },
     {
-      "rank": 21,
+      "rank": 22,
       "ticker": "ONDS",
       "name": "온다스",
       "price": 7.24,
@@ -299,7 +313,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 22,
+      "rank": 23,
       "ticker": "MARA",
       "name": "마라 홀딩스",
       "price": 11.23,
@@ -313,7 +327,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 23,
+      "rank": 24,
       "ticker": "IREN",
       "name": "IREN",
       "price": 41.76,
@@ -327,7 +341,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 24,
+      "rank": 25,
       "ticker": "PCG",
       "name": "퍼시픽 가스 앤드 일렉트릭",
       "price": 12.32,
@@ -341,7 +355,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 25,
+      "rank": 26,
       "ticker": "AGNC",
       "name": "AGNC 인베스트먼트",
       "price": 8.79,
@@ -355,7 +369,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 26,
+      "rank": 27,
       "ticker": "RKT",
       "name": "로켓 컴퍼니스",
       "price": 11.7,
@@ -369,7 +383,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 27,
+      "rank": 28,
       "ticker": "NFLX",
       "name": "넷플릭스",
       "price": 67.06,
@@ -383,21 +397,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 28,
+      "rank": 29,
       "ticker": "PSKY",
       "name": "파라마운트 스카이댄스",
       "price": 9.5,
       "changePct": 1.71,
       "changePoints": 0.16,
       "volume": 37388663,
-      "marketCap": 10658484224,
+      "marketCap": 10632144896,
       "tradingValue": 355192299,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NAS"
     },
     {
-      "rank": 29,
+      "rank": 30,
       "ticker": "BMNR",
       "name": "비트마인 이머전 테크놀로지스",
       "price": 26.27,
@@ -411,7 +425,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 30,
+      "rank": 31,
       "ticker": "PLUG",
       "name": "플러그 파워",
       "price": 1.9,
@@ -425,7 +439,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 31,
+      "rank": 32,
       "ticker": "ORCL",
       "name": "오라클",
       "price": 142.3,
@@ -439,7 +453,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 32,
+      "rank": 33,
       "ticker": "MDT",
       "name": "메드트로닉",
       "price": 86.38,
@@ -453,7 +467,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 33,
+      "rank": 34,
       "ticker": "BAC",
       "name": "뱅크오브아메리카",
       "price": 53.75,
@@ -467,7 +481,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 34,
+      "rank": 35,
       "ticker": "PFE",
       "name": "화이자",
       "price": 27.8,
@@ -481,7 +495,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 35,
+      "rank": 36,
       "ticker": "QQQ",
       "name": "INVESCO QQQ TRUST",
       "price": 749.58,
@@ -495,7 +509,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 36,
+      "rank": 37,
       "ticker": "AMZN",
       "name": "아마존닷컴",
       "price": 251.52,
@@ -509,21 +523,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 37,
+      "rank": 38,
       "ticker": "HL",
       "name": "헤클라 마이닝",
       "price": 17.2,
       "changePct": 1.18,
       "changePoints": 0.2,
       "volume": 33407946,
-      "marketCap": 11554417664,
+      "marketCap": 11536253952,
       "tradingValue": 574616671,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NYS"
     },
     {
-      "rank": 38,
+      "rank": 39,
       "ticker": "AAPL",
       "name": "애플",
       "price": 333.69,
@@ -537,7 +551,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 39,
+      "rank": 40,
       "ticker": "OWL",
       "name": "블루 아울 캐피털",
       "price": 9.08,
@@ -551,7 +565,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 40,
+      "rank": 41,
       "ticker": "ORBS",
       "name": "에이트코 홀딩스",
       "price": 1.16,
@@ -565,7 +579,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 41,
+      "rank": 42,
       "ticker": "IBRX",
       "name": "이뮤니티바이오",
       "price": 10.29,
@@ -579,7 +593,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 42,
+      "rank": 43,
       "ticker": "NCLH",
       "name": "노르웨이지언 크루즈 라인 홀딩스",
       "price": 15.14,
@@ -593,7 +607,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 43,
+      "rank": 44,
       "ticker": "CIFR",
       "name": "사이퍼 마이닝",
       "price": 15.71,
@@ -607,21 +621,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 44,
+      "rank": 45,
       "ticker": "OPEN",
       "name": "오픈도어 테크놀로지스",
       "price": 2.44,
       "changePct": 1.67,
       "changePoints": 0.04,
       "volume": 29719886,
-      "marketCap": 2369462272,
+      "marketCap": 2353957376,
       "tradingValue": 73230344,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NAS"
     },
     {
-      "rank": 45,
+      "rank": 46,
       "ticker": "SNAP",
       "name": "스냅",
       "price": 5.58,
@@ -635,7 +649,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 46,
+      "rank": 47,
       "ticker": "NIO",
       "name": "니오(ADR)",
       "price": 3.37,
@@ -649,7 +663,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 47,
+      "rank": 48,
       "ticker": "HOOD",
       "name": "로빈훗 마케츠",
       "price": 112.74,
@@ -663,7 +677,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 48,
+      "rank": 49,
       "ticker": "T",
       "name": "AT&T",
       "price": 24.3,
@@ -677,7 +691,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 49,
+      "rank": 50,
       "ticker": "HPE",
       "name": "휴렛 팩커드 엔터프라이즈",
       "price": 69.33,
@@ -686,20 +700,6 @@
       "volume": 29092163,
       "marketCap": 92033138688,
       "tradingValue": 2016959661,
-      "volSurgePct": null,
-      "baseVolume": null,
-      "exchange": "NYS"
-    },
-    {
-      "rank": 50,
-      "ticker": "RIG",
-      "name": "트랜스오션",
-      "price": 5.17,
-      "changePct": -1.34,
-      "changePoints": -0.07,
-      "volume": 28691831,
-      "marketCap": 5774270464,
-      "tradingValue": 151691075,
       "volSurgePct": null,
       "baseVolume": null,
       "exchange": "NYS"

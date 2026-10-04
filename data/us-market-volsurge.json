@@ -1,11 +1,25 @@
 {
-  "updatedAt": "2026-10-04T20:16:51.420Z",
+  "updatedAt": "2026-10-04T23:21:52.833Z",
   "source": "kis+yahoo",
   "action": "trade-growth",
   "count": 50,
   "stocks": [
     {
       "rank": 1,
+      "ticker": "AMOD",
+      "name": "알파 모더스",
+      "price": 3.49,
+      "changePct": 198.29,
+      "changePoints": 2.32,
+      "volume": 194457253,
+      "marketCap": 197561312,
+      "tradingValue": 678655813,
+      "volSurgePct": 2130.06,
+      "baseVolume": 8719840,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 2,
       "ticker": "NNBR",
       "name": "NN",
       "price": 4.51,
@@ -19,7 +33,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 2,
+      "rank": 3,
       "ticker": "SYNA",
       "name": "시냅틱스",
       "price": 121.1,
@@ -33,21 +47,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 3,
+      "rank": 4,
       "ticker": "THRM",
       "name": "젠섬",
       "price": 31.3,
       "changePct": -0.82,
       "changePoints": -0.26,
       "volume": 6124326,
-      "marketCap": 962131328,
+      "marketCap": 1705066880,
       "tradingValue": 191691404,
       "volSurgePct": 512.88,
       "baseVolume": 999266,
       "exchange": "NAS"
     },
     {
-      "rank": 4,
+      "rank": 5,
       "ticker": "TH",
       "name": "타겟 호스피털리티",
       "price": 18.84,
@@ -61,7 +75,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 5,
+      "rank": 6,
       "ticker": "TBCH",
       "name": "터틀 비치",
       "price": 13.99,
@@ -75,7 +89,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 6,
+      "rank": 7,
       "ticker": "STX",
       "name": "시게이트 테크놀로지 홀딩스",
       "price": 848.99,
@@ -89,7 +103,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 7,
+      "rank": 8,
       "ticker": "TD",
       "name": "토론토 도미니언 뱅크",
       "price": 117.88,
@@ -103,7 +117,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 8,
+      "rank": 9,
       "ticker": "IART",
       "name": "인테그라 라이프사이언시스 홀딩스",
       "price": 12.68,
@@ -117,7 +131,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 9,
+      "rank": 10,
       "ticker": "WDC",
       "name": "웨스턴 디지털",
       "price": 415.29,
@@ -131,7 +145,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 10,
+      "rank": 11,
       "ticker": "AZTA",
       "name": "어젠타",
       "price": 38.75,
@@ -145,7 +159,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 11,
+      "rank": 12,
       "ticker": "XRPN",
       "name": "ARMADA ACQUISITION CORP II",
       "price": 39.42,
@@ -159,7 +173,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 12,
+      "rank": 13,
       "ticker": "NBHC",
       "name": "내셔널 뱅크 홀딩스",
       "price": 38.06,
@@ -173,7 +187,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 13,
+      "rank": 14,
       "ticker": "BMO",
       "name": "뱅크 오브 몬트리올",
       "price": 165.7,
@@ -187,7 +201,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 14,
+      "rank": 15,
       "ticker": "NUVB",
       "name": "누베이션 바이오",
       "price": 5.14,
@@ -201,7 +215,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 15,
+      "rank": 16,
       "ticker": "LU",
       "name": "루팍스 홀딩(ADR)",
       "price": 1.02,
@@ -215,7 +229,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 16,
+      "rank": 17,
       "ticker": "AEG",
       "name": "아혼(ADR)",
       "price": 8.45,
@@ -229,7 +243,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 17,
+      "rank": 18,
       "ticker": "PDO",
       "name": "PIMCO DYNAMIC INCOME OPPORTUNITIES",
       "price": 12.11,
@@ -243,7 +257,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 18,
+      "rank": 19,
       "ticker": "ATKR",
       "name": "앳코어",
       "price": 94.62,
@@ -257,7 +271,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 19,
+      "rank": 20,
       "ticker": "TV",
       "name": "그루포 텔레비사(ADR)",
       "price": 2.29,
@@ -271,7 +285,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 20,
+      "rank": 21,
       "ticker": "CM",
       "name": "캐나디안 임페리얼 뱅크 오브 커머스",
       "price": 111.02,
@@ -285,7 +299,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 21,
+      "rank": 22,
       "ticker": "IX",
       "name": "오릭스(ADR)",
       "price": 37.12,
@@ -299,7 +313,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 22,
+      "rank": 23,
       "ticker": "MRP",
       "name": "밀로즈 프라퍼티스",
       "price": 24.61,
@@ -313,21 +327,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 23,
+      "rank": 24,
       "ticker": "WK",
       "name": "워키바",
       "price": 71.23,
       "changePct": 2.3,
       "changePoints": 1.6,
       "volume": 3240723,
-      "marketCap": 3876086528,
+      "marketCap": 3997380608,
       "tradingValue": 230836699,
       "volSurgePct": 145.55,
       "baseVolume": 1319778,
       "exchange": "NYS"
     },
     {
-      "rank": 24,
+      "rank": 25,
       "ticker": "CTRE",
       "name": "케어트러스트 리츠",
       "price": 36.3,
@@ -341,7 +355,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 25,
+      "rank": 26,
       "ticker": "NYT",
       "name": "뉴욕타임스",
       "price": 62.7,
@@ -355,7 +369,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 26,
+      "rank": 27,
       "ticker": "BSAC",
       "name": "방코 산탄데르 칠레(ADR)",
       "price": 31.99,
@@ -369,7 +383,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 27,
+      "rank": 28,
       "ticker": "ARW",
       "name": "애로우 일렉트로닉스",
       "price": 242.01,
@@ -383,7 +397,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 28,
+      "rank": 29,
       "ticker": "RAL",
       "name": "랠리언트",
       "price": 73.2,
@@ -397,7 +411,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 29,
+      "rank": 30,
       "ticker": "BHC",
       "name": "바슈 헬스 컴퍼니스",
       "price": 5.8,
@@ -411,7 +425,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 30,
+      "rank": 31,
       "ticker": "BCH",
       "name": "방코 데 칠레(ADR)",
       "price": 38.49,
@@ -425,21 +439,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 31,
+      "rank": 32,
       "ticker": "NNN",
       "name": "NNN 리츠",
       "price": 40.95,
       "changePct": 1.87,
       "changePoints": 0.75,
       "volume": 5059244,
-      "marketCap": 7790663168,
+      "marketCap": 7859590656,
       "tradingValue": 207176042,
       "volSurgePct": 121.1,
       "baseVolume": 2288260,
       "exchange": "NYS"
     },
     {
-      "rank": 32,
+      "rank": 33,
       "ticker": "RXO",
       "name": "RXO",
       "price": 23.38,
@@ -453,7 +467,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 33,
+      "rank": 34,
       "ticker": "NOC",
       "name": "노스롭 그루만",
       "price": 478,
@@ -467,7 +481,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 34,
+      "rank": 35,
       "ticker": "VSH",
       "name": "비샤이 인터테크놀로지",
       "price": 38.18,
@@ -481,7 +495,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 35,
+      "rank": 36,
       "ticker": "LW",
       "name": "램 웨스턴 홀딩스",
       "price": 43.6,
@@ -495,21 +509,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 36,
+      "rank": 37,
       "ticker": "STM",
       "name": "ST 마이크로일렉트로닉스(ADR)",
       "price": 57.26,
       "changePct": 7.03,
       "changePoints": 3.76,
       "volume": 16340102,
-      "marketCap": 51071803392,
+      "marketCap": 51079184384,
       "tradingValue": 935634241,
       "volSurgePct": 102.35,
       "baseVolume": 8075298,
       "exchange": "NYS"
     },
     {
-      "rank": 37,
+      "rank": 38,
       "ticker": "WOLF",
       "name": "울프스피드",
       "price": 35.28,
@@ -523,7 +537,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 38,
+      "rank": 39,
       "ticker": "MGY",
       "name": "매그놀리아 오일 앤드 가스",
       "price": 24.07,
@@ -537,7 +551,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 39,
+      "rank": 40,
       "ticker": "VST",
       "name": "비스트라 에너지",
       "price": 140.02,
@@ -551,7 +565,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 40,
+      "rank": 41,
       "ticker": "EVR",
       "name": "에버코어",
       "price": 261.68,
@@ -565,7 +579,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 41,
+      "rank": 42,
       "ticker": "NKE",
       "name": "나이키 B",
       "price": 33.87,
@@ -579,21 +593,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 42,
+      "rank": 43,
       "ticker": "OGE",
       "name": "OGE 에너지",
       "price": 45.34,
       "changePct": -0.72,
       "changePoints": -0.33,
       "volume": 3934392,
-      "marketCap": 9366394880,
+      "marketCap": 9357011968,
       "tradingValue": 178385333,
       "volSurgePct": 84.74,
       "baseVolume": 2129686,
       "exchange": "NYS"
     },
     {
-      "rank": 43,
+      "rank": 44,
       "ticker": "QGEN",
       "name": "키아젠",
       "price": 44.75,
@@ -607,7 +621,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 44,
+      "rank": 45,
       "ticker": "OWL",
       "name": "블루 아울 캐피털",
       "price": 9.08,
@@ -621,7 +635,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 45,
+      "rank": 46,
       "ticker": "PBA",
       "name": "펨비나 파이프라인",
       "price": 45.89,
@@ -635,21 +649,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 46,
+      "rank": 47,
       "ticker": "INVX",
       "name": "이노벡스 인터내셔널",
       "price": 27.31,
       "changePct": -0.76,
       "changePoints": -0.21,
       "volume": 1013342,
-      "marketCap": 1909947264,
+      "marketCap": 1906794880,
       "tradingValue": 27674370,
       "volSurgePct": 72.21,
       "baseVolume": 588450,
       "exchange": "NYS"
     },
     {
-      "rank": 47,
+      "rank": 48,
       "ticker": "EFX",
       "name": "에퀴팩스",
       "price": 140,
@@ -663,7 +677,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 48,
+      "rank": 49,
       "ticker": "VVR",
       "name": "INVESCO SENIOR INCOME TRUST",
       "price": 2.89,
@@ -677,7 +691,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 49,
+      "rank": 50,
       "ticker": "CTVA",
       "name": "코르테바",
       "price": 11.92,
@@ -688,20 +702,6 @@
       "tradingValue": 939645542,
       "volSurgePct": 70.61,
       "baseVolume": 46205397,
-      "exchange": "NYS"
-    },
-    {
-      "rank": 50,
-      "ticker": "CX",
-      "name": "세멕스(ADR)",
-      "price": 9.53,
-      "changePct": 1.38,
-      "changePoints": 0.13,
-      "volume": 6557940,
-      "marketCap": 13751335936,
-      "tradingValue": 62497168,
-      "volSurgePct": 69.16,
-      "baseVolume": 3876882,
       "exchange": "NYS"
     }
   ]

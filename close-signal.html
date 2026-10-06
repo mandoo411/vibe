@@ -510,6 +510,12 @@
         font-size: 11px; font-weight: 800; white-space: nowrap; color: #fff; background: linear-gradient(135deg, #f59e0b, #f97316);
         box-shadow: 0 0 0 1px color-mix(in srgb, #f59e0b 45%, transparent), 0 2px 8px color-mix(in srgb, #f97316 30%, transparent); }
       .cb-xb .ti { font-size: 12px; }
+      /* 2026-10-06 변동 주의 배지 — 거르지 않고 알리기만 한다(CRASH_BACKTEST.md 11장) */
+      .cb-vb { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 1px 7px; border-radius: 999px; vertical-align: 2px;
+        font-size: 11px; font-weight: 700; white-space: nowrap; color: var(--text-secondary);
+        border: 1px dashed color-mix(in srgb, var(--text-secondary) 60%, transparent); background: transparent; }
+      .cb-vb .ti { font-size: 12px; }
+      .cb-volnote { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all; }
       /* 관리자 픽 */
       .cb-sec__tag--adm { background: color-mix(in srgb, #f59e0b 18%, transparent) !important; color: #f59e0b !important; }
       .adm-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
@@ -1084,6 +1090,10 @@
             html += '<p class="cb-pen">감점 · ' +
               r.penalties.map(function (p) { return esc(p.label) + " −" + (p.points != null ? p.points : p.pts); }).join(" · ") + "</p>";
           }
+          if (r.volatility && r.volatility.length) {
+            html += '<p class="cb-volnote"><b>변동 큼</b> · ' + r.volatility.map(function (v) { return esc(v.label); }).join(" · ") +
+              " — 과거 데이터로 다시 계산해 보면 이런 종목은 다음 날 크게 오른 경우와 크게 빠진 경우가 모두 잦았습니다(실제 매매 결과 아님).</p>";
+          }
           if (r.missing && r.missing.length) {
             html += '<p class="cb-missing">미반영(데이터 없음, 만점 계산에서도 제외) · ' + r.missing.map(esc).join(" · ") + "</p>";
           }
@@ -1217,13 +1227,18 @@
             "<" + tag + (locked ? "" : ' type="button"') + ' class="cb-main">' +
             '<span class="cb-rank">' + r.rank + "</span>" +
             '<span class="cb-idn"><span><span class="cb-name">' + (locked ? "종목명 비공개" : esc(r.name)) +
-            '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span>" + overlapBadge(r, kind) + "</span>" +
+            '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span>" + overlapBadge(r, kind) + volBadge(r, locked) + "</span>" +
             '<span class="cb-meta">' + meta + "</span>" +
             (chips ? '<span class="cb-chips">' + chips + "</span>" : "") + "</span>" +
             '<span class="cb-scorebox"><span class="cb-score">' + r.score + "<span>점</span></span>" +
             '<span class="cb-bar"><i style="width:' + pctWidth(r.score, 100) + '%"></i></span></span>' +
             "</" + tag + ">" + (locked ? "" : kind === "swing" ? swDetailHtml(r) : detailHtml(r)) + "</div>"
           );
+        }
+        function volBadge(r, locked) {
+          if (locked || !r.volatility || !r.volatility.length) return "";
+          return '<span class="cb-vb" title="' + esc(r.volatility.map(function (v) { return v.label; }).join(" · ")) +
+            ' — 다음 날 크게 오르거나 크게 빠지는 경우가 모두 잦았던 유형"><i class="ti ti-activity" aria-hidden="true"></i>변동 큼</span>';
         }
         function bindRows(el) {
           el.querySelectorAll("button.cb-main").forEach(function (btn) {

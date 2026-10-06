@@ -124,6 +124,9 @@
   // TM_ALL_PAGES에만 넣으면 모바일 "전체 메뉴"에는 끝까지 안 나온다(실제로 그랬다).
   // 12칸이 꽉 차 있었으므로 한 칸이 늘어 5행이 된다. 위치는 같은 "종목 고르기" 계열인
   // 매매시그널 바로 옆 — 그 뒤 항목들은 한 칸씩 밀린다.
+  // 2026-10-07: PRO 딱지 대상 한 곳에서 관리 — 종가시그널이 모바일 전체메뉴·하단 탭에서 빠져 있었다.
+  const PRO_PAGE_IDS = new Set(["signal", "closebet", "analysis"]);
+
   const NAV_SHEET_GRID = [
     ["home", "signal", "closebet"],
     ["analysis", "briefing", "daily"],
@@ -648,7 +651,7 @@
     iconWrap.innerHTML = isMenu ? BOTTOM_NAV_MENU_ICON : BOTTOM_NAV_ICONS[tabId] || "";
     // 2026-07-31: 매매시그널·AI분석은 유료(PRO) 기능이라 하단 탭에도 골드 PRO 뱃지를 붙인다
     // (데스크톱 GNB·전체보기 시트와 동일한 시각 언어 — 사용자 피드백: "노란색 pro 딱지가 없네").
-    if (tabId === "signal" || tabId === "analysis") {
+    if (PRO_PAGE_IDS.has(tabId)) {
       const badge = document.createElement("span");
       badge.className = "tm-bottom-nav__pro-badge";
       badge.textContent = "PRO";
@@ -672,7 +675,7 @@
         const p = pageById(id);
         if (!p) return "";
         const label = NAV_SHEET_LABELS[id] || p.label;
-        const proBadge = id === "signal" || id === "analysis" ? '<span class="tm-nav-sheet__pro">PRO</span>' : "";
+        const proBadge = PRO_PAGE_IDS.has(id) ? '<span class="tm-nav-sheet__pro">PRO</span>' : "";
         if (id === "analysis" && ANALYSIS_PAGE_LOCKED) {
           return (
             `<button type="button" class="tm-nav-sheet__cell home-nav__link--analysis-locked" data-tm-page="${p.id}" data-analysis-locked="1">` +

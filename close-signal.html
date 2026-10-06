@@ -515,6 +515,10 @@
         font-size: 11px; font-weight: 700; white-space: nowrap; color: var(--text-secondary);
         border: 1px dashed color-mix(in srgb, var(--text-secondary) 60%, transparent); background: transparent; }
       .cb-vb .ti { font-size: 12px; }
+      .cb-sb { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 1px 7px; border-radius: 999px; vertical-align: 2px;
+        font-size: 11px; font-weight: 800; white-space: nowrap; color: var(--cb-accent);
+        border: 1px solid var(--cb-line); background: var(--cb-soft); }
+      .cb-sb .ti { font-size: 12px; }
       .cb-volnote { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all; }
       /* 관리자 픽 */
       .cb-sec__tag--adm { background: color-mix(in srgb, #f59e0b 18%, transparent) !important; color: #f59e0b !important; }
@@ -715,7 +719,7 @@
               <span class="cb-sec__icon"><i class="ti ti-bolt" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">오늘의 종가시그널 <span class="cb-sec__tag">다음 거래일 매도</span></h2>
-                <p class="cb-sec__cap">번호는 조건 점수 순서이며 수익 기대 순서가 아닙니다. 종목을 누르면 어떤 기법에 어떤 값으로 걸렸는지 볼 수 있습니다.</p>
+                <p class="cb-sec__cap">번호는 조건 점수 순서이며 수익 기대 순서가 아닙니다. <b>선별 3</b>은 ‘변동 큼’을 뺀 점수 상위 3종목으로, 과거 2년 데이터로 다시 계산했을 때 5종목 전체보다 결과가 고르게 나왔던 조건입니다(실제 매매 결과 아님). 종목을 누르면 근거를 볼 수 있습니다.</p>
               </span>
               <span class="cb-stamp" id="cbStamp">불러오는 중…</span>
             </div>
@@ -1227,13 +1231,17 @@
             "<" + tag + (locked ? "" : ' type="button"') + ' class="cb-main">' +
             '<span class="cb-rank">' + r.rank + "</span>" +
             '<span class="cb-idn"><span><span class="cb-name">' + (locked ? "종목명 비공개" : esc(r.name)) +
-            '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span>" + overlapBadge(r, kind) + volBadge(r, locked) + "</span>" +
+            '</span><span class="cb-code">' + (locked ? "------" : esc(r.code)) + "</span>" + overlapBadge(r, kind) + shortBadge(r, locked) + volBadge(r, locked) + "</span>" +
             '<span class="cb-meta">' + meta + "</span>" +
             (chips ? '<span class="cb-chips">' + chips + "</span>" : "") + "</span>" +
             '<span class="cb-scorebox"><span class="cb-score">' + r.score + "<span>점</span></span>" +
             '<span class="cb-bar"><i style="width:' + pctWidth(r.score, 100) + '%"></i></span></span>' +
             "</" + tag + ">" + (locked ? "" : kind === "swing" ? swDetailHtml(r) : detailHtml(r)) + "</div>"
           );
+        }
+        function shortBadge(r, locked) {
+          if (locked || !r.shortlist) return "";
+          return '<span class="cb-sb" title="변동 큼이 아닌 종목 중 점수 상위 3종목"><i class="ti ti-filter" aria-hidden="true"></i>선별 3</span>';
         }
         function volBadge(r, locked) {
           if (locked || !r.volatility || !r.volatility.length) return "";

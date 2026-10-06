@@ -87,7 +87,20 @@ async function sendAlert(text) {
 }
 
 async function main() {
-  const today = process.env.PROMO_FORCE_DATE || seoulYmd();
+  // 2026-10-07: 19:00 백업 schedule이 6시간 넘게 밀려 01:24 KST에 돌았고, 그 시각의 "오늘"(10/7,
+  // 아직 장 시작 전)을 점검해 "오늘 시세 동기화 실패" 오경보를 보냈다. 날짜 지정 없이 15:40(시세
+  // 동기화 시각) 전에 돌았다면 전날 점검이 밀린 것이므로 직전 거래일을 점검한다.
+  let today = process.env.PROMO_FORCE_DATE || seoulYmd();
+  if (!process.env.PROMO_FORCE_DATE) {
+    const hm = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).format(new Date()).replace(":", "");
+    if (Number(hm) < 1540) {
+      const prev = krx.prevTradingDay(today);
+      console.log("[watchdog] " + hm + " KST 실행 — 지연 실행으로 보고 직전 거래일 " + prev + " 점검");
+      today = prev;
+    }
+  }
 
   let data;
   try {

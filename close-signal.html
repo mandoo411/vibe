@@ -519,6 +519,7 @@
         font-size: 11px; font-weight: 800; white-space: nowrap; color: var(--cb-accent);
         border: 1px solid var(--cb-line); background: var(--cb-soft); }
       .cb-sb .ti { font-size: 12px; }
+      .sw-block__idx { margin-left: 8px; font-size: 11.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
       .cb-volnote { margin: 8px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); word-break: keep-all; }
       /* 관리자 픽 */
       .cb-sec__tag--adm { background: color-mix(in srgb, #f59e0b 18%, transparent) !important; color: #f59e0b !important; }
@@ -1034,6 +1035,10 @@
             html += '<p class="cb-rec__grp">1주 스윙 · 결과 확정 ' + sw.weeks + "회</p>";
             html += recCell("5거래일 보유 평균", sign(sw.avgReturnPct), tone(sw.avgReturnPct),
               sw.winRatePct == null ? "" : "수익 종목 비율 " + sw.winRatePct + "%");
+            if (sw.avgKospiReturnPct != null && sw.kospiWeeks) {
+              html += recCell("같은 기간 코스피 평균", sign(sw.avgKospiReturnPct), tone(sw.avgKospiReturnPct),
+                sw.kospiWeeks === sw.weeks ? "같은 회차 기준" : "지수 비교 가능한 " + sw.kospiWeeks + "회 기준");
+            }
             html += recCell("평균이 플러스였던 회차", sw.plusDays + " / " + sw.measuredDays, "", sw.tracking ? "추적 중 " + sw.tracking + "회" : "");
           }
           recordEl.innerHTML = html;
@@ -1485,7 +1490,8 @@
             '<div class="sw-block__h"><span class="sw-block__t">' + esc(dLabel(row.asOfDate)) + "(" + esc(dowLabel(row.asOfDate)) + ") 선정</span>" +
             '<span class="sw-block__s">결과일 ' + esc(dLabel(row.targetDate)) + "(" + esc(dowLabel(row.targetDate)) + ") 종가 · " +
             (done ? "확정" : n + "/5거래일 경과") + (row.source === "backfill" ? " · 사후 검증" : "") + "</span>" + progHtml(n) +
-            '<span class="sw-block__avg ' + tone(s.avgReturnPct) + '" title="5종목 평균">' + (s.avgReturnPct != null ? "평균 " + sign(s.avgReturnPct) : "—") + "</span></div>" +
+            '<span class="sw-block__avg ' + tone(s.avgReturnPct) + '" title="5종목 평균">' + (s.avgReturnPct != null ? "평균 " + sign(s.avgReturnPct) : "—") + "</span>" +
+            (s.kospiReturnPct != null ? '<span class="sw-block__idx" title="같은 기간 코스피">코스피 ' + sign(s.kospiReturnPct) + "</span>" : "") + "</div>" +
             (row.picks || []).map(function (p, i, a) { return extSep(a, i) + swPickRowHtml(p, done); }).join("") + "</div>";
         }
         function swTableHtml(row) {
@@ -1528,6 +1534,11 @@
               '<span class="cb-verdict__v ' + (cls || "") + '">' + v + (sub ? ' <span class="cb-verdict__k">' + esc(sub) + "</span>" : "") + "</span></div>";
           }
           var html = item(done ? "5거래일 보유 평균" : "현재 평균", sign(s.avgReturnPct), tone(s.avgReturnPct), s.wins != null ? s.wins + "/" + s.measured + " 수익" : "");
+          if (s.kospiReturnPct != null) {
+            var gap = s.avgReturnPct != null ? Math.round((s.avgReturnPct - s.kospiReturnPct) * 100) / 100 : null;
+            html += item("같은 기간 코스피", sign(s.kospiReturnPct), tone(s.kospiReturnPct),
+              gap != null ? "코스피 대비 " + sign(gap) : "");
+          }
           if (s.avgMaxHighPct != null) html += item("기간 최고 평균", sign(s.avgMaxHighPct), tone(s.avgMaxHighPct));
           if (s.best) html += item("가장 좋았던 종목", esc(s.best.name) + " " + sign(s.best.returnPct), tone(s.best.returnPct));
           if (s.worst && (!s.best || s.worst.code !== s.best.code)) html += item("가장 나빴던 종목", esc(s.worst.name) + " " + sign(s.worst.returnPct), tone(s.worst.returnPct));

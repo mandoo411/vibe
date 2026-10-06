@@ -5443,6 +5443,9 @@ function swBuildRecord(rows) {
     measuredDays: dayAvg.length,
     avgMaxHighPct: mean(picks.filter((p) => p.maxHighPct != null).map((p) => p.maxHighPct)),
     tracking: rows.filter((r) => r.status === "tracking").length,
+    // (2026-10-06) 같은 회차들의 코스피 5거래일 수익률 평균 — 지수 비교가 있는 회차만, 회차 수도 같이
+    avgKospiReturnPct: mean(done.map((r) => (r.summary || {}).kospiReturnPct).filter((v) => v != null)),
+    kospiWeeks: done.filter((r) => (r.summary || {}).kospiReturnPct != null).length,
   };
 }
 

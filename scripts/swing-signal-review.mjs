@@ -59,6 +59,38 @@ function hmNow() {
   );
 }
 
+/* (2026-10-06) 같은 기간 지수 수익률 — "장이 좋아서 오른 건지, 종목을 잘 골라서인지" 화면에서 바로 보이게.
+ * 네이버 지수 일봉(KOSPI·KOSDAQ 종가). 못 받으면 비워 두고 지어내지 않는다. */
+const idxCache = {};
+async function indexCloses(sym) {
+  if (idxCache[sym]) return idxCache[sym];
+  const m = new Map();
+  try {
+    const end = krx.seoulYmd().replace(/-/g, "");
+    const r = await fetch(`https://api.finance.naver.com/siseJson.naver?symbol=${sym}&requestType=1&startTime=20260801&endTime=${end}&timeframe=day`);
+    const t = await r.text();
+    const rows = JSON.parse(t.replace(/'/g, '"')).slice(1);
+    for (const x of rows) {
+      const d = String(x[0]).trim();
+      if (d.length === 8 && x[4] > 0) m.set(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, Number(x[4]));
+    }
+  } catch (e) {
+    console.log(`::warning::${sym} 지수 일봉 실패: ${e && e.message}`);
+  }
+  idxCache[sym] = m;
+  return m;
+}
+async function indexReturn(sym, from, to) {
+  const m = await indexCloses(sym);
+  const a = m.get(from), b = m.get(to);
+  return a && b ? pct(b, a) : null;
+}
+async function withIndex(summary, asOf, picks, done, target) {
+  const lastDay = done ? target : picks.reduce((d, p) => { const t = (p.track || [])[(p.track || []).length - 1]; return t && (!d || t.date > d) ? t.date : d; }, null);
+  if (!lastDay) return summary;
+  return { ...summary, indexTo: lastDay, kospiReturnPct: await indexReturn("KOSPI", asOf, lastDay), kosdaqReturnPct: await indexReturn("KOSDAQ", asOf, lastDay) };
+}
+
 const barCache = new Map();
 async function bars(code) {
   if (barCache.has(code)) return barCache.get(code);
@@ -200,6 +232,16 @@ async function main() {
   for (const [asOf, row] of have) {
     const extTodo = Array.isArray(row.extra_picks) && row.extra_picks.length && !allFinal(row.extra_picks);
     if (row.status === "done") {
+      // (2026-10-06) 지수 비교가 없는 확정 행은 한 번만 채운다
+      const needIdx = !(row.summary && "kospiReturnPct" in row.summary);
+      if (needIdx && !extTodo && !row._extNew) {
+        const summary = await withIndex(row.summary || {}, asOf, row.picks || [], true, row.target_date);
+        if (summary.kospiReturnPct != null) {
+          toWrite.push({ ...row, summary });
+          console.log(`[swing] ${asOf} 지수 비교 채움: 코스피 ${summary.kospiReturnPct}%`);
+        }
+        continue;
+      }
       // 공개 5종목은 확정 — 관리자용 6~20위만 아직 덜 채워졌으면 그것만 추적
       if (!extTodo && !row._extNew) continue;
       const days = tradingDaysAfter(asOf, HOLD);
@@ -222,10 +264,10 @@ async function main() {
     const extra = [];
     for (const p0 of row.extra_picks || []) extra.push(await trackPick(p0, days, target, lastBarDay));
     const done = target <= lastBarDay && picks.every((p) => p.finalReturnPct != null);
-    const next = { ...row, target_date: target, picks, extra_picks: extra, status: done ? "done" : "tracking", summary: summarize(picks, done) };
+    const next = { ...row, target_date: target, picks, extra_picks: extra, status: done ? "done" : "tracking", summary: await withIndex(summarize(picks, done), asOf, picks, done, target) };
     toWrite.push(next);
     const s = next.summary;
-    console.log(`[swing] ${asOf} → ${target} ${done ? "확정" : `추적 ${s.daysElapsed}/${HOLD}일`} 평균 ${s.avgReturnPct ?? "-"}% (${s.wins}/${s.measured} 수익)`);
+    console.log(`[swing] ${asOf} → ${target} ${done ? "확정" : `추적 ${s.daysElapsed}/${HOLD}일`} 평균 ${s.avgReturnPct ?? "-"}% (${s.wins}/${s.measured} 수익) · 코스피 ${s.kospiReturnPct ?? "-"}%`);
   }
 
   if (DRY) {

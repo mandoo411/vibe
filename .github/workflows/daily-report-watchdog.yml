@@ -29,6 +29,7 @@ on:
 
 permissions:
   contents: read
+  actions: read  # 백업 schedule이 정시 실행 성공 여부를 확인(krx-guard --backup-of)
 
 concurrency:
   group: daily-report-watchdog
@@ -48,7 +49,9 @@ jobs:
       # 2026-09-24: 한국 증시 휴장일(주말·공휴일)에는 아무것도 하지 않는다. 판단은 lib/krx-calendar.js
       - name: KRX 거래일 확인
         id: krx
-        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }} --backup-of=daily-report-watchdog.yml --not-before=15:00
 
       - name: Setup Node.js
         if: steps.krx.outputs.open == 'true'

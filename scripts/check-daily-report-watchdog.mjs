@@ -27,6 +27,7 @@
  *   final — 마지막 점검(19:00 KST). "오늘 발행 못 한다" 알림.
  */
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import { readJson, seoulYmd } from "./telegram-utils.mjs";
 
 // 2026-09-24: "거래일인가"를 데이터 모양으로 추측하던 것을 휴장일 달력으로 바꿨다.
@@ -86,6 +87,12 @@ async function sendAlert(text) {
   }
 }
 
+// 인스타 마감 카드 발행이 켜져 있는지(2026-09-25부터 job에 `if: ${{ false }}`로 꺼 둠) — 안내 문구에만 쓴다
+const instaOn = (() => {
+  try { return !/^\s*if:\s*\$\{\{\s*false\s*\}\}/m.test(readFileSync(".github/workflows/instagram-carousel-v2.yml", "utf8")); }
+  catch { return true; }
+})();
+
 async function main() {
   // 2026-10-07: 19:00 백업 schedule이 6시간 넘게 밀려 01:24 KST에 돌았고, 그 시각의 "오늘"(10/7,
   // 아직 장 시작 전)을 점검해 "오늘 시세 동기화 실패" 오경보를 보냈다. 날짜 지정 없이 15:40(시세
@@ -127,7 +134,7 @@ async function main() {
       "",
       "날짜: " + today + " (거래일)",
       "15:40 Daily Market Sync가 오늘 순위·등락률을 저장하지 못했습니다.",
-      "이 데이터가 없으면 마감시황·마감 카드뉴스가 모두 만들어지지 않습니다.",
+      "이 데이터가 없으면 마감시황" + (instaOn ? "·마감 카드뉴스가 모두" : "이") + " 만들어지지 않습니다.",
       "",
       "GitHub Actions → Daily Market Sync 실행 기록을 확인하거나,",
       "Claude에게 \"오늘 시세 동기화 실패 확인해줘\"라고 요청하세요.",
@@ -151,8 +158,9 @@ async function main() {
   const tail =
     STAGE === "final"
       ? [
-          "이 상태로는 오늘 인스타 마감 카드가 나가지 않습니다.",
-          "리포트가 커밋되는 즉시 카드는 자동 발행됩니다.",
+          ...(instaOn
+            ? ["이 상태로는 오늘 인스타 마감 카드가 나가지 않습니다.", "리포트가 커밋되는 즉시 카드는 자동 발행됩니다."]
+            : ["사이트 마감시황이 오늘 비어 있습니다."]),
           "Claude에게 \"오늘 마감시황 미발행 확인해줘\"라고 요청하세요.",
         ]
       : [

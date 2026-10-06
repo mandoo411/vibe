@@ -86,6 +86,14 @@ function readStamp(folder) {
   return existsSync(p) ? readFileSync(p, "utf8").trim() : "";
 }
 
+/* 2026-10-07: 인스타 발행을 꺼 둔 동안(2026-09-25~, 워크플로 job에 `if: ${{ false }}`) 점검봇이 매 평일
+ * "인스타 카드 미발행"을 3시간마다 보냈다. 발행 워크플로가 꺼져 있으면 그 카드 점검도 건너뛴다.
+ * 시우가 발행을 재개(그 줄 삭제)하면 점검도 자동으로 다시 켜진다 — 여기는 손댈 필요 없다. */
+function workflowPaused(file) {
+  try { return /^\s*if:\s*\$\{\{\s*false\s*\}\}/m.test(readFileSync(path.resolve(".github/workflows", file), "utf8")); }
+  catch { return false; }
+}
+
 const issues = []; // { code, area, message }
 const fail = (code, area, message) => issues.push({ code, area, message });
 
@@ -143,19 +151,25 @@ const CHECKS = [
     run() {
       const b = readJsonSafe("data/morning-briefing.json");
       if (!b || String(b.updatedAt || "").slice(0, 10) !== NOW.ymd) return;
-      for (const m of Array.isArray(b.errors) ? b.errors : []) fail("morning-briefing-sanity", "아침", `아침 브리핑 데이터 이상: ${m}`);
+      // 2026-10-07: 곁가지(코인·뉴스) 수집 실패는 브리핑 발행에 지장이 없어 알리지 않는다(9/30 CoinGecko 403 오경보).
+      // 알릴 때도 HTML 원문 대신 짧게.
+      for (const m of Array.isArray(b.errors) ? b.errors : []) {
+        if (/^(crypto|news|krNews|marketNews)\b/i.test(String(m))) { console.log("[health-check] 곁가지 수집 실패(알림 생략):", String(m).slice(0, 80)); continue; }
+        const short = String(m).replace(/<[^>]*>?/g, "").replace(/\s+/g, " ").trim().slice(0, 120);
+        fail("morning-briefing-sanity", "아침", `아침 브리핑 데이터 이상: ${short}`);
+      }
     },
   },
   {
     code: "morning-ai", area: "아침", when: "weekday", from: [9, 0],
-    desc: "아침 브리핑 AI 분석 발행(08:03 Cowork 예약작업) — 발행 기록 파일",
+    desc: "아침 브리핑 AI 분석 발행(08:03 클라우드 예약작업) — 발행 기록 파일",
     run() {
       const s = readStamp("morning-briefing");
-      if (s !== NOW.ymd) fail("morning-briefing-not-published", "아침", `아침 브리핑 AI 분석 미발행 (마지막: ${s || "기록 없음"}) — PC의 Cowork 예약작업(totalmoney-morning-briefing)이 안 돈 것으로 보임`);
+      if (s !== NOW.ymd) fail("morning-briefing-not-published", "아침", `아침 브리핑 AI 분석 미발행 (마지막: ${s || "기록 없음"}) — Claude 클라우드 예약작업(아침 브리핑)이 안 돈 것으로 보임`);
     },
   },
   {
-    code: "morning-carousel", area: "아침", when: "weekday", from: [9, 0],
+    code: "morning-carousel", area: "아침", when: "weekday", from: [9, 0], workflow: "instagram-carousel-morning.yml",
     desc: "인스타 아침 카드(08:03) 발행 기록",
     run() {
       const s = readStamp("carousel-morning");
@@ -201,7 +215,7 @@ const CHECKS = [
     },
   },
   {
-    code: "closing-carousel", area: "마감", when: "trading", from: [18, 30],
+    code: "closing-carousel", area: "마감", when: "trading", from: [18, 30], workflow: "instagram-carousel-v2.yml",
     desc: "인스타 마감 카드(17:30) 발행 — 리포트는 있는데 발행이 안 된 경우만",
     run() {
       const day = readJsonSafe("data/daily-market.json")?.days?.[NOW.ymd];
@@ -212,7 +226,7 @@ const CHECKS = [
     },
   },
   {
-    code: "ranking-carousel", area: "주간", when: "saturday", from: [11, 30],
+    code: "ranking-carousel", area: "주간", when: "saturday", from: [11, 30], workflow: "instagram-carousel-ranking.yml",
     desc: "인스타 주간 글로벌 랭킹 카드(토 10:30)",
     run() {
       const s = readStamp("carousel-ranking");
@@ -228,6 +242,7 @@ function applies(c) {
   if (c.when === "saturday" && NOW.dow !== 6) return false;
   if (c.from && !at(c.from[0], c.from[1])) return false;
   if (c.until && at(c.until[0], c.until[1] + 1)) return false;
+  if (c.workflow && workflowPaused(c.workflow)) return false; // 발행 꺼 둔 카드는 점검 안 함
   return true;
 }
 
@@ -241,7 +256,7 @@ const signatureOf = (list) => list.map((i) => i.code).sort().join(",");
 
 async function main() {
   if (process.argv.includes("--list")) {
-    for (const c of CHECKS) console.log(`${c.when.padEnd(8)} ${c.from ? `${String(c.from[0]).padStart(2, "0")}:${String(c.from[1]).padStart(2, "0")}~` : "매시간"}  [${c.area}] ${c.desc}`);
+    for (const c of CHECKS) console.log(`${c.workflow && workflowPaused(c.workflow) ? "(발행중지) " : ""}${c.when.padEnd(8)} ${c.from ? `${String(c.from[0]).padStart(2, "0")}:${String(c.from[1]).padStart(2, "0")}~` : "매시간"}  [${c.area}] ${c.desc}`);
     return;
   }
   const closed = krx.closedReason(NOW.ymd);

@@ -38,6 +38,7 @@ on:
 
 permissions:
   contents: write
+  actions: read  # 백업 schedule이 정시 실행 성공 여부를 확인(krx-guard --backup-of)
 
 concurrency:
   group: daily-closing-report
@@ -63,7 +64,8 @@ jobs:
         id: krx
         env:
           KRX_FORCE: ${{ github.event.inputs.force || github.event.client_payload.force || '' }}
-        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/krx-guard.mjs --date=${{ github.event.inputs.date || github.event.client_payload.date || '' }} --backup-of=daily-closing-report.yml --not-before=15:00
 
       - name: Setup Node.js
         if: steps.krx.outputs.open == 'true'

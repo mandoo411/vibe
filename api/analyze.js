@@ -2923,7 +2923,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         if (ratio < 0.1 && it.strength !== "하") it.strength = "하";
         else if (ratio < 1 && it.strength === "상") it.strength = "중";
         if (it.strength !== before) {
-          const pctTxt = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
+          const pctTxt = ratio < 0.1 ? ratio.toFixed(3) : ratio.toFixed(1);
           it.judgment = `${it.judgment ? it.judgment + " " : ""}금액은 시가총액의 약 ${pctTxt}%라 회사 규모에 비해 크지 않습니다.`.trim();
         }
       }

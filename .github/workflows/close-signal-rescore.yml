@@ -1,0 +1,73 @@
+name: Close Signal Rescore
+
+# "옛 채점이었다면 그날 어떤 종목이 나왔나" — 저장된 1520 스냅샷을 지금 채점과 옛 채점(git ref)으로
+# 다시 돌려 나란히 비교한다. 읽기 전용(저장 없음). 결과는 실행 화면의 Summary 표에 나온다.
+# 세션에서 돌릴 때: POST /repos/mandoo411/vibe/dispatches
+#   {"event_type":"close-signal-rescore","client_payload":{"date":"2026-10-06","refs":"v2=cd69dc33~1"}}
+# refs 기본값 "v2=cd69dc33~1" = 2026-10-02 과열 감점 도입 전(기세 가산) 채점.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "선정일 YYYY-MM-DD (비우면 직전 거래일)"
+        required: false
+        default: ""
+      refs:
+        description: "라벨=git ref, 쉼표로 여러 개 (기본 v2=cd69dc33~1)"
+        required: false
+        default: ""
+      limit:
+        description: "상위 몇 종목 (기본 5)"
+        required: false
+        default: ""
+  repository_dispatch:
+    types: [close-signal-rescore]
+
+permissions:
+  contents: read
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  rescore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - name: Extract old scorers
+        id: old
+        env:
+          REFS: ${{ github.event.inputs.refs || github.event.client_payload.refs || 'v2=cd69dc33~1' }}
+        run: |
+          set -euo pipefail
+          DIRS=""
+          IFS=',' read -ra PAIRS <<< "$REFS"
+          for p in "${PAIRS[@]}"; do
+            label="${p%%=*}"; ref="${p#*=}"
+            d="$RUNNER_TEMP/old-$label"
+            mkdir -p "$d/data"
+            git archive "$ref" lib | tar -x -C "$d"
+            cp data/close-signal-weights.json "$d/data/" 2>/dev/null || true
+            DIRS="${DIRS:+$DIRS,}$label($ref)=$d/lib"
+          done
+          echo "dirs=$DIRS" >> "$GITHUB_OUTPUT"
+      - name: Rescore
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          KIS_ACCESS_TOKEN: ${{ secrets.KIS_ACCESS_TOKEN }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+          RESCORE_DATE: ${{ github.event.inputs.date || github.event.client_payload.date || '' }}
+          RESCORE_LIMIT: ${{ github.event.inputs.limit || github.event.client_payload.limit || '5' }}
+          RESCORE_OLD_DIRS: ${{ steps.old.outputs.dirs }}
+        run: node scripts/close-signal-rescore.mjs

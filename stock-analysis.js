@@ -467,6 +467,22 @@
     return `${Math.round(v).toLocaleString("ko-KR")}원`;
   }
 
+  /* (2026-10-07 페이블 리뷰) 가격 시점 — 장중에 낸 리포트의 266,500원과 그날 종가 279,000원이 "모순"으로 읽혔다.
+     국내 종목만: 평일 09:00~15:30이면 "장중 HH:MM 기준", 그 뒤면 "HH:MM 기준(장 마감 후)", 그 전이면 "직전 종가 기준". */
+  function priceAsOfHtml(data) {
+    if (!data || !data.quoteAt || String(data.assetType || "KR") !== "KR") return "";
+    const d = new Date(data.quoteAt);
+    if (Number.isNaN(d.getTime())) return "";
+    const parts = new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+    const g = (t) => (parts.find((p) => p.type === t) || {}).value || "";
+    const hm = Number(g("hour")) * 100 + Number(g("minute"));
+    const wk = g("weekday");
+    const weekend = wk === "토" || wk === "일";
+    const when = `${g("month")}/${g("day")} ${g("hour")}:${g("minute")}`;
+    const label = weekend || hm < 900 ? `${when} · 직전 종가 기준` : hm < 1530 ? `${when} 장중 가격` : `${when} · 장 마감 후`;
+    return `<div class="ai-stock-header__asof">${escapeHtml(label)}</div>`;
+  }
+
   function resolveOpinionPrices(op, currentPrice) {
     const o = op && typeof op === "object" ? op : {};
     const cp = toNum(currentPrice) || 0;
@@ -774,6 +790,7 @@
       `<div class="ai-stock-header__quote ${priceCls}">` +
       `<div class="ai-stock-header__price">${escapeHtml(fmtPrice(data.currentPrice, data.assetType))}</div>` +
       `<div class="ai-stock-header__chg">${escapeHtml(fmtPct(data.changeRate))}</div>` +
+      priceAsOfHtml(data) +
       `</div></div>` +
       renderMetaGrid(data) +
       `</header>`
@@ -1835,6 +1852,7 @@
         ${cell("5거래일 뒤", ps.d5.up, ps.sample, ps.d5.upPct, ps.d5.median)}
         ${cell("20거래일 뒤", ps.d20.up, ps.sample, ps.d20.upPct, ps.d20.median)}
       </div>
+      ${ps.period ? `<p class="ai-pattern__foot ai-pattern__cmp">비교 기준: 같은 기간 <b>아무 날이나</b> 20거래일 들고 있었다면 <b>${escapeHtml(String(ps.period.allUp20Pct))}%</b>가 올랐고(중앙값 <b class="${cls(ps.period.allMedian20)}">${escapeHtml(pct(ps.period.allMedian20))}</b>), 이 기간 전체를 그냥 보유했다면 <b class="${cls(ps.period.holdPct)}">${escapeHtml(pct(ps.period.holdPct))}</b>였습니다.${ps.period.holdPct >= 100 ? " 크게 오른 시기라 위 통계도 그 상승장의 영향을 받았습니다." : ""}</p>` : ""}
       <p class="ai-pattern__foot">20거래일 뒤 수익률은 절반이 <b>${escapeHtml(pct(ps.d20.p25))} ~ ${escapeHtml(pct(ps.d20.p75))}</b> 사이였습니다. 겹치는 날은 한 번으로 셌고, 수급은 과거 이력이 없어 조건에서 뺐습니다.</p>
       <p class="ai-pattern__foot">조건은 추세(20일선 위·아래)·중기 배열(20일선과 60일선)·RSI 구간 세 가지뿐입니다 — 조건을 늘리면 표본이 너무 줄어듭니다. 표본 ${escapeHtml(String(ps.sample))}번은 ${ps.sample < 30 ? "많지 않아 참고용이며" : "적당한 편이지만"}, 업황·금리 환경이 과거와 다르면 같은 결과가 반복된다는 보장은 없습니다.</p>
     </div>`;
@@ -2122,9 +2140,24 @@
             : "";
         // 2026-09-26 리뷰: 시세 PER(직전 연간 실적 기준)과 최근 4개 분기 기준 PER을 나란히 — 실적 급변기엔 차이가 크다.
         const t = fin.ttm;
+        // (2026-10-07 페이블 리뷰) 예전엔 두 PER 관계와 상관없이 "이익이 빠르게 늘어난 지금은 실제보다 비싸 보인다"를
+        // 붙였다 — 이익이 줄고 있는 한미반도체(최근 4개 분기 114.4배 vs 직전 연간 119.35배)에도 그대로 나왔다.
+        let perRel = "";
+        if (t && t.per != null && t.quotePer != null && t.quotePer > 0) {
+          const qp = escapeHtml(String(t.quotePer));
+          if (t.per < t.quotePer * 0.85) perRel = ` 시세 화면의 PER ${qp}배는 직전 연간 실적 기준이라, 최근 이익이 늘어난 만큼 실제보다 비싸 보이게 나옵니다.`;
+          else if (t.per > t.quotePer * 1.15) perRel = ` 시세 화면의 PER ${qp}배는 직전 연간 실적 기준인데, 최근 이익이 줄어 지금 기준으로는 그보다 비쌉니다.`;
+          else perRel = ` 시세 화면의 PER ${qp}배(직전 연간 실적 기준)와 큰 차이는 없습니다.`;
+        }
+        // (2026-10-07 페이블 리뷰) "가격이 요구하는 이익" — PER이 높으면 지금 시총이 이익의 몇 배 성장을 전제하는지 숫자로.
+        let needNote = "";
+        if (t && t.per != null && t.per >= 40 && t.netProfit > 0) {
+          const x40 = t.per / 40, x30 = t.per / 30;
+          needNote = ` 지금 시가총액이 PER 40배로 설명되려면 최근 4개 분기 순이익(${escapeHtml(finFmtEok(t.netProfit))})이 약 <b>${x40.toFixed(1)}배</b>(${escapeHtml(finFmtEok(t.netProfit * x40))}), 30배면 약 ${x30.toFixed(1)}배(${escapeHtml(finFmtEok(t.netProfit * x30))})가 돼야 합니다 — 시장이 그만큼의 이익 성장을 이미 가격에 넣었다는 뜻입니다.`;
+        }
         const ttmNote =
           t && t.per != null
-            ? `<p class="fin__why">최근 4개 분기 순이익 기준 PER은 <b>${escapeHtml(String(t.per))}배</b>${t.perOp != null ? `(영업이익 기준 ${escapeHtml(String(t.perOp))}배)` : ""}입니다.${t.quotePer != null ? ` 시세 화면의 PER ${escapeHtml(String(t.quotePer))}배는 직전 연간 실적 기준이라, 이익이 빠르게 늘어난 지금은 실제보다 비싸 보이게 나옵니다.` : ""}</p>`
+            ? `<p class="fin__why">최근 4개 분기 순이익 기준 PER은 <b>${escapeHtml(String(t.per))}배</b>${t.perOp != null ? `(영업이익 기준 ${escapeHtml(String(t.perOp))}배)` : ""}입니다.${perRel}${needNote}</p>`
             : "";
         quarterHtml = `<section class="fin-group">
           <h4 class="fin-group__title">최근 실적 <span class="fin-group__cap">${escapeHtml(q.label)} · ${escapeHtml(q.prevLabel)} 대비</span></h4>

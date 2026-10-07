@@ -38,6 +38,15 @@ const {
 } = require("../lib/kis-indicators.js");
 const { buildSnapshotFromSeries } = require("../lib/trade-condition-eval.js");
 const STOCK_LIST = require("../assets/stock-list.json");
+const KRX_CAL = require("../lib/krx-calendar.js");
+
+/** (2026-10-07) 캐시 데이터의 기준일 = 마지막 일봉 날짜. GHA 대기로 자정을 넘겨 끝나면 빌드 날짜(다음 날)가
+ * "종가" 날짜로 찍혀 AI 종목분석에 "10-07 종가"처럼 아직 오지 않은 종가가 표시됐다(페이블 리뷰에서 발견). */
+function dataAsOfDate() {
+  const today = KRX_CAL.seoulYmd();
+  const hm = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date()).replace(":", ""));
+  return KRX_CAL.isTradingDay(today) && hm >= 1530 ? today : KRX_CAL.prevTradingDay(today);
+}
 
 const GAP_MS = Number(process.env.SCREENER_GAP_MS || 220);
 const TARGET_BARS = Number(process.env.SCREENER_TARGET_BARS || 270); // 2026-08-26: 240일선(MA240) 계산에 여유를 두기 위해 260 -> 270으로 상향
@@ -174,7 +183,7 @@ async function main() {
 
   const payload = {
     updatedAt: new Date().toISOString(),
-    asOfDate: seoulYmd(),
+    asOfDate: dataAsOfDate(),
     count: results.length,
     failedCount: failed,
     stocks: results,

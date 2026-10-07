@@ -55,6 +55,7 @@ const BEGINNER_RULE = [
   "[종합 의견과 기준 계획 일치 — 반드시 준수] 화면 상단 매매 계획은 확률이 가장 높은 시나리오의 진입가를 그대로 쓴다. 그래서 종합 의견(aiComment)과 단기 전망이 권하는 행동은 그 시나리오의 진입 방식과 같아야 한다: 그 진입가가 현재가보다 높으면(돌파형) '돌파를 확인한 뒤 진입', 낮으면(눌림형) '내려올 때를 기다려 진입'으로 쓴다. '추격보다 눌림 대기'를 권하고 싶다면 눌림형 시나리오(보통 중립 B)에 가장 높은 확률을 주고, 돌파형 시나리오를 최고 확률로 두면서 눌림 대기를 권하지 않는다.",
   "종합 의견에서는 '기준 계획은', '가장 높은 확률은'이라는 말을 직접 쓰지 않는다(코드가 붙인다). 기준 계획과 다른 시나리오를 주 전략처럼 쓰지 않는다.",
   "종합 의견(aiComment)은 화면에서 코드가 '기준 계획은 ○안입니다 — …'라는 첫 문장을 붙인 뒤에 이어진다. 그러니 그 계획과 다른 진입 방식을 '가장 확률 높은 길'처럼 쓰지 않는다. 다른 시나리오는 '다만 ○○이면 B안으로 바꿉니다'처럼 대안으로만 쓴다.",
+  "[문장에 영어 단어를 섞지 않는다] surprise·momentum 같은 영어 표현 대신 '깜짝 요소'·'상승 탄력'처럼 한국어로 쓴다(종목명·지표 약어 MACD·RSI·ATR·PER·HBM 등은 예외).",
   "[재료 강도는 회사 규모 대비로 — 반드시 준수] 계약·수주·투자 금액이 있는 재료는 시가총액 대비 비율로 강도를 매긴다: 시가총액의 0.1% 미만이면 '하', 1% 미만이면 최대 '중'. 협력사가 받은 수주처럼 이 회사 매출이 아닌 건은 '하'로 둔다.",
   "[표현 반복 금지] '숨고르기', '눌림', '부담' 같은 같은 표현은 리포트 전체에서 두 번까지만 쓴다.",
   "[같은 사실 반복 금지] 외국인·기관 수급 방향(예: 20일 동반 순매도)은 수급 카드에서 자세히, 종합 의견에서 한 번만 언급한다. 요약·스토리·재료·차트 카드에서 같은 문장을 되풀이하지 않는다.",
@@ -790,7 +791,7 @@ function marketPositionPromptBlock(mp) {
   const perIt = mp.items.find((it) => it.key === "per" && it.note);
   if (perIt) {
     lines.push(
-      `※ PER은 최근 4개 분기 순이익 기준(${perIt.valueText})이다. 시세 화면의 PER은 직전 연간 실적 기준이라 이익이 급증한 지금은 훨씬 높게 나온다 — 이익 대비 가격을 말할 때는 반드시 이 PER을 쓰고, 이 PER이 중앙값보다 낮으면 '이익 대비 주가가 비싸다'고 쓰지 않는다(PBR이 높다는 사실은 따로 쓸 수 있다).`
+      `※ PER은 최근 4개 분기 순이익 기준(${perIt.valueText})이다. 시세 화면의 PER(직전 연간 실적 기준)과 다를 수 있다 — 이익 대비 가격을 말할 때는 반드시 이 PER을 쓰고, 이 PER이 중앙값보다 낮으면 '이익 대비 주가가 비싸다'고 쓰지 않는다(PBR이 높다는 사실은 따로 쓸 수 있다).`
     );
   }
   return [
@@ -2788,6 +2789,26 @@ function swapPlanPricesInText(text, from, to) {
   return out;
 }
 
+/** (2026-10-07) 재료 문장에서 계약·수주·투자 금액(억원)을 꺼낸다. "244억8천만원"·"578억2400만원"·"1,477억"·"1조 2,000억".
+ *  계약·수주·공급·투자·취득·매입·인수 같은 말이 같은 문장에 있을 때만 — 시장 규모 같은 숫자를 잘못 집지 않도록. */
+function materialAmountEok(text) {
+  const sents = String(text || "").split(/(?<=[다요.])\s+/);
+  for (const sent of sents) {
+    if (!/(계약|수주|공급|투자|취득|매입|인수|발주)/.test(sent)) continue;
+    const m = sent.match(/(?:(\d[\d,]*(?:\.\d+)?)\s*조\s*)?(?:(\d[\d,]*(?:\.\d+)?)\s*억\s*)?(?:(\d[\d,]*)\s*(천만|백만|만)\s*)?원?/g) || [];
+    for (const tok of m) {
+      if (!/[조억]/.test(tok)) continue;
+      const g = tok.match(/(?:(\d[\d,]*(?:\.\d+)?)\s*조)?\s*(?:(\d[\d,]*(?:\.\d+)?)\s*억)?\s*(?:(\d[\d,]*)\s*(천만|백만|만))?/);
+      if (!g) continue;
+      const n = (v) => (v ? Number(String(v).replace(/,/g, "")) : 0);
+      let eok = n(g[1]) * 10000 + n(g[2]);
+      if (g[3]) eok += g[4] === "천만" ? n(g[3]) * 0.1 : g[4] === "백만" ? n(g[3]) * 0.01 : n(g[3]) / 10000;
+      if (eok > 0) return eok;
+    }
+  }
+  return null;
+}
+
 async function normalizeAnalysis(raw, quote, wm, indicators) {
   const price = toNum(quote && quote.currentPrice) || 0;
   if (!raw || typeof raw !== "object") {
@@ -2887,6 +2908,29 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         })
         .filter((it) => it.name)
     : [];
+
+  // (2026-10-07 페이블 리뷰) 재료 강도를 회사 규모 대비로 코드가 강제한다 — 프롬프트 규칙만으론
+  // 삼성전기 수주 244.8억(시총 25.4조의 0.096%)이 '중'으로 나왔다. 계약·수주·투자 금액이 보이면
+  // 시총 대비 0.1% 미만 → '하', 1% 미만 → 최대 '중'. 국내 종목만(시총 단위 억원). 올리지는 않는다.
+  try {
+    const capEok = (quote && (quote.assetType || "KR") === "KR") ? toNum(String(quote.marketCapRaw || "").replace(/,/g, "")) : null;
+    if (capEok > 0) {
+      for (const it of materialItems) {
+        const eok = materialAmountEok(`${it.name} ${it.reflectionBasis || ""} ${it.judgment || ""}`);
+        if (!(eok > 0)) continue;
+        const ratio = (eok / capEok) * 100;
+        const before = it.strength;
+        if (ratio < 0.1 && it.strength !== "하") it.strength = "하";
+        else if (ratio < 1 && it.strength === "상") it.strength = "중";
+        if (it.strength !== before) {
+          const pctTxt = ratio < 0.1 ? ratio.toFixed(2) : ratio.toFixed(1);
+          it.judgment = `${it.judgment ? it.judgment + " " : ""}금액은 시가총액의 약 ${pctTxt}%라 회사 규모에 비해 크지 않습니다.`.trim();
+        }
+      }
+    }
+  } catch (e) {
+    console.log(`[analyze] 재료 강도 보정 실패: ${e && e.message}`);
+  }
 
   // 2026-09-03: 재료 슬롯에 실제로 뭐가 들어갔는지 로그로 남긴다.
   // 이 페이지는 로그인+구독 게이트라 Claude가 화면으로 직접 검증할 수 없어서, 지난 세션에
@@ -3035,12 +3079,25 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
       }
       if (sc.entry > 0 && sc.target > 0) {
         const mult = (Math.abs(sc.target - sc.entry) / atrV).toFixed(1);
+        const stopMult = sc.stop > 0 ? (Math.abs(sc.entry - sc.stop) / atrV).toFixed(1) : null;
+        // (2026-10-07 페이블 리뷰) 예전엔 문장 속 "ATR N배"를 전부 목표가 배수로 바꿔서
+        // 손절 근거가 "ATR 약 2.9배 아래로"(실제 1.0배)처럼 숫자와 반대가 됐다 → 문장 단위로 손절/목표를 구분한다.
+        const fixMults = (t) =>
+          String(t)
+            .split(/(?<=[다요]\.)\s+/)
+            .map((sent) => {
+              if (!/ATR/.test(sent)) return sent;
+              const isStop = /손절/.test(sent) && !/목표/.test(sent);
+              const m = isStop ? stopMult : mult;
+              return m == null ? sent : sent.replace(/ATR\s*\)?\s*(?:의)?\s*약?\s*\d+(?:\.\d+)?\s*배/g, (x) => x.replace(/\s*약?\s*\d+(?:\.\d+)?\s*배$/, ` 약 ${m}배`));
+            })
+            .join(" ");
         const fix = (t) =>
           !t
             ? t
             : adjusted
-              ? t.replace(/목표 근거\s*:[\s\S]*?(?:[다요]\.(?=\s|$)|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`)
-              : t.replace(/ATR\s*(?:의)?\s*약?\s*[\d.]+\s*배/g, `ATR 약 ${mult}배`);
+              ? fixMults(t.replace(/목표 근거\s*:[\s\S]*?(?:[다요]\.(?=\s|$)|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`))
+              : fixMults(t);
         sc.basis = fix(sc.basis);
         sc.condition = fix(sc.condition);
         if (adjusted && !/목표 근거/.test(sc.basis || "")) {
@@ -3048,6 +3105,16 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         }
       }
       sc.rr = computeRR(sc.entry, sc.stop, sc.target);
+      // (2026-10-07 페이블 리뷰) 손절이 ATR 1.5배보다 좁으면 손익비가 좁은 손절 덕에 부풀려 보인다 →
+      // "ATR 2배로 넓히면 손익비 1:x"를 함께 적어 독자가 직접 비교하게 한다(계획 숫자는 그대로).
+      if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.target > sc.entry && sc.entry - sc.stop < 1.5 * atrV) {
+        const wide = roundToTick(Math.floor(sc.entry - 2 * atrV), quote.assetType) ?? Math.floor(sc.entry - 2 * atrV);
+        const rr2 = (sc.target - sc.entry) / (sc.entry - wide);
+        if (wide > 0 && Number.isFinite(rr2)) {
+          sc.basis = `${sc.basis ? sc.basis + " " : ""}손절 폭이 하루 평균 변동폭의 ${((sc.entry - sc.stop) / atrV).toFixed(1)}배라 하루 흔들림에도 닿을 수 있습니다 — 손절을 ATR 2배(${wide.toLocaleString("ko-KR")}원)로 넓히면 손익비는 1:${rr2.toFixed(1)}로 낮아집니다.`;
+          sc.rrWide = { stop: wide, rr: Math.round(rr2 * 10) / 10 };
+        }
+      }
     });
   }
 
@@ -6045,6 +6112,7 @@ module.exports = async function handler(req, res) {
     currency: quote.currency || "KRW",
     exchange: quote.exchange || undefined,
     currentPrice: quote.currentPrice,
+    quoteAt: new Date().toISOString(), // (2026-10-07) 가격 시점 표시용 — 장중 가격인지 종가인지
     changeAmt: quote.changeAmt,
     changeRate: quote.changeRate,
     high52w: quote.high52w,

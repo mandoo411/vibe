@@ -164,6 +164,10 @@ function normalizeQuick(q, curPrice) {
 }
 
 const FREE_MONTHLY_LIMIT = 3;
+/** mini·nano·luna 외 모델 = 큰 모델(느림, temperature 고정, 추론량 지정 필요). */
+function isBigModel(model) {
+  return !/mini|nano|luna/.test(String(model || ""));
+}
 // (2026-10-08) 관리자만 body.model로 고를 수 있는 모델(품질 비교 테스트용). 일반 회원은 항상 OPENAI_MODEL/기본값.
 const ANALYZE_TEST_MODELS = ["gpt-5.4-mini", "gpt-6.1-sol", "gpt-6-astra", "gpt-5.5", "gpt-5.6-sol", "gpt-6-luna"]; // keep in sync with assets/pricing-config.js free plan description
 
@@ -3501,6 +3505,8 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
     ],
   };
   if (forceSearch) body.tool_choice = { type: "web_search" };
+  // (2026-10-08) 큰 모델은 기본 추론량이 커서 100초를 넘겼다 → 추론량 medium으로 고정.
+  if (isBigModel(model)) body.reasoning = { effort: "medium" };
 
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -3510,7 +3516,7 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
     },
     body: JSON.stringify(body),
     // mini는 45초, 큰 모델(테스트용)은 생각하는 시간이 길어 100초까지 기다린다.
-    signal: AbortSignal.timeout(/mini|nano|luna/.test(model) ? 45000 : 100000),
+    signal: AbortSignal.timeout(isBigModel(model) ? 200000 : 45000),
   });
 
   if (!res.ok) {
@@ -3680,6 +3686,7 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
 
   // 2차: 강제 호출이 (a) 에러로 실패했거나 (b) 성공했지만 실제로는 검색을 안 한 경우,
   // auto 모드로 한 번 더 시도한다. 강제 호출이 성공하고 검색 흔적도 있으면 그대로 사용.
+  if (!data && isBigModel(model)) throw new Error("큰 모델 응답 시간 초과 — 재시도 생략(서버 시간 한도)");
   if (!data || !hasSearchEvidence(data)) {
     data = await callOpenAIResponsesOnce(system, user, apiKey, model, false);
   }
@@ -3851,13 +3858,13 @@ async function openaiAnalyze(quote, stockName, indicators, today, wm, modelOverr
       },
       body: JSON.stringify({
         model,
-        temperature: 0.25,
+        ...(isBigModel(model) ? {} : { temperature: 0.25 }),
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
         ],
       }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(isBigModel(model) ? 150000 : 30000),
     });
 
     if (!res.ok) {

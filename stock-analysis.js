@@ -713,11 +713,12 @@
     clearProgressTimer();
     setProgressPct(0);
     let pct = 0;
+    // (2026-10-08) 모델을 gpt-6.1-sol로 올리며 생성 시간이 2~3분이 됐다 → 95%까지 약 2분 40초에 걸쳐 오르게.
     progressTimer = setInterval(() => {
       if (pct >= 95) return;
-      pct += pct < 60 ? 2 : pct < 85 ? 1 : 0.5;
+      pct += pct < 60 ? 1.2 : pct < 85 ? 0.6 : 0.15;
       setProgressPct(Math.min(95, pct));
-    }, 400);
+    }, 1000);
   }
 
   async function fetchQuickQuote(code) {
@@ -1375,7 +1376,7 @@
       `<div class="ai-loading-panel" role="status" aria-live="polite">` +
       `<div class="ai-loading-progress"><div class="ai-loading-progress__track"><div id="ai-loading-progress-bar" class="ai-loading-progress__bar"></div></div><span id="ai-loading-progress-pct" class="ai-loading-progress__pct">0%</span></div>` +
       `<p id="ai-loading-msg" class="ai-loading-panel__msg">${escapeHtml(LOADING_STEPS[0])}</p>` +
-      `<p class="ai-loading-panel__hint">보통 15~25초 소요됩니다</p>` +
+      `<p class="ai-loading-panel__hint">정밀 분석이라 보통 2~3분 걸립니다 — 이 화면을 닫지 마세요</p>` +
       `</div>`;
     startProgressAnimation();
     loadingTimer = setInterval(() => {

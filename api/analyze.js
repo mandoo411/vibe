@@ -36,6 +36,7 @@ const { computeTechExtras, techExtrasPromptBlock } = require("../lib/tech-extras
 /* 2026-09-26 리뷰 지적(해석의 긍정 왜곡): 불리한 사실 뒤에 위안 문장을 붙이지 않게 한다. 세 경로 공통. */
 const HONEST_TONE_RULE = [
   "",
+  "[독자에게 보이는 문장 — 분석 과정 노출 금지] '제공된 시세', '제공 현재가', '입력 데이터', '입력 시점', '정성적 어림값', '정성 추정', '코드가 계산한' 같은 분석 과정·내부 사정 표현을 쓰지 않는다. 독자에게는 '현재가', '10월 8일 장중 기준'처럼 결과만 말한다. '종가와 섞지 않았다' 같은 작업 방식 설명 문장도 쓰지 않는다.",
   "[해석의 정직성 — 반드시 준수] 불리한 사실을 유리한 쪽으로 돌려 말하지 않는다. 예: 외국인·기관이 20일 누적으로 둘 다 순매도인데 '중기 자금은 아직 이 종목을 완전히 놓지 않았다'처럼 쓰는 것은 금지다 — 사실(동반 순매도)을 그대로 쓰고, 확인할 조건('동반 매도가 멈추는지부터 확인해야 합니다')으로 끝낸다.",
   "순매도·하락·역배열·실적 감소·과열 같은 사실 뒤에 '아직', '그래도', '완전히 ~한 것은 아니다', '여지는 있다' 식의 위안 문장을 붙이지 않는다. 호재와 악재는 같은 무게로 쓰고, 판단이 긍정이면 그 판단을 뒤집을 반대 신호를 한 번은 함께 적는다.",
   "[재료·업황의 근거] 미반영 핵심 재료·AI 재료 종합 판단·종합 의견에서 새 주장을 할 때는 materials 목록에 있거나 web_search로 날짜·금액이 확인된 사실만 쓴다. 예: '자사주 매입 종료로 수급 공백'은 종료 날짜와 규모가 확인될 때만 쓰고, 자사주 매입·소각 같은 주주환원 재료가 확인되면 materials에 반드시 넣는다. HBM·ASP(평균 판매단가)·출하량 같은 업황 근거를 쓸 때는 web_search로 확인한 숫자(가격 변화율·출하량·점유율 등)를 최소 하나 붙이고, 숫자가 없으면 그 재료를 핵심 근거로 쓰지 않는다.",
@@ -164,6 +165,33 @@ function normalizeQuick(q, curPrice) {
 }
 
 const FREE_MONTHLY_LIMIT = 3;
+/**
+ * (2026-10-08) 큰 모델이 "제공 현재가", "입력 시점인", "…정성적 어림값입니다." 같은 내부 사정 문구를 쓴다
+ * (프로젝트 규칙: 고객에게 내부 사정 노출 금지). 프롬프트 규칙의 안전망 — 응답 전체 문자열을 훑어 고친다.
+ */
+function scrubInternalWording(obj) {
+  const fixStr = (t) => {
+    let out = String(t)
+      .replace(/제공(?:된|한)?\s*((?:장중\s*|실시간\s*)?(?:현재가|시세|가격))/g, "$1")
+      .replace(/입력 시점(?:인|의|에서)?\s*/g, "")
+      .replace(/(?:확인된|제공된)\s*발행주식 수(?:에|와)\s*(?:제공\s*)?현재가(?:를|로)?\s*(?:적용하면|환산한)\s*/g, "현재가 기준 ")
+      .replace(/[^.。\n]*(?:정성적\s*어림값|정성\s*추정|정성적으로\s*판단했습니다|종가와 섞지 않고|분석 기준은)[^.。\n]*[.。]\s*/g, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    return out || String(t);
+  };
+  const walk = (v) => {
+    if (typeof v === "string") return fixStr(v);
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object") {
+      for (const k of Object.keys(v)) v[k] = walk(v[k]);
+      return v;
+    }
+    return v;
+  };
+  try { return walk(obj); } catch (_) { return obj; }
+}
+
 /** mini·nano·luna 외 모델 = 큰 모델(느림, temperature 고정, 추론량 지정 필요). */
 function isBigModel(model) {
   return !/mini|nano|luna/.test(String(model || ""));
@@ -3716,7 +3744,9 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
  * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
 async function openaiAnalyze(quote, stockName, indicators, today, wm, modelOverride) {
   const apiKey = requireOpenAIKey();
-  const model = sanitizeStr(modelOverride) || sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+  // (2026-10-08 시우 결정) 품질 우선 — 기본 모델을 gpt-6.1-sol로. 비교 테스트(한미반도체 3모델)에서 mini의
+  // 지지/저항 혼동·자사주 오분류·날짜 모순이 사라지고 위험 재료가 생겼다. 1회 약 $0.28, 2~3분.
+  const model = sanitizeStr(modelOverride) || sanitizeStr(process.env.OPENAI_MODEL) || "gpt-6.1-sol";
   if (modelOverride) console.log(`[analyze] 관리자 모델 지정: ${model}`);
   const name = stockName || quote.stockName || quote.stockCode;
   const cryptoNews = await fetchCryptoNewsForPrompt(quote.assetType, name);
@@ -6150,7 +6180,7 @@ module.exports = async function handler(req, res) {
   // 2026-07-17: Anthropic 계정 크레딧 소진 확인 후 사용자가 OpenAI를 기본으로 쓰기로
   // 결정함. claudeAnalyze()는 나중에 다시 우선순위로 되돌릴 수 있도록 그대로 남겨둔다.
   try {
-    analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm, modelOverride);
+    analysis = scrubInternalWording(await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm, modelOverride));
   } catch (e) {
     const openaiErrMsg =
       e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";

@@ -257,6 +257,7 @@
         color: #9ca3af;
       }
       .crypto-table .crypto-col-price,
+      .crypto-table .crypto-col-1h,
       .crypto-table .crypto-col-24h,
       .crypto-table .crypto-col-mcap,
       .crypto-table .crypto-col-volume,
@@ -655,23 +656,25 @@
           display: none !important;
         }
         .crypto-col-price {
-          width: 28%;
+          width: 24%;
           padding-right: 2px;
           text-align: right;
           font-variant-numeric: tabular-nums;
         }
+        .crypto-col-1h,
         .crypto-col-24h {
-          width: 16%;
+          width: 14%;
           padding-right: 2px;
           text-align: right;
         }
         .crypto-col-mcap {
-          width: 22%;
+          width: 18%;
           text-align: right;
           font-variant-numeric: tabular-nums;
         }
         .crypto-col-price,
         .crypto-col-mcap,
+        .crypto-col-1h,
         .crypto-col-24h {
           font-size: 12px;
         }
@@ -684,7 +687,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
-    <link rel="stylesheet" href="./assets/wide.css?v=3" />
+    <link rel="stylesheet" href="./assets/wide.css?v=5" />
     <script src="./assets/tm-chart-style.js?v=2"></script>
 </head>
   <body class="page-tm-v2" data-tm-tab="crypto">
@@ -764,6 +767,7 @@
                       <th class="num crypto-col-rank">#</th>
                       <th class="crypto-col-name">코인</th>
                       <th class="num crypto-col-price">가격</th>
+                      <th class="num crypto-col-1h crypto-th-sort" data-sort="change1h">1H <span class="sort-icon"></span></th>
                       <th class="num crypto-col-24h crypto-th-sort" data-sort="change24h">24H <span class="sort-icon"></span></th>
                       <th class="num crypto-col-volume crypto-th-sort" data-sort="volume24h">거래대금</th>
                       <th class="num crypto-col-mcap crypto-th-sort" data-sort="marketCap">
@@ -1181,6 +1185,7 @@
             <td class="num crypto-col-rank">${escapeHtml(Number(c.rank) || "-")}</td>
             <td class="crypto-col-name">${coinNameCellHtml(c)}</td>
             <td class="num crypto-col-price">${escapeHtml(fmtPrice(price))}</td>
+            <td class="num crypto-col-1h"><span class="${deltaClass(c.change1h)}">${escapeHtml(fmtPct(c.change1h))}</span></td>
             <td class="num crypto-col-24h"><span class="${deltaClass(c.change24h)}">${escapeHtml(fmtPct(c.change24h))}</span></td>
             <td class="num crypto-col-volume">${escapeHtml(fmtVolumeCell(c))}</td>
             <td class="num crypto-col-mcap">${escapeHtml(fmtMcapCell(c))}</td>

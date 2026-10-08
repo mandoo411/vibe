@@ -202,7 +202,7 @@ html[lang] body .dm-analysis.dmx-on > div:not([class]) { display: flex; flex-dir
 @media (min-width: 1100px) {
   html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) {
     display: grid;
-    grid-template-columns: minmax(420px, 30%) minmax(0, 1fr); /* 2026-09-26 시우: 왼쪽 순위 폭 줄임(0.82fr→30%) */
+    grid-template-columns: minmax(360px, 24%) minmax(0, 1fr); /* 2026-09-26 0.82fr→30%, 2026-10-08 시우: 더 좁게 30%→24%(1H 열 추가) */
     grid-template-rows: auto 1fr;
     column-gap: 18px;
     align-items: start;
@@ -218,6 +218,13 @@ html[lang] body .dm-analysis.dmx-on > div:not([class]) { display: flex; flex-dir
   /* 왼쪽 목록은 핵심 열만: 순위·코인·가격·24H·시총 */
   html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) :is(.crypto-col-volume, .crypto-col-fdv, .crypto-col-spark) { display: none !important; }
   html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table { width: 100% !important; min-width: 0 !important; }
+  /* 2026-10-08: 좁아진 왼쪽 목록 — 칸 여백·글씨를 줄이고 이름은 말줄임, 숫자 열은 내용 폭만 */
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table { table-layout: auto; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table :is(th, td) { padding-left: 5px !important; padding-right: 5px !important; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table :is(.crypto-col-price, .crypto-col-1h, .crypto-col-24h, .crypto-col-mcap) { font-size: 12px !important; white-space: nowrap; width: 1%; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table .crypto-col-rank { width: 22px; font-size: 11px; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table td.crypto-col-name { max-width: 0; overflow: hidden; }
+  html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) .crypto-table td.crypto-col-name :is(.crypto-coin-name, .crypto-symbol-inline) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 100%; }
   html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) tbody tr[data-symbol] { cursor: pointer; }
   html[lang] body #crypto-ranking-panel:has(> #crypto-detail-pane:not([hidden])) tbody tr[data-symbol]:has(.crypto-name-btn[aria-expanded="true"]) > td {
     background: color-mix(in srgb, var(--accent, #10b981) 13%, transparent) !important;

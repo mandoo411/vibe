@@ -100,6 +100,25 @@ function stripAiPlanClaims(text, plan) {
     .trim();
 }
 
+/**
+ * (2026-10-08) 현재가보다 위에 있는 가격을 "지키는지"로 쓰는 오류 교정(실측: 현재가 264,000원인데
+ * "266,000원 안팎을 지키는지가 핵심"). 프롬프트 규칙([가격 표현의 정합성])의 안전망 — 그런 문장만
+ * "N원 (안팎) 위로 다시 올라서는지"로 바꾼다. 현재가 이하 가격은 그대로 둔다.
+ */
+function fixAboveSupportWording(text, curPrice) {
+  const cp = toNum(curPrice);
+  if (!text || !(cp > 0)) return text;
+  return String(text).replace(
+    /(\d{1,3}(?:,\d{3})+|\d+)원(\s*(?:안팎|부근|근처|선|대)?)\s*(?:을|를|이|가)?\s*(지키는지|지켜내는지|버티는지|지키느냐|지켜내느냐|버티느냐)/g,
+    (m, num, mid, verb) => {
+      const n = Number(num.replace(/,/g, ""));
+      if (!(n > cp * 1.003)) return m;
+      const v = /느냐$/.test(verb) ? "다시 올라서느냐" : "다시 올라서는지";
+      return `${num}원${mid || ""} 위로 ${v}`;
+    }
+  );
+}
+
 /** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
 function normalizeQuick(q, curPrice) {
   if (!q || typeof q !== "object") return null;
@@ -3060,13 +3079,17 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     scenarios.forEach((sc) => {
       const bear = sc.label === "C" || String(sc.type).includes("약");
       let adjusted = false;
+      let widened = false;
       // 2026-09-26 Opus 리뷰: 손절폭이 하루 평균 변동폭(ATR)보다 좁으면 평범한 하루 흔들림에도 손절된다 → ATR 1배까지 넓힌다.
       if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.entry - sc.stop < atrV) {
         const ns = sc.entry - atrV;
         let r = roundToTick(Math.floor(ns), quote.assetType) ?? Math.floor(ns);
         if (r > ns) r = roundToTick(Math.floor(ns * 0.998), quote.assetType) ?? r;
         sc.stop = r;
-        const note = `손절 근거: 하루 평균 변동폭(ATR)보다 좁으면 평범한 흔들림에도 걸려, 진입가에서 ATR 1배 아래로 잡았습니다.`;
+        widened = true;
+        // (2026-10-08) 예전 문구 "ATR보다 좁으면 흔들림에 걸려 1배로 잡았다" 뒤에 "1배라 하루 흔들림에도 닿을 수 있다"가
+        // 붙어 앞뒤가 엇갈려 읽혔다 → 1배는 '최소 여유'로 넓힌 것이라고 쓴다.
+        const note = `손절 근거: 처음 잡은 손절이 하루 평균 변동폭(ATR)보다 좁아, 최소 여유인 ATR 1배 아래까지 넓혔습니다.`;
         sc.basis = `${sc.basis ? sc.basis + " " : ""}${note}`;
       }
       if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.target > 0) {
@@ -3111,7 +3134,11 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         const wide = roundToTick(Math.floor(sc.entry - 2 * atrV), quote.assetType) ?? Math.floor(sc.entry - 2 * atrV);
         const rr2 = (sc.target - sc.entry) / (sc.entry - wide);
         if (wide > 0 && Number.isFinite(rr2)) {
-          sc.basis = `${sc.basis ? sc.basis + " " : ""}손절 폭이 하루 평균 변동폭의 ${((sc.entry - sc.stop) / atrV).toFixed(1)}배라 하루 흔들림에도 닿을 수 있습니다 — 손절을 ATR 2배(${wide.toLocaleString("ko-KR")}원)로 넓히면 손익비는 1:${rr2.toFixed(1)}로 낮아집니다.`;
+          const wideStr = `손절을 ATR 2배(${wide.toLocaleString("ko-KR")}원)로 넓히면 손익비는 1:${rr2.toFixed(1)}로 낮아집니다.`;
+          const lead = widened
+            ? `ATR 1배는 최소한의 여유라 변동이 큰 날엔 닿을 수 있습니다 — `
+            : `손절 폭이 하루 평균 변동폭의 ${((sc.entry - sc.stop) / atrV).toFixed(1)}배라 하루 흔들림에도 닿을 수 있습니다 — `;
+          sc.basis = `${sc.basis ? sc.basis + " " : ""}${lead}${wideStr}`;
           sc.rrWide = { stop: wide, rr: Math.round(rr2 * 10) / 10 };
         }
       }
@@ -3164,10 +3191,10 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     summary: {
       signal: deriveFinalSignal(normalizeSignal(summary.signal), scoreCard, scenarios),
       probability: finalProbability,
-      description: sanitizeOneLineText(summary.description) || "요약 정보가 없습니다.",
+      description: fixAboveSupportWording(sanitizeOneLineText(summary.description), price) || "요약 정보가 없습니다.",
     },
     quick: normalizeQuick(raw.quick, price),
-    story: stripCitations(sanitizeStr(raw.story)),
+    story: fixAboveSupportWording(stripCitations(sanitizeStr(raw.story)), price),
     supply: stripCitations(sanitizeStr(raw.supply)),
     events,
     materials: {

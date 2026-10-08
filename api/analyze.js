@@ -3089,8 +3089,8 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         widened = true;
         // (2026-10-08) 예전 문구 "ATR보다 좁으면 흔들림에 걸려 1배로 잡았다" 뒤에 "1배라 하루 흔들림에도 닿을 수 있다"가
         // 붙어 앞뒤가 엇갈려 읽혔다 → 1배는 '최소 여유'로 넓힌 것이라고 쓴다.
-        const note = `손절 근거: 처음 잡은 손절이 하루 평균 변동폭(ATR)보다 좁아, 최소 여유인 ATR 1배 아래까지 넓혔습니다.`;
-        sc.basis = `${sc.basis ? sc.basis + " " : ""}${note}`;
+        // 문장은 목표 근거 교정(아래 fix) 뒤에 붙인다 — 먼저 붙이면 AI가 마침표 없이 쓴 "목표 근거: …"를
+        // 교정하는 정규식이 이 문장까지 삼켜 손절 근거가 사라진다(10/8 실측).
       }
       if (!bear && sc.entry > 0 && sc.stop > 0 && sc.stop < sc.entry && sc.target > 0) {
         const minT = sc.entry + Math.max(1.5 * atrV, 1.5 * (sc.entry - sc.stop));
@@ -3126,6 +3126,9 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
         if (adjusted && !/목표 근거/.test(sc.basis || "")) {
           sc.basis = `${sc.basis ? sc.basis + " " : ""}목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`;
         }
+      }
+      if (widened) {
+        sc.basis = `${sc.basis ? sc.basis + " " : ""}손절 근거: 처음 잡은 손절이 하루 평균 변동폭(ATR)보다 좁아, 최소 여유인 ATR 1배 아래까지 넓혔습니다.`;
       }
       sc.rr = computeRR(sc.entry, sc.stop, sc.target);
       // (2026-10-07 페이블 리뷰) 손절이 ATR 1.5배보다 좁으면 손익비가 좁은 손절 덕에 부풀려 보인다 →

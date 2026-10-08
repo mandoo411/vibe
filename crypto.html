@@ -687,7 +687,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
     <link rel="stylesheet" href="./refresh.css?v=1" />
     <link rel="stylesheet" href="./premium.css?v=1" />
-    <link rel="stylesheet" href="./assets/wide.css?v=5" />
+    <link rel="stylesheet" href="./assets/wide.css?v=6" />
     <script src="./assets/tm-chart-style.js?v=2"></script>
 </head>
   <body class="page-tm-v2" data-tm-tab="crypto">
@@ -1170,11 +1170,13 @@
 
         function coinNameCellHtml(c) {
           const open = state.openSymbol === c.symbol ? "true" : "false";
+          // 2026-10-08 시우: 풀네임이 긴 코인(예: "World Liberty Financial USD")은 좁은 목록에서 티커만 보인다.
+          const longName = String(c.name || "").length > 11;
           return `<div class="crypto-coin-cell">
                 <div class="crypto-coin-cell__logo">${coinLogoHtml(c)}</div>
                 <div class="crypto-coin-cell__stack">
                   <div class="crypto-symbol-inline">${escapeHtml(c.symbol)}</div>
-                  <button type="button" class="crypto-name-btn crypto-coin-name" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)}) 차트">${escapeHtml(c.name || c.symbol || "-")}</button>
+                  <button type="button" class="crypto-name-btn crypto-coin-name${longName ? " is-long" : ""}" data-symbol="${escapeHtml(c.symbol)}" aria-expanded="${open}" title="${escapeHtml(c.name)} (${escapeHtml(c.symbol)}) 차트">${escapeHtml(c.name || c.symbol || "-")}</button>
                 </div>
               </div>`;
         }

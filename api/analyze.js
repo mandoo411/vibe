@@ -172,11 +172,16 @@ const FREE_MONTHLY_LIMIT = 3;
 function scrubInternalWording(obj) {
   const fixStr = (t) => {
     let out = String(t)
+      // (2026-10-09) web_search 출처 링크가 opinion.long 등 일부 필드에 그대로 남음(BTC 10/8) — 마크다운 링크만 지운다.
+      .replace(/\(\[[^\]]*\]\(https?:\/\/[^)]*\)\)/g, "")
+      .replace(/\[[^\]]*\]\(https?:\/\/[^)]*\)/g, "")
+      .replace(/\(\s*\)/g, "")
+      .replace(/[ \t]+([.,)])/g, "$1")
       .replace(/제공(?:된|한)?\s*((?:장중\s*|실시간\s*)?(?:현재가|시세|가격))/g, "$1")
       .replace(/입력 시점(?:인|의|에서)?\s*/g, "")
       .replace(/(?:확인된|제공된)\s*발행주식 수(?:에|와)\s*(?:제공\s*)?현재가(?:를|로)?\s*(?:적용하면|환산한)\s*/g, "현재가 기준 ")
       .replace(/[^.。\n]*(?:정성적\s*어림값|정성\s*추정|정성적으로\s*판단했습니다|종가와 섞지 않고|분석 기준은)[^.。\n]*[.。]\s*/g, "")
-      .replace(/\s{2,}/g, " ")
+      .replace(/[ \t]{2,}/g, " ")
       .trim();
     return out || String(t);
   };
@@ -201,7 +206,9 @@ function stripDisclaimerSentences(t) {
   const s = String(t || "");
   if (!s) return s;
   const re = /[^.。!?\n]*(?:보장하지\s*않|보장되지\s*않|보장(?:은|이)\s*없|투자\s*(?:판단|결정)(?:의|에\s*대한)?\s*책임|투자\s*권유(?:가|는)?\s*아니|참고용(?:이며|입니다|으로만)|원금\s*손실)[^.。!?\n]*[.。!?]?\s*/g;
-  const out = s.replace(re, "").replace(/\s{2,}/g, " ").trim();
+  // 상승확률의 뜻을 설명하는 문장(예: "상승확률은 향후 20거래일 뒤 … 뜻합니다", "… 통계적 적중률이 아니라 …")도 요약에선 뺀다 — 화면 다른 곳에 정의가 있다.
+  const reProb = /[^.。!?\n]*(?:상승\s*확률|확률)(?:은|이란|이라는)[^.。!?\n]*(?:뜻합니다|의미합니다|뜻입니다|아니라|수치화|정의)[^.。!?\n]*[.。!?]?\s*/g;
+  const out = s.replace(re, "").replace(reProb, "").replace(/\s{2,}/g, " ").trim();
   return out || s;
 }
 
@@ -937,7 +944,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - [내부 필드명 노출 금지 — 반드시 준수] 고객이 읽는 문장에 JSON 필드명·내부 변수명을 절대 쓰지 않는다. scenarioA/scenarioB/scenarioC, entry, entryPrice, stopLoss, target, target2, reflectionPct, reflectionBasis, supplyDemand, materialAnalysis, aiJudgment, upcomingEvents 같은 표기는 전부 금지다. 반드시 화면 라벨 그대로 한국어로 쓴다 — "scenarioB.entry를 160만5000원으로 둔 이유는"(오답) → "중립 시나리오 진입가를 160만5000원으로 잡은 이유는"(정답).
 - [숫자 중복 금지] 그 밖의 카드에서도 같은 수치를 한 카드 안에서 두 번 이상 적지 않는다.
 - [섹션 역할 분담 — 반드시 준수] 같은 재료·같은 논거를 세 개 이상 섹션에서 반복하지 않는다(최대 두 곳). 각 섹션의 역할은 이렇게 나눈다.
-  · summary(1번) = 결론 한 덩어리. 근거 나열 금지. "수익을 보장하지 않습니다"·"투자 판단의 책임은…" 같은 면책 문장도 쓰지 않는다(면책은 페이지 하단 고정 문구가 맡는다).
+  · summary(1번) = 결론 한 덩어리. 근거 나열 금지. "수익을 보장하지 않습니다"·"투자 판단의 책임은…" 같은 면책 문장, "상승확률은 …을 뜻합니다" 같은 확률 정의 문장도 쓰지 않는다(면책·정의는 화면 고정 문구가 맡는다).
   · story(2번) = 기존에 알려진 축 대비 "오늘 새로 바뀐 것"의 차이.
   · supplyDemand(3번) = 수급의 방향과 그 의미. 재료 이야기 반복 금지.
   · materials(5번) = 재료 자체의 강도·확정성·반영도.

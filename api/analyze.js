@@ -192,6 +192,19 @@ function scrubInternalWording(obj) {
   try { return walk(obj); } catch (_) { return obj; }
 }
 
+/**
+ * (2026-10-09) 한눈에 요약(summary.description)에 "상승확률은 … 보장하지 않습니다" 같은 면책 문장이 섞인다
+ * (SK하이닉스 10/8, gpt-6.1-sol). 면책은 페이지 하단 고정 문구가 맡으므로 요약에서는 그 문장만 지운다.
+ * 문장을 지운 결과가 비면 원문을 그대로 둔다.
+ */
+function stripDisclaimerSentences(t) {
+  const s = String(t || "");
+  if (!s) return s;
+  const re = /[^.。!?\n]*(?:보장하지\s*않|보장되지\s*않|보장(?:은|이)\s*없|투자\s*(?:판단|결정)(?:의|에\s*대한)?\s*책임|투자\s*권유(?:가|는)?\s*아니|참고용(?:이며|입니다|으로만)|원금\s*손실)[^.。!?\n]*[.。!?]?\s*/g;
+  const out = s.replace(re, "").replace(/\s{2,}/g, " ").trim();
+  return out || s;
+}
+
 /** mini·nano·luna 외 모델 = 큰 모델(느림, temperature 고정, 추론량 지정 필요). */
 function isBigModel(model) {
   return !/mini|nano|luna/.test(String(model || ""));
@@ -924,7 +937,7 @@ const ANALYST_PERSONA_RULES = `당신은 20년 경력의 베테랑 증권 애널
 - [내부 필드명 노출 금지 — 반드시 준수] 고객이 읽는 문장에 JSON 필드명·내부 변수명을 절대 쓰지 않는다. scenarioA/scenarioB/scenarioC, entry, entryPrice, stopLoss, target, target2, reflectionPct, reflectionBasis, supplyDemand, materialAnalysis, aiJudgment, upcomingEvents 같은 표기는 전부 금지다. 반드시 화면 라벨 그대로 한국어로 쓴다 — "scenarioB.entry를 160만5000원으로 둔 이유는"(오답) → "중립 시나리오 진입가를 160만5000원으로 잡은 이유는"(정답).
 - [숫자 중복 금지] 그 밖의 카드에서도 같은 수치를 한 카드 안에서 두 번 이상 적지 않는다.
 - [섹션 역할 분담 — 반드시 준수] 같은 재료·같은 논거를 세 개 이상 섹션에서 반복하지 않는다(최대 두 곳). 각 섹션의 역할은 이렇게 나눈다.
-  · summary(1번) = 결론 한 덩어리. 근거 나열 금지.
+  · summary(1번) = 결론 한 덩어리. 근거 나열 금지. "수익을 보장하지 않습니다"·"투자 판단의 책임은…" 같은 면책 문장도 쓰지 않는다(면책은 페이지 하단 고정 문구가 맡는다).
   · story(2번) = 기존에 알려진 축 대비 "오늘 새로 바뀐 것"의 차이.
   · supplyDemand(3번) = 수급의 방향과 그 의미. 재료 이야기 반복 금지.
   · materials(5번) = 재료 자체의 강도·확정성·반영도.
@@ -2696,7 +2709,7 @@ function mapToolInputToLegacy(input) {
     summary: {
       signal: mapDirectionToSignal(summary.direction || summary.signal),
       probability: toNum(summary.confidence ?? summary.probability),
-      description: sanitizeOneLineText(summary.reason || summary.description),
+      description: stripDisclaimerSentences(sanitizeOneLineText(summary.reason || summary.description)),
     },
     story: stripCitations(sanitizeStr(input.priceReason || input.story)),
     supply: stripCitations(sanitizeStr(input.supplyDemand || input.supply)),
@@ -3242,7 +3255,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
     summary: {
       signal: deriveFinalSignal(normalizeSignal(summary.signal), scoreCard, scenarios),
       probability: finalProbability,
-      description: fixAboveSupportWording(sanitizeOneLineText(summary.description), price) || "요약 정보가 없습니다.",
+      description: stripDisclaimerSentences(fixAboveSupportWording(sanitizeOneLineText(summary.description), price)) || "요약 정보가 없습니다.",
     },
     quick: normalizeQuick(raw.quick, price),
     story: fixAboveSupportWording(stripCitations(sanitizeStr(raw.story)), price),

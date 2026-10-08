@@ -119,6 +119,20 @@ function fixAboveSupportWording(text, curPrice) {
   );
 }
 
+/**
+ * (2026-10-08) AI가 "RSI가 60으로 힘은 남아 있고, 목표 근거: …"처럼 문장 중간에 목표 근거를 붙이면
+ * 코드가 목표 근거를 갈아끼운 뒤 "남아 있고, 목표 근거:"로 문장이 끊긴다 → 앞 절을 마침표로 닫는다.
+ * 흔한 어미는 존댓말로 바꾸고, 모르는 어미면 그 끊긴 절을 지운다.
+ */
+function closeDanglingClause(text) {
+  return String(text).replace(/(^|[다요]\.\s+|\s)([^.]*?)(\S+),\s*(?=목표 근거\s*:)/, (m, pre, mid, last) => {
+    const map = { 있고: "있습니다.", 없고: "없습니다.", 이고: "입니다.", 했고: "했습니다.", 되고: "됩니다.", 있으며: "있습니다.", 했으며: "했습니다." };
+    const tail = Object.keys(map).find((k) => last.endsWith(k));
+    if (tail) return `${pre}${mid}${last.slice(0, -tail.length)}${map[tail]} `;
+    return /[다요]\.\s+$/.test(pre) ? pre : `${pre}`;
+  });
+}
+
 /** quick(초보자용 한눈에 보기) 정규화 — 빈 값·과한 길이·순서를 코드가 정리한다. */
 function normalizeQuick(q, curPrice) {
   if (!q || typeof q !== "object") return null;
@@ -3119,7 +3133,7 @@ async function normalizeAnalysis(raw, quote, wm, indicators) {
           !t
             ? t
             : adjusted
-              ? fixMults(t.replace(/목표 근거\s*:[\s\S]*?(?:[다요]\.(?=\s|$)|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`))
+              ? fixMults(closeDanglingClause(t.replace(/목표 근거\s*:[\s\S]*?(?:[다요]\.(?=\s|$)|$)/, `목표 근거: 가까운 저항이 진입가에 너무 붙어 있어, 진입가에서 하루 평균 변동폭(ATR)의 ${mult}배 위로 잡았습니다.`)))
               : fixMults(t);
         sc.basis = fix(sc.basis);
         sc.condition = fix(sc.condition);

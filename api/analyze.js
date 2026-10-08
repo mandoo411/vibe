@@ -3516,7 +3516,14 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
     err.statusCode = res.status;
     throw err;
   }
-  return res.json();
+  const json = await res.json();
+  // (2026-10-08) 1회 비용 산정용 — 토큰·검색 횟수만 남긴다(본문 X).
+  try {
+    const u = json && json.usage ? json.usage : {};
+    const searches = (Array.isArray(json && json.output) ? json.output : []).filter((o) => o && o.type === "web_search_call").length;
+    console.log(`[analyze-usage] model=${json && json.model} in=${u.input_tokens} cached=${u.input_tokens_details && u.input_tokens_details.cached_tokens} out=${u.output_tokens} reasoning=${u.output_tokens_details && u.output_tokens_details.reasoning_tokens} searches=${searches} forced=${!!forceSearch}`);
+  } catch (_) {}
+  return json;
 }
 
 /** OpenAI Responses API + web_search 툴을 사용하는 실시간 검색 기반 분석 경로.

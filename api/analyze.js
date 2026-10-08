@@ -163,7 +163,9 @@ function normalizeQuick(q, curPrice) {
   return out.pros.length || out.cons.length || out.watch.length ? out : null;
 }
 
-const FREE_MONTHLY_LIMIT = 3; // keep in sync with assets/pricing-config.js free plan description
+const FREE_MONTHLY_LIMIT = 3;
+// (2026-10-08) 관리자만 body.model로 고를 수 있는 모델(품질 비교 테스트용). 일반 회원은 항상 OPENAI_MODEL/기본값.
+const ANALYZE_TEST_MODELS = ["gpt-5.4-mini", "gpt-6.1-sol", "gpt-6-astra", "gpt-5.5", "gpt-5.6-sol", "gpt-6-luna"]; // keep in sync with assets/pricing-config.js free plan description
 
 const DEFAULT_KIS_BASE = "https://openapi.koreainvestment.com:9443";
 
@@ -3507,7 +3509,8 @@ async function callOpenAIResponsesOnce(system, user, apiKey, model, forceSearch)
       authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(45000),
+    // mini는 45초, 큰 모델(테스트용)은 생각하는 시간이 길어 100초까지 기다린다.
+    signal: AbortSignal.timeout(/mini|nano|luna/.test(model) ? 45000 : 100000),
   });
 
   if (!res.ok) {
@@ -3704,9 +3707,10 @@ async function openaiWebSearchAnalyze(quote, stockName, indicators, today, apiKe
  * RSS(무료) 헤드라인 기반 경로로 자동 폴백한다.
  * 응답 스키마는 CLAUDE_RESPONSE_SCHEMA(레거시 포맷)와 동일하게 맞춰서
  * normalizeAnalysis()를 그대로 재사용한다 (프론트엔드 기대 형태 100% 동일). */
-async function openaiAnalyze(quote, stockName, indicators, today, wm) {
+async function openaiAnalyze(quote, stockName, indicators, today, wm, modelOverride) {
   const apiKey = requireOpenAIKey();
-  const model = sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+  const model = sanitizeStr(modelOverride) || sanitizeStr(process.env.OPENAI_MODEL) || "gpt-5.4-mini";
+  if (modelOverride) console.log(`[analyze] 관리자 모델 지정: ${model}`);
   const name = stockName || quote.stockName || quote.stockCode;
   const cryptoNews = await fetchCryptoNewsForPrompt(quote.assetType, name);
 
@@ -6006,9 +6010,12 @@ module.exports = async function handler(req, res) {
   const isInternalSeed = false;
 
   let chargedUsage = null; // 무료 사용횟수를 올렸으면 기록 — 분석 실패 시 되돌린다
+  let modelOverride = ""; // (2026-10-08) 관리자 전용 모델 비교 테스트 — body.model, 허용 목록만
   if (supabaseConfigured() && !isInternalSeed) {
     const token = bearerToken(req);
     const user = await getUserFromToken(token);
+    const reqModel = sanitizeStr(body && body.model);
+    if (user && reqModel && ANALYZE_TEST_MODELS.includes(reqModel) && cbIsAdmin(user)) modelOverride = reqModel;
     if (!user) {
       json(res, 401, { error: "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4." });
       return;
@@ -6136,7 +6143,7 @@ module.exports = async function handler(req, res) {
   // 2026-07-17: Anthropic 계정 크레딧 소진 확인 후 사용자가 OpenAI를 기본으로 쓰기로
   // 결정함. claudeAnalyze()는 나중에 다시 우선순위로 되돌릴 수 있도록 그대로 남겨둔다.
   try {
-    analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm);
+    analysis = await openaiAnalyze(quote, stockName, indicators, todayKoreaLabel(), wm, modelOverride);
   } catch (e) {
     const openaiErrMsg =
       e && e.message === ANALYSIS_PARSE_ERROR_MSG ? ANALYSIS_PARSE_ERROR_MSG : (e && e.message) || "OpenAI 분석 실패";

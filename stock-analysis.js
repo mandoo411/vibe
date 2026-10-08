@@ -2758,6 +2758,8 @@
           ma120: ind.ma120,
           ma200: ind.ma200,
           rsi14: ind.rsi14,
+          // (2026-10-08) 관리자 모델 비교 테스트 — 주소에 &m=모델명. 서버가 관리자·허용 목록만 받아준다.
+          model: new URLSearchParams(location.search).get("m") || undefined,
         }),
         cache: "no-store",
       });

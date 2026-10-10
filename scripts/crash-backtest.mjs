@@ -197,7 +197,7 @@ for (const D of testDays) {
   const closePicks = cb.map((p) => {
     const nb = nextBars(p.code, D, 1)[0];
     return {
-      code: p.code, name: p.name, score: p.score, consensus: p.consensus, buy: p.close, chg: p.changePct, tv: p.tradingValueEok, mc: p.marketCapEok,
+      code: p.code, name: p.name, score: p.score, consensus: p.consensus, shortlist: !!p.shortlist, buy: p.close, chg: p.changePct, tv: p.tradingValueEok, mc: p.marketCapEok,
       openRet: nb && nb.time === dNext ? pct(nb.open, p.close) : null,
       closeRet: nb && nb.time === dNext ? pct(nb.close, p.close) : null,
       lowRet: nb && nb.time === dNext ? pct(nb.low, p.close) : null,

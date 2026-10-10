@@ -1,11 +1,25 @@
 {
-  "updatedAt": "2026-10-10T06:06:35.581Z",
+  "updatedAt": "2026-10-10T12:47:28.453Z",
   "source": "kis+yahoo",
   "action": "trade-growth",
   "count": 50,
   "stocks": [
     {
       "rank": 1,
+      "ticker": "VEEA",
+      "name": "비아",
+      "price": 5.7,
+      "changePct": 47.29,
+      "changePoints": 1.83,
+      "volume": 83591400,
+      "marketCap": 354620672,
+      "tradingValue": 476470980,
+      "volSurgePct": 3143.99,
+      "baseVolume": 2576806,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 2,
       "ticker": "QVCG",
       "name": "QVC 그룹",
       "price": 12.87,
@@ -19,7 +33,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 2,
+      "rank": 3,
       "ticker": "SVC",
       "name": "서비스 프라퍼티스 트러스트",
       "price": 7.15,
@@ -33,7 +47,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 3,
+      "rank": 4,
       "ticker": "NTWO",
       "name": "뉴버리 스트리트 애퀴지션 2",
       "price": 10.81,
@@ -47,7 +61,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 4,
+      "rank": 5,
       "ticker": "EMAT",
       "name": "에볼루션 메탈&테크",
       "price": 1.64,
@@ -61,7 +75,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 5,
+      "rank": 6,
       "ticker": "ADAG",
       "name": "아다진(ADR)",
       "price": 2.76,
@@ -75,7 +89,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 6,
+      "rank": 7,
       "ticker": "CDNL",
       "name": "CARDINAL INFRASTRUCTURE GROUP INC",
       "price": 21.12,
@@ -89,7 +103,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 7,
+      "rank": 8,
       "ticker": "QSI",
       "name": "퀀텀사이",
       "price": 1.53,
@@ -103,7 +117,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 8,
+      "rank": 9,
       "ticker": "TLSA",
       "name": "티지아나 라이프 사이언시스",
       "price": 1.19,
@@ -117,7 +131,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 9,
+      "rank": 10,
       "ticker": "VZ",
       "name": "버라이존 커뮤니케이션스",
       "price": 41.65,
@@ -131,21 +145,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 10,
+      "rank": 11,
       "ticker": "CRGY",
       "name": "크레센트 에너지",
       "price": 12.66,
       "changePct": -2.69,
       "changePoints": -0.35,
       "volume": 41806135,
-      "marketCap": 4980483072,
+      "marketCap": 4182910976,
       "tradingValue": 529265669,
       "volSurgePct": 325.97,
       "baseVolume": 9814382,
       "exchange": "NYS"
     },
     {
-      "rank": 11,
+      "rank": 12,
       "ticker": "AVNT",
       "name": "애비엔트",
       "price": 37.79,
@@ -159,7 +173,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 12,
+      "rank": 13,
       "ticker": "T",
       "name": "AT&T",
       "price": 22.18,
@@ -173,7 +187,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 13,
+      "rank": 14,
       "ticker": "NTR",
       "name": "뉴트리엔",
       "price": 67.48,
@@ -187,21 +201,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 14,
+      "rank": 15,
       "ticker": "CCI",
       "name": "크라운 캐슬",
       "price": 79.64,
       "changePct": 15.6,
       "changePoints": 10.75,
       "volume": 14393048,
-      "marketCap": 34802679808,
+      "marketCap": 33883269120,
       "tradingValue": 1146262343,
       "volSurgePct": 245.98,
       "baseVolume": 4160104,
       "exchange": "NYS"
     },
     {
-      "rank": 15,
+      "rank": 16,
       "ticker": "MNSO",
       "name": "미니소 그룹 홀딩(ADR)",
       "price": 9.6,
@@ -215,7 +229,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 16,
+      "rank": 17,
       "ticker": "BKD",
       "name": "브룩데일 시니어 리빙",
       "price": 10.12,
@@ -229,7 +243,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 17,
+      "rank": 18,
       "ticker": "TEVA",
       "name": "테바 파머슈티컬 인더스트리스(ADR)",
       "price": 41.1,
@@ -243,7 +257,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 18,
+      "rank": 19,
       "ticker": "LXFR",
       "name": "럭스퍼 홀딩스",
       "price": 17.24,
@@ -257,7 +271,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 19,
+      "rank": 20,
       "ticker": "HZO",
       "name": "마린맥스",
       "price": 52.37,
@@ -271,7 +285,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 20,
+      "rank": 21,
       "ticker": "RERE",
       "name": "AT리뉴(ADR)",
       "price": 3.76,
@@ -285,7 +299,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 21,
+      "rank": 22,
       "ticker": "SOBO",
       "name": "사우스 보우",
       "price": 33.22,
@@ -299,21 +313,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 22,
+      "rank": 23,
       "ticker": "UTZ",
       "name": "UTZ 브랜즈",
       "price": 14.3,
       "changePct": -0.14,
       "changePoints": -0.02,
       "volume": 5544381,
-      "marketCap": 2058659584,
+      "marketCap": 1267169024,
       "tradingValue": 79284648,
       "volSurgePct": 176.82,
       "baseVolume": 2002897,
       "exchange": "NYS"
     },
     {
-      "rank": 23,
+      "rank": 24,
       "ticker": "TME",
       "name": "텐센트 뮤직 엔터테인먼트 그룹(ADR)",
       "price": 8.38,
@@ -327,7 +341,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 24,
+      "rank": 25,
       "ticker": "KT",
       "name": "KT(ADR)",
       "price": 18.3,
@@ -341,7 +355,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 25,
+      "rank": 26,
       "ticker": "WDH",
       "name": "워터드롭(ADR)",
       "price": 1.04,
@@ -355,7 +369,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 26,
+      "rank": 27,
       "ticker": "BEKE",
       "name": "KE 홀딩스(ADR)",
       "price": 17.84,
@@ -369,7 +383,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 27,
+      "rank": 28,
       "ticker": "RCI",
       "name": "로저스 커뮤니케이션스",
       "price": 29.78,
@@ -383,7 +397,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 28,
+      "rank": 29,
       "ticker": "SNOW",
       "name": "스노우플레이크",
       "price": 368.89,
@@ -397,7 +411,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 29,
+      "rank": 30,
       "ticker": "SMWB",
       "name": "시밀러웹",
       "price": 9.05,
@@ -411,7 +425,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 30,
+      "rank": 31,
       "ticker": "AMT",
       "name": "아메리칸 타워",
       "price": 182.24,
@@ -425,7 +439,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 31,
+      "rank": 32,
       "ticker": "ELV",
       "name": "엘리밴스 헬스",
       "price": 412.7,
@@ -439,7 +453,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 32,
+      "rank": 33,
       "ticker": "OSG",
       "name": "옥타브 스페셜티 GP",
       "price": 4.62,
@@ -453,7 +467,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 33,
+      "rank": 34,
       "ticker": "WEAV",
       "name": "위브 커뮤니케이션스",
       "price": 7.38,
@@ -467,7 +481,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 34,
+      "rank": 35,
       "ticker": "LYNX",
       "name": "린트리스",
       "price": 11.68,
@@ -481,7 +495,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 35,
+      "rank": 36,
       "ticker": "MMT",
       "name": "MFS MULTI MARKET INCOME",
       "price": 4.2,
@@ -495,7 +509,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 36,
+      "rank": 37,
       "ticker": "XPEV",
       "name": "샤오펑(ADR)",
       "price": 9.9,
@@ -509,7 +523,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 37,
+      "rank": 38,
       "ticker": "MNR",
       "name": "마크 내추럴 리소시스",
       "price": 10.73,
@@ -523,7 +537,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 38,
+      "rank": 39,
       "ticker": "BTX",
       "name": "BLACKROCK TECHNOLOGY AND PRIVATE EQUITY TERM TRU",
       "price": 9.4,
@@ -537,7 +551,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 39,
+      "rank": 40,
       "ticker": "RLX",
       "name": "RLX 테크놀로지(ADR)",
       "price": 1.73,
@@ -551,7 +565,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 40,
+      "rank": 41,
       "ticker": "GPRK",
       "name": "지오파크",
       "price": 11.54,
@@ -565,7 +579,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 41,
+      "rank": 42,
       "ticker": "HUM",
       "name": "휴마나",
       "price": 431.87,
@@ -579,7 +593,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 42,
+      "rank": 43,
       "ticker": "PHG",
       "name": "필립스(ADR)",
       "price": 24.24,
@@ -593,7 +607,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 43,
+      "rank": 44,
       "ticker": "HYT",
       "name": "BLACKROCK CORPORATE HIGH YIELD",
       "price": 7.93,
@@ -607,7 +621,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 44,
+      "rank": 45,
       "ticker": "BCE",
       "name": "BCE",
       "price": 18.78,
@@ -621,7 +635,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 45,
+      "rank": 46,
       "ticker": "AERO",
       "name": "그루포 아에로멕시코 스폰서드 ADS",
       "price": 15.57,
@@ -635,7 +649,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 46,
+      "rank": 47,
       "ticker": "IGD",
       "name": "VOYA GLOBAL EQUITY DIVIDEND AND PREMIUM OPPORTUN",
       "price": 6.31,
@@ -649,7 +663,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 47,
+      "rank": 48,
       "ticker": "ACM",
       "name": "애이콤 테크놀로지",
       "price": 59.28,
@@ -663,7 +677,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 48,
+      "rank": 49,
       "ticker": "ITGR",
       "name": "인티거 홀딩스",
       "price": 126.61,
@@ -677,31 +691,17 @@
       "exchange": "NYS"
     },
     {
-      "rank": 49,
+      "rank": 50,
       "ticker": "MPLX",
       "name": "MPLX",
       "price": 56.3,
       "changePct": -1.78,
       "changePoints": -1.02,
       "volume": 1700451,
-      "marketCap": 57080217600,
+      "marketCap": 57129504768,
       "tradingValue": 95735391,
       "volSurgePct": 89.43,
       "baseVolume": 897666,
-      "exchange": "NYS"
-    },
-    {
-      "rank": 50,
-      "ticker": "CANG",
-      "name": "캉고(ADR)",
-      "price": 3.51,
-      "changePct": -1.4,
-      "changePoints": -0.05,
-      "volume": 3475757,
-      "marketCap": 143987104,
-      "tradingValue": 12199907,
-      "volSurgePct": 86.14,
-      "baseVolume": 1867282,
       "exchange": "NYS"
     }
   ]

@@ -264,10 +264,20 @@ html body .rt-table .tv-lightweight-charts th {
     display: flex;
     flex-direction: column;
   }
+  /* 버튼(종목 닫기·AI 분석하기)은 위에 한 줄씩, 남는 높이는 전부 차트 — 가로 배치되면 '종목 닫기'가 칸을 다 먹는다 */
   html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-acc-footer {
     flex: 1 1 auto;
     min-height: 0;
-    display: flex;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    align-content: stretch !important;
   }
-  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap { flex: 1 1 auto; min-height: 0; }
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-acc-footer > .rt-acc-btn {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 44px;
+  }
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap { flex: 1 1 auto !important; min-height: 0; width: 100%; }
 }

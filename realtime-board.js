@@ -1403,6 +1403,8 @@
     disposePanelChartsInRoot(panel);
     panel.hidden = true;
     panel.innerHTML = "";
+    const page = panel.closest(".page--rt-split");
+    if (page) page.removeAttribute("data-search-open");
   }
 
   function isSearchPanelOpen() {
@@ -3171,6 +3173,8 @@
       // 기존 구현(시세 조회/결과 표시 로직)을 그대로 사용
       const data = await fetchStockQuoteDetail(code6);
       panel.innerHTML = stockPanelHtml(data, { searchPanel: true });
+      const splitPage = panel.closest(".page--rt-split");
+      if (splitPage) splitPage.setAttribute("data-search-open", "1");
 
       const hidePanel = () => {
         clearStockResultPanel();
@@ -3597,6 +3601,12 @@
       if (!row || !body.contains(row)) return;
       const code = code6Maybe(row.getAttribute("data-code") || "");
       if (!isValidStockCode(code)) return;
+      // 2026-10-12 시우: PC 분할 화면에서 검색으로 띄운 종목은 목록 선택과 같은 자리를 쓴다 —
+      // 목록을 누르면 검색 결과를 걷어내고 그 종목으로 바뀐다.
+      if (isSplitLayout() && isSearchPanelOpen()) {
+        clearStockResultPanel();
+        if (code6Maybe(state.openChartCode) === code) return;
+      }
       if (code6Maybe(state.openChartCode) === code) {
         // PC 분할 화면에선 오른쪽 상세가 항상 떠 있어야 하므로 같은 행을 다시 눌러도 닫지 않는다.
         if (isSplitLayout()) return;

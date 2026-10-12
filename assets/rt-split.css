@@ -281,3 +281,37 @@ html body .rt-table .tv-lightweight-charts th {
   }
   html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap { flex: 1 1 auto !important; min-height: 0; width: 100%; }
 }
+
+/* 2026-10-12 2차 — 검색 결과를 "팝업"이 아니라 목록에서 고른 것과 똑같은 오른쪽 상세로 보이게 */
+@media (min-width: 1100px) {
+  html body.page-tm-v2 .page--rt-split #stock-result-panel:not([hidden]) {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+  }
+  html body.page-tm-v2 .page--rt-split #stock-result-panel > .rt-acc {
+    height: 100%;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+    background: var(--rts-card) !important;
+  }
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-acc-close { display: none !important; }
+  /* 검색 종목이 떠 있는 동안 목록의 선택 표시(뒤에 깔린 종목)는 지운다 */
+  html body.page-tm-v2 .page--rt-split[data-search-open] .rt-table tbody tr.rt-stock-row:has(.rt-name-chart-btn[aria-expanded="true"]) .rt-mobile-row {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+@media (min-width: 1100px) {
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-acc-header,
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-acc-footer,
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap,
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap *:not(button):not(.rt-acc-btn):not(i):not(canvas):not(.tm-lw-ohlc-tooltip):not(.tm-lw-ohlc-tooltip *) {
+    background-color: transparent !important;
+  }
+  html body.page-tm-v2 .page--rt-split #stock-result-panel .rt-chart-wrap { border: 0 !important; box-shadow: none !important; }
+}

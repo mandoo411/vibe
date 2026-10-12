@@ -2695,20 +2695,27 @@
   }
 
   function wireStockPanelChart(panelEl, code6) {
+    /* 2026-10-12 시우: PC 분할 화면은 차트가 기본으로 펼쳐져 있어 "차트 보기" 버튼이 필요 없다(누르면 작은 차트가
+       하나 더 뜨는 혼란만 생김) → 분할 화면에선 버튼을 만들지 않고(stockPanelHtml) 차트 칸을 바로 연다.
+       모바일·좁은 화면은 예전처럼 버튼으로 연다. */
     const toggleBtn = panelEl.querySelector(".rt-chart-toggle");
-    const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : "";
-    const chartHost = findPanelElById(panelEl, targetId);
+    const autoHost = toggleBtn ? null : panelEl.querySelector(".rt-chart-wrap[data-chart-auto]");
+    const targetId = toggleBtn ? toggleBtn.getAttribute("data-chart-target") : autoHost ? autoHost.id : "";
+    const chartHost = toggleBtn ? findPanelElById(panelEl, targetId) : autoHost;
     const codeNorm = chartSymbolSixDigits(code6);
-    if (!toggleBtn || !chartHost || !codeNorm) return;
-    if (toggleBtn.dataset.wiredChart === "1") return;
-    toggleBtn.dataset.wiredChart = "1";
+    if (!chartHost || !codeNorm) return;
+    const wireEl = toggleBtn || chartHost;
+    if (wireEl.dataset.wiredChart === "1") return;
+    wireEl.dataset.wiredChart = "1";
 
     let chartOpen = false;
 
     function setToggle(open) {
       chartOpen = !!open;
-      toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
-      toggleBtn.textContent = chartOpen ? "차트 닫기" : "차트 보기";
+      if (toggleBtn) {
+        toggleBtn.setAttribute("aria-expanded", chartOpen ? "true" : "false");
+        toggleBtn.textContent = chartOpen ? "차트 닫기" : "차트 보기";
+      }
       chartHost.hidden = !chartOpen;
       chartHost.style.display = chartOpen ? "" : "none";
       if (!chartOpen) {
@@ -2718,14 +2725,8 @@
       }
     }
 
-    setToggle(false);
-    // 2026-09-25 PC 분할 화면: 오른쪽 상세는 차트까지 펼친 상태로 연다.
-    if (isSplitLayout()) setTimeout(() => { if (!chartOpen) toggleBtn.click(); }, 0);
-    toggleBtn.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      setToggle(!chartOpen);
-      if (!chartOpen) return;
+    function openChart() {
+      setToggle(true);
       if (!chartHost.dataset.mounted) {
         chartHost.innerHTML = stockPanelChartShellHtml(targetId);
         chartHost.dataset.mounted = "1";
@@ -2746,6 +2747,19 @@
         if (panes) panes.style.display = "";
       }
       void mountStockPanelChart(chartHost, codeNorm, "D");
+    }
+
+    if (!toggleBtn) {
+      // 분할 화면(버튼 없음): 차트를 바로 연다.
+      setTimeout(() => { if (!chartOpen) openChart(); }, 0);
+      return;
+    }
+    setToggle(false);
+    toggleBtn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (chartOpen) { setToggle(false); return; }
+      openChart();
     });
   }
 
@@ -2976,8 +2990,12 @@
       `  <footer class="rt-acc-footer">`,
       dismissFooterBtn,
       `    <a class="rt-acc-btn rt-acc-btn--ai" href="${escapeHtml(aiHref)}">AI 분석하기</a>`,
-      `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
-      `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
+      ...(isSplitLayout()
+        ? [`    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" data-chart-auto="1" hidden></div>`]
+        : [
+            `    <button type="button" class="rt-acc-btn rt-acc-btn--chart rt-chart-toggle" data-chart-target="${escapeHtml(chartId)}" aria-expanded="false">차트 보기</button>`,
+            `    <div id="${escapeHtml(chartId)}" class="rt-chart-wrap" hidden></div>`,
+          ]),
       `  </footer>`,
       `</div>`,
     ].join("");

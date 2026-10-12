@@ -1055,7 +1055,53 @@
     return lwChartsPromise;
   }
 
+  /* 2026-10-12 시우: 미국주식·암호화폐 AI 분석 차트를 미국주식·암호화폐 메뉴 차트와 똑같이 —
+     공용 모듈(assets/lw-candle-chart.js)·같은 틀(주기 버튼·전체화면·범례)·더 큰 높이로 그린다. */
+  let aiSharedChartHandle = null;
+  function isNonKrMarket(market) {
+    return market === "US" || market === "CRYPTO";
+  }
+  function aiSharedChartHeight() {
+    return window.matchMedia("(max-width: 768px)").matches ? undefined : 560;
+  }
+  function disposeAiSharedChart() {
+    if (aiSharedChartHandle && window.tmDisposeCandleChart) {
+      try { window.tmDisposeCandleChart(aiSharedChartHandle); } catch (_) {}
+    }
+    aiSharedChartHandle = null;
+  }
+  async function mountAiSharedChart(hostEl, chartData, market) {
+    if (!hostEl || !chartData || !window.tmMountCandleChart) return;
+    disposeAiChart();
+    hostEl.innerHTML = "";
+    const h = aiSharedChartHeight();
+    if (h) hostEl.style.height = h + "px";
+    aiSharedChartHandle = await window.tmMountCandleChart(hostEl, chartData, { market, height: h });
+  }
+  function sharedChartShellHtml(stockCode) {
+    return (
+      `<div class="tm-tv-chart-shell ai-shared-chart" data-ai-chart-code="${escapeHtml(stockCode)}">` +
+      `<div class="tm-tv-chart-toolbar">` +
+      `<div class="tm-lw-period-group" role="toolbar" aria-label="캔들 주기">` +
+      `<button type="button" class="tm-lw-period-btn" data-lw-period="D" aria-pressed="true">일봉</button>` +
+      `<button type="button" class="tm-lw-period-btn" data-lw-period="W" aria-pressed="false">주봉</button>` +
+      `<button type="button" class="tm-lw-period-btn" data-lw-period="M" aria-pressed="false">월봉</button>` +
+      `</div>` +
+      `<button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>` +
+      `</div>` +
+      `<div class="tm-lw-chart-legend">` +
+      `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>` +
+      `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>` +
+      `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>` +
+      `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot tm-lw-legend-dot--ma200" style="background:var(--text-muted-ui)"></i>200일</span>` +
+      `</div>` +
+      `<div class="tm-lw-chart-host" role="region" aria-label="캔들 차트"></div>` +
+      `</div>`
+    );
+  }
+
   function disposeAiChart() {
+    disposeAiSharedChart();
     if (aiChartBundle) {
       try {
         if (aiChartBundle.ro) aiChartBundle.ro.disconnect();
@@ -1293,6 +1339,7 @@
   }
 
   function applyAiChartTheme() {
+    if (aiSharedChartHandle && window.tmApplyCandleChartTheme) window.tmApplyCandleChartTheme(aiSharedChartHandle);
     if (!aiChartBundle || !aiChartBundle.chart) return;
     const t = getLwTheme();
     aiChartBundle.chart.applyOptions({
@@ -1310,6 +1357,9 @@
         renderChartText(chartText) +
         `</div>`
       );
+    }
+    if (isNonKrMarket(market) && window.tmMountCandleChart) {
+      return `<div class="ai-chart-block">` + sharedChartShellHtml(stockCode) + renderChartText(chartText) + `</div>`;
     }
     return (
       `<div class="ai-chart-block">` +
@@ -1333,6 +1383,30 @@
   }
 
   function wireAiChart(stockCode, chartData, activePeriod, market) {
+    const shared = panel && panel.querySelector(".ai-shared-chart");
+    if (shared) {
+      const host = shared.querySelector(".tm-lw-chart-host");
+      const period0 = activePeriod || "D";
+      if (window.tmWireTradingViewChartTools) window.tmWireTradingViewChartTools(shared.parentElement || shared);
+      if (host && chartData) void mountAiSharedChart(host, chartData, market);
+      shared.querySelectorAll(".tm-lw-period-btn").forEach((btn) => {
+        const p = btn.getAttribute("data-lw-period") || "D";
+        btn.setAttribute("aria-pressed", p === period0 ? "true" : "false");
+        if (btn.dataset.wired === "1") return;
+        btn.dataset.wired = "1";
+        btn.addEventListener("click", async () => {
+          const next = btn.getAttribute("data-lw-period") || "D";
+          shared.querySelectorAll(".tm-lw-period-btn").forEach((b) => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+          try {
+            const data = await fetchNonKrChart(stockCode, market, next);
+            await mountAiSharedChart(host, data, market);
+          } catch (err) {
+            console.error("[AI분석] 차트 주기 변경 실패", err);
+          }
+        });
+      });
+      return;
+    }
     const wrap = panel && panel.querySelector(".ai-lw-chart-wrap");
     if (!wrap) return;
     const host = wrap.querySelector(".ai-lw-chart-host");

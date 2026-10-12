@@ -2910,7 +2910,8 @@
 
     const chartId = `rt-chart-${String(data.stockCode || "").replace(/\D/g, "")}`;
     const isSearchPanel = !!(opts && opts.searchPanel);
-    const showDismissFooter = isSearchPanel || (isMobile && opts && opts.accordion);
+    // 2026-10-12 시우: PC 분할 화면 검색 패널은 머리줄 "닫기"가 있으니 아래 "종목 닫기"는 뺀다.
+    const showDismissFooter = (isSearchPanel && !isSplitLayout()) || (isMobile && opts && opts.accordion);
     const closeBtn = `<button type="button" class="rt-acc-close rt-acc-close--pill" aria-label="닫기">닫기</button>`;
     const dismissFooterBtn = showDismissFooter
       ? `<button type="button" class="rt-acc-btn rt-acc-btn--dismiss rt-panel-close-btn">종목 닫기</button>`

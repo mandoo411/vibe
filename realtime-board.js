@@ -2503,10 +2503,11 @@
   /* PC 분할 화면: 아무 종목도 안 열려 있으면 목록 첫 종목을 오른쪽에 자동으로 띄운다. */
   let splitAutoOpenTimer = null;
   function scheduleSplitAutoOpen() {
-    if (!isSplitLayout() || state.openChartCode) return;
+    // 검색 결과가 오른쪽에 떠 있으면 자동으로 목록 1위를 열지 않는다(열면 목록 클릭으로 처리돼 검색 결과가 지워진다).
+    if (!isSplitLayout() || state.openChartCode || isSearchPanelOpen()) return;
     clearTimeout(splitAutoOpenTimer);
     splitAutoOpenTimer = setTimeout(() => {
-      if (!isSplitLayout() || state.openChartCode) return;
+      if (!isSplitLayout() || state.openChartCode || isSearchPanelOpen()) return;
       const first = document.querySelector("#rt-tbody tr.rt-stock-row");
       if (first) first.click();
     }, 60);
@@ -3173,6 +3174,7 @@
       // 기존 구현(시세 조회/결과 표시 로직)을 그대로 사용
       const data = await fetchStockQuoteDetail(code6);
       panel.innerHTML = stockPanelHtml(data, { searchPanel: true });
+      panel.hidden = false;
       const splitPage = panel.closest(".page--rt-split");
       if (splitPage) splitPage.setAttribute("data-search-open", "1");
 

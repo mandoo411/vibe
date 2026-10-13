@@ -84,6 +84,8 @@ export default async function middleware(req) {
   if (!path.startsWith("/api/") && !path.startsWith("/data/") && PUBLIC_EXT.test(path)) return pass();
   // 출입증 발급 창구, 결제 웹훅(결제 비활성이지만 외부 호출 경로는 열어 둔다)
   if (path === "/api/analyze" && url.searchParams.get("feature") === "site-pass") return pass();
+  // 2026-10-13: 회원 탈퇴 — 승인 대기·차단 회원도 할 수 있어야 한다(본인 로그인 토큰은 서버에서 확인)
+  if (path === "/api/analyze" && url.searchParams.get("feature") === "delete-account") return pass();
   if (path.startsWith("/api/payment/")) return pass();
 
   const key = await hmacKey();

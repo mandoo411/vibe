@@ -20,6 +20,7 @@ const {
   currentMonthKeySeoul,
   isConfigured: supabaseConfigured,
   serviceRequest,
+  deleteAuthUser,
 } = require("../lib/supabase-server");
 
 const STOCK_LIST = require("../assets/stock-list.json"); // 매매 시그널 종목명 매칭용 (2026-07-16 merge)
@@ -6021,7 +6022,32 @@ async function handleSitePass(req, res) {
   return json(res, 200, { ok: true, status, exp: pass.exp });
 }
 
+/* 2026-10-13 시우: 회원 탈퇴. 승인 대기·차단 회원도 할 수 있어야 해서 출입증 없이 열려 있다(middleware.js).
+   본인 로그인 토큰으로만 본인 계정을 지운다. 운영자 계정은 실수 방지로 막는다. */
+async function handleDeleteAccount(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
+  const user = await getUserFromToken(bearerToken(req));
+  if (!user) return json(res, 401, { error: "login_required" });
+  try {
+    const o = await serviceRequest(`owner_accounts?user_id=eq.${encodeURIComponent(user.id)}&select=user_id`, { method: "GET" });
+    if (!o.ok) return json(res, 503, { error: "error" });
+    const or = await o.json();
+    if (Array.isArray(or) && or.length) return json(res, 403, { error: "owner_account" });
+  } catch (e) {
+    return json(res, 503, { error: "error" });
+  }
+  const ok = await deleteAuthUser(user.id);
+  if (!ok) return json(res, 500, { error: "delete_failed" });
+  console.log("[delete-account] 탈퇴 완료", user.id);
+  res.setHeader("Set-Cookie", SITE_PASS.clearPassCookies());
+  return json(res, 200, { ok: true });
+}
+
 module.exports = async function handler(req, res) {
+  if (req.query && req.query.feature === "delete-account") {
+    return await handleDeleteAccount(req, res);
+  }
   if (req.query && req.query.feature === "site-pass") {
     return await handleSitePass(req, res);
   }

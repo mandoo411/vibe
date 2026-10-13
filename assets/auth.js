@@ -300,6 +300,62 @@
   }
 
   /* ==========================================================================
+   * 2026-10-13 회원 탈퇴 — 로그인 화면(승인 대기·차단 회원)과 마이페이지가 같이 쓴다
+   * ========================================================================== */
+  async function deleteAccount() {
+    const token = await getAccessToken();
+    if (!token) throw new Error("로그인이 필요합니다.");
+    const res = await fetch("/api/analyze?feature=delete-account", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token },
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (j && j.error === "owner_account") throw new Error("운영자 계정은 여기서 탈퇴할 수 없습니다.");
+      throw new Error("탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+    try { await signOut(); } catch (e) {}
+    return true;
+  }
+
+  function mountWithdraw(el, opts) {
+    if (!el || el.dataset.mounted) return;
+    el.dataset.mounted = "1";
+    opts = opts || {};
+    el.innerHTML =
+      '<details class="tm-withdraw" style="margin-top:14px;font-size:13px">' +
+      '<summary style="cursor:pointer;color:var(--text-secondary);text-decoration:underline;text-underline-offset:3px;width:max-content">회원 탈퇴</summary>' +
+      '<div style="margin-top:10px;padding:14px;border:1px solid var(--border-color);border-radius:10px;background:var(--bg-primary)">' +
+      '<p style="margin:0 0 8px;font-weight:700;color:var(--text-primary)">탈퇴하면 되돌릴 수 없습니다</p>' +
+      '<p style="margin:0 0 10px;line-height:1.6;color:var(--text-secondary)">계정과 함께 AI 분석 기록, 관심종목, 매매시그널 설정이 모두 삭제됩니다. 결제 기록은 관계법령에 따라 5년간 보관 후 파기됩니다.</p>' +
+      '<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;color:var(--text-primary)"><input type="checkbox" class="tm-withdraw__agree" style="margin-top:3px" />위 내용을 확인했으며 탈퇴하겠습니다.</label>' +
+      '<button type="button" class="tm-withdraw__btn" disabled style="margin-top:12px;padding:9px 16px;border-radius:8px;border:1px solid #d33;background:transparent;color:#d33;font:inherit;font-weight:700;cursor:pointer;opacity:.5">탈퇴하기</button>' +
+      '<p class="tm-withdraw__msg" style="margin:10px 0 0;color:#d33"></p>' +
+      "</div></details>";
+    const agree = el.querySelector(".tm-withdraw__agree");
+    const btn = el.querySelector(".tm-withdraw__btn");
+    const msg = el.querySelector(".tm-withdraw__msg");
+    agree.addEventListener("change", function () { btn.disabled = !agree.checked; btn.style.opacity = agree.checked ? "1" : ".5"; });
+    btn.addEventListener("click", async function () {
+      if (!agree.checked) return;
+      btn.disabled = true;
+      btn.textContent = "처리 중…";
+      msg.textContent = "";
+      try {
+        await deleteAccount();
+        el.innerHTML = '<p style="margin-top:14px;font-size:13px;color:var(--text-secondary)">탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.</p>';
+        if (opts.onDone) opts.onDone();
+      } catch (e) {
+        msg.textContent = (e && e.message) || "탈퇴 처리에 실패했습니다.";
+        btn.disabled = false;
+        btn.textContent = "탈퇴하기";
+      }
+    });
+  }
+
+  /* ==========================================================================
    * 비밀번호 재설정
    * ========================================================================== */
   async function requestPasswordReset(email) {
@@ -635,6 +691,8 @@
     signIn,
     signOut,
     getAccessToken,
+    deleteAccount,
+    mountWithdraw,
     ensureSitePass,
     enterInvite,
     clearSitePass,

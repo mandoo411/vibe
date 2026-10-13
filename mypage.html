@@ -115,6 +115,8 @@
             <a class="tm-btn tm-btn--primary" href="./pricing.html">요금제 관리 / 업그레이드</a>
             <button type="button" class="tm-btn tm-btn--ghost" id="acc-logout">로그아웃</button>
           </div>
+          <!-- 2026-10-13 시우: 회원 탈퇴 -->
+          <div id="acc-withdraw"></div>
         </div>
 
         <!-- 2026-09-25 회원 승인제: 운영자만 보이는 승인 관리 -->
@@ -257,6 +259,14 @@
           if (window.TM_AUTH_STATE.loaded) render();
         });
 
+        if (window.TMAuth && window.TMAuth.mountWithdraw) {
+          window.TMAuth.mountWithdraw(document.getElementById("acc-withdraw"), {
+            onDone: function () {
+              loggingOut = true;
+              setTimeout(function () { window.location.href = "./login.html"; }, 1800);
+            },
+          });
+        }
         document.getElementById("acc-logout").addEventListener("click", async function () {
           // 2026-07-11: signOut() 내부에서 refreshState()가 "tm-auth-ready"를 쏘는데, 그걸 그대로
           // 두면 render()가 로그아웃된 상태로 다시 그려져서 "로그인이 필요합니다" 게스트 카드가

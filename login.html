@@ -93,6 +93,8 @@
             <button type="submit" class="tm-auth-submit" id="login-submit">로그인</button>
             <div class="tm-auth-msg" id="login-msg"></div>
           </form>
+          <!-- 2026-10-13: 승인 대기·차단 회원은 마이페이지에 못 들어가므로 여기서 탈퇴할 수 있게 -->
+          <div id="login-withdraw" hidden></div>
 
           <div class="tm-social" id="login-social"></div>
 
@@ -169,6 +171,13 @@
     </script>
     <script>
       (function () {
+        function showWithdraw() {
+          const box = document.getElementById("login-withdraw");
+          box.hidden = false;
+          window.TMAuth.mountWithdraw(box, {
+            onDone: function () { document.getElementById("login-msg").classList.remove("is-visible"); },
+          });
+        }
         function showMsg(text, isError) {
           const el = document.getElementById("login-msg");
           el.textContent = text;
@@ -192,6 +201,7 @@
           if (!st || !st.isLoggedIn) return;
           if (st.sitePass === "ok") { window.location.replace(nextParam); return; }
           showMsg(st.sitePass === "blocked" ? "이용이 제한된 계정입니다." : PENDING_MSG, true);
+          if (st.sitePass === "pending" || st.sitePass === "blocked") showWithdraw();
         }
         if ((window.TM_AUTH_STATE || {}).loaded) autoForward(window.TM_AUTH_STATE);
         else document.addEventListener("tm-auth-ready", function once(e) { document.removeEventListener("tm-auth-ready", once); autoForward(e.detail || window.TM_AUTH_STATE); });
@@ -227,6 +237,7 @@
             const sp = (window.TM_AUTH_STATE || {}).sitePass;
             if (sp !== "ok") {
               showMsg(sp === "blocked" ? "이용이 제한된 계정입니다." : sp === "error" ? "잠시 후 다시 시도해주세요." : PENDING_MSG, true);
+              if (sp === "pending" || sp === "blocked") showWithdraw();
               return;
             }
             showMsg("로그인 성공! 이동합니다…", false);

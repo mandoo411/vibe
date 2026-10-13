@@ -66,6 +66,18 @@ export default async function middleware(req) {
   const url = new URL(req.url);
   const path = url.pathname;
 
+  // 2026-10-13 시우: 정식 서비스 전까지 회원가입 막음 — 가입 화면 주소로 와도 로그인으로 돌려보낸다.
+  // 다시 열려면 이 if 블록만 지우면 된다(signup.html 파일은 그대로 있음).
+  if (path === "/signup.html" || path === "/signup") {
+    const next = url.searchParams.get("next");
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: "/login.html" + (next ? "?next=" + encodeURIComponent(next) : ""),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
   if (PUBLIC_PAGES.has(path)) return pass();
   if (path.startsWith("/icon-") || path.startsWith("/apple-touch-icon")) return pass();
   // 화면 코드(스크립트·스타일·폰트·이미지)는 공개 — 데이터(json·API)와 페이지(html)만 막는다

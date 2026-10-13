@@ -214,14 +214,12 @@
       btnEl.setAttribute("href", "./index.html");
       if (secondaryEl) secondaryEl.hidden = true;
     } else if (!st.isLoggedIn) {
-      titleEl.textContent = "회원가입이 필요합니다";
-      textEl.innerHTML = "AI 종목분석은 회원가입 후 이용하실 수 있습니다.<br>무료 회원가입 시 매월 체험 3회가 제공됩니다.";
-      btnEl.textContent = "회원가입 하러 가기";
-      btnEl.setAttribute("href", "./signup.html?next=/stock-analysis.html");
-      if (secondaryEl) {
-        secondaryEl.hidden = false;
-        secondaryEl.innerHTML = '이미 계정이 있으신가요? <a href="./login.html?next=/stock-analysis.html">로그인</a>';
-      }
+      // 2026-10-13 시우: 정식 서비스 전까지 회원가입 막음 — 로그인 안내만
+      titleEl.textContent = "로그인이 필요합니다";
+      textEl.innerHTML = "AI 종목분석은 로그인 후 이용하실 수 있습니다.";
+      btnEl.textContent = "로그인";
+      btnEl.setAttribute("href", "./login.html?next=/stock-analysis.html");
+      if (secondaryEl) secondaryEl.hidden = true;
     } else {
       titleEl.textContent = "AI 종목분석 이용 안내";
       textEl.innerHTML = "무료 플랜은 매월 체험 횟수가 제한됩니다.<br>Pro 플랜으로 업그레이드하면 무제한 이용 가능합니다.";

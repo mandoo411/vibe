@@ -3776,9 +3776,9 @@
             $("ts-gate-title").textContent = "매매기법을 클릭하면 종목이 나오는 스크리너";
             $("ts-gate-text").textContent = "국내외 대표 매매기법 32가지를 조건으로 담았습니다. 코스피·코스닥 전 종목에서 지금 그 조건에 맞는 종목을 찾아주고, 조건이 다시 발생하면 알림까지 보내드립니다.";
             const b1 = $("ts-gate-btn");
-            if (b1) { b1.textContent = "무료 회원가입"; b1.setAttribute("href", "./signup.html?next=/trade-signal.html"); }
+            if (b1) { b1.textContent = "로그인"; b1.setAttribute("href", "./login.html?next=/trade-signal.html"); }
             const b2 = $("ts-gate-btn2");
-            if (b2) b2.hidden = false;
+            if (b2) b2.hidden = true; // 2026-10-13: 회원가입 막음 — 로그인 버튼 하나만
             $("ts-gate").classList.remove("ts-hidden");
             $("ts-content").classList.add("ts-hidden");
             return;

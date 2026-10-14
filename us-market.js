@@ -514,6 +514,7 @@
       `    <button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>`,
       `  </div>`,
       `  <div class="tm-lw-chart-legend">`,
+      `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#E0A000"></i>7일</span>`,
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
       `    <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,

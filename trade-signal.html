@@ -2280,6 +2280,7 @@
             </div>
             <div class="ts-detail__chart ts-hidden" data-chart-wrap="${escapeHtml(code)}">
               <div class="ts-detail__chart-legend">
+                <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#E0A000"></i>7일</span>
                 <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#FF0000"></i>20일</span>
                 <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#1E90FF"></i>60일</span>
                 <span class="ts-detail__chart-legend-item"><i class="ts-detail__chart-legend-dot" style="background:#008000"></i>120일</span>
@@ -2469,9 +2470,16 @@
             );
 
             const ma200Color = chartColors.text;
-            const maColors = { ma20: "#FF0000", ma60: "#1E90FF", ma120: "#008000", ma200: ma200Color };
-            for (const key of ["ma20", "ma60", "ma120", "ma200"]) {
-              const series = data[key];
+            // 2026-10-14: 7일선(진한 노랑) 추가 — 서버 응답에 없어 캔들 종가로 계산
+            const ma7 = candles.map((c, i) => {
+              if (i < 6) return null;
+              let sum = 0;
+              for (let k = i - 6; k <= i; k++) sum += Number(candles[k].close) || 0;
+              return sum / 7;
+            });
+            const maColors = { ma20: "#FF0000", ma60: "#1E90FF", ma120: "#008000", ma200: ma200Color, ma7: "#E0A000" };
+            for (const key of ["ma20", "ma60", "ma120", "ma200", "ma7"]) {
+              const series = key === "ma7" ? (Array.isArray(data.ma7) ? data.ma7 : ma7) : data[key];
               if (!Array.isArray(series)) continue;
               const lineSeries = chart.addLineSeries({
                 color: maColors[key],

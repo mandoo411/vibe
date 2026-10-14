@@ -66,6 +66,20 @@
     };
   }
 
+  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 #E0A000, 두께는 20일선과 같은 1).
+     서버 응답에 ma7이 없어서 캔들 종가로 직접 계산한다 — 다른 이평선 배열과 같은 길이·같은 순서. */
+  function calcMa7(candles) {
+    const out = new Array(candles ? candles.length : 0).fill(null);
+    let sum = 0;
+    for (let i = 0; i < out.length; i++) {
+      const c = Number(candles[i] && candles[i].close);
+      sum += Number.isFinite(c) ? c : 0;
+      if (i >= 7) { const o = Number(candles[i - 7] && candles[i - 7].close); sum -= Number.isFinite(o) ? o : 0; }
+      if (i >= 6) out[i] = sum / 7;
+    }
+    return out;
+  }
+
   function buildMaLineData(candles, maArr) {
     const out = [];
     for (let i = 0; i < candles.length; i++) {
@@ -242,6 +256,8 @@
       [chartData.ma60, "#1E90FF", 1],
       [chartData.ma120, "#008000", 1],
       [chartData.ma200, getLwTheme().text, 2],
+      // 7일선은 맨 뒤에 둔다 — 200일선이 maSeries[3]이라는 전제(다크모드 재색칠)를 깨지 않게
+      [chartData.ma7 || calcMa7(chartData.candles), "#E0A000", 1],
     ];
     // 2026-07-11: 다크모드 전환 시 200일선(마지막 인덱스)만 검정↔흰색으로 다시 칠해야 해서
     // 라인 시리즈 참조를 index 그대로 보관해둔다(handle.maSeries) — applyCandleChartTheme 참고.

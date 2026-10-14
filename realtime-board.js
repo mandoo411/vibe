@@ -1008,6 +1008,7 @@
     { key: "ma60", color: "#1E90FF", lineWidth: 1 },
     { key: "ma120", color: "#008000", lineWidth: 1 },
     { key: "ma200", color: null, lineWidth: 2 },
+    { key: "ma7", color: "#E0A000", lineWidth: 1 }, // 2026-10-14 7일선 — 맨 뒤(200일선 maSeries[3] 유지)
   ];
 
   /** 캔들 차트 위에 20/60/120/200일 이동평균선 4개를 얹는다 (거래량 차트가 아니라 캔들 차트에). */
@@ -1304,6 +1305,20 @@
     return { chartCandle: chart, chartVol: chart, candle, vol, maSeries };
   }
 
+  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 #E0A000, 두께는 20일선과 같은 1).
+     서버 응답에 ma7이 없어서 캔들 종가로 직접 계산한다 — 다른 이평선 배열과 같은 길이·같은 순서. */
+  function calcMa7(candles) {
+    const out = new Array(candles ? candles.length : 0).fill(null);
+    let sum = 0;
+    for (let i = 0; i < out.length; i++) {
+      const c = Number(candles[i] && candles[i].close);
+      sum += Number.isFinite(c) ? c : 0;
+      if (i >= 7) { const o = Number(candles[i - 7] && candles[i - 7].close); sum -= Number.isFinite(o) ? o : 0; }
+      if (i >= 6) out[i] = sum / 7;
+    }
+    return out;
+  }
+
   function applyLwChartSeriesData(bundle, candles, limit, maData) {
     if (!bundle || !bundle.candle || !bundle.vol || !candles || !candles.length) return [];
     const lim = limit || state.chartBarsLimit || 400;
@@ -1315,7 +1330,8 @@
       LW_MA_LINE_SPECS.forEach((spec, i) => {
         const series = bundle.maSeries[i];
         if (!series) return;
-        series.setData(buildMaLineData(candles, maData[spec.key], lim));
+        const arr = spec.key === "ma7" && !maData.ma7 ? calcMa7(candles) : maData[spec.key];
+        series.setData(buildMaLineData(candles, arr, lim));
       });
     }
     // 2026-09-25 공용 차트 규칙(격자선 제거·콤마 눈금·거래량 구역 음수 눈금 제거) — assets/tm-chart-style.js
@@ -2674,6 +2690,7 @@
       `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
       `</div>`,
       `<div class="tm-lw-chart-legend">`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#E0A000"></i>7일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,

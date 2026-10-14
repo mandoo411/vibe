@@ -1090,6 +1090,7 @@
       `<button type="button" class="tm-tv-fullscreen-btn" title="차트 전체화면" aria-label="차트 전체화면">전체화면</button>` +
       `</div>` +
       `<div class="tm-lw-chart-legend">` +
+      `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#E0A000"></i>7일</span>` +
       `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>` +
       `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>` +
       `<span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>` +
@@ -1121,6 +1122,20 @@
       text: muted || (dark ? "#8a95a8" : "#555555"),
       grid: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
     };
+  }
+
+  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 #E0A000, 두께는 20일선과 같은 1).
+     서버 응답에 ma7이 없어서 캔들 종가로 직접 계산한다 — 다른 이평선 배열과 같은 길이·같은 순서. */
+  function calcMa7(candles) {
+    const out = new Array(candles ? candles.length : 0).fill(null);
+    let sum = 0;
+    for (let i = 0; i < out.length; i++) {
+      const c = Number(candles[i] && candles[i].close);
+      sum += Number.isFinite(c) ? c : 0;
+      if (i >= 7) { const o = Number(candles[i - 7] && candles[i - 7].close); sum -= Number.isFinite(o) ? o : 0; }
+      if (i >= 6) out[i] = sum / 7;
+    }
+    return out;
   }
 
   function buildMaLineData(candles, maArr) {
@@ -1303,6 +1318,7 @@
       [chartData.ma60, "#1E90FF", 1],
       [chartData.ma120, "#008000", 1],
       [chartData.ma200, getLwTheme().text, 2],
+      [chartData.ma7 || calcMa7(chartData.candles), "#E0A000", 1], // 2026-10-14 7일선
     ];
     for (const [arr, color, lineWidth] of specs) {
       const lineData = buildMaLineData(chartData.candles, arr);
@@ -1370,6 +1386,7 @@
       `<button type="button" class="rt-chart-interval-btn ai-chart-period-btn" data-ai-period="M" aria-pressed="false">월봉</button>` +
       `</div>` +
       `<div class="ai-chart-legend">` +
+      `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#E0A000"></i>7일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#FF0000"></i>20일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#1E90FF"></i>60일</span>` +
       `<span class="ai-chart-legend__item"><i class="ai-chart-legend__dot" style="background:#008000"></i>120일</span>` +

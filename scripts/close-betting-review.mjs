@@ -183,12 +183,13 @@ async function main() {
   });
   console.log(`[review] close_signal_results 저장 완료 (${target.asOfDate}, phase=${phase})`);
 
-  // 관리자 픽 (2026-10-02): 관리자가 고른 종목(없으면 상위 5종목)의 결과를 20종목 측정분에서 골라 따로 기록
+  // 관리자 픽 (2026-10-02): 관리자가 고른 종목의 결과를 20종목 측정분에서 골라 따로 기록
+  // 2026-10-14 시우: 1~5종목 아무 개수나 저장 가능(고른 종목만 평균). 안 고른 날은 상위 3종목(1·2·3위)으로 자동 기록.
   try {
     const cur = await (await sb(`close_admin_picks?as_of_date=eq.${target.asOfDate}&select=codes,chosen`, { method: "GET" })).json();
     const row0 = Array.isArray(cur) && cur[0] ? cur[0] : null;
     const chosen = !!(row0 && row0.chosen && Array.isArray(row0.codes) && row0.codes.length);
-    const codes = chosen ? row0.codes : picks.map((p) => p.code);
+    const codes = chosen ? row0.codes : target.ranked.slice(0, 3).map((r) => r.code).filter(Boolean);
     const pool = picks.concat(extraPicks);
     const adminPicks = codes.map((c) => pool.find((p) => p.code === c)).filter(Boolean);
     const adminSummary = buildSummary(adminPicks);
@@ -199,7 +200,7 @@ async function main() {
         { as_of_date: target.asOfDate, codes, chosen, review_date: today, phase, picks: adminPicks, summary: adminSummary, updated_at: new Date().toISOString() },
       ]),
     });
-    console.log(`[review] 관리자 픽 ${chosen ? "선택분" : "미선택→상위5 대체"} ${adminPicks.length}종목 · 종가 평균 ${adminSummary.avgCloseReturnPct ?? "-"}%`);
+    console.log(`[review] 관리자 픽 ${chosen ? "선택분" : "미선택→상위3 자동"} ${adminPicks.length}종목 · 종가 평균 ${adminSummary.avgCloseReturnPct ?? "-"}%`);
   } catch (e) {
     console.log(`::warning::관리자 픽 기록 실패: ${e && e.message}`);
   }

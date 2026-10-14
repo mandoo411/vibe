@@ -5672,8 +5672,8 @@ async function cbRequestIsAdmin(req) {
 }
 
 /* ── 관리자 픽 (2026-10-02) ─────────────────────────────────────────────
- * 관리자가 20위 안에서 5종목을 골라 따로 추적한다. 선택은 다음 거래일 09:00 전까지만.
- * 고르지 않은 날은 리뷰 스크립트가 상위 5종목으로 대체해 기록한다(chosen=false). 일반 사용자에겐 보이지 않는다. */
+ * 관리자가 20위 안에서 1~5종목을 골라 따로 추적한다(고른 종목만 평균). 선택은 다음 거래일 09:00 전까지만.
+ * 고르지 않은 날은 리뷰 스크립트가 상위 3종목(1·2·3위)으로 기록한다(chosen=false, 2026-10-14 시우: 5→3). 일반 사용자에겐 보이지 않는다. */
 const ADMIN_PICK_MAX = 5;
 function adminPickDeadline(asOfDate) {
   const next = KRX_CAL.nextTradingDay(asOfDate);
@@ -5721,7 +5721,7 @@ async function handleAdminPickSave(req, res) {
   const saved = await serviceRequest("close_admin_picks?on_conflict=as_of_date", {
     method: "POST",
     headers: { prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify([{ as_of_date: latest.asOfDate, codes: chosen ? codes : latest.ranked.map((r) => r.code), chosen, updated_at: new Date().toISOString() }]),
+    body: JSON.stringify([{ as_of_date: latest.asOfDate, codes: chosen ? codes : latest.ranked.slice(0, 3).map((r) => r.code), chosen, updated_at: new Date().toISOString() }]),
   });
   if (!saved.ok) return json(res, 500, { error: "저장하지 못했습니다." });
   return json(res, 200, { ok: true, asOfDate: latest.asOfDate, codes: chosen ? codes : [], chosen });

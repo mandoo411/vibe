@@ -764,7 +764,7 @@
               <span class="cb-sec__icon"><i class="ti ti-star" aria-hidden="true"></i></span>
               <span class="cb-sec__txt">
                 <h2 class="cb-sec__title">관리자 픽 <span class="cb-sec__tag cb-sec__tag--adm">관리자 전용</span></h2>
-                <p class="cb-sec__cap">종가시그널 20종목 중 5종목을 직접 골라 따로 추적합니다. 고르지 않은 날은 상위 5종목으로 기록됩니다.</p>
+                <p class="cb-sec__cap">종가시그널 20종목 중 1~5종목을 골라 따로 추적합니다(고른 종목만 평균). 고르지 않은 날은 1·2·3위로 자동 기록됩니다.</p>
               </span>
               <span class="cb-stamp" id="admStamp">—</span>
             </div>
@@ -1685,7 +1685,7 @@
                 (disabled ? ' disabled title="종가는 15:45에 반영됩니다"' : "") + ">" + label + "</button>";
             };
             dayDetailEl.innerHTML =
-              '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + (calKind === "admin" ? " 관리자 픽 " + (day.chosen ? "" : "(미선택 · 상위 5 대체) ") : " 선정 종가시그널 ") + (day.pickCount || 0) + "종목</h3>" +
+              '<div class="cb-daydetail__h"><h3>' + esc(day.asOfDate) + (calKind === "admin" ? " 관리자 픽 " + (day.chosen ? "" : "(미선택 · 상위 " + ((day.picks || []).length || 3) + " 자동) ") : " 선정 종가시그널 ") + (day.pickCount || 0) + "종목</h3>" +
               "<span>결과 측정일 " + esc(day.reviewDate || "—") + "</span>" +
               '<div class="cb-seg cb-seg--sort" role="group" aria-label="표 정렬 기준">' +
               segBtn("pick", "선정 순위") + segBtn("open", "시가 매도") + segBtn("close", "종가 매도", !dayHasClose) + "</div></div>" +
@@ -1754,11 +1754,11 @@
           ADM.data = d;
           ADM.sel = (ap.codes || []).slice();
           $("admStamp").innerHTML = "<b>" + esc(ap.asOfDate) + "</b> 선정분 · " + (ap.locked ? "선택 마감됨" : "마감 " + esc(ap.deadlineLabel)) +
-            " · " + (ap.chosen ? "저장됨" : "미선택(상위 5 대체 예정)");
+            " · " + (ap.chosen ? "저장됨 " + (ap.codes || []).length + "종목" : "미선택 — 1·2·3위로 자동 기록 예정");
           drawAdminChips();
           var last = ap.last;
           if (last) {
-            $("admLastH").innerHTML = "직전 관리자 픽 · " + esc(dLabel(last.asOfDate)) + " 선정" + (last.chosen ? "" : ' <small class="adm-def">미선택 → 상위 5 대체</small>');
+            $("admLastH").innerHTML = "직전 관리자 픽 · " + esc(dLabel(last.asOfDate)) + " 선정" + (last.chosen ? "" : ' <small class="adm-def">미선택 → 상위 ' + ((last.picks || []).length || 3) + ' 자동</small>');
             $("admLast").innerHTML = ydSummaryHtml(last) + ydCardsHtml(last);
           } else {
             $("admLast").innerHTML = '<div class="cb-empty cb-empty--slim">아직 결과가 없습니다.</div>';
@@ -1803,7 +1803,7 @@
             if (!res.ok) throw new Error(r.error || "저장 실패");
             ap.codes = r.codes; ap.chosen = r.chosen;
             ADM.sel = r.codes.slice();
-            $("admMsg").textContent = r.chosen ? "저장했습니다 (" + r.codes.length + "종목)" : "선택을 해제했습니다 — 상위 5종목으로 기록됩니다";
+            $("admMsg").textContent = r.chosen ? "저장했습니다 (" + r.codes.length + "종목)" : "선택을 해제했습니다 — 1·2·3위로 자동 기록됩니다";
             renderAdmin(ADM.data);
           } catch (e) {
             $("admMsg").textContent = e.message || "저장 실패";

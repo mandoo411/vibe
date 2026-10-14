@@ -999,6 +999,9 @@
     const v = getComputedStyle(document.documentElement).getPropertyValue("--text-muted-ui").trim();
     return v || (isLwChartDarkTheme() ? "#8a95a8" : "#555555");
   }
+  function lwMa7Color() {
+    return isLwChartDarkTheme() ? "#E8AC00" : "#C99200";
+  }
   function lwMa200Color() {
     return lwMutedTextColor();
   }
@@ -1008,13 +1011,13 @@
     { key: "ma60", color: "#1E90FF", lineWidth: 1 },
     { key: "ma120", color: "#008000", lineWidth: 1 },
     { key: "ma200", color: null, lineWidth: 2 },
-    { key: "ma7", color: "#E0A000", lineWidth: 1 }, // 2026-10-14 7일선 — 맨 뒤(200일선 maSeries[3] 유지)
+    { key: "ma7", color: null, lineWidth: 1 }, // 2026-10-14 7일선 — 맨 뒤(200일선 maSeries[3] 유지)
   ];
 
   /** 캔들 차트 위에 20/60/120/200일 이동평균선 4개를 얹는다 (거래량 차트가 아니라 캔들 차트에). */
   function addMaLineSeries(LC, chart) {
     return LW_MA_LINE_SPECS.map((spec) => {
-      const color = spec.key === "ma200" ? lwMa200Color() : spec.color;
+      const color = spec.key === "ma200" ? lwMa200Color() : spec.key === "ma7" ? lwMa7Color() : spec.color;
       // 2026-07-11: 이평선 위에 뜨는 동그란 크로스헤어 마커 제거 — OHLC 툴팁 박스
       // (wireRtCrosshairTooltip)가 이미 시가/고가/저가/종가/거래량을 보여주므로 불필요.
       const opts = {
@@ -1305,7 +1308,7 @@
     return { chartCandle: chart, chartVol: chart, candle, vol, maSeries };
   }
 
-  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 #E0A000, 두께는 20일선과 같은 1).
+  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 — 라이트 #C99200·다크 #E8AC00, 두께는 20일선과 같은 1).
      서버 응답에 ma7이 없어서 캔들 종가로 직접 계산한다 — 다른 이평선 배열과 같은 길이·같은 순서. */
   function calcMa7(candles) {
     const out = new Array(candles ? candles.length : 0).fill(null);
@@ -1359,6 +1362,7 @@
     if (Array.isArray(bundle.maSeries) && bundle.maSeries[3]) {
       bundle.maSeries[3].applyOptions({ color: lwMa200Color() });
     }
+    if (Array.isArray(bundle.maSeries) && bundle.maSeries[4]) bundle.maSeries[4].applyOptions({ color: lwMa7Color() });
   }
 
   function refreshAllLwChartsTheme() {
@@ -2690,7 +2694,7 @@
       `  <button type="button" class="rt-chart-interval-btn" data-rt-candle-period="M" aria-pressed="false">월봉</button>`,
       `</div>`,
       `<div class="tm-lw-chart-legend">`,
-      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#E0A000"></i>7일</span>`,
+      `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#C99200"></i>7일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#FF0000"></i>20일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#1E90FF"></i>60일</span>`,
       `  <span class="tm-lw-legend-item"><i class="tm-lw-legend-dot" style="background:#008000"></i>120일</span>`,

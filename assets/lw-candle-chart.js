@@ -66,7 +66,7 @@
     };
   }
 
-  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 #E0A000, 두께는 20일선과 같은 1).
+  /* 2026-10-14 시우: 7일 이동평균선 추가(진한 노랑 — 라이트 #C99200·다크 #E8AC00, 두께는 20일선과 같은 1).
      서버 응답에 ma7이 없어서 캔들 종가로 직접 계산한다 — 다른 이평선 배열과 같은 길이·같은 순서. */
   function calcMa7(candles) {
     const out = new Array(candles ? candles.length : 0).fill(null);
@@ -79,6 +79,9 @@
     }
     return out;
   }
+
+  // 라이트 배경에선 진하게, 다크 배경에선 밝게 — 같은 노랑 계열
+  function ma7Color() { return isDarkTheme() ? "#E8AC00" : "#C99200"; }
 
   function buildMaLineData(candles, maArr) {
     const out = [];
@@ -257,7 +260,7 @@
       [chartData.ma120, "#008000", 1],
       [chartData.ma200, getLwTheme().text, 2],
       // 7일선은 맨 뒤에 둔다 — 200일선이 maSeries[3]이라는 전제(다크모드 재색칠)를 깨지 않게
-      [chartData.ma7 || calcMa7(chartData.candles), "#E0A000", 1],
+      [chartData.ma7 || calcMa7(chartData.candles), ma7Color(), 1],
     ];
     // 2026-07-11: 다크모드 전환 시 200일선(마지막 인덱스)만 검정↔흰색으로 다시 칠해야 해서
     // 라인 시리즈 참조를 index 그대로 보관해둔다(handle.maSeries) — applyCandleChartTheme 참고.
@@ -327,6 +330,7 @@
     if (handle.maSeries && handle.maSeries[3]) {
       handle.maSeries[3].applyOptions({ color: getLwTheme().text });
     }
+    if (handle.maSeries && handle.maSeries[4]) handle.maSeries[4].applyOptions({ color: ma7Color() });
   }
 
   window.tmMountCandleChart = mountCandleChart;

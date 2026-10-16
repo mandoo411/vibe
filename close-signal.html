@@ -1895,7 +1895,7 @@
       document.addEventListener("click", function (e) {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         var a = e.target && e.target.closest ? e.target.closest('a[href*="stock-analysis.html?code="]') : null;
-        if (!a || a.classList.contains("cb-ai-link") || typeof window.tmStockActions !== "function") return;
+        if (!a || a.classList.contains("cb-ai-link") || a.closest(".tmsd") || typeof window.tmStockActions !== "function") return;
         var u;
         try { u = new URL(a.getAttribute("href"), location.href); } catch (_) { return; }
         var code = u.searchParams.get("code") || "";

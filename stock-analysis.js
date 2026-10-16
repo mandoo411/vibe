@@ -2904,13 +2904,28 @@
 
     closeAutocomplete();
     running = true;
-    setButtonLoading(true);
 
     try {
       const resolved = await resolveForAnalysis(q);
       if (!resolved || !resolved.code) {
         throw new Error("종목을 찾을 수 없습니다. 종목명, 티커, 또는 6자리 코드를 입력해 주세요. (예: 삼성전자, AAPL, 비트코인)");
       }
+
+      // (2026-10-16) 분석 1회 = 실제 비용. 종목을 누르거나 검색하자마자 분석이 돌아
+      // 의도치 않은 분석이 많았다 — 어디서 들어오든 시작 전에 한 번 확인받는다.
+      if (typeof window.tmConfirmAnalysis === "function") {
+        const note =
+          freePlanRemaining !== null
+            ? `이번 달 남은 무료 분석 <strong>${escapeHtml(String(freePlanRemaining))}회</strong> 중 1회가 사용됩니다.`
+            : "";
+        const ok = await window.tmConfirmAnalysis({ name: resolved.name, code: resolved.code, note });
+        if (!ok) {
+          console.log("[AI분석] 사용자가 시작 취소", resolved.code);
+          if (input) input.value = resolved.name || resolved.code;
+          return;
+        }
+      }
+      setButtonLoading(true);
 
       if (input) input.value = resolved.name || resolved.code;
       showLoading(resolved);
@@ -3158,6 +3173,13 @@
         return;
       }
       freePlanRemaining = remaining;
+      // (2026-10-16) 종목을 눌러 들어온 경우엔 분석 시작 확인 팝업이 남은 횟수를 같이 보여주므로
+      // 입장 안내 팝업까지 띄우면 두 번 묻게 된다 — 그때는 바로 연다.
+      const bootQ = new URLSearchParams(window.location.search);
+      if (bootQ.get("q") || bootQ.get("name") || bootQ.get("code")) {
+        activateAnalysisPage();
+        return;
+      }
       showFreeUsageConfirmGate(remaining, activateAnalysisPage);
       return;
     }

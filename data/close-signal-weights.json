@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-10T05:17:57.631Z",
+  "updatedAt": "2026-10-17T03:51:47.313Z",
   "window": {
-    "since": "2026-07-10",
-    "days": 15,
-    "samples": 632
+    "since": "2026-07-20",
+    "days": 20,
+    "samples": 746
   },
   "objective": "익일 (시가 매도 + 종가 매도) / 2",
   "rules": {
@@ -16,112 +16,123 @@
     "LIFT_TO_WEIGHT": 0.5
   },
   "baseline": {
-    "avg": 0.29,
-    "open": 0.37,
-    "close": 0.22
+    "avg": -0.18,
+    "open": 0.08,
+    "close": -0.44
   },
   "weights": {
-    "institution": 1,
-    "bothFlow": 1,
-    "gapHold": 1,
-    "gapModerate": 1,
-    "smallTurnover": 1,
-    "momentum": 1,
-    "kosdaqLead": 1,
-    "longTrend": 1,
-    "liquidity": 1,
+    "institution": 1.12,
+    "bothFlow": 1.2,
+    "gapHold": 0.97,
+    "gapModerate": 0.94,
+    "smallTurnover": 0.85,
+    "turnoverBand": 1,
+    "momentum": 0.97,
+    "kosdaqLead": 1.14,
+    "longTrend": 1.08,
+    "liquidity": 1.03,
     "catalyst": 1
   },
   "detail": [
     {
       "key": "institution",
-      "n": 330,
-      "avg": 0.4,
-      "open": 0.48,
-      "close": 0.32,
-      "openWin": 56.97,
-      "closeWin": 45.15,
-      "weight": 1
+      "n": 376,
+      "avg": 0.09,
+      "open": 0.26,
+      "close": -0.09,
+      "openWin": 53.72,
+      "closeWin": 42.82,
+      "weight": 1.12
     },
     {
       "key": "bothFlow",
-      "n": 140,
-      "avg": 0.66,
-      "open": 0.5,
-      "close": 0.82,
-      "openWin": 56.43,
-      "closeWin": 47.86,
-      "weight": 1
+      "n": 156,
+      "avg": 0.48,
+      "open": 0.41,
+      "close": 0.54,
+      "openWin": 55.13,
+      "closeWin": 46.15,
+      "weight": 1.2
     },
     {
       "key": "gapHold",
-      "n": 320,
-      "avg": 0.19,
-      "open": 0.39,
-      "close": -0.01,
-      "openWin": 50.63,
-      "closeWin": 43.13,
-      "weight": 1
+      "n": 365,
+      "avg": -0.23,
+      "open": 0.12,
+      "close": -0.59,
+      "openWin": 46.3,
+      "closeWin": 40,
+      "weight": 0.97
     },
     {
       "key": "gapModerate",
-      "n": 220,
-      "avg": 0.26,
-      "open": 0.52,
-      "close": 0,
-      "openWin": 59.55,
-      "closeWin": 42.27,
-      "weight": 1
+      "n": 261,
+      "avg": -0.31,
+      "open": 0.07,
+      "close": -0.69,
+      "openWin": 51.34,
+      "closeWin": 37.93,
+      "weight": 0.94
     },
     {
       "key": "smallTurnover",
-      "n": 81,
-      "avg": -0.27,
-      "open": 0.36,
-      "close": -0.89,
-      "openWin": 44.44,
-      "closeWin": 33.33,
+      "n": 99,
+      "avg": -0.57,
+      "open": 0.13,
+      "close": -1.26,
+      "openWin": 41.41,
+      "closeWin": 34.34,
+      "weight": 0.85
+    },
+    {
+      "key": "turnoverBand",
+      "n": 7,
+      "avg": -4.35,
+      "open": -1.65,
+      "close": -7.05,
+      "openWin": 14.29,
+      "closeWin": 14.29,
       "weight": 1
     },
     {
       "key": "momentum",
-      "n": 241,
-      "avg": 0.08,
-      "open": 0.21,
-      "close": -0.04,
-      "openWin": 46.06,
-      "closeWin": 43.57,
-      "weight": 1
+      "n": 271,
+      "avg": -0.25,
+      "open": 0.09,
+      "close": -0.59,
+      "openWin": 44.65,
+      "closeWin": 40.96,
+      "weight": 0.97
     },
     {
       "key": "kosdaqLead",
-      "n": 321,
-      "avg": 0.6,
-      "open": 0.57,
-      "close": 0.63,
-      "openWin": 54.52,
-      "closeWin": 47.66,
-      "weight": 1
+      "n": 373,
+      "avg": 0.12,
+      "open": 0.26,
+      "close": -0.02,
+      "openWin": 51.21,
+      "closeWin": 43.43,
+      "weight": 1.14
     },
     {
       "key": "longTrend",
-      "n": 284,
-      "avg": 0.54,
-      "open": 0.58,
-      "close": 0.51,
-      "openWin": 56.34,
-      "closeWin": 47.54,
-      "weight": 1
+      "n": 338,
+      "avg": -0.01,
+      "open": 0.24,
+      "close": -0.27,
+      "openWin": 52.66,
+      "closeWin": 42.9,
+      "weight": 1.08
     },
     {
       "key": "liquidity",
-      "n": 113,
-      "avg": 0.18,
-      "open": 0.18,
-      "close": 0.19,
-      "openWin": 45.13,
-      "closeWin": 47.79,
-      "weight": 1
+      "n": 128,
+      "avg": -0.1,
+      "open": -0.02,
+      "close": -0.17,
+      "openWin": 42.97,
+      "closeWin": 46.09,
+      "weight": 1.03
     },
     {
       "key": "catalyst",

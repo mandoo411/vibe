@@ -1,11 +1,81 @@
 {
-  "updatedAt": "2026-10-18T14:44:00.083Z",
+  "updatedAt": "2026-10-18T17:40:38.082Z",
   "source": "kis+yahoo",
   "action": "losers",
-  "count": 27,
+  "count": 32,
   "stocks": [
     {
       "rank": 1,
+      "ticker": "RFAIU",
+      "name": "RF 애퀴지션 2 유닛",
+      "price": 28.02,
+      "changePct": -21.51,
+      "changePoints": -7.68,
+      "volume": 2894,
+      "marketCap": 280200000,
+      "tradingValue": 81090,
+      "volSurgePct": -21.51,
+      "baseVolume": null,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 2,
+      "ticker": "CANG",
+      "name": "캉고(ADR)",
+      "price": 3.06,
+      "changePct": -19.69,
+      "changePoints": -0.75,
+      "volume": 5616100,
+      "marketCap": 125527216,
+      "tradingValue": 17185266,
+      "volSurgePct": -19.69,
+      "baseVolume": null,
+      "exchange": "NYS"
+    },
+    {
+      "rank": 3,
+      "ticker": "UPB",
+      "name": "업스트림 바이오",
+      "price": 2.76,
+      "changePct": -18.1,
+      "changePoints": -0.61,
+      "volume": 1836415,
+      "marketCap": 151168064,
+      "tradingValue": 5068505,
+      "volSurgePct": -18.1,
+      "baseVolume": null,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 4,
+      "ticker": "BNR",
+      "name": "버닝 록 바이오테크(ADR)",
+      "price": 12.9,
+      "changePct": -17.31,
+      "changePoints": -2.7,
+      "volume": 24910,
+      "marketCap": 136047824,
+      "tradingValue": 321339,
+      "volSurgePct": -17.31,
+      "baseVolume": null,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 5,
+      "ticker": "RXRX",
+      "name": "리커전 파머슈티컬스",
+      "price": 3.47,
+      "changePct": -16.71,
+      "changePoints": -0.7,
+      "volume": 40724318,
+      "marketCap": 1858179200,
+      "tradingValue": 141313383,
+      "volSurgePct": -16.71,
+      "baseVolume": null,
+      "exchange": "NAS"
+    },
+    {
+      "rank": 6,
       "ticker": "AEHL",
       "name": "안텔로페 엔터프라이즈 홀딩스",
       "price": 9.6,
@@ -19,21 +89,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 2,
+      "rank": 7,
       "ticker": "EOSE",
       "name": "이오스 에너지 엔터프라이지스",
       "price": 1.82,
       "changePct": -15.74,
       "changePoints": -0.34,
       "volume": 31322101,
-      "marketCap": 658270976,
+      "marketCap": 662785344,
       "tradingValue": 57006224,
       "volSurgePct": -15.74,
       "baseVolume": null,
       "exchange": "NAS"
     },
     {
-      "rank": 3,
+      "rank": 8,
       "ticker": "BSP",
       "name": "벤딩스푼스",
       "price": 47.07,
@@ -47,7 +117,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 4,
+      "rank": 9,
       "ticker": "AIBZ",
       "name": "비트제로 홀딩스",
       "price": 2.33,
@@ -61,7 +131,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 5,
+      "rank": 10,
       "ticker": "WTF",
       "name": "와튼 파이낸셜",
       "price": 2.35,
@@ -75,7 +145,7 @@
       "exchange": "NAS"
     },
     {
-      "rank": 6,
+      "rank": 11,
       "ticker": "KDK",
       "name": "코디악 AI",
       "price": 1.35,
@@ -89,21 +159,21 @@
       "exchange": "NAS"
     },
     {
-      "rank": 7,
+      "rank": 12,
       "ticker": "CYPH",
       "name": "사이퍼펑크 테크놀로지스",
       "price": 2.57,
       "changePct": -14.9,
       "changePoints": -0.45,
       "volume": 11664613,
-      "marketCap": 276954464,
+      "marketCap": 273613696,
       "tradingValue": 29978055,
       "volSurgePct": -14.9,
       "baseVolume": null,
       "exchange": "NAS"
     },
     {
-      "rank": 8,
+      "rank": 13,
       "ticker": "GLAS",
       "name": "글래스 하우스 브랜즈",
       "price": 3.19,
@@ -117,7 +187,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 9,
+      "rank": 14,
       "ticker": "TLK",
       "name": "텔콤 인도네시아(ADR)",
       "price": 11.03,
@@ -131,7 +201,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 10,
+      "rank": 15,
       "ticker": "SECZ",
       "name": "시큐리타이즈",
       "price": 9.86,
@@ -145,7 +215,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 11,
+      "rank": 16,
       "ticker": "EVMN",
       "name": "에보뮨",
       "price": 5.17,
@@ -159,7 +229,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 12,
+      "rank": 17,
       "ticker": "DNA",
       "name": "깅코 바이오웍스 홀딩스",
       "price": 10.27,
@@ -173,7 +243,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 13,
+      "rank": 18,
       "ticker": "EBS",
       "name": "이머전트 바이오솔루션스",
       "price": 6.38,
@@ -187,7 +257,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 14,
+      "rank": 19,
       "ticker": "TWLO",
       "name": "트윌리오",
       "price": 244.37,
@@ -201,7 +271,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 15,
+      "rank": 20,
       "ticker": "TE",
       "name": "T1 에너지",
       "price": 2.62,
@@ -215,7 +285,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 16,
+      "rank": 21,
       "ticker": "WOLF",
       "name": "울프스피드",
       "price": 23.22,
@@ -229,21 +299,21 @@
       "exchange": "NYS"
     },
     {
-      "rank": 17,
+      "rank": 22,
       "ticker": "DOCN",
       "name": "디지털오션 홀딩스",
       "price": 98.69,
       "changePct": -9.85,
       "changePoints": -10.78,
       "volume": 4358942,
-      "marketCap": 11603926016,
+      "marketCap": 11537659904,
       "tradingValue": 430183986,
       "volSurgePct": -9.85,
       "baseVolume": null,
       "exchange": "NYS"
     },
     {
-      "rank": 18,
+      "rank": 23,
       "ticker": "INFQ",
       "name": "인플렉션",
       "price": 8.55,
@@ -257,7 +327,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 19,
+      "rank": 24,
       "ticker": "GCTS",
       "name": "GCT 세미컨덕터 홀딩",
       "price": 1.59,
@@ -271,7 +341,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 20,
+      "rank": 25,
       "ticker": "LEU",
       "name": "센트러스 에너지",
       "price": 114.94,
@@ -285,7 +355,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 21,
+      "rank": 26,
       "ticker": "BTGO",
       "name": "비트고 홀딩스",
       "price": 5.88,
@@ -299,7 +369,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 22,
+      "rank": 27,
       "ticker": "ZIP",
       "name": "집리크루터",
       "price": 4.41,
@@ -313,7 +383,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 23,
+      "rank": 28,
       "ticker": "IONQ",
       "name": "아이온큐",
       "price": 31.28,
@@ -327,7 +397,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 24,
+      "rank": 29,
       "ticker": "NRDY",
       "name": "너디",
       "price": 6.17,
@@ -341,7 +411,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 25,
+      "rank": 30,
       "ticker": "BUR",
       "name": "버포드 캐피털",
       "price": 3,
@@ -355,7 +425,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 26,
+      "rank": 31,
       "ticker": "UWMC",
       "name": "UWM 홀딩스",
       "price": 1.05,
@@ -369,7 +439,7 @@
       "exchange": "NYS"
     },
     {
-      "rank": 27,
+      "rank": 32,
       "ticker": "YSS",
       "name": "요크 스페이스 시스템스",
       "price": 5.58,

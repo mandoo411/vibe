@@ -625,6 +625,17 @@
         html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > .cb-sec:has(+ #cbYesterday) { grid-row: 3; }
         html[lang] body.page-close-betting .cb-body:not(.cb-body--guest) > #cbYesterday { grid-row: 4; }
       }
+      /* 대형주 과매도 (2026-10-19) */
+      .os-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--cb-inset); font-size: 12px; line-height: 1.7; color: var(--text-secondary); word-break: keep-all; }
+      .os-note b { color: var(--text-title, var(--text-primary)); font-weight: 700; }
+      .os-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10.5px; font-weight: 700; background: var(--cb-inset); color: var(--text-muted-ui, var(--text-secondary)); vertical-align: 1px; }
+      .os-names { white-space: normal !important; text-align: left !important; font-size: 12.5px; line-height: 1.6; min-width: 220px; }
+      .os-names a { color: var(--text-title, var(--text-primary)); text-decoration: none; font-weight: 600; }
+      .os-mv { font-size: 13px; }
+      .os-mv small, .cb-num small { display: block; font-size: 10.5px; font-weight: 500; color: var(--text-muted-ui, var(--text-secondary)); }
+      .cb-mname .os-names { white-space: normal; font-weight: 500; min-width: 0; word-break: keep-all; }
+      .os-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; font-size: 12.5px; color: var(--text-secondary); }
+      .os-sum b { font-family: var(--cb-mono); font-variant-numeric: tabular-nums; }
       @media (max-width: 560px) {
         .cb-jump { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
         .cb-seg--kind { margin-left: 0; width: 100%; }
@@ -712,6 +723,7 @@
               <a href="#cbTodaySec"><i class="ti ti-bolt" aria-hidden="true"></i>오늘의 종가시그널</a>
               <a href="#swSec"><i class="ti ti-trending-up" aria-hidden="true"></i>1주 스윙</a>
               <a href="#swTrackSec"><i class="ti ti-route" aria-hidden="true"></i>스윙 추적</a>
+              <a href="#osSec"><i class="ti ti-arrow-back-up" aria-hidden="true"></i>대형주 과매도</a>
               <a href="#cbCalSec"><i class="ti ti-calendar-stats" aria-hidden="true"></i>성과 달력</a>
               <a href="#cbStratSec"><i class="ti ti-checklist" aria-hidden="true"></i>매매기법</a>
             </nav>
@@ -830,6 +842,36 @@
             </div>
             <div class="cb-card" id="swTrack">
               <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+            </div>
+
+            <!-- ══ 대형주 과매도 (2026-10-19 신설) — 데이터: /data/oversold-largecap.json (매 거래일 16시 갱신) ══ -->
+            <div class="cb-pair" id="osPair">
+              <div class="cb-col">
+                <div class="cb-sec" id="osSec">
+                  <span class="cb-sec__icon"><i class="ti ti-arrow-back-up" aria-hidden="true"></i></span>
+                  <span class="cb-sec__txt">
+                    <h2 class="cb-sec__title">대형주 과매도 <span class="cb-sec__tag">5~20거래일 보유</span></h2>
+                    <p class="cb-sec__cap">시가총액 1조 원 이상 대형주 중 RSI(14)가 30 아래이고 종가가 20일선보다 10% 넘게 내려온 종목을, 과매도가 깊은 순서로 최대 5개 추립니다. 번호는 과매도 정도 순서이며 수익 기대 순서가 아닙니다.</p>
+                  </span>
+                  <span class="cb-stamp" id="osStamp">불러오는 중…</span>
+                </div>
+                <div class="cb-card cb-card--fill" id="osToday">
+                  <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+                </div>
+              </div>
+              <div class="cb-col">
+                <div class="cb-sec" id="osRecSec">
+                  <span class="cb-sec__icon"><i class="ti ti-history" aria-hidden="true"></i></span>
+                  <span class="cb-sec__txt">
+                    <h2 class="cb-sec__title">대형주 과매도 기록</h2>
+                    <p class="cb-sec__cap">선정일 종가를 기준가로, 5거래일 뒤·20거래일 뒤 종가까지의 평균 수익률입니다(거래 비용 미반영). 결과가 나오기 전에는 최근 종가 기준으로 표시합니다.</p>
+                  </span>
+                  <span class="cb-stamp" id="osRecStamp">—</span>
+                </div>
+                <div class="cb-card cb-card--fill" id="osRec">
+                  <div class="cb-empty"><i class="ti ti-loader-2" aria-hidden="true"></i>불러오는 중…</div>
+                </div>
+              </div>
             </div>
 
             <div class="cb-sec" id="cbCalSec">
@@ -1887,6 +1929,96 @@
             if (!calSelected && window.matchMedia("(min-width: 1100px)").matches) selectLatest();
           }, 250);
         });
+      })();
+    </script>
+    <script>
+      /* 대형주 과매도 (2026-10-19) — 계산은 scripts/build-oversold-largecap.mjs가 하고, 화면은 파일을 그대로 그린다. */
+      (function () {
+        var todayEl = document.getElementById("osToday");
+        if (!todayEl) return;
+        var recEl = document.getElementById("osRec");
+        var stampEl = document.getElementById("osStamp");
+        var recStampEl = document.getElementById("osRecStamp");
+        function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        function won(n) { return n == null ? "—" : Math.round(n).toLocaleString("ko-KR") + "원"; }
+        function sign(n) { return n == null || !isFinite(n) ? "—" : (n > 0 ? "+" : "") + n.toFixed(2) + "%"; }
+        function sign1(n) { return n == null || !isFinite(n) ? "—" : (n > 0 ? "+" : "") + n.toFixed(1) + "%"; }
+        function tone(n) { return n == null || !isFinite(n) || Math.abs(n) < 0.005 ? "cb-flat" : n > 0 ? "cb-up" : "cb-down"; }
+        function md(d) { return d ? Number(d.slice(5, 7)) + "/" + Number(d.slice(8, 10)) : "—"; }
+        function eok(n) { if (n == null) return "—"; return n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1) + "조" : n.toLocaleString("ko-KR") + "억"; }
+        function href(p) { return "./stock-analysis.html?code=" + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || ""); }
+        function avg(arr) { var v = arr.filter(function (x) { return x != null && isFinite(x); }); return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : null; }
+        function ret(p, k) { return p[k] != null && p.base ? (p[k] / p.base - 1) * 100 : null; }
+
+        function renderToday(d) {
+          stampEl.textContent = md(d.asOfDate) + " 종가 기준" + (d.matched ? " · 조건 해당 " + d.matched + "종목" : "");
+          var ps = d.picks || [];
+          if (!ps.length) {
+            todayEl.innerHTML = '<div class="cb-empty"><i class="ti ti-mood-empty" aria-hidden="true"></i>오늘은 조건에 해당하는 대형주가 없습니다.</div>';
+            return;
+          }
+          var head = '<tr><th class="cb-t-fit">순서</th><th class="cb-t-fit">종목</th><th>종가</th><th>RSI(14)</th><th>20일선 대비</th><th>시가총액</th></tr>';
+          var body = ps.map(function (p, i) {
+            return "<tr>" +
+              '<td class="cb-t-fit cb-t-no"><span class="cb-tno">' + (i + 1) + "</span></td>" +
+              '<td class="cb-t-fit cb-t-name"><a class="cb-t-link" href="' + href(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a><small>' + esc(p.code) + "</small></td>" +
+              '<td class="cb-num">' + won(p.close) + "</td>" +
+              '<td class="cb-num">' + (p.rsi != null ? p.rsi.toFixed(1) : "—") + "</td>" +
+              '<td class="cb-num cb-down">' + sign1(p.gapMa20) + "</td>" +
+              '<td class="cb-num">' + eok(p.marketCapEok) + "</td></tr>";
+          }).join("");
+          var mrows = ps.map(function (p, i) {
+            return '<div class="cb-mrow"><div class="cb-mname"><a href="' + href(p) + '">' + (i + 1) + ". " + esc(p.name) + "</a><small>" + esc(p.code) + " · " + won(p.close) + ' · <span style="white-space:nowrap">시총 ' + eok(p.marketCapEok) + "</span></small></div>" +
+              '<div class="cb-mret">' + (p.rsi != null ? p.rsi.toFixed(1) : "—") + "</div>" +
+              '<div class="cb-mret cb-down">' + sign1(p.gapMa20) + "</div></div>";
+          }).join("");
+          todayEl.innerHTML =
+            '<div class="cb-scroll cb-has-m"><table class="cb-table" style="min-width:0"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" +
+            '<div class="cb-mlist"><div class="cb-mhead"><span>종목</span><span>RSI</span><span>20일선 대비</span></div>' + mrows + "</div>" +
+            '<p class="os-note">과거 기록(2024년 6월~2026년 10월)으로 같은 조건을 되짚어 본 <b>사후 검증 결과</b>, 다음 날 시가에 사서 5거래일 뒤 판 경우 1건 평균이 같은 기간 코스피보다 높았습니다. ' +
+            "과거 결과이며 앞으로의 수익을 보장하지 않습니다. 하락이 길게 이어지는 장에서는 손실이 커질 수 있고, 원금 손실이 발생할 수 있습니다.</p>";
+        }
+
+        function renderRec(d) {
+          var hs = (d.history || []).slice().reverse();
+          if (!hs.length) {
+            recEl.innerHTML = '<div class="cb-empty"><i class="ti ti-hourglass" aria-hidden="true"></i>기록이 쌓이는 중입니다.</div>';
+            return;
+          }
+          var all5 = [], all20 = [];
+          hs.forEach(function (h) { (h.picks || []).forEach(function (p) { var a = ret(p, "d5"), b = ret(p, "d20"); if (a != null) all5.push(a); if (b != null) all20.push(b); }); });
+          var a5 = avg(all5), a20 = avg(all20);
+          recStampEl.textContent = "최근 " + hs.length + "회 선정";
+          var sum = '<div class="os-sum"><span>5거래일 결과 <b class="' + tone(a5) + '">' + sign(a5) + "</b> (" + all5.length + "건 평균)</span>" +
+            "<span>20거래일 결과 <b class=\"" + tone(a20) + '">' + sign(a20) + "</b> (" + all20.length + "건 평균)</span></div>";
+          var mrows = [];
+          var rows = hs.slice(0, 20).map(function (h) {
+            var ps = h.picks || [];
+            var r5 = avg(ps.map(function (p) { return ret(p, "d5"); }));
+            var r20 = avg(ps.map(function (p) { return ret(p, "d20"); }));
+            var now = avg(ps.map(function (p) { return ret(p, "last"); }));
+            var names = ps.map(function (p) { return '<a href="' + href(p) + '">' + esc(p.name) + "</a>"; }).join(", ");
+            var c5 = r5 != null ? '<span class="' + tone(r5) + '">' + sign(r5) + "</span>" : (h.age > 0 && now != null ? '<span class="' + tone(now) + '">' + sign(now) + '</span><small>' + h.age + "일째</small>" : '<span class="cb-flat">—</span>');
+            var c20 = r20 != null ? '<span class="' + tone(r20) + '">' + sign(r20) + "</span>" : (h.age >= 5 && now != null ? '<span class="' + tone(now) + '">' + sign(now) + '</span><small>' + h.age + "일째</small>" : '<span class="cb-flat">—</span>');
+            mrows.push('<div class="cb-mrow"><div class="cb-mname">' + md(h.date) + (h.source === "backfill" ? '<span class="os-tag">사후 검증</span>' : "") +
+              '<small class="os-names">' + names + '</small></div><div class="cb-mret os-mv">' + c5 + '</div><div class="cb-mret os-mv">' + c20 + "</div></div>");
+            return "<tr><td class=\"cb-t-fit\">" + md(h.date) + (h.source === "backfill" ? '<span class="os-tag">사후 검증</span>' : "") + "</td>" +
+              '<td class="os-names">' + names + "</td>" +
+              '<td class="cb-num">' + c5 + '</td><td class="cb-num">' + c20 + "</td></tr>";
+          }).join("");
+          recEl.innerHTML = sum + '<div class="cb-scroll cb-has-m"><table class="cb-table" style="min-width:0"><thead><tr><th class="cb-t-fit">선정일</th><th>종목</th><th>5거래일 뒤</th><th>20거래일 뒤</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+            '<div class="cb-mlist"><div class="cb-mhead"><span>선정일 · 종목</span><span>5거래일</span><span>20거래일</span></div>' + mrows.join("") + "</div>";
+        }
+
+        fetch("/data/oversold-largecap.json", { cache: "no-store", credentials: "same-origin" })
+          .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (d) { renderToday(d); renderRec(d); })
+          .catch(function (e) {
+            console.warn("[oversold-largecap]", e);
+            stampEl.textContent = "불러오기 실패";
+            todayEl.innerHTML = '<div class="cb-empty"><i class="ti ti-alert-triangle" aria-hidden="true"></i>목록을 불러오지 못했습니다.<br />잠시 후 다시 시도해 주세요.</div>';
+            recEl.innerHTML = "";
+          });
       })();
     </script>
     <script>

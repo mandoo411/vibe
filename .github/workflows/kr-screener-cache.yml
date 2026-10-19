@@ -65,6 +65,13 @@ jobs:
           KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
           KIS_BASE_URL: ${{ secrets.KIS_BASE_URL }}
 
+      # 2026-10-19: 대형주 과매도 반등(종가시그널 페이지) — 방금 만든 캐시에서 조건 종목을 추리고 기록을 갱신한다.
+      # 실패해도 스크리너 캐시 커밋은 막지 않는다.
+      - name: Build oversold large-cap list
+        if: steps.krx.outputs.open == 'true'
+        continue-on-error: true
+        run: node scripts/build-oversold-largecap.mjs
+
       - name: Commit data/kr-screener-cache.json
         if: steps.krx.outputs.open == 'true'
         id: commit
@@ -72,7 +79,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/kr-screener-cache.json
+          git add data/kr-screener-cache.json data/oversold-largecap.json
           if git diff --staged --quiet; then
             echo "::notice::No screener cache changes to commit"
             echo "changed=false" >> "$GITHUB_OUTPUT"

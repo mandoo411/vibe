@@ -1,407 +1,407 @@
 {
-  "savedAt": "2026-10-19T13:53:40.985Z",
-  "sessionYmd": "20261019",
+  "savedAt": "2026-10-20T12:05:33.284Z",
+  "sessionYmd": "20261020",
   "source": "GitHub Actions — fluctuation FHPST01700000 (코스피·코스닥 통합 상승률 TOP50)",
   "stocks": [
     {
       "rank": 1,
-      "code": "083660",
-      "name": "CSA 코스믹",
+      "code": "093240",
+      "name": "형지엘리트",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 30
+    },
+    {
+      "rank": 2,
+      "code": "011080",
+      "name": "형지I&C",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 29.99
+    },
+    {
+      "rank": 3,
+      "code": "300080",
+      "name": "플리토",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 29.99
+    },
+    {
+      "rank": 4,
+      "code": "458350",
+      "name": "에스팀",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
       "prevDayChangePct": 29.97
     },
     {
-      "rank": 2,
-      "code": "008970",
-      "name": "KBI동양철관",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 29.96
-    },
-    {
-      "rank": 3,
-      "code": "010580",
-      "name": "에스엠벡셀",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 29.9
-    },
-    {
-      "rank": 4,
-      "code": "012340",
-      "name": "뉴인텍",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 29.88
-    },
-    {
       "rank": 5,
-      "code": "456160",
-      "name": "지투지바이오",
+      "code": "289220",
+      "name": "자이언트스텝",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 25.04
+      "prevDayChangePct": 29.95
     },
     {
       "rank": 6,
-      "code": "336370",
-      "name": "솔루스첨단소재",
+      "code": "000040",
+      "name": "KR모터스",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 23.94
+      "prevDayChangePct": 29.94
     },
     {
       "rank": 7,
-      "code": "419050",
-      "name": "삼기에너지솔루션즈",
+      "code": "308100",
+      "name": "형지글로벌",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 23.31
+      "prevDayChangePct": 29.83
     },
     {
       "rank": 8,
-      "code": "089230",
-      "name": "THE E&M",
+      "code": "0035S0",
+      "name": "빅웨이브로보틱스",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 21.12
+      "prevDayChangePct": 23.64
     },
     {
       "rank": 9,
-      "code": "354320",
-      "name": "알멕",
+      "code": "131100",
+      "name": "티엔엔터테인먼트",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 20.66
+      "prevDayChangePct": 19.08
     },
     {
       "rank": 10,
-      "code": "088280",
-      "name": "쏘닉스",
+      "code": "030960",
+      "name": "양지사",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 20.05
+      "prevDayChangePct": 17.6
     },
     {
       "rank": 11,
-      "code": "020150",
-      "name": "롯데에너지머티리얼즈",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 18.83
-    },
-    {
-      "rank": 12,
-      "code": "040160",
-      "name": "누리플렉스",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 18.75
-    },
-    {
-      "rank": 13,
-      "code": "106240",
-      "name": "파인테크닉스",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 18.54
-    },
-    {
-      "rank": 14,
-      "code": "004545",
-      "name": "깨끗한나라우",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 16.95
-    },
-    {
-      "rank": 15,
-      "code": "107640",
-      "name": "한중엔시에스",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 16.23
-    },
-    {
-      "rank": 16,
-      "code": "005870",
-      "name": "휴니드",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 16.22
-    },
-    {
-      "rank": 17,
-      "code": "424760",
-      "name": "벨로크",
+      "code": "195990",
+      "name": "루트K",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
       "prevDayChangePct": 15.99
     },
     {
-      "rank": 18,
-      "code": "464500",
-      "name": "아이언디바이스",
+      "rank": 12,
+      "code": "373200",
+      "name": "엑스플러스",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 14.87
+      "prevDayChangePct": 14.55
+    },
+    {
+      "rank": 13,
+      "code": "061040",
+      "name": "알에프텍",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 13.12
+    },
+    {
+      "rank": 14,
+      "code": "317240",
+      "name": "TS트릴리온",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 12.46
+    },
+    {
+      "rank": 15,
+      "code": "001525",
+      "name": "동양우",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 12.34
+    },
+    {
+      "rank": 16,
+      "code": "456160",
+      "name": "지투지바이오",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 11.96
+    },
+    {
+      "rank": 17,
+      "code": "065450",
+      "name": "빅텍",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 10.63
+    },
+    {
+      "rank": 18,
+      "code": "014915",
+      "name": "성문전자우",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 10.39
     },
     {
       "rank": 19,
-      "code": "478340",
-      "name": "나라스페이스테크놀로지",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 14.8
+      "code": "007810",
+      "name": "코리아써키트",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 9.46
     },
     {
       "rank": 20,
-      "code": "450080",
-      "name": "에코프로머티",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 14.75
+      "code": "396300",
+      "name": "HT로보틱스",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 9.32
     },
     {
       "rank": 21,
-      "code": "095270",
-      "name": "웨이브일렉트로",
+      "code": "142280",
+      "name": "녹십자엠에스",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 14.58
+      "prevDayChangePct": 8.93
     },
     {
       "rank": 22,
-      "code": "323280",
-      "name": "태성",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 14.56
+      "code": "002070",
+      "name": "비비안",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 8.61
     },
     {
       "rank": 23,
-      "code": "006110",
-      "name": "삼아알미늄",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 14.29
+      "code": "176750",
+      "name": "듀켐바이오",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 8.45
     },
     {
       "rank": 24,
-      "code": "225190",
-      "name": "LK삼양",
+      "code": "340450",
+      "name": "지씨지놈",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 14.08
+      "prevDayChangePct": 7.91
     },
     {
       "rank": 25,
-      "code": "140430",
-      "name": "카티스",
+      "code": "126340",
+      "name": "비나텍",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 13.92
+      "prevDayChangePct": 7.8
     },
     {
       "rank": 26,
-      "code": "278650",
-      "name": "HLB바이오스텝",
+      "code": "138360",
+      "name": "앤로보틱스",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 13.42
+      "prevDayChangePct": 7.75
     },
     {
       "rank": 27,
-      "code": "161000",
-      "name": "애경케미칼",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 13.16
+      "code": "186230",
+      "name": "그린플러스",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 7.66
     },
     {
       "rank": 28,
-      "code": "009900",
-      "name": "명신산업",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 12.9
+      "code": "270660",
+      "name": "에브리봇",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 7.26
     },
     {
       "rank": 29,
-      "code": "023790",
-      "name": "동일스틸럭스",
+      "code": "468530",
+      "name": "프로티나",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 12.78
+      "prevDayChangePct": 7.01
     },
     {
       "rank": 30,
-      "code": "370090",
-      "name": "퓨런티어",
+      "code": "258610",
+      "name": "케일럼",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 12.69
+      "prevDayChangePct": 6.84
     },
     {
       "rank": 31,
-      "code": "142760",
-      "name": "모아라이프플러스",
+      "code": "405920",
+      "name": "나라셀라",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 12.31
+      "prevDayChangePct": 6.6
     },
     {
       "rank": 32,
-      "code": "024950",
-      "name": "삼천리자전거",
+      "code": "338840",
+      "name": "와이바이오로직스",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 12.19
+      "prevDayChangePct": 6.54
     },
     {
       "rank": 33,
-      "code": "003010",
-      "name": "혜인",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 12.1
+      "code": "089230",
+      "name": "THE E&M",
+      "market": "KOSDAQ",
+      "tvBoard": "KOSDAQ",
+      "prevDayChangePct": 6.34
     },
     {
       "rank": 34,
-      "code": "050110",
-      "name": "캠시스",
+      "code": "464490",
+      "name": "쿼드메디슨",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 12.02
+      "prevDayChangePct": 6.29
     },
     {
       "rank": 35,
-      "code": "365590",
-      "name": "하이딥",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 11.99
+      "code": "078520",
+      "name": "에이블씨엔씨",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 6.25
     },
     {
       "rank": 36,
-      "code": "091580",
-      "name": "상신이디피",
+      "code": "110020",
+      "name": "전진바이오팜",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 11.97
+      "prevDayChangePct": 5.87
     },
     {
       "rank": 37,
-      "code": "451220",
-      "name": "아이엠티",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 11.84
+      "code": "002820",
+      "name": "SUN&L",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 5.73
     },
     {
       "rank": 38,
-      "code": "214680",
-      "name": "디알텍",
+      "code": "064800",
+      "name": "포니링크",
       "market": "KOSDAQ",
       "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 11.7
+      "prevDayChangePct": 5.54
     },
     {
       "rank": 39,
-      "code": "006400",
-      "name": "삼성SDI",
+      "code": "000760",
+      "name": "이화산업",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 11.51
+      "prevDayChangePct": 4.8
     },
     {
       "rank": 40,
-      "code": "476830",
-      "name": "알지노믹스",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 11.31
+      "code": "101140",
+      "name": "인바이오젠",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 4.03
     },
     {
       "rank": 41,
-      "code": "007120",
-      "name": "미래아이앤지",
+      "code": "00781K",
+      "name": "코리아써키트2우B",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 11.27
+      "prevDayChangePct": 3.98
     },
     {
       "rank": 42,
-      "code": "006370",
-      "name": "대구백화점",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 11.13
-    },
-    {
-      "rank": 43,
-      "code": "248070",
-      "name": "솔루엠",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 11.05
-    },
-    {
-      "rank": 44,
-      "code": "227610",
-      "name": "아우딘퓨쳐스",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 10.99
-    },
-    {
-      "rank": 45,
-      "code": "45226K",
-      "name": "한화갤러리아우",
-      "market": "KOSPI",
-      "tvBoard": "KOSPI",
-      "prevDayChangePct": 10.96
-    },
-    {
-      "rank": 46,
-      "code": "393890",
-      "name": "더블유씨피",
-      "market": "KOSDAQ",
-      "tvBoard": "KOSDAQ",
-      "prevDayChangePct": 10.95
-    },
-    {
-      "rank": 47,
       "code": "011330",
       "name": "유니켐",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 10.79
+      "prevDayChangePct": 3.64
+    },
+    {
+      "rank": 43,
+      "code": "003830",
+      "name": "대한화섬",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 3.46
+    },
+    {
+      "rank": 44,
+      "code": "004890",
+      "name": "동일산업",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 3.29
+    },
+    {
+      "rank": 45,
+      "code": "244920",
+      "name": "에이플러스에셋",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 3.28
+    },
+    {
+      "rank": 46,
+      "code": "003535",
+      "name": "한화투자증권우",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 3.19
+    },
+    {
+      "rank": 47,
+      "code": "008700",
+      "name": "아남전자",
+      "market": "KOSPI",
+      "tvBoard": "KOSPI",
+      "prevDayChangePct": 3.17
     },
     {
       "rank": 48,
-      "code": "011500",
-      "name": "한농화성",
+      "code": "002360",
+      "name": "SH에너지화학",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 10.38
+      "prevDayChangePct": 2.89
     },
     {
       "rank": 49,
-      "code": "307950",
-      "name": "현대오토에버",
+      "code": "007120",
+      "name": "미래아이앤지",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 10.08
+      "prevDayChangePct": 2.86
     },
     {
       "rank": 50,
-      "code": "003670",
-      "name": "포스코퓨처엠",
+      "code": "005800",
+      "name": "신영와코루",
       "market": "KOSPI",
       "tvBoard": "KOSPI",
-      "prevDayChangePct": 10.02
+      "prevDayChangePct": 2.65
     }
   ]
 }

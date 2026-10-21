@@ -538,49 +538,51 @@ html[data-theme="light"] {
   --border: var(--lt-line);
   --color-border: var(--lt-line);
 }
-html[data-theme="light"][lang] body,
-html[data-theme="light"][lang] body.page-tm-v2,
-html[data-theme="light"][lang] body.page-home-v2 {
+html[data-theme="light"][lang] body:not(#_),
+html[data-theme="light"][lang] body:not(#_).page-tm-v2,
+html[data-theme="light"][lang] body:not(#_).page-home-v2 {
   background: var(--lt-canvas) !important;
   background-image: none !important;
 }
-html[data-theme="light"][lang] body :is(.tm-wrap, .tm-main, .home-main, .home-wrap, .page, .bfx-deck) {
+html[data-theme="light"][lang] body:not(#_) :is(.tm-wrap, .tm-main, .home-main, .home-wrap, .page, .bfx-deck) {
   background-color: transparent !important;
   background-image: none !important;
 }
 
 /* 상단 메뉴와 지표 줄 — 흰 띠 + 아래 경계선 */
-html[data-theme="light"][lang] body .home-nav {
+html[data-theme="light"][lang] body:not(#_) .home-nav {
   background: rgba(255, 255, 255, 0.94) !important;
   border-bottom: 1px solid var(--lt-line) !important;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
 }
-html[data-theme="light"][lang] body .home-ticker-bar {
+html[data-theme="light"][lang] body:not(#_) .home-ticker-bar {
   background: #ffffff !important;
   border-bottom: 1px solid var(--lt-line) !important;
 }
 
 /* 큰 카드(페이지별 최상위 면) — 흰 면 + 테두리 + 옅은 그림자 */
-html[data-theme="light"][lang] body :is(
+html[data-theme="light"][lang] body:not(#_) :is(
   .home-section, .home-mini-card, .hx-report, .hm__panel,
   .bfx-block, .bfx-hero, .bq-tape, .bq-issue, .bq-card, .bq-sec, .bq-more,
   .dmx-block, .dmx-hero,
-  .rt-panel, .tms,
+  .rt-panel, .tms, .rt-panel.dm-panel,
   .cb-card, .cb-hero,
   .ts-card, .ts-hero,
   .crypto-panel, .world-panel, .schedule-card,
   .tm-plan-card, .tm-account-row,
-  .ai-search-card, .airg__item
+  .ai-search-card, .airg__item,
+  .market-card, .market-gauge-card, .ail-hero, .ail-facts, .ail-card,
+  .crypto-metric-card, .tm-auth-card, .home-hero, .hx-reports
 ) {
   background-color: var(--lt-card) !important;
   border: 1px solid var(--lt-line) !important;
   box-shadow: var(--lt-shadow) !important;
 }
 /* 숫자 띠는 칸 사이 선이 바탕색으로 보이게 */
-html[data-theme="light"][lang] body .bq-tape { background: var(--lt-line-soft) !important; }
+html[data-theme="light"][lang] body:not(#_) .bq-tape { background: var(--lt-line-soft) !important; }
 
 /* 카드 안 보조 면(인셋)은 한 톤 진하게 — 흰 카드 안에서 구분되도록 */
-html[data-theme="light"][lang] body :is(
+html[data-theme="light"][lang] body:not(#_) :is(
   .bfx-card, .dmx-score__item, .dmx-idx, .dmx-callout, .mstat__cell, .wk-in,
   .ts-hero__step, .home-rt-tabs, .os-note
 ) {
@@ -589,16 +591,16 @@ html[data-theme="light"][lang] body :is(
 }
 
 /* 표 — 머리줄 바탕과 줄 구분선 */
-html[data-theme="light"][lang] body .tm-main table thead th {
+html[data-theme="light"][lang] body:not(#_) .tm-main table thead th {
   background-color: #f6f7f9;
 }
-html[data-theme="light"][lang] body .tm-main table tbody tr:hover td {
+html[data-theme="light"][lang] body:not(#_) .tm-main table tbody tr:hover td {
   background-color: #f7f9fb;
 }
 
 /* 세그먼트·칩 버튼 — 선택 안 된 것도 테두리가 보이게 */
-html[data-theme="light"][lang] body :is(.cb-jump a, .ai-search-popular__chip, .ts-tech__btn:not(.is-active):not([aria-pressed="true"])) {
+html[data-theme="light"][lang] body:not(#_) :is(.cb-jump a, .ai-search-popular__chip, .ts-tech__btn:not(.is-active):not([aria-pressed="true"])) {
   background-color: #ffffff !important;
   border: 1px solid var(--lt-line) !important;
 }
-html[data-theme="light"][lang] body .bq-t { background-color: var(--lt-card) !important; }
+html[data-theme="light"][lang] body:not(#_) .bq-t { background-color: var(--lt-card) !important; }

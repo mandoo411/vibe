@@ -1783,6 +1783,68 @@
         .bfx-bar-row--px { grid-template-columns: 52px 62px minmax(0, 1fr) 56px; }
       }
 
+
+      /* ==========================================================
+         2026-10-21 3분 브리핑 — "오전에 너무 오래 걸린다, 중복이 많다"(시우).
+         16개 섹션 → 숫자 한 줄 · 핵심 3 · 체크 4 · 업종 · 리스크 3. 나머지는 '자세히 보기'로 접는다.
+         ========================================================== */
+      .bq-max { max-width: 880px; width: 100%; margin: 0 auto; }
+      .bq-tape {
+        display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px;
+        border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: var(--border);
+      }
+      .bq-t { padding: 10px 12px 11px; background: var(--bg-panel, var(--bg-elevated)); min-width: 0; }
+      .bq-t__l { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-muted, #6b7280); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bq-t__v { display: block; margin-top: 3px; font-size: 15px; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--text-primary); white-space: nowrap; }
+      .bq-t__p { display: block; margin-top: 1px; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-muted, #6b7280); }
+      .bq-t__p.is-up { color: var(--up-color, #e24b4a); }
+      .bq-t__p.is-down { color: var(--down-color, #3b82f6); }
+      .bq-h { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 10px; font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.01em; }
+      .bq-h small { font-size: 12px; font-weight: 600; color: var(--text-muted, #6b7280); }
+      .bq-issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+      .bq-issue { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel, var(--bg-elevated)); }
+      .bq-issue__n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-size: 13px; font-weight: 800; background: var(--accent-brand, #059669); color: #fff; }
+      .bq-issue__t { margin: 3px 0 0; font-size: 15.5px; font-weight: 750; line-height: 1.45; color: var(--text-primary); word-break: keep-all; }
+      .bq-issue__d { margin: 4px 0 0; font-size: 13px; line-height: 1.6; color: var(--text-secondary, var(--text-muted)); word-break: keep-all; }
+      .bq-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .bq-card { padding: 14px 16px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel, var(--bg-elevated)); min-width: 0; }
+      .bq-card .bq-h { margin-top: 0; }
+      .bq-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+      .bq-checks li { position: relative; padding-left: 24px; font-size: 13.5px; line-height: 1.55; color: var(--text-primary); word-break: keep-all; }
+      .bq-checks li::before { content: ""; position: absolute; left: 0; top: 3px; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--accent-brand, #059669); }
+      .bq-risks { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+      .bq-risks b { display: block; font-size: 13.5px; font-weight: 750; color: var(--text-primary); }
+      .bq-risks span { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary, var(--text-muted)); word-break: keep-all; }
+      .bq-secs { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+      .bq-sec { display: flex; flex-direction: column; gap: 4px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-panel, var(--bg-elevated)); }
+      .bq-sec__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .bq-sec__name { font-size: 14px; font-weight: 750; color: var(--text-primary); }
+      .bq-sec__view { flex: none; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(148, 163, 184, 0.16); color: var(--text-muted, #6b7280); }
+      .bq-sec__view.is-pos { background: rgba(226, 75, 74, 0.13); color: var(--up-color, #e24b4a); }
+      .bq-sec__view.is-neg { background: rgba(59, 130, 246, 0.13); color: var(--down-color, #3b82f6); }
+      .bq-sec__why { font-size: 12.5px; line-height: 1.5; color: var(--text-secondary, var(--text-muted)); word-break: keep-all; }
+      .bq-more { border: 1px solid var(--border); border-radius: 14px; background: var(--bg-panel, var(--bg-elevated)); }
+      .bq-more > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+      .bq-more > summary::-webkit-details-marker { display: none; }
+      .bq-more > summary small { margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--text-muted, #6b7280); }
+      .bq-more > summary::after { content: "\2304"; font-size: 16px; color: var(--text-muted, #6b7280); transition: transform .15s; }
+      .bq-more[open] > summary::after { transform: rotate(180deg); }
+      .bq-more__body { display: flex; flex-direction: column; gap: 14px; padding: 0 12px 14px; }
+      .bq-more__body .bfx-block { border-radius: 12px; }
+      .bq-more__sum { margin: 0; padding: 4px 6px 0; font-size: 14px; line-height: 1.75; color: var(--text-secondary, var(--text-primary)); word-break: keep-all; }
+      .bfx-hero .bq-tone { margin-left: auto; }
+      @media (max-width: 720px) {
+        .bq-two { grid-template-columns: 1fr; }
+        .bq-tape { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .bq-t { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 6px; }
+        .bq-t__l { grid-column: 1 / -1; }
+        .bq-t__p { margin-top: 0; text-align: right; }
+        .bq-t { padding: 9px 10px 10px; }
+        .bq-t__v { font-size: 14px; }
+        .bq-issue { padding: 12px 13px; grid-template-columns: 24px 1fr; gap: 10px; }
+        .bq-issue__n { width: 24px; height: 24px; font-size: 12px; }
+        .bq-issue__t { font-size: 14.5px; }
+      }
     </style>
       <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
@@ -2150,7 +2212,6 @@
             ${tone ? `<span class="bfx-hero__tone">${escapeHtml(tone)}</span>` : ""}
           </div>
           ${lead ? `<p class="bfx-hero__line">${escapeHtml(lead)}</p>` : ""}
-          ${rest ? `<p class="bfx-hero__sub">${escapeHtml(rest)}</p>` : ""}
         </section>`;
       }
 
@@ -2571,7 +2632,7 @@
       /* 2026-09-02: 모바일에서 이 덱이 14,000px(17화면)까지 늘어나 스크롤이 감당이 안 됐다.
          내용을 잘라내면 리포트 가치가 줄어드니, 핵심 3개만 펼쳐 두고 나머지는 제목만 남기는
          접이식으로 바꾼다. 데스크톱은 지금처럼 전부 펼친 상태 그대로다. */
-      const BFX_OPEN_ON_MOBILE = /(간밤 미국시장 마감|간밤 시장 온도|오늘 주목할 핵심 이슈)/;
+      const BFX_OPEN_ON_MOBILE = /(간밤 미국시장 마감|간밤 시장 온도|오늘 주목할 핵심 이슈|간밤을 움직인 뉴스|섹터 · 대형주)/;
 
       function bfxIsMobile() {
         return window.matchMedia("(max-width: 768px)").matches;
@@ -2644,29 +2705,103 @@
         });
       }
 
+      // ── 2026-10-21 3분 브리핑 ─────────────────────────────────────
+      function bqSplit(t) {
+        const x = bfxTxt(t);
+        const i = x.indexOf(" — ");
+        return i > 0 ? [x.slice(0, i), x.slice(i + 3)] : [x, ""];
+      }
+
+      function bqRenderTape() {
+        const data = BFX.data || {};
+        const items = [];
+        for (const r of bfxIndexRows()) {
+          const v = bfxNum(r.price);
+          if (v == null) continue;
+          items.push({ l: bfxTxt(r.name) || bfxTxt(r.symbol), v: bfxFmt(v, Math.abs(v) >= 1000 ? 0 : 2), p: bfxNum(r.changePct) });
+        }
+        const com = Array.isArray(data.forex && data.forex.commodities) ? data.forex.commodities : [];
+        const pick = (id) => com.find((r) => r.id === id) || {};
+        const sox = BFX.sox && BFX.sox.price != null ? BFX.sox : pick("sox");
+        if (bfxNum(sox.price) != null && !items.some((x) => /반도체/.test(x.l))) items.push({ l: "필라델피아반도체", v: bfxFmt(bfxNum(sox.price), 0), p: bfxNum(sox.changePct) });
+        const krw = bfxNum(data.forex && data.forex.rates && data.forex.rates["USD/KRW"]);
+        if (krw != null) items.push({ l: "원/달러", v: bfxFmt(krw, 1) + "원", p: null });
+        const wti = pick("wti");
+        if (bfxNum(wti.price) != null) items.push({ l: "WTI 유가", v: "$" + bfxFmt(bfxNum(wti.price), 2), p: bfxNum(wti.changePct) });
+        const gold = pick("gold");
+        if (bfxNum(gold.price) != null) items.push({ l: "금", v: "$" + bfxFmt(bfxNum(gold.price), 0), p: bfxNum(gold.changePct) });
+        const btc = (Array.isArray(data.crypto && data.crypto.assets) ? data.crypto.assets : []).find((r) => r.symbol === "BTC");
+        if (btc && bfxNum(btc.priceUsd) != null) items.push({ l: "비트코인", v: "$" + bfxFmt(bfxNum(btc.priceUsd), 0), p: bfxNum(btc.changePct24h) });
+        if (!items.length) return "";
+        return `<section class="bq-max"><div class="bq-tape">${items
+          .map((x) => `<div class="bq-t"><span class="bq-t__l">${escapeHtml(x.l)}</span><strong class="bq-t__v">${escapeHtml(x.v)}</strong><span class="bq-t__p ${bfxCls(x.p)}">${x.p == null ? "&nbsp;" : escapeHtml(bfxPct(x.p))}</span></div>`)
+          .join("")}</div></section>`;
+      }
+
+      function bqRenderIssues(ai) {
+        const list = (Array.isArray(ai.keyIssues) ? ai.keyIssues : []).map(bfxTxt).filter(Boolean).slice(0, 3);
+        if (!list.length) return "";
+        return `<section class="bq-max"><h3 class="bq-h">오늘의 핵심 3가지</h3><ol class="bq-issues">${list
+          .map((t, i) => {
+            const [head, tail] = bqSplit(t);
+            return `<li class="bq-issue"><span class="bq-issue__n">${i + 1}</span><div><p class="bq-issue__t">${escapeHtml(head)}</p>${tail ? `<p class="bq-issue__d">${escapeHtml(tail)}</p>` : ""}</div></li>`;
+          })
+          .join("")}</ol></section>`;
+      }
+
+      function bqRenderChecksRisks(ai) {
+        const checks = ((ai.todayOutlook && ai.todayOutlook.checkpoints) || []).map(bfxTxt).filter(Boolean).slice(0, 4);
+        const risks = (Array.isArray(ai.riskTable) ? ai.riskTable : []).filter((r) => r && bfxTxt(r.risk)).slice(0, 3);
+        if (!checks.length && !risks.length) return "";
+        const a = checks.length
+          ? `<div class="bq-card"><h3 class="bq-h">장중 체크할 것</h3><ul class="bq-checks">${checks.map((c) => `<li>${escapeHtml(c)}</li>`).join("")}</ul></div>`
+          : "";
+        const b = risks.length
+          ? `<div class="bq-card"><h3 class="bq-h">경계할 리스크</h3><ul class="bq-risks">${risks
+              .map((r) => `<li><b>${escapeHtml(bfxTxt(r.risk))}</b>${bfxTxt(r.response) ? `<span>${escapeHtml(bfxTxt(r.response))}</span>` : ""}</li>`)
+              .join("")}</ul></div>`
+          : "";
+        return `<section class="bq-max"><div class="bq-two">${a}${b}</div></section>`;
+      }
+
+      function bqViewTone(v) {
+        const t = bfxTxt(v);
+        if (/보수|축소|부정|관망|약세|경계|회피/.test(t)) return "is-neg";
+        if (/확대|긍정|우호|강세|매수|선호|중립 이상/.test(t)) return "is-pos";
+        return "";
+      }
+
+      function bqRenderSectors(ai) {
+        const rows = (Array.isArray(ai.sectorStrategyTable) ? ai.sectorStrategyTable : []).filter((r) => r && bfxTxt(r.sector));
+        if (!rows.length) return "";
+        return `<section class="bq-max"><h3 class="bq-h">업종 한눈에</h3><div class="bq-secs">${rows
+          .map((r) => {
+            const why = bqSplit(r.strategy)[0];
+            return `<div class="bq-sec"><div class="bq-sec__top"><span class="bq-sec__name">${escapeHtml(bfxTxt(r.sector))}</span>${bfxTxt(r.view) ? `<span class="bq-sec__view ${bqViewTone(r.view)}">${escapeHtml(bfxTxt(r.view))}</span>` : ""}</div>${why ? `<span class="bq-sec__why">${escapeHtml(why)}</span>` : ""}</div>`;
+          })
+          .join("")}</div></section>`;
+      }
+
+      function bqRenderMore(ai) {
+        const sum = bfxTxt(ai.summary);
+        const inner = [sum ? `<p class="bq-more__sum">${escapeHtml(sum)}</p>` : "", bfxRenderNews(ai), bfxRenderMovers()].filter(Boolean);
+        if (!inner.length) return "";
+        return `<section class="bq-max"><details class="bq-more"><summary><span>자세히 보기<small>시장 해설 · 뉴스 · 섹터·대형주 등락</small></span></summary><div class="bq-more__body">${inner.join("")}</div></details></section>`;
+      }
+
       function renderBriefingDeck() {
         const el = $("bfx-deck");
         if (!el) return;
         const data = BFX.data || {};
         const ai = data.aiAnalysis || {};
+        /* 2026-10-21 3분 브리핑으로 축소. 예전 섹션 함수(지수 카드·시장 온도·결론 등)는 지우지 않고 호출만 뺐다 — 되돌릴 때 이 배열만 바꾸면 된다. */
         const parts = [
-          bfxRenderHero(ai),
-          bfxRenderIndexCards(ai),
-          bfxRenderMacroCards(ai),
-          bfxRenderScoreboard(),
-          bfxRenderIssues(ai),
-          bfxRenderPillars(ai),
-          bfxRenderMovers(),
-          bfxRenderNews(ai),
-          bfxRenderDomestic(ai),
-          bfxRenderForexRead(ai),
-          bfxRenderOutlook(ai),
-          bfxRenderSectorStrategy(ai),
-          bfxRenderWatchlist(ai),
-          bfxRenderStrategy(ai),
-          bfxRenderPortfolio(ai),
-          bfxRenderRisk(ai),
-          bfxRenderConclusion(ai),
+          bfxRenderHero(ai) ? `<div class="bq-max">${bfxRenderHero(ai)}</div>` : "",
+          bqRenderTape(),
+          bqRenderIssues(ai),
+          bqRenderChecksRisks(ai),
+          bqRenderSectors(ai),
+          bqRenderMore(ai),
         ].filter(Boolean);
         el.innerHTML = parts.length
           ? parts.join("")

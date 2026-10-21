@@ -519,3 +519,86 @@ html[lang] body .tm-nav-sheet .tm-nav-sheet__close { width: 36px !important; hei
 @media (max-width: 419px) {
   html[lang] body .home-nav .home-nav__m-meta .home-nav__live { display: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   라이트 모드 개편 (2026-10-21) — 시우: "라이트는 경계가 없고 색이 단조로워 보기 불편".
+   원인: 바탕(흰색) 위에 흰 카드 + 아주 옅은 테두리라 면이 구분되지 않았다.
+   처방: ① 바탕을 옅은 회색 캔버스로 ② 큰 카드는 흰 면 + 또렷한 테두리 + 아주 옅은 그림자
+        ③ 보조 글자색 대비 상향 ④ 상단 메뉴·지표 줄을 흰 띠로 분리.
+   다크 모드는 건드리지 않는다. 되돌리려면 이 블록만 지우면 된다.
+   ════════════════════════════════════════════════════════════════════ */
+html[data-theme="light"] {
+  --lt-canvas: #f1f3f6;
+  --lt-card: #ffffff;
+  --lt-line: #dfe3e9;
+  --lt-line-soft: #e9ecf1;
+  --lt-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.05);
+  --text-secondary: #565e6b;
+  --text-muted: #5f6774;
+  --border: var(--lt-line);
+  --color-border: var(--lt-line);
+}
+html[data-theme="light"][lang] body,
+html[data-theme="light"][lang] body.page-tm-v2,
+html[data-theme="light"][lang] body.page-home-v2 {
+  background: var(--lt-canvas) !important;
+  background-image: none !important;
+}
+html[data-theme="light"][lang] body :is(.tm-wrap, .tm-main, .home-main, .home-wrap, .page, .bfx-deck) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* 상단 메뉴와 지표 줄 — 흰 띠 + 아래 경계선 */
+html[data-theme="light"][lang] body .home-nav {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid var(--lt-line) !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+html[data-theme="light"][lang] body .home-ticker-bar {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--lt-line) !important;
+}
+
+/* 큰 카드(페이지별 최상위 면) — 흰 면 + 테두리 + 옅은 그림자 */
+html[data-theme="light"][lang] body :is(
+  .home-section, .home-mini-card, .hx-report, .hm__panel,
+  .bfx-block, .bfx-hero, .bq-tape, .bq-issue, .bq-card, .bq-sec, .bq-more,
+  .dmx-block, .dmx-hero,
+  .rt-panel, .tms,
+  .cb-card, .cb-hero,
+  .ts-card, .ts-hero,
+  .crypto-panel, .world-panel, .schedule-card,
+  .tm-plan-card, .tm-account-row,
+  .ai-search-card, .airg__item
+) {
+  background-color: var(--lt-card) !important;
+  border: 1px solid var(--lt-line) !important;
+  box-shadow: var(--lt-shadow) !important;
+}
+/* 숫자 띠는 칸 사이 선이 바탕색으로 보이게 */
+html[data-theme="light"][lang] body .bq-tape { background: var(--lt-line-soft) !important; }
+
+/* 카드 안 보조 면(인셋)은 한 톤 진하게 — 흰 카드 안에서 구분되도록 */
+html[data-theme="light"][lang] body :is(
+  .bfx-card, .dmx-score__item, .dmx-idx, .dmx-callout, .mstat__cell, .wk-in,
+  .ts-hero__step, .home-rt-tabs, .os-note
+) {
+  background-color: #f4f6f9 !important;
+  border: 1px solid var(--lt-line-soft) !important;
+}
+
+/* 표 — 머리줄 바탕과 줄 구분선 */
+html[data-theme="light"][lang] body .tm-main table thead th {
+  background-color: #f6f7f9;
+}
+html[data-theme="light"][lang] body .tm-main table tbody tr:hover td {
+  background-color: #f7f9fb;
+}
+
+/* 세그먼트·칩 버튼 — 선택 안 된 것도 테두리가 보이게 */
+html[data-theme="light"][lang] body :is(.cb-jump a, .ai-search-popular__chip, .ts-tech__btn:not(.is-active):not([aria-pressed="true"])) {
+  background-color: #ffffff !important;
+  border: 1px solid var(--lt-line) !important;
+}
+html[data-theme="light"][lang] body .bq-t { background-color: var(--lt-card) !important; }

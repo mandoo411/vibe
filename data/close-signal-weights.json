@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-17T03:51:47.313Z",
+  "updatedAt": "2026-10-24T04:04:40.401Z",
   "window": {
-    "since": "2026-07-20",
-    "days": 20,
-    "samples": 746
+    "since": "2026-07-27",
+    "days": 25,
+    "samples": 853
   },
   "objective": "익일 (시가 매도 + 종가 매도) / 2",
   "rules": {
@@ -16,132 +16,132 @@
     "LIFT_TO_WEIGHT": 0.5
   },
   "baseline": {
-    "avg": -0.18,
-    "open": 0.08,
-    "close": -0.44
+    "avg": -0.3,
+    "open": -0.02,
+    "close": -0.58
   },
   "weights": {
     "institution": 1.12,
-    "bothFlow": 1.2,
-    "gapHold": 0.97,
-    "gapModerate": 0.94,
-    "smallTurnover": 0.85,
+    "bothFlow": 1.26,
+    "gapHold": 1.05,
+    "gapModerate": 1.01,
+    "smallTurnover": 0.88,
     "turnoverBand": 1,
-    "momentum": 0.97,
-    "kosdaqLead": 1.14,
-    "longTrend": 1.08,
-    "liquidity": 1.03,
+    "momentum": 1.01,
+    "kosdaqLead": 1.11,
+    "longTrend": 1.1,
+    "liquidity": 1.04,
     "catalyst": 1
   },
   "detail": [
     {
       "key": "institution",
-      "n": 376,
-      "avg": 0.09,
-      "open": 0.26,
-      "close": -0.09,
-      "openWin": 53.72,
-      "closeWin": 42.82,
+      "n": 437,
+      "avg": -0.05,
+      "open": 0.13,
+      "close": -0.24,
+      "openWin": 49.89,
+      "closeWin": 42.11,
       "weight": 1.12
     },
     {
       "key": "bothFlow",
-      "n": 156,
-      "avg": 0.48,
-      "open": 0.41,
-      "close": 0.54,
-      "openWin": 55.13,
-      "closeWin": 46.15,
-      "weight": 1.2
+      "n": 179,
+      "avg": 0.31,
+      "open": 0.18,
+      "close": 0.45,
+      "openWin": 49.16,
+      "closeWin": 46.37,
+      "weight": 1.26
     },
     {
       "key": "gapHold",
-      "n": 365,
-      "avg": -0.23,
-      "open": 0.12,
-      "close": -0.59,
-      "openWin": 46.3,
-      "closeWin": 40,
-      "weight": 0.97
+      "n": 416,
+      "avg": -0.19,
+      "open": 0.04,
+      "close": -0.43,
+      "openWin": 43.99,
+      "closeWin": 41.11,
+      "weight": 1.05
     },
     {
       "key": "gapModerate",
-      "n": 261,
-      "avg": -0.31,
-      "open": 0.07,
-      "close": -0.69,
-      "openWin": 51.34,
-      "closeWin": 37.93,
-      "weight": 0.94
+      "n": 281,
+      "avg": -0.27,
+      "open": 0.02,
+      "close": -0.56,
+      "openWin": 49.11,
+      "closeWin": 39.15,
+      "weight": 1.01
     },
     {
       "key": "smallTurnover",
-      "n": 99,
-      "avg": -0.57,
-      "open": 0.13,
-      "close": -1.26,
-      "openWin": 41.41,
-      "closeWin": 34.34,
-      "weight": 0.85
+      "n": 117,
+      "avg": -0.61,
+      "open": 0.1,
+      "close": -1.33,
+      "openWin": 40.17,
+      "closeWin": 33.33,
+      "weight": 0.88
     },
     {
       "key": "turnoverBand",
-      "n": 7,
-      "avg": -4.35,
-      "open": -1.65,
-      "close": -7.05,
-      "openWin": 14.29,
-      "closeWin": 14.29,
+      "n": 17,
+      "avg": -2.14,
+      "open": -1.71,
+      "close": -2.58,
+      "openWin": 17.65,
+      "closeWin": 29.41,
       "weight": 1
     },
     {
       "key": "momentum",
-      "n": 271,
-      "avg": -0.25,
-      "open": 0.09,
-      "close": -0.59,
-      "openWin": 44.65,
-      "closeWin": 40.96,
-      "weight": 0.97
+      "n": 295,
+      "avg": -0.27,
+      "open": 0.08,
+      "close": -0.62,
+      "openWin": 44.07,
+      "closeWin": 40.34,
+      "weight": 1.01
     },
     {
       "key": "kosdaqLead",
-      "n": 373,
-      "avg": 0.12,
-      "open": 0.26,
-      "close": -0.02,
-      "openWin": 51.21,
-      "closeWin": 43.43,
-      "weight": 1.14
+      "n": 434,
+      "avg": -0.07,
+      "open": 0.1,
+      "close": -0.24,
+      "openWin": 47.93,
+      "closeWin": 41.71,
+      "weight": 1.11
     },
     {
       "key": "longTrend",
-      "n": 338,
-      "avg": -0.01,
-      "open": 0.24,
-      "close": -0.27,
-      "openWin": 52.66,
-      "closeWin": 42.9,
-      "weight": 1.08
+      "n": 374,
+      "avg": -0.09,
+      "open": 0.17,
+      "close": -0.35,
+      "openWin": 50.53,
+      "closeWin": 41.71,
+      "weight": 1.1
     },
     {
       "key": "liquidity",
-      "n": 128,
-      "avg": -0.1,
-      "open": -0.02,
-      "close": -0.17,
-      "openWin": 42.97,
-      "closeWin": 46.09,
-      "weight": 1.03
+      "n": 145,
+      "avg": -0.19,
+      "open": -0.09,
+      "close": -0.29,
+      "openWin": 42.07,
+      "closeWin": 44.14,
+      "weight": 1.04
     },
     {
       "key": "catalyst",
-      "n": 8,
-      "avg": 1.15,
-      "open": 0.74,
-      "close": 1.56,
-      "openWin": 50,
-      "closeWin": 62.5,
+      "n": 9,
+      "avg": 1.49,
+      "open": 0.84,
+      "close": 2.13,
+      "openWin": 55.56,
+      "closeWin": 66.67,
       "weight": 1
     }
   ]

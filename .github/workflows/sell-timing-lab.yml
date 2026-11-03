@@ -1,0 +1,32 @@
+name: Sell Timing Lab
+
+# 종가시그널 다음 날 매도 시점 연구(CRASH_BACKTEST.md 14장). 수동 실행, 저장·커밋 없음.
+# 저장소가 공개라 로그도 공개 — 스크립트는 집계 수치만 출력한다(분봉 원자료 출력 금지).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sell-timing-lab
+  cancel-in-progress: true
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run sell-timing study
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/close-signal-factor-lab/4-sell-timing.mjs

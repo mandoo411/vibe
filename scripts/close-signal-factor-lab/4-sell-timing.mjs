@@ -78,7 +78,8 @@ function tpSl(bars, buy, { tp = null, sl = null, until = "1530", base = "buy" })
 const RULES = [
   ["시가 즉시", (b) => openP(b)],
   ...["0905", "0910", "0915", "0930", "1000", "1030", "1100", "1200", "1400"].map((t) => [`${t.slice(0, 2)}:${t.slice(2)} 매도`, (b) => priceAt(b, t)]),
-  ["종가(15:30)", (b) => lastP(b)],
+  ["마지막 분봉", (b) => lastP(b)],
+  ["실제 종가(일봉)", (b, buy, s) => s.dayClose],
 ];
 for (const tp of [1, 2, 3, 5]) for (const until of ["0930", "1000", "1530"])
   RULES.push([`매수가+${tp}% 익절, 아니면 ${until.slice(0, 2)}:${until.slice(2)}`, (b, buy) => tpSl(b, buy, { tp, until })]);
@@ -125,7 +126,8 @@ async function main() {
   if (!SUPABASE_URL || !KEY) throw new Error("env 없음");
   const files = await listFiles();
   const samples = []; // {day, group, bars, buy}
-  let closeFix = 0, closeMiss = 0, barGap = [];
+  let closeFix = 0, closeMiss = 0, barGap = [], fixedOutlier = 0, dropped = 0, openGap = [];
+  const lastT = new Map();
   for (const name of files) {
     const j = await getFile(name);
     for (const s of j.stocks || []) {
@@ -138,9 +140,15 @@ async function main() {
       let buy = prev ? prev.c : s.buyPrice;
       if (prev) closeFix++; else closeMiss++;
       if (!buy) continue;
+      // 하루 등락 제한(±30%)을 넘는 값은 수정주가(분할 등) 불일치 → 스캔가로 대체, 그래도 넘으면 제외
+      const okGap = (b) => Math.abs(openP(bars) / b - 1) <= 0.3;
+      if (!okGap(buy) && s.buyPrice && okGap(Number(s.buyPrice))) { buy = Number(s.buyPrice); fixedOutlier++; }
+      if (!okGap(buy)) { dropped++; continue; }
       if (today) barGap.push(Math.abs(lastP(bars) / today.c - 1) * 100);
+      lastT.set(bars[bars.length - 1][0], (lastT.get(bars[bars.length - 1][0]) || 0) + 1);
+      if (today) openGap.push(Math.abs(openP(bars) / today.o - 1) * 100);
       const group = s.kind === "swing" ? "swing" : s.rank <= 5 ? "top5" : "ext";
-      samples.push({ day: j.reviewDate, group, shortlist: s.shortlist === true, rank: s.rank, bars, buy });
+      samples.push({ day: j.reviewDate, group, shortlist: s.shortlist === true, rank: s.rank, bars, buy, dayClose: today ? today.c : null });
     }
   }
   const days = [...new Set(samples.map((s) => s.day))].sort();
@@ -148,6 +156,8 @@ async function main() {
   const train = new Set(days.slice(0, half)), test = new Set(days.slice(half));
   console.log(`거래일 ${days.length} (${days[0]}~${days[days.length - 1]}) · 학습 ${days[0]}~${days[half - 1]} / 검증 ${days[half]}~${days[days.length - 1]}`);
   console.log(`표본: 상위5 ${samples.filter((s) => s.group === "top5").length} · 선별3 ${samples.filter((s) => s.shortlist).length} · 6~20위 ${samples.filter((s) => s.group === "ext").length} · 매수가=실제종가 ${closeFix} / 스캔가 대체 ${closeMiss}`);
+  console.log(`이상치: 매수가 대체 ${fixedOutlier} · 제외 ${dropped} · 마지막 봉 시각 분포 ${JSON.stringify([...lastT].sort())}`);
+  if (openGap.length) console.log(`첫 봉 시가 vs 일봉 시가 차이 중앙값 ${openGap.sort((a, b) => a - b)[Math.floor(openGap.length / 2)].toFixed(3)}%`);
   if (barGap.length) console.log(`분봉 마지막 값 vs 일봉 종가 차이 중앙값 ${barGap.sort((a, b) => a - b)[Math.floor(barGap.length / 2)].toFixed(3)}%`);
 
   const GROUPS = [
@@ -163,7 +173,7 @@ async function main() {
     console.log(`규칙 | 전체 평균 | 학습 평균 | 검증 평균 | 중앙 | +비율 | 최악 | 복리(전체) | 복리 학습 | 복리 검증 | MDD`);
     const rows = [];
     for (const [rname, rf] of RULES) {
-      const tr = pool.map((s) => ({ day: s.day, r: net(rf(s.bars, s.buy), s.buy) })).filter((t) => Number.isFinite(t.r));
+      const tr = pool.map((s) => ({ day: s.day, r: net(rf(s.bars, s.buy, s), s.buy) })).filter((t) => Number.isFinite(t.r));
       const all = stats(tr, days), a = stats(tr.filter((t) => train.has(t.day)), days), b = stats(tr.filter((t) => test.has(t.day)), days);
       if (!all) continue;
       rows.push({ rname, all, a, b });

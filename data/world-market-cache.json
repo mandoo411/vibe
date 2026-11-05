@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T23:19:51.803Z",
+  "updatedAt": "2026-11-05T05:36:56.660Z",
   "source": "companiesmarketcap.com",
   "symbolCount": 100,
   "withMarketCap": 100,
@@ -138,18 +138,8 @@
       "price": 579.09,
       "changePct": 3.95
     },
-    "SSNLF": {
-      "rank": 14,
-      "name": "Samsung",
-      "symbol": "SSNLF",
-      "marketCap": 951082579624.4889,
-      "netIncome": 124394000000,
-      "revenue": 326389633099,
-      "price": 162.68171099370167,
-      "changePct": 0
-    },
     "WMT": {
-      "rank": 15,
+      "rank": 14,
       "name": "Walmart",
       "symbol": "WMT",
       "marketCap": 1024801964032,
@@ -157,6 +147,16 @@
       "revenue": 735840000000,
       "price": 129.17,
       "changePct": 3.45
+    },
+    "SSNLF": {
+      "rank": 15,
+      "name": "Samsung",
+      "symbol": "SSNLF",
+      "marketCap": 875321792503.4265,
+      "netIncome": 124394000000,
+      "revenue": 326389633099,
+      "price": 149.72290089982718,
+      "changePct": -7.8
     },
     "JPM": {
       "rank": 16,
@@ -198,18 +198,8 @@
       "price": 488.78,
       "changePct": 1.01
     },
-    "rank:20": {
-      "rank": 20,
-      "name": "SK Hynix",
-      "symbol": "000660.KS",
-      "marketCap": 760997656786.3646,
-      "netIncome": 136915000000,
-      "revenue": 126446271973,
-      "price": 1041.7599474642548,
-      "changePct": 0
-    },
     "XOM": {
-      "rank": 21,
+      "rank": 20,
       "name": "Exxon Mobil",
       "symbol": "XOM",
       "marketCap": 690489982976,
@@ -217,6 +207,16 @@
       "revenue": 361060000000,
       "price": 169.27,
       "changePct": -4.62
+    },
+    "rank:21": {
+      "rank": 21,
+      "name": "SK Hynix",
+      "symbol": "000660.KS",
+      "marketCap": 688876780287.2296,
+      "netIncome": 136915000000,
+      "revenue": 126446271973,
+      "price": 943.0308086526428,
+      "changePct": -9.31
     },
     "JNJ": {
       "rank": 22,
@@ -262,24 +262,14 @@
       "rank": 26,
       "name": "Tencent",
       "symbol": "TCEHY",
-      "marketCap": 472967880000,
+      "marketCap": 473600190000,
       "netIncome": 36150700000,
       "revenue": 99659103529,
-      "price": 52.36,
-      "changePct": 3.85
-    },
-    "rank:27": {
-      "rank": 27,
-      "name": "CXMT",
-      "symbol": "688825.SS",
-      "marketCap": 467764715286,
-      "netIncome": 18857000000,
-      "revenue": 28600000000,
-      "price": null,
-      "changePct": 13.63
+      "price": 52.43,
+      "changePct": 3.99
     },
     "COST": {
-      "rank": 28,
+      "rank": 27,
       "name": "Costco",
       "symbol": "COST",
       "marketCap": 463721562112,
@@ -288,15 +278,25 @@
       "price": 1046.47,
       "changePct": 2.67
     },
-    "rank:29": {
-      "rank": 29,
+    "rank:28": {
+      "rank": 28,
       "name": "China Construction Bank",
       "symbol": "601939.SS",
-      "marketCap": 458157284122,
+      "marketCap": 452670396644,
       "netIncome": 54347000000,
       "revenue": 119019499326,
       "price": null,
-      "changePct": -1.35
+      "changePct": -1.2
+    },
+    "rank:29": {
+      "rank": 29,
+      "name": "CXMT",
+      "symbol": "688825.SS",
+      "marketCap": 448455761287,
+      "netIncome": 18857000000,
+      "revenue": 28600000000,
+      "price": null,
+      "changePct": -4.13
     },
     "CVX": {
       "rank": 30,
@@ -362,11 +362,11 @@
       "rank": 36,
       "name": "Agricultural Bank of China",
       "symbol": "601288.SS",
-      "marketCap": 383288795008,
+      "marketCap": 375948110976,
       "netIncome": 49687900000,
       "revenue": 110286905503,
       "price": null,
-      "changePct": -2.53
+      "changePct": -1.92
     },
     "ORCL": {
       "rank": 37,
@@ -398,8 +398,18 @@
       "price": 409.38,
       "changePct": 1.22
     },
-    "BAC": {
+    "rank:40": {
       "rank": 40,
+      "name": "ICBC",
+      "symbol": "1398.HK",
+      "marketCap": 357051793602,
+      "netIncome": 59688100000,
+      "revenue": 125628868448,
+      "price": null,
+      "changePct": 0.51
+    },
+    "BAC": {
+      "rank": 41,
       "name": "Bank of America",
       "symbol": "BAC",
       "marketCap": 356257792000,
@@ -407,16 +417,6 @@
       "revenue": 116983000000,
       "price": 51.63,
       "changePct": 3.97
-    },
-    "rank:41": {
-      "rank": 41,
-      "name": "ICBC",
-      "symbol": "1398.HK",
-      "marketCap": 355234712153,
-      "netIncome": 59688100000,
-      "revenue": 125628868448,
-      "price": null,
-      "changePct": 1.03
     },
     "HD": {
       "rank": 42,
@@ -438,18 +438,8 @@
       "price": 329.45,
       "changePct": 2.74
     },
-    "rank:44": {
-      "rank": 44,
-      "name": "Bank of China",
-      "symbol": "601988.SS",
-      "marketCap": 329704366145,
-      "netIncome": 44833900000,
-      "revenue": 98663240388,
-      "price": null,
-      "changePct": -1.3
-    },
     "PM": {
-      "rank": 45,
+      "rank": 44,
       "name": "Philip Morris International",
       "symbol": "PM",
       "marketCap": 329303818240,
@@ -457,6 +447,16 @@
       "revenue": 43130000000,
       "price": 211.28,
       "changePct": 1.56
+    },
+    "rank:45": {
+      "rank": 45,
+      "name": "Bank of China",
+      "symbol": "601988.SS",
+      "marketCap": 324394328077,
+      "netIncome": 44833900000,
+      "revenue": 98663240388,
+      "price": null,
+      "changePct": -1.61
     },
     "NVS": {
       "rank": 46,
@@ -602,11 +602,11 @@
       "rank": 60,
       "name": "Kweichow Moutai",
       "symbol": "600519.SS",
-      "marketCap": 270894710741,
+      "marketCap": 270810449046,
       "netIncome": 16187200000,
       "revenue": 24880000000,
       "price": null,
-      "changePct": -2.27
+      "changePct": -0.03
     },
     "NESN.SW": {
       "rank": 61,
@@ -688,18 +688,8 @@
       "price": 478.48,
       "changePct": 3.73
     },
-    "rank:69": {
-      "rank": 69,
-      "name": "PetroChina",
-      "symbol": "0857.HK",
-      "marketCap": 252167963924,
-      "netIncome": 40835700000,
-      "revenue": 440996706836,
-      "price": null,
-      "changePct": 0.84
-    },
     "MUFG": {
-      "rank": 70,
+      "rank": 69,
       "name": "Mitsubishi UFJ Financial",
       "symbol": "MUFG",
       "marketCap": 247289151488,
@@ -709,7 +699,7 @@
       "changePct": 3.29
     },
     "CRWD": {
-      "rank": 71,
+      "rank": 70,
       "name": "CrowdStrike",
       "symbol": "CRWD",
       "marketCap": 246768304128,
@@ -717,6 +707,16 @@
       "revenue": 5390000000,
       "price": 241,
       "changePct": -1.5
+    },
+    "rank:71": {
+      "rank": 71,
+      "name": "PetroChina",
+      "symbol": "0857.HK",
+      "marketCap": 241903946277,
+      "netIncome": 40835700000,
+      "revenue": 440996706836,
+      "price": null,
+      "changePct": -4.07
     },
     "LIN": {
       "rank": 72,
@@ -788,8 +788,18 @@
       "price": 178.48,
       "changePct": 5.04
     },
-    "AXP": {
+    "rank:79": {
       "rank": 79,
+      "name": "China Mobile",
+      "symbol": "0941.HK",
+      "marketCap": 224000845916,
+      "netIncome": 24321400000,
+      "revenue": 142724815105,
+      "price": null,
+      "changePct": 0.68
+    },
+    "AXP": {
+      "rank": 80,
       "name": "American Express",
       "symbol": "AXP",
       "marketCap": 223018893312,
@@ -797,16 +807,6 @@
       "revenue": 75950000000,
       "price": 332.59,
       "changePct": 2.18
-    },
-    "rank:80": {
-      "rank": 80,
-      "name": "China Mobile",
-      "symbol": "0941.HK",
-      "marketCap": 222480780971,
-      "netIncome": 24321400000,
-      "revenue": 142724815105,
-      "price": null,
-      "changePct": -0.12
     },
     "GEV": {
       "rank": 81,
@@ -972,11 +972,11 @@
       "rank": 97,
       "name": "Commonwealth Bank",
       "symbol": "CBA.AX",
-      "marketCap": 195106514839,
+      "marketCap": 195141722788,
       "netIncome": null,
       "revenue": null,
       "price": null,
-      "changePct": -0.58
+      "changePct": 0.02
     },
     "APH": {
       "rank": 98,

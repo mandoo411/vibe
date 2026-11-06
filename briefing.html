@@ -1829,6 +1829,8 @@
       .bq-more > summary small { margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--text-muted, #6b7280); }
       .bq-more > summary::after { content: "\2304"; font-size: 16px; color: var(--text-muted, #6b7280); transition: transform .15s; }
       .bq-more[open] > summary::after { transform: rotate(180deg); }
+      /* 자세히 보기 펼칠 때 화면이 맨 아래로 튀던 문제(2026-11-07) — 페이지 전체 스크롤 앵커링 끔 + 아래 JS 위치 보정 */
+      html, body { overflow-anchor: none; }
       .bq-more__body { display: flex; flex-direction: column; gap: 14px; padding: 0 12px 14px; }
       .bq-more__body .bfx-block { border-radius: 12px; }
       .bq-more__sum { margin: 0; padding: 4px 6px 0; font-size: 14px; line-height: 1.75; color: var(--text-secondary, var(--text-primary)); word-break: keep-all; }
@@ -2788,6 +2790,27 @@
         if (!inner.length) return "";
         return `<section class="bq-max"><details class="bq-more"><summary><span>자세히 보기<small>시장 해설 · 뉴스 · 섹터·대형주 등락</small></span></summary><div class="bq-more__body">${inner.join("")}</div></details></section>`;
       }
+
+      // '자세히 보기'를 누른 순간의 제목 위치를 기억했다가, 펼친 뒤 같은 자리에 고정한다.
+      // 브라우저가 아래쪽 요소(푸터·하단 메뉴)를 붙잡고 스크롤을 같이 내려 맨 끝으로 튀던 현상 방지.
+      (function bqKeepMoreInPlace() {
+        let saved = null;
+        document.addEventListener("click", (e) => {
+          const sm = e.target.closest && e.target.closest(".bq-more > summary");
+          if (!sm) return;
+          saved = { el: sm, top: sm.getBoundingClientRect().top, y: window.scrollY };
+        }, true);
+        document.addEventListener("toggle", (e) => {
+          const d = e.target;
+          if (!d || !d.classList || !d.classList.contains("bq-more") || !saved) return;
+          const s = saved; saved = null;
+          const fix = () => {
+            const delta = s.el.getBoundingClientRect().top - s.top;
+            if (Math.abs(delta) > 1) window.scrollTo(0, window.scrollY + delta);
+          };
+          fix(); requestAnimationFrame(() => { fix(); setTimeout(fix, 120); });
+        }, true);
+      })();
 
       function renderBriefingDeck() {
         const el = $("bfx-deck");

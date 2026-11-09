@@ -1,85 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-08 09:10 KST",
-    "from": "2026-11-08",
-    "to": "2026-11-22",
-    "historyFrom": "2026-08-10",
+    "lastUpdatedKst": "2026-11-09 09:29 KST",
+    "from": "2026-11-09",
+    "to": "2026-11-23",
+    "historyFrom": "2026-08-11",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-11",
-      "event": "3-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "82.94",
-      "previous": "10.13",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-11",
-      "event": "3-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.88",
-      "previous": "2.61",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-11",
-      "event": "3-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "97.5739",
-      "previous": "99.2944",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-11",
-      "event": "6-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "96.11",
-      "previous": "65.4",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-11",
-      "event": "6-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.85",
-      "previous": "2.98",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-11",
-      "event": "6-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "83.7859",
-      "previous": "85.2632",
-      "estimate": "",
-      "unit": "$"
-    },
     {
       "date": "2026-08-11",
       "event": "ADP Employment Change Weekly",
@@ -9343,6 +9271,30 @@
       "previous": "200.14",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-13",
+      "event": "USDA Pork Net Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "37.3",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-13",
+      "event": "USDA Pork Gross Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "39.5",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
@@ -9397,15 +9349,15 @@
     {
       "type": "macro",
       "date": "2026-11-10",
-      "title": "NY Fed 소비자 기대 (1yr)",
-      "expected": "이전 3.9%",
-      "why": "소비자 인플레이션 기대가 높아지면 금리에 영향을 미칠 수 있습니다. 이는 향후 소비 및 투자에 대한 신뢰도를 반영합니다.",
-      "bull": "소비자 기대가 상승하면 주식 시장이 긍정적으로 반응하고, 특히 소비 관련 주식이 상승할 가능성이 큽니다.",
-      "bear": "소비자 기대가 하락하면 금리가 낮아질 것으로 예상되어 안전 자산 선호가 증가하며 주식 시장은 부진할 수 있습니다.",
+      "title": "NY Fed 소비자 기대 (1년 인플레이션)",
+      "expected": "예측 3.9% / 이전 3.9%",
+      "why": "소비자 기대는 향후 소비 및 투자에 큰 영향을 미치므로 주목해야 합니다. 인플레이션 기대가 높아지면 금리에 대한 우려도 커질 수 있습니다.",
+      "bull": "소비자 기대가 상승하면 소비 증가로 이어져 주식 시장이 긍정적으로 반응할 것입니다.",
+      "bear": "소비자 기대가 하락하면 경기 둔화 우려가 커져 주식 시장이 부정적으로 반응할 것입니다.",
       "watch": [
+        "미국 금리",
         "소비자물가지수",
-        "금리",
-        "소비재 업종"
+        "S&P 500"
       ]
     },
     {
@@ -9413,27 +9365,41 @@
       "date": "2026-11-10",
       "title": "3개월물 입찰 결과",
       "expected": "이전 64.28%",
-      "why": "입찰 결과는 단기 금리와 시장의 유동성을 나타내며, 경제 전반의 신뢰도를 반영합니다.",
-      "bull": "입찰 결과가 양호하면 단기 금리가 안정되며, 금융주가 상승할 수 있습니다.",
-      "bear": "입찰 결과가 부진하면 금리가 상승할 가능성이 커져 주식 시장에 부정적인 영향을 미칠 것입니다.",
+      "why": "입찰 결과는 시장의 유동성과 금리 전망을 반영하므로 중요합니다. 높은 입찰률은 수요가 강하다는 신호입니다.",
+      "bull": "입찰률이 예상보다 높으면 금리가 안정세를 보이며 주식 시장에 긍정적인 영향을 미칠 것입니다.",
+      "bear": "입찰률이 낮으면 유동성 우려가 커져 금리가 상승하고 주식 시장이 하락할 것입니다.",
       "watch": [
-        "금리",
-        "채권시장",
-        "금융주"
+        "채권 수익률",
+        "금리 정책",
+        "다우존스"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-10",
-      "title": "3년물 국채 입찰 결과",
-      "expected": "이전 8.35%",
-      "why": "국채 입찰 결과는 장기 금리에 대한 시장의 기대를 반영하며, 투자 심리에 큰 영향을 미칩니다.",
-      "bull": "입찰이 성공적으로 이루어지면 장기 금리가 안정되어 주식 시장이 긍정적으로 반응할 수 있습니다.",
-      "bear": "입찰이 부진하면 장기 금리가 상승할 수 있어 주식 시장에 부정적인 영향을 미칠 것입니다.",
+      "title": "6개월물 입찰 결과",
+      "expected": "이전 49.23%",
+      "why": "6개월물 입찰 결과는 단기 금리의 방향성을 제시합니다. 시장의 금리 전망에 큰 영향을 미칠 수 있습니다.",
+      "bull": "입찰 결과가 긍정적이면 금리가 안정되고 주식 시장이 상승할 가능성이 높습니다.",
+      "bear": "입찰 결과가 부진하면 금리가 상승하고 주식 시장이 하락할 것입니다.",
       "watch": [
-        "장기금리",
-        "채권시장",
-        "금융주"
+        "금리 선물",
+        "국채",
+        "코스피"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-11-10",
+      "title": "3년물 입찰 결과",
+      "expected": "이전 8.35%",
+      "why": "3년물 입찰 결과는 중장기 금리에 대한 시장의 신뢰도를 나타냅니다. 금리 변동성에 주목해야 합니다.",
+      "bull": "입찰 결과가 좋으면 중장기 금리가 안정되며 주식 시장이 긍정적으로 반응할 것입니다.",
+      "bear": "입찰 결과가 나쁘면 금리가 상승하고 주식 시장이 부정적인 영향을 받을 것입니다.",
+      "watch": [
+        "장기 금리",
+        "채권 시장",
+        "나스닥"
       ]
     }
   ]

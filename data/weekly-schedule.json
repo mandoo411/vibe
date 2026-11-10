@@ -1,109 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-09 09:29 KST",
-    "from": "2026-11-09",
-    "to": "2026-11-23",
-    "historyFrom": "2026-08-11",
+    "lastUpdatedKst": "2026-11-10 12:08 KST",
+    "from": "2026-11-10",
+    "to": "2026-11-24",
+    "historyFrom": "2026-08-12",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-11",
-      "event": "ADP Employment Change Weekly",
-      "country": "US",
-      "time": "20:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "11000",
-      "previous": "15000",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-11",
-      "event": "Existing Home Sales",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4.06",
-      "previous": "4.13",
-      "estimate": "4.05",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-11",
-      "event": "Existing Home Sales MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-1.7",
-      "previous": "-1.4",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-12",
-      "event": "3-Year Note Auction Allotted at High",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "18.31",
-      "previous": "2.17",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-12",
-      "event": "3-Year Note Auction Bid-to-Cover",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.71",
-      "previous": "2.6",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-12",
-      "event": "3-Year Note Auction Total Accepted",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "72.6706",
-      "previous": "58",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-12",
-      "event": "API Crude Oil Stock Change",
-      "country": "US",
-      "time": "05:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "9.072",
-      "previous": "2.69",
-      "estimate": "-1.8",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-12",
-      "event": "Unemployment Rate",
-      "country": "KR",
-      "time": "08:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.8",
-      "previous": "2.7",
-      "estimate": "",
-      "unit": "%"
-    },
     {
       "date": "2026-08-12",
       "event": "MBA 5/1 ARM Contract Rate",
@@ -8638,7 +8542,7 @@
     },
     {
       "date": "2026-11-10",
-      "event": "United States-NY Fed Consumer Expectation-NY Fed Inflation Expectation 1yr",
+      "event": "United States-NY Fed Consumer Expectation-NY Fed Inflation Expectation 1yr *",
       "country": "US",
       "time": "01:00",
       "impact": "high",
@@ -9295,6 +9199,102 @@
       "previous": "39.5",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-14",
+      "event": "Baker Hughes Gas Rig Count",
+      "country": "US",
+      "time": "04:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "131",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-16",
+      "event": "NY Empire State Manufacturing Index",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "25.5",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-17",
+      "event": "3-Month Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "64.28",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-17",
+      "event": "3-Month Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.88",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-17",
+      "event": "3-Month Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "99.0678",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-17",
+      "event": "6-Month Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "49.23",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-17",
+      "event": "6-Month Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.89",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-17",
+      "event": "6-Month Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "87.1045",
+      "estimate": "",
+      "unit": "$"
     }
   ],
   "krIPO": [
@@ -9342,22 +9342,52 @@
       "offeringPrice": 12000,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2338",
       "code": ""
+    },
+    {
+      "date": "2026-11-18",
+      "name": "에이엘로봇",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": 17600,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2331",
+      "code": ""
+    },
+    {
+      "date": "2026-11-20",
+      "name": "하나에어로다이내믹스",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": 5700,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2334",
+      "code": ""
     }
   ],
-  "krEarnings": [],
+  "krEarnings": [
+    {
+      "date": "2026-11-09",
+      "name": "셀트리온",
+      "sector": "",
+      "code": "068270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
+    }
+  ],
   "eventAnalysis": [
     {
       "type": "macro",
       "date": "2026-11-10",
-      "title": "NY Fed 소비자 기대 (1년 인플레이션)",
+      "title": "NY Fed 소비자 기대 (1년 인플레이션 기대)",
       "expected": "예측 3.9% / 이전 3.9%",
-      "why": "소비자 기대는 향후 소비 및 투자에 큰 영향을 미치므로 주목해야 합니다. 인플레이션 기대가 높아지면 금리에 대한 우려도 커질 수 있습니다.",
-      "bull": "소비자 기대가 상승하면 소비 증가로 이어져 주식 시장이 긍정적으로 반응할 것입니다.",
-      "bear": "소비자 기대가 하락하면 경기 둔화 우려가 커져 주식 시장이 부정적으로 반응할 것입니다.",
+      "why": "소비자 인플레이션 기대치는 경제 전반의 소비 심리를 반영하며, 최근 물가 상승세와 관련이 깊습니다.",
+      "bull": "예상보다 높게 나올 경우, 금리가 상승하고 달러 강세가 지속될 것입니다.",
+      "bear": "예상보다 낮게 나올 경우, 금리 인하 기대감이 커지며 주식 시장이 상승할 수 있습니다.",
       "watch": [
-        "미국 금리",
-        "소비자물가지수",
-        "S&P 500"
+        "미국 소비자물가지수",
+        "S&P 500",
+        "달러/원"
       ]
     },
     {
@@ -9365,13 +9395,13 @@
       "date": "2026-11-10",
       "title": "3개월물 입찰 결과",
       "expected": "이전 64.28%",
-      "why": "입찰 결과는 시장의 유동성과 금리 전망을 반영하므로 중요합니다. 높은 입찰률은 수요가 강하다는 신호입니다.",
-      "bull": "입찰률이 예상보다 높으면 금리가 안정세를 보이며 주식 시장에 긍정적인 영향을 미칠 것입니다.",
-      "bear": "입찰률이 낮으면 유동성 우려가 커져 금리가 상승하고 주식 시장이 하락할 것입니다.",
+      "why": "단기 금리의 변동성을 살펴보는 중요한 지표로, 시장의 유동성을 나타냅니다.",
+      "bull": "높은 입찰 비율이 나올 경우, 단기 금리가 상승하며 은행주가 긍정적인 반응을 보일 것입니다.",
+      "bear": "낮은 입찰 비율은 유동성 경색 우려를 키워 주가 하락을 초래할 수 있습니다.",
       "watch": [
-        "채권 수익률",
-        "금리 정책",
-        "다우존스"
+        "미국 10년물 국채",
+        "은행업종",
+        "금리선물"
       ]
     },
     {
@@ -9379,27 +9409,27 @@
       "date": "2026-11-10",
       "title": "6개월물 입찰 결과",
       "expected": "이전 49.23%",
-      "why": "6개월물 입찰 결과는 단기 금리의 방향성을 제시합니다. 시장의 금리 전망에 큰 영향을 미칠 수 있습니다.",
-      "bull": "입찰 결과가 긍정적이면 금리가 안정되고 주식 시장이 상승할 가능성이 높습니다.",
-      "bear": "입찰 결과가 부진하면 금리가 상승하고 주식 시장이 하락할 것입니다.",
+      "why": "중기 금리의 방향성을 가늠할 수 있는 지표로, 투자자들의 신뢰도를 반영합니다.",
+      "bull": "높은 입찰 비율은 금리 상승 기대감을 불러일으켜 금융주가 상승할 것입니다.",
+      "bear": "낮은 입찰 비율은 금리 인하 기대를 높이며 주식 시장에 부정적인 영향을 미칠 수 있습니다.",
       "watch": [
-        "금리 선물",
-        "국채",
-        "코스피"
+        "미국 10년물 국채",
+        "금융업종",
+        "금리선물"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-10",
-      "title": "3년물 입찰 결과",
+      "title": "3년물 국채 입찰 결과",
       "expected": "이전 8.35%",
-      "why": "3년물 입찰 결과는 중장기 금리에 대한 시장의 신뢰도를 나타냅니다. 금리 변동성에 주목해야 합니다.",
-      "bull": "입찰 결과가 좋으면 중장기 금리가 안정되며 주식 시장이 긍정적으로 반응할 것입니다.",
-      "bear": "입찰 결과가 나쁘면 금리가 상승하고 주식 시장이 부정적인 영향을 받을 것입니다.",
+      "why": "중장기 금리에 대한 시장의 기대를 반영하며, 경제 성장 전망과 밀접한 관계가 있습니다.",
+      "bull": "높은 입찰 비율은 금리 상승을 예고하며, 관련 업종이 긍정적인 반응을 보일 것입니다.",
+      "bear": "낮은 입찰 비율은 금리 하락 기대를 불러일으켜 주식 시장에 부정적 영향을 미칠 수 있습니다.",
       "watch": [
-        "장기 금리",
-        "채권 시장",
-        "나스닥"
+        "미국 10년물 국채",
+        "S&P 500",
+        "금리선물"
       ]
     }
   ]

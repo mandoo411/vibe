@@ -1,169 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-11 09:59 KST",
-    "from": "2026-11-11",
-    "to": "2026-11-25",
-    "historyFrom": "2026-08-13",
+    "lastUpdatedKst": "2026-11-12 11:07 KST",
+    "from": "2026-11-12",
+    "to": "2026-11-26",
+    "historyFrom": "2026-08-14",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-13",
-      "event": "PPI MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.2",
-      "previous": "-0.1",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-13",
-      "event": "Core PPI MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.3",
-      "previous": "0.4",
-      "estimate": "0.3",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-13",
-      "event": "PPI Machinery Manufacturing",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "199.07",
-      "previous": "198.18",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-13",
-      "event": "USDA Pork Net Export Sales",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "36.3",
-      "previous": "27.3",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-13",
-      "event": "USDA Pork Gross Export Sales",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "37.5",
-      "previous": "32.4",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-13",
-      "event": "Initial Jobless Claims",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "212",
-      "previous": "200",
-      "estimate": "202",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-13",
-      "event": "코스피200 옵션 만기일",
-      "country": "KR",
-      "time": "15:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-14",
-      "event": "4-Week Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "79.23",
-      "previous": "72.82",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "4-Week Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.77",
-      "previous": "2.68",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-14",
-      "event": "4-Week Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "30-Year Bond Auction Allotted at High",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "12.1",
-      "previous": "7.13",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "30-Year Bond Auction Bid-to-Cover",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.39",
-      "previous": "2.44",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-14",
-      "event": "30-Year Bond Auction Total Accepted",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "31.3235",
-      "previous": "22",
-      "estimate": "",
-      "unit": "$"
-    },
     {
       "date": "2026-08-14",
       "event": "Broad Money",
@@ -5302,7 +5146,7 @@
     },
     {
       "date": "2026-10-08",
-      "event": "United States-NY Fed Consumer Expectation-NY Fed Inflation Expectation 1yr",
+      "event": "United States-NY Fed Consumer Expectation-NY Fed Inflation Expectation 1yr *",
       "country": "US",
       "time": "00:00",
       "impact": "high",
@@ -5319,7 +5163,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "7.86",
+      "actual": "7.75",
       "previous": "7.85",
       "estimate": "",
       "unit": ""
@@ -5823,7 +5667,7 @@
       "time": "21:30",
       "impact": "high",
       "importance": 3,
-      "actual": "-0.5",
+      "actual": "-0.4",
       "previous": "0.2",
       "estimate": "",
       "unit": "%"
@@ -8583,7 +8427,7 @@
       "time": "21:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "7.21",
       "previous": "7.3",
       "estimate": "",
       "unit": "%"
@@ -9160,7 +9004,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "7.3",
+      "previous": "7.21",
       "estimate": "",
       "unit": "%"
     },
@@ -9331,18 +9175,141 @@
       "previous": "2.73",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-19",
+      "event": "20-Year Bond Auction Total Accepted",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "13",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-19",
+      "event": "Net Long-term TIC Flows",
+      "country": "US",
+      "time": "06:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "279.2",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-19",
+      "event": "Philadelphia Fed Manufacturing Index",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "20.9",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-19",
+      "event": "USDA Pork Net Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "37.3",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-19",
+      "event": "USDA Pork Gross Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "39.5",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-19",
+      "event": "Initial Jobless Claims",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "189",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-20",
+      "event": "4-Week Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "5.33",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "4-Week Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.46",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-20",
+      "event": "4-Week Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "97.4397",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "10-Year TIPS Auction Allotted at High",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "93.14",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-20",
+      "event": "10-Year TIPS Auction Bid-to-Cover",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.24",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-11-11",
-      "name": "바로팜",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": 16400,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2325",
-      "code": ""
-    },
     {
       "date": "2026-11-12",
       "name": "넥스아이",
@@ -9409,35 +9376,84 @@
       "reportName": "영업(잠정)실적(공정공시)",
       "confirmed": true,
       "source": "dart"
+    },
+    {
+      "date": "2026-11-11",
+      "name": "KB금융",
+      "sector": "",
+      "code": "105560",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)(자회사의 주요경영사항)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-12",
+      "name": "NAVER",
+      "sector": "",
+      "code": "035420",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
     }
   ],
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-11",
-      "title": "실업률",
-      "expected": "예측 2.5% / 이전 2.6%",
-      "why": "실업률은 경제 회복의 신호로, 고용 시장의 건강성을 나타냅니다. 최근 고용 지표들이 개선되고 있어 주목받고 있습니다.",
-      "bull": "실업률이 예상보다 낮아지면 소비자 신뢰가 상승하고, 주식 시장이 긍정적으로 반응할 것입니다.",
-      "bear": "실업률이 예상보다 높아지면 경기 둔화 우려가 커져 주식 시장이 하락할 가능성이 큽니다.",
+      "date": "2026-11-12",
+      "title": "실업수당 청구건수",
+      "expected": "예측 195 / 이전 189",
+      "why": "미국의 고용 시장 상황을 가늠할 수 있는 중요한 지표로, 최근 고용 지표가 혼조세를 보이고 있어 주목받고 있습니다.",
+      "bull": "예상보다 높은 수치가 발표되면 달러 강세와 함께 미국 주식 시장이 상승할 가능성이 큽니다.",
+      "bear": "예상보다 낮은 수치가 나올 경우, 미국 금리가 하락하고 주식 시장은 하락세를 보일 것입니다.",
       "watch": [
-        "소비자물가",
-        "GDP 성장률",
-        "제조업 PMI"
+        "미국 고용지표",
+        "코스피200",
+        "달러/원 환율"
       ]
     },
     {
       "type": "macro",
-      "date": "2026-11-11",
-      "title": "API 원유 재고 변화",
-      "expected": "예측 -1.483 / 이전 -5.267",
-      "why": "원유 재고 변화는 공급과 수요의 균형을 보여주며, 유가에 직접적인 영향을 미칩니다. 최근 유가 상승세가 지속되고 있습니다.",
-      "bull": "재고 감소폭이 예상보다 클 경우 유가가 상승하고, 에너지 관련 주식이 강세를 보일 것입니다.",
-      "bear": "재고 변화가 예상보다 적으면 유가가 하락하고, 에너지 주식이 부진할 가능성이 높습니다.",
+      "date": "2026-11-12",
+      "title": "코스피200 옵션 만기일",
+      "why": "옵션 만기일은 시장의 변동성을 증가시키는 경향이 있어 투자자들이 주의해야 합니다.",
+      "bull": "만기일에 주가가 상승하면 옵션 매도자들이 손실을 보게 되어 주가가 더욱 오를 수 있습니다.",
+      "bear": "주가가 하락할 경우, 옵션 매수자들이 이익을 보게 되어 추가 하락 압력을 받을 수 있습니다.",
       "watch": [
-        "브렌트유",
-        "WTI유",
-        "에너지 ETF"
+        "코스피",
+        "선물옵션",
+        "주식시장 변동성"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-11-13",
+      "title": "기존 주택 판매",
+      "expected": "예측 3.85 / 이전 3.99",
+      "why": "주택 시장의 건전성을 나타내는 지표로, 최근 금리 인상이 주택 판매에 미치는 영향을 분석할 수 있습니다.",
+      "bull": "예상보다 높은 판매 수치가 나오면 주택 관련 주식들이 상승세를 탈 것입니다.",
+      "bear": "판매 수치가 예상보다 낮을 경우, 주택 관련 주식들이 하락할 가능성이 높습니다.",
+      "watch": [
+        "주택시장 지표",
+        "금리",
+        "부동산 관련 주식"
+      ]
+    },
+    {
+      "type": "earnings",
+      "date": "2026-11-12",
+      "title": "NAVER 실적발표",
+      "expected": "컨센서스 영업이익 1.2조원 / 전년동기 대비 10%",
+      "why": "NAVER의 광고 매출과 플랫폼 성장성을 확인하는 것이 중요합니다.",
+      "bull": "호실적이 나올 경우, 같은 플랫폼 업종의 주가가 동반 상승할 것입니다.",
+      "bear": "부진한 실적이 발표되면, 같은 업종의 기업들도 부정적인 영향을 받을 가능성이 큽니다.",
+      "watch": [
+        "카카오",
+        "쿠팡",
+        "IT 플랫폼 주식"
       ]
     }
   ]

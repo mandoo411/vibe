@@ -1,85 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-12 11:07 KST",
-    "from": "2026-11-12",
-    "to": "2026-11-26",
-    "historyFrom": "2026-08-14",
+    "lastUpdatedKst": "2026-11-13 10:41 KST",
+    "from": "2026-11-13",
+    "to": "2026-11-27",
+    "historyFrom": "2026-08-15",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-14",
-      "event": "Broad Money",
-      "country": "KR",
-      "time": "12:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6362",
-      "previous": "6314",
-      "estimate": "",
-      "unit": "KRW"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "Retail Sales Ex Autos MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.1",
-      "previous": "-0.3",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "Retail Sales MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.4",
-      "previous": "0.2",
-      "estimate": "0.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-14",
-      "event": "Michigan Consumer Sentiment Prel",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "51",
-      "previous": "54.4",
-      "estimate": "54.5",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-14",
-      "event": "Business Inventories MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.1",
-      "previous": "0.4",
-      "estimate": "0.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-15",
-      "event": "Baker Hughes Gas Rig Count",
-      "country": "US",
-      "time": "03:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "128",
-      "previous": "124",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-08-17",
       "event": "NY Empire State Manufacturing Index",
@@ -1834,7 +1762,7 @@
     },
     {
       "date": "2026-09-02",
-      "event": "Durable Goods Orders Excluding Transportation",
+      "event": "Durable Goods Orders Ex Transp MoM Final",
       "country": "US",
       "time": "23:00",
       "impact": "high",
@@ -4786,7 +4714,7 @@
     },
     {
       "date": "2026-10-02",
-      "event": "Durable Goods Orders Excluding Transportation",
+      "event": "Durable Goods Orders Ex Transp MoM Final",
       "country": "US",
       "time": "23:00",
       "impact": "high",
@@ -7642,7 +7570,7 @@
     },
     {
       "date": "2026-11-04",
-      "event": "Durable Goods Orders Excluding Transportation",
+      "event": "Durable Goods Orders Ex Transp MoM Final",
       "country": "US",
       "time": "00:00",
       "impact": "high",
@@ -8452,7 +8380,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "200",
-      "previous": "189",
+      "previous": "191",
       "estimate": "195",
       "unit": ""
     },
@@ -8475,8 +8403,8 @@
       "time": "00:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "3.99",
+      "actual": "3.75",
+      "previous": "3.97",
       "estimate": "3.85",
       "unit": ""
     },
@@ -8487,8 +8415,8 @@
       "time": "00:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "1.5",
+      "actual": "-5.5",
+      "previous": "1",
       "estimate": "",
       "unit": "%"
     },
@@ -8499,7 +8427,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "26.54",
       "previous": "5.33",
       "estimate": "",
       "unit": "%"
@@ -8511,7 +8439,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "2.94",
       "previous": "2.46",
       "estimate": "",
       "unit": ""
@@ -8535,7 +8463,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "1130",
       "previous": "1143",
       "estimate": "",
       "unit": ""
@@ -8547,7 +8475,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "24345",
       "previous": "24434",
       "estimate": "",
       "unit": ""
@@ -8559,7 +8487,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "4.657",
       "previous": "-0.865",
       "estimate": "-1.483",
       "unit": ""
@@ -8571,7 +8499,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "1.799",
       "previous": "-0.222",
       "estimate": "-0.35",
       "unit": ""
@@ -8583,7 +8511,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-0.22",
       "previous": "-1.179",
       "estimate": "",
       "unit": ""
@@ -8595,7 +8523,7 @@
       "time": "03:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "21.29",
       "previous": "26.77",
       "estimate": "",
       "unit": "%"
@@ -8607,7 +8535,7 @@
       "time": "03:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "2.36",
       "previous": "2.54",
       "estimate": "",
       "unit": ""
@@ -8619,7 +8547,7 @@
       "time": "03:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "25",
       "previous": "22",
       "estimate": "",
       "unit": "$"
@@ -8631,7 +8559,7 @@
       "time": "04:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-404",
       "previous": "-27",
       "estimate": "",
       "unit": "$"
@@ -9100,7 +9028,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "1143",
+      "previous": "1130",
       "estimate": "",
       "unit": ""
     },
@@ -9112,7 +9040,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "24434",
+      "previous": "24345",
       "estimate": "",
       "unit": ""
     },
@@ -9124,7 +9052,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-0.865",
+      "previous": "4.657",
       "estimate": "",
       "unit": ""
     },
@@ -9136,7 +9064,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-0.222",
+      "previous": "1.799",
       "estimate": "",
       "unit": ""
     },
@@ -9148,7 +9076,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "-1.179",
+      "previous": "-0.22",
       "estimate": "",
       "unit": ""
     },
@@ -9244,7 +9172,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "189",
+      "previous": "200",
       "estimate": "",
       "unit": ""
     },
@@ -9256,7 +9184,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "5.33",
+      "previous": "26.54",
       "estimate": "",
       "unit": "%"
     },
@@ -9268,7 +9196,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "2.46",
+      "previous": "2.94",
       "estimate": "",
       "unit": ""
     },
@@ -9307,18 +9235,69 @@
       "previous": "2.24",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-20",
+      "event": "10-Year TIPS Auction Total Accepted",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "19",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-21",
+      "event": "Michigan Consumer Sentiment Final",
+      "country": "US",
+      "time": "00:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "48",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-21",
+      "event": "Baker Hughes Gas Rig Count",
+      "country": "US",
+      "time": "04:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "131",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-23",
+      "event": "Chicago Fed National Activity Index",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.07",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-23",
+      "event": "S&P Global Services PMI Flash",
+      "country": "US",
+      "time": "23:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-11-12",
-      "name": "넥스아이",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": 8000,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2336",
-      "code": ""
-    },
     {
       "date": "2026-11-16",
       "name": "영광와이케이엠씨",
@@ -9390,6 +9369,17 @@
     },
     {
       "date": "2026-11-12",
+      "name": "한화에어로스페이스",
+      "sector": "",
+      "code": "012450",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-12",
       "name": "NAVER",
       "sector": "",
       "code": "035420",
@@ -9398,62 +9388,57 @@
       "reportName": "영업(잠정)실적(공정공시)",
       "confirmed": true,
       "source": "dart"
+    },
+    {
+      "date": "2026-11-12",
+      "name": "카카오",
+      "sector": "",
+      "code": "035720",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-12",
+      "name": "LG에너지솔루션",
+      "sector": "",
+      "code": "373220",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "연결재무제표기준영업(잠정)실적(공정공시)",
+      "confirmed": true,
+      "source": "dart"
     }
   ],
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-12",
-      "title": "실업수당 청구건수",
-      "expected": "예측 195 / 이전 189",
-      "why": "미국의 고용 시장 상황을 가늠할 수 있는 중요한 지표로, 최근 고용 지표가 혼조세를 보이고 있어 주목받고 있습니다.",
-      "bull": "예상보다 높은 수치가 발표되면 달러 강세와 함께 미국 주식 시장이 상승할 가능성이 큽니다.",
-      "bear": "예상보다 낮은 수치가 나올 경우, 미국 금리가 하락하고 주식 시장은 하락세를 보일 것입니다.",
+      "date": "2026-11-13",
+      "title": "기존 주택 판매 (EHS)",
+      "expected": "예측 3.85 / 이전 3.97",
+      "why": "주택 시장의 회복 여부를 판단하기 위해 이 지표를 주목한다. 최근 주택 판매 감소가 시장에 미치는 영향이 크다.",
+      "bull": "판매가 예상보다 높으면 주택 관련 주식이 상승하고, 금리가 안정될 가능성이 높다.",
+      "bear": "판매가 예상보다 낮으면 주택 관련 주식이 하락하고, 금리 인상이 우려된다.",
       "watch": [
-        "미국 고용지표",
-        "코스피200",
-        "달러/원 환율"
-      ]
-    },
-    {
-      "type": "macro",
-      "date": "2026-11-12",
-      "title": "코스피200 옵션 만기일",
-      "why": "옵션 만기일은 시장의 변동성을 증가시키는 경향이 있어 투자자들이 주의해야 합니다.",
-      "bull": "만기일에 주가가 상승하면 옵션 매도자들이 손실을 보게 되어 주가가 더욱 오를 수 있습니다.",
-      "bear": "주가가 하락할 경우, 옵션 매수자들이 이익을 보게 되어 추가 하락 압력을 받을 수 있습니다.",
-      "watch": [
-        "코스피",
-        "선물옵션",
-        "주식시장 변동성"
+        "주택가격지수",
+        "금리",
+        "부동산 ETF"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-13",
-      "title": "기존 주택 판매",
-      "expected": "예측 3.85 / 이전 3.99",
-      "why": "주택 시장의 건전성을 나타내는 지표로, 최근 금리 인상이 주택 판매에 미치는 영향을 분석할 수 있습니다.",
-      "bull": "예상보다 높은 판매 수치가 나오면 주택 관련 주식들이 상승세를 탈 것입니다.",
-      "bear": "판매 수치가 예상보다 낮을 경우, 주택 관련 주식들이 하락할 가능성이 높습니다.",
+      "title": "EIA 원유 재고 변화 (EIA)",
+      "expected": "예측 -1.483 / 이전 4.657",
+      "why": "원유 재고 변화는 공급과 수요의 균형을 보여준다. 최근 원유 가격의 변동성이 커지고 있다.",
+      "bull": "재고 감소가 예상보다 클 경우 원유 가격 상승과 관련 주식의 상승을 이끌 것이다.",
+      "bear": "재고 증가가 예상보다 클 경우 원유 가격 하락과 관련 주식의 하락을 유도할 것이다.",
       "watch": [
-        "주택시장 지표",
-        "금리",
-        "부동산 관련 주식"
-      ]
-    },
-    {
-      "type": "earnings",
-      "date": "2026-11-12",
-      "title": "NAVER 실적발표",
-      "expected": "컨센서스 영업이익 1.2조원 / 전년동기 대비 10%",
-      "why": "NAVER의 광고 매출과 플랫폼 성장성을 확인하는 것이 중요합니다.",
-      "bull": "호실적이 나올 경우, 같은 플랫폼 업종의 주가가 동반 상승할 것입니다.",
-      "bear": "부진한 실적이 발표되면, 같은 업종의 기업들도 부정적인 영향을 받을 가능성이 큽니다.",
-      "watch": [
-        "카카오",
-        "쿠팡",
-        "IT 플랫폼 주식"
+        "원유 가격",
+        "정유업체",
+        "에너지 ETF"
       ]
     }
   ]

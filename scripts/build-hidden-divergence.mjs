@@ -36,6 +36,7 @@ try {
 } catch (_) {
   /* 첫 실행 */
 }
+const firstRun = !prev.asOfDate;
 const prevCodes = new Set(prev.asOfDate && prev.asOfDate < asOf ? (prev.picks || []).map((p) => p.code) : (prev.prevCodes || []));
 
 const picks = [];
@@ -57,7 +58,7 @@ for (const s of cache.stocks || []) {
     changePct: s.changePct,
     marketCapEok: Math.round(s.marketCapEok),
     sector: n.sector || null,
-    isNew: !prevCodes.has(s.code),
+    isNew: !firstRun && !prevCodes.has(s.code), // 첫 실행 날은 비교 대상이 없으니 NEW 표시 안 함
     fromB: hb.bLow ? Math.round((s.close / hb.bLow - 1) * 1000) / 10 : null,
     ...hb,
   });

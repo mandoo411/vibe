@@ -1,133 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-15 09:42 KST",
-    "from": "2026-11-15",
-    "to": "2026-11-29",
-    "historyFrom": "2026-08-17",
+    "lastUpdatedKst": "2026-11-16 09:42 KST",
+    "from": "2026-11-16",
+    "to": "2026-11-30",
+    "historyFrom": "2026-08-18",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-17",
-      "event": "NY Empire State Manufacturing Index",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "20.6",
-      "previous": "15.6",
-      "estimate": "10.5",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-17",
-      "event": "NAHB Housing Market Index",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "35",
-      "previous": "34",
-      "estimate": "33",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "3-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "44.68",
-      "previous": "82.94",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "3-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.86",
-      "previous": "2.88",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "3-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "98.7259",
-      "previous": "97.5739",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "6-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "18.55",
-      "previous": "96.11",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "6-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.97",
-      "previous": "2.85",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "6-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "84.7754",
-      "previous": "83.7859",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "NOPA Soybean Oil Stocks",
-      "country": "US",
-      "time": "01:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.36",
-      "previous": "1.501",
-      "estimate": "1.455",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Net Long-term TIC Flows",
-      "country": "US",
-      "time": "05:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "175.5",
-      "previous": "231.2",
-      "estimate": "",
-      "unit": "$"
-    },
     {
       "date": "2026-08-18",
       "event": "ADP Employment Change Weekly",
@@ -9295,6 +9175,150 @@
       "previous": "",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-23",
+      "event": "S&P Global Composite PMI Flash",
+      "country": "US",
+      "time": "23:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-23",
+      "event": "S&P Global Manufacturing PMI Flash",
+      "country": "US",
+      "time": "23:45",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "3-Month Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "79.03",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "3-Month Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.67",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "3-Month Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "99.0678",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "6-Month Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "70.91",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "6-Month Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.92",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "6-Month Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "87.4885",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "2-Year Note Auction Allotted at High",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "80.83",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "2-Year Note Auction Bid-to-Cover",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.59",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "2-Year Note Auction Total Accepted",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "69.0001",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "Consumer Confidence",
+      "country": "KR",
+      "time": "06:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "105.4",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
@@ -9342,6 +9366,15 @@
       "offeringPrice": 7000,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2321",
       "code": ""
+    },
+    {
+      "date": "2026-11-30",
+      "name": "유캐스트",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2352",
+      "code": ""
     }
   ],
   "krEarnings": [],
@@ -9349,28 +9382,28 @@
     {
       "type": "macro",
       "date": "2026-11-16",
-      "title": "NY Empire State Manufacturing Index (NYESMI)",
+      "title": "NY Empire State Manufacturing Index (ESMI)",
       "expected": "예측 18 / 이전 25.5",
-      "why": "제조업 경기가 둔화되고 있는지 확인하기 위해 주목받고 있다. 시장은 이미 경기 둔화를 반영하고 있다.",
-      "bull": "지표가 예상보다 높게 나오면 제조업 관련 주가가 상승할 것이다.",
-      "bear": "지표가 예상보다 낮게 나오면 경기 민감 업종이 하락세를 보일 것이다.",
+      "why": "제조업의 경기 흐름을 파악하기 위해 중요하다. 최근 경제 지표가 혼조세를 보이고 있어 주목된다.",
+      "bull": "지표가 예상보다 높게 나올 경우, 제조업 관련 주가가 상승할 것이다.",
+      "bear": "예상보다 낮게 발표되면, 제조업 주식과 관련된 지수가 하락할 가능성이 크다.",
       "watch": [
-        "ISM 제조업지수",
+        "ISM 제조업 지수",
         "S&P 500",
-        "제조업체 주식"
+        "제조업 관련 ETF"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-17",
       "title": "3-Month Bill Auction Allotted at High",
-      "expected": "이전 79.03%",
-      "why": "단기 금리의 방향성을 확인하기 위한 중요한 지표로, 시장의 금리 전망에 영향을 미친다.",
-      "bull": "높은 배정률이 나타나면 금리가 상승하고, 채권 수익률이 오를 것이다.",
-      "bear": "낮은 배정률은 금리 하락을 시사하며, 채권 시장에 부정적 영향을 미칠 것이다.",
+      "previous": "79.03%",
+      "why": "단기 금리의 방향성을 결정짓는 중요한 지표로, 금리 인상 우려가 반영될 수 있다.",
+      "bull": "높은 비율로 배정될 경우, 단기 금리가 상승하면서 금융주가 긍정적인 영향을 받을 것이다.",
+      "bear": "낮은 배정 비율은 금리 인상 우려를 완화시켜, 금융주가 하락할 수 있다.",
       "watch": [
-        "금리 인상 전망",
-        "채권 ETF",
+        "금리 인상 가능성",
+        "채권 수익률",
         "금융주"
       ]
     },
@@ -9379,13 +9412,13 @@
       "date": "2026-11-17",
       "title": "NOPA Soybean Oil Stocks",
       "expected": "예측 1.089 / 이전 1.053",
-      "why": "대두유 재고량은 농업 및 식품 관련 주식에 큰 영향을 미친다. 공급과 수요의 균형을 파악할 수 있다.",
-      "bull": "재고가 예상보다 적으면 대두유 가격이 상승하고 관련 주식이 긍정적인 반응을 보일 것이다.",
-      "bear": "재고가 예상보다 많으면 대두유 가격이 하락하고, 관련 기업의 주가도 부진할 것이다.",
+      "why": "농산물 가격에 영향을 미치는 주요 지표로, 공급과 수요의 균형을 확인할 수 있다.",
+      "bull": "예상치를 초과하면, 대두유 관련 주식이 상승세를 보일 것이다.",
+      "bear": "예상보다 낮게 나오면, 대두유 가격이 하락하면서 관련 주식이 부진할 수 있다.",
       "watch": [
         "대두 가격",
-        "농업 관련 ETF",
-        "식품주"
+        "농산물 관련 ETF",
+        "식품업체 주식"
       ]
     }
   ]

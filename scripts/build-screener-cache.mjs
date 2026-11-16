@@ -28,6 +28,7 @@ const {
   computeMaSeries,
   computeRsiSeries,
   detectDivergence,
+  detectHiddenBullishDivergence,
   computeMacd,
   computeBollinger,
   computeStochastic,
@@ -128,6 +129,29 @@ async function buildOne(stock) {
         sector: market.sector,
       });
 
+      // 2026-11-16: 상승 히든 다이버전스 — 해당 종목만 a 직전부터의 종가·RSI 미니차트용 배열을 같이 저장한다.
+      let hiddenBull = null;
+      try {
+        const hd = detectHiddenBullishDivergence(candles, rsiSeries);
+        if (hd) {
+          const from = Math.max(0, hd.aIdx - 10);
+          const { aIdx, hIdx, bIdx, ...rest } = hd;
+          hiddenBull = {
+            ...rest,
+            spark: {
+              from: candles[from].time,
+              close: closes.slice(from),
+              rsi: rsiSeries.slice(from).map((v) => (v == null ? null : Math.round(v * 10) / 10)),
+              a: aIdx - from,
+              h: hIdx - from,
+              b: bIdx - from,
+            },
+          };
+        }
+      } catch (_) {
+        hiddenBull = null;
+      }
+
       const n = closes.length;
       const close = closes[n - 1];
       const prevClose = n >= 2 ? closes[n - 2] : null;
@@ -147,6 +171,7 @@ async function buildOne(stock) {
         marketCapEok: market.marketCapEok,
         tradingValueEok: market.tradingValueEok,
         snapshot,
+        ...(hiddenBull ? { hiddenBull } : {}),
       };
     } catch (error) {
       attempt += 1;

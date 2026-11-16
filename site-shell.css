@@ -1004,6 +1004,11 @@ body[data-theme="dark"] .home-nav__theme #theme-icon {
   grid-template-rows: repeat(5, minmax(0, auto));
 }
 
+/* 2026-11-16: 히든다이버전스 추가로 14칸 = 5행 그대로. */
+.tm-nav-sheet__grid--14 {
+  grid-template-rows: repeat(5, minmax(0, auto));
+}
+
 .tm-nav-sheet__cell {
   position: relative;
   display: flex;

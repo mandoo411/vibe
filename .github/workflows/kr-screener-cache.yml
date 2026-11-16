@@ -72,6 +72,12 @@ jobs:
         continue-on-error: true
         run: node scripts/build-oversold-largecap.mjs
 
+      # 2026-11-16: 히든 다이버전스 메뉴(hidden-divergence.html) — 캐시의 stocks[].hiddenBull을 거른다. 실패해도 커밋은 진행.
+      - name: Build hidden divergence list
+        if: steps.krx.outputs.open == 'true'
+        continue-on-error: true
+        run: node scripts/build-hidden-divergence.mjs
+
       - name: Commit data/kr-screener-cache.json
         if: steps.krx.outputs.open == 'true'
         id: commit
@@ -80,6 +86,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/kr-screener-cache.json data/oversold-largecap.json
+          git add data/hidden-divergence.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "::notice::No screener cache changes to commit"
             echo "changed=false" >> "$GITHUB_OUTPUT"

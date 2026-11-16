@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>TotalMoney AI · 히든 다이버전스</title>
+    <meta name="description" content="상승추세 출발 바닥(a)보다 눌림 바닥(b)의 가격은 높고 RSI는 낮은 상승 히든 다이버전스 종목을 매 거래일 일봉 기준으로 찾습니다." />
+    <link rel="apple-touch-icon" href="/assets/icon-t-180.png?v=8">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-t-32.png?v=8">
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=8">
+    <link rel="shortcut icon" href="/favicon.ico?v=8">
+    <link rel="manifest" href="/site.webmanifest?v=8">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="./theme.js"></script>
+    <script src="./site-shell.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/auth-config.js"></script>
+    <script src="./assets/auth.js"></script>
+    <link rel="stylesheet" href="./theme.css" />
+    <link rel="stylesheet" href="./site-shell.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+    <link rel="stylesheet" href="./typography.css?v=1" />
+    <style>
+      /* ══════════════════════════════════════════════════════════════════════
+         히든 다이버전스 (2026-11-16 신설, 시우 요청)
+         a = 상승이 출발한 바닥, b = 지금 눌림 바닥. b 가격은 a보다 높은데 RSI는 a보다 낮은 종목.
+         계산은 scripts/build-screener-cache.mjs(종목별 판정) → scripts/build-hidden-divergence.mjs(목록)이 하고
+         화면은 data/hidden-divergence.json을 그대로 그린다. 상승 빨강·하락 파랑(국내 관례).
+         ══════════════════════════════════════════════════════════════════════ */
+      .page-hidden-div .masthead__title { margin: 0; }
+      .hd-wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+      .hd-intro { border: 1px solid var(--border-color, var(--border)); border-radius: 14px; background: var(--card-bg); padding: 18px 20px; display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 18px; align-items: center; }
+      .hd-intro h2 { margin: 0 0 6px; font-size: 18px; font-weight: 800; color: var(--text-primary); }
+      .hd-intro p { margin: 0; font-size: 13.5px; line-height: 1.7; color: var(--text-secondary); word-break: keep-all; }
+      .hd-rules { margin: 10px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+      .hd-rules li { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border-color, var(--border)); color: var(--text-secondary); white-space: nowrap; }
+      .hd-guide svg { width: 100%; height: auto; display: block; }
+      .hd-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between; }
+      .hd-seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+      .hd-seg button { font: inherit; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border-color, var(--border)); background: transparent; color: var(--text-secondary); cursor: pointer; }
+      .hd-seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .hd-stamp { font-size: 12.5px; color: var(--text-muted, var(--text-secondary)); }
+      .hd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+      .hd-card { border: 1px solid var(--border-color, var(--border)); border-radius: 14px; background: var(--card-bg); padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+      .hd-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+      .hd-name { font-size: 15.5px; font-weight: 800; color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+      .hd-name:hover { text-decoration: underline; }
+      .hd-sub { display: block; font-size: 12px; color: var(--text-muted, var(--text-secondary)); margin-top: 2px; }
+      .hd-price { text-align: right; font-variant-numeric: tabular-nums; }
+      .hd-price b { display: block; font-size: 15px; color: var(--text-primary); }
+      .hd-price span { font-size: 12.5px; font-weight: 700; }
+      .hd-new { font-size: 10.5px; font-weight: 800; color: #fff; background: var(--up-color, #e24b4a); border-radius: 4px; padding: 1px 5px; margin-left: 4px; vertical-align: 2px; }
+      .hd-svg { width: 100%; height: auto; display: block; }
+      .hd-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+      .hd-fact { border-radius: 8px; padding: 7px 9px; background: color-mix(in srgb, var(--text-primary) 4%, transparent); font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+      .hd-fact b { display: block; font-size: 13px; color: var(--text-primary); margin-top: 2px; }
+      .hd-up { color: var(--up-color, #e24b4a) !important; }
+      .hd-down { color: var(--down-color, #3b82f6) !important; }
+      .hd-empty { padding: 40px 16px; text-align: center; color: var(--text-secondary); border: 1px dashed var(--border-color, var(--border)); border-radius: 14px; }
+      .hd-note { font-size: 12px; line-height: 1.7; color: var(--text-muted, var(--text-secondary)); margin: 0; word-break: keep-all; }
+      .hd-rec { border: 1px solid var(--border-color, var(--border)); border-radius: 14px; background: var(--card-bg); padding: 14px 16px; }
+      .hd-rec h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--text-primary); }
+      .hd-rec table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+      .hd-rec th, .hd-rec td { padding: 7px 6px; border-bottom: 1px solid var(--border-color, var(--border)); text-align: right; }
+      .hd-rec th:first-child, .hd-rec td:first-child, .hd-rec th:nth-child(2), .hd-rec td:nth-child(2) { text-align: left; }
+      .hd-rec td:nth-child(2) { color: var(--text-secondary); word-break: keep-all; }
+      html[data-theme="light"] .hd-intro, html[data-theme="light"] .hd-card, html[data-theme="light"] .hd-rec { background: #fff; border-color: #dfe3e9; box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 4px 14px rgba(15,23,42,.05); }
+      html[data-theme="light"] .hd-fact { background: #f4f6f9; }
+      @media (max-width: 720px) {
+        .hd-intro { grid-template-columns: 1fr; }
+        .hd-guide { max-width: 320px; }
+        .hd-grid { grid-template-columns: 1fr; }
+        .hd-rec .hd-hide-m { display: none; }
+      }
+    </style>
+      <!-- Pretendard + 디자인 리프레시 레이어 (2026-09-13) — 항상 마지막에 온다. 지우면 원복. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <link rel="stylesheet" href="./refresh.css?v=1" />
+    <link rel="stylesheet" href="./premium.css?v=1" />
+    <link rel="stylesheet" href="./assets/guest-gate.css?v=1" />
+    <link rel="stylesheet" href="./assets/wide.css?v=4" />
+    <link rel="stylesheet" href="./assets/read-layout.css?v=3" />
+    <script src="./assets/read-layout.js?v=2" defer></script>
+    <script src="./assets/stock-dialog.js?v=1" defer></script>
+</head>
+  <body class="page-tm-v2 page-hidden-div">
+    <div class="tm-wrap">
+      <header class="home-nav" aria-label="주요 메뉴">
+        <a class="home-nav__logo" href="./index.html" aria-label="TotalMoney AI 홈">
+          <div class="home-nav__logo-box" aria-hidden="true">
+            <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true"><path d="M6 40h9l6-16h-9z" fill="#059669"/><path d="M19 40h9l12-32h-9z" fill="#10b981"/></svg>
+          </div>
+          <div class="home-nav__brand">
+            <span class="home-nav__brand-name">TotalMoney <em>AI</em></span>
+          </div>
+        </a>
+        <button type="button" class="home-nav__toggle" aria-label="메뉴 열기" aria-expanded="false">
+          <i class="ti ti-menu-2" aria-hidden="true"></i>
+        </button>
+        <nav class="home-nav__menu">
+          <a class="home-nav__link home-nav__home-btn" href="./index.html" title="홈"><i class="ti ti-home" aria-hidden="true"></i></a>
+          <!-- 2026-09-25 시우: 화면이 넓어져 드롭다운 없이 전부 펼친다 -->
+          <div class="home-nav__links" id="home-nav-links">
+          <a class="home-nav__link" href="./market.html"><i class="ti ti-chart-line home-nav__ico" aria-hidden="true"></i>시장지표</a>
+          <a class="home-nav__link" href="./briefing.html"><i class="ti ti-sunrise home-nav__ico" aria-hidden="true"></i>오전브리핑</a>
+          <a class="home-nav__link" href="./daily-market.html"><i class="ti ti-chart-bar home-nav__ico" aria-hidden="true"></i>마감시황</a>
+          <a class="home-nav__link" href="./weekly-market.html"><i class="ti ti-calendar home-nav__ico" aria-hidden="true"></i>일정</a>
+          <a class="home-nav__link" href="./realtime.html"><i class="ti ti-activity home-nav__ico" aria-hidden="true"></i>국내주식</a>
+          <a class="home-nav__link" href="./us-market.html"><i class="ti ti-building-skyscraper home-nav__ico" aria-hidden="true"></i>미국주식</a>
+          <a class="home-nav__link" href="./crypto.html"><i class="ti ti-currency-bitcoin home-nav__ico" aria-hidden="true"></i>암호화폐</a>
+          <a class="home-nav__link" href="./world-market.html"><i class="ti ti-world home-nav__ico" aria-hidden="true"></i>글로벌랭킹</a>
+          <a class="home-nav__link" href="./trade-signal.html"><i class="ti ti-bell home-nav__ico" aria-hidden="true"></i>매매시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./close-signal.html"><i class="ti ti-chart-candle home-nav__ico" aria-hidden="true"></i>종가시그널 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./hidden-divergence.html" aria-current="page"><i class="ti ti-trending-up home-nav__ico" aria-hidden="true"></i>히든다이버전스 <span class="home-nav__ai-badge">PRO</span></a>
+          <a class="home-nav__link" href="./stock-analysis.html"><i class="ti ti-robot home-nav__ico" aria-hidden="true"></i>AI 종목분석 <span class="home-nav__ai-badge">PRO</span></a></div>
+          <div class="home-nav__more" id="home-nav-more">
+            <button type="button" class="home-nav__link home-nav__more-btn" id="home-nav-more-btn" aria-haspopup="true" aria-expanded="false">더보기 <i class="ti ti-chevron-down" aria-hidden="true"></i></button>
+            <div class="home-nav__more-panel" id="home-nav-more-panel" role="menu"></div>
+          </div>
+
+          <button type="button" class="home-nav__theme tm-theme-toggle" id="theme-toggle" aria-label="테마 전환" title="테마 전환">
+            <i class="ti ti-moon" id="theme-icon" aria-hidden="true"></i>
+          </button>
+        </nav>
+      </header>
+
+      <div class="home-ticker" id="home-ticker" aria-label="실시간 시장 지표" aria-live="polite">
+        <span class="home-empty">시장 지표 로딩 중…</span>
+      </div>
+
+      <main class="tm-main">
+        <div class="page">
+          <header class="masthead masthead--title-only">
+            <div class="masthead__copy">
+              <p class="masthead__kicker">HIDDEN DIVERGENCE</p>
+              <h1 class="masthead__title">히든 다이버전스</h1>
+            </div>
+          </header>
+
+          <div class="hd-wrap">
+            <section class="hd-intro" aria-labelledby="hdTitle">
+              <div>
+                <h2 id="hdTitle">상승추세 속 눌림목 — 상승 히든 다이버전스</h2>
+                <p>상승이 시작된 바닥(<b>a</b>)보다 지금 눌린 바닥(<b>b</b>)의 <b>가격은 높은데, RSI는 더 낮게</b> 내려온 종목입니다. 가격은 저점을 높이며 추세를 지키고 있는데 지표만 과하게 눌렸다는 뜻이라, 상승추세가 이어질 때 자주 보이는 눌림 구간으로 봅니다. 매 거래일 장 마감 뒤 일봉 기준으로 다시 찾습니다.</p>
+                <ul class="hd-rules">
+                  <li>a 이후 고점까지 +20% 이상 상승</li>
+                  <li>고점 대비 8% 이상 눌림</li>
+                  <li>b = 최근 10거래일 안의 최저점</li>
+                  <li>b 가격 &gt; a 가격</li>
+                  <li>b RSI(14) &lt; a RSI(14)</li>
+                  <li>시총 1,000억↑ · 거래대금 10억↑</li>
+                </ul>
+              </div>
+              <div class="hd-guide" aria-hidden="true">
+                <svg viewBox="0 0 260 150" role="img">
+                  <text x="4" y="12" font-size="10" fill="currentColor" opacity=".6">가격 — 저점이 높아짐</text>
+                  <polyline points="10,78 40,70 60,88 90,52 120,40 150,22 175,38 200,50 225,62 250,58" fill="none" stroke="currentColor" stroke-opacity=".55" stroke-width="2" stroke-linejoin="round"/>
+                  <line x1="60" y1="88" x2="225" y2="62" stroke="var(--up-color,#e24b4a)" stroke-width="1.6" stroke-dasharray="4 3"/>
+                  <circle cx="60" cy="88" r="4" fill="var(--up-color,#e24b4a)"/><text x="54" y="104" font-size="11" font-weight="700" fill="var(--up-color,#e24b4a)">a</text>
+                  <circle cx="225" cy="62" r="4" fill="var(--up-color,#e24b4a)"/><text x="221" y="78" font-size="11" font-weight="700" fill="var(--up-color,#e24b4a)">b</text>
+                  <text x="4" y="114" font-size="10" fill="currentColor" opacity=".6">RSI — 저점이 낮아짐</text>
+                  <polyline points="10,128 40,124 60,132 90,118 120,116 150,112 175,126 200,136 225,142 250,136" fill="none" stroke="var(--down-color,#3b82f6)" stroke-width="1.6" stroke-linejoin="round"/>
+                  <line x1="60" y1="132" x2="225" y2="142" stroke="var(--down-color,#3b82f6)" stroke-width="1.6" stroke-dasharray="4 3"/>
+                </svg>
+              </div>
+            </section>
+
+            <div class="hd-bar">
+              <div class="hd-seg" role="group" aria-label="보기 선택">
+                <button type="button" data-f="all" aria-pressed="true">전체</button>
+                <button type="button" data-f="big" aria-pressed="false">시총 1조↑</button>
+                <button type="button" data-f="new" aria-pressed="false">오늘 새로 진입</button>
+              </div>
+              <div class="hd-seg" role="group" aria-label="정렬">
+                <button type="button" data-s="cap" aria-pressed="true">시총순</button>
+                <button type="button" data-s="gap" aria-pressed="false">RSI 차이 큰 순</button>
+                <button type="button" data-s="near" aria-pressed="false">b에 가까운 순</button>
+              </div>
+            </div>
+            <div class="hd-stamp" id="hdStamp">불러오는 중…</div>
+            <div class="hd-grid" id="hdGrid"><div class="hd-empty">불러오는 중…</div></div>
+
+            <section class="hd-rec" id="hdRecWrap" hidden>
+              <h3>기록 — 새로 진입한 종목의 이후 수익률</h3>
+              <p class="hd-note" style="margin-bottom:8px">처음 목록에 들어온 날 종가를 기준가로, 5거래일·20거래일 뒤 종가까지의 평균입니다(거래 비용 미반영). 결과가 나오기 전에는 최근 종가 기준입니다.</p>
+              <div id="hdRec"></div>
+            </section>
+
+            <p class="hd-note">가격은 일봉 저가, RSI는 종가 기준 14일입니다. 미니차트의 선은 종가이며 점은 a·b 날짜를 표시합니다. 조건에 맞는 차트 모양을 찾아 보여주는 것이며 매수 추천이 아닙니다. 하락추세로 바뀌는 중에도 같은 모양이 나올 수 있고, 원금 손실이 발생할 수 있습니다.</p>
+          </div>
+        </div>
+      </main>
+
+      <footer class="home-footer">
+        <div class="home-footer__top">
+          <div>
+            <div class="home-footer__brand-name">TotalMoney AI</div>
+            <div class="home-footer__slogan">실시간 시장을 AI로 분석하세요</div>
+          </div>
+          <div class="home-footer__divider" aria-hidden="true"></div>
+          <a class="home-footer__tg" href="https://t.me/mandoo_market_bot" target="_blank" rel="noopener noreferrer">텔레그램봇 @mandoo_market_bot</a>
+          <div class="home-footer__sns">
+            <a href="https://www.instagram.com/totalmoney_ai/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a>
+            <a href="https://t.me/totalmoney_ai" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><i class="ti ti-brand-telegram"></i></a>
+            <a href="#" aria-label="X"><i class="ti ti-brand-x"></i></a>
+          </div>
+        </div>
+        <div class="home-footer__bottom">
+          <span>© 2026 TotalMoney AI</span>
+          <div class="home-footer__links">
+            <a href="./terms.html">이용약관</a>
+            <a href="./privacy.html">개인정보처리방침</a>
+            <a href="mailto:totalmoneyai@gmail.com">문의하기</a>
+          </div>
+          <span>Data by KIS · FMP · CMC</span>
+        </div>
+      </footer>
+
+      <nav class="tm-bottom-nav home-m-bottom-nav" aria-label="모바일 빠른 이동"></nav>
+    </div>
+
+    <script>
+      /* 히든 다이버전스 (2026-11-16) — data/hidden-divergence.json을 그대로 그린다. 값이 없으면 지어내지 않고 생략. */
+      (function () {
+        var grid = document.getElementById("hdGrid");
+        var stampEl = document.getElementById("hdStamp");
+        var recWrap = document.getElementById("hdRecWrap");
+        var recEl = document.getElementById("hdRec");
+        var DATA = null, filt = "all", sortBy = "cap";
+        function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+        function won(n) { return n == null ? "—" : Math.round(n).toLocaleString("ko-KR"); }
+        function sign1(n) { return n == null || !isFinite(n) ? "—" : (n > 0 ? "+" : "") + n.toFixed(1) + "%"; }
+        function sign2(n) { return n == null || !isFinite(n) ? "—" : (n > 0 ? "+" : "") + n.toFixed(2) + "%"; }
+        function tone(n) { return n == null || !isFinite(n) || Math.abs(n) < 0.005 ? "" : n > 0 ? "hd-up" : "hd-down"; }
+        function md(d) { return d ? Number(d.slice(5, 7)) + "/" + Number(d.slice(8, 10)) : "—"; }
+        function eok(n) { if (n == null) return "—"; return n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1) + "조" : n.toLocaleString("ko-KR") + "억"; }
+        function href(p) { return "./stock-analysis.html?code=" + encodeURIComponent(p.code) + "&name=" + encodeURIComponent(p.name || ""); }
+        function avg(arr) { var v = arr.filter(function (x) { return x != null && isFinite(x); }); return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : null; }
+
+        function chart(p) {
+          var sp = p.spark;
+          if (!sp || !sp.close || sp.close.length < 5) return "";
+          var W = 320, PH = 92, RH = 44, G = 8, H = PH + G + RH, L = 2, R = 2;
+          var cl = sp.close, rs = sp.rsi || [], n = cl.length;
+          var mn = Math.min.apply(null, cl), mx = Math.max.apply(null, cl);
+          if (mx === mn) mx = mn + 1;
+          var x = function (i) { return L + (i / (n - 1)) * (W - L - R); };
+          var y = function (v) { return 4 + (1 - (v - mn) / (mx - mn)) * (PH - 8); };
+          var ry = function (v) { return PH + G + (1 - v / 100) * RH; };
+          var pts = cl.map(function (v, i) { return x(i).toFixed(1) + "," + y(v).toFixed(1); }).join(" ");
+          var rp = [];
+          rs.forEach(function (v, i) { if (v != null) rp.push(x(i).toFixed(1) + "," + ry(v).toFixed(1)); });
+          var up = "var(--up-color,#e24b4a)", dn = "var(--down-color,#3b82f6)";
+          var a = sp.a, b = sp.b, h = sp.h;
+          var s = '<svg class="hd-svg" viewBox="0 0 ' + W + " " + H + '" aria-hidden="true">';
+          s += '<line x1="0" x2="' + W + '" y1="' + ry(30).toFixed(1) + '" y2="' + ry(30).toFixed(1) + '" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="2 3"/>';
+          s += '<line x1="0" x2="' + W + '" y1="' + ry(70).toFixed(1) + '" y2="' + ry(70).toFixed(1) + '" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="2 3"/>';
+          s += '<polyline points="' + pts + '" fill="none" stroke="currentColor" stroke-opacity=".6" stroke-width="1.5" stroke-linejoin="round"/>';
+          if (rp.length > 1) s += '<polyline points="' + rp.join(" ") + '" fill="none" stroke="' + dn + '" stroke-opacity=".85" stroke-width="1.3" stroke-linejoin="round"/>';
+          if (a != null && b != null && cl[a] != null && cl[b] != null) {
+            s += '<line x1="' + x(a).toFixed(1) + '" y1="' + y(cl[a]).toFixed(1) + '" x2="' + x(b).toFixed(1) + '" y2="' + y(cl[b]).toFixed(1) + '" stroke="' + up + '" stroke-width="1.4" stroke-dasharray="4 3"/>';
+            if (rs[a] != null && rs[b] != null) s += '<line x1="' + x(a).toFixed(1) + '" y1="' + ry(rs[a]).toFixed(1) + '" x2="' + x(b).toFixed(1) + '" y2="' + ry(rs[b]).toFixed(1) + '" stroke="' + dn + '" stroke-width="1.4" stroke-dasharray="4 3"/>';
+            [[a, "a"], [b, "b"]].forEach(function (q) {
+              var i = q[0];
+              s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(cl[i]).toFixed(1) + '" r="3.2" fill="' + up + '"/>';
+              s += '<text x="' + Math.min(W - 8, x(i) + 4).toFixed(1) + '" y="' + Math.min(PH - 2, y(cl[i]) + 12).toFixed(1) + '" font-size="10" font-weight="700" fill="' + up + '">' + q[1] + "</text>";
+              if (rs[i] != null) s += '<circle cx="' + x(i).toFixed(1) + '" cy="' + ry(rs[i]).toFixed(1) + '" r="2.6" fill="' + dn + '"/>';
+            });
+          }
+          if (h != null && cl[h] != null) s += '<circle cx="' + x(h).toFixed(1) + '" cy="' + y(cl[h]).toFixed(1) + '" r="2.4" fill="currentColor" fill-opacity=".5"/>';
+          s += '<text x="2" y="' + (PH + G + 9) + '" font-size="9" fill="currentColor" opacity=".55">RSI</text>';
+          return s + "</svg>";
+        }
+
+        function card(p) {
+          var priceUp = p.aLow ? (p.bLow / p.aLow - 1) * 100 : null;
+          var rsiGap = p.aRsi != null && p.bRsi != null ? p.bRsi - p.aRsi : null;
+          return '<article class="hd-card">' +
+            '<div class="hd-top"><div><a class="hd-name" href="' + href(p) + '">' + esc(p.name) + '<i class="ti ti-arrow-up-right" aria-hidden="true"></i></a>' + (p.isNew ? '<span class="hd-new">NEW</span>' : "") +
+            '<span class="hd-sub">' + esc(p.code) + " · " + esc(p.market === "KOSDAQ" ? "코스닥" : "코스피") + " · 시총 " + eok(p.marketCapEok) + (p.sector ? " · " + esc(p.sector) : "") + "</span></div>" +
+            '<div class="hd-price"><b>' + won(p.close) + '원</b><span class="' + tone(p.changePct) + '">' + sign2(p.changePct) + "</span></div></div>" +
+            chart(p) +
+            '<div class="hd-facts">' +
+            '<div class="hd-fact">가격 a ' + md(p.aDate) + " → b " + md(p.bDate) + "<b>" + won(p.aLow) + " → " + won(p.bLow) + ' <span class="hd-up">' + sign1(priceUp) + "</span></b></div>" +
+            '<div class="hd-fact">RSI a → b<b>' + (p.aRsi != null ? p.aRsi.toFixed(1) : "—") + " → " + (p.bRsi != null ? p.bRsi.toFixed(1) : "—") + ' <span class="hd-down">' + (rsiGap != null ? rsiGap.toFixed(1) : "—") + "</span></b></div>" +
+            '<div class="hd-fact">고점 ' + md(p.hDate) + " 대비 눌림<b class=\"hd-down\">-" + (p.pullbackPct != null ? p.pullbackPct.toFixed(1) : "—") + "%</b></div>" +
+            '<div class="hd-fact">b 저가 대비 현재<b class="' + tone(p.fromB) + '">' + sign1(p.fromB) + (p.barsSinceB != null ? " <small>(" + p.barsSinceB + "일 전 b)</small>" : "") + "</b></div>" +
+            "</div></article>";
+        }
+
+        function render() {
+          if (!DATA) return;
+          var ps = (DATA.picks || []).slice();
+          if (filt === "big") ps = ps.filter(function (p) { return p.marketCapEok >= 10000; });
+          if (filt === "new") ps = ps.filter(function (p) { return p.isNew; });
+          if (sortBy === "gap") ps.sort(function (a, b) { return (a.bRsi - a.aRsi) - (b.bRsi - b.aRsi); });
+          else if (sortBy === "near") ps.sort(function (a, b) { return (a.fromB == null ? 99 : a.fromB) - (b.fromB == null ? 99 : b.fromB); });
+          else ps.sort(function (a, b) { return b.marketCapEok - a.marketCapEok; });
+          grid.innerHTML = ps.length ? ps.map(card).join("") :
+            '<div class="hd-empty">' + (filt === "all" ? "오늘은 조건에 해당하는 종목이 없습니다." : "이 보기에 해당하는 종목이 없습니다.") + "</div>";
+        }
+
+        function renderRec(d) {
+          var hs = (d.history || []).filter(function (h) { return h.age > 0; }).reverse();
+          if (!hs.length) { recWrap.hidden = true; return; }
+          recWrap.hidden = false;
+          var ret = function (p, k) { return p[k] != null && p.base ? (p[k] / p.base - 1) * 100 : null; };
+          var rows = hs.slice(0, 20).map(function (h) {
+            var ps = h.picks || [];
+            var r5 = avg(ps.map(function (p) { return ret(p, "d5"); }));
+            var r20 = avg(ps.map(function (p) { return ret(p, "d20"); }));
+            var now = avg(ps.map(function (p) { return ret(p, "last"); }));
+            var names = ps.slice(0, 6).map(function (p) { return esc(p.name); }).join(", ") + (ps.length > 6 ? " 외 " + (ps.length - 6) : "");
+            var c5 = r5 != null ? '<span class="' + tone(r5) + '">' + sign2(r5) + "</span>" : (now != null ? '<span class="' + tone(now) + '">' + sign2(now) + "</span> <small>" + h.age + "일째</small>" : "—");
+            var c20 = r20 != null ? '<span class="' + tone(r20) + '">' + sign2(r20) + "</span>" : (h.age >= 5 && now != null ? '<span class="' + tone(now) + '">' + sign2(now) + "</span> <small>" + h.age + "일째</small>" : "—");
+            return "<tr><td>" + md(h.date) + '</td><td class="hd-hide-m">' + names + "</td><td>" + ps.length + "</td><td>" + c5 + "</td><td>" + c20 + "</td></tr>";
+          }).join("");
+          recEl.innerHTML = '<table><thead><tr><th>진입일</th><th class="hd-hide-m">종목</th><th>수</th><th>5거래일</th><th>20거래일</th></tr></thead><tbody>' + rows + "</tbody></table>";
+        }
+
+        document.querySelectorAll(".hd-seg button").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var grp = btn.parentElement;
+            grp.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+            if (btn.dataset.f) filt = btn.dataset.f;
+            if (btn.dataset.s) sortBy = btn.dataset.s;
+            render();
+          });
+        });
+
+        fetch("/data/hidden-divergence.json", { cache: "no-store", credentials: "same-origin" })
+          .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+          .then(function (d) {
+            DATA = d;
+            var nNew = (d.picks || []).filter(function (p) { return p.isNew; }).length;
+            stampEl.textContent = md(d.asOfDate) + " 종가 기준 · 조건 해당 " + (d.matched || 0) + "종목" + (nNew ? " · 오늘 새로 진입 " + nNew : "") + (d.matched > (d.picks || []).length ? " · 시총 상위 " + d.picks.length + "개 표시" : "");
+            render();
+            renderRec(d);
+          })
+          .catch(function (e) {
+            console.warn("[hidden-divergence]", e);
+            stampEl.textContent = "";
+            grid.innerHTML = '<div class="hd-empty">목록을 아직 만들지 못했습니다. 장 마감 뒤 일봉 계산이 끝나면 자동으로 채워집니다.</div>';
+          });
+      })();
+    </script>
+    <script>
+      /* (2026-10-16) 종목을 누르면 바로 AI 분석으로 가던 것을 → 시세 보기 / AI 분석 중 고르게 한다.
+         "AI종목분석으로 … 확인하기" 버튼(.cb-ai-link)은 이미 AI 분석이라고 밝힌 링크라 그대로 둔다. */
+      document.addEventListener("click", function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var a = e.target && e.target.closest ? e.target.closest('a[href*="stock-analysis.html?code="]') : null;
+        if (!a || a.classList.contains("cb-ai-link") || a.closest(".tmsd") || typeof window.tmStockActions !== "function") return;
+        var u;
+        try { u = new URL(a.getAttribute("href"), location.href); } catch (_) { return; }
+        var code = u.searchParams.get("code") || "";
+        if (!code) return;
+        e.preventDefault();
+        window.tmStockActions({
+          name: u.searchParams.get("name") || "",
+          code: code,
+          quoteHref: "./realtime.html?q=" + encodeURIComponent(code),
+          aiHref: a.getAttribute("href"),
+        });
+      });
+    </script>
+  </body>
+</html>

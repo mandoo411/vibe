@@ -106,6 +106,8 @@
     { id: "signal", href: "./trade-signal.html", label: "매매시그널", icon: "ti-bell" },
     // 2026-09-11: 종가베팅 랭킹. 매매시그널과 같은 "지금 뭘 살까" 계열이라 나란히 둔다.
     { id: "closebet", href: "./close-signal.html", label: "종가시그널", icon: "ti-chart-candle" },
+    // 2026-11-16: 히든 다이버전스(상승추세 눌림목 스캐너) — 시우 요청.
+    { id: "hiddendiv", href: "./hidden-divergence.html", label: "히든다이버전스", icon: "ti-trending-up" },
     { id: "analysis", href: "./stock-analysis.html", label: "AI 종목분석", icon: "ti-robot" },
     { id: "schedule", href: "./weekly-market.html", label: "일정", icon: "ti-calendar" },
     { id: "briefing", href: "./briefing.html", label: "오전브리핑", icon: "ti-file-description" },
@@ -125,14 +127,14 @@
   // 12칸이 꽉 차 있었으므로 한 칸이 늘어 5행이 된다. 위치는 같은 "종목 고르기" 계열인
   // 매매시그널 바로 옆 — 그 뒤 항목들은 한 칸씩 밀린다.
   // 2026-10-07: PRO 딱지 대상 한 곳에서 관리 — 종가시그널이 모바일 전체메뉴·하단 탭에서 빠져 있었다.
-  const PRO_PAGE_IDS = new Set(["signal", "closebet", "analysis"]);
+  const PRO_PAGE_IDS = new Set(["signal", "closebet", "hiddendiv", "analysis"]);
 
   const NAV_SHEET_GRID = [
     ["home", "signal", "closebet"],
-    ["analysis", "briefing", "daily"],
-    ["schedule", "market", "realtime"],
-    ["us", "crypto", "world"],
-    ["pricing"],
+    ["hiddendiv", "analysis", "briefing"],
+    ["daily", "schedule", "market"],
+    ["realtime", "us", "crypto"],
+    ["world", "pricing"],
   ];
 
   const NAV_SHEET_LABELS = {
@@ -140,6 +142,7 @@
     realtime: "국내주식",
     signal: "매매시그널",
     closebet: "종가시그널",
+    hiddendiv: "히든다이버전스",
     analysis: "AI분석",
     schedule: "일정",
     briefing: "오전브리핑",
@@ -166,6 +169,7 @@
     "/stock-analysis.html": "analysis",
     "/trade-signal.html": "signal",
     "/close-signal.html": "closebet",
+    "/hidden-divergence.html": "hiddendiv",
     "/pricing.html": "pricing",
   };
 
@@ -419,6 +423,7 @@
   const NAV_PRIORITY = {
     "./trade-signal.html": 1,
     "./close-signal.html": 2,
+    "./hidden-divergence.html": 2.5,
     "./stock-analysis.html": 3,
     "./realtime.html": 4,
     "./us-market.html": 5,
@@ -686,7 +691,7 @@
         );
       })
       .join("");
-    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--13">${cells}</div>`;
+    const body = `<div class="tm-nav-sheet__grid tm-nav-sheet__grid--14">${cells}</div>`;
     const sheet = document.createElement("div");
     sheet.id = "tm-nav-sheet";
     sheet.className = "tm-nav-sheet";

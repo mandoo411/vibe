@@ -1,145 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-16 09:42 KST",
-    "from": "2026-11-16",
-    "to": "2026-11-30",
-    "historyFrom": "2026-08-18",
+    "lastUpdatedKst": "2026-11-17 12:24 KST",
+    "from": "2026-11-17",
+    "to": "2026-12-01",
+    "historyFrom": "2026-08-19",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-18",
-      "event": "ADP Employment Change Weekly",
-      "country": "US",
-      "time": "21:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "9500",
-      "previous": "8250",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Export Prices MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-1.4",
-      "previous": "-0.8",
-      "estimate": "0.2",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Import Prices MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.4",
-      "previous": "-0.3",
-      "estimate": "0.1",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Housing Starts",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.369",
-      "previous": "1.439",
-      "estimate": "1.35",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Housing Starts MoM",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-4.9",
-      "previous": "21.7",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Building Permits Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.443",
-      "previous": "1.367",
-      "estimate": "1.37",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Building Permits MoM Prel",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "5",
-      "previous": "-3",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Industrial Production MoM",
-      "country": "US",
-      "time": "22:15",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.2",
-      "previous": "0.2",
-      "estimate": "0.3",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Pending Home Sales Index",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "71",
-      "previous": "72.9",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-18",
-      "event": "Pending Home Sales MoM",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-2.6",
-      "previous": "-4.8",
-      "estimate": "0.3",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "API Crude Oil Stock Change",
-      "country": "US",
-      "time": "05:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-0.328",
-      "previous": "9.072",
-      "estimate": "-1.6",
-      "unit": ""
-    },
     {
       "date": "2026-08-19",
       "event": "MBA 5/1 ARM Contract Rate",
@@ -5734,7 +5602,7 @@
     },
     {
       "date": "2026-10-16",
-      "event": "United States-Imports/Exports-Export Prices YY",
+      "event": "United States-Imports/Exports-Export Prices YY *",
       "country": "US",
       "time": "21:30",
       "impact": "high",
@@ -8535,7 +8403,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "7.8",
       "previous": "25.5",
       "estimate": "18",
       "unit": ""
@@ -8547,7 +8415,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "93.85",
       "previous": "79.03",
       "estimate": "",
       "unit": "%"
@@ -8559,7 +8427,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "2.76",
       "previous": "2.67",
       "estimate": "",
       "unit": ""
@@ -8583,7 +8451,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "7.39",
       "previous": "70.91",
       "estimate": "",
       "unit": "%"
@@ -8595,7 +8463,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "2.83",
       "previous": "2.92",
       "estimate": "",
       "unit": ""
@@ -8607,7 +8475,7 @@
       "time": "01:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "87.8472",
       "previous": "87.4885",
       "estimate": "",
       "unit": "$"
@@ -8619,7 +8487,7 @@
       "time": "02:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "1.171",
       "previous": "1.053",
       "estimate": "1.089",
       "unit": ""
@@ -8638,7 +8506,7 @@
     },
     {
       "date": "2026-11-17",
-      "event": "United States-Imports/Exports-Export Prices YY",
+      "event": "United States-Imports/Exports-Export Prices YY *",
       "country": "US",
       "time": "22:30",
       "impact": "high",
@@ -8657,7 +8525,7 @@
       "importance": 3,
       "actual": "",
       "previous": "2.2",
-      "estimate": "0.3",
+      "estimate": "0.5",
       "unit": "%"
     },
     {
@@ -8741,7 +8609,7 @@
       "importance": 3,
       "actual": "",
       "previous": "8.968",
-      "estimate": "",
+      "estimate": "-0.5",
       "unit": ""
     },
     {
@@ -8837,7 +8705,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.221",
-      "estimate": "1.268",
+      "estimate": "1.245",
       "unit": ""
     },
     {
@@ -8933,7 +8801,7 @@
       "importance": 3,
       "actual": "",
       "previous": "4.657",
-      "estimate": "",
+      "estimate": "-0.5",
       "unit": ""
     },
     {
@@ -8945,7 +8813,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.799",
-      "estimate": "",
+      "estimate": "1.6",
       "unit": ""
     },
     {
@@ -9017,7 +8885,7 @@
       "importance": 3,
       "actual": "",
       "previous": "20.9",
-      "estimate": "18",
+      "estimate": "20",
       "unit": ""
     },
     {
@@ -9053,7 +8921,7 @@
       "importance": 3,
       "actual": "",
       "previous": "200",
-      "estimate": "196",
+      "estimate": "197",
       "unit": ""
     },
     {
@@ -9137,7 +9005,7 @@
       "importance": 3,
       "actual": "",
       "previous": "48",
-      "estimate": "52",
+      "estimate": "51.5",
       "unit": ""
     },
     {
@@ -9208,7 +9076,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "79.03",
+      "previous": "93.85",
       "estimate": "",
       "unit": "%"
     },
@@ -9220,7 +9088,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "2.67",
+      "previous": "2.76",
       "estimate": "",
       "unit": ""
     },
@@ -9244,7 +9112,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "70.91",
+      "previous": "7.39",
       "estimate": "",
       "unit": "%"
     },
@@ -9256,7 +9124,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "2.92",
+      "previous": "2.83",
       "estimate": "",
       "unit": ""
     },
@@ -9268,7 +9136,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "87.4885",
+      "previous": "87.8472",
       "estimate": "",
       "unit": "$"
     },
@@ -9319,18 +9187,165 @@
       "previous": "105.4",
       "estimate": "",
       "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "ADP Employment Change Weekly",
+      "country": "US",
+      "time": "22:15",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "19750",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-24",
+      "event": "S&P/Case-Shiller 20-City Home Price MoM s.a",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.3",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-24",
+      "event": "S&P/Case-Shiller Home Price YoY",
+      "country": "US",
+      "time": "23:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.7",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "CB Consumer Confidence",
+      "country": "US",
+      "time": "00:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "91.7",
+      "estimate": "92",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "2-Year FRN Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "11.37",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "2-Year FRN Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "3.05",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "2-Year FRN Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "30",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "52-Week Bill Auction Allotted at High",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "65.33",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "52-Week Bill Auction Bid-to-Cover",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "3.15",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "52-Week Bill Auction Total Accepted",
+      "country": "US",
+      "time": "01:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "58.8048",
+      "estimate": "",
+      "unit": "$"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "5-Year Note Auction Allotted at High",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "98.6",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "5-Year Note Auction Bid-to-Cover",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "2.33",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "5-Year Note Auction Total Accepted",
+      "country": "US",
+      "time": "03:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "70.0001",
+      "estimate": "",
+      "unit": "$"
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-11-16",
-      "name": "영광와이케이엠씨",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": 11000,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2342",
-      "code": ""
-    },
     {
       "date": "2026-11-17",
       "name": "옵토닉스",
@@ -9377,48 +9392,181 @@
       "code": ""
     }
   ],
-  "krEarnings": [],
+  "krEarnings": [
+    {
+      "date": "2026-11-16",
+      "name": "기아",
+      "sector": "",
+      "code": "000270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "SK하이닉스",
+      "sector": "",
+      "code": "000660",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "현대차",
+      "sector": "",
+      "code": "005380",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "삼성전자",
+      "sector": "",
+      "code": "005930",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "삼성SDI",
+      "sector": "",
+      "code": "006400",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "카카오",
+      "sector": "",
+      "code": "035720",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "LG화학",
+      "sector": "",
+      "code": "051910",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "신한지주",
+      "sector": "",
+      "code": "055550",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "셀트리온",
+      "sector": "",
+      "code": "068270",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "KB금융",
+      "sector": "",
+      "code": "105560",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "삼성바이오로직스",
+      "sector": "",
+      "code": "207940",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    },
+    {
+      "date": "2026-11-16",
+      "name": "LG에너지솔루션",
+      "sector": "",
+      "code": "373220",
+      "epsEstimate": "",
+      "previousQuarter": "",
+      "reportName": "분기보고서 (2026.09)",
+      "confirmed": true,
+      "source": "dart"
+    }
+  ],
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-16",
-      "title": "NY Empire State Manufacturing Index (ESMI)",
-      "expected": "예측 18 / 이전 25.5",
-      "why": "제조업의 경기 흐름을 파악하기 위해 중요하다. 최근 경제 지표가 혼조세를 보이고 있어 주목된다.",
-      "bull": "지표가 예상보다 높게 나올 경우, 제조업 관련 주가가 상승할 것이다.",
-      "bear": "예상보다 낮게 발표되면, 제조업 주식과 관련된 지수가 하락할 가능성이 크다.",
-      "watch": [
-        "ISM 제조업 지수",
-        "S&P 500",
-        "제조업 관련 ETF"
-      ]
-    },
-    {
-      "type": "macro",
       "date": "2026-11-17",
-      "title": "3-Month Bill Auction Allotted at High",
-      "previous": "79.03%",
-      "why": "단기 금리의 방향성을 결정짓는 중요한 지표로, 금리 인상 우려가 반영될 수 있다.",
-      "bull": "높은 비율로 배정될 경우, 단기 금리가 상승하면서 금융주가 긍정적인 영향을 받을 것이다.",
-      "bear": "낮은 배정 비율은 금리 인상 우려를 완화시켜, 금융주가 하락할 수 있다.",
-      "watch": [
-        "금리 인상 가능성",
-        "채권 수익률",
-        "금융주"
-      ]
-    },
-    {
-      "type": "macro",
-      "date": "2026-11-17",
-      "title": "NOPA Soybean Oil Stocks",
+      "title": "NOPA 대두유 재고",
       "expected": "예측 1.089 / 이전 1.053",
-      "why": "농산물 가격에 영향을 미치는 주요 지표로, 공급과 수요의 균형을 확인할 수 있다.",
-      "bull": "예상치를 초과하면, 대두유 관련 주식이 상승세를 보일 것이다.",
-      "bear": "예상보다 낮게 나오면, 대두유 가격이 하락하면서 관련 주식이 부진할 수 있다.",
+      "why": "대두유 재고는 식품 가격과 관련이 깊어, 인플레이션 압력을 가늠하는 데 중요합니다.",
+      "bull": "재고가 예상보다 줄어들면 식품 관련 주식이 상승할 가능성이 높습니다.",
+      "bear": "재고가 늘어나면 식품 관련 주식이 하락하고, 인플레이션 우려가 커질 수 있습니다.",
       "watch": [
-        "대두 가격",
-        "농산물 관련 ETF",
-        "식품업체 주식"
+        "소비자물가",
+        "식품업종",
+        "CJ제일제당"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-11-17",
+      "title": "3개월물 국채 입찰",
+      "expected": "예측 없음 / 이전 79.03%",
+      "why": "국채 입찰 결과는 금리 방향성을 제시하며, 시장의 신뢰도를 반영합니다.",
+      "bull": "입찰이 성공적으로 이루어지면 금리가 안정세를 보이며 주식시장에 긍정적 영향을 미칩니다.",
+      "bear": "입찰 성과가 부진하면 금리가 상승하고 주식시장이 하락할 수 있습니다.",
+      "watch": [
+        "금리",
+        "주식시장",
+        "환율"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-11-17",
+      "title": "6개월물 국채 입찰",
+      "expected": "예측 없음 / 이전 70.91%",
+      "why": "6개월물 국채 입찰 결과는 단기 금리 전망에 중요한 영향을 미칩니다.",
+      "bull": "입찰 성과가 좋으면 금리가 하락하고 주식시장이 상승할 가능성이 큽니다.",
+      "bear": "입찰이 저조하면 금리가 상승하고 주식시장이 하락할 수 있습니다.",
+      "watch": [
+        "금리",
+        "주식시장",
+        "환율"
       ]
     }
   ]

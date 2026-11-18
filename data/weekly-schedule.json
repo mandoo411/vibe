@@ -1,193 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-17 12:24 KST",
-    "from": "2026-11-17",
-    "to": "2026-12-01",
-    "historyFrom": "2026-08-19",
+    "lastUpdatedKst": "2026-11-18 11:43 KST",
+    "from": "2026-11-18",
+    "to": "2026-12-02",
+    "historyFrom": "2026-08-20",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-19",
-      "event": "MBA 5/1 ARM Contract Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "5.94",
-      "previous": "5.99",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 5/1 ARM Effective Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.26",
-      "previous": "6.3",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 15-Year Mortgage Contract Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.08",
-      "previous": "6.1",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 15-Year Mortgage Effective Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.29",
-      "previous": "6.33",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 15-Year Mortgage Points",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.82",
-      "previous": "0.94",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 30-Year Mortgage Rate",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "6.77",
-      "previous": "6.77",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "MBA 5/1 ARM Points",
-      "country": "US",
-      "time": "20:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.87",
-      "previous": "0.83",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-19",
-      "event": "EIA Crude Oil Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "4.405",
-      "previous": "17.423",
-      "estimate": "-1.6",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-19",
-      "event": "EIA Gasoline Stocks Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.688",
-      "previous": "-0.968",
-      "estimate": "-1.319",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-19",
-      "event": "EIA Crude Oil Exports Change",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1.008",
-      "previous": "-0.627",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-19",
-      "event": "EIA Ethanol Production",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "1089",
-      "previous": "1117",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-19",
-      "event": "EIA Ethanol Stocks",
-      "country": "US",
-      "time": "23:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "25121",
-      "previous": "24798",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-20",
-      "event": "20-Year Bond Auction Allotted at High",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "65.58",
-      "previous": "15.13",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-20",
-      "event": "20-Year Bond Auction Bid-to-Cover",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "2.53",
-      "previous": "2.64",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-20",
-      "event": "20-Year Bond Auction Total Accepted",
-      "country": "US",
-      "time": "02:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "18.0569",
-      "previous": "13",
-      "estimate": "",
-      "unit": "$"
-    },
     {
       "date": "2026-08-20",
       "event": "Philadelphia Fed Manufacturing Index",
@@ -8499,22 +8319,10 @@
       "time": "22:15",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "19750",
+      "actual": "23750",
+      "previous": "19250",
       "estimate": "",
       "unit": ""
-    },
-    {
-      "date": "2026-11-17",
-      "event": "United States-Imports/Exports-Export Prices YY *",
-      "country": "US",
-      "time": "22:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "",
-      "previous": "11.63",
-      "estimate": "",
-      "unit": "%"
     },
     {
       "date": "2026-11-17",
@@ -8523,8 +8331,8 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "2.2",
+      "actual": "1.1",
+      "previous": "2.4",
       "estimate": "0.5",
       "unit": "%"
     },
@@ -8535,7 +8343,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "1.1",
       "previous": "1.1",
       "estimate": "0.7",
       "unit": "%"
@@ -8547,8 +8355,8 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
-      "previous": "0.9",
+      "actual": "0.6",
+      "previous": "1.1",
       "estimate": "0.4",
       "unit": "%"
     },
@@ -8559,7 +8367,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "0.2",
       "previous": "0.8",
       "estimate": "0.2",
       "unit": "%"
@@ -8571,7 +8379,7 @@
       "time": "23:15",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-0.4",
       "previous": "0.7",
       "estimate": "0.1",
       "unit": "%"
@@ -8583,7 +8391,7 @@
       "time": "00:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "0.5",
       "previous": "0.4",
       "estimate": "0.5",
       "unit": "%"
@@ -8595,7 +8403,7 @@
       "time": "00:00",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "25",
       "previous": "29",
       "estimate": "29",
       "unit": ""
@@ -8607,9 +8415,9 @@
       "time": "06:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "5.278",
       "previous": "8.968",
-      "estimate": "-0.5",
+      "estimate": "-0.477",
       "unit": ""
     },
     {
@@ -8801,7 +8609,7 @@
       "importance": 3,
       "actual": "",
       "previous": "4.657",
-      "estimate": "-0.5",
+      "estimate": "-0.477",
       "unit": ""
     },
     {
@@ -8813,7 +8621,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.799",
-      "estimate": "1.6",
+      "estimate": "1.7",
       "unit": ""
     },
     {
@@ -9196,7 +9004,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "19750",
+      "previous": "23750",
       "estimate": "",
       "unit": ""
     },
@@ -9343,18 +9151,165 @@
       "previous": "70.0001",
       "estimate": "",
       "unit": "$"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "Composite Business Sentiment Index",
+      "country": "KR",
+      "time": "06:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "104.2",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "API Crude Oil Stock Change",
+      "country": "US",
+      "time": "06:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "5.278",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 5/1 ARM Contract Rate",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "6.28",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 5/1 ARM Effective Rate",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "6.7",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 15-Year Mortgage Contract Rate",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "6.64",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 15-Year Mortgage Effective Rate",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "6.88",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 15-Year Mortgage Points",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.97",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 30-Year Mortgage Rate",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "7.21",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "MBA 5/1 ARM Points",
+      "country": "US",
+      "time": "21:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "1.14",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "Personal Spending MoM",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.5",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "PCE Services Prices ex Energy & Housing MoM",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.4",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "PCE Prices ex Food, Energy & Housing MoM",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.3",
+      "estimate": "",
+      "unit": "%"
+    },
+    {
+      "date": "2026-11-25",
+      "event": "PCE Price Index MoM",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "0.5",
+      "estimate": "0.3",
+      "unit": "%"
     }
   ],
   "krIPO": [
-    {
-      "date": "2026-11-17",
-      "name": "옵토닉스",
-      "market": "코스닥",
-      "sector": "",
-      "offeringPrice": 12000,
-      "url": "https://www.38.co.kr/html/fund/?o=v&no=2338",
-      "code": ""
-    },
     {
       "date": "2026-11-18",
       "name": "에이엘로봇",
@@ -9387,8 +9342,17 @@
       "name": "유캐스트",
       "market": "코스닥",
       "sector": "",
-      "offeringPrice": null,
+      "offeringPrice": 19000,
       "url": "https://www.38.co.kr/html/fund/?o=v&no=2352",
+      "code": ""
+    },
+    {
+      "date": "2026-12-02",
+      "name": "아델",
+      "market": "코스닥",
+      "sector": "",
+      "offeringPrice": null,
+      "url": "https://www.38.co.kr/html/fund/?o=v&no=2345",
       "code": ""
     }
   ],
@@ -9529,44 +9493,44 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-17",
-      "title": "NOPA 대두유 재고",
-      "expected": "예측 1.089 / 이전 1.053",
-      "why": "대두유 재고는 식품 가격과 관련이 깊어, 인플레이션 압력을 가늠하는 데 중요합니다.",
-      "bull": "재고가 예상보다 줄어들면 식품 관련 주식이 상승할 가능성이 높습니다.",
-      "bear": "재고가 늘어나면 식품 관련 주식이 하락하고, 인플레이션 우려가 커질 수 있습니다.",
+      "date": "2026-11-18",
+      "title": "비즈니스 재고 (Business Inventories MoM)",
+      "expected": "예측 0.5% / 이전 0.4%",
+      "why": "재고 증가율이 소매업체의 판매 전망을 반영하므로 중요하다. 시장은 소비자 수요의 회복 여부를 주목하고 있다.",
+      "bull": "예상보다 높게 나올 경우, 소비 관련 주식과 원자재 가격이 상승할 것이다.",
+      "bear": "예상보다 낮게 나오면, 경기 둔화 우려로 인해 주식 시장이 하락할 가능성이 크다.",
       "watch": [
-        "소비자물가",
-        "식품업종",
-        "CJ제일제당"
+        "소매판매",
+        "S&P 500",
+        "원유 가격"
       ]
     },
     {
       "type": "macro",
-      "date": "2026-11-17",
-      "title": "3개월물 국채 입찰",
-      "expected": "예측 없음 / 이전 79.03%",
-      "why": "국채 입찰 결과는 금리 방향성을 제시하며, 시장의 신뢰도를 반영합니다.",
-      "bull": "입찰이 성공적으로 이루어지면 금리가 안정세를 보이며 주식시장에 긍정적 영향을 미칩니다.",
-      "bear": "입찰 성과가 부진하면 금리가 상승하고 주식시장이 하락할 수 있습니다.",
+      "date": "2026-11-18",
+      "title": "NAHB 주택 시장 지수 (NAHB Housing Market Index)",
+      "expected": "예측 29 / 이전 25",
+      "why": "주택 시장의 건강성을 나타내는 지표로, 주택 가격과 건설업 전망에 영향을 미친다. 시장은 주택 수요 회복을 기대하고 있다.",
+      "bull": "지수가 예상보다 높으면, 건설업체와 관련 주식들이 상승할 것이다.",
+      "bear": "지수가 예상보다 낮으면, 주택 시장에 대한 부정적 전망으로 인해 관련 주식이 하락할 수 있다.",
       "watch": [
-        "금리",
-        "주식시장",
-        "환율"
+        "주택 착공",
+        "건축 자재",
+        "부동산 ETF"
       ]
     },
     {
       "type": "macro",
-      "date": "2026-11-17",
-      "title": "6개월물 국채 입찰",
-      "expected": "예측 없음 / 이전 70.91%",
-      "why": "6개월물 국채 입찰 결과는 단기 금리 전망에 중요한 영향을 미칩니다.",
-      "bull": "입찰 성과가 좋으면 금리가 하락하고 주식시장이 상승할 가능성이 큽니다.",
-      "bear": "입찰이 저조하면 금리가 상승하고 주식시장이 하락할 수 있습니다.",
+      "date": "2026-11-18",
+      "title": "API 원유 재고 변화 (API Crude Oil Stock Change)",
+      "expected": "예측 -0.477 / 이전 5.278",
+      "why": "원유 재고 변화는 공급과 수요의 균형을 나타내며, 유가에 직접적인 영향을 미친다. 시장은 공급 축소를 기대하고 있다.",
+      "bull": "예상보다 낮은 재고 변화는 유가 상승과 에너지 관련 주식의 강세를 이끌 것이다.",
+      "bear": "예상보다 높은 재고 변화는 유가 하락과 에너지 주식의 약세를 초래할 수 있다.",
       "watch": [
-        "금리",
-        "주식시장",
-        "환율"
+        "WTI 유가",
+        "에너지 ETF",
+        "OPEC 발표"
       ]
     }
   ]

@@ -1,109 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-22 09:55 KST",
-    "from": "2026-11-22",
-    "to": "2026-12-06",
-    "historyFrom": "2026-08-24",
+    "lastUpdatedKst": "2026-11-23 10:23 KST",
+    "from": "2026-11-23",
+    "to": "2026-12-07",
+    "historyFrom": "2026-08-25",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-24",
-      "event": "Chicago Fed National Activity Index",
-      "country": "US",
-      "time": "21:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "0.12",
-      "previous": "0.01",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-25",
-      "event": "3-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "97.66",
-      "previous": "44.68",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-25",
-      "event": "3-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "3.08",
-      "previous": "2.86",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-25",
-      "event": "3-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "96.1445",
-      "previous": "98.7259",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-25",
-      "event": "6-Month Bill Auction Allotted at High",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "59.64",
-      "previous": "18.55",
-      "estimate": "",
-      "unit": "%"
-    },
-    {
-      "date": "2026-08-25",
-      "event": "6-Month Bill Auction Bid-to-Cover",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "3.05",
-      "previous": "2.97",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-25",
-      "event": "6-Month Bill Auction Total Accepted",
-      "country": "US",
-      "time": "00:30",
-      "impact": "high",
-      "importance": 3,
-      "actual": "82.5587",
-      "previous": "84.7754",
-      "estimate": "",
-      "unit": "$"
-    },
-    {
-      "date": "2026-08-25",
-      "event": "Consumer Confidence",
-      "country": "KR",
-      "time": "06:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "104.5",
-      "previous": "106.8",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-08-25",
       "event": "ADP Employment Change Weekly",
@@ -9475,6 +9379,30 @@
       "previous": "-134.9",
       "estimate": "-131",
       "unit": "$"
+    },
+    {
+      "date": "2026-11-27",
+      "event": "USDA Pork Net Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "32.1",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-27",
+      "event": "USDA Pork Gross Export Sales",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "36.2",
+      "estimate": "",
+      "unit": ""
     }
   ],
   "krIPO": [
@@ -9502,42 +9430,42 @@
     {
       "type": "macro",
       "date": "2026-11-23",
-      "title": "시카고 연준 국가 활동 지수",
+      "title": "시카고 연방준비은행 국가활동지수",
       "expected": "이전 0.07",
-      "why": "경제 전반의 활동 수준을 나타내며, 최근 경기 회복세를 확인할 수 있습니다.",
-      "bull": "지수가 상승하면 주식 시장이 긍정적으로 반응하고, 특히 경기 민감 업종이 상승할 것입니다.",
-      "bear": "지수가 하락하면 경기 둔화 우려가 커지며, 방어주가 상대적으로 강세를 보일 수 있습니다.",
+      "why": "경제 전반의 활동 수준을 측정하는 지표로, 최근 경기 회복세를 확인할 수 있다.",
+      "bull": "지표가 긍정적으로 나오면 미국 주식 시장이 상승하고 원화가 강세를 보인다.",
+      "bear": "부진한 수치가 발표되면 주식 시장이 하락하고 원화가 약세를 보일 가능성이 크다.",
       "watch": [
-        "미국 GDP",
-        "ISM 제조업 PMI",
-        "소비자 신뢰지수"
+        "S&P500",
+        "달러/원",
+        "국내 제조업 PMI"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-23",
       "title": "S&P 글로벌 서비스 PMI 플래시",
-      "expected": "예상 55.6",
-      "why": "서비스업 경기를 가늠할 수 있는 중요한 지표로, 소비자 지출과 밀접한 연관이 있습니다.",
-      "bull": "예상치를 초과하면 서비스업 관련 주식이 상승하며, 전체 주식 시장에도 긍정적인 영향을 미칩니다.",
-      "bear": "예상치를 하회하면 서비스업 부진 우려가 커져 관련 주식이 하락할 것입니다.",
+      "expected": "예측 55.6",
+      "why": "서비스 부문의 경기 흐름을 파악할 수 있는 중요한 지표로, 소비자 신뢰와 밀접한 연관이 있다.",
+      "bull": "예상치를 초과하면 서비스 관련 주식이 상승하고, 경기 회복 기대감이 높아진다.",
+      "bear": "예상보다 낮은 수치가 나오면 서비스 업종 주식이 하락하며 경기 둔화 우려가 커진다.",
       "watch": [
-        "소비자 물가 지수",
+        "S&P500",
         "소비자 신뢰지수",
-        "S&P 500"
+        "국내 서비스업"
       ]
     },
     {
       "type": "macro",
       "date": "2026-11-23",
       "title": "S&P 글로벌 제조업 PMI 플래시",
-      "expected": "예상 54.5",
-      "why": "제조업의 건강성을 나타내며, 공급망 문제와 인플레이션 압력을 파악할 수 있습니다.",
-      "bull": "지수가 상승하면 제조업 관련 주식이 강세를 보이며, 경기 회복 기대감이 커집니다.",
-      "bear": "지수가 낮아지면 제조업 부진 우려가 커지고, 경기 민감 주식이 하락할 것입니다.",
+      "expected": "예측 54.5",
+      "why": "제조업의 경기 상황을 나타내는 지표로, 글로벌 공급망과 무역 상황을 반영한다.",
+      "bull": "지표가 긍정적으로 나오면 제조업 관련 주식이 상승하고, 원화 강세를 이끌 가능성이 있다.",
+      "bear": "부진한 수치가 발표되면 제조업 주식이 하락하고, 경기 둔화 우려가 커질 것이다.",
       "watch": [
-        "ISM 제조업 PMI",
-        "산업 생산 지수",
+        "코스피",
+        "제조업 생산지수",
         "원자재 가격"
       ]
     }

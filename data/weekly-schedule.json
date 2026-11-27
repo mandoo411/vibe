@@ -1,61 +1,13 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-26 12:21 KST",
-    "from": "2026-11-26",
-    "to": "2026-12-10",
-    "historyFrom": "2026-08-28",
+    "lastUpdatedKst": "2026-11-27 12:28 KST",
+    "from": "2026-11-27",
+    "to": "2026-12-11",
+    "historyFrom": "2026-08-29",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
-    {
-      "date": "2026-08-28",
-      "event": "Chicago PMI",
-      "country": "US",
-      "time": "22:45",
-      "impact": "high",
-      "importance": 3,
-      "actual": "47.1",
-      "previous": "57.6",
-      "estimate": "58",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-28",
-      "event": "Michigan Consumer Sentiment Final",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "51.7",
-      "previous": "55.2",
-      "estimate": "51",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-28",
-      "event": "Nonfarm Payrolls Benchmark Revision Prel",
-      "country": "US",
-      "time": "23:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "-79",
-      "previous": "-911",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-08-29",
-      "event": "Baker Hughes Gas Rig Count",
-      "country": "US",
-      "time": "03:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "132",
-      "previous": "127",
-      "estimate": "",
-      "unit": ""
-    },
     {
       "date": "2026-08-31",
       "event": "Dallas Fed Manufacturing Index",
@@ -8849,7 +8801,7 @@
       "importance": 3,
       "actual": "",
       "previous": "93.7",
-      "estimate": "",
+      "estimate": "96.8",
       "unit": "%"
     },
     {
@@ -8957,7 +8909,7 @@
       "importance": 3,
       "actual": "",
       "previous": "2.8",
-      "estimate": "",
+      "estimate": "2.85",
       "unit": "%"
     },
     {
@@ -9261,6 +9213,30 @@
       "unit": "%"
     },
     {
+      "date": "2026-12-04",
+      "event": "Non Farm Payrolls",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "165",
+      "estimate": "90",
+      "unit": ""
+    },
+    {
+      "date": "2026-12-04",
+      "event": "Unemployment Rate",
+      "country": "US",
+      "time": "22:30",
+      "impact": "high",
+      "importance": 3,
+      "actual": "",
+      "previous": "4.1",
+      "estimate": "4.1",
+      "unit": "%"
+    },
+    {
       "date": "2026-12-10",
       "event": "코스피200 선물·옵션 동시만기일 (네 마녀의 날)",
       "country": "KR",
@@ -9297,44 +9273,72 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-26",
-      "title": "신규 주택 판매",
-      "expected": "예측 0.65 / 이전 0.614",
-      "why": "주택 시장의 회복 여부를 판단하기 위해 이 지표를 주목하고 있다. 최근 주택 판매가 증가세를 보이고 있다.",
-      "bull": "판매가 예상보다 높게 나올 경우, 건설업체 주가가 상승할 가능성이 크다.",
-      "bear": "판매가 예상보다 낮으면, 주택 관련 주식이 하락세를 보일 것이다.",
+      "date": "2026-11-27",
+      "title": "소매 재고 (Retail Inventories)",
+      "expected": "예측 없음 / 이전 0.4%",
+      "why": "소매 재고는 소비자 수요의 변화를 반영하며, 현재 경제 상황을 파악하는 데 중요합니다.",
+      "bull": "재고가 예상보다 증가하면 소비자 신뢰가 높아져 주식 시장이 상승할 수 있습니다.",
+      "bear": "재고가 감소하면 소비자 수요 약세로 해석되어 주가가 하락할 것입니다.",
       "watch": [
-        "건설업",
-        "부동산",
-        "금리"
+        "소비자 신뢰지수",
+        "S&P 500",
+        "소매업종"
       ]
     },
     {
       "type": "macro",
-      "date": "2026-11-26",
-      "title": "EIA 원유 재고 변화",
-      "expected": "예측 1.3 / 이전 3.38",
-      "why": "원유 재고 변화는 공급과 수요의 균형을 나타내며, 유가에 직접적인 영향을 미친다.",
-      "bull": "재고가 예상보다 줄어들면, 유가는 상승하고 에너지 관련 주식도 함께 오를 것이다.",
-      "bear": "재고가 예상보다 증가하면, 유가는 하락하고 관련 주식이 부진할 것이다.",
+      "date": "2026-11-27",
+      "title": "도매 재고 (Wholesale Inventories)",
+      "expected": "예측 없음 / 이전 0.6%",
+      "why": "도매 재고는 공급망의 건강성을 나타내며, 경제 성장에 대한 신호로 해석됩니다.",
+      "bull": "재고 증가 시 기업의 생산 확대 기대감으로 주식이 상승할 수 있습니다.",
+      "bear": "재고 감소는 공급망 문제를 시사하며, 주가 하락으로 이어질 수 있습니다.",
       "watch": [
-        "유가",
-        "에너지업",
-        "원유 수출"
+        "제조업 PMI",
+        "소비자 물가 지수",
+        "도매업종"
       ]
     },
     {
       "type": "macro",
-      "date": "2026-11-26",
-      "title": "EIA 에탄올 생산",
-      "expected": "이전 1126",
-      "why": "에탄올 생산량은 바이오 연료 시장의 동향을 반영하며, 에너지 정책에 영향을 준다.",
-      "bull": "생산량이 증가하면, 바이오 연료 관련 기업의 주가가 상승할 수 있다.",
-      "bear": "생산량이 감소하면, 관련 기업의 실적에 부정적인 영향을 미칠 것이다.",
+      "date": "2026-11-27",
+      "title": "상품 무역수지 (Goods Trade Balance)",
+      "expected": "예측 -133억 달러 / 이전 -134.9억 달러",
+      "why": "무역수지는 국가의 경제 건강을 나타내며, 수출입 변화가 중요합니다.",
+      "bull": "무역수지가 개선되면 환율이 안정되고 주식 시장이 긍정적으로 반응할 것입니다.",
+      "bear": "무역수지가 악화되면 환율이 불안정해지고 주가가 하락할 수 있습니다.",
       "watch": [
-        "바이오 연료",
-        "에너지업",
-        "농업"
+        "수출입 지표",
+        "환율",
+        "무역업종"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-11-30",
+      "title": "시카고 PMI",
+      "expected": "예측 없음 / 이전 55.3",
+      "why": "PMI는 제조업의 건강성을 나타내며, 경제 성장의 선행 지표로 중요합니다.",
+      "bull": "PMI가 상승하면 제조업체의 활동 증가로 주가가 상승할 것입니다.",
+      "bear": "PMI가 하락하면 경기 둔화 우려로 주가가 하락할 가능성이 큽니다.",
+      "watch": [
+        "제조업 생산지수",
+        "S&P 500",
+        "제조업종"
+      ]
+    },
+    {
+      "type": "macro",
+      "date": "2026-12-01",
+      "title": "달라스 연준 제조업지수",
+      "expected": "예측 없음 / 이전 13.4",
+      "why": "제조업 지수는 지역 경제의 건강성을 반영하며, 향후 정책 방향에 영향을 미칩니다.",
+      "bull": "지수가 상승하면 경제 회복 기대감으로 주식이 상승할 것입니다.",
+      "bear": "지수가 하락하면 경기 침체 우려로 주가가 하락할 수 있습니다.",
+      "watch": [
+        "제조업 PMI",
+        "소비자 물가 지수",
+        "제조업종"
       ]
     }
   ]

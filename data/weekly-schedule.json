@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "매일 증시 일정",
-    "lastUpdatedKst": "2026-11-27 12:28 KST",
-    "from": "2026-11-27",
-    "to": "2026-12-11",
-    "historyFrom": "2026-08-29",
+    "lastUpdatedKst": "2026-11-28 12:03 KST",
+    "from": "2026-11-28",
+    "to": "2026-12-12",
+    "historyFrom": "2026-08-30",
     "source": "investing+forexfactory+38-detail+claude"
   },
   "economicCalendar": [
@@ -8614,6 +8614,18 @@
     },
     {
       "date": "2026-11-26",
+      "event": "Baker Hughes Gas Rig Count",
+      "country": "US",
+      "time": "04:00",
+      "impact": "high",
+      "importance": 3,
+      "actual": "127",
+      "previous": "128",
+      "estimate": "",
+      "unit": ""
+    },
+    {
+      "date": "2026-11-26",
       "event": "Interest Rate Decision",
       "country": "KR",
       "time": "10:00",
@@ -8631,7 +8643,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "0.6",
       "previous": "0.4",
       "estimate": "",
       "unit": "%"
@@ -8643,7 +8655,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "0.9",
       "previous": "0.6",
       "estimate": "",
       "unit": "%"
@@ -8655,7 +8667,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "-149.5",
       "previous": "-134.9",
       "estimate": "-133",
       "unit": "$"
@@ -8667,7 +8679,7 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "34.6",
       "previous": "32.1",
       "estimate": "",
       "unit": ""
@@ -8679,20 +8691,8 @@
       "time": "22:30",
       "impact": "high",
       "importance": 3,
-      "actual": "",
+      "actual": "36.5",
       "previous": "36.2",
-      "estimate": "",
-      "unit": ""
-    },
-    {
-      "date": "2026-11-28",
-      "event": "Baker Hughes Gas Rig Count",
-      "country": "US",
-      "time": "04:00",
-      "impact": "high",
-      "importance": 3,
-      "actual": "127",
-      "previous": "128",
       "estimate": "",
       "unit": ""
     },
@@ -8705,7 +8705,7 @@
       "importance": 3,
       "actual": "",
       "previous": "55.3",
-      "estimate": "",
+      "estimate": "55",
       "unit": ""
     },
     {
@@ -8837,7 +8837,7 @@
       "importance": 3,
       "actual": "",
       "previous": "55.5",
-      "estimate": "55.2",
+      "estimate": "55",
       "unit": ""
     },
     {
@@ -8849,7 +8849,7 @@
       "importance": 3,
       "actual": "",
       "previous": "7.523",
-      "estimate": "",
+      "estimate": "7.5",
       "unit": ""
     },
     {
@@ -9005,7 +9005,7 @@
       "importance": 3,
       "actual": "",
       "previous": "86",
-      "estimate": "",
+      "estimate": "80",
       "unit": ""
     },
     {
@@ -9076,7 +9076,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "32.1",
+      "previous": "34.6",
       "estimate": "",
       "unit": ""
     },
@@ -9088,7 +9088,7 @@
       "impact": "high",
       "importance": 3,
       "actual": "",
-      "previous": "36.2",
+      "previous": "36.5",
       "estimate": "",
       "unit": ""
     },
@@ -9101,7 +9101,7 @@
       "importance": 3,
       "actual": "",
       "previous": "189",
-      "estimate": "",
+      "estimate": "195",
       "unit": ""
     },
     {
@@ -9113,7 +9113,7 @@
       "importance": 3,
       "actual": "",
       "previous": "54.5",
-      "estimate": "54.5",
+      "estimate": "54.6",
       "unit": ""
     },
     {
@@ -9137,7 +9137,7 @@
       "importance": 3,
       "actual": "",
       "previous": "1.8",
-      "estimate": "",
+      "estimate": "0.4",
       "unit": "%"
     },
     {
@@ -9197,7 +9197,7 @@
       "importance": 3,
       "actual": "",
       "previous": "3.1",
-      "estimate": "",
+      "estimate": "3",
       "unit": "%"
     },
     {
@@ -9273,72 +9273,30 @@
   "eventAnalysis": [
     {
       "type": "macro",
-      "date": "2026-11-27",
-      "title": "소매 재고 (Retail Inventories)",
-      "expected": "예측 없음 / 이전 0.4%",
-      "why": "소매 재고는 소비자 수요의 변화를 반영하며, 현재 경제 상황을 파악하는 데 중요합니다.",
-      "bull": "재고가 예상보다 증가하면 소비자 신뢰가 높아져 주식 시장이 상승할 수 있습니다.",
-      "bear": "재고가 감소하면 소비자 수요 약세로 해석되어 주가가 하락할 것입니다.",
-      "watch": [
-        "소비자 신뢰지수",
-        "S&P 500",
-        "소매업종"
-      ]
-    },
-    {
-      "type": "macro",
-      "date": "2026-11-27",
-      "title": "도매 재고 (Wholesale Inventories)",
-      "expected": "예측 없음 / 이전 0.6%",
-      "why": "도매 재고는 공급망의 건강성을 나타내며, 경제 성장에 대한 신호로 해석됩니다.",
-      "bull": "재고 증가 시 기업의 생산 확대 기대감으로 주식이 상승할 수 있습니다.",
-      "bear": "재고 감소는 공급망 문제를 시사하며, 주가 하락으로 이어질 수 있습니다.",
-      "watch": [
-        "제조업 PMI",
-        "소비자 물가 지수",
-        "도매업종"
-      ]
-    },
-    {
-      "type": "macro",
-      "date": "2026-11-27",
-      "title": "상품 무역수지 (Goods Trade Balance)",
-      "expected": "예측 -133억 달러 / 이전 -134.9억 달러",
-      "why": "무역수지는 국가의 경제 건강을 나타내며, 수출입 변화가 중요합니다.",
-      "bull": "무역수지가 개선되면 환율이 안정되고 주식 시장이 긍정적으로 반응할 것입니다.",
-      "bear": "무역수지가 악화되면 환율이 불안정해지고 주가가 하락할 수 있습니다.",
-      "watch": [
-        "수출입 지표",
-        "환율",
-        "무역업종"
-      ]
-    },
-    {
-      "type": "macro",
       "date": "2026-11-30",
       "title": "시카고 PMI",
-      "expected": "예측 없음 / 이전 55.3",
-      "why": "PMI는 제조업의 건강성을 나타내며, 경제 성장의 선행 지표로 중요합니다.",
-      "bull": "PMI가 상승하면 제조업체의 활동 증가로 주가가 상승할 것입니다.",
-      "bear": "PMI가 하락하면 경기 둔화 우려로 주가가 하락할 가능성이 큽니다.",
+      "expected": "예측 55 / 이전 55.3",
+      "why": "제조업 경기를 나타내는 지표로, 시장의 경기 회복 여부를 가늠할 수 있습니다.",
+      "bull": "지표가 예상보다 높으면 제조업 관련 주가가 상승할 가능성이 큽니다.",
+      "bear": "지표가 예상보다 낮으면 경기 둔화 우려로 주식 시장이 하락할 수 있습니다.",
       "watch": [
-        "제조업 생산지수",
+        "제조업지수",
         "S&P 500",
-        "제조업종"
+        "금리"
       ]
     },
     {
       "type": "macro",
       "date": "2026-12-01",
-      "title": "달라스 연준 제조업지수",
-      "expected": "예측 없음 / 이전 13.4",
-      "why": "제조업 지수는 지역 경제의 건강성을 반영하며, 향후 정책 방향에 영향을 미칩니다.",
-      "bull": "지수가 상승하면 경제 회복 기대감으로 주식이 상승할 것입니다.",
-      "bear": "지수가 하락하면 경기 침체 우려로 주가가 하락할 수 있습니다.",
+      "title": "달라스 연방 제조업 지수",
+      "previous": "13.4",
+      "why": "미국 내 제조업의 건강성을 측정하며, 경제 전반에 미치는 영향을 분석할 수 있습니다.",
+      "bull": "지수가 상승하면 관련 산업의 주가가 동반 상승할 가능성이 높습니다.",
+      "bear": "지수가 하락하면 제조업체들의 실적 부진으로 주가가 하락할 수 있습니다.",
       "watch": [
-        "제조업 PMI",
-        "소비자 물가 지수",
-        "제조업종"
+        "ISM 제조업지수",
+        "나스닥",
+        "제조업체 주식"
       ]
     }
   ]

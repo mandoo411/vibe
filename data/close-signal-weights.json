@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-11-21T06:33:53.428Z",
+  "updatedAt": "2026-11-28T07:13:02.860Z",
   "window": {
-    "since": "2026-08-25",
-    "days": 34,
+    "since": "2026-09-01",
+    "days": 35,
     "samples": 1000
   },
   "objective": "익일 (시가 매도 + 종가 매도) / 2",
@@ -18,7 +18,7 @@
   "baseline": {
     "avg": -0.38,
     "open": -0.03,
-    "close": -0.73
+    "close": -0.74
   },
   "weights": {
     "institution": 1.1,
@@ -29,7 +29,7 @@
     "turnoverBand": 1,
     "momentum": 1,
     "kosdaqLead": 1.09,
-    "longTrend": 1.07,
+    "longTrend": 1.08,
     "liquidity": 1,
     "catalyst": 1
   },
@@ -122,7 +122,7 @@
       "close": -0.59,
       "openWin": 49.03,
       "closeWin": 40.34,
-      "weight": 1.07
+      "weight": 1.08
     },
     {
       "key": "liquidity",
